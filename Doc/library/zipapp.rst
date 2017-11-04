@@ -86,6 +86,8 @@ The following options are understood:
 
    :option:`--compress` has no effect when copying an archive.
 
+   .. versionadded:: 3.7
+
 .. cmdoption:: --info
 
    Display the interpreter embedded in the archive, for diagnostic purposes.  In

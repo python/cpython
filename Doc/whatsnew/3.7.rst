@@ -159,6 +159,32 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 564: Add new time functions with nanosecond resolution
+----------------------------------------------------------
+
+Add six new "nanosecond" variants of existing functions to the :mod:`time`
+module:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+While similar to the existing functions without the ``_ns`` suffix, they
+provide nanosecond resolution: they return a number of nanoseconds as a Python
+``int``.
+
+The ``time.time_ns()`` resolution is 3 times better than the ``time.time()``
+resolution on Linux and Windows.
+
+.. seealso::
+
+    :pep:`564` -- Add new time functions with nanosecond resolution
+       PEP written and implemented by Victor Stinner
+
+
 Other Language Changes
 ======================
 
@@ -292,9 +318,9 @@ to be executed on a process fork.  (Contributed by Antoine Pitrou in
 pdb
 ---
 
-:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+:func:`~pdb.set_trace` now takes an optional *header* keyword-only
 argument.  If given, this is printed to the console just before debugging
-begins.
+begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
 re
 --
@@ -309,6 +335,29 @@ string
 :class:`string.Template` now lets you to optionally modify the regular
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+time
+----
+
+The :pep:`564` added six new functions with nanosecond resolution:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+Add new clock identifiers:
+
+* :data:`time.CLOCK_BOOTTIME` (Linux): Identical to
+  :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
+  system is suspended.
+* :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
+  per-process timer from the CPU.
+* :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
+  the time the system has been running and not suspended, providing accurate
+  uptime measurement, both absolute and interval.
 
 unittest.mock
 -------------
@@ -390,6 +439,10 @@ Optimizations
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
+* The :func:`shutil.rmtree` function has been sped up to 20--40%.
+  This was done using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`28564`.)
 
 * Optimized case-insensitive matching and searching of :mod:`regular
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
@@ -606,6 +659,11 @@ Changes in the Python API
 
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
+
+* Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
+  function, the user specified handler *onerror* is now called with the first
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  is failed.
 
 
 Changes in the C API
