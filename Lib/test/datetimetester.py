@@ -1521,11 +1521,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, year=2001)
 
     def test_subclass_replace(self):
-        class C(self.theclass):
+        class DateSubclass(self.theclass):
             pass
 
-        dt = C(2012, 1, 1)
-        self.assertIs(type(dt.replace(year=2013)), C)
+        dt = DateSubclass(2012, 1, 1)
+        self.assertIs(type(dt.replace(year=2013)), DateSubclass)
 
     def test_subclass_date(self):
 
@@ -2634,11 +2634,11 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
     def test_subclass_replace(self):
-        class C(self.theclass):
+        class TimeSubclass(self.theclass):
             pass
 
-        ctime = C(12, 30)
-        self.assertIs(type(ctime.replace(hour=10)), C)
+        ctime = TimeSubclass(12, 30)
+        self.assertIs(type(ctime.replace(hour=10)), TimeSubclass)
 
     def test_subclass_time(self):
 
