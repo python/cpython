@@ -395,7 +395,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
         if (skipcore)
             *szCur = '\0';
         else {
-            /* If we have no values, we dont need a ';' */
+            /* If we have no values, we don't need a ';' */
             if (numKeys) {
                 *(szCur++) = L';';
                 dataSize--;
@@ -718,7 +718,7 @@ calculate_path(void)
     machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
     userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
 #endif
-    /* We only use the default relative PYTHONPATH if we havent
+    /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */
     skipdefault = envpath!=NULL || pythonhome!=NULL || \
                   machinepath!=NULL || userpath!=NULL;

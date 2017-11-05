@@ -391,7 +391,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
 
     /* If the source parameter is set, try to get the Python implementation.
        The Python implementation is able to log the traceback where the source
-       was allocated, whereas the C implementation doesnt. */
+       was allocated, whereas the C implementation doesn't. */
     show_fn = get_warnings_attr("_showwarnmsg", source != NULL);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
