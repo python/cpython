@@ -2676,6 +2676,7 @@ AC_MSG_RESULT($SHLIBS)
 AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
+AC_CHECK_LIB(uuid, uuid_generate_time_safe)
 
 AC_SEARCH_LIBS(sem_init, pthread rt posix4) 	# 'Real Time' functions on Solaris
 						# posix4 on Solaris 2.6
