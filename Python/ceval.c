@@ -2650,10 +2650,12 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(IMPORT_STAR) {
             PyObject *from = POP(), *locals;
             int err;
-            if (PyFrame_FastToLocalsWithError(f) < 0) {
-                Py_DECREF(from);
-                goto error;
-            }
+            /* TODO for PEP 558
+             *   Report an error here for CO_OPTIMIZED frames
+             *   The 3.x compiler treats wildcard imports as an error inside
+             *   functions, but they can still happen with independently
+             *   constructed opcode sequences
+             */
 
             locals = f->f_locals;
             if (locals == NULL) {
@@ -2663,7 +2665,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 goto error;
             }
             err = import_all_from(locals, from);
-            PyFrame_LocalsToFast(f, 0);
             Py_DECREF(from);
             if (err != 0)
                 goto error;

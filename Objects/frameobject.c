@@ -980,42 +980,11 @@ PyFrame_FastToLocals(PyFrameObject *f)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    /* Merge f->f_locals into fast locals */
-    PyObject *locals, *map;
-    PyObject **fast;
-    PyObject *error_type, *error_value, *error_traceback;
-    PyCodeObject *co;
-    Py_ssize_t j;
-    Py_ssize_t ncells, nfreevars;
-    if (f == NULL)
-        return;
-    locals = f->f_locals;
-    co = f->f_code;
-    map = co->co_varnames;
-    if (locals == NULL)
-        return;
-    if (!PyTuple_Check(map))
-        return;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    fast = f->f_localsplus;
-    j = PyTuple_GET_SIZE(map);
-    if (j > co->co_nlocals)
-        j = co->co_nlocals;
-    if (co->co_nlocals)
-        dict_to_map(co->co_varnames, j, locals, fast, 0, clear);
-    ncells = PyTuple_GET_SIZE(co->co_cellvars);
-    nfreevars = PyTuple_GET_SIZE(co->co_freevars);
-    if (ncells || nfreevars) {
-        dict_to_map(co->co_cellvars, ncells,
-                    locals, fast + co->co_nlocals, 1, clear);
-        /* Same test as in PyFrame_FastToLocals() above. */
-        if (co->co_flags & CO_OPTIMIZED) {
-            dict_to_map(co->co_freevars, nfreevars,
-                locals, fast + co->co_nlocals + ncells, 1,
-                clear);
-        }
-    }
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetString(
+        PyExc_RuntimeError,
+        "PyFrame_LocalsToFast is no longer supported. "
+        "Use PyFrame_GetLocals() instead."
+    );
 }
 
 /* Clear out the free list */
