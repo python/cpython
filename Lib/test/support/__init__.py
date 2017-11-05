@@ -2774,7 +2774,7 @@ def run_pty(script, input=b"dummy input\r", env=None):
         cleanup.enter_context(proc)
         def terminate(proc):
             try:
-                proc.terminate()
+                proc.kill()
             except ProcessLookupError:
                 # Workaround for Open/Net BSD bug (Issue 16762)
                 pass
@@ -2786,10 +2786,10 @@ def run_pty(script, input=b"dummy input\r", env=None):
         # either (Issue 20472). Hopefully the file descriptor is low enough
         # to use with select().
         sel = cleanup.enter_context(selectors.SelectSelector())
-        sel.register(master, selectors.EVENT_READ | selectors.EVENT_WRITE)
         os.set_blocking(master, False)
-        while True:
-            for [_, events] in sel.select():
+        sel.register(master, selectors.EVENT_READ | selectors.EVENT_WRITE)
+        while sel.get_map():
+            for [key, events] in sel.select():
                 if events & selectors.EVENT_READ:
                     try:
                         chunk = os.read(master, 0x10000)
@@ -2799,7 +2799,8 @@ def run_pty(script, input=b"dummy input\r", env=None):
                             raise
                         chunk = b""
                     if not chunk:
-                        return output
+                        sel.unregister(key.fileobj)
+                        break
                     output.extend(chunk)
                 if events & selectors.EVENT_WRITE:
                     try:
@@ -2811,3 +2812,5 @@ def run_pty(script, input=b"dummy input\r", env=None):
                         input = b""  # Stop writing
                     if not input:
                         sel.modify(master, selectors.EVENT_READ)
+        proc.wait()
+        return proc.returncode, output

@@ -88,8 +88,8 @@ int
 PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *flags)
 {
     PyObject *filename, *v;
+    int ret, err;
     PyCompilerFlags local_flags;
-    int ret = -1;
     static int nomem_count = 0;
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -112,7 +112,8 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         _PySys_SetObjectId(&PyId_ps2, v = PyUnicode_FromString("... "));
         Py_XDECREF(v);
     }
-    while (ret != E_EOF) {
+    err = 0;
+    do {
         ret = PyRun_InteractiveOneObjectEx(fp, filename, flags);
         if (ret == -1 && PyErr_Occurred()) {
             /* Prevent an endless loop after multiple consecutive MemoryErrors
@@ -120,7 +121,9 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
              * MemoryError. */
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
                 if (++nomem_count > 16) {
-                    Py_FatalError("Cannot recover from MemoryErrors.");
+                    PyErr_Clear();
+                    err = -1;
+                    break;
                 }
             } else {
                 nomem_count = 0;
@@ -134,9 +137,9 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         if (_PyDebug_XOptionShowRefCount() == Py_True)
             _PyDebug_PrintTotalRefs();
 #endif
-    }
+    } while (ret != E_EOF);
     Py_DECREF(filename);
-    return 0;
+    return err;
 }
 
 /* compute parser flags based on compiler flags */

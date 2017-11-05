@@ -141,11 +141,11 @@ print("History length:", readline.get_current_history_length())
 """
 
     def test_auto_history_enabled(self):
-        output = run_pty(self.auto_history_script.format(True))
+        rc, output = run_pty(self.auto_history_script.format(True))
         self.assertIn(b"History length: 1\r\n", output)
 
     def test_auto_history_disabled(self):
-        output = run_pty(self.auto_history_script.format(False))
+        rc, output = run_pty(self.auto_history_script.format(False))
         self.assertIn(b"History length: 0\r\n", output)
 
     def test_nonascii(self):
@@ -211,7 +211,7 @@ print("history", ascii(readline.get_history_item(1)))
         input += b"\t\t"  # Display possible completions
         input += b"x\t"  # Complete "t\xEBx" -> "t\xEBxt"
         input += b"\r"
-        output = run_pty(script, input)
+        rc, output = run_pty(script, input)
         self.assertIn(b"text 't\\xeb'\r\n", output)
         self.assertIn(b"line '[\\xefnserted]|t\\xeb[after]'\r\n", output)
         self.assertIn(b"indexes 11 13\r\n", output)
