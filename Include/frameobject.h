@@ -57,8 +57,12 @@ PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
                                         PyObject *, PyObject *);
 
 /* only internal use */
-PyFrameObject* _PyFrame_New_NoTrack(PyThreadState *, PyCodeObject *,
-                                    PyObject *, PyObject *);
+PyFrameObject* _PyFrame_Enter_New(PyThreadState *, PyCodeObject *,
+                                  PyObject *, PyObject *);
+void _PyFrame_Enter(PyThreadState *tstate, PyFrameObject *f);
+/* This must match the prototype in pystate.c */
+void _PyFrame_Leave(PyThreadState *tstate, PyFrameObject *f);
+
 
 
 /* The rest of the interface is specific for frame objects */

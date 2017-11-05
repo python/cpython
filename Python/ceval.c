@@ -833,7 +833,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     if (Py_EnterRecursiveCall(""))
         return NULL;
 
-    tstate->frame = f;
+    assert(tstate->frame == f);
 
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc != NULL) {
@@ -3536,7 +3536,6 @@ exit_eval_frame:
         dtrace_function_return(f);
     Py_LeaveRecursiveCall();
     f->f_executing = 0;
-    tstate->frame = f->f_back;
 
     return _Py_CheckFunctionResult(NULL, retval, "PyEval_EvalFrameEx");
 }
@@ -3729,7 +3728,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     /* Create the frame */
     tstate = PyThreadState_GET();
     assert(tstate != NULL);
-    f = _PyFrame_New_NoTrack(tstate, co, globals, locals);
+    f = _PyFrame_Enter_New(tstate, co, globals, locals);
     if (f == NULL) {
         return NULL;
     }
@@ -3938,12 +3937,11 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             goto fail;
         }
 
-        /* Don't need to keep the reference to f_back, it will be set
-         * when the generator is resumed. */
-        Py_CLEAR(f->f_back);
-
         /* Create a new generator that owns the ready to run frame
          * and return that as the value. */
+        Py_INCREF(f);
+        _PyFrame_Leave(tstate, f);
+
         if (is_coro) {
             gen = PyCoro_New(f, name, qualname);
         } else if (co->co_flags & CO_ASYNC_GENERATOR) {
@@ -3954,8 +3952,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         if (gen == NULL) {
             return NULL;
         }
-
-        _PyObject_GC_TRACK(f);
 
         if (is_coro && coro_wrapper != NULL) {
             PyObject *wrapped;
@@ -3971,22 +3967,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     retval = PyEval_EvalFrameEx(f,0);
 
 fail: /* Jump here from prelude on failure */
-
-    /* decref'ing the frame can cause __del__ methods to get invoked,
-       which can call back into Python.  While we're done with the
-       current Python frame (f), the associated C stack is still in use,
-       so recursion_depth must be boosted for the duration.
-    */
-    assert(tstate != NULL);
-    if (Py_REFCNT(f) > 1) {
-        Py_DECREF(f);
-        _PyObject_GC_TRACK(f);
-    }
-    else {
-        ++tstate->recursion_depth;
-        Py_DECREF(f);
-        --tstate->recursion_depth;
-    }
+    _PyFrame_Leave(tstate, f);
     return retval;
 }
 
