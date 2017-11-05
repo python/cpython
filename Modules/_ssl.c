@@ -4635,7 +4635,7 @@ PySSL_RAND(int len, int pseudo)
         return NULL;
     if (pseudo) {
 #ifdef OPENSSL_VERSION_1_1
-        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+        ok = (_PyOS_URandom((unsigned char*)PyBytes_AS_STRING(bytes), len) == 0 ? 1 : 0);
 #else
         ok = RAND_pseudo_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
 #endif
