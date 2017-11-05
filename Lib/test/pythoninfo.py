@@ -1,5 +1,5 @@
 """
-Collect various informations about Python to help debugging test failures.
+Collect various information about Python to help debugging test failures.
 """
 from __future__ import print_function
 import errno
@@ -40,7 +40,7 @@ class PythonInfo:
 
     def get_infos(self):
         """
-        Get informations as a key:value dictionary where values are strings.
+        Get information as a key:value dictionary where values are strings.
         """
         return {key: str(value) for key, value in self.info.items()}
 
