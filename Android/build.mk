@@ -197,7 +197,7 @@ distclean: hostclean
 	rm -rf $(PY_DESTDIR)
 
 hostclean:
-	$(MAKE) -C $(py_host_dir) distclean
+	-$(MAKE) -C $(py_host_dir) distclean
 
 # Remove everything for the given ANDROID_API and ANDROID_ARCH except the avd.
 clean: distclean

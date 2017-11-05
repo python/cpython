@@ -1,0 +1,14 @@
+diff --git a/configure b/configure
+index c6da467..1b176fc 100755
+--- a/configure
++++ b/configure
+@@ -18530,7 +18530,8 @@ case "$target" in
+ $as_echo "#define FFI_EXEC_TRAMPOLINE_TABLE 1" >>confdefs.h
+ 
+      ;;
+-     *-apple-darwin1* | *-*-freebsd* | *-*-kfreebsd* | *-*-openbsd* | *-pc-solaris*)
++     *-apple-darwin1* | *-*-freebsd* | *-*-kfreebsd* | *-*-openbsd* | *-pc-solaris* \
++| *-linux-android*)
+ 
+ $as_echo "#define FFI_MMAP_EXEC_WRIT 1" >>confdefs.h
+ 
