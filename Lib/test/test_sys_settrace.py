@@ -5,6 +5,7 @@ import unittest
 import sys
 import difflib
 import gc
+import textwrap
 
 # A very basic example.  If this fails, we're in deep trouble.
 def basic():
@@ -929,6 +930,105 @@ class FrameLocalsTestCase(unittest.TestCase):
         self.assertEqual(x_from_generator, i_from_generator)
         self.assertEqual(x_from_nested_ref, [2, 6])
         self.assertEqual(x_from_nested_locals, [3, 7])
+
+    def test_locals_writeback_support(self):
+        # To support interactive debuggers, trace functions are expected to
+        # be able to reliably modify function locals. However, this should
+        # NOT enable writebacks via locals() at function scope.
+        #
+        # Note: the sample values have numbers in them so mixing up variable
+        #       names in the checks can't accidentally make the test pass -
+        #       you'd have to get both the name *and* expected number wrong
+        self.maxDiff = None
+        code = textwrap.dedent("""
+            locals()['a_global'] = 'created1' # We expect this to be retained
+            another_global = 'original2'      # Trace func will modify this
+
+            class C:
+                locals()['an_attr'] = 'created3' # We expect this to be retained
+                another_attr = 'original4'       # Trace func will modify this
+            a_class_attribute = C.an_attr
+            another_class_attribute = C.another_attr
+            del C
+
+            def outer():
+                a_nonlocal = 'original5'       # We expect this to be retained
+                another_nonlocal = 'original6' # Trace func will modify this
+                def inner():
+                    nonlocal another_nonlocal
+                    a_local = 'original7'          # We expect this to be retained
+                    another_local = 'original8'    # Trace func will modify this
+                    ns = locals()
+                    ns['a_local'] = 'modified7'    # We expect this to be reverted
+                    ns['a_nonlocal'] = 'modified5' # We expect this to be reverted
+                    ns['a_new_local'] = 'created9' # We expect this to be retained
+                    return a_local, another_local, ns
+                outer_local = 'original10' # Trace func will modify this
+                # Trigger any updates from the inner function & trace function
+                inner_result = inner()
+                outer_result = a_nonlocal, another_nonlocal, outer_local, locals()
+                return outer_result, inner_result
+            outer_result, inner_result = outer()
+            a_nonlocal, another_nonlocal, outer_local, outer_ns = outer_result
+            a_nonlocal_via_ns = outer_ns['a_nonlocal']
+            another_nonlocal_via_ns = outer_ns['another_nonlocal']
+            outer_local_via_ns = outer_ns['outer_local']
+            a_local, another_local, inner_ns = inner_result
+            a_local_via_ns = inner_ns['a_local']
+            a_nonlocal_via_inner_ns = inner_ns['a_nonlocal']
+            another_nonlocal_via_inner_ns = inner_ns['another_nonlocal']
+            another_local_via_ns = inner_ns['another_local']
+            a_new_local_via_ns = inner_ns['a_new_local']
+            del outer, outer_result, outer_ns, inner_result, inner_ns
+            """
+        )
+        def tracefunc(frame, event, arg):
+            if event == "return":
+                # We leave any state manipulation to the very end
+                ns = frame.f_locals
+                co_name = frame.f_code.co_name
+                if co_name == "C":
+                    # Modify class attributes
+                    ns["another_attr"] = "modified4"
+                elif co_name == "inner":
+                    # Modify local and nonlocal variables
+                    ns["another_nonlocal"] = "modified6"
+                    ns["another_local"] = "modified8"
+                    outer_ns = frame.f_back.f_locals
+                    outer_ns["outer_local"] = "modified10"
+                elif co_name == "<module>":
+                    # Modify globals
+                    ns["another_global"] = "modified2"
+            return tracefunc
+        actual_ns = {}
+        sys.settrace(tracefunc)
+        try:
+            exec(code, actual_ns)
+        finally:
+            sys.settrace(None)
+        for k in list(actual_ns.keys()):
+            if k.startswith("_"):
+                del actual_ns[k]
+        expected_ns = {
+            "a_global": "created1",
+            "another_global": "modified2",
+            "a_class_attribute": "created3",
+            "another_class_attribute": "modified4",
+            "a_nonlocal": "modified5",
+            "a_nonlocal_via_ns": "modified5",
+            "a_nonlocal_via_inner_ns": "modified5",
+            "another_nonlocal": "modified6",
+            "another_nonlocal_via_ns": "modified6",
+            "another_nonlocal_via_inner_ns": "modified6",
+            "a_local": "original7",
+            "a_local_via_ns": "original7",
+            "another_local": "modified8",
+            "another_local_via_ns": "modified8",
+            "a_new_local_via_ns": "created9",
+            "outer_local": "modified10",
+            "outer_local_via_ns": "modified10",
+        }
+        self.assertEqual(actual_ns, expected_ns)
 
 
 def test_main():
