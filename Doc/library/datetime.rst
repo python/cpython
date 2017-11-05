@@ -1347,7 +1347,7 @@ Examples of working with datetime objects:
 Using datetime with tzinfo:
 
     >>> from datetime import timedelta, datetime, tzinfo
-    >>> class GMT1(tzinfo):
+    >>> class TZ1(tzinfo):
     ...     def utcoffset(self, dt):
     ...         return timedelta(hours=1) + self.dst(dt)
     ...     def dst(self, dt):
@@ -1361,9 +1361,9 @@ Using datetime with tzinfo:
     ...         else:
     ...             return timedelta(0)
     ...     def tzname(self,dt):
-    ...          return "GMT +1"
+    ...         return "UTC +2" if self.dst(dt) else "UTC +1"
     ...
-    >>> class GMT2(tzinfo):
+    >>> class TZ2(tzinfo):
     ...     def utcoffset(self, dt):
     ...         return timedelta(hours=2) + self.dst(dt)
     ...     def dst(self, dt):
@@ -1376,26 +1376,26 @@ Using datetime with tzinfo:
     ...         else:
     ...             return timedelta(0)
     ...     def tzname(self,dt):
-    ...         return "GMT +2"
+    ...         return "UTC +3" if self.dst(dt) else "UTC +2"
     ...
-    >>> gmt1 = GMT1()
+    >>> tz1 = TZ1()
     >>> # Daylight Saving Time
-    >>> dt1 = datetime(2006, 11, 21, 16, 30, tzinfo=gmt1)
+    >>> dt1 = datetime(2006, 11, 21, 16, 30, tzinfo=tz1)
     >>> dt1.dst()
     datetime.timedelta(0)
     >>> dt1.utcoffset()
     datetime.timedelta(seconds=3600)
-    >>> dt2 = datetime(2006, 6, 14, 13, 0, tzinfo=gmt1)
+    >>> dt2 = datetime(2006, 6, 14, 13, 0, tzinfo=tz1)
     >>> dt2.dst()
     datetime.timedelta(seconds=3600)
     >>> dt2.utcoffset()
     datetime.timedelta(seconds=7200)
     >>> # Convert datetime to another time zone
-    >>> dt3 = dt2.astimezone(GMT2())
+    >>> dt3 = dt2.astimezone(TZ2())
     >>> dt3     # doctest: +ELLIPSIS
-    datetime.datetime(2006, 6, 14, 14, 0, tzinfo=<GMT2 object at 0x...>)
+    datetime.datetime(2006, 6, 14, 14, 0, tzinfo=<TZ2 object at 0x...>)
     >>> dt2     # doctest: +ELLIPSIS
-    datetime.datetime(2006, 6, 14, 13, 0, tzinfo=<GMT1 object at 0x...>)
+    datetime.datetime(2006, 6, 14, 13, 0, tzinfo=<TZ1 object at 0x...>)
     >>> dt2.utctimetuple() == dt3.utctimetuple()
     True
 
@@ -1637,26 +1637,25 @@ Instance methods:
 Example:
 
     >>> from datetime import time, tzinfo, timedelta
-    >>> class GMT1(tzinfo):
+    >>> class TZ1(tzinfo):
     ...     def utcoffset(self, dt):
     ...         return timedelta(hours=1)
     ...     def dst(self, dt):
     ...         return timedelta(0)
     ...     def tzname(self,dt):
-    ...         return "Europe/Prague"
+    ...         return "UTC+1"
     ...
-    >>> t = time(12, 10, 30, tzinfo=GMT1())
+    >>> t = time(12, 10, 30, tzinfo=TZ1())
     >>> t                               # doctest: +ELLIPSIS
-    datetime.time(12, 10, 30, tzinfo=<GMT1 object at 0x...>)
-    >>> gmt = GMT1()
+    datetime.time(12, 10, 30, tzinfo=<TZ1 object at 0x...>)
     >>> t.isoformat()
     '12:10:30+01:00'
     >>> t.dst()
     datetime.timedelta(0)
     >>> t.tzname()
-    'Europe/Prague'
+    'UTC+1'
     >>> t.strftime("%H:%M:%S %Z")
-    '12:10:30 Europe/Prague'
+    '12:10:30 UTC+1'
     >>> 'The {} is {:%H:%M}.'.format("time", t)
     'The time is 12:10.'
 
