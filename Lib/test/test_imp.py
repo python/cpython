@@ -112,7 +112,7 @@ class ImportTests(unittest.TestCase):
         # Martin von Loewis note what shared library cannot have non-ascii
         # character because init_xxx function cannot be compiled
         # and issue never happens for dynamic modules.
-        # But sources modified to follow generic way for processing pathes.
+        # But sources modified to follow generic way for processing paths.
 
         # the return encoding could be uppercase or None
         fs_encoding = sys.getfilesystemencoding()
