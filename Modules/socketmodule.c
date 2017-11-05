@@ -226,15 +226,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 # include "pythread.h"
 #endif
 
-#if defined(PYCC_VACPP)
-# include <types.h>
-# include <io.h>
-# include <sys/ioctl.h>
-# include <utils.h>
-# include <ctype.h>
-#endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__CYGWIN__)
 # include <sys/ioctl.h>
 #endif
 

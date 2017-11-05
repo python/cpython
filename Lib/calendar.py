@@ -111,8 +111,9 @@ def leapdays(y1, y2):
 
 
 def weekday(year, month, day):
-    """Return weekday (0-6 ~ Mon-Sun) for year (1970-...), month (1-12),
-       day (1-31)."""
+    """Return weekday (0-6 ~ Mon-Sun) for year, month (1-12), day (1-31)."""
+    if not datetime.MINYEAR <= year <= datetime.MAXYEAR:
+        year = 2000 + year % 400
     return datetime.date(year, month, day).weekday()
 
 

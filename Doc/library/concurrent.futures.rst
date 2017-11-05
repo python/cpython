@@ -124,10 +124,16 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='')
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
+
+   *initializer* is an optional callable that is called at the start of
+   each worker thread; *initargs* is a tuple of arguments passed to the
+   initializer.  Should *initializer* raise an exception, all currently
+   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   as well any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -141,6 +147,10 @@ And::
       The *thread_name_prefix* argument was added to allow users to
       control the threading.Thread names for worker threads created by
       the pool for easier debugging.
+
+   .. versionchanged:: 3.7
+      Added the *initializer* and *initargs* arguments.
+
 
 .. _threadpoolexecutor-example:
 
@@ -191,7 +201,7 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None)
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=())
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
@@ -202,6 +212,12 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    launch the workers. If *mp_context* is ``None`` or not given, the default
    multiprocessing context is used.
 
+   *initializer* is an optional callable that is called at the start of
+   each worker process; *initargs* is a tuple of arguments passed to the
+   initializer.  Should *initializer* raise an exception, all currently
+   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   as well any attempt to submit more jobs to the pool.
+
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
@@ -211,6 +227,8 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    .. versionchanged:: 3.7
       The *mp_context* argument was added to allow users to control the
       start_method for worker processes created by the pool.
+
+      Added the *initializer* and *initargs* arguments.
 
 
 .. _processpoolexecutor-example:
@@ -432,13 +450,31 @@ Exception classes
 
    Raised when a future operation exceeds the given timeout.
 
+.. exception:: BrokenExecutor
+
+   Derived from :exc:`RuntimeError`, this exception class is raised
+   when an executor is broken for some reason, and cannot be used
+   to submit or execute new tasks.
+
+   .. versionadded:: 3.7
+
+.. currentmodule:: concurrent.futures.thread
+
+.. exception:: BrokenThreadPool
+
+   Derived from :exc:`~concurrent.futures.BrokenExecutor`, this exception
+   class is raised when one of the workers of a :class:`ThreadPoolExecutor`
+   has failed initializing.
+
+   .. versionadded:: 3.7
+
 .. currentmodule:: concurrent.futures.process
 
 .. exception:: BrokenProcessPool
 
-   Derived from :exc:`RuntimeError`, this exception class is raised when
-   one of the workers of a :class:`ProcessPoolExecutor` has terminated
-   in a non-clean fashion (for example, if it was killed from the outside).
+   Derived from :exc:`~concurrent.futures.BrokenExecutor` (formerly
+   :exc:`RuntimeError`), this exception class is raised when one of the
+   workers of a :class:`ProcessPoolExecutor` has terminated in a non-clean
+   fashion (for example, if it was killed from the outside).
 
    .. versionadded:: 3.3
-
