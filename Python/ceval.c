@@ -514,8 +514,52 @@ enum why_code {
 static int do_raise(PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, int, PyObject **);
 
-#define _Py_TracingPossible _PyRuntime.ceval.tracing_possible
+static PyObject *
+globals_getitem(PyFrameObject *f, PyObject *name)
+{
+    PyObject *v;
+    if (PyDict_CheckExact(f->f_globals)
+        && PyDict_CheckExact(f->f_builtins))
+    {
+        v = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
+                               (PyDictObject *)f->f_builtins,
+                               name);
+        if (v == NULL) {
+            if (!_PyErr_OCCURRED()) {
+                /* _PyDict_LoadGlobal() returns NULL without raising
+                 * an exception if the key doesn't exist */
+                format_exc_check_arg(PyExc_NameError,
+                                     NAME_ERROR_MSG, name);
+            }
+            return NULL;
+        }
+        Py_INCREF(v);
+    }
+    else {
+        /* Slow-path if globals or builtins is not a dict */
 
+        /* namespace 1: globals */
+        v = PyObject_GetItem(f->f_globals, name);
+        if (v == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_KeyError))
+                return NULL;
+            PyErr_Clear();
+
+            /* namespace 2: builtins */
+            v = PyObject_GetItem(f->f_builtins, name);
+            if (v == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_KeyError))
+                    format_exc_check_arg(
+                                         PyExc_NameError,
+                                         NAME_ERROR_MSG, name);
+                return NULL;
+            }
+        }
+    }
+    return v;
+}
+
+#define _Py_TracingPossible _PyRuntime.ceval.tracing_possible
 
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
@@ -2063,30 +2107,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 }
             }
             if (v == NULL) {
-                v = PyDict_GetItem(f->f_globals, name);
-                Py_XINCREF(v);
-                if (v == NULL) {
-                    if (PyDict_CheckExact(f->f_builtins)) {
-                        v = PyDict_GetItem(f->f_builtins, name);
-                        if (v == NULL) {
-                            format_exc_check_arg(
-                                        PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            goto error;
-                        }
-                        Py_INCREF(v);
-                    }
-                    else {
-                        v = PyObject_GetItem(f->f_builtins, name);
-                        if (v == NULL) {
-                            if (PyErr_ExceptionMatches(PyExc_KeyError))
-                                format_exc_check_arg(
-                                            PyExc_NameError,
-                                            NAME_ERROR_MSG, name);
-                            goto error;
-                        }
-                    }
-                }
+                v = globals_getitem(f, name);
+                if (v == NULL)
+                    goto error;
             }
             PUSH(v);
             DISPATCH();
@@ -2094,45 +2117,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
         TARGET(LOAD_GLOBAL) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *v;
-            if (PyDict_CheckExact(f->f_globals)
-                && PyDict_CheckExact(f->f_builtins))
-            {
-                v = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
-                                       (PyDictObject *)f->f_builtins,
-                                       name);
-                if (v == NULL) {
-                    if (!_PyErr_OCCURRED()) {
-                        /* _PyDict_LoadGlobal() returns NULL without raising
-                         * an exception if the key doesn't exist */
-                        format_exc_check_arg(PyExc_NameError,
-                                             NAME_ERROR_MSG, name);
-                    }
-                    goto error;
-                }
-                Py_INCREF(v);
-            }
-            else {
-                /* Slow-path if globals or builtins is not a dict */
-
-                /* namespace 1: globals */
-                v = PyObject_GetItem(f->f_globals, name);
-                if (v == NULL) {
-                    if (!PyErr_ExceptionMatches(PyExc_KeyError))
-                        goto error;
-                    PyErr_Clear();
-
-                    /* namespace 2: builtins */
-                    v = PyObject_GetItem(f->f_builtins, name);
-                    if (v == NULL) {
-                        if (PyErr_ExceptionMatches(PyExc_KeyError))
-                            format_exc_check_arg(
-                                        PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                        goto error;
-                    }
-                }
-            }
+            PyObject *v = globals_getitem(f, name);
+            if (v == NULL)
+                goto error;
             PUSH(v);
             DISPATCH();
         }
