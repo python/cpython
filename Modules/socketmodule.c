@@ -1348,20 +1348,18 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 #endif /* HAVE_LINUX_TIPC_H */
 
-#ifdef AF_CAN
+#if defined(AF_CAN) && defined(SIOCGIFNAME)
     case AF_CAN:
     {
         struct sockaddr_can *a = (struct sockaddr_can *)addr;
         const char *ifname = "";
-#ifdef SIOCGIFNAME
+        struct ifreq ifr;
         /* need to look up interface name given index */
         if (a->can_ifindex) {
-            struct ifreq ifr;
             ifr.ifr_ifindex = a->can_ifindex;
             if (ioctl(sockfd, SIOCGIFNAME, &ifr) == 0)
                 ifname = ifr.ifr_name;
         }
-#endif /* SIOCGIFNAME */
 
         switch (proto) {
 #ifdef CAN_ISOTP
@@ -1380,7 +1378,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
           }
         }
     }
-#endif /* AF_CAN */
+#endif /* AF_CAN && SIOCGIFNAME */
 
 #ifdef PF_SYSTEM
     case PF_SYSTEM:
@@ -1901,7 +1899,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     }
 #endif /* HAVE_LINUX_TIPC_H */
 
-#ifdef AF_CAN
+#if defined(AF_CAN) && defined(SIOCGIFINDEX)
     case AF_CAN:
         switch (s->sock_proto) {
 #ifdef CAN_RAW
@@ -2002,7 +2000,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                             "getsockaddrarg: unsupported CAN protocol");
             return 0;
         }
-#endif /* AF_CAN */
+#endif /* AF_CAN && SIOCGIFINDEX */
 
 #ifdef PF_SYSTEM
     case PF_SYSTEM:
