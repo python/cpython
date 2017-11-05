@@ -686,6 +686,20 @@ CPython bytecode changes
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
 
+Other CPython implementation changes
+------------------------------------
+
+* In preparation for potential future changes to the public CPython runtime
+  initialization API (see :pep:`432` for details), CPython's internal startup
+  and configuration management logic has been significantly refactored. While
+  these updates are intended to be entirely transparent to both embedding
+  applications and users of the regular CPython CLI, they're being mentioned
+  here as the refactoring changes the internal order of various operations
+  during interpreter startup, and hence may uncover previously latent defects,
+  either in embedding applications, or in CPython itself.
+  (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
+
+
 Documentation
 =============
 
