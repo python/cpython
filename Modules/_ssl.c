@@ -5277,9 +5277,7 @@ PyInit__ssl(void)
         return NULL;
     PySocketModule = *socket_api;
 
-#ifdef OPENSSL_VERSION_1_1
-    OPENSSL_init_ssl(0, NULL);
-#else
+#ifndef OPENSSL_VERSION_1_1
     /* Load all algorithms and initialize cpuid */
     OPENSSL_add_all_algorithms_noconf();
     /* Init OpenSSL */
