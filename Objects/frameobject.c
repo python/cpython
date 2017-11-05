@@ -817,70 +817,6 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
     return 0;
 }
 
-/* Copy values from the "locals" dict into the fast locals.
-
-   dict is an input argument containing string keys representing
-   variables names and arbitrary PyObject* as values.
-
-   map and values are input arguments.  map is a tuple of strings.
-   values is an array of PyObject*.  At index i, map[i] is the name of
-   the variable with value values[i].  The function gets the new value
-   for values[i] by looking up map[i] in the dict.
-
-   If clear is true and map[i] is missing from the dict, then values[i] is
-   set to NULL. If clear is false, then values[i] is left alone in that case.
-
-   If deref is true, then the values being copied are cell variables
-   and the value is inserted into the cell variable rather than overwriting
-   the value directly. If the value in the dict *is* the cell itself, then
-   the cell value is left alone, and instead that value is written back
-   into the dict (replacing the cell reference).
-
-   Exceptions raised while reading or updating the dict or updating a cell
-   reference are silently ignored, because there is no good way to report them.
-*/
-
-static void
-dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
-            int deref, int clear)
-{
-    Py_ssize_t j;
-    assert(PyTuple_Check(map));
-    assert(PyDict_Check(dict));
-    assert(PyTuple_Size(map) >= nmap);
-    for (j = nmap; --j >= 0; ) {
-        PyObject *key = PyTuple_GET_ITEM(map, j);
-        PyObject *value = PyObject_GetItem(dict, key);
-        assert(PyUnicode_Check(key));
-        /* We only care about NULLs if clear is true. */
-        if (value == NULL) {
-            PyErr_Clear();
-            if (!clear)
-                continue;
-        }
-        if (deref) {
-            assert(PyCell_Check(values[j]));
-            PyObject *cell_value = PyCell_GET(values[j]);
-            if (values[j] == value) {
-                /* The dict currently contains the cell itself, so write the
-                   cell's value into the dict rather than the other way around
-                */
-                if (PyObject_SetItem(dict, key, cell_value) != 0) {
-                    PyErr_Clear();
-                }
-            } else if (cell_value != value) {
-                /* Write the value from the dict back into the cell */
-                if (PyCell_Set(values[j], value) < 0)
-                    PyErr_Clear();
-            }
-        } else if (values[j] != value) {
-            Py_XINCREF(value);
-            Py_XSETREF(values[j], value);
-        }
-        Py_XDECREF(value);
-    }
-}
-
 int
 _PyFrame_FastToLocalsInternal(PyFrameObject *f, int deref)
 {
@@ -987,6 +923,109 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     );
 }
 
+static int
+add_local_refs(PyObject *map, Py_ssize_t nmap, PyObject *fast_refs)
+{
+    /* Populate a lookup table from variable names to fast locals array indices */
+    Py_ssize_t j;
+    assert(PyTuple_Check(map));
+    assert(PyDict_Check(fast_refs));
+    assert(PyTuple_Size(map) >= nmap);
+    for (j = nmap; --j >= 0; ) {
+        PyObject *key = PyTuple_GET_ITEM(map, j);
+        PyObject *value = PyLong_FromSsize_t(j);
+        assert(PyUnicode_Check(key));
+        if (PyDict_SetItem(fast_refs, key, value) != 0) {
+                return -1;
+        }
+    }
+    return 0;
+}
+
+static int
+add_nonlocal_refs(PyObject *map, Py_ssize_t nmap, PyObject *fast_refs, PyObject **cells)
+{
+    /* Populate a lookup table from variable names to closure cell references */
+    Py_ssize_t j;
+    assert(PyTuple_Check(map));
+    assert(PyDict_Check(fast_refs));
+    assert(PyTuple_Size(map) >= nmap);
+    for (j = nmap; --j >= 0; ) {
+        PyObject *key = PyTuple_GET_ITEM(map, j);
+        PyObject *value = cells[j];
+        assert(PyUnicode_Check(key));
+        assert(PyCell_Check(value));
+        assert(PyUnicode_Check(key));
+        if (PyDict_SetItem(fast_refs, key, value) != 0) {
+                return -1;
+        }
+    }
+    return 0;
+}
+
+
+static PyObject *
+_PyFrame_BuildFastRefs(PyFrameObject *f)
+{
+    PyObject *fast_refs, *map;
+    PyObject **fast;
+    PyCodeObject *co;
+    Py_ssize_t j;
+    Py_ssize_t ncells, nfreevars;
+
+    /* Construct a combined mapping from local variable names to indices
+     * in the fast locals array, and from nonlocal variable names directly
+     * to the corresponding cell objects
+     */
+    co = f->f_code;
+    if (!(co->co_flags & CO_OPTIMIZED)) {
+        PyErr_SetString(PyExc_SystemError,
+            "attempted to build fast refs lookup table for non-optimized scope");
+        return NULL;
+    }
+    map = co->co_varnames;
+    if (!PyTuple_Check(map)) {
+        PyErr_Format(PyExc_SystemError,
+                     "co_varnames must be a tuple, not %s",
+                     Py_TYPE(map)->tp_name);
+        return NULL;
+    }
+    fast_refs = PyDict_New();
+    if (fast_refs == NULL) {
+        return NULL;
+    }
+    j = PyTuple_GET_SIZE(map);
+    if (j > co->co_nlocals)
+        j = co->co_nlocals;
+    if (co->co_nlocals) {
+        if (add_local_refs(map, j, fast_refs) < 0) {
+            Py_DECREF(fast_refs);
+            return NULL;
+        }
+    }
+    fast = f->f_localsplus;
+    ncells = PyTuple_GET_SIZE(co->co_cellvars);
+    if (ncells) {
+        if (add_nonlocal_refs(co->co_cellvars, ncells,
+                              fast_refs, fast + co->co_nlocals)) {
+            Py_DECREF(fast_refs);
+            return NULL;
+        }
+    }
+
+    nfreevars = PyTuple_GET_SIZE(co->co_freevars);
+    if (nfreevars) {
+        if (add_nonlocal_refs(co->co_freevars, nfreevars,
+                             fast_refs, fast + co->co_nlocals + ncells) < 0) {
+            Py_DECREF(fast_refs);
+            return NULL;
+        }
+    }
+
+    return fast_refs;
+
+}
+
 /* Clear out the free list */
 int
 PyFrame_ClearFreeList(void)
@@ -1018,3 +1057,226 @@ _PyFrame_DebugMallocStats(FILE *out)
                            numfree, sizeof(PyFrameObject));
 }
 
+/* PyFastLocalsProxy_Type
+ *
+ * Subclass of PyDict_Proxy (currently defined in descrobject.h/.c)
+ *
+ * Mostly works just like PyDict_Proxy (backed by the frame locals), but
+ * suflports setitem and delitem, with writes being delegated to both the
+ * referenced mapping *and* the fast locals and/or cell reference on the
+ * frame.
+ */
+/*[clinic input]
+class fastlocalsproxy "fastlocalsproxyobject *" "&PyFastLocalsProxy_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0e135835cface9f]*/
+
+
+typedef struct {
+    PyObject_HEAD           /* Match mappingproxyobject in descrobject.c */
+    PyObject      *mapping; /* Match mappingproxyobject in descrobject.c */
+    PyFrameObject *frame;
+    PyObject      *fast_refs; /* Cell refs and local variable indices */
+} fastlocalsproxyobject;
+
+/* Provide __setitem__() and __delitem__() implementations that not only
+ * write to the namespace returned by locals(), but also write to the frame
+ * storage directly (either the closure cells or the fast locals array)
+ */
+
+static int
+fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
+{
+    int result = 0;
+    PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
+    if (fast_ref != NULL) {
+        /* Key is also stored on the frame, so update that reference */
+        if (PyCell_Check(fast_ref)) {
+            result = PyCell_Set(fast_ref, NULL);
+        } else {
+            /* TODO: It's Python integer mapping into the fast locals array */
+        }
+    }
+    return result;
+}
+
+static int
+fastlocalsproxy_setitem(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
+{
+    int result;
+    result = PyDict_SetItem(flp->mapping, key, value);
+    if (result == 0) {
+        result = fastlocalsproxy_write_to_frame(flp, key, value);
+    }
+    return result;
+}
+
+static int
+fastlocalsproxy_delitem(fastlocalsproxyobject *flp, PyObject *key)
+{
+    int result;
+    result = PyDict_DelItem(flp->mapping, key);
+    if (result == 0) {
+        result = fastlocalsproxy_write_to_frame(flp, key, NULL);
+    }
+    return result;
+}
+
+static int
+fastlocalsproxy_mp_assign_subscript(PyObject *flp, PyObject *key, PyObject *value)
+{
+    if (value == NULL)
+        return fastlocalsproxy_delitem((fastlocalsproxyobject *)flp, key);
+    else
+        return fastlocalsproxy_setitem((fastlocalsproxyobject *)flp, key, value);
+}
+
+static PyMappingMethods fastlocalsproxy_as_mapping = {
+    0,                                    /* mp_length */
+    0,                                    /* mp_subscript */
+    fastlocalsproxy_mp_assign_subscript,  /* mp_ass_subscript */
+};
+
+
+/* TODO: Delegate the mutating methods not delegated by mappingproxy */
+
+static PyMethodDef fastlocalsproxy_methods[] = {
+    {0}
+};
+
+static void
+fastlocalsproxy_dealloc(fastlocalsproxyobject *flp)
+{
+    _PyObject_GC_UNTRACK(flp);
+    Py_CLEAR(flp->frame);
+    Py_CLEAR(flp->mapping);
+    Py_CLEAR(flp->fast_refs);
+    PyObject_GC_Del(flp);
+}
+
+static PyObject *
+fastlocalsproxy_repr(fastlocalsproxyobject *flp)
+{
+    return PyUnicode_FromFormat("fastlocalsproxy(%R)", flp->mapping);
+}
+
+static int
+fastlocalsproxy_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    fastlocalsproxyobject *flp = (fastlocalsproxyobject *)self;
+    Py_VISIT(flp->frame);
+    Py_VISIT(flp->mapping);
+    Py_VISIT(flp->fast_refs);
+    return 0;
+}
+
+static int
+fastlocalsproxy_check_frame(PyObject *maybe_frame)
+{
+    /* This is an internal-only API, so getting bad arguments means something
+     * already went wrong elsewhere in the interpreter code.
+     */
+    if (!PyFrame_Check(maybe_frame)) {
+        PyErr_Format(PyExc_SystemError,
+                    "fastlocalsproxy() argument must be a frame, not %s",
+                    Py_TYPE(maybe_frame)->tp_name);
+        return -1;
+    }
+
+    PyFrameObject *frame = (PyFrameObject *) maybe_frame;
+    if (!(frame->f_code->co_flags & CO_OPTIMIZED)) {
+        PyErr_SetString(PyExc_SystemError,
+            "fastlocalsproxy() argument must be a frame using fast locals");
+        return -1;
+    } else if (frame->f_locals == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+            "fastlocalsproxy() argument must already have an allocated locals namespace");
+        return -1;
+    } else if (!PyDict_CheckExact(frame->f_locals)) {
+        PyErr_SetString(PyExc_SystemError,
+            "fastlocalsproxy() argument must be a builtin dict");
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+_PyFastLocalsProxy_New(PyObject *frame)
+{
+    fastlocalsproxyobject *flp;
+    PyObject *mapping;
+
+    if (fastlocalsproxy_check_frame(frame) == -1)
+        return NULL;
+
+    flp = PyObject_GC_New(fastlocalsproxyobject, &PyDictProxy_Type);
+    if (flp == NULL)
+        return NULL;
+    Py_INCREF(frame);
+    flp->frame = (PyFrameObject *) frame;
+    mapping = flp->frame->f_locals;
+    Py_INCREF(mapping);
+    flp->mapping = mapping;
+    flp->fast_refs = _PyFrame_BuildFastRefs(flp->frame);
+    _PyObject_GC_TRACK(flp);
+    return (PyObject *)flp;
+}
+
+/*[clinic input]
+@classmethod
+fastlocalsproxy.__new__ as fastlocalsproxy_new
+
+    frame: object
+
+[clinic start generated code]*/
+
+static PyObject *
+fastlocalsproxy_new_impl(PyTypeObject *type, PyObject *frame)
+/*[clinic end generated code: output=058c588af86f1525 input=049f74502e02fc63]*/
+{
+    return _PyFastLocalsProxy_New(frame);
+}
+
+#include "clinic/frameobject.c.h"
+
+PyTypeObject PyFastLocalsProxy_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "fastlocalsproxy",                          /* tp_name */
+    sizeof(fastlocalsproxyobject),              /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    (destructor)fastlocalsproxy_dealloc,        /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    (reprfunc)fastlocalsproxy_repr,             /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    &fastlocalsproxy_as_mapping,                /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)fastlocalsproxy_traverse,     /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    fastlocalsproxy_methods,                    /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    &PyDictProxy_Type,                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    fastlocalsproxy_new,                        /* tp_new */
+    0,                                          /* tp_free */
+};

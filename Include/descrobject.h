@@ -98,9 +98,12 @@ PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
 #define PyDescr_IsData(d) (Py_TYPE(d)->tp_descr_set != NULL)
 #endif
 
+/* PyDictProxy should really have its own header/impl pair, but keeping
+ * it here for now... */
+
 PyAPI_FUNC(PyObject *) PyDictProxy_New(PyObject *);
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(PyObject *) _PyDictProxy_GetMapping(PyObject *);
+PyAPI_DATA(PyTypeObject) PyDictProxy_Type;
 #endif
 
 PyAPI_FUNC(PyObject *) PyWrapper_New(PyObject *, PyObject *);
