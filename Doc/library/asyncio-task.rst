@@ -374,7 +374,7 @@ Task
    running in different threads. While a task waits for the completion of a
    future, the event loop executes a new task.
 
-   The cancellation of a task is different from the cancelation of a
+   The cancellation of a task is different from the cancellation of a
    future. Calling :meth:`cancel` will throw a
    :exc:`~concurrent.futures.CancelledError` to the wrapped
    coroutine. :meth:`~Future.cancelled` only returns ``True`` if the

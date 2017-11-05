@@ -9752,7 +9752,7 @@ Library
 - Issue #11382: Trivial system calls, such as dup() or pipe(), needn't
   release the GIL.  Patch by Charles-François Natali.
 
-- Issue #11223: Add threading._info() function providing informations about
+- Issue #11223: Add threading._info() function providing information about
   the thread implementation.
 
 - Issue #11731: simplify/enhance email parser/generator API by introducing
@@ -29642,7 +29642,7 @@ of the object in the message.
 - Fixed a bug in list.sort() that would occasionally dump core.
 
 - Fixed a bug in PyNumber_Power() that caused numeric arrays to fail
-when taken tothe real power.
+when taken to the real power.
 
 - Fixed a number of bugs in the file reading code, at least one of
 which could cause a core dump on NT, and one of which would
@@ -29689,7 +29689,7 @@ thanks to Charles Waldman.
 - Many nits fixed in the manuals, thanks to Fred Drake and many others
 (especially Rob Hooft and Andrew Kuchling).  The HTML version now uses
 HTML markup instead of inline GIF images for tables; only two images
-are left (for obsure bits of math).  The index of the HTML version has
+are left (for obscure bits of math).  The index of the HTML version has
 also been much improved.  Finally, it is once again possible to
 generate an Emacs info file from the library manual (but I don't
 commit to supporting this in future versions).
@@ -30341,7 +30341,7 @@ http://grail.cnri.reston.va.us/python/essays/packages.html
 for more info.
 
 - Changes to standard library subdirectory names: those subdirectories
-that are not packages have been renamed with a hypen in their name,
+that are not packages have been renamed with a hyphen in their name,
 e.g. lib-tk, lib-stdwin, plat-win, plat-linux2, plat-sunos5, dos-8x3.
 The test suite is now a package -- to run a test, you must now use
 "import test.test_foo".
@@ -34181,7 +34181,7 @@ You need STDWIN version 0.9.7 (released 30 June 1992) for the stdwin
 interface
 
 Dynamic loading is now supported for Sun (and other non-COFF systems)
-throug dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
+through dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
 DL is out, 1.4)
 
 The system-dependent code for the use of the select() system call is

@@ -329,7 +329,7 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
-  Retrive the (optional) _pack_ attribute from a type, the _fields_ attribute,
+  Retrieve the (optional) _pack_ attribute from a type, the _fields_ attribute,
   and create an StgDictObject.  Used for Structure and Union subclasses.
 */
 int
@@ -447,7 +447,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         stgdict->format = _ctypes_alloc_format_string(NULL, "T{");
     } else {
         /* PEP3118 doesn't support union, or packed structures (well,
-           only standard packing, but we dont support the pep for
+           only standard packing, but we don't support the pep for
            that). Use 'B' for bytes. */
         stgdict->format = _ctypes_alloc_format_string(NULL, "B");
     }

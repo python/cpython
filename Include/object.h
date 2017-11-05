@@ -604,7 +604,7 @@ introducing new functionality between major revisions (to avoid mid-version
 changes in the PYTHON_API_VERSION).
 
 Arbitration of the flag bit positions will need to be coordinated among
-all extension writers who publically release their extensions (this will
+all extension writers who publicly release their extensions (this will
 be fewer than you might expect!)..
 
 Most flags were removed as of Python 3.0 to make room for new flags.  (Some

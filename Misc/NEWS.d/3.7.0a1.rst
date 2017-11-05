@@ -5779,7 +5779,7 @@ module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
 customizations made before 3.6.3 will not affect their keyset- specific
 customization after 3.6.3. and vice versa.
 
-Inital patch by Charles Wohlganger.
+Initial patch by Charles Wohlganger.
 
 ..
 

@@ -427,7 +427,7 @@ class ThreadTests(BaseTestCase):
         t.daemon = True
         self.assertIn('daemon', repr(t))
 
-    def test_deamon_param(self):
+    def test_daemon_param(self):
         t = threading.Thread()
         self.assertFalse(t.daemon)
         t = threading.Thread(daemon=False)

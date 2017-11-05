@@ -1032,7 +1032,7 @@ Fail:
 }
 
 /*
-Internal routine used by dictresize() to buid a hashtable of entries.
+Internal routine used by dictresize() to build a hashtable of entries.
 */
 static void
 build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep, Py_ssize_t n)

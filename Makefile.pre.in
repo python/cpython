@@ -470,7 +470,7 @@ profile-run-stamp:
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean
 	# This is an expensive target to build and it does not have proper
-	# makefile dependancy information.  So, we create a "stamp" file
+	# makefile dependency information.  So, we create a "stamp" file
 	# to record its completion and avoid re-running it.
 	touch $@
 

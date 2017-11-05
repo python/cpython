@@ -58,7 +58,7 @@ class ModuleBrowser:
     """Browse module classes and functions in IDLE.
     """
     # This class is also the base class for pathbrowser.PathBrowser.
-    # Init and close are inherited, other methods are overriden.
+    # Init and close are inherited, other methods are overridden.
     # PathBrowser.__init__ does not call __init__ below.
 
     def __init__(self, master, path, *, _htest=False, _utest=False):

@@ -1864,7 +1864,7 @@ class LzmaTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
     compression = zipfile.ZIP_LZMA
 
 
-# Privide the tell() method but not seek()
+# Provide the tell() method but not seek()
 class Tellable:
     def __init__(self, fp):
         self.fp = fp

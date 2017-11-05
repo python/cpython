@@ -2770,7 +2770,7 @@ class SaveSignals:
         import signal
         self.signal = signal
         self.signals = list(range(1, signal.NSIG))
-        # SIGKILL and SIGSTOP signals cannot be ignored nor catched
+        # SIGKILL and SIGSTOP signals cannot be ignored nor caught
         for signame in ('SIGKILL', 'SIGSTOP'):
             try:
                 signum = getattr(signal, signame)
