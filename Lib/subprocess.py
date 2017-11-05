@@ -263,14 +263,7 @@ def call(*popenargs, timeout=None, **kwargs):
 
     retcode = call(["ls", "-l"])
     """
-    with Popen(*popenargs, **kwargs) as p:
-        try:
-            return p.wait(timeout=timeout)
-        except:
-            p.kill()
-            p.wait()
-            raise
-
+    return run(*popenargs, timeout=timeout, **kwargs).returncode
 
 def check_call(*popenargs, **kwargs):
     """Run command with arguments.  Wait for command to complete.  If
