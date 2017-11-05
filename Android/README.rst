@@ -295,7 +295,7 @@ Requirements
 - Android SDK (see `Installation of the SDK`_). The SDK with the system images
   of the x86_64 and armv7 architectures for API 21 requires 3.7 Gb of disk
   space.
-- Java JRE to run the ``sdkmanager`` tool.
+- A Java 8 JRE to run the sdk tools.
 - GNU make, find, xargs, zip and unzip.
 - The native compiler of the build platform to build the native Python.
 - wget or curl for downloading the external libraries unless those files are
