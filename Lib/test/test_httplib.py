@@ -756,6 +756,29 @@ class BasicTest(TestCase):
         conn.request('GET', '/foo', body(), {'Content-Length': '11'})
         self.assertEqual(sock.data, expected)
 
+    def test_blocksize_request(self):
+        """Check that request() respects the configured block size."""
+        blocksize = 8  # For easy debugging.
+        conn = client.HTTPConnection('example.com', blocksize=blocksize)
+        sock = FakeSocket(None)
+        conn.sock = sock
+        expected = b"a" * blocksize + b"b"
+        conn.request("PUT", "/", io.BytesIO(expected), {"Content-Length": "9"})
+        self.assertEqual(sock.sendall_calls, 3)
+        body = sock.data.split(b"\r\n\r\n", 1)[1]
+        self.assertEqual(body, expected)
+
+    def test_blocksize_send(self):
+        """Check that send() respects the configured block size."""
+        blocksize = 8  # For easy debugging.
+        conn = client.HTTPConnection('example.com', blocksize=blocksize)
+        sock = FakeSocket(None)
+        conn.sock = sock
+        expected = b"a" * blocksize + b"b"
+        conn.send(io.BytesIO(expected))
+        self.assertEqual(sock.sendall_calls, 2)
+        self.assertEqual(sock.data, expected)
+
     def test_send_type_error(self):
         # See: Issue #12676
         conn = client.HTTPConnection('example.com')
