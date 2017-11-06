@@ -9511,13 +9511,13 @@ _ACEOF
 
 fi
 	# Dynamic linking for HP-UX
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
-$as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
-if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing uuid_generate_time_safe" >&5
+$as_echo_n "checking for library containing uuid_generate_time_safe... " >&6; }
+if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-luuid  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9536,25 +9536,45 @@ return uuid_generate_time_safe ();
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_uuid_uuid_generate_time_safe=yes
-else
-  ac_cv_lib_uuid_uuid_generate_time_safe=no
+for ac_lib in '' uuid; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_uuid_generate_time_safe=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+    conftest$ac_exeext
+  if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
+  break
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
-$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
-if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBUUID 1
-_ACEOF
+done
+if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
 
-  LIBS="-luuid $LIBS"
-
+else
+  ac_cv_search_uuid_generate_time_safe=no
 fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_uuid_generate_time_safe" >&5
+$as_echo "$ac_cv_search_uuid_generate_time_safe" >&6; }
+ac_res=$ac_cv_search_uuid_generate_time_safe
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+>...
+$as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+
+else
+
+>...
+$as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 0" >>confdefs.h
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
