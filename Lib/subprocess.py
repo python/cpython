@@ -270,7 +270,8 @@ def call(*popenargs, timeout=None, cleanup_timeout=None, **kwargs):
     Example:
       retcode = call(["ls", "-l"])
     """
-    return run(*popenargs, timeout=timeout, cleanup_timeout=cleanup_timeout, **kwargs).returncode
+    return run(*popenargs, timeout=timeout, cleanup_timeout=cleanup_timeout,
+               **kwargs).returncode
 
 def check_call(*popenargs, **kwargs):
     """Run command with arguments.  Wait for command to complete.  If
@@ -386,13 +387,16 @@ def run(*popenargs, input=None, timeout=None, check=False, cleanup_timeout=None,
     If timeout is given, and the process takes too long, a TimeoutExpired
     exception will be raised.
 
-    If the current process recevies a KeyboardInterrupt and
+    If the current process encounters any exception (e.g. KeyboardInterrupt) and
     cleanup_timeout is non-zero, the child process is given some additional
     time to finish before it is killed, to allow potential clean-up
-    operations in the child to complete. During this time, a second KeyboardInterrupt
-    will kill the child immediately. If cleanup_timeout is not specified,
-    then any remaining time from the original timeout is used, or 1.0 if no
-    original timeout was specified.
+    operations in the child to complete. During this time, a second exception
+    will kill the child immediately.
+
+    If cleanup_timeout is not specified, then a default value is chosen:
+    If timeout was provided, then any remaining time from the original timeout
+    is used.  Otherwise, if the exception is a KeyboardInterrupt, the child is
+    given 1 second to clean up. Otherwise, the child is killed immediately.
 
     There is an optional argument "input", allowing you to
     pass bytes or a string to the subprocess's stdin.  If you use this argument
@@ -422,28 +426,53 @@ def run(*popenargs, input=None, timeout=None, check=False, cleanup_timeout=None,
             stdout, stderr = process.communicate()
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
-        except KeyboardInterrupt:
-            if cleanup_timeout is None:
-                cleanup_timeout = 1.0
-                if timeout:
-                    remaining_timeout = timeout - (_time() - start_time)
-                    cleanup_timeout = max(0.0, remaining_timeout)
-
-            if cleanup_timeout == 0.0:
-                process.kill()
-                process.wait()
-                raise
+        except BaseException as ex:
             try:
-                process.wait(timeout=cleanup_timeout)
-                raise
-            except TimeoutExpired:
+                if cleanup_timeout is None:
+                    # Choose a reasonable default
+                    if timeout:
+                        remaining_timeout = timeout - (_time() - start_time)
+                        cleanup_timeout = max(0.0, remaining_timeout)
+                    elif isinstance(ex, KeyboardInterrupt):
+                        # KeyboardInterrupts are:
+                        # 1. Typically automatically triggered in the child, too.
+                        #    Therefore, the child is likely to be already cleaning up
+                        #    (if we give it the chance).
+                        # 2. Generated interactively by humans at a keyboard.
+                        #    If the child is well-written (exits in response to SIGINT),
+                        #    a 1 second timeout is usually enough time for it to clean up.
+                        #    Othwerwise, 1 second seems like a tolerable delay in response to Ctrl+C,
+                        #    and a resonable price to pay for correct behavior in the well-written case.
+                        cleanup_timeout = 1.0
+                    else:
+                        # The above reasoning does not apply to arbitrary exceptions,
+                        # so kill the child immediately.
+                        cleanup_timeout = 0.0
+
+                if cleanup_timeout == 0.0:
+                    raise # Skip cleanup
+
+                # Close streams to/from child
+                streams = (process.stdin, process.stdout, process.stderr)
+                for f in filter(None, streams):
+                    try:
+                        f.close()
+                    except:
+                        pass  # Ignore EBADF or other errors.
+
+                try:
+                    process.wait(timeout=cleanup_timeout)
+                except:
+                    # Ignore cleanup errors;
+                    # original exception is always re-raised below
+                    pass
+            finally:
+                # Kill the child and re-raise original exception,
+                # regardless of successful/failed cleanup
                 process.kill()
                 process.wait()
-                raise KeyboardInterrupt
-        except:
-            process.kill()
-            process.wait()
-            raise
+                raise ex
+
         retcode = process.poll()
         if check and retcode:
             raise CalledProcessError(retcode, process.args,

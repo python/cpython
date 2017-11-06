@@ -76,13 +76,13 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
 
-   If the current process recevies a :exc:`KeyboardInterrupt` and
-   *cleanup_timeout* is non-zero, the child process is given additional
-   time to finish before it is killed, to allow potential clean-up operations
-   in the child to complete. During this time, a second :exc:`KeyboardInterrupt`
-   will kill the child immediately. If *cleanup_timeout* is not specified,
-   then any remaining time from the original *timeout* is used, or 1 second
-   if no original *timeout* was specified.
+   If the current process encounters an exception (e.g. :exc:`KeyboardInterrupt`)
+   while waiting for the child process and *cleanup_timeout* is non-zero,
+   the child process is given additional time to finish before it is killed,
+   to allow potential clean-up operations in the child to complete.
+   During this time, a second exception will kill the child immediately.
+   If *cleanup_timeout* is not specified, then any remaining time from the original
+   *timeout* is used, or 1 second if no original *timeout* was specified.
 
    Examples::
 
