@@ -441,7 +441,6 @@ def run(*popenargs, input=None, timeout=None, check=False, cleanup_timeout=None,
                 process.wait()
                 raise KeyboardInterrupt
         except:
-            print("Killing!")
             process.kill()
             process.wait()
             raise
