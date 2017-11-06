@@ -344,6 +344,14 @@ HTTPConnection Objects
 
    Close the connection to the server.
 
+
+.. attribute:: HTTPConnection.blocksize
+
+   Buffer size in bytes for sending a file-like message body.
+
+   .. versionadded:: 3.7
+
+
 As an alternative to using the :meth:`request` method described above, you can
 also send your request step by step, by using the four functions below.
 
@@ -399,13 +407,6 @@ also send your request step by step, by using the four functions below.
    Send data to the server.  This should be used directly only after the
    :meth:`endheaders` method has been called and before :meth:`getresponse` is
    called.
-
-
-.. attribute:: HTTPConnection.blocksize
-
-   Buffer size in bytes for sending a file-like message body.
-
-   .. versionadded:: 3.7
 
 
 .. _httpresponse-objects:
