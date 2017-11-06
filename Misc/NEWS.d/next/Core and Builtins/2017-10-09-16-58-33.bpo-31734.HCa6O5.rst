@@ -1,0 +1,2 @@
+Raise a `ValueError` instead of crashing, when the `get()` method of an
+uninitialized `sqlite3.Cache` object is called. Patch by Oren Milman.

@@ -54,12 +54,37 @@ void pysqlite_node_dealloc(pysqlite_Node* self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+/* Iterate over all nodes and deallocate them. If there aren't any nodes, do
+   nothing. */
+static void deallocate_nodes(pysqlite_Cache* self)
+{
+    pysqlite_Node* node;
+    pysqlite_Node* delete_node;
+
+    node = self->first;
+    self->first = NULL;
+    self->last = NULL;
+    while (node) {
+        delete_node = node;
+        node = node->next;
+        Py_DECREF(delete_node);
+    }
+}
+
 int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* factory;
     int size = 10;
 
-    self->factory = NULL;
+    if (self->decref_factory) {
+        self->decref_factory = 0;
+        Py_CLEAR(self->factory);
+    }
+    else {
+        self->factory = NULL;
+    }
+    deallocate_nodes(self);
+    Py_CLEAR(self->mapping);
 
     if (!PyArg_ParseTuple(args, "O|i", &factory, &size)) {
         return -1;
@@ -70,8 +95,6 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         size = 5;
     }
     self->size = size;
-    self->first = NULL;
-    self->last = NULL;
 
     self->mapping = PyDict_New();
     if (!self->mapping) {
@@ -88,26 +111,13 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
 
 void pysqlite_cache_dealloc(pysqlite_Cache* self)
 {
-    pysqlite_Node* node;
-    pysqlite_Node* delete_node;
-
-    if (!self->factory) {
-        /* constructor failed, just get out of here */
-        return;
+    if (self->factory != NULL) {
+        deallocate_nodes(self);
+        if (self->decref_factory) {
+            Py_DECREF(self->factory);
+        }
+        Py_DECREF(self->mapping);
     }
-
-    /* iterate over all nodes and deallocate them */
-    node = self->first;
-    while (node) {
-        delete_node = node;
-        node = node->next;
-        Py_DECREF(delete_node);
-    }
-
-    if (self->decref_factory) {
-        Py_DECREF(self->factory);
-    }
-    Py_DECREF(self->mapping);
 
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
@@ -119,6 +129,11 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args)
     pysqlite_Node* ptr;
     PyObject* data;
 
+    if (self->factory == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        MODULE_NAME ".Cache.__init__() not called");
+        return NULL;
+    }
     node = (pysqlite_Node*)PyDict_GetItem(self->mapping, key);
     if (node) {
         /* an entry for this key already exists in the cache */

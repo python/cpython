@@ -24,6 +24,7 @@
 import datetime
 import unittest
 import sqlite3 as sqlite
+from test import support
 
 class RegressionTests(unittest.TestCase):
     def setUp(self):
@@ -375,6 +376,25 @@ class RegressionTests(unittest.TestCase):
                     self.assertEqual(row[0], 2)
                 counter += 1
         self.assertEqual(counter, 3, "should have returned exactly three rows")
+
+    @support.cpython_only
+    def CheckUninitializedCache(self):
+        # bpo-31734: Cache.get() shouldn't crash in case the Cache object is
+        # uninitialized.
+        cache = sqlite.Cache.__new__(sqlite.Cache)
+        self.assertRaises(ValueError, cache.get, None)
+
+    @support.cpython_only
+    def Check__init__Fail(self):
+        # bpo-31734: A failure of the __init__() method of an already
+        # initialized Cache object shouldn't cause the Cache object to be
+        # partially initialized, and its get() method to raise a SystemError.
+        cache = sqlite.Cache(str)
+        try:
+            cache.__init__()  # invalid number of arguments
+        except TypeError:
+            pass
+        self.assertRaises(ValueError, cache.get, None)
 
 
 def suite():
