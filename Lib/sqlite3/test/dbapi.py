@@ -164,8 +164,10 @@ class ConnectionTests(unittest.TestCase):
         """ Checks that we can succesfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
         self.addCleanup(unlink, TESTFN)
-        import pathlib
-        path = pathlib.Path(TESTFN)
+        class Path:
+            def __fspath__(self):
+                return TESTFN
+        path = Path()
         with sqlite.connect(path) as cx:
             cx.execute('create table test(id integer)')
 
