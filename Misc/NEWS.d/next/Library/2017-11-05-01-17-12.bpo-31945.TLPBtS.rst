@@ -1,2 +1,2 @@
-Add ``blocksize`` optional argument to ``HTTPConnection`` and
-``HTTPSConnection``.  Patch by Nir Soffer.
+Add Configurable blocksize to ``HTTPConnection`` and ``HTTPSConnection``
+for improved upload throughput.  Patch by Nir Soffer.
