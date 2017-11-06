@@ -90,7 +90,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyObject *filename, *v;
     int ret, err;
     PyCompilerFlags local_flags;
-    static int nomem_count = 0;
+    int nomem_count = 0;
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL) {
@@ -166,6 +166,8 @@ static int PARSER_FLAGS(PyCompilerFlags *flags)
                    PyPARSE_WITH_IS_KEYWORD : 0)) : 0)
 #endif
 
+/* A PyRun_InteractiveOneObject() auxiliary function that does not print the
+ * error on failure. */
 static int
 PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
                              PyCompilerFlags *flags)
