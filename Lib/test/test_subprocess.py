@@ -1518,7 +1518,8 @@ class RunFuncTestCase(BaseTestCase):
                                 "  time.sleep(3.0)\n"
                                 "except KeyboardInterrupt:\n"
                                f"  time.sleep({cleanup_time})\n"
-                               f"  open('{tf.name}', 'w').write('cleaned up')\n"],
+                               f"  with open('{tf.name}', 'w') as f:\n"
+                                "    f.write('cleaned up')\n"],
                                 timeout=None, cleanup_timeout=cleanup_timeout,
                                 check=True)
 
