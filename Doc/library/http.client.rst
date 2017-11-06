@@ -43,8 +43,8 @@ The module provides the following classes:
    (if it is not given, the global default timeout setting is used).
    The optional *source_address* parameter may be a tuple of a (host, port)
    to use as the source address the HTTP connection is made from.
-   The optional *blocksize* parameter sets the buffer size used to send a
-   file-like message body.
+   The optional *blocksize* parameter sets the buffer size in bytes for
+   sending a file-like message body.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
@@ -62,7 +62,7 @@ The module provides the following classes:
       not longer supported.
 
    .. versionchanged:: 3.7
-      *blocksize* was added.
+      *blocksize* parameter was added.
 
 
 .. class:: HTTPSConnection(host, port=None, key_file=None, \
@@ -399,6 +399,13 @@ also send your request step by step, by using the four functions below.
    Send data to the server.  This should be used directly only after the
    :meth:`endheaders` method has been called and before :meth:`getresponse` is
    called.
+
+
+.. attribute:: HTTPConnection.blocksize
+
+   Buffer size in bytes for sending a file-like message body.
+
+   .. versionadded:: 3.7
 
 
 .. _httpresponse-objects:
