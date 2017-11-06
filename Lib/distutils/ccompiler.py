@@ -154,7 +154,7 @@ class CCompiler:
         if hasattr(value, "strip"):
             setattr(self, key, split_quoted(value))
         else:
-            setattr(self, key, value) 
+            setattr(self, key, value)
 
     def _find_macro(self, name):
         i = 0
