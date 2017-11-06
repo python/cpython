@@ -226,6 +226,8 @@ Module functions and constants
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.
+   .. versionchanged:: 3.7
+      *database* can now also be a :term:`path-like object`, not only a string.
 
 
 .. function:: register_converter(typename, callable)
