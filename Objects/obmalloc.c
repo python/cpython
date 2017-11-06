@@ -1418,7 +1418,7 @@ static void *
 _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *p;           /* base address of malloc'epad d block */
+    uint8_t *p;           /* base address of malloc'ed pad block */
     uint8_t *data;        /* p + 2*SST == pointer to data bytes */
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
     size_t total;         /* 2 * SST + nbytes + 2 * SST */
@@ -1516,7 +1516,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
 
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *head;        /* base address of malloc'ed d block */
+    uint8_t *head;        /* base address of malloc'ed pad block */
     uint8_t *data;        /* pointer to data bytes */
     uint8_t *r;
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
@@ -1556,23 +1556,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     /* Resize and add decorations. */
     r = (uint8_t *)api->alloc.realloc(api->alloc.ctx, head, total);
     if (r == NULL) {
-        write_size_t(head, original_nbytes);
-        head[SST] = (uint8_t)api->api_id;
-        memset(head + SST + 1, FORBIDDENBYTE, SST-1);
-
-        memset(tail, FORBIDDENBYTE, SST);
-        write_size_t(tail + SST, serialno);
-
-        /* Restore saved bytes. */
-        if (original_nbytes <= sizeof(save)) {
-            memcpy(data, save, original_nbytes);
-        }
-        else {
-            memcpy(tail - ERASED_SIZE, &save[ERASED_SIZE], ERASED_SIZE);
-            memcpy(data, save, ERASED_SIZE);
-        }
-        _PyMem_DebugCheckAddress(api->api_id, data);
-        return NULL;
+        nbytes = original_nbytes;
     }
     else {
         head = r;
@@ -1595,13 +1579,12 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
     else {
         size_t i = original_nbytes - ERASED_SIZE;
+        memcpy(data, save, Py_MIN(nbytes, ERASED_SIZE));
         if (nbytes > i) {
             memcpy(data + i, &save[ERASED_SIZE],
                    Py_MIN(nbytes - i, ERASED_SIZE));
         }
-        memcpy(data, save, Py_MIN(nbytes, ERASED_SIZE));
     }
-    _PyMem_DebugCheckAddress(api->api_id, data);
 
     if (r == NULL) {
         return NULL;
