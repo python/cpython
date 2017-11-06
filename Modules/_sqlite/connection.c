@@ -127,6 +127,8 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
 #endif
     Py_END_ALLOW_THREADS
 
+    Py_DECREF(database_obj);
+
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db, NULL);
         return -1;
