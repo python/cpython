@@ -206,7 +206,7 @@ PyType_ClearCache(void)
             method_cache_misses, (int) (100.0 * method_cache_misses / total));
     fprintf(stderr, "-- Method cache collisions  = %zd (%d%%)\n",
             method_cache_collisions, (int) (100.0 * method_cache_collisions / total));
-    fprintf(stderr, "-- Method cache size        = %zd KB\n",
+    fprintf(stderr, "-- Method cache size        = %zd KiB\n",
             sizeof(method_cache) / 1024);
 #endif
 
