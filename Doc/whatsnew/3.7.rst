@@ -276,6 +276,13 @@ README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
 
+http.client
+-----------
+
+Add Configurable *blocksize* to ``HTTPConnection`` and
+``HTTPSConnection`` for improved upload throughput.
+(Contributed by Nir Soffer in :issue:`31945`.)
+
 http.server
 -----------
 
