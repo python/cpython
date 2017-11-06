@@ -430,13 +430,18 @@ def run(*popenargs, input=None, timeout=None, check=False, cleanup_timeout=None,
                     cleanup_timeout = max(0.0, remaining_timeout)
 
             if cleanup_timeout == 0.0:
+                process.kill()
+                process.wait()
                 raise
             try:
                 process.wait(timeout=cleanup_timeout)
                 raise
             except TimeoutExpired:
+                process.kill()
+                process.wait()
                 raise KeyboardInterrupt
         except:
+            print("Killing!")
             process.kill()
             process.wait()
             raise

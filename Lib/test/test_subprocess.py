@@ -1476,10 +1476,23 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
+
+    def test_run_interrupted_cleanup_succeeds(self):
+        # In the event of KeyboardInterrupt, run() should allow the
+        # child time to cleanup (if cleanup_timeout was given).
+        # In this case, child's cleanup completes before cleanup_timeout runs out.
+        self._test_run_interrupted(0.2, 1.0)
+
+    def test_run_interrupted_cleanup_timed_out(self):
+        # In the event of SIGINT, run() should allow the
+        # child time to cleanup (if cleanup_timeout was given).
+        # In this case, child's cleanup takes too long for the cleanup_timout.
+        self._test_run_interrupted(3.0, 0.1)
+
     @unittest.skipIf(mswindows, "cannot use setpgid, killpg, etc. on windows")
     @unittest.skipIf(threading is None, "threading required")
-    def test_run_interrupted(self):
-        # In the event of SIGINT, run() should allow the
+    def _test_run_interrupted(self, cleanup_time, cleanup_timeout):
+        # In the event of KeyboardInterrupt, run() should allow the
         # child time to cleanup (if cleanup_timeout was given).
 
         # Change the current process group to avoid
@@ -1498,18 +1511,22 @@ class RunFuncTestCase(BaseTestCase):
         try:
             with self.assertRaises(KeyboardInterrupt) as ex:
                 threading.Thread(target=interrupt_this_process_group).start()
-                rc = subprocess.run([sys.executable, "-c",
-                                    "import time\n"
-                                    "try:\n"
-                                    "  time.sleep(3.0)\n"
-                                    "except KeyboardInterrupt:\n"
-                                    "  time.sleep(0.1)\n"
-                                   f"  open('{tf.name}', 'w').write('cleaned up')\n"],
-                                    timeout=None, cleanup_timeout=1.0,
-                                    check=True)
+                subprocess.run([sys.executable, "-c",
+                                "import time\n"
+                                "try:\n"
+                                "  time.sleep(3.0)\n"
+                                "except KeyboardInterrupt:\n"
+                               f"  time.sleep({cleanup_time})\n"
+                               f"  open('{tf.name}', 'w').write('cleaned up')\n"],
+                                timeout=None, cleanup_timeout=cleanup_timeout,
+                                check=True)
 
             with open(tf.name, 'r') as tf:
-                self.assertEqual(tf.read(), 'cleaned up')
+                if cleanup_time < cleanup_timeout:
+                    self.assertEqual(tf.read(), 'cleaned up')
+                else:
+                    # child should have been killed before the cleanup executed
+                    self.assertEqual(tf.read(), '')
         finally:
             # Restore original process group
             os.setpgid(0, original_pgid)
