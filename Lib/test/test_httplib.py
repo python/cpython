@@ -719,6 +719,16 @@ class BasicTest(TestCase):
         conn.send(io.BytesIO(expected))
         self.assertEqual(expected, sock.data)
 
+    def test_send_readable_blocksize(self):
+        blocksize = 8  # For easy debugging.
+        conn = client.HTTPConnection('example.com', blocksize=blocksize)
+        sock = FakeSocket(None)
+        conn.sock = sock
+        expected = b"a" * blocksize + b"b"
+        conn.send(io.BytesIO(expected))
+        self.assertEqual(sock.sendall_calls, 2)
+        self.assertEqual(expected, sock.data)
+
     def test_send_updating_file(self):
         def data():
             yield 'data'
