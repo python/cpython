@@ -172,9 +172,13 @@ Module functions and constants
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
 
-   Opens a connection to the SQLite database file *database*. You can use
-   ``":memory:"`` to open a database connection to a database that resides in RAM
-   instead of on disk.
+   Opens a connection to the SQLite database file *database* and return a
+   :class:`Connection` object.
+
+   *database* is a :term:`path-like object` giving the pathname (absolute or
+   relative to the current  working directory) of the database file to be opened.
+   You can use ``":memory:"`` to open a database connection to a database that
+   resides in RAM instead of on disk.
 
    When a database is accessed by multiple connections, and one of the processes
    modifies the database, the SQLite database is locked until that transaction is
