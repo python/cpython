@@ -1476,7 +1476,6 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
-
     def test_run_interrupted_cleanup_succeeds(self):
         # In the event of KeyboardInterrupt, run() should allow the
         # child time to cleanup (if cleanup_timeout was given).
@@ -1484,27 +1483,28 @@ class RunFuncTestCase(BaseTestCase):
         self._test_run_interrupted(0.2, 1.0)
 
     def test_run_interrupted_cleanup_timed_out(self):
-        # In the event of SIGINT, run() should allow the
+        # In the event of KeyboardInterrupt, run() should allow the
         # child time to cleanup (if cleanup_timeout was given).
         # In this case, child's cleanup takes too long for the cleanup_timout.
         self._test_run_interrupted(3.0, 0.1)
 
-    @unittest.skipIf(mswindows, "cannot use setpgid, killpg, etc. on windows")
+    @unittest.skipIf(mswindows, "cannot use 'ps' command windows")
     @unittest.skipIf(threading is None, "threading required")
     def _test_run_interrupted(self, cleanup_time, cleanup_timeout):
         # In the event of KeyboardInterrupt, run() should allow the
         # child time to cleanup (if cleanup_timeout was given).
 
-        # Change the current process group to avoid
-        # interrupting our parent process.
-        original_pgid = os.getpgrp()
-        os.setpgid(0, 0)
-
-        def interrupt_this_process_group():
-            # Send SIGINT to the current process group after a short delay
+        parent_pid = os.getpid()
+        def generate_sigint():
+            # Send SIGINT to the current process and its child after a short delay
             time.sleep(0.5)
-            os.killpg(os.getpgrp(), signal.SIGINT)
-        interrupter_thread = threading.Thread(target=interrupt_this_process_group)
+            children = self._find_children(parent_pid)
+            for (pid, command) in children:
+                if 'python' in command:
+                    os.kill(pid, signal.SIGINT)
+            os.kill(parent_pid, signal.SIGINT)
+
+        interrupter_thread = threading.Thread(target=generate_sigint)
 
         tf = tempfile.NamedTemporaryFile(delete=False)
         tf.close()
@@ -1513,13 +1513,15 @@ class RunFuncTestCase(BaseTestCase):
             with self.assertRaises(KeyboardInterrupt):
                 interrupter_thread.start()
                 subprocess.run([sys.executable, "-c",
-                                "import time\n"
-                                "try:\n"
-                                "  time.sleep(3.0)\n"
-                                "except KeyboardInterrupt:\n"
-                               f"  time.sleep({cleanup_time})\n"
-                               f"  with open('{tf.name}', 'w') as f:\n"
-                                "    f.write('cleaned up')\n"],
+                                textwrap.dedent(f"""\
+                                    import time
+                                    try:
+                                        time.sleep(3.0)
+                                    except KeyboardInterrupt:
+                                        time.sleep({cleanup_time})
+                                    with open('{tf.name}', 'w') as f:
+                                        f.write('cleaned up')
+                                """)],
                                 timeout=None, cleanup_timeout=cleanup_timeout,
                                 check=True)
 
@@ -1530,10 +1532,26 @@ class RunFuncTestCase(BaseTestCase):
                     # child should have been killed before the cleanup executed
                     self.assertEqual(tf.read(), '')
         finally:
-            # Restore original process group
-            os.setpgid(0, original_pgid)
             os.unlink(tf.name)
             interrupter_thread.join()
+
+    def _find_children(self, parent_pid):
+        """Return a list of tuples (child_pid, command)
+        for all direct children of the given parent_id.
+        (Unix only.)
+        Note: Output may include the 'ps' command itself.
+        """
+        children = []
+        ps_output = subprocess.check_output(['ps', '-o', 'pid,ppid,command'])
+        for line in ps_output.decode().strip().split('\n')[1:]:
+            words = line.split()
+            pid = int(words[0])
+            ppid = int(words[1])
+            command = ' '.join(words[2:])
+            if ppid == parent_pid:
+                children.append( (pid, command) )
+        return children
+
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):
