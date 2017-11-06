@@ -9512,9 +9512,7 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-# only check for sem_init if thread support is requested
-if test "$with_threads" = "yes" -o -z "$with_threads"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
 $as_echo_n "checking for library containing sem_init... " >&6; }
 if ${ac_cv_search_sem_init+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -9572,7 +9570,6 @@ fi
  # 'Real Time' functions on Solaris
 						# posix4 on Solaris 2.6
 						# pthread (first!) on Linux
-fi
 
 # check if we need libintl for locale functions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for textdomain in -lintl" >&5
@@ -10150,9 +10147,6 @@ then
     fi
     posix_threads=yes
 else
-    if test ! -z "$with_threads" -a -d "$with_threads"
-    then LDFLAGS="$LDFLAGS -L$with_threads"
-    fi
     if test ! -z "$withval" -a -d "$withval"
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
