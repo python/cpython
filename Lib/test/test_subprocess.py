@@ -1508,7 +1508,7 @@ class RunFuncTestCase(BaseTestCase):
 
         tf = tempfile.NamedTemporaryFile(delete=False)
         tf.close()
-        
+
         try:
             with self.assertRaises(KeyboardInterrupt):
                 interrupter_thread.start()
