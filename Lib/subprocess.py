@@ -270,7 +270,7 @@ def call(*popenargs, timeout=None, cleanup_timeout=None, **kwargs):
     Example:
       retcode = call(["ls", "-l"])
     """
-    return run(*popenargs, timeout=timeout, cleanup_timeout=None, **kwargs).returncode
+    return run(*popenargs, timeout=timeout, cleanup_timeout=cleanup_timeout, **kwargs).returncode
 
 def check_call(*popenargs, **kwargs):
     """Run command with arguments.  Wait for command to complete.  If
