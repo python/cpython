@@ -172,8 +172,8 @@ Module functions and constants
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
 
-   Opens a connection to the SQLite database file *database* and return a
-   :class:`Connection` object.
+   Opens a connection to the SQLite database file *database*. By default returns a
+   :class:`Connection` object, unless a custom *factory* is given.
 
    *database* is a :term:`path-like object` giving the pathname (absolute or
    relative to the current  working directory) of the database file to be opened.
