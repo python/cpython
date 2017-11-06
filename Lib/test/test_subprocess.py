@@ -1504,13 +1504,14 @@ class RunFuncTestCase(BaseTestCase):
             # Send SIGINT to the current process group after a short delay
             time.sleep(0.5)
             os.killpg(os.getpgrp(), signal.SIGINT)
+        interrupter_thread = threading.Thread(target=interrupt_this_process_group)
 
         tf = tempfile.NamedTemporaryFile(delete=False)
         tf.close()
-
+        
         try:
             with self.assertRaises(KeyboardInterrupt):
-                threading.Thread(target=interrupt_this_process_group).start()
+                interrupter_thread.start()
                 subprocess.run([sys.executable, "-c",
                                 "import time\n"
                                 "try:\n"
@@ -1531,6 +1532,7 @@ class RunFuncTestCase(BaseTestCase):
             # Restore original process group
             os.setpgid(0, original_pgid)
             os.unlink(tf.name)
+            interrupter_thread.join()
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):
