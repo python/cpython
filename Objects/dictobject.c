@@ -591,6 +591,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = 0;
+    mp->ma_clean = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     assert(_PyDict_CheckConsistency(mp));
     return (PyObject *)mp;
@@ -1078,27 +1079,25 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
     }
 
     oldkeys = mp->ma_keys;
-
-    /* NOTE: Current odict checks mp->ma_keys to detect resize happen.
-     * So we can't reuse oldkeys even if oldkeys->dk_size == newsize.
-     * TODO: Try reusing oldkeys when reimplement odict.
-     */
-
-    /* Allocate a new table. */
-    mp->ma_keys = new_keys_object(newsize);
-    if (mp->ma_keys == NULL) {
-        mp->ma_keys = oldkeys;
-        return -1;
+    oldvalues = mp->ma_values;
+    if (newsize != oldkeys->dk_size || oldvalues != NULL) {
+        /* Allocate a new table. */
+        mp->ma_keys = new_keys_object(newsize);
+        if (mp->ma_keys == NULL) {
+            mp->ma_keys = oldkeys;
+            return -1;
+        }
+        mp->ma_clean = 0;
+        // New table must be large enough.
+        assert(mp->ma_keys->dk_usable >= mp->ma_used);
+        if (oldkeys->dk_lookup == lookdict)
+            mp->ma_keys->dk_lookup = lookdict;
     }
-    // New table must be large enough.
-    assert(mp->ma_keys->dk_usable >= mp->ma_used);
-    if (oldkeys->dk_lookup == lookdict)
-        mp->ma_keys->dk_lookup = lookdict;
+    mp->ma_clean = 0;
 
     numentries = mp->ma_used;
     oldentries = DK_ENTRIES(oldkeys);
     newentries = DK_ENTRIES(mp->ma_keys);
-    oldvalues = mp->ma_values;
     if (oldvalues != NULL) {
         /* Convert split table into new combined table.
          * We must incref keys; we can transfer values.
@@ -1122,7 +1121,8 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
     }
     else {  // combined table.
         if (oldkeys->dk_nentries == numentries) {
-            memcpy(newentries, oldentries, numentries * sizeof(PyDictKeyEntry));
+            /* Source and destination can overlap if reuse an old table. */
+            memmove(newentries, oldentries, numentries * sizeof(PyDictKeyEntry));
         }
         else {
             PyDictKeyEntry *ep = oldentries;
@@ -1133,14 +1133,24 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
             }
         }
 
-        assert(oldkeys->dk_lookup != lookdict_split);
-        assert(oldkeys->dk_refcnt == 1);
-        if (oldkeys->dk_size == PyDict_MINSIZE &&
-            numfreekeys < PyDict_MAXFREELIST) {
-            DK_DEBUG_DECREF keys_free_list[numfreekeys++] = oldkeys;
+        if (oldkeys != mp->ma_keys) {
+            assert(oldkeys->dk_lookup != lookdict_split);
+            assert(oldkeys->dk_refcnt == 1);
+            if (oldkeys->dk_size == PyDict_MINSIZE &&
+                numfreekeys < PyDict_MAXFREELIST)
+            {
+                DK_DEBUG_DECREF keys_free_list[numfreekeys++] = oldkeys;
+            }
+            else {
+                DK_DEBUG_DECREF PyObject_FREE(oldkeys);
+            }
         }
         else {
-            DK_DEBUG_DECREF PyObject_FREE(oldkeys);
+            oldkeys->dk_usable = USABLE_FRACTION(newsize);
+            memset(&oldkeys->dk_indices.as_1[0], 0xff,
+                   DK_IXSIZE(oldkeys) * newsize);
+            memset(newentries + numentries, 0,
+                   sizeof(PyDictKeyEntry) * (oldkeys->dk_usable - numentries));
         }
     }
 
@@ -1577,6 +1587,7 @@ PyDict_Clear(PyObject *op)
     mp->ma_keys = Py_EMPTY_KEYS;
     mp->ma_values = empty_values;
     mp->ma_used = 0;
+    mp->ma_clean = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     /* ...then clear the keys and values */
     if (oldvalues != NULL) {
@@ -2500,6 +2511,7 @@ PyDict_Copy(PyObject *o)
         split_copy->ma_values = newvalues;
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
+        split_copy->ma_clean = 0;
         DK_INCREF(mp->ma_keys);
         for (i = 0, n = size; i < n; i++) {
             PyObject *value = mp->ma_values[i];
@@ -3087,6 +3099,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         _PyObject_GC_UNTRACK(d);
 
     d->ma_used = 0;
+    d->ma_clean = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
     d->ma_keys = new_keys_object(PyDict_MINSIZE);
     if (d->ma_keys == NULL) {

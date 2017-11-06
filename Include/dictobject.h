@@ -26,6 +26,9 @@ typedef struct {
     /* Number of items in the dictionary */
     Py_ssize_t ma_used;
 
+    /* Whether OrderedDict's cache is synchronized with dict table */
+    unsigned int ma_clean: 1;
+
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
     uint64_t ma_version_tag;
