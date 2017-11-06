@@ -9512,70 +9512,51 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing uuid_generate_time_safe" >&5
-$as_echo_n "checking for library containing uuid_generate_time_safe... " >&6; }
-if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if uuid_generate_time_safe() available" >&5
+$as_echo_n "checking if uuid_generate_time_safe() available... " >&6; }
+if ${ax_cv_uuid_generate_time_safe+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  if test "$cross_compiling" = yes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: test program execution failed" >&5
+$as_echo "$as_me: WARNING: test program execution failed" >&2;}
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char uuid_generate_time_safe ();
+    #include <uuid/uuih.h>
 int
 main ()
 {
-return uuid_generate_time_safe ();
+
+        uuid_t out;
+        uuid_generate_time_safe(out);
+
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' uuid; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_uuid_generate_time_safe=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
-
+if ac_fn_c_try_run "$LINENO"; then :
+  ax_cv_uuid_generate_time_safe=yes
 else
-  ac_cv_search_uuid_generate_time_safe=no
+  ax_cv_uuid_generate_time_safe=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_uuid_generate_time_safe" >&5
-$as_echo "$ac_cv_search_uuid_generate_time_safe" >&6; }
-ac_res=$ac_cv_search_uuid_generate_time_safe
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
->...
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_uuid_generate_time_safe" >&5
+$as_echo "$ax_cv_uuid_generate_time_safe" >&6; }
+if test "$ax_cv_uuid_generate_time_safe" = yes; then :
+
 $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-
 else
 
->...
 $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 0" >>confdefs.h
 
-
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
 $as_echo_n "checking for library containing sem_init... " >&6; }

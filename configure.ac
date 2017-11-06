@@ -2677,11 +2677,19 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
-AC_SEARCH_LIBS([uuid_generate_time_safe], [uuid], [
->...AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1], [Define if uuid_generate_time_safe() exists.])
-], [
->...AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [0], [Define if uuid_generate_time_safe() exists.])
-]
+AC_CACHE_CHECK([if uuid_generate_time_safe() available],
+[ax_cv_uuid_generate_time_safe],
+[AC_RUN_IFELSE([
+    AC_LANG_PROGRAM([#include <uuid/uuih.h>], [
+        uuid_t out;
+        uuid_generate_time_safe(out);
+        ])],
+    [ax_cv_uuid_generate_time_safe=yes],
+    [ax_cv_uuid_generate_time_safe=no],
+    [AC_MSG_WARN([test program execution failed])])])
+AS_IF([test "$ax_cv_uuid_generate_time_safe" = yes],
+      [AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1], [Define if uuid_generate_time_safe() exists.])],
+      [AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [0], [Define if uuid_generate_time_safe() exists.])])
 
 AC_SEARCH_LIBS(sem_init, pthread rt posix4) 	# 'Real Time' functions on Solaris
 						# posix4 on Solaris 2.6
