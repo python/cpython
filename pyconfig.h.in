@@ -158,6 +158,9 @@
 /* Define if you have the 'immedok' function. */
 #undef HAVE_CURSES_IMMEDOK
 
+/* Define if you have the 'is_pad' function or macro. */
+#undef HAVE_CURSES_IS_PAD
+
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
 
@@ -175,6 +178,9 @@
 
 /* Define if you have the 'use_env' function. */
 #undef HAVE_CURSES_USE_ENV
+
+/* Define if you have the 'wchgat' function. */
+#undef HAVE_CURSES_WCHGAT
 
 /* Define to 1 if you have the declaration of `isfinite', and to 0 if you
    don't. */

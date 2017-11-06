@@ -911,12 +911,19 @@ PyCursesWindow_Border(PyCursesWindowObject *self, PyObject *args)
 static PyObject *
 PyCursesWindow_Box(PyCursesWindowObject *self, PyObject *args)
 {
+    PyObject *temp1, *temp2;
     chtype ch1=0,ch2=0;
     switch(PyTuple_Size(args)){
     case 0: break;
     default:
-        if (!PyArg_ParseTuple(args,"ll;vertint,horint", &ch1, &ch2))
+        if (!PyArg_ParseTuple(args,"OO;verch,horch", &temp1, &temp2))
             return NULL;
+        if (!PyCurses_ConvertToChtype(self, temp1, &ch1)) {
+            return NULL;
+        }
+        if (!PyCurses_ConvertToChtype(self, temp2, &ch2)) {
+            return NULL;
+        }
     }
     box(self->win,ch1,ch2);
     Py_RETURN_NONE;
@@ -934,8 +941,14 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 }
 #endif
 
-/* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
+#if defined(HAVE_CURSES_IS_PAD)
+#define py_is_pad(win)      is_pad(win)
+#elif defined(WINDOW_HAS_FLAGS)
+#define py_is_pad(win)      ((win) ? ((win)->_flags & _ISPAD) != 0 : FALSE)
+#endif
 
+/* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
+#ifdef HAVE_CURSES_WCHGAT
 static PyObject *
 PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
 {
@@ -988,7 +1001,7 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
     }
     return PyCursesCheckERR(rtn, "chgat");
 }
-
+#endif
 
 static PyObject *
 PyCursesWindow_DelCh(PyCursesWindowObject *self, PyObject *args)
@@ -1073,10 +1086,11 @@ PyCursesWindow_EchoChar(PyCursesWindowObject *self, PyObject *args)
     if (!PyCurses_ConvertToChtype(self, temp, &ch))
         return NULL;
 
-#ifdef WINDOW_HAS_FLAGS
-    if (self->win->_flags & _ISPAD)
+#ifdef py_is_pad
+    if (py_is_pad(self->win)) {
         return PyCursesCheckERR(pechochar(self->win, ch | attr),
                                 "echochar");
+    }
     else
 #endif
         return PyCursesCheckERR(wechochar(self->win, ch | attr),
@@ -1156,8 +1170,16 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
         if (!PyErr_Occurred())
             PyErr_SetString(PyCursesError, "no input");
         return NULL;
-    } else if (rtn<=255) {
-        return Py_BuildValue("C", rtn);
+    } else if (rtn <= 255) {
+#ifdef NCURSES_VERSION_MAJOR
+#if NCURSES_VERSION_MAJOR*100+NCURSES_VERSION_MINOR <= 507
+        /* Work around a bug in ncurses 5.7 and earlier */
+        if (rtn < 0) {
+            rtn += 256;
+        }
+#endif
+#endif
+        return PyUnicode_FromOrdinal(rtn);
     } else {
         const char *knp = keyname(rtn);
         return PyUnicode_FromString((knp == NULL) ? "" : knp);
@@ -1603,10 +1625,10 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
     int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
     int rtn;
 
-#ifndef WINDOW_HAS_FLAGS
+#ifndef py_is_pad
     if (0)
 #else
-        if (self->win->_flags & _ISPAD)
+        if (py_is_pad(self->win))
 #endif
         {
             switch(PyTuple_Size(args)) {
@@ -1766,10 +1788,10 @@ PyCursesWindow_Refresh(PyCursesWindowObject *self, PyObject *args)
     int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
     int rtn;
 
-#ifndef WINDOW_HAS_FLAGS
+#ifndef py_is_pad
     if (0)
 #else
-        if (self->win->_flags & _ISPAD)
+        if (py_is_pad(self->win))
 #endif
         {
             switch(PyTuple_Size(args)) {
@@ -1835,9 +1857,10 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
     }
 
     /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
-#ifdef WINDOW_HAS_FLAGS
-    if (self->win->_flags & _ISPAD)
+#ifdef py_is_pad
+    if (py_is_pad(self->win)) {
         win = subpad(self->win, nlines, ncols, begin_y, begin_x);
+    }
     else
 #endif
         win = subwin(self->win, nlines, ncols, begin_y, begin_x);
@@ -1977,7 +2000,9 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"attron",          (PyCFunction)PyCursesWindow_AttrOn, METH_VARARGS},
     {"attrset",         (PyCFunction)PyCursesWindow_AttrSet, METH_VARARGS},
     {"bkgd",            (PyCFunction)PyCursesWindow_Bkgd, METH_VARARGS},
+#ifdef HAVE_CURSES_WCHGAT
     {"chgat",           (PyCFunction)PyCursesWindow_ChgAt, METH_VARARGS},
+#endif
     {"bkgdset",         (PyCFunction)PyCursesWindow_BkgdSet, METH_VARARGS},
     {"border",          (PyCFunction)PyCursesWindow_Border, METH_VARARGS},
     {"box",             (PyCFunction)PyCursesWindow_Box, METH_VARARGS},
@@ -2250,24 +2275,30 @@ PyCurses_GetMouse(PyObject *self)
         PyErr_SetString(PyCursesError, "getmouse() returned ERR");
         return NULL;
     }
-    return Py_BuildValue("(hiiil)",
+    return Py_BuildValue("(hiiik)",
                          (short)event.id,
-                         event.x, event.y, event.z,
-                         (long) event.bstate);
+                         (int)event.x, (int)event.y, (int)event.z,
+                         (unsigned long) event.bstate);
 }
 
 static PyObject *
 PyCurses_UngetMouse(PyObject *self, PyObject *args)
 {
     MEVENT event;
+    short id;
+    int x, y, z;
+    unsigned long bstate;
 
     PyCursesInitialised;
-    if (!PyArg_ParseTuple(args, "hiiil",
-                          &event.id,
-                          &event.x, &event.y, &event.z,
-                          (int *) &event.bstate))
+    if (!PyArg_ParseTuple(args, "hiiik",
+                          &id, &x, &y, &z, &bstate))
         return NULL;
 
+    event.id = id;
+    event.x = x;
+    event.y = y;
+    event.z = z;
+    event.bstate = bstate;
     return PyCursesCheckERR(ungetmouse(&event), "ungetmouse");
 }
 #endif
@@ -2651,14 +2682,15 @@ PyCurses_MouseInterval(PyObject *self, PyObject *args)
 static PyObject *
 PyCurses_MouseMask(PyObject *self, PyObject *args)
 {
-    int newmask;
+    unsigned long newmask;
     mmask_t oldmask, availmask;
 
     PyCursesInitialised;
-    if (!PyArg_ParseTuple(args,"i;mousemask",&newmask))
+    if (!PyArg_ParseTuple(args,"k;mousemask",&newmask))
         return NULL;
-    availmask = mousemask(newmask, &oldmask);
-    return Py_BuildValue("(ll)", (long)availmask, (long)oldmask);
+    availmask = mousemask((mmask_t)newmask, &oldmask);
+    return Py_BuildValue("(kk)",
+                         (unsigned long)availmask, (unsigned long)oldmask);
 }
 #endif
 

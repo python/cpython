@@ -2915,45 +2915,16 @@ long_compare(PyLongObject *a, PyLongObject *b)
     return sign < 0 ? -1 : sign > 0 ? 1 : 0;
 }
 
-#define TEST_COND(cond) \
-    ((cond) ? Py_True : Py_False)
-
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
     int result;
-    PyObject *v;
     CHECK_BINOP(self, other);
     if (self == other)
         result = 0;
     else
         result = long_compare((PyLongObject*)self, (PyLongObject*)other);
-    /* Convert the return value to a Boolean */
-    switch (op) {
-    case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-    case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-    case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-    case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-    case Py_LT:
-        v = TEST_COND(result == -1);
-        break;
-    case Py_GT:
-        v = TEST_COND(result == 1);
-        break;
-    default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 static Py_hash_t

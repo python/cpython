@@ -158,7 +158,7 @@ def reformat_comment(data, limit, comment_header):
     newdata = reformat_paragraph(data, format_width)
     # re-split and re-insert the comment header.
     newdata = newdata.split("\n")
-    # If the block ends in a \n, we dont want the comment prefix
+    # If the block ends in a \n, we don't want the comment prefix
     # inserted after it. (Im not sure it makes sense to reformat a
     # comment block that is not made of complete lines, but whatever!)
     # Can't think of a clean solution, so we hack away

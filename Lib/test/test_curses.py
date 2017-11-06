@@ -92,7 +92,7 @@ class TestCurses(unittest.TestCase):
                 with self.subTest(meth=meth.__qualname__, args=args):
                     meth(*args)
 
-        for meth in [stdscr.box, stdscr.clear, stdscr.clrtobot,
+        for meth in [stdscr.clear, stdscr.clrtobot,
                      stdscr.clrtoeol, stdscr.cursyncup, stdscr.delch,
                      stdscr.deleteln, stdscr.erase, stdscr.getbegyx,
                      stdscr.getbkgd, stdscr.getkey, stdscr.getmaxyx,
@@ -126,6 +126,13 @@ class TestCurses(unittest.TestCase):
             win.border(65, 66, 67, 68,
                        69, [], 71, 72)
 
+        win.box(65, 67)
+        win.box('!', '_')
+        win.box(b':', b'~')
+        self.assertRaises(TypeError, win.box, 65, 66, 67)
+        self.assertRaises(TypeError, win.box, 65)
+        win.box()
+
         stdscr.clearok(1)
 
         win4 = stdscr.derwin(2,2)
@@ -143,6 +150,7 @@ class TestCurses(unittest.TestCase):
         stdscr.idlok(1)
         if hasattr(stdscr, 'immedok'):
             stdscr.immedok(1)
+            stdscr.immedok(0)
         stdscr.insch('c')
         stdscr.insdelln(1)
         stdscr.insnstr('abc', 3)
@@ -176,26 +184,27 @@ class TestCurses(unittest.TestCase):
         stdscr.setscrreg(10,15)
         win3 = stdscr.subwin(10,10)
         win3 = stdscr.subwin(10,10, 5,5)
-        if hasattr(stdscr, 'syncok'):
+        if hasattr(stdscr, 'syncok') and not sys.platform.startswith("sunos"):
             stdscr.syncok(1)
         stdscr.timeout(5)
         stdscr.touchline(5,5)
         stdscr.touchline(5,5,0)
         stdscr.vline('a', 3)
         stdscr.vline('a', 3, curses.A_STANDOUT)
-        stdscr.chgat(5, 2, 3, curses.A_BLINK)
-        stdscr.chgat(3, curses.A_BOLD)
-        stdscr.chgat(5, 8, curses.A_UNDERLINE)
-        stdscr.chgat(curses.A_BLINK)
+        if hasattr(stdscr, 'chgat'):
+            stdscr.chgat(5, 2, 3, curses.A_BLINK)
+            stdscr.chgat(3, curses.A_BOLD)
+            stdscr.chgat(5, 8, curses.A_UNDERLINE)
+            stdscr.chgat(curses.A_BLINK)
         stdscr.refresh()
 
         stdscr.vline(1,1, 'a', 3)
         stdscr.vline(1,1, 'a', 3, curses.A_STANDOUT)
 
-        if hasattr(curses, 'resize'):
-            stdscr.resize()
-        if hasattr(curses, 'enclose'):
-            stdscr.enclose()
+        if hasattr(stdscr, 'resize'):
+            stdscr.resize(25, 80)
+        if hasattr(stdscr, 'enclose'):
+            stdscr.enclose(10, 10)
 
         self.assertRaises(ValueError, stdscr.getstr, -400)
         self.assertRaises(ValueError, stdscr.getstr, 2, 3, -400)
@@ -321,7 +330,8 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('panel')
     def test_userptr_segfault(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         class A:
             def __del__(self):
                 panel.set_userptr(None)
@@ -330,7 +340,8 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('panel')
     def test_new_curses_panel(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         self.assertRaises(TypeError, type(panel))
 
     @requires_curses_func('is_term_resized')
@@ -357,6 +368,9 @@ class TestCurses(unittest.TestCase):
         self.stdscr.getkey()
 
     @requires_curses_func('unget_wch')
+    # XXX Remove the decorator when ncurses on OpenBSD be updated
+    @unittest.skipIf(sys.platform.startswith("openbsd"),
+                     "OpenBSD's curses (v.5.7) has bugs")
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
@@ -423,6 +437,8 @@ class TestCurses(unittest.TestCase):
 
     def test_issue13051(self):
         stdscr = self.stdscr
+        if not hasattr(stdscr, 'resize'):
+            raise unittest.SkipTest('requires curses.window.resize')
         box = curses.textpad.Textbox(stdscr, insert_mode=True)
         lines, cols = stdscr.getmaxyx()
         stdscr.resize(lines-2, cols-2)
