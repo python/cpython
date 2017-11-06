@@ -76,6 +76,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     };
 
     char* database;
+    PyObject* database_obj;
     int detect_types = 0;
     PyObject* isolation_level = NULL;
     PyObject* factory = NULL;
@@ -85,13 +86,15 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     double timeout = 5.0;
     int rc;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOip", kwlist,
-                                     &database, &timeout, &detect_types,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|diOiOip", kwlist,
+                                     PyUnicode_FSConverter, &database_obj, &timeout, &detect_types,
                                      &isolation_level, &check_same_thread,
                                      &factory, &cached_statements, &uri))
     {
         return -1;
     }
+
+    database = PyBytes_AsString(database_obj);
 
     self->initialized = 1;
 
