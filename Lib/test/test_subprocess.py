@@ -1509,7 +1509,7 @@ class RunFuncTestCase(BaseTestCase):
         tf.close()
 
         try:
-            with self.assertRaises(KeyboardInterrupt) as ex:
+            with self.assertRaises(KeyboardInterrupt):
                 threading.Thread(target=interrupt_this_process_group).start()
                 subprocess.run([sys.executable, "-c",
                                 "import time\n"
