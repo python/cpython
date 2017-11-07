@@ -1,7 +1,7 @@
 #-*- coding: iso-8859-1 -*-
 # pysqlite2/test/hooks.py: tests for various SQLite-specific hooks
 #
-# Copyright (C) 2006-2007 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2006-2007 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -41,7 +41,7 @@ class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotAscii(self):
         con = sqlite.connect(":memory:")
         with self.assertRaises(sqlite.ProgrammingError):
-            con.create_collation("collä", lambda x, y: (x > y) - (x < y))
+            con.create_collation("collÃ¤", lambda x, y: (x > y) - (x < y))
 
     def CheckCreateCollationBadUpper(self):
         class BadUpperStr(str):
@@ -177,9 +177,7 @@ class ProgressTests(unittest.TestCase):
         Test that returning a non-zero value stops the operation in progress.
         """
         con = sqlite.connect(":memory:")
-        progress_calls = []
         def progress():
-            progress_calls.append(None)
             return 1
         con.set_progress_handler(progress, 1)
         curs = con.cursor()
