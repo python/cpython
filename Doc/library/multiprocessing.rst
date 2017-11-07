@@ -2306,7 +2306,8 @@ multiple connections at the same time.
    *address*. (See :ref:`multiprocessing-address-formats`)
 
    If *authkey* is given and not None, it should be a byte string and will be
-   used as the secret key for an authentication challenge.
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
@@ -2339,10 +2340,11 @@ multiple connections at the same time.
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
-   If *authkey* is a byte string then it will be used as the authentication key;
-   otherwise it must be ``None``. If *authkey* is ``None`` then no
-   authentication is done. :exc:`~multiprocessing.AuthenticationError`
-   is raised if authentication fails. See :ref:`multiprocessing-auth-keys`.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
+   :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
+   See :ref:`multiprocessing-auth-keys`.
 
    .. method:: accept()
 
