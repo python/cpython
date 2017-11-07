@@ -283,6 +283,7 @@ msiobj_dealloc(msiobj* msidb)
 {
     MsiCloseHandle(msidb->h);
     msidb->h = 0;
+    PyObject_Del(msidb);
 }
 
 static PyObject*
