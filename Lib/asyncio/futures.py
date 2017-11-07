@@ -79,7 +79,7 @@ class Future:
             self._loop = loop
         self._callbacks = []
         if self._loop.get_debug():
-            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+            self._source_traceback = events.extract_stack(sys._getframe(1))
 
     _repr_info = base_futures._future_repr_info
 

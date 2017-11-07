@@ -1223,6 +1223,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         handler is set, and can be called by a custom exception
         handler that wants to defer to the default behavior.
 
+        This default handler logs the error message and other
+        context-dependent information.  In debug mode, a truncated
+        stack trace is also appended showing where the given object
+        (e.g. a handle or future or task) was created, if any.
+
         The context parameter has the same meaning as in
         `call_exception_handler()`.
         """
