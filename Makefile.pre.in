@@ -446,7 +446,9 @@ build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
 # Check that the source is clean when building out of source.
 check-clean-src:
 	@if test -n "$(VPATH)" -a -f "$(srcdir)/Programs/python.o"; then \
-		echo "Error: The source directory is not clean" ; \
+		echo "Error: The source directory ($(srcdir)) is not clean" ; \
+		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
+		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
 		exit 1; \
 	fi
 
