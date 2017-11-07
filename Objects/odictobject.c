@@ -584,7 +584,7 @@ _odict_resize(PyODictObject *od) {
     /* Replace the old fast nodes table. */
     _odict_free_fast_nodes(od);
     od->od_fast_nodes = fast_nodes;
-    ((PyDictObject *)od)->ma_clean = 1;
+    ((PyDictObject *)od)->ma_keys->dk_clean = 1;
     return 0;
 }
 
@@ -593,7 +593,7 @@ static Py_ssize_t
 _odict_get_index(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
     /* Ensure od_fast_nodes and dk_entries are in sync. */
-    if (!((PyDictObject *)od)->ma_clean) {
+    if (!((PyDictObject *)od)->ma_keys->dk_clean) {
         int resize_res = _odict_resize(od);
         if (resize_res < 0)
             return -1;

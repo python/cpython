@@ -544,6 +544,7 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
     dk->dk_usable = usable;
     dk->dk_lookup = lookdict_unicode_nodummy;
     dk->dk_nentries = 0;
+    dk->dk_clean = 0;
     memset(&dk->dk_indices.as_1[0], 0xff, es * size);
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
@@ -591,7 +592,6 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = 0;
-    mp->ma_clean = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     assert(_PyDict_CheckConsistency(mp));
     return (PyObject *)mp;
@@ -1087,13 +1087,12 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
             mp->ma_keys = oldkeys;
             return -1;
         }
-        mp->ma_clean = 0;
         // New table must be large enough.
         assert(mp->ma_keys->dk_usable >= mp->ma_used);
         if (oldkeys->dk_lookup == lookdict)
             mp->ma_keys->dk_lookup = lookdict;
     }
-    mp->ma_clean = 0;
+    mp->ma_keys->dk_clean = 0;
 
     numentries = mp->ma_used;
     oldentries = DK_ENTRIES(oldkeys);
@@ -1587,7 +1586,6 @@ PyDict_Clear(PyObject *op)
     mp->ma_keys = Py_EMPTY_KEYS;
     mp->ma_values = empty_values;
     mp->ma_used = 0;
-    mp->ma_clean = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     /* ...then clear the keys and values */
     if (oldvalues != NULL) {
@@ -2511,7 +2509,6 @@ PyDict_Copy(PyObject *o)
         split_copy->ma_values = newvalues;
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
-        split_copy->ma_clean = 0;
         DK_INCREF(mp->ma_keys);
         for (i = 0, n = size; i < n; i++) {
             PyObject *value = mp->ma_values[i];
@@ -3099,7 +3096,6 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         _PyObject_GC_UNTRACK(d);
 
     d->ma_used = 0;
-    d->ma_clean = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
     d->ma_keys = new_keys_object(PyDict_MINSIZE);
     if (d->ma_keys == NULL) {
