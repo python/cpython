@@ -867,6 +867,12 @@ Handle
       Cancel the call.  If the callback is already canceled or executed,
       this method has no effect.
 
+   .. method:: cancelled()
+
+      Return ``True`` if the call was cancelled.
+
+      .. versionadded:: 3.7
+
 
 Event loop examples
 -------------------

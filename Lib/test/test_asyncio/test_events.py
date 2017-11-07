@@ -2305,10 +2305,10 @@ class HandleTests(test_utils.TestCase):
         h = asyncio.Handle(callback, args, self.loop)
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
-        self.assertFalse(h._cancelled)
+        self.assertFalse(h.cancelled())
 
         h.cancel()
-        self.assertTrue(h._cancelled)
+        self.assertTrue(h.cancelled())
 
     def test_callback_with_exception(self):
         def callback():
@@ -2494,11 +2494,11 @@ class TimerTests(unittest.TestCase):
         h = asyncio.TimerHandle(when, callback, args, mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
-        self.assertFalse(h._cancelled)
+        self.assertFalse(h.cancelled())
 
         # cancel
         h.cancel()
-        self.assertTrue(h._cancelled)
+        self.assertTrue(h.cancelled())
         self.assertIsNone(h._callback)
         self.assertIsNone(h._args)
 

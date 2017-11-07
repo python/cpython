@@ -117,6 +117,9 @@ class Handle:
             self._callback = None
             self._args = None
 
+    def cancelled(self):
+        return self._cancelled
+
     def _run(self):
         try:
             self._callback(*self._args)
