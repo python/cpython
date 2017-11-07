@@ -2305,7 +2305,8 @@ multiple connections at the same time.
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authkey* is a byte string, digest authentication is used.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an authentication challenge.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
