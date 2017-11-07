@@ -72,6 +72,24 @@ def _format_callback_source(func, args):
     return func_repr
 
 
+def extract_stack(f=None, limit=None):
+    """Replacement for traceback.extract_stack() that only does the
+    necessary work for asyncio debug mode.
+    """
+    if f is None:
+        f = sys._getframe().f_back
+    if limit is None:
+        # This is heuristically the max number of entries we're gonna pop + 1
+        # (we're only interested in displaying the top of stack)
+        # If this is too small, tests will fail.
+        limit = 4
+    stack = traceback.StackSummary.extract(traceback.walk_stack(f),
+                                           limit=limit,
+                                           lookup_lines=False)
+    stack.reverse()
+    return stack
+
+
 class Handle:
     """Object returned by callback registration methods."""
 
@@ -85,7 +103,7 @@ class Handle:
         self._cancelled = False
         self._repr = None
         if self._loop.get_debug():
-            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+            self._source_traceback = extract_stack(sys._getframe(1))
         else:
             self._source_traceback = None
 
