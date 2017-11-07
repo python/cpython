@@ -2688,8 +2688,7 @@ AC_CACHE_CHECK([if uuid_generate_time_safe() available],
     [ax_cv_uuid_generate_time_safe=no],
     [AC_MSG_WARN([test program execution failed])])])
 AS_IF([test "$ax_cv_uuid_generate_time_safe" = yes],
-      [AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1], [Define if uuid_generate_time_safe() exists.])],
-      [AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [0], [Define if uuid_generate_time_safe() exists.])])
+      [AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1], [Define if uuid_generate_time_safe() exists.])])
 
 AC_SEARCH_LIBS(sem_init, pthread rt posix4) 	# 'Real Time' functions on Solaris
 						# posix4 on Solaris 2.6

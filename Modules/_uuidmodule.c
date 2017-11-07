@@ -7,7 +7,7 @@
 static PyObject *
 py_uuid_generate_time_safe(void)
 {
-#if defined(HAVE_UUID_GENERATE_TIME_SAFE) && HAVE_UUID_GENERATE_TIME_SAFE
+#ifdef HAVE_UUID_GENERATE_TIME_SAFE
     uuid_t out;
     int res;
 
@@ -38,7 +38,7 @@ PyInit__uuid(void)
 {
     PyObject *mod;
     assert(sizeof(uuid_t) == 16);
-#if defined(HAVE_UUID_GENERATE_TIME_SAFE) && HAVE_UUID_GENERATE_TIME_SAFE
+#ifdef HAVE_UUID_GENERATE_TIME_SAFE
     int has_uuid_generate_time_safe = 1;
 #else
     int has_uuid_generate_time_safe = 0;

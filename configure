@@ -9552,10 +9552,6 @@ if test "$ax_cv_uuid_generate_time_safe" = yes; then :
 
 $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-else
-
-$as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 0" >>confdefs.h
-
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
