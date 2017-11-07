@@ -184,7 +184,7 @@ class CoroWrapper:
             if tb:
                 tb = ''.join(traceback.format_list(tb))
                 msg += ('\nCoroutine object created at '
-                        '(most recent call last):\n')
+                        '(most recent call last, maybe truncated):\n')
                 msg += tb.rstrip()
             logger.error(msg)
 

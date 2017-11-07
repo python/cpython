@@ -79,10 +79,9 @@ def extract_stack(f=None, limit=None):
     if f is None:
         f = sys._getframe().f_back
     if limit is None:
-        # This is heuristically the max number of entries we're gonna pop + 1
-        # (we're only interested in displaying the top of stack)
-        # If this is too small, tests will fail.
-        limit = 4
+        # This is enough for decent debug information and puts
+        # a reasonable on the amount of work we have to do here.
+        limit = 10
     stack = traceback.StackSummary.extract(traceback.walk_stack(f),
                                            limit=limit,
                                            lookup_lines=False)

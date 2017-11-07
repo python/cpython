@@ -1981,7 +1981,7 @@ class BaseTaskTests:
 
         regex = (r'^<CoroWrapper %s\(?\)? .* at %s:%s, .*> '
                     r'was never yielded from\n'
-                 r'Coroutine object created at \(most recent call last\):\n'
+                 r'Coroutine object created at \(most recent call last, maybe truncated\):\n'
                  r'.*\n'
                  r'  File "%s", line %s, in test_coroutine_never_yielded\n'
                  r'    coro_noop\(\)$'
