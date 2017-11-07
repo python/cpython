@@ -190,6 +190,9 @@ class RegressionTests(unittest.TestCase):
         cur = Cursor(con)
         with self.assertRaises(sqlite.ProgrammingError):
             cur.execute("select 4+5").fetchall()
+        with self.assertRaisesRegex(sqlite.ProgrammingError,
+                                    r'^Base Cursor\.__init__ not called\.$'):
+            cur.close()
 
     def CheckStrSubclass(self):
         """
