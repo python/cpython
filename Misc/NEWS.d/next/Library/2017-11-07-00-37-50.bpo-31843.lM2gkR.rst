@@ -1,0 +1,2 @@
+*database* argument of sqlite3.connect() now accepts a
+:term:`path-like object`, instead of just a string.
