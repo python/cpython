@@ -10,6 +10,7 @@ import traceback
 import types
 
 from . import compat
+from . import constants
 from . import events
 from . import base_futures
 from .log import logger
@@ -183,8 +184,9 @@ class CoroWrapper:
             tb = getattr(self, '_source_traceback', ())
             if tb:
                 tb = ''.join(traceback.format_list(tb))
-                msg += ('\nCoroutine object created at '
-                        '(most recent call last, maybe truncated):\n')
+                msg += (f'\nCoroutine object created at '
+                        f'(most recent call last, truncated to '
+                        f'{constants.DEBUG_STACK_DEPTH} last lines):\n')
                 msg += tb.rstrip()
             logger.error(msg)
 
