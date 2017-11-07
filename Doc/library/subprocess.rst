@@ -516,8 +516,24 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be :data:`CREATE_NEW_CONSOLE` or
-   :data:`CREATE_NEW_PROCESS_GROUP`. (Windows only)
+   *creationflags*, if given, can be
+   ::
+      :data:`CREATE_NEW_CONSOLE`
+      :data:`CREATE_NEW_PROCESS_GROUP`
+      
+   .. versionadded:: 3.7
+      added windows process creation flags
+   :data:`ABOVE_NORMAL_PRIORITY_CLASS`
+   :data:`BELOW_NORMAL_PRIORITY_CLASS`
+   :data:`HIGH_PRIORITY_CLASS`
+   :data:`IDLE_PRIORITY_CLASS`
+   :data:`NORMAL_PRIORITY_CLASS`
+   :data:`REALTIME_PRIORITY_CLASS`
+   :data:`CREATE_NO_WINDOW`
+   :data:`DETACHED_PROCESS`
+   :data:`CREATE_DEFAULT_ERROR_MODE`
+   :data:`CREATE_BREAKAWAY_FROM_JOB`
+   
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
