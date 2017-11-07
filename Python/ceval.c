@@ -2127,7 +2127,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                             goto error;
                         PyErr_Clear();
                     }
-
                 }
                 Py_XINCREF(v);
                 if (v == NULL) {
