@@ -2666,6 +2666,22 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(NonbytesStream('a'))
         self.assertEqual(t.read(), u'a')
 
+    def test_illegal_encoder(self):
+        # bpo-31271: A TypeError should be raised in case the return value of
+        # encoder's encode() is invalid.
+        class BadEncoder:
+            def encode(self, dummy):
+                return u'spam'
+        def get_bad_encoder(dummy):
+            return BadEncoder()
+        rot13 = codecs.lookup("rot13")
+        with support.swap_attr(rot13, '_is_text_encoding', True), \
+             support.swap_attr(rot13, 'incrementalencoder', get_bad_encoder):
+            t = io.TextIOWrapper(io.BytesIO(b'foo'), encoding="rot13")
+        with self.assertRaises(TypeError):
+            t.write('bar')
+            t.flush()
+
     def test_illegal_decoder(self):
         # Issue #17106
         # Bypass the early encoding check added in issue 20404
