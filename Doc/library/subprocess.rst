@@ -866,7 +866,64 @@ The :mod:`subprocess` module exposes the following constants.
    on the subprocess.
 
    This flag is ignored if :data:`CREATE_NEW_CONSOLE` is specified.
+   
+.. data:: ABOVE_NORMAL_PRIORITY_CLASS
 
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an above average priority.
+   
+.. data:: BELOW_NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have a below average priority.
+   
+.. data:: HIGH_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have a high priority.
+   
+.. data:: IDLE_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an idle (lowest) priority.
+   
+.. data:: NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an normal priority. (default)
+   
+.. data:: REALTIME_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have realtime priority.
+   You should almost never use REALTIME_PRIORITY_CLASS, because this interrupts
+   system threads that manage mouse input, keyboard input, and background disk
+   flushing. This class can be appropriate for applications that "talk" directly
+   to hardware or that perform brief tasks that should have limited interruptions.
+   
+.. data:: CREATE_NO_WINDOW
+  
+  A :class:`Popen` ``creationflags`` parameter to specify that a new process
+  will not create a window
+  
+.. data:: DETACHED_PROCESS
+  
+  A :class:`Popen` ``creationflags`` parameter to specify that a new process
+  will not inherit its parent's console.
+  This value cannot be used with CREATE_NEW_CONSOLE.
+  
+.. data:: CREATE_DEFAULT_ERROR_MODE
+  
+  A :class:`Popen` ``creationflags`` parameter to specify that a new process
+  does not inherit the error mode of the calling process. Instead, the new
+  process gets the default error mode.
+  This feature is particularly useful for multithreaded shell applications
+  that run with hard errors disabled.
+
+.. data:: CREATE_BREAKAWAY_FROM_JOB
+
+  A :class:`Popen` ``creationflags`` parameter to specify that a new process
+  is not associated with the job.
 .. _call-function-trio:
 
 Older high-level API
