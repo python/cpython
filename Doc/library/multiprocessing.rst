@@ -2296,7 +2296,7 @@ multiple connections at the same time.
    If a welcome message is not received, then
    :exc:`~multiprocessing.AuthenticationError` is raised.
 
-.. function:: Client(address[, family[, authenticate[, authkey]]])
+.. function:: Client(address[, family[, authkey]])
 
    Attempt to set up a connection to the listener which is using address
    *address*, returning a :class:`~multiprocessing.Connection`.
@@ -2305,14 +2305,13 @@ multiple connections at the same time.
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authenticate* is ``True`` or *authkey* is a byte string then digest
-   authentication is used.  The key used for authentication will be either
-   *authkey* or ``current_process().authkey`` if *authkey* is ``None``.
-   If authentication fails then
-   :exc:`~multiprocessing.AuthenticationError` is raised.  See
-   :ref:`multiprocessing-auth-keys`.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
+   :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
+   See :ref:`multiprocessing-auth-keys`.
 
-.. class:: Listener([address[, family[, backlog[, authenticate[, authkey]]]]])
+.. class:: Listener([address[, family[, backlog[, authkey]]]])
 
    A wrapper for a bound socket or Windows named pipe which is 'listening' for
    connections.
@@ -2341,17 +2340,10 @@ multiple connections at the same time.
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
-   If *authenticate* is ``True`` (``False`` by default) or *authkey* is not
-   ``None`` then digest authentication is used.
-
-   If *authkey* is a byte string then it will be used as the
-   authentication key; otherwise it must be ``None``.
-
-   If *authkey* is ``None`` and *authenticate* is ``True`` then
-   ``current_process().authkey`` is used as the authentication key.  If
-   *authkey* is ``None`` and *authenticate* is ``False`` then no
-   authentication is done.  If authentication fails then
-   :exc:`~multiprocessing.AuthenticationError` is raised.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
+   :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
    .. method:: accept()
