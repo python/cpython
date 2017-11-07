@@ -152,12 +152,18 @@ Database Objects
    :c:func:`MsiGetSummaryInformation`.  *count* is the maximum number of updated
    values.
 
+.. method:: Database.Close()
+
+   Close the database object, through :c:func:`MsiCloseHandle`.
+
+   .. versionadded:: 3.7
 
 .. seealso::
 
    `MSIDatabaseOpenView <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msidatabaseopenview.asp>`_
    `MSIDatabaseCommit <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msidatabasecommit.asp>`_
    `MSIGetSummaryInformation <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msigetsummaryinformation.asp>`_
+   `MsiCloseHandle <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370067(v=vs.85).aspx>`_
 
 .. _view-objects:
 
