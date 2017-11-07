@@ -32,11 +32,13 @@ class Future:
 
     Differences:
 
+    - This class is not thread-safe.
+
     - result() and exception() do not take a timeout argument and
       raise an exception when the future isn't done yet.
 
     - Callbacks registered with add_done_callback() are always called
-      via the event loop's call_soon_threadsafe().
+      via the event loop's call_soon().
 
     - This class is not compatible with the wait() and as_completed()
       methods in the concurrent.futures package.
