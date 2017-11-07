@@ -195,16 +195,19 @@ class BuiltinLevelsTest(BaseTest):
         INF.log(logging.CRITICAL, m())
         INF.error(m())
         INF.warning(m())
+        INF.notice(m())
         INF.info(m())
 
         DEB.log(logging.CRITICAL, m())
         DEB.error(m())
         DEB.warning(m())
+        DEB.notice(m())
         DEB.info(m())
         DEB.debug(m())
 
         # These should not log.
         ERR.warning(m())
+        ERR.notice(m())
         ERR.info(m())
         ERR.debug(m())
 
@@ -216,10 +219,12 @@ class BuiltinLevelsTest(BaseTest):
             ('INF', 'CRITICAL', '3'),
             ('INF', 'ERROR', '4'),
             ('INF', 'WARNING', '5'),
+            ('INF', 'NOTICE', '5.5'),
             ('INF', 'INFO', '6'),
             ('DEB', 'CRITICAL', '7'),
             ('DEB', 'ERROR', '8'),
             ('DEB', 'WARNING', '9'),
+            ('DEB', 'NOTICE', '9.5'),
             ('DEB', 'INFO', '10'),
             ('DEB', 'DEBUG', '11'),
         ])
@@ -239,6 +244,7 @@ class BuiltinLevelsTest(BaseTest):
 
         # These should not log.
         INF_ERR.warning(m())
+        INF_ERR.notice(m())
         INF_ERR.info(m())
         INF_ERR.debug(m())
 
@@ -263,6 +269,7 @@ class BuiltinLevelsTest(BaseTest):
         INF_UNDEF.log(logging.CRITICAL, m())
         INF_UNDEF.error(m())
         INF_UNDEF.warning(m())
+        INF_UNDEF.notice(m())
         INF_UNDEF.info(m())
         INF_ERR_UNDEF.log(logging.CRITICAL, m())
         INF_ERR_UNDEF.error(m())
@@ -270,6 +277,7 @@ class BuiltinLevelsTest(BaseTest):
         # These should not log.
         INF_UNDEF.debug(m())
         INF_ERR_UNDEF.warning(m())
+        INF_ERR_UNDEF.notice(m())
         INF_ERR_UNDEF.info(m())
         INF_ERR_UNDEF.debug(m())
 
@@ -277,6 +285,7 @@ class BuiltinLevelsTest(BaseTest):
             ('INF.UNDEF', 'CRITICAL', '1'),
             ('INF.UNDEF', 'ERROR', '2'),
             ('INF.UNDEF', 'WARNING', '3'),
+            ('INF.UNDEF', 'NOTICE', '3.5'),
             ('INF.UNDEF', 'INFO', '4'),
             ('INF.ERR.UNDEF', 'CRITICAL', '5'),
             ('INF.ERR.UNDEF', 'ERROR', '6'),

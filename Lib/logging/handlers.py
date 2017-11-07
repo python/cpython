@@ -786,6 +786,7 @@ class SysLogHandler(logging.Handler):
     priority_map = {
         "DEBUG" : "debug",
         "INFO" : "info",
+        "NOTICE" : "notice",
         "WARNING" : "warning",
         "ERROR" : "error",
         "CRITICAL" : "critical"
@@ -1049,6 +1050,7 @@ class NTEventLogHandler(logging.Handler):
             self.typemap = {
                 logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
                 logging.INFO    : win32evtlog.EVENTLOG_INFORMATION_TYPE,
+                logging.NOTICE  : win32evtlog.EVENTLOG_INFORMATION_TYPE,
                 logging.WARNING : win32evtlog.EVENTLOG_WARNING_TYPE,
                 logging.ERROR   : win32evtlog.EVENTLOG_ERROR_TYPE,
                 logging.CRITICAL: win32evtlog.EVENTLOG_ERROR_TYPE,

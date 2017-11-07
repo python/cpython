@@ -350,6 +350,8 @@ name is lost.
 +--------------+---------------+
 | ``WARNING``  | 30            |
 +--------------+---------------+
+| ``NOTICE``   | 25            |
++--------------+---------------+
 | ``INFO``     | 20            |
 +--------------+---------------+
 | ``DEBUG``    | 10            |
@@ -768,11 +770,12 @@ the options available to you.
 | funcName       | ``%(funcName)s``        | Name of function containing the logging call. |
 +----------------+-------------------------+-----------------------------------------------+
 | levelname      | ``%(levelname)s``       | Text logging level for the message            |
-|                |                         | (``'DEBUG'``, ``'INFO'``, ``'WARNING'``,      |
-|                |                         | ``'ERROR'``, ``'CRITICAL'``).                 |
+|                |                         | (``'DEBUG'``, ``'INFO'``, ``'NOTICE'``,       |
+|                |                         | ``'WARNING'``, ``'ERROR'``, ``'CRITICAL'``).  |
 +----------------+-------------------------+-----------------------------------------------+
 | levelno        | ``%(levelno)s``         | Numeric logging level for the message         |
 |                |                         | (:const:`DEBUG`, :const:`INFO`,               |
+|                |                         | :const:`NOTICE`,                              |
 |                |                         | :const:`WARNING`, :const:`ERROR`,             |
 |                |                         | :const:`CRITICAL`).                           |
 +----------------+-------------------------+-----------------------------------------------+
@@ -987,6 +990,12 @@ functions.
    interpreted as for :func:`debug`.
 
 
+.. function:: notice(msg, *args, **kwargs)
+
+   Logs a message with level :const:`NOTICE` on the root logger. The arguments are
+   interpreted as for :func:`debug`.
+
+
 .. function:: warning(msg, *args, **kwargs)
 
    Logs a message with level :const:`WARNING` on the root logger. The arguments
@@ -1068,11 +1077,12 @@ functions.
 
    Returns the textual representation of logging level *lvl*. If the level is one
    of the predefined levels :const:`CRITICAL`, :const:`ERROR`, :const:`WARNING`,
-   :const:`INFO` or :const:`DEBUG` then you get the corresponding string. If you
-   have associated levels with names using :func:`addLevelName` then the name you
-   have associated with *lvl* is returned. If a numeric value corresponding to one
-   of the defined levels is passed in, the corresponding string representation is
-   returned. Otherwise, the string 'Level %s' % lvl is returned.
+   :const:`NOTICE`, :const:`INFO` or :const:`DEBUG` then you get the corresponding
+   string. If you have associated levels with names using :func:`addLevelName` then
+   the name you have associated with *lvl* is returned. If a numeric value
+   corresponding to one of the defined levels is passed in, the corresponding
+   string representation is returned. Otherwise, the string 'Level %s' % lvl is
+   returned.
 
    .. note:: Levels are internally integers (as they need to be compared in the
       logging logic). This function is used to convert between an integer level
