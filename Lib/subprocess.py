@@ -1237,7 +1237,10 @@ class Popen(object):
             if isinstance(args, (str, bytes)):
                 args = [args]
             else:
-                args = list(args)
+                try:
+                    args = list(args)
+                except TypeError:
+                    args = [os.fsencode(args)]
 
             if shell:
                 # On Android the default shell is at '/system/bin/sh'.

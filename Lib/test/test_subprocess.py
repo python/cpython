@@ -230,6 +230,31 @@ class ProcessTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(rc, 1)
 
+    def test_run_with_pathlike_path(self):
+        # bpo-31961: test run(pathlike_object)
+        class Path:
+            def __fspath__(self):
+                # the name of a command that can be run without
+                # any argumenets that exit fast
+                return 'dir' if mswindows else 'ls'
+
+        path = Path()
+        res = subprocess.run(path, check=True)
+        self.assertEqual(res.returncode, 0)
+
+    def test_run_with_pathlike_path_with_arguments(self):
+        # bpo-31961: test run([pathlike_object, 'additional arguments'])
+        class Path:
+            def __fspath__(self):
+                # the name of a command that can be run without
+                # any argumenets that exits fast
+                return 'dir' if mswindows else 'ls'
+
+        path = Path()
+        args = [path, '/AD' if mswindows else '-l']
+        res = subprocess.run(args, check=True)
+        self.assertEqual(res.returncode, 0)
+
     def test_invalid_args(self):
         # Popen() called with invalid arguments should raise TypeError
         # but Popen.__del__ should not complain (issue #12085)
