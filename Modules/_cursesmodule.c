@@ -646,10 +646,10 @@ PyCursesWindow_Box(PyCursesWindowObject *self, PyObject *args)
     default:
         if (!PyArg_ParseTuple(args,"OO;verch,horch", &temp1, &temp2))
             return NULL;
-        if (!PyCurses_ConvertToChtype(self, temp1, &ch1)) {
+        if (!PyCurses_ConvertToChtype(temp1, &ch1)) {
             return NULL;
         }
-        if (!PyCurses_ConvertToChtype(self, temp2, &ch2)) {
+        if (!PyCurses_ConvertToChtype(temp2, &ch2)) {
             return NULL;
         }
     }
