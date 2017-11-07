@@ -101,7 +101,7 @@ static int running_on_valgrind = -1;
  *
  * For small requests, the allocator sub-allocates <Big> blocks of memory.
  * Requests greater than SMALL_REQUEST_THRESHOLD bytes are routed to the
- * system's allocator. 
+ * system's allocator.
  *
  * Small requests are grouped in size classes spaced 8 bytes apart, due
  * to the required valid alignment of the returned address. Requests of
@@ -134,7 +134,7 @@ static int running_on_valgrind = -1;
  *       65-72                   72                       8
  *        ...                   ...                     ...
  *      497-504                 504                      62
- *      505-512                 512                      63 
+ *      505-512                 512                      63
  *
  *      0, SMALL_REQUEST_THRESHOLD + 1 and up: routed to the underlying
  *      allocator.
@@ -176,7 +176,7 @@ static int running_on_valgrind = -1;
  * Although not required, for better performance and space efficiency,
  * it is recommended that SMALL_REQUEST_THRESHOLD is set to a power of 2.
  */
-#define SMALL_REQUEST_THRESHOLD 512 
+#define SMALL_REQUEST_THRESHOLD 512
 #define NB_SMALL_SIZE_CLASSES   (SMALL_REQUEST_THRESHOLD / ALIGNMENT)
 
 /*
@@ -209,7 +209,7 @@ static int running_on_valgrind = -1;
  * usually an address range reservation for <Big> bytes, unless all pages within
  * this space are referenced subsequently. So malloc'ing big blocks and not
  * using them does not mean "wasting memory". It's an addressable range
- * wastage... 
+ * wastage...
  *
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
@@ -619,7 +619,7 @@ new_arena(void)
 #else
     address = malloc(ARENA_SIZE);
     err = (address == 0);
-#endif    
+#endif
     if (err) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1552,7 +1552,7 @@ _PyObject_DebugReallocApi(char api, void *p, size_t nbytes)
         /* overflow:  can't represent total as a size_t */
         return NULL;
 
-    if (nbytes < original_nbytes) {
+    if (nbytes <= original_nbytes) {
         /* shrinking:  mark old extra memory dead */
         memset(q + nbytes, DEADBYTE, original_nbytes - nbytes + 2*SST);
     }
@@ -1562,8 +1562,14 @@ _PyObject_DebugReallocApi(char api, void *p, size_t nbytes)
      * but we live with that.
      */
     q = (uchar *)PyObject_Realloc(q - 2*SST, total);
-    if (q == NULL)
+    if (q == NULL) {
+        if (nbytes <= original_nbytes) {
+            /* bpo-31626: the memset() above expects that realloc never fails
+               on shrinking a memory block. */
+            Py_FatalError("Shrinking reallocation failed");
+        }
         return NULL;
+    }
 
     write_size_t(q, nbytes);
     assert(q[SST] == (uchar)api);
