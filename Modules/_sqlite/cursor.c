@@ -889,6 +889,11 @@ PyObject* pysqlite_noop(pysqlite_Connection* self, PyObject* args)
 
 PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
 {
+    if (!self->connection) {
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Base Cursor.__init__ not called.");
+        return NULL;
+    }
     if (!pysqlite_check_thread(self->connection) || !pysqlite_check_connection(self->connection)) {
         return NULL;
     }
