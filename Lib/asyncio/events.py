@@ -19,6 +19,8 @@ import sys
 import threading
 import traceback
 
+from . import constants
+
 
 def _get_function_source(func):
     func = inspect.unwrap(func)
@@ -79,9 +81,9 @@ def extract_stack(f=None, limit=None):
     if f is None:
         f = sys._getframe().f_back
     if limit is None:
-        # This is enough for decent debug information and puts
-        # a reasonable on the amount of work we have to do here.
-        limit = 10
+        # Limit the amount of work to a reasonable amount, as extract_stack()
+        # can be called for each coroutine and future in debug mode.
+        limit = constants.DEBUG_STACK_DEPTH
     stack = traceback.StackSummary.extract(traceback.walk_stack(f),
                                            limit=limit,
                                            lookup_lines=False)
