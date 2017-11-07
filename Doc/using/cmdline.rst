@@ -408,11 +408,11 @@ Miscellaneous options
    * ``-X showalloccount`` to output the total count of allocated objects for
      each type when the program finishes. This only works when Python was built with
      ``COUNT_ALLOCS`` defined.
-   * ``-X importtime`` to show how long each import takes. It shows module name,
-     cumulative time (including nested imports) and self time (exluding nested
-     imports).  Note that its output may be broken in multi threaded application.
-     Typical usage is ``python3 -X importtime -c 'import asyncio'``.  See also
-     :envvar:`PYTHONPROFILEIMPORTTIME`.
+   * ``-X importtime`` to show how long each import takes. It shows module
+     name, cumulative time (including nested imports) and self time (excluding
+     nested imports).  Note that its output may be broken in multi-threaded
+     application.  Typical usage is ``python3 -X importtime -c 'import
+     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.

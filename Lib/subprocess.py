@@ -751,7 +751,7 @@ class Popen(object):
     @property
     def universal_newlines(self):
         # universal_newlines as retained as an alias of text_mode for API
-        # compatability. bpo-31756
+        # compatibility. bpo-31756
         return self.text_mode
 
     @universal_newlines.setter

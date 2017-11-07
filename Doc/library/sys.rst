@@ -1336,7 +1336,7 @@ always available.
    |                  |  * ``None`` if this information is unknown              |
    +------------------+---------------------------------------------------------+
    | :const:`version` | Name and version of the thread library. It is a string, |
-   |                  | or ``None`` if these informations are unknown.          |
+   |                  | or ``None`` if this information is unknown.             |
    +------------------+---------------------------------------------------------+
 
    .. versionadded:: 3.3
