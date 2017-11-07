@@ -1,0 +1,5 @@
+Fixed incorrect discrimination between string and list types in
+distutils.CCompiler.set_executables() method. Previously if unicode string
+was passed as executable value it was considered not as string, but as list.
+It caused TypeError: "coercing to Unicode: need string or buffer, list
+found" at unixccompiler.py, line 122, in _compile().
