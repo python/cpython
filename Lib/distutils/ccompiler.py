@@ -151,7 +151,7 @@ class CCompiler:
             self.set_executable(key, kwargs[key])
 
     def set_executable(self, key, value):
-        if isinstance(value, str):
+        if hasattr(value, "strip"):
             setattr(self, key, split_quoted(value))
         else:
             setattr(self, key, value)
