@@ -516,7 +516,8 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be
+   *creationflags*, if given, can be one or more of the following flags:
+   
       * :data:`CREATE_NEW_CONSOLE`
       * :data:`CREATE_NEW_PROCESS_GROUP`
       * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
@@ -529,7 +530,6 @@ functions.
       * :data:`DETACHED_PROCESS`
       * :data:`CREATE_DEFAULT_ERROR_MODE`
       * :data:`CREATE_BREAKAWAY_FROM_JOB`
-   
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -815,7 +815,7 @@ on Windows.
       :class:`Popen` is called with ``shell=True``.
 
 
-Constants
+Windows Constants
 ^^^^^^^^^
 
 The :mod:`subprocess` module exposes the following constants.
@@ -855,8 +855,6 @@ The :mod:`subprocess` module exposes the following constants.
    The new process has a new console, instead of inheriting its parent's
    console (the default).
 
-   .. versionadded:: 3.7
-
 .. data:: CREATE_NEW_PROCESS_GROUP
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
@@ -864,8 +862,6 @@ The :mod:`subprocess` module exposes the following constants.
    on the subprocess.
 
    This flag is ignored if :data:`CREATE_NEW_CONSOLE` is specified.
-
-   .. versionadded:: 3.7
 
 .. data:: ABOVE_NORMAL_PRIORITY_CLASS
 
@@ -912,14 +908,14 @@ The :mod:`subprocess` module exposes the following constants.
    to hardware or that perform brief tasks that should have limited interruptions.
 
    .. versionadded:: 3.7
-   
+
 .. data:: CREATE_NO_WINDOW
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
    will not create a window
 
    .. versionadded:: 3.7
-  
+
 .. data:: DETACHED_PROCESS
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
