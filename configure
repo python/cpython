@@ -9512,47 +9512,36 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if uuid_generate_time_safe() available" >&5
-$as_echo_n "checking if uuid_generate_time_safe() available... " >&6; }
-if ${ax_cv_uuid_generate_time_safe+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: test program execution failed" >&5
-$as_echo "$as_me: WARNING: test program execution failed" >&2;}
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
+$as_echo_n "checking for uuid_generate_time_safe... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-    #include <uuid/uuih.h>
+#include <uuid/uuid.h>
 int
 main ()
 {
 
-        uuid_t out;
-        uuid_generate_time_safe(out);
+#ifndef uuid_generate_time_safe
+uuid_t out;
+uuid_generate_time_safe(out);
+#endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ax_cv_uuid_generate_time_safe=yes
-else
-  ax_cv_uuid_generate_time_safe=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_uuid_generate_time_safe" >&5
-$as_echo "$ax_cv_uuid_generate_time_safe" >&6; }
-if test "$ax_cv_uuid_generate_time_safe" = yes; then :
+if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
 $as_echo_n "checking for library containing sem_init... " >&6; }
