@@ -26,7 +26,7 @@ class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_set_executables_unicode(self):
         class MyCCompiler(CCompiler):
-            executables = {}
+            executables = {'compiler':'', 'compiler_cxx':'', 'linker':''}
 
         compiler = MyCCompiler()
 
