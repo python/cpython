@@ -255,6 +255,12 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+cProfile
+--------
+
+cProfile command line now accepts `-m module_name` as an alternative to
+script path. (Contributed by Sanyam Khurana in :issue:`21862`.)
+
 crypt
 -----
 
