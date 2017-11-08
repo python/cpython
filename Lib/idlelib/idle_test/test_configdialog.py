@@ -844,22 +844,24 @@ class KeysPageTest(unittest.TestCase):
         eq = self.assertEqual
         d = self.page
         del d.set_keys_type
+        try:
+            # Builtin keyset selected.
+            d.keyset_source.set(True)
+            d.set_keys_type()
+            eq(d.builtinlist['state'], NORMAL)
+            eq(d.customlist['state'], DISABLED)
+            eq(d.button_delete_custom_keys.state(), ('disabled',))
 
-        # Builtin keyset selected.
-        d.keyset_source.set(True)
-        d.set_keys_type()
-        eq(d.builtinlist['state'], NORMAL)
-        eq(d.customlist['state'], DISABLED)
-        eq(d.button_delete_custom_keys.state(), ('disabled',))
-
-        # Custom keyset selected.
-        d.keyset_source.set(False)
-        d.set_keys_type()
-        eq(d.builtinlist['state'], DISABLED)
-        eq(d.custom_keyset_on.state(), ('selected',))
-        eq(d.customlist['state'], NORMAL)
-        eq(d.button_delete_custom_keys.state(), ())
-        d.set_keys_type = Func()
+            # Custom keyset selected.
+            d.keyset_source.set(False)
+            d.set_keys_type()
+            eq(d.builtinlist['state'], DISABLED)
+            self.assertIn(d.custom_keyset_on.state(),  # Issue 31971
+                          (('selected',), ('selected', 'hover')))
+            eq(d.customlist['state'], NORMAL)
+            eq(d.button_delete_custom_keys.state(), ())
+        finally:
+            d.set_keys_type = Func()
 
     def test_get_new_keys(self):
         eq = self.assertEqual
