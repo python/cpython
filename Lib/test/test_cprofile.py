@@ -44,7 +44,7 @@ class CProfileTest(ProfileTest):
         assert_python_failure('-m', 'cProfile', '-m')
 
         # Test failure for not-existent module
-        assert_python_failure('-m', 'cProfile', 'random_module_xyz')
+        assert_python_failure('-m', 'cProfile', '-m', 'random_module_xyz')
 
         # Test successful run
         assert_python_ok('-m', 'cProfile', '-m', 'timeit', '-n', '1')
