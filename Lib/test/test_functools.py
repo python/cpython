@@ -609,6 +609,8 @@ class TestTotalOrdering(unittest.TestCase):
                 return self.value > other.value
             def __eq__(self, other):
                 return self.value == other.value
+            def __hash__(self):
+                return hash(self.value)
         self.assertTrue(A(1) != A(2))
         self.assertFalse(A(1) != A(1))
 
@@ -620,6 +622,8 @@ class TestTotalOrdering(unittest.TestCase):
                 return self.value > other.value
             def __eq__(self, other):
                 return self.value == other.value
+            def __hash__(self):
+                return hash(self.value)
         self.assertTrue(A(1) != A(2))
         self.assertFalse(A(1) != A(1))
 
@@ -633,6 +637,8 @@ class TestTotalOrdering(unittest.TestCase):
                 return self.value == other.value
             def __ne__(self, other):
                 raise RuntimeError(self, other)
+            def __hash__(self):
+                return hash(self.value)
         with self.assertRaises(RuntimeError):
             A(1) != A(2)
         with self.assertRaises(RuntimeError):
@@ -648,6 +654,8 @@ class TestTotalOrdering(unittest.TestCase):
                 return self.value == other.value
             def __ne__(self, other):
                 raise RuntimeError(self, other)
+            def __hash__(self):
+                return hash(self.value)
         with self.assertRaises(RuntimeError):
             A(1) != A(2)
         with self.assertRaises(RuntimeError):
