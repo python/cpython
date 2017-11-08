@@ -164,13 +164,23 @@ if _mswindows:
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
-                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW)
+                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
+                         ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
+                         HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
+                         NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
+                         CREATE_NO_WINDOW, DETACHED_PROCESS,
+                         CREATE_DEFAULT_ERROR_MODE, CREATE_BREAKAWAY_FROM_JOB)
 
     __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
                     "STD_ERROR_HANDLE", "SW_HIDE",
                     "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW",
-                    "STARTUPINFO"])
+                    "STARTUPINFO",
+                    "ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
+                    "HIGH_PRIORITY_CLASS", "IDLE_PRIORITY_CLASS",
+                    "NORMAL_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS",
+                    "CREATE_NO_WINDOW", "DETACHED_PROCESS",
+                    "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
 
     class Handle(int):
         closed = False
