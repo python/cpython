@@ -1501,12 +1501,9 @@ class RunFuncTestCase(BaseTestCase):
                 return sys.executable
 
         path = Path()
-        args = [path, '-c', 'import sys; sys.exit(57)']
 
-        if mswindows:
-            res = subprocess.run(args)
-        else:
-            res = subprocess.run(args)
+        args = [path, '-c', 'import sys; sys.exit(57)']
+        res = subprocess.run(args)
 
         self.assertEqual(res.returncode, 57)
 
