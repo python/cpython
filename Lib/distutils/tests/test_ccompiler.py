@@ -32,6 +32,7 @@ class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
 
         # set executable as list
         compiler.set_executables(compiler = ['/usr/bin/env', 'OMPI_MPICC=clang', '/usr/bin/mpicc.openmpi'])
+        print(compiler.executables)
         self.assertEqual(len(compiler.executables['compiler']) == 3)
         self.assertEqual(len(compiler.executables['compiler'][2]) == '/usr/bin/mpicc.openmpi')
 
