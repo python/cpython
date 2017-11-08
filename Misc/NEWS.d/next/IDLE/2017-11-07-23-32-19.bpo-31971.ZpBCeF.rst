@@ -1,0 +1,3 @@
+Fix IDLE test failure.
+
+On one machine, tk sees a mouse cursor hovering over one widget.
