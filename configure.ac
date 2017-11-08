@@ -2680,8 +2680,7 @@ AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 AC_MSG_CHECKING(for uuid_generate_time_safe)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
 #ifndef uuid_generate_time_safe
-uuid_t out;
-uuid_generate_time_safe(out);
+void *x = uuid_generate_time_safe
 #endif
 ]])],
   [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
