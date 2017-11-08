@@ -5299,7 +5299,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     Test the send() implementation of socket.sendfile().
     """
 
-    FILESIZE = (10 * 1024 * 1024)  # 10MB
+    FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
     TIMEOUT = 2
