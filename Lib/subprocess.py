@@ -994,7 +994,12 @@ class Popen(object):
             assert not pass_fds, "pass_fds not supported on Windows."
 
             if not isinstance(args, str):
-                args = list2cmdline(args)
+                try:
+                    args = os.fsdecode(args)
+                except TypeError:
+                    args = list(args)
+                    args[0] = os.fsdecode(args[0])
+                    args = list2cmdline(args)
 
             # Process startup details
             if startupinfo is None:

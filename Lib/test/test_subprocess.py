@@ -230,31 +230,6 @@ class ProcessTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(rc, 1)
 
-    def test_run_with_pathlike_path(self):
-        # bpo-31961: test run(pathlike_object)
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exit fast
-                return 'dir' if mswindows else 'ls'
-
-        path = Path()
-        res = subprocess.run(path, check=True)
-        self.assertEqual(res.returncode, 0)
-
-    def test_run_with_pathlike_path_with_arguments(self):
-        # bpo-31961: test run([pathlike_object, 'additional arguments'])
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exits fast
-                return 'dir' if mswindows else 'ls'
-
-        path = Path()
-        args = [path, '/AD' if mswindows else '-l']
-        res = subprocess.run(args, check=True)
-        self.assertEqual(res.returncode, 0)
-
     def test_invalid_args(self):
         # Popen() called with invalid arguments should raise TypeError
         # but Popen.__del__ should not complain (issue #12085)
@@ -1500,6 +1475,39 @@ class RunFuncTestCase(BaseTestCase):
                       'sys.exit(33 if os.getenv("FRUIT")=="banana" else 31)'),
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
+
+    def test_run_with_pathlike_path(self):
+        # bpo-31961: test run(pathlike_object)
+        class Path:
+            def __fspath__(self):
+                # the name of a command that can be run without
+                # any argumenets that exit fast
+                return 'dir' if mswindows else 'ls'
+
+        path = Path()
+        if mswindows:
+            res = subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
+        else:
+            res = subprocess.run(path, stdout=subprocess.DEVNULL)
+
+        self.assertEqual(res.returncode, 0)
+
+    def test_run_with_pathlike_path_and_arguments(self):
+        # bpo-31961: test run([pathlike_object, 'additional arguments'])
+        class Path:
+            def __fspath__(self):
+                # the name of a command that can be run without
+                # any argumenets that exits fast
+                return 'dir' if mswindows else 'ls'
+
+        path = Path()
+        args = [path, '/AD' if mswindows else '-l']
+        if mswindows:
+            res = subprocess.run(args, stdout=subprocess.DEVNULL, shell=True)
+        else:
+            res = subprocess.run(args, stdout=subprocess.DEVNULL)
+
+        self.assertEqual(res.returncode, 0)
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
