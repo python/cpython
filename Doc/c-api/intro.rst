@@ -106,6 +106,8 @@ complete listing.
    all possible values are covered in ``case`` statements.  Use this in places
    where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
 
+   .. versionadded:: 3.7
+
 .. c:macro:: Py_ABS(x)
 
    Return the absolute value of ``x``.
