@@ -102,7 +102,7 @@ def _resolve(name):
     return found
 
 def _strip_spaces(alist):
-    return map(lambda x: x.strip(), alist)
+    return map(str.strip, alist)
 
 def _create_formatters(cp):
     """Create and return formatters"""
