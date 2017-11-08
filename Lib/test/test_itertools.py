@@ -1491,6 +1491,8 @@ class RegressionTests(unittest.TestCase):
                 if K.i == 1:
                     next(g, None)
                 return True
+            def __hash__(self):
+                return 1
         g = next(groupby(range(10), K))[1]
         for j in range(2):
             next(g, None)  # shouldn't crash
