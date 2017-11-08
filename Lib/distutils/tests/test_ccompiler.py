@@ -24,26 +24,26 @@ class FakeCompiler(object):
 
 class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
 
-    def test_set_executables_unicode(self):
+    def test_set_executables(self):
         class MyCCompiler(CCompiler):
-            executables = {'compiler':'', 'compiler_cxx':'', 'linker':''}
+            executables = {'compiler': '', 'compiler_cx': '', 'linker': ''}
 
         compiler = MyCCompiler()
 
         # set executable as list
-        compiler.set_executables(compiler = ['/usr/bin/env', 'OMPI_MPICC=clang', '/usr/bin/mpicc.openmpi'])
+        compiler.set_executables(compiler=['env', 'OMPI_MPICC=clang', 'mpicc'])
         self.assertEqual(len(compiler.executables['compiler']), 3)
-        self.assertEqual(len(compiler.executables['compiler'][2]), '/usr/bin/mpicc.openmpi')
+        self.assertEqual(len(compiler.executables['compiler'][2]), 'mpicc')
 
         # set executable as string
-        compiler.set_executables(compiler_cxx = '/usr/bin/env OMPI_MPICXX=clang++ /usr/bin/mpicxx.openmpi')
+        compiler.set_executables(compiler_cxx='env OMPI_MPICXX=clang++ mpicx')
         self.assertEqual(len(compiler.executables['compiler_cxx']), 3)
-        self.assertEqual(len(compiler.executables['compiler_cxx'][2]), '/usr/bin/mpicxx.openmpi')
+        self.assertEqual(len(compiler.executables['compiler_cxx'][2]), 'mpicx')
 
         # set executable as unicode string
-        compiler.set_executables(linker = u'/usr/bin/env OMPI_MPICXX=clang++ /usr/bin/mpicxx.openmpi')
+        compiler.set_executables(linker=u'env OMPI_MPICXX=clang++ mpicxx')
         self.assertEqual(len(compiler.executables['linker']), 3)
-        self.assertEqual(len(compiler.executables['linker'][2]), '/usr/bin/mpicxx.openmpi')
+        self.assertEqual(len(compiler.executables['linker'][2]), 'mpicxx')
 
     def test_gen_lib_options(self):
         compiler = FakeCompiler()
