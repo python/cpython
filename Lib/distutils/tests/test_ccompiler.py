@@ -43,7 +43,7 @@ class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
         # set executable as unicode string
         compiler.set_executables(linker=u'env OMPI_MPICXX=clang++ mpicxx')
         self.assertEqual(len(compiler.executables['linker']), 3)
-        self.assertEqual(len(compiler.executables['linker'][2]), 'mpicxx')
+        self.assertEqual(len(compiler.executables['linker'][2]), u'mpicxx')
 
     def test_gen_lib_options(self):
         compiler = FakeCompiler()
