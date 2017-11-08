@@ -308,7 +308,7 @@ class GzipFile(_compression.BaseStream):
             if self.mode == WRITE:
                 fileobj.write(self.compress.flush())
                 write32u(fileobj, self.crc)
-                # self.size may exceed 2GB, or even 4GB
+                # self.size may exceed 2 GiB, or even 4 GiB
                 write32u(fileobj, self.size & 0xffffffff)
             elif self.mode == READ:
                 self._buffer.close()

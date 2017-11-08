@@ -779,12 +779,12 @@ class Bz2DetectReadTest(Bz2Test, DetectReadTest):
     def test_detect_stream_bz2(self):
         # Originally, tarfile's stream detection looked for the string
         # "BZh91" at the start of the file. This is incorrect because
-        # the '9' represents the blocksize (900kB). If the file was
+        # the '9' represents the blocksize (900,000 bytes). If the file was
         # compressed using another blocksize autodetection fails.
         with open(tarname, "rb") as fobj:
             data = fobj.read()
 
-        # Compress with blocksize 100kB, the file starts with "BZh11".
+        # Compress with blocksize 100,000 bytes, the file starts with "BZh11".
         with bz2.BZ2File(tmpname, "wb", compresslevel=1) as fobj:
             fobj.write(data)
 

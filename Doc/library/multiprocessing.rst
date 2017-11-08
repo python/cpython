@@ -1034,7 +1034,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
       Send an object to the other end of the connection which should be read
       using :meth:`recv`.
 
-      The object must be picklable.  Very large pickles (approximately 32 MB+,
+      The object must be picklable.  Very large pickles (approximately 32 MiB+,
       though it depends on the OS) may raise a :exc:`ValueError` exception.
 
    .. method:: recv()
@@ -1071,7 +1071,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
 
       If *offset* is given then data is read from that position in *buffer*.  If
       *size* is given then that many bytes will be read from buffer.  Very large
-      buffers (approximately 32 MB+, though it depends on the OS) may raise a
+      buffers (approximately 32 MiB+, though it depends on the OS) may raise a
       :exc:`ValueError` exception
 
    .. method:: recv_bytes([maxlength])

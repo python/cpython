@@ -4221,7 +4221,7 @@ class TestIgnoreEINTR(unittest.TestCase):
         conn.send('ready')
         x = conn.recv()
         conn.send(x)
-        conn.send_bytes(b'x'*(1024*1024))   # sending 1 MB should block
+        conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):

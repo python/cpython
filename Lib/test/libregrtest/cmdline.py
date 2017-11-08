@@ -96,7 +96,7 @@ resources to test.  Currently only the following are defined:
 
     largefile - It is okay to run some test that may create huge
                 files.  These tests can take a long time and may
-                consume >2GB of disk space temporarily.
+                consume >2 GiB of disk space temporarily.
 
     network -   It is okay to run tests that use external network
                 resource, e.g. testing SSL support for sockets.

@@ -72,7 +72,7 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
 
 
-# Issue #10276 - check that inputs >=4GB are handled correctly.
+# Issue #10276 - check that inputs >=4 GiB are handled correctly.
 class ChecksumBigBufferTestCase(unittest.TestCase):
 
     @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
@@ -130,7 +130,7 @@ class ExceptionTestCase(unittest.TestCase):
 class BaseCompressTestCase(object):
     def check_big_compress_buffer(self, size, compress_func):
         _1M = 1024 * 1024
-        # Generate 10MB worth of random, and expand it by repeating it.
+        # Generate 10 MiB worth of random, and expand it by repeating it.
         # The assumption is that zlib's memory is not big enough to exploit
         # such spread out redundancy.
         data = b''.join([random.getrandbits(8 * _1M).to_bytes(_1M, 'little')

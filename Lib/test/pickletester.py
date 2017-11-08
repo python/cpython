@@ -2276,7 +2276,7 @@ class AbstractPickleTests(unittest.TestCase):
 
 class BigmemPickleTests(unittest.TestCase):
 
-    # Binary protocols can serialize longs of up to 2GB-1
+    # Binary protocols can serialize longs of up to 2 GiB-1
 
     @bigmemtest(size=_2G, memuse=3.6, dry_run=False)
     def test_huge_long_32b(self, size):
@@ -2291,7 +2291,7 @@ class BigmemPickleTests(unittest.TestCase):
         finally:
             data = None
 
-    # Protocol 3 can serialize up to 4GB-1 as a bytes object
+    # Protocol 3 can serialize up to 4 GiB-1 as a bytes object
     # (older protocols don't have a dedicated opcode for bytes and are
     # too inefficient)
 

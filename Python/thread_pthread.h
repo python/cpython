@@ -35,7 +35,7 @@
 #define THREAD_STACK_SIZE       0x400000
 #endif
 /* for safety, ensure a viable minimum stacksize */
-#define THREAD_STACK_MIN        0x8000  /* 32kB */
+#define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
 #ifdef THREAD_STACK_SIZE
 #error "THREAD_STACK_SIZE defined but _POSIX_THREAD_ATTR_STACKSIZE undefined"

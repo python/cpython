@@ -777,7 +777,7 @@ class LargeMmapTests(unittest.TestCase):
             with mmap.mmap(f.fileno(), 0x10000, access=mmap.ACCESS_READ) as m:
                 self.assertEqual(m.size(), 0x180000000)
 
-    # Issue 11277: mmap() with large (~4GB) sparse files crashes on OS X.
+    # Issue 11277: mmap() with large (~4 GiB) sparse files crashes on OS X.
 
     def _test_around_boundary(self, boundary):
         tail = b'  DEARdear  '
