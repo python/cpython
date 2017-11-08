@@ -1498,16 +1498,17 @@ class RunFuncTestCase(BaseTestCase):
             def __fspath__(self):
                 # the name of a command that can be run without
                 # any argumenets that exits fast
-                return 'dir' if mswindows else 'ls'
+                return sys.executable
 
         path = Path()
-        args = [path, '/AD' if mswindows else '-l']
-        if mswindows:
-            res = subprocess.run(args, stdout=subprocess.DEVNULL, shell=True)
-        else:
-            res = subprocess.run(args, stdout=subprocess.DEVNULL)
+        args = [path, '-c', 'import sys; sys.exit(57)']
 
-        self.assertEqual(res.returncode, 0)
+        if mswindows:
+            res = subprocess.run(args)
+        else:
+            res = subprocess.run(args)
+
+        self.assertEqual(res.returncode, 57)
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
