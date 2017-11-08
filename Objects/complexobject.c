@@ -914,10 +914,9 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
         if (s_buffer == NULL) {
             return NULL;
         }
+        assert(PyUnicode_IS_ASCII(s_buffer));
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        if (s == NULL) {
-            goto exit;
-        }
+        assert(s != NULL);
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -928,7 +927,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 
     result = _Py_string_to_number_with_underscores(s, len, "complex", v, type,
                                                    complex_from_string_inner);
-  exit:
     Py_DECREF(s_buffer);
     return result;
 }
