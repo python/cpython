@@ -123,7 +123,7 @@ them in various ways.
 The file :mod:`cProfile` can also be invoked as a script to profile another
 script.  For example::
 
-   python -m cProfile [-o output_file] [-s sort_order] [-m module] myscript.py
+   python -m cProfile [-o output_file] [-s sort_order] (-m module | myscript.py)
 
 ``-o`` writes the profile results to a file instead of to stdout
 
@@ -131,6 +131,8 @@ script.  For example::
 the output by. This only applies when ``-o`` is not supplied.
 
 ``-m`` specifies that a module is being profiled instead of a script.
+
+   .. versionadded:: 3.7
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::

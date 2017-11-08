@@ -145,9 +145,9 @@ def main():
 
     if len(args) > 0:
         if options.module:
-            code = "runpy.run_module(modname, run_name='__main__')"
+            code = "run_module(modname, run_name='__main__')"
             globs = {
-                'runpy': runpy,
+                'run_module': runpy.run_module,
                 'modname': args[0]
             }
         else:
