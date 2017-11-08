@@ -177,6 +177,9 @@ class RegressionTests(unittest.TestCase):
             pass
         except:
             self.fail("should have raised ProgrammingError")
+        with self.assertRaisesRegexp(sqlite.ProgrammingError,
+                                     r'^Base Cursor\.__init__ not called\.$'):
+            cur.close()
 
     def CheckConnectionConstructorCallCheck(self):
         """
