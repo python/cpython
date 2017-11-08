@@ -816,7 +816,7 @@ on Windows.
 
 
 Windows Constants
-^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 The :mod:`subprocess` module exposes the following constants.
 
