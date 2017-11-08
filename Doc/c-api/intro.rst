@@ -112,22 +112,32 @@ complete listing.
 
    Return the absolute value of ``x``.
 
+   .. versionadded:: 3.3
+
 .. c:macro:: Py_MIN(x, y)
 
    Return the minimum value between ``x`` and ``y``.
 
+   .. versionadded:: 3.3
+
 .. c:macro:: Py_MAX(x, y)
 
    Return the maximum value between ``x`` and ``y``.
+
+   .. versionadded:: 3.3
 
 .. c:macro:: Py_STRINGIFY(x)
 
    Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
    ``"123"``.
 
+   .. versionadded:: 3.4
+
 .. c:macro:: Py_MEMBER_SIZE(type, member)
 
    Return the size of a structure (``type``) ``member`` in bytes.
+
+   .. versionadded:: 3.6
 
 .. c:macro:: Py_CHARMASK(c)
 
