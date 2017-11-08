@@ -171,7 +171,7 @@ class FileTests(unittest.TestCase):
         with open(support.TESTFN, "rb") as fp:
             data = os.read(fp.fileno(), size)
 
-        # The test does not try to read more than 2 GB at once because the
+        # The test does not try to read more than 2 GiB at once because the
         # operating system is free to return less bytes than requested.
         self.assertEqual(data, b'test')
 
@@ -2573,7 +2573,7 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
 class TestSendfile(unittest.TestCase):
 
-    DATA = b"12345abcde" * 16 * 1024  # 160 KB
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
     SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
                                not sys.platform.startswith("solaris") and \
                                not sys.platform.startswith("sunos")

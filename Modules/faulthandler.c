@@ -14,8 +14,8 @@
 #  include <sys/resource.h>
 #endif
 
-/* Allocate at maximum 100 MB of the stack to raise the stack overflow */
-#define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
+/* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
+#define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
 
 #define FAULTHANDLER_LATER
 
