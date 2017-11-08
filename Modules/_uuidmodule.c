@@ -4,17 +4,10 @@
 #include <uuid/uuid.h>
 
 
-/* bpo-11063: libuuid on macOS doesn't provide uuid_generate_time_safe(),
-   only uuid_generate_time(). */
-#ifndef __APPLE__
-#  define HAVE_TIME_SAFE
-#endif
-
-
 static PyObject *
 py_uuid_generate_time_safe(void)
 {
-#ifdef HAVE_TIME_SAFE
+#ifdef HAVE_UUID_GENERATE_TIME_SAFE
     uuid_t out;
     int res;
 
@@ -45,7 +38,7 @@ PyInit__uuid(void)
 {
     PyObject *mod;
     assert(sizeof(uuid_t) == 16);
-#ifdef HAVE_TIME_SAFE
+#ifdef HAVE_UUID_GENERATE_TIME_SAFE
     int has_uuid_generate_time_safe = 1;
 #else
     int has_uuid_generate_time_safe = 0;
