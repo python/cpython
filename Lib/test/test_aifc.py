@@ -7,6 +7,7 @@ import io
 import sys
 import struct
 import aifc
+import warnings
 
 
 class AifcTest(audiotests.AudioWriteTests,
@@ -145,6 +146,20 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
 
 
 class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
+
+    @mock.patch("aifc.open")
+    def test_openfp_deprecated(self, mock_open):
+        arg = "arg"
+        mode = "mode"
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            aifc.openfp(arg, mode=mode)
+
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
+
+        mock_open.assert_called_with(arg, mode=mode)
+
     def test_skipunknown(self):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.

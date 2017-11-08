@@ -1,0 +1,4 @@
+Formally deprecated aifc.openfp. Since change
+7bc817d5ba917528e8bd07ec461c635291e7b06a in 1993, this had been pointing to
+aifc.open as a matter of backwards compatibility, though it had been both
+untested and undocumented.
