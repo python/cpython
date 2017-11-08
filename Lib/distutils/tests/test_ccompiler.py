@@ -26,7 +26,7 @@ class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_set_executables(self):
         class MyCCompiler(CCompiler):
-            executables = {'compiler': '', 'compiler_cx': '', 'linker': ''}
+            executables = {'compiler': '', 'compiler_cxx': '', 'linker': ''}
 
         compiler = MyCCompiler()
 
@@ -36,9 +36,9 @@ class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertEqual(compiler.compiler[2], 'mpicc')
 
         # set executable as string
-        compiler.set_executables(compiler_cxx='env OMPI_MPICXX=clang++ mpicx')
+        compiler.set_executables(compiler_cxx='env OMPI_MPICXX=clang++ mpicxx')
         self.assertEqual(len(compiler.compiler_cxx), 3)
-        self.assertEqual(compiler.compiler_cxx[2], 'mpicx')
+        self.assertEqual(compiler.compiler_cxx[2], 'mpicxx')
 
         # set executable as unicode string
         compiler.set_executables(linker=u'env OMPI_MPICXX=clang++ mpicxx')
