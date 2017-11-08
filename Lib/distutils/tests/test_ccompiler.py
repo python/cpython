@@ -32,18 +32,18 @@ class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
 
         # set executable as list
         compiler.set_executables(compiler=['env', 'OMPI_MPICC=clang', 'mpicc'])
-        self.assertEqual(len(compiler.executables['compiler']), 3)
-        self.assertEqual(len(compiler.executables['compiler'][2]), 'mpicc')
+        self.assertEqual(len(compiler.compiler), 3)
+        self.assertEqual(compiler.compiler[2], 'mpicc')
 
         # set executable as string
         compiler.set_executables(compiler_cxx='env OMPI_MPICXX=clang++ mpicx')
-        self.assertEqual(len(compiler.executables['compiler_cxx']), 3)
-        self.assertEqual(len(compiler.executables['compiler_cxx'][2]), 'mpicx')
+        self.assertEqual(len(compiler.compiler_cxx), 3)
+        self.assertEqual(compiler.compiler_cxx[2], 'mpicx')
 
         # set executable as unicode string
         compiler.set_executables(linker=u'env OMPI_MPICXX=clang++ mpicxx')
-        self.assertEqual(len(compiler.executables['linker']), 3)
-        self.assertEqual(len(compiler.executables['linker'][2]), u'mpicxx')
+        self.assertEqual(len(compiler.linker), 3)
+        self.assertEqual(compiler.linker[2], u'mpicxx')
 
     def test_gen_lib_options(self):
         compiler = FakeCompiler()
