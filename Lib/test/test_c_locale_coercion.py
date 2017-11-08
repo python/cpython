@@ -6,7 +6,6 @@ import os
 import sys
 import sysconfig
 import shutil
-import subprocess
 from collections import namedtuple
 
 import test.support
@@ -21,6 +20,8 @@ from test.support.script_helper import (
 # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
 if sys.platform.startswith("aix"):
     C_LOCALE_STREAM_ENCODING = "iso8859-1"
+elif test.support.is_android:
+    C_LOCALE_STREAM_ENCODING = "utf-8"
 else:
     C_LOCALE_STREAM_ENCODING = "ascii"
 
@@ -143,12 +144,15 @@ class EncodingDetails(_EncodingDetails):
 
 
 # Details of the shared library warning emitted at runtime
-LEGACY_LOCALE_WARNING = (
+if test.support.is_android:
+    LEGACY_LOCALE_WARNING = None
+else:
+    LEGACY_LOCALE_WARNING = (
     "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
     "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
     "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
     "locales is recommended."
-)
+    )
 
 # Details of the CLI locale coercion warning emitted at runtime
 CLI_COERCION_WARNING_FMT = (
@@ -207,7 +211,7 @@ class _LocaleHandlingTestCase(unittest.TestCase):
             env_vars
         )
         self.assertEqual(encoding_details, expected_details)
-        if expected_warnings is None:
+        if expected_warnings in (None, [None]):
             expected_warnings = []
         self.assertEqual(stderr_lines, expected_warnings)
 

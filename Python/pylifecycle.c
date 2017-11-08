@@ -503,7 +503,8 @@ _Py_CoerceLegacyLocale(void)
                 const char *new_locale = setlocale(LC_CTYPE,
                                                    target->locale_name);
                 if (new_locale != NULL) {
-#if !defined(__APPLE__) && defined(HAVE_LANGINFO_H) && defined(CODESET)
+#if !defined(__APPLE__) && !defined(__ANDROID__) && \
+    defined(HAVE_LANGINFO_H) && defined(CODESET)
                     /* Also ensure that nl_langinfo works in this locale */
                     char *codeset = nl_langinfo(CODESET);
                     if (!codeset || *codeset == '\0') {
