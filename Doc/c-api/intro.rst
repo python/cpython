@@ -149,6 +149,13 @@ complete listing.
    Like ``getenv(s)``, but returns *NULL* if :option:`-E` was passed on the
    command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
 
+.. c:macro:: Py_UNUSED(arg)
+
+   Use this for unused arguments in a function definition to silence compiler
+   warnings, e.g. ``PyObject* func(PyObject *Py_UNUSED(ignored))``.
+
+   .. versionadded:: 3.4
+
 
 .. _api-objects:
 
