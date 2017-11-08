@@ -9522,8 +9522,7 @@ main ()
 {
 
 #ifndef uuid_generate_time_safe
-uuid_t out;
-uuid_generate_time_safe(out);
+void *x = uuid_generate_time_safe
 #endif
 
   ;
