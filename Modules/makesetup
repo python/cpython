@@ -133,7 +133,11 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 
 		# Output DEFS in reverse order so first definition overrides
 		case $line in
-		*=*)	DEFS="$line$NL$DEFS"; continue;;
+		*=*)    if [ $(sed -e 's$::=\|:=\|+=\|?=$=$' -e 's$\s*=.*$$' <<< $line | wc -w) == 1 ] 
+			then 
+				DEFS="$line$NL$DEFS"; continue;
+			fi
+			;;
 		'include '*)	DEFS="$line$NL$DEFS"; continue;;
 		'*noobjects*')
 			case $noobjects in
