@@ -190,7 +190,7 @@ def _install_loggers(cp, handlers, disable_existing):
     # configure the root first
     llist = cp["loggers"]["keys"]
     llist = llist.split(",")
-    llist = list(map(lambda x: x.strip(), llist))
+    llist = list(_strip_spaces(llist))
     llist.remove("root")
     section = cp["logger_root"]
     root = logging.root
