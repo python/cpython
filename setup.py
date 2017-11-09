@@ -882,13 +882,13 @@ class PyBuildExt(build_ext):
         ssl_libs = find_library_file(self.compiler, lib_find, lib_dirs, lib_paths )
         if (ssl_incs is not None and
                 ssl_libs is not None):
-                exts.append( Extension('_ssl', ['_ssl.c'],
-                                   include_dirs = ssl_incs,
-                                   library_dirs = ssl_libs,
-                                   libraries = libs_add,
-                                   depends = ['socketmodule.h']), )
+            exts.append( Extension('_ssl', ['_ssl.c'],
+                               include_dirs = ssl_incs,
+                               library_dirs = ssl_libs,
+                               libraries = libs_add,
+                               depends = ['socketmodule.h']), )
         else:
-                missing.append('_ssl')
+            missing.append('_ssl')
 
         # find out which version of OpenSSL we have
         openssl_ver = 0
