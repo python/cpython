@@ -9,7 +9,10 @@ from test.support.script_helper import assert_python_ok
 
 import contextlib
 import itertools
+import logging
+from logging.handlers import QueueHandler
 import os
+import queue
 import sys
 import threading
 import time
@@ -61,7 +64,12 @@ def init(x):
 def get_init_status():
     return INITIALIZER_STATUS
 
-def init_fail():
+def init_fail(log_queue=None):
+    if log_queue is not None:
+        logger = logging.getLogger('concurrent.futures')
+        logger.addHandler(QueueHandler(log_queue))
+        logger.setLevel('CRITICAL')
+        logger.propagate = False
     time.sleep(0.1)  # let some futures be scheduled
     raise ValueError('error in initializer')
 
@@ -206,7 +214,18 @@ class FailingInitializerMixin(ExecutorMixin):
     worker_count = 2
 
     def setUp(self):
-        self.executor_kwargs = dict(initializer=init_fail)
+        if hasattr(self, "ctx"):
+            # Pass a queue to redirect the child's logging output
+            self.mp_context = get_context(self.ctx)
+            self.log_queue = self.mp_context.Queue()
+            self.executor_kwargs = dict(initializer=init_fail,
+                                        initargs=(self.log_queue,))
+        else:
+            # In a thread pool, the child shares our logging setup
+            # (see _assert_logged())
+            self.mp_context = None
+            self.log_queue = None
+            self.executor_kwargs = dict(initializer=init_fail)
         super().setUp()
 
     def test_initializer(self):
@@ -234,14 +253,20 @@ class FailingInitializerMixin(ExecutorMixin):
 
     @contextlib.contextmanager
     def _assert_logged(self, msg):
-        if self.executor_type is futures.ProcessPoolExecutor:
-            # No easy way to catch the child processes' stderr
+        if self.log_queue is not None:
             yield
+            output = []
+            while True:
+                try:
+                    output.append(self.log_queue.get_nowait().getMessage())
+                except queue.Empty:
+                    break
         else:
             with self.assertLogs('concurrent.futures', 'CRITICAL') as cm:
                 yield
-            self.assertTrue(any(msg in line for line in cm.output),
-                            cm.output)
+            output = cm.output
+        self.assertTrue(any(msg in line for line in output),
+                        output)
 
 
 create_executor_tests(InitializerMixin)
