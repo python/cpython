@@ -160,7 +160,7 @@
  */
 #ifdef WITH_MEMORY_LIMITS
 #ifndef SMALL_MEMORY_LIMIT
-#define SMALL_MEMORY_LIMIT      (64 * 1024 * 1024)      /* 64 MB -- more? */
+#define SMALL_MEMORY_LIMIT      (64 * 1024 * 1024)      /* 64 MiB -- more? */
 #endif
 #endif
 
@@ -177,7 +177,7 @@
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#define ARENA_SIZE              (256 << 10)     /* 256KB */
+#define ARENA_SIZE              (256 << 10)     /* 256 KiB */
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
@@ -435,7 +435,7 @@ currently in use isn't on either list.
 */
 
 /* How many arena_objects do we initially allocate?
- * 16 = can allocate 16 arenas = 16 * ARENA_SIZE = 4MB before growing the
+ * 16 = can allocate 16 arenas = 16 * ARENA_SIZE = 4 MiB before growing the
  * `arenas` vector.
  */
 #define INITIAL_ARENA_OBJECTS 16

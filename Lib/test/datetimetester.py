@@ -866,6 +866,46 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
         self.assertRaises(TypeError, divmod, t, 10)
 
+    def test_issue31293(self):
+        # The interpreter shouldn't crash in case a timedelta is divided or
+        # multiplied by a float with a bad as_integer_ratio() method.
+        def get_bad_float(bad_ratio):
+            class BadFloat(float):
+                def as_integer_ratio(self):
+                    return bad_ratio
+            return BadFloat()
+
+        with self.assertRaises(TypeError):
+            timedelta() / get_bad_float(1 << 1000)
+        with self.assertRaises(TypeError):
+            timedelta() * get_bad_float(1 << 1000)
+
+        for bad_ratio in [(), (42, ), (1, 2, 3)]:
+            with self.assertRaises(ValueError):
+                timedelta() / get_bad_float(bad_ratio)
+            with self.assertRaises(ValueError):
+                timedelta() * get_bad_float(bad_ratio)
+
+    def test_issue31752(self):
+        # The interpreter shouldn't crash because divmod() returns negative
+        # remainder.
+        class BadInt(int):
+            def __mul__(self, other):
+                return Prod()
+
+        class Prod:
+            def __radd__(self, other):
+                return Sum()
+
+        class Sum(int):
+            def __divmod__(self, other):
+                # negative remainder
+                return (0, -1)
+
+        timedelta(microseconds=BadInt(1))
+        timedelta(hours=BadInt(1))
+        timedelta(weeks=BadInt(1))
+
 
 #############################################################################
 # date tests
@@ -2107,6 +2147,10 @@ class TestDateTime(TestDate):
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
+        self.assertEqual(
+            strptime("-00:02:01.000003", "%z").utcoffset(),
+            -timedelta(minutes=2, seconds=1, microseconds=3)
+        )
         # Only local timezone and UTC are supported
         for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
                                  (-_time.timezone, _time.tzname[0])):

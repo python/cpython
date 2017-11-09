@@ -283,14 +283,7 @@ msiobj_dealloc(msiobj* msidb)
 {
     MsiCloseHandle(msidb->h);
     msidb->h = 0;
-}
-
-static PyObject*
-msiobj_close(msiobj* msidb, PyObject *args)
-{
-    MsiCloseHandle(msidb->h);
-    msidb->h = 0;
-    Py_RETURN_NONE;
+    PyObject_Del(msidb);
 }
 
 static PyObject*
@@ -339,6 +332,17 @@ msierror(int status)
     if (res != buf)
         free(res);
     return NULL;
+}
+
+static PyObject*
+msidb_close(msiobj* msidb, PyObject *args)
+{
+    int status;
+    if ((status = MsiCloseHandle(msidb->h)) != ERROR_SUCCESS) {
+        return msierror(status);
+    }
+    msidb->h = 0;
+    Py_RETURN_NONE;
 }
 
 /*************************** Record objects **********************/
@@ -900,6 +904,8 @@ static PyMethodDef db_methods[] = {
         PyDoc_STR("Commit() -> None\nWraps MsiDatabaseCommit")},
     { "GetSummaryInformation", (PyCFunction)msidb_getsummaryinformation, METH_VARARGS,
         PyDoc_STR("GetSummaryInformation(updateCount) -> viewobj\nWraps MsiGetSummaryInformation")},
+    { "Close", (PyCFunction)msidb_close, METH_NOARGS,
+        PyDoc_STR("Close() -> None\nWraps MsiCloseHandle")},
     { NULL, NULL }
 };
 

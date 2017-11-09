@@ -2330,13 +2330,10 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 
     if (Py_SIZE(vl) != Py_SIZE(wl) && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the lists differ */
-        PyObject *res;
         if (op == Py_EQ)
-            res = Py_False;
+            Py_RETURN_FALSE;
         else
-            res = Py_True;
-        Py_INCREF(res);
-        return res;
+            Py_RETURN_TRUE;
     }
 
     /* Search for the first index where items are different */
@@ -2351,25 +2348,7 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 
     if (i >= Py_SIZE(vl) || i >= Py_SIZE(wl)) {
         /* No more items to compare -- compare sizes */
-        Py_ssize_t vs = Py_SIZE(vl);
-        Py_ssize_t ws = Py_SIZE(wl);
-        int cmp;
-        PyObject *res;
-        switch (op) {
-        case Py_LT: cmp = vs <  ws; break;
-        case Py_LE: cmp = vs <= ws; break;
-        case Py_EQ: cmp = vs == ws; break;
-        case Py_NE: cmp = vs != ws; break;
-        case Py_GT: cmp = vs >  ws; break;
-        case Py_GE: cmp = vs >= ws; break;
-        default: return NULL; /* cannot happen */
-        }
-        if (cmp)
-            res = Py_True;
-        else
-            res = Py_False;
-        Py_INCREF(res);
-        return res;
+        Py_RETURN_RICHCOMPARE(Py_SIZE(vl), Py_SIZE(wl), op);
     }
 
     /* We have an item that differs -- shortcuts for EQ/NE */

@@ -42,6 +42,7 @@ _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(threading);
 
 #ifdef __cplusplus
 extern "C" {
@@ -216,15 +217,18 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
 
 */
 
-static int
-add_flag(int flag, const char *envs)
+static void
+set_flag(int *flag, const char *envs)
 {
+    /* Helper to set flag variables from environment variables:
+    *   - uses the higher of the two values if they're both set
+    *   - otherwise sets the flag to 1
+    */
     int env = atoi(envs);
-    if (flag < env)
-        flag = env;
-    if (flag < 1)
-        flag = 1;
-    return flag;
+    if (*flag < env)
+        *flag = env;
+    if (*flag < 1)
+        *flag = 1;
 }
 
 static char*
@@ -283,7 +287,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
 {
     PyObject *importlib;
     PyObject *impmod;
-    PyObject *sys_modules;
     PyObject *value;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
@@ -314,11 +317,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     else if (Py_VerboseFlag) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    sys_modules = PyImport_GetModuleDict();
-    if (Py_VerboseFlag) {
-        PySys_FormatStderr("import sys # builtin\n");
-    }
-    if (PyDict_SetItemString(sys_modules, "_imp", impmod) < 0) {
+    if (_PyImport_SetModuleString("_imp", impmod) < 0) {
         Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
     }
 
@@ -616,22 +615,28 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
 #endif
 
     if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
-        Py_DebugFlag = add_flag(Py_DebugFlag, p);
+        set_flag(&Py_DebugFlag, p);
     if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
-        Py_VerboseFlag = add_flag(Py_VerboseFlag, p);
+        set_flag(&Py_VerboseFlag, p);
     if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
-        Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
+        set_flag(&Py_OptimizeFlag, p);
+    if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
+        set_flag(&Py_InspectFlag, p);
     if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
-        Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
+        set_flag(&Py_DontWriteBytecodeFlag, p);
+    if ((p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
+        set_flag(&Py_NoUserSiteDirectory, p);
+    if ((p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
+        set_flag(&Py_UnbufferedStdioFlag, p);
     /* The variable is only tested for existence here;
        _Py_HashRandomization_Init will check its value further. */
     if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
-        Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
+        set_flag(&Py_HashRandomizationFlag, p);
 #ifdef MS_WINDOWS
     if ((p = Py_GETENV("PYTHONLEGACYWINDOWSFSENCODING")) && *p != '\0')
-        Py_LegacyWindowsFSEncodingFlag = add_flag(Py_LegacyWindowsFSEncodingFlag, p);
+        set_flag(&Py_LegacyWindowsFSEncodingFlag, p);
     if ((p = Py_GETENV("PYTHONLEGACYWINDOWSSTDIO")) && *p != '\0')
-        Py_LegacyWindowsStdioFlag = add_flag(Py_LegacyWindowsStdioFlag, p);
+        set_flag(&Py_LegacyWindowsStdioFlag, p);
 #endif
 
     _Py_HashRandomization_Init(&core_config);
@@ -1506,7 +1511,7 @@ create_stdio(PyObject* io,
     PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
     const char* mode;
     const char* newline;
-    PyObject *line_buffering;
+    PyObject *line_buffering, *write_through;
     int buffering, isatty;
     _Py_IDENTIFIER(open);
     _Py_IDENTIFIER(isatty);
@@ -1563,7 +1568,11 @@ create_stdio(PyObject* io,
     Py_DECREF(res);
     if (isatty == -1)
         goto error;
-    if (isatty || Py_UnbufferedStdioFlag)
+    if (Py_UnbufferedStdioFlag)
+        write_through = Py_True;
+    else
+        write_through = Py_False;
+    if (isatty && !Py_UnbufferedStdioFlag)
         line_buffering = Py_True;
     else
         line_buffering = Py_False;
@@ -1582,9 +1591,9 @@ create_stdio(PyObject* io,
     newline = "\n";
 #endif
 
-    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssO",
+    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssOO",
                                     buf, encoding, errors,
-                                    newline, line_buffering);
+                                    newline, line_buffering, write_through);
     Py_CLEAR(buf);
     if (stream == NULL)
         goto error;
@@ -1833,16 +1842,46 @@ _Py_FatalError_PrintExc(int fd)
 
 /* Print fatal error message and abort */
 
+#ifdef MS_WINDOWS
+static void
+fatal_output_debug(const char *msg)
+{
+    /* buffer of 256 bytes allocated on the stack */
+    WCHAR buffer[256 / sizeof(WCHAR)];
+    size_t buflen = Py_ARRAY_LENGTH(buffer) - 1;
+    size_t msglen;
+
+    OutputDebugStringW(L"Fatal Python error: ");
+
+    msglen = strlen(msg);
+    while (msglen) {
+        size_t i;
+
+        if (buflen > msglen) {
+            buflen = msglen;
+        }
+
+        /* Convert the message to wchar_t. This uses a simple one-to-one
+           conversion, assuming that the this error message actually uses
+           ASCII only. If this ceases to be true, we will have to convert. */
+        for (i=0; i < buflen; ++i) {
+            buffer[i] = msg[i];
+        }
+        buffer[i] = L'\0';
+        OutputDebugStringW(buffer);
+
+        msg += buflen;
+        msglen -= buflen;
+    }
+    OutputDebugStringW(L"\n");
+}
+#endif
+
 void
 Py_FatalError(const char *msg)
 {
     const int fd = fileno(stderr);
     static int reentrant = 0;
-#ifdef MS_WINDOWS
-    size_t len;
-    WCHAR* buffer;
-    size_t i;
-#endif
 
     if (reentrant) {
         /* Py_FatalError() caused a second fatal error.
@@ -1856,12 +1895,14 @@ Py_FatalError(const char *msg)
 
     /* Print the exception (if an exception is set) with its traceback,
      * or display the current Python stack. */
-    if (!_Py_FatalError_PrintExc(fd))
+    if (!_Py_FatalError_PrintExc(fd)) {
         _Py_FatalError_DumpTracebacks(fd);
+    }
 
-    /* The main purpose of faulthandler is to display the traceback. We already
-     * did our best to display it. So faulthandler can now be disabled.
-     * (Don't trigger it on abort().) */
+    /* The main purpose of faulthandler is to display the traceback.
+       This function already did its best to display a traceback.
+       Disable faulthandler to prevent writing a second traceback
+       on abort(). */
     _PyFaulthandler_Fini();
 
     /* Check if the current Python thread hold the GIL */
@@ -1871,17 +1912,7 @@ Py_FatalError(const char *msg)
     }
 
 #ifdef MS_WINDOWS
-    len = strlen(msg);
-
-    /* Convert the message to wchar_t. This uses a simple one-to-one
-    conversion, assuming that the this error message actually uses ASCII
-    only. If this ceases to be true, we will have to convert. */
-    buffer = alloca( (len+1) * (sizeof *buffer));
-    for( i=0; i<=len; ++i)
-        buffer[i] = msg[i];
-    OutputDebugStringW(L"Fatal Python error: ");
-    OutputDebugStringW(buffer);
-    OutputDebugStringW(L"\n");
+    fatal_output_debug(msg);
 #endif /* MS_WINDOWS */
 
 exit:
@@ -1920,8 +1951,7 @@ wait_for_thread_shutdown(void)
 {
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyObject *modules = PyImport_GetModuleDict();
-    PyObject *threading = PyMapping_GetItemString(modules, "threading");
+    PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();

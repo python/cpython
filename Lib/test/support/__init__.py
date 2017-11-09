@@ -2060,7 +2060,6 @@ def threading_cleanup(*original_values):
 def reap_threads(func):
     """Use this function when threads are being used.  This will
     ensure that the threads are cleaned up even when the test fails.
-    If threading is unavailable this function does nothing.
     """
     @functools.wraps(func)
     def decorator(*args):
@@ -2105,6 +2104,16 @@ def wait_threads_exit(timeout=60.0):
                 raise AssertionError(msg)
             time.sleep(0.010)
             gc_collect()
+
+
+def join_thread(thread, timeout=30.0):
+    """Join a thread. Raise an AssertionError if the thread is still alive
+    after timeout seconds.
+    """
+    thread.join(timeout)
+    if thread.is_alive():
+        msg = f"failed to join the thread in {timeout:.1f} seconds"
+        raise AssertionError(msg)
 
 
 def reap_children():
@@ -2746,3 +2755,42 @@ def fd_count():
                 msvcrt.CrtSetReportMode(report_type, old_modes[report_type])
 
     return count
+
+
+class SaveSignals:
+    """
+    Save an restore signal handlers.
+
+    This class is only able to save/restore signal handlers registered
+    by the Python signal module: see bpo-13285 for "external" signal
+    handlers.
+    """
+
+    def __init__(self):
+        import signal
+        self.signal = signal
+        self.signals = list(range(1, signal.NSIG))
+        # SIGKILL and SIGSTOP signals cannot be ignored nor caught
+        for signame in ('SIGKILL', 'SIGSTOP'):
+            try:
+                signum = getattr(signal, signame)
+            except AttributeError:
+                continue
+            self.signals.remove(signum)
+        self.handlers = {}
+
+    def save(self):
+        for signum in self.signals:
+            handler = self.signal.getsignal(signum)
+            if handler is None:
+                # getsignal() returns None if a signal handler was not
+                # registered by the Python signal module,
+                # and the handler is not SIG_DFL nor SIG_IGN.
+                #
+                # Ignore the signal: we cannot restore the handler.
+                continue
+            self.handlers[signum] = handler
+
+    def restore(self):
+        for signum, handler in self.handlers.items():
+            self.signal.signal(signum, handler)

@@ -859,6 +859,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if family == 0:
                     raise ValueError('unexpected address family')
                 addr_pairs_info = (((family, proto), (None, None)),)
+            elif hasattr(socket, 'AF_UNIX') and family == socket.AF_UNIX:
+                for addr in (local_addr, remote_addr):
+                    if addr is not None and not isistance(addr, str):
+                        raise TypeError('string is expected')
+                addr_pairs_info = (((family, proto),
+                                    (local_addr, remote_addr)), )
             else:
                 # join address by (family, protocol)
                 addr_infos = collections.OrderedDict()
@@ -1216,6 +1222,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         This is called when an exception occurs and no exception
         handler is set, and can be called by a custom exception
         handler that wants to defer to the default behavior.
+
+        This default handler logs the error message and other
+        context-dependent information.  In debug mode, a truncated
+        stack trace is also appended showing where the given object
+        (e.g. a handle or future or task) was created, if any.
 
         The context parameter has the same meaning as in
         `call_exception_handler()`.
