@@ -184,6 +184,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #ifdef __VXWORKS__
 # include <ipcom_sock2.h>
 # define gethostbyaddr_r  ipcom_gethostbyaddr_r
+# define h_errno  errno
 # include <hostLib.h>
 #endif
 
@@ -531,7 +532,7 @@ set_error(void)
     return PyErr_SetFromErrno(PyExc_OSError);
 }
 
-#ifndef __VXWORKS__
+/*#ifndef __VXWORKS__ */
 static PyObject *
 set_herror(int h_error)
 {
@@ -549,7 +550,7 @@ set_herror(int h_error)
 
     return NULL;
 }
-#endif
+/* #endif */
 
 static PyObject *
 set_gaierror(int error)
@@ -5078,9 +5079,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     if (h == NULL) {
         /* Let's get real error message to return */
-#ifndef __VXWORKS__
         set_herror(h_errno);
-#endif
         return NULL;
     }
 
