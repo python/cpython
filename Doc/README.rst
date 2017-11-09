@@ -21,12 +21,9 @@ tree but are maintained separately and are available from
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
 
-The easiest way to install these tools is to create a virtual environment and
-install the tools into there.
-
-The process itself requires Python 3 and `Sphinx <http://sphinx-doc.org/>`_. As
-long as you have a working Python interpreter available, the rest is handled
-automatically, so you don't have to install Sphinx yourself.
+You could manually create a virtual environment and install them, but there is
+a ``Makefile`` already set up to do this for you, as long as you have a working
+Python 3 interpreter available.
 
 
 Using make
@@ -44,10 +41,10 @@ look for instances of sphinxbuild and blurb installed on your process PATH
 On Windows, we try to emulate the Makefile as closely as possible with a
 ``make.bat`` file.
 
-To use a Python interpreter that's not called ``python``, use the standard
+To use a Python interpreter that's not called ``python3``, use the standard
 way to set Makefile variables, using e.g. ::
 
-   make html PYTHON=python3
+   make html PYTHON=python
 
 On Windows, set the PYTHON environment variable instead.
 
@@ -112,8 +109,8 @@ Without make
 ------------
 
 Install the Sphinx package and its dependencies from PyPI. In this situation,
-you'll have to create a virtual environment manually, and install Sphinx into it.
-Change into the ``Doc`` directory and run ::
+you'll have to create a virtual environment manually, and install Sphinx into
+it. Change into the ``Doc`` directory and run ::
 
    $ python3 -m venv venv
    $ source venv/bin/activate
