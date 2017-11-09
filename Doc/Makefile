@@ -5,9 +5,15 @@
 
 # You can set these variables from the command line.
 PYTHON       = python3
+<<<<<<< HEAD
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
+||||||| merged common ancestors
+SPHINXBUILD  = sphinx-build
+=======
+SPHINXBUILD  = ./venv/bin/sphinx-build
+>>>>>>> 9a3d158180169c92aea2f781194869098e8b1f25
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -39,6 +45,7 @@ help:
 	@echo "  check      to run a check for frequent markup errors"
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
+<<<<<<< HEAD
 build:
 	venv
 	-mkdir -p build
@@ -55,6 +62,11 @@ build:
 		echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
 		exit 1; \
 	fi
+||||||| merged common ancestors
+build:
+=======
+build: venv
+>>>>>>> 9a3d158180169c92aea2f781194869098e8b1f25
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
