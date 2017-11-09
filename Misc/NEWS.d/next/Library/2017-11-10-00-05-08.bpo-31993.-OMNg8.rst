@@ -1,0 +1,3 @@
+The Python-based ``pickle._Pickler`` does no longer allocate temporary
+memory when dumping large ``bytes`` objects. Instead the data is directly
+streamed into the underlying file object.
