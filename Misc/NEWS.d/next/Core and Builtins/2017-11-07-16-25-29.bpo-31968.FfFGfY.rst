@@ -1,0 +1,3 @@
+exec(): fixed overloaded __getitem__ method is not called for load default
+argument in class method definition for dict-iherited object passed as
+globals.
