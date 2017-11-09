@@ -102,8 +102,9 @@ extern "C" {
 #endif
 
 
-#if !defined(PREFIX) || !defined(EXEC_PREFIX) || !defined(VERSION) || !defined(VPATH)
-#error "PREFIX, EXEC_PREFIX, VERSION, and VPATH must be constant defined"
+#if !defined(PREFIX) || !defined(EXEC_PREFIX) || !defined(VERSION) || \
+    !defined(VPATH) || !defined(EXE_SUFFIX)
+#error "PREFIX, EXEC_PREFIX, VERSION, VPATH, and EXE_SUFFIX must be constant defined"
 #endif
 
 #ifndef LANDMARK
@@ -294,6 +295,43 @@ absolutize(wchar_t *path)
     copy_absolute(buffer, path, MAXPATHLEN+1);
     wcscpy(path, buffer);
 }
+
+
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+/* add_exe_suffix requires that progpath be allocated at least
+   MAXPATHLEN + 1 bytes.
+*/
+static void
+add_exe_suffix(wchar_t *progpath)
+{
+    wchar_t *_suffix = Py_DecodeLocale(EXE_SUFFIX, NULL);
+    if (_suffix == NULL) {
+        Py_FatalError("Unable to decode suffix variables in getpath.c: "
+                      "memory error");
+    }
+
+    /* Check for already have an executable suffix */
+    size_t n = wcslen(progpath);
+    size_t s = wcslen(_suffix);
+    if (wcsncasecmp(_suffix, progpath+n-s, s) != 0) {
+        if (n + s > MAXPATHLEN) {
+            Py_FatalError("progpath overflow in getpath.c's add_exe_suffix()");
+        }
+        /* Save original path for revert */
+        wchar_t orig[MAXPATHLEN+1];
+        wcsncpy(orig, progpath, MAXPATHLEN);
+
+        wcsncpy(progpath+n, _suffix, s);
+        progpath[n+s] = '\0';
+
+        if (!isxfile(progpath)) {
+            /* Path that added suffix is invalid */
+            wcsncpy(progpath, orig, MAXPATHLEN);
+        }
+    }
+    PyMem_RawFree(_suffix);
+}
+#endif
 
 
 /* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
@@ -605,6 +643,15 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
     if (program_full_path[0] != SEP && program_full_path[0] != '\0') {
         absolutize(program_full_path);
     }
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+    /* For these platforms it is necessary to ensure that the .exe suffix
+     * is appended to the filename, otherwise there is potential for
+     * sys.executable to return the name of a directory under the same
+     * path (bpo-28441).
+     */
+    if (EXE_SUFFIX[0] != '\0' && program_full_path[0] != '\0')
+        add_exe_suffix(program_full_path);
+#endif
 
     config->program_full_path = _PyMem_RawWcsdup(program_full_path);
     if (config->program_full_path == NULL) {
