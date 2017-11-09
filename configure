@@ -13309,7 +13309,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_char_unsigned" >&5
 $as_echo "$ac_cv_c_char_unsigned" >&6; }
-if test $ac_cv_c_char_unsigned = yes && test "$GCC" != yes; then
+if test $ac_cv_c_char_unsigned = yes && test "$GCC" != yes && test "$ac_sys_system" != "VxWorks"  ; then
   $as_echo "#define __CHAR_UNSIGNED__ 1" >>confdefs.h
 
 fi

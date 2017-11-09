@@ -1463,9 +1463,9 @@ PyInit_mmap(void)
 #endif
 
     setint(dict, "PAGESIZE", (long)my_getpagesize());
-
+#ifndef __VXWORKS__
     setint(dict, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity());
-
+#endif
     setint(dict, "ACCESS_READ", ACCESS_READ);
     setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
     setint(dict, "ACCESS_COPY", ACCESS_COPY);

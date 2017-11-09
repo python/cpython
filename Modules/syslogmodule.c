@@ -54,6 +54,11 @@ Revision history:
 
 #include <syslog.h>
 
+#ifndef LOG_UPTO
+/* all priorities through pri */
+#define LOG_UPTO(pri) ((1 << ((pri)+1)) - 1)
+#endif
+
 /*  only one instance, only one syslog, so globals should be ok  */
 static PyObject *S_ident_o = NULL;                      /*  identifier, held by openlog()  */
 static char S_log_open = 0;

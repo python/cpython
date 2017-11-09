@@ -32,8 +32,12 @@
 #  define BOOL int
 #  define UINT32 uint32_t
 #  define INT32 int32_t
-#  define TRUE 1
-#  define FALSE 0
+#  ifndef TRUE
+#    define TRUE 1
+#  endif
+#  ifndef FALSE
+#    define FALSE 0
+#  endif
 #  define INVALID_HANDLE_VALUE (-1)
 #endif
 
