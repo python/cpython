@@ -282,7 +282,7 @@ class PyBuildExt(build_ext):
                 for item in cppflags:
                     self.announce('ITEM: "%s"' % item )
                     if item.startswith('@'):
-                        args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags + ' '+ item 
+                        args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags + ' ' + item
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
