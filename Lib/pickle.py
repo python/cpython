@@ -216,6 +216,21 @@ class _Framer:
         else:
             return self.file_write(data)
 
+    def write_many(self, *chunks):
+        total_size = sum(len(c) for c in chunks)
+        if self.current_frame and total_size >= self._FRAME_SIZE_TARGET:
+            # Terminate the current frame to write the next frame directly into
+            # the underlying file to skip the unnecessary memory allocations
+            # of a large temporary buffer.
+            self.commit_frame(force=True)
+            write = self.file_write
+            write(FRAME + pack("<Q", total_size))
+        else:
+            write = self.write
+
+        for chunk in chunks:
+            write(chunk)
+
 
 class _Unframer:
 
@@ -379,6 +394,7 @@ class _Pickler:
             raise TypeError("file must have a 'write' attribute")
         self.framer = _Framer(self._file_write)
         self.write = self.framer.write
+        self._write_many = self.framer.write_many
         self.memo = {}
         self.proto = int(protocol)
         self.bin = protocol >= 1
@@ -694,11 +710,11 @@ class _Pickler:
             return
         n = len(obj)
         if n <= 0xff:
-            self.write(SHORT_BINBYTES + pack("<B", n) + obj)
+            self._write_many(SHORT_BINBYTES, pack("<B", n), obj)
         elif n > 0xffffffff and self.proto >= 4:
-            self.write(BINBYTES8 + pack("<Q", n) + obj)
+            self._write_many(BINBYTES8, pack("<Q", n), obj)
         else:
-            self.write(BINBYTES + pack("<I", n) + obj)
+            self._write_many(BINBYTES, pack("<I", n), obj)
         self.memoize(obj)
     dispatch[bytes] = save_bytes
 
@@ -707,11 +723,11 @@ class _Pickler:
             encoded = obj.encode('utf-8', 'surrogatepass')
             n = len(encoded)
             if n <= 0xff and self.proto >= 4:
-                self.write(SHORT_BINUNICODE + pack("<B", n) + encoded)
+                self._write_many(SHORT_BINUNICODE, pack("<B", n), encoded)
             elif n > 0xffffffff and self.proto >= 4:
-                self.write(BINUNICODE8 + pack("<Q", n) + encoded)
+                self._write_many(BINUNICODE8, pack("<Q", n), encoded)
             else:
-                self.write(BINUNICODE + pack("<I", n) + encoded)
+                self._write_many(BINUNICODE, pack("<I", n), encoded)
         else:
             obj = obj.replace("\\", "\\u005c")
             obj = obj.replace("\n", "\\u000a")
