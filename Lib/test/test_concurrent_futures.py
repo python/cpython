@@ -256,11 +256,11 @@ class FailingInitializerMixin(ExecutorMixin):
         if self.log_queue is not None:
             yield
             output = []
-            while True:
-                try:
+            try:
+                while True:
                     output.append(self.log_queue.get_nowait().getMessage())
-                except queue.Empty:
-                    break
+            except queue.Empty:
+                pass
         else:
             with self.assertLogs('concurrent.futures', 'CRITICAL') as cm:
                 yield
