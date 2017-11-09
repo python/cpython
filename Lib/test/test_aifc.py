@@ -145,16 +145,8 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
         frames = byteswap(frames, 2)
 
 
-class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
-
-    @mock.patch("aifc.open")
-    def test_openfp_deprecated(self, mock_open):
-        arg = "arg"
-        mode = "mode"
-        with self.assertWarns(DeprecationWarning):
-            aifc.openfp(arg, mode=mode)
-
-        mock_open.assert_called_with(arg, mode=mode)
+class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
+    module = aifc
 
     def test_skipunknown(self):
         #Issue 2245
