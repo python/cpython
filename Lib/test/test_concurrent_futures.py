@@ -109,18 +109,15 @@ class ExecutorMixin:
         super().setUp()
 
         self.t1 = time.time()
-        try:
-            if hasattr(self, "ctx"):
-                self.executor = self.executor_type(
-                    max_workers=self.worker_count,
-                    mp_context=get_context(self.ctx),
-                    **self.executor_kwargs)
-            else:
-                self.executor = self.executor_type(
-                    max_workers=self.worker_count,
-                    **self.executor_kwargs)
-        except NotImplementedError as e:
-            self.skipTest(str(e))
+        if hasattr(self, "ctx"):
+            self.executor = self.executor_type(
+                max_workers=self.worker_count,
+                mp_context=self.get_context(),
+                **self.executor_kwargs)
+        else:
+            self.executor = self.executor_type(
+                max_workers=self.worker_count,
+                **self.executor_kwargs)
         self._prime_executor()
 
     def tearDown(self):
@@ -133,6 +130,9 @@ class ExecutorMixin:
         self.assertLess(dt, 60, "synchronization issue: test lasted too long")
 
         super().tearDown()
+
+    def get_context(self):
+        return get_context(self.ctx)
 
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the
@@ -151,10 +151,10 @@ class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "fork"
 
-    def setUp(self):
+    def get_context(self):
         if sys.platform == "win32":
             self.skipTest("require unix system")
-        super().setUp()
+        return super().get_context()
 
 
 class ProcessPoolSpawnMixin(ExecutorMixin):
@@ -166,10 +166,10 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "forkserver"
 
-    def setUp(self):
+    def get_context(self):
         if sys.platform == "win32":
             self.skipTest("require unix system")
-        super().setUp()
+        return super().get_context()
 
 
 def create_executor_tests(mixin, bases=(BaseTestCase,),
@@ -216,7 +216,7 @@ class FailingInitializerMixin(ExecutorMixin):
     def setUp(self):
         if hasattr(self, "ctx"):
             # Pass a queue to redirect the child's logging output
-            self.mp_context = get_context(self.ctx)
+            self.mp_context = self.get_context()
             self.log_queue = self.mp_context.Queue()
             self.executor_kwargs = dict(initializer=init_fail,
                                         initargs=(self.log_queue,))
