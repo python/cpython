@@ -28,7 +28,7 @@ only_commits:
     - Modules/
     - Objects/
     - PC/
-    - PCBuild/
+    - PCbuild/
     - Parser/
     - Programs/
     - Python/

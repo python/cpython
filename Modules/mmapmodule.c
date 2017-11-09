@@ -1466,6 +1466,8 @@ PyInit_mmap(void)
 #ifndef __VXWORKS__
     setint(dict, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity());
 #endif
+
+    setint(dict, "ACCESS_DEFAULT", ACCESS_DEFAULT);
     setint(dict, "ACCESS_READ", ACCESS_READ);
     setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
     setint(dict, "ACCESS_COPY", ACCESS_COPY);
