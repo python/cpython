@@ -5,9 +5,15 @@
 
 # You can set these variables from the command line.
 PYTHON       = python3
+<<<<<<< HEAD
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
+||||||| merged common ancestors
+SPHINXBUILD  = sphinx-build
+=======
+SPHINXBUILD  = ./venv/bin/sphinx-build
+>>>>>>> 9a3d158180169c92aea2f781194869098e8b1f25
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -17,7 +23,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PA
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
-	autobuild-dev autobuild-stable venv
+	autobuild-dev autobuild-stable
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -39,7 +45,9 @@ help:
 	@echo "  check      to run a check for frequent markup errors"
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
+<<<<<<< HEAD
 build:
+	venv
 	-mkdir -p build
 # Look first for a Misc/NEWS file (building from a source release tarball
 # or old repo) and use that, otherwise look for a Misc/NEWS.d directory
@@ -54,6 +62,11 @@ build:
 		echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
 		exit 1; \
 	fi
+||||||| merged common ancestors
+build:
+=======
+build: venv
+>>>>>>> 9a3d158180169c92aea2f781194869098e8b1f25
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
@@ -122,9 +135,11 @@ clean:
 	-rm -rf build/* $(VENVDIR)/*
 
 venv:
-	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
-	@echo "The venv has been created in the $(VENVDIR) directory"
+	@if [ "$(SPHINXBUILD)" == "$(VENVDIR)/bin/sphinx-build" ]; then \
+		@echo "The venv has been created in the $(VENVDIR) directory"
+		$(PYTHON) -m venv $(VENVDIR); \
+		$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb; \
+	fi
 
 dist:
 	rm -rf dist
