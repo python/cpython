@@ -870,29 +870,24 @@ class PyBuildExt(build_ext):
             if krb5_h:
                 ssl_incs += krb5_h
         if host_platform == 'vxworks':
-            ssl_libs = find_library_file(self.compiler, 'OPENSSL',lib_dirs, [] )
-            if (ssl_incs is not None and
-                ssl_libs is not None):
-                exts.append( Extension('_ssl', ['_ssl.c'],
-                                   include_dirs = ssl_incs,
-                                   library_dirs = ssl_libs,
-                                   libraries = ['OPENSSL', 'HASH'],
-                                   depends = ['socketmodule.h']), )
-            else:
-                missing.append('_ssl')
+            lib_find = 'OPENSSL'
+            libs_add = ['OPENSSL', 'HASH']
+            lib_paths = []
         else:
-            ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
-                                     ['/usr/local/ssl/lib',
-                                      '/usr/contrib/ssl/lib/'
-                                     ] )
-            if (ssl_incs is not None and
+            lib_find = 'ssl'
+            libs_add = ['ssl', 'crypto']
+            lib_paths = ['/usr/local/ssl/lib',
+                         '/usr/contrib/ssl/lib/'
+                        ]
+        ssl_libs = find_library_file(self.compiler, lib_find, lib_dirs, lib_paths )
+        if (ssl_incs is not None and
                 ssl_libs is not None):
                 exts.append( Extension('_ssl', ['_ssl.c'],
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
-                                   libraries = ['ssl', 'crypto'],
+                                   libraries = libs_add,
                                    depends = ['socketmodule.h']), )
-            else:
+        else:
                 missing.append('_ssl')
 
         # find out which version of OpenSSL we have
@@ -927,18 +922,11 @@ class PyBuildExt(build_ext):
             if have_usable_openssl:
                 # The _hashlib module wraps optimized implementations
                 # of hash functions from the OpenSSL library.
-                if host_platform != 'vxworks':
-                    exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                exts.append( Extension('_hashlib', ['_hashopenssl.c'],
                                        depends = ['hashlib.h'],
                                        include_dirs = ssl_incs,
                                        library_dirs = ssl_libs,
-                                       libraries = ['ssl', 'crypto']) )
-                else :
-                    exts.append( Extension('_hashlib', ['_hashopenssl.c'],
-                                       depends = ['hashlib.h'],
-                                       include_dirs = ssl_incs,
-                                       library_dirs = ssl_libs,
-                                       libraries = ['OPENSSL', 'HASH']) )
+                                       libraries = libs_add) )
             else:
                 print("warning: openssl 0x%08x is too old for _hashlib" %
                       openssl_ver)
