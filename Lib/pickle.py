@@ -228,6 +228,9 @@ class _Framer:
         else:
             write = self.write
 
+        # Be careful to not concatenate the chunks prior to calling 'write' as
+        # some chunks (typically the last of the list) can be very large and we
+        # do not want to allocate a large temporary bytes object.
         for chunk in chunks:
             write(chunk)
 
