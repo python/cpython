@@ -101,14 +101,6 @@ SRE(at)(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 }
 
 LOCAL(int)
-SRE(char_loc_ignore)(SRE_STATE* state, SRE_CODE pattern, SRE_CODE ch)
-{
-    return ch == pattern
-        || (SRE_CODE) state->lower(ch) == pattern
-        || (SRE_CODE) state->upper(ch) == pattern;
-}
-
-LOCAL(int)
 SRE(charset)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
 {
     /* check if character is a member of the given set */
@@ -150,14 +142,14 @@ SRE(charset)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
             set += 2;
             break;
 
-        case SRE_OP_RANGE_IGNORE:
-            /* <RANGE_IGNORE> <lower> <upper> */
+        case SRE_OP_RANGE_UNI_IGNORE:
+            /* <RANGE_UNI_IGNORE> <lower> <upper> */
         {
             SRE_CODE uch;
             /* ch is already lower cased */
             if (set[0] <= ch && ch <= set[1])
                 return ok;
-            uch = state->upper(ch);
+            uch = sre_upper_unicode(ch);
             if (set[0] <= uch && uch <= set[1])
                 return ok;
             set += 2;
@@ -199,11 +191,11 @@ LOCAL(int)
 SRE(charset_loc_ignore)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
 {
     SRE_CODE lo, up;
-    lo = state->lower(ch);
+    lo = sre_lower_locale(ch);
     if (SRE(charset)(state, set, lo))
        return 1;
 
-    up = state->upper(ch);
+    up = sre_upper_locale(ch);
     return up != lo && SRE(charset)(state, set, up);
 }
 
@@ -263,7 +255,15 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
         /* repeated literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT LITERAL_IGNORE %d\n", pattern, ptr, chr));
-        while (ptr < end && (SRE_CODE) state->lower(*ptr) == chr)
+        while (ptr < end && (SRE_CODE) sre_lower_ascii(*ptr) == chr)
+            ptr++;
+        break;
+
+    case SRE_OP_LITERAL_UNI_IGNORE:
+        /* repeated literal */
+        chr = pattern[1];
+        TRACE(("|%p|%p|COUNT LITERAL_UNI_IGNORE %d\n", pattern, ptr, chr));
+        while (ptr < end && (SRE_CODE) sre_lower_unicode(*ptr) == chr)
             ptr++;
         break;
 
@@ -271,7 +271,7 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
         /* repeated literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT LITERAL_LOC_IGNORE %d\n", pattern, ptr, chr));
-        while (ptr < end && SRE(char_loc_ignore)(state, chr, *ptr))
+        while (ptr < end && char_loc_ignore(chr, *ptr))
             ptr++;
         break;
 
@@ -293,7 +293,15 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
         /* repeated non-literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT NOT_LITERAL_IGNORE %d\n", pattern, ptr, chr));
-        while (ptr < end && (SRE_CODE) state->lower(*ptr) != chr)
+        while (ptr < end && (SRE_CODE) sre_lower_ascii(*ptr) != chr)
+            ptr++;
+        break;
+
+    case SRE_OP_NOT_LITERAL_UNI_IGNORE:
+        /* repeated non-literal */
+        chr = pattern[1];
+        TRACE(("|%p|%p|COUNT NOT_LITERAL_UNI_IGNORE %d\n", pattern, ptr, chr));
+        while (ptr < end && (SRE_CODE) sre_lower_unicode(*ptr) != chr)
             ptr++;
         break;
 
@@ -301,7 +309,7 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
         /* repeated non-literal */
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT NOT_LITERAL_LOC_IGNORE %d\n", pattern, ptr, chr));
-        while (ptr < end && !SRE(char_loc_ignore)(state, chr, *ptr))
+        while (ptr < end && !char_loc_ignore(chr, *ptr))
             ptr++;
         break;
 
@@ -687,7 +695,17 @@ entrance:
             TRACE(("|%p|%p|LITERAL_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, ctx->pattern[0]));
             if (ctx->ptr >= end ||
-                state->lower(*ctx->ptr) != *ctx->pattern)
+                sre_lower_ascii(*ctx->ptr) != *ctx->pattern)
+                RETURN_FAILURE;
+            ctx->pattern++;
+            ctx->ptr++;
+            break;
+
+        case SRE_OP_LITERAL_UNI_IGNORE:
+            TRACE(("|%p|%p|LITERAL_UNI_IGNORE %d\n",
+                   ctx->pattern, ctx->ptr, ctx->pattern[0]));
+            if (ctx->ptr >= end ||
+                sre_lower_unicode(*ctx->ptr) != *ctx->pattern)
                 RETURN_FAILURE;
             ctx->pattern++;
             ctx->ptr++;
@@ -697,7 +715,7 @@ entrance:
             TRACE(("|%p|%p|LITERAL_LOC_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, ctx->pattern[0]));
             if (ctx->ptr >= end
-                || !SRE(char_loc_ignore)(state, *ctx->pattern, *ctx->ptr))
+                || !char_loc_ignore(*ctx->pattern, *ctx->ptr))
                 RETURN_FAILURE;
             ctx->pattern++;
             ctx->ptr++;
@@ -707,7 +725,17 @@ entrance:
             TRACE(("|%p|%p|NOT_LITERAL_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, *ctx->pattern));
             if (ctx->ptr >= end ||
-                state->lower(*ctx->ptr) == *ctx->pattern)
+                sre_lower_ascii(*ctx->ptr) == *ctx->pattern)
+                RETURN_FAILURE;
+            ctx->pattern++;
+            ctx->ptr++;
+            break;
+
+        case SRE_OP_NOT_LITERAL_UNI_IGNORE:
+            TRACE(("|%p|%p|NOT_LITERAL_UNI_IGNORE %d\n",
+                   ctx->pattern, ctx->ptr, *ctx->pattern));
+            if (ctx->ptr >= end ||
+                sre_lower_unicode(*ctx->ptr) == *ctx->pattern)
                 RETURN_FAILURE;
             ctx->pattern++;
             ctx->ptr++;
@@ -717,7 +745,7 @@ entrance:
             TRACE(("|%p|%p|NOT_LITERAL_LOC_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, *ctx->pattern));
             if (ctx->ptr >= end
-                || SRE(char_loc_ignore)(state, *ctx->pattern, *ctx->ptr))
+                || char_loc_ignore(*ctx->pattern, *ctx->ptr))
                 RETURN_FAILURE;
             ctx->pattern++;
             ctx->ptr++;
@@ -727,7 +755,17 @@ entrance:
             TRACE(("|%p|%p|IN_IGNORE\n", ctx->pattern, ctx->ptr));
             if (ctx->ptr >= end
                 || !SRE(charset)(state, ctx->pattern+1,
-                                 (SRE_CODE)state->lower(*ctx->ptr)))
+                                 (SRE_CODE)sre_lower_ascii(*ctx->ptr)))
+                RETURN_FAILURE;
+            ctx->pattern += ctx->pattern[0];
+            ctx->ptr++;
+            break;
+
+        case SRE_OP_IN_UNI_IGNORE:
+            TRACE(("|%p|%p|IN_UNI_IGNORE\n", ctx->pattern, ctx->ptr));
+            if (ctx->ptr >= end
+                || !SRE(charset)(state, ctx->pattern+1,
+                                 (SRE_CODE)sre_lower_unicode(*ctx->ptr)))
                 RETURN_FAILURE;
             ctx->pattern += ctx->pattern[0];
             ctx->ptr++;
@@ -1135,7 +1173,59 @@ entrance:
                         RETURN_FAILURE;
                     while (p < e) {
                         if (ctx->ptr >= end ||
-                            state->lower(*ctx->ptr) != state->lower(*p))
+                            sre_lower_ascii(*ctx->ptr) != sre_lower_ascii(*p))
+                            RETURN_FAILURE;
+                        p++;
+                        ctx->ptr++;
+                    }
+                }
+            }
+            ctx->pattern++;
+            break;
+
+        case SRE_OP_GROUPREF_UNI_IGNORE:
+            /* match backreference */
+            TRACE(("|%p|%p|GROUPREF_UNI_IGNORE %d\n", ctx->pattern,
+                   ctx->ptr, ctx->pattern[0]));
+            i = ctx->pattern[0];
+            {
+                Py_ssize_t groupref = i+i;
+                if (groupref >= state->lastmark) {
+                    RETURN_FAILURE;
+                } else {
+                    SRE_CHAR* p = (SRE_CHAR*) state->mark[groupref];
+                    SRE_CHAR* e = (SRE_CHAR*) state->mark[groupref+1];
+                    if (!p || !e || e < p)
+                        RETURN_FAILURE;
+                    while (p < e) {
+                        if (ctx->ptr >= end ||
+                            sre_lower_unicode(*ctx->ptr) != sre_lower_unicode(*p))
+                            RETURN_FAILURE;
+                        p++;
+                        ctx->ptr++;
+                    }
+                }
+            }
+            ctx->pattern++;
+            break;
+
+        case SRE_OP_GROUPREF_LOC_IGNORE:
+            /* match backreference */
+            TRACE(("|%p|%p|GROUPREF_LOC_IGNORE %d\n", ctx->pattern,
+                   ctx->ptr, ctx->pattern[0]));
+            i = ctx->pattern[0];
+            {
+                Py_ssize_t groupref = i+i;
+                if (groupref >= state->lastmark) {
+                    RETURN_FAILURE;
+                } else {
+                    SRE_CHAR* p = (SRE_CHAR*) state->mark[groupref];
+                    SRE_CHAR* e = (SRE_CHAR*) state->mark[groupref+1];
+                    if (!p || !e || e < p)
+                        RETURN_FAILURE;
+                    while (p < e) {
+                        if (ctx->ptr >= end ||
+                            sre_lower_locale(*ctx->ptr) != sre_lower_locale(*p))
                             RETURN_FAILURE;
                         p++;
                         ctx->ptr++;

@@ -1276,10 +1276,10 @@ exception is raised, and the stack size is unmodified.  32k bytes\n\
 sufficient stack space for the interpreter itself.\n\
 \n\
 Note that some platforms may have particular restrictions on values for\n\
-the stack size, such as requiring a minimum stack size larger than 32kB or\n\
+the stack size, such as requiring a minimum stack size larger than 32 KiB or\n\
 requiring allocation in multiples of the system memory page size\n\
 - platform documentation should be referred to for more information\n\
-(4kB pages are common; using multiples of 4096 for the stack size is\n\
+(4 KiB pages are common; using multiples of 4096 for the stack size is\n\
 the suggested approach in the absence of more specific information).");
 
 static PyMethodDef thread_methods[] = {
@@ -1363,9 +1363,11 @@ PyInit__thread(void)
     if (m == NULL)
         return NULL;
 
-    timeout_max = PY_TIMEOUT_MAX / 1000000;
-    time_max = floor(_PyTime_AsSecondsDouble(_PyTime_MAX));
+    timeout_max = (double)PY_TIMEOUT_MAX * 1e-6;
+    time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
+    /* Round towards minus infinity */
+    timeout_max = floor(timeout_max);
 
     v = PyFloat_FromDouble(timeout_max);
     if (!v)

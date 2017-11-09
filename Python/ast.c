@@ -4147,7 +4147,7 @@ decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 
 static int
 warn_invalid_escape_sequence(struct compiling *c, const node *n,
-                             char first_invalid_escape_char)
+                             unsigned char first_invalid_escape_char)
 {
     PyObject *msg = PyUnicode_FromFormat("invalid escape sequence \\%c",
                                          first_invalid_escape_char);
@@ -4287,7 +4287,7 @@ static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
 
    `parent` is the enclosing node.
    `n` is the node which locations are going to be fixed relative to parent.
-   `expr_str` is the child node's string representation, incuding braces.
+   `expr_str` is the child node's string representation, including braces.
 */
 static void
 fstring_fix_node_location(const node *parent, node *n, char *expr_str)

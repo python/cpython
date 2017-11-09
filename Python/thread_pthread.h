@@ -35,7 +35,7 @@
 #define THREAD_STACK_SIZE       0x400000
 #endif
 /* for safety, ensure a viable minimum stacksize */
-#define THREAD_STACK_MIN        0x8000  /* 32kB */
+#define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
 #ifdef THREAD_STACK_SIZE
 #error "THREAD_STACK_SIZE defined but _POSIX_THREAD_ATTR_STACKSIZE undefined"
@@ -318,23 +318,66 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
     struct timespec ts;
+    _PyTime_t deadline = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    if (microseconds > 0)
+    if (microseconds > PY_TIMEOUT_MAX) {
+        Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+    }
+
+    if (microseconds > 0) {
         MICROSECONDS_TO_TIMESPEC(microseconds, ts);
-    do {
-        if (microseconds > 0)
+
+        if (!intr_flag) {
+            /* cannot overflow thanks to (microseconds > PY_TIMEOUT_MAX)
+               check done above */
+            _PyTime_t timeout = _PyTime_FromNanoseconds(microseconds * 1000);
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
+    }
+
+    while (1) {
+        if (microseconds > 0) {
             status = fix_status(sem_timedwait(thelock, &ts));
-        else if (microseconds == 0)
+        }
+        else if (microseconds == 0) {
             status = fix_status(sem_trywait(thelock));
-        else
+        }
+        else {
             status = fix_status(sem_wait(thelock));
+        }
+
         /* Retry if interrupted by a signal, unless the caller wants to be
            notified.  */
-    } while (!intr_flag && status == EINTR);
+        if (intr_flag || status != EINTR) {
+            break;
+        }
+
+        if (microseconds > 0) {
+            /* wait interrupted by a signal (EINTR): recompute the timeout */
+            _PyTime_t dt = deadline - _PyTime_GetMonotonicClock();
+            if (dt < 0) {
+                status = ETIMEDOUT;
+                break;
+            }
+            else if (dt > 0) {
+                _PyTime_t realtime_deadline = _PyTime_GetSystemClock() + dt;
+                if (_PyTime_AsTimespec(realtime_deadline, &ts) < 0) {
+                    /* Cannot occur thanks to (microseconds > PY_TIMEOUT_MAX)
+                       check done above */
+                    Py_UNREACHABLE();
+                }
+                /* no need to update microseconds value, the code only care
+                   if (microseconds > 0 or (microseconds == 0). */
+            }
+            else {
+                microseconds = 0;
+            }
+        }
+    }
 
     /* Don't check the status if we're stopping because of an interrupt.  */
     if (!(intr_flag && status == EINTR)) {

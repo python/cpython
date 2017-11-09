@@ -283,12 +283,13 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
         milliseconds = microseconds / 1000;
         if (microseconds % 1000 > 0)
             ++milliseconds;
-        if ((DWORD) milliseconds != milliseconds)
-            Py_FatalError("Timeout too large for a DWORD, "
-                           "please check PY_TIMEOUT_MAX");
+        if (milliseconds > PY_DWORD_MAX) {
+            Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+        }
     }
-    else
+    else {
         milliseconds = INFINITE;
+    }
 
     dprintf(("%lu: PyThread_acquire_lock_timed(%p, %lld) called\n",
              PyThread_get_thread_ident(), aLock, microseconds));
@@ -322,8 +323,8 @@ PyThread_release_lock(PyThread_type_lock aLock)
 }
 
 /* minimum/maximum thread stack sizes supported */
-#define THREAD_MIN_STACKSIZE    0x8000          /* 32kB */
-#define THREAD_MAX_STACKSIZE    0x10000000      /* 256MB */
+#define THREAD_MIN_STACKSIZE    0x8000          /* 32 KiB */
+#define THREAD_MAX_STACKSIZE    0x10000000      /* 256 MiB */
 
 /* set the thread stack size.
  * Return 0 if size is valid, -1 otherwise.
