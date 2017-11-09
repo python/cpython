@@ -40,6 +40,7 @@ help:
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
+	venv
 	-mkdir -p build
 # Look first for a Misc/NEWS file (building from a source release tarball
 # or old repo) and use that, otherwise look for a Misc/NEWS.d directory
@@ -122,20 +123,11 @@ clean:
 	-rm -rf build/* $(VENVDIR)/*
 
 venv:
-<<<<<<< HEAD
-	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
-	@echo "The venv has been created in the $(VENVDIR) directory"
-||||||| parent of 4b5513c3ea... Only create a venv if SPHINXBUILD option matches the default.
-	$(PYTHON) -m venv venv
-	./venv/bin/python3 -m pip install -U Sphinx
-=======
-	@if [ "$(SPHINXBUILD)" == "./venv/bin/sphinx-build" ]; then \
-		echo "Creating venv and installing Sphinx"; \
-		$(PYTHON) -m venv venv; \
-		./venv/bin/python3 -m pip install -U Sphinx; \
+	@if [ "$(SPHINXBUILD)" == "$(VENVDIR)/bin/sphinx-build" ]; then \
+		@echo "The venv has been created in the $(VENVDIR) directory"
+		$(PYTHON) -m venv $(VENVDIR); \
+		$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb; \
 	fi
->>>>>>> 4b5513c3ea... Only create a venv if SPHINXBUILD option matches the default.
 
 dist:
 	rm -rf dist
