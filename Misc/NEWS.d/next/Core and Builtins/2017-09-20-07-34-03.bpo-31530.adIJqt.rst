@@ -1,0 +1,1 @@
+Prevent crashes when multiple threads iterate of a file at once.
