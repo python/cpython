@@ -183,7 +183,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 
 #ifdef __VXWORKS__
 # include <ipcom_sock2.h>
-# define gethostbyaddr_r( a1, a2, a3, a4, a5, a6, a7 )  ipcom_gethostbyaddr_r( a1, a2, a3, a4, a5, a6, a7 )
+# define gethostbyaddr_r  ipcom_gethostbyaddr_r
 # include <hostLib.h>
 #endif
 
