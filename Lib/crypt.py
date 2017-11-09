@@ -27,9 +27,15 @@ def mksalt(method=None, *, rounds=None):
     """
     if method is None:
         method = methods[0]
+    if rounds is not None and not isinstance(rounds, int):
+        raise TypeError(f'{rounds.__class__.__name__} object cannot be '
+                        f'interpreted as an integer')
     if not method.ident:  # traditional
         s = ''
-    elif method.ident[0] == '2':  # Blowfish variants
+    else:  # modular
+        s = f'${method.ident}$'
+
+    if method.ident and method.ident[0] == '2':  # Blowfish variants
         if rounds is None:
             log_rounds = 12
         else:
@@ -38,14 +44,15 @@ def mksalt(method=None, *, rounds=None):
                 raise ValueError('rounds must be a power of 2')
             if not 4 <= log_rounds <= 31:
                 raise ValueError('rounds out of the range 2**4 to 2**31')
-        s = f'${method.ident}${log_rounds:02d}$'
-    elif method.ident in ('5', '6') and rounds is not None:  # SHA-2
-        range(rounds)  # raise a TypeError for non-integers
-        if not 1000 <= rounds <= 999_999_999:
-            raise ValueError('rounds out of the range 1000 to 999_999_999')
-        s = f'${method.ident}$rounds={rounds}$'
-    else:
-        s = f'${method.ident}$'
+        s += f'{log_rounds:02d}$'
+    elif method.ident in ('5', '6'):  # SHA-2
+        if rounds is not None:
+            if not 1000 <= rounds <= 999_999_999:
+                raise ValueError('rounds out of the range 1000 to 999_999_999')
+            s += f'rounds={rounds}$'
+    elif rounds is not None:
+        raise ValueError(f"{method} doesn't support the rounds argument")
+
     s += ''.join(_sr.choice(_saltchars) for char in range(method.salt_chars))
     return s
 

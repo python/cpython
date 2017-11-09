@@ -58,7 +58,7 @@ class CryptTestCase(unittest.TestCase):
                         'requires support of Blowfish')
     def test_blowfish_rounds(self):
         for log_rounds in range(4, 11):
-            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, rounds=1<<log_rounds)
+            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, rounds=1 << log_rounds)
             self.assertIn('$%02d$' % log_rounds, salt)
             self.assertIn(len(salt) - crypt.METHOD_BLOWFISH.salt_chars, {6, 7})
             cr = crypt.crypt('mypassword', salt)
@@ -78,6 +78,9 @@ class CryptTestCase(unittest.TestCase):
                     crypt.mksalt(method, rounds=rounds)
         with self.assertRaises(ValueError):
             crypt.mksalt(crypt.METHOD_BLOWFISH, rounds=1000)
+        for method in (crypt.METHOD_CRYPT, crypt.METHOD_MD5):
+            with self.assertRaisesRegex(ValueError, 'support'):
+                crypt.mksalt(method, rounds=4096)
 
 
 if __name__ == "__main__":
