@@ -159,6 +159,32 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 564: Add new time functions with nanosecond resolution
+----------------------------------------------------------
+
+Add six new "nanosecond" variants of existing functions to the :mod:`time`
+module:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+While similar to the existing functions without the ``_ns`` suffix, they
+provide nanosecond resolution: they return a number of nanoseconds as a Python
+``int``.
+
+The ``time.time_ns()`` resolution is 3 times better than the ``time.time()``
+resolution on Linux and Windows.
+
+.. seealso::
+
+    :pep:`564` -- Add new time functions with nanosecond resolution
+       PEP written and implemented by Victor Stinner
+
+
 Other Language Changes
 ======================
 
@@ -229,6 +255,12 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+cProfile
+--------
+
+cProfile command line now accepts `-m module_name` as an alternative to
+script path. (Contributed by Sanyam Khurana in :issue:`21862`.)
+
 crypt
 -----
 
@@ -252,6 +284,13 @@ distutils
 README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
+
+http.client
+-----------
+
+Add Configurable *blocksize* to ``HTTPConnection`` and
+``HTTPSConnection`` for improved upload throughput.
+(Contributed by Nir Soffer in :issue:`31945`.)
 
 http.server
 -----------
@@ -295,9 +334,9 @@ to be executed on a process fork.  (Contributed by Antoine Pitrou in
 pdb
 ---
 
-:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+:func:`~pdb.set_trace` now takes an optional *header* keyword-only
 argument.  If given, this is printed to the console just before debugging
-begins.
+begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
 re
 --
@@ -312,6 +351,29 @@ string
 :class:`string.Template` now lets you to optionally modify the regular
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+time
+----
+
+The :pep:`564` added six new functions with nanosecond resolution:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+Add new clock identifiers:
+
+* :data:`time.CLOCK_BOOTTIME` (Linux): Identical to
+  :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
+  system is suspended.
+* :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
+  per-process timer from the CPU.
+* :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
+  the time the system has been running and not suspended, providing accurate
+  uptime measurement, both absolute and interval.
 
 unittest.mock
 -------------
@@ -394,6 +456,10 @@ Optimizations
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+* The :func:`shutil.rmtree` function has been sped up to 20--40%.
+  This was done using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`28564`.)
+
 * Optimized case-insensitive matching and searching of :mod:`regular
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
@@ -442,6 +508,11 @@ Build and C API Changes
   If Python 3.6 is not found on the system (via ``py -3.6``), NuGet is used to
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
+
+* The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+  has been removed as its members being never cleared may cause a segfault
+  during finalization of the interpreter. Contributed by Xavier de Gaye in
+  :issue:`22898` and :issue:`30697`.
 
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
@@ -605,6 +676,11 @@ Changes in the Python API
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
+* Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
+  function, the user specified handler *onerror* is now called with the first
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  is failed.
+
 
 Changes in the C API
 --------------------
@@ -626,6 +702,20 @@ CPython bytecode changes
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
 
+Other CPython implementation changes
+------------------------------------
+
+* In preparation for potential future changes to the public CPython runtime
+  initialization API (see :pep:`432` for details), CPython's internal startup
+  and configuration management logic has been significantly refactored. While
+  these updates are intended to be entirely transparent to both embedding
+  applications and users of the regular CPython CLI, they're being mentioned
+  here as the refactoring changes the internal order of various operations
+  during interpreter startup, and hence may uncover previously latent defects,
+  either in embedding applications, or in CPython itself.
+  (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
+
+
 Documentation
 =============
 
@@ -637,11 +727,11 @@ PEP 545: Python Documentation Translations
 :pep:`545` describes the process to translate Python documentation,
 and two translations have been added:
 
-- Japanese: https://docs.python.org/ja/ and associated github
+- Japanese: https://docs.python.org/ja/ and associated GitHub
   repository: https://github.com/python/python-docs-ja
 
-- French: https://docs.python.org/fr/ and associated github
+- French: https://docs.python.org/fr/ and associated GitHub
   repository: https://github.com/python/python-docs-fr
 
 (Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
-:issue:`issue26546`.)
+:issue:`26546`.)

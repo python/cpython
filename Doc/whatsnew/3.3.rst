@@ -1504,7 +1504,7 @@ argument taking an iterable of handlers to be added to the root logger.
 A class level attribute :attr:`~logging.handlers.SysLogHandler.append_nul` has
 been added to :class:`~logging.handlers.SysLogHandler` to allow control of the
 appending of the ``NUL`` (``\000``) byte to syslog records, since for some
-deamons it is required while for others it is passed through to the log.
+daemons it is required while for others it is passed through to the log.
 
 
 
@@ -2003,7 +2003,7 @@ sys
 ---
 
 The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
-sequence` holding informations about the thread implementation
+sequence` holding information about the thread implementation
 (:issue:`11223`).
 
 
@@ -2040,7 +2040,7 @@ class instance, are now classes and may be subclassed.  (Contributed by Éric
 Araujo in :issue:`10968`.)
 
 The :class:`threading.Thread` constructor now accepts a ``daemon`` keyword
-argument to override the default behavior of inheriting the ``deamon`` flag
+argument to override the default behavior of inheriting the ``daemon`` flag
 value from the parent thread (:issue:`6064`).
 
 The formerly private function ``_thread.get_ident`` is now available as the

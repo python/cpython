@@ -599,8 +599,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
    On POSIX, use fstat().
 
    On Windows, use GetFileType() and GetFileInformationByHandle() which support
-   files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
-   than 2 GB because the file size type is a signed 32-bit integer: see issue
+   files larger than 2 GiB.  fstat() may fail with EOVERFLOW on files larger
+   than 2 GiB because the file size type is a signed 32-bit integer: see issue
    #23152.
 
    On Windows, set the last Windows error and return nonzero on error. On
@@ -665,8 +665,8 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
    On POSIX, use fstat().
 
    On Windows, use GetFileType() and GetFileInformationByHandle() which support
-   files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
-   than 2 GB because the file size type is a signed 32-bit integer: see issue
+   files larger than 2 GiB.  fstat() may fail with EOVERFLOW on files larger
+   than 2 GiB because the file size type is a signed 32-bit integer: see issue
    #23152.
 
    Raise an exception and return -1 on error. On Windows, set the last Windows

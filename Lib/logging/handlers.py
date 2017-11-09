@@ -353,10 +353,10 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 suffix = fileName[plen:]
                 if self.extMatch.match(suffix):
                     result.append(os.path.join(dirName, fileName))
-        result.sort()
         if len(result) < self.backupCount:
             result = []
         else:
+            result.sort()
             result = result[:len(result) - self.backupCount]
         return result
 

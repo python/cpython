@@ -185,7 +185,7 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_gettime(clk_id)
+.. function:: clock_gettime(clk_id) -> float
 
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
@@ -195,7 +195,16 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_settime(clk_id, time)
+.. function:: clock_gettime_ns(clk_id) -> int
+
+   Similar to :func:`clock_gettime` but return time as nanoseconds.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
+
+
+.. function:: clock_settime(clk_id, time: float)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
@@ -203,6 +212,15 @@ Functions
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: clock_settime_ns(clk_id, time: int)
+
+   Similar to :func:`clock_settime` but set time with nanoseconds.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
 
 
 .. function:: ctime([secs])
@@ -267,7 +285,7 @@ Functions
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: monotonic()
+.. function:: monotonic() -> float
 
    Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
@@ -287,7 +305,13 @@ Functions
       The function is now always available.
 
 
-.. function:: perf_counter()
+.. function:: monotonic_ns() -> int
+
+   Similar to :func:`monotonic`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+.. function:: perf_counter() -> float
 
    .. index::
       single: benchmarking
@@ -300,8 +324,14 @@ Functions
 
    .. versionadded:: 3.3
 
+.. function:: perf_counter_ns() -> int
 
-.. function:: process_time()
+   Similar to :func:`perf_counter`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+
+.. function:: process_time() -> float
 
    .. index::
       single: CPU time
@@ -315,6 +345,12 @@ Functions
    of consecutive calls is valid.
 
    .. versionadded:: 3.3
+
+.. function:: process_time_ns() -> int
+
+   Similar to :func:`process_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
 
 .. function:: sleep(secs)
 
@@ -541,7 +577,7 @@ Functions
    :class:`struct_time`, or having elements of the wrong type, a
    :exc:`TypeError` is raised.
 
-.. function:: time()
+.. function:: time() -> float
 
    Return the time in seconds since the epoch_ as a floating point
    number. The specific date of the epoch and the handling of
@@ -566,6 +602,13 @@ Functions
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
 
+
+.. function:: time_ns() -> int
+
+   Similar to :func:`time` but returns time as an integer number of nanoseconds
+   since the epoch_.
+
+   .. versionadded:: 3.7
 
 .. function:: tzset()
 
@@ -663,6 +706,21 @@ Clock ID Constants
 These constants are used as parameters for :func:`clock_getres` and
 :func:`clock_gettime`.
 
+.. data:: CLOCK_BOOTTIME
+
+   Identical to :data:`CLOCK_MONOTONIC`, except it also includes any time that
+   the system is suspended.
+
+   This allows applications to get a suspend-aware monotonic  clock  without
+   having to deal with the complications of :data:`CLOCK_REALTIME`, which may
+   have  discontinuities if the time is changed using ``settimeofday()`` or
+   similar.
+
+   Availability: Linux 2.6.39 or later.
+
+   .. versionadded:: 3.7
+
+
 .. data:: CLOCK_HIGHRES
 
    The Solaris OS has a ``CLOCK_HIGHRES`` timer that attempts to use an optimal
@@ -703,6 +761,15 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.3
 
 
+.. data:: CLOCK_PROF
+
+   High-resolution per-process timer from the CPU.
+
+   Availability: FreeBSD 3 or later, NetBSD 7 or later, OpenBSD.
+
+   .. versionadded:: 3.7
+
+
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
    Thread-specific CPU-time clock.
@@ -710,6 +777,17 @@ These constants are used as parameters for :func:`clock_getres` and
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. data:: CLOCK_UPTIME
+
+   Time whose absolute value is the time the system has been running and not
+   suspended, providing accurate uptime measurement, both absolute and
+   interval.
+
+   Availability: FreeBSD 7 or later, OpenBSD 5.5 or later.
+
+   .. versionadded:: 3.7
 
 
 The following constant is the only parameter that can be sent to
