@@ -1,0 +1,2 @@
+Fixed reading arbitrary data when parse a AF_BLUETOOTH address on NetBSD and
+DragonFly BSD.
