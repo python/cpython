@@ -713,11 +713,11 @@ class _Pickler:
             return
         n = len(obj)
         if n <= 0xff:
-            self._write_many(SHORT_BINBYTES, pack("<B", n), obj)
+            self.write(SHORT_BINBYTES + pack("<B", n) + obj)
         elif n > 0xffffffff and self.proto >= 4:
-            self._write_many(BINBYTES8, pack("<Q", n), obj)
+            self._write_many(BINBYTES8 + pack("<Q", n), obj)
         else:
-            self._write_many(BINBYTES, pack("<I", n), obj)
+            self._write_many(BINBYTES + pack("<I", n), obj)
         self.memoize(obj)
     dispatch[bytes] = save_bytes
 
@@ -726,11 +726,11 @@ class _Pickler:
             encoded = obj.encode('utf-8', 'surrogatepass')
             n = len(encoded)
             if n <= 0xff and self.proto >= 4:
-                self._write_many(SHORT_BINUNICODE, pack("<B", n), encoded)
+                self.write(SHORT_BINUNICODE + pack("<B", n) + encoded)
             elif n > 0xffffffff and self.proto >= 4:
-                self._write_many(BINUNICODE8, pack("<Q", n), encoded)
+                self._write_many(BINUNICODE8 + pack("<Q", n), encoded)
             else:
-                self._write_many(BINUNICODE, pack("<I", n), encoded)
+                self._write_many(BINUNICODE + pack("<I", n), encoded)
         else:
             obj = obj.replace("\\", "\\u005c")
             obj = obj.replace("\n", "\\u000a")
