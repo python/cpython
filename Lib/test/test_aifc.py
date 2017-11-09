@@ -151,12 +151,8 @@ class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
     def test_openfp_deprecated(self, mock_open):
         arg = "arg"
         mode = "mode"
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with self.assertWarns(DeprecationWarning):
             aifc.openfp(arg, mode=mode)
-
-            self.assertTrue(len(w) == 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         mock_open.assert_called_with(arg, mode=mode)
 
