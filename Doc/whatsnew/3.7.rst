@@ -441,8 +441,8 @@ Optimizations
   INADA Naoki in :issue:`26110`.)
 
 * Searching some unlucky Unicode characters (like Ukrainian capital "Є")
-  in a string was to 25 times slower than searching other characters.
-  Now it is slower only by 3 times in worst case.
+  in a string was up to 25 times slower than searching other characters.
+  Now it is slower only by 3 times in the worst case.
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
@@ -463,7 +463,7 @@ Optimizations
 
 * :func:`re.compile` now converts ``flags`` parameter to int object if
   it is ``RegexFlag``.  It is now as fast as Python 3.5, and faster than
-  Python 3.6 about 10% depending on the pattern.
+  Python 3.6 by about 10% depending on the pattern.
   (Contributed by INADA Naoki in :issue:`31671`.)
 
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
