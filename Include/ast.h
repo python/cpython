@@ -15,6 +15,10 @@ PyAPI_FUNC(mod_ty) PyAST_FromNodeObject(
     PyCompilerFlags *flags,
     PyObject *filename,
     PyArena *arena);
+PyAPI_FUNC(PyObject *) PyAST_UnicodeFromAstExpr(
+    expr_ty e,
+    int omit_parens,
+    int omit_string_brackets);
 
 #ifdef __cplusplus
 }
