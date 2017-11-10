@@ -1,0 +1,4 @@
+Formally deprecated aifc.openfp, sunau.openfp, and wave.openfp. Since change
+7bc817d5ba917528e8bd07ec461c635291e7b06a in 1993, openfp in each of the three
+modules had been pointing to that module's open funciton as a matter of
+backwards compatibility, though it had been both untested and undocumented.

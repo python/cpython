@@ -87,6 +87,7 @@ import struct
 import sys
 from chunk import Chunk
 from collections import namedtuple
+import warnings
 
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
@@ -502,4 +503,7 @@ def open(f, mode=None):
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
 
-openfp = open # B/W compatibility
+def openfp(f, mode=None):
+    warnings.warn("wave.openfp is deprecated since Python 3.7. "
+                  "Use wave.open instead.", DeprecationWarning, stacklevel=2)
+    return open(f, mode=mode)
