@@ -169,7 +169,12 @@ class PyMisbehavedRawIO(MisbehavedRawIO, pyio.RawIOBase):
 
 
 class SlowFlushRawIO(MockRawIO):
+    def __init__(self):
+        super().__init__()
+        self.in_flush = threading.Event()
+
     def flush(self):
+        self.in_flush.set()
         time.sleep(0.25)
 
 class CSlowFlushRawIO(SlowFlushRawIO, io.RawIOBase):
@@ -1742,7 +1747,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         bufio = self.tp(rawio, 8)
         t = threading.Thread(target=bufio.close)
         t.start()
-        time.sleep(0.1) # Long enough that t is sleeping in bufio.close()
+        rawio.in_flush.wait()
         self.assertRaises(ValueError, bufio.write, b'spam')
         self.assertTrue(bufio.closed)
 

@@ -1257,6 +1257,10 @@ class BufferedWriter(_BufferedIOMixin):
         with self._write_lock:
             if self.raw is None or self.closed:
                 return
+        # We have to release the lock and call self.flush() (which will
+        # probably just re-take the lock) in case flush has been overridden in
+        # a subclass or the user set self.flush to something. This is the same
+        # behavior as the C implementation.
         try:
             # may raise BlockingIOError or BrokenPipeError etc
             self.flush()

@@ -1,0 +1,2 @@
+Fixed race condition when flushing a file is slow, which can cause a
+segfault.
