@@ -248,6 +248,19 @@ extern int lstat(const char *, struct stat *);
 
 #endif /* !_MSC_VER */
 
+#if defined(__VXWORKS__)
+#include <vxCpuLib.h>
+#include <rtpLib.h>
+#define HAVE_RTPSPAWN 1
+#ifndef _P_WAIT
+#define _P_WAIT 3
+#define _P_NOWAIT 2
+#define _P_NOWAITO 1
+#define _OLD_P_OVERLAY 0
+#define _P_OVERLAY 0
+#endif
+#endif 
+
 #ifdef HAVE_UTIME_H
 #include <utime.h>
 #endif /* HAVE_UTIME_H */
@@ -4772,7 +4785,7 @@ os__exit_impl(PyObject *module, int status)
 #define EXECV_CHAR char
 #endif
 
-#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV)
+#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV) || defined (HAVE_RTPSPAWN)
 static void
 free_string_array(EXECV_CHAR **array, Py_ssize_t count)
 {
@@ -4810,7 +4823,7 @@ fsconvert_strdup(PyObject *o, EXECV_CHAR **out)
 }
 #endif
 
-#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE)
+#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE) || defined (HAVE_RTPSPAWN)
 static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
@@ -5081,7 +5094,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 #endif /* HAVE_EXECV */
 
 
-#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
+#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)
 /*[clinic input]
 os.spawnv
 
@@ -5158,6 +5171,11 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnv(mode, path->wide, argvlist);
+#elif defined (HAVE_RTPSPAWN)
+    spawnval = rtpSpawn(path->narrow, (const char **)argvlist, 
+                   NULL, 100, 0, 0, 0);
+    if ( (spawnval != RTP_ID_ERROR) && (mode == _P_WAIT) )
+        waitpid(spawnval, &spawnval, 0);
 #else
     spawnval = _spawnv(mode, path->narrow, argvlist);
 #endif
@@ -5264,6 +5282,11 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
+#elif defined (HAVE_RTPSPAWN)
+    spawnval = rtpSpawn(path->narrow, (const char **)argvlist, 
+                   (const char **)envlist, 100, 0, 0, 0);
+    if ( (spawnval != RTP_ID_ERROR) && (mode == _P_WAIT) )
+        waitpid(spawnval, &spawnval, 0);
 #else
     spawnval = _spawnve(mode, path->narrow, argvlist, envlist);
 #endif
@@ -11152,7 +11175,9 @@ os_cpu_count_impl(PyObject *module)
         ncpu = sysinfo.dwNumberOfProcessors;
     }
 #elif defined(__hpux)
-    ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
+    ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL); 
+#elif defined(__VXWORKS__)
+    ncpu = __builtin_popcount(vxCpuEnabledGet());
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     ncpu = sysconf(_SC_NPROCESSORS_ONLN);
 #elif defined(__DragonFly__) || \
@@ -12935,11 +12960,13 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, F_TEST)) return -1;
 #endif
 
-#ifdef HAVE_SPAWNV
+#if defined(HAVE_SPAWNV) || defined (HAVE_RTPSPAWN)
     if (PyModule_AddIntConstant(m, "P_WAIT", _P_WAIT)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAIT", _P_NOWAIT)) return -1;
-    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAITO", _P_NOWAITO)) return -1;
+#endif
+#if defined(HAVE_SPAWNV)
+    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_DETACH", _P_DETACH)) return -1;
 #endif
 

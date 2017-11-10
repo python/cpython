@@ -1721,7 +1721,7 @@ exit:
 
 #endif /* defined(HAVE_EXECV) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) || defined(__VXWORKS__)
 
 PyDoc_STRVAR(os_spawnv__doc__,
 "spawnv($module, mode, path, argv, /)\n"
@@ -1765,7 +1765,7 @@ exit:
 
 #endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) || defined(__VXWORKS__)
 
 PyDoc_STRVAR(os_spawnve__doc__,
 "spawnve($module, mode, path, argv, env, /)\n"
