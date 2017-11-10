@@ -168,6 +168,22 @@ class PyMisbehavedRawIO(MisbehavedRawIO, pyio.RawIOBase):
     pass
 
 
+class SlowFlushRawIO(MockRawIO):
+    def __init__(self):
+        super().__init__()
+        self.in_flush = threading.Event()
+
+    def flush(self):
+        self.in_flush.set()
+        time.sleep(0.25)
+
+class CSlowFlushRawIO(SlowFlushRawIO, io.RawIOBase):
+    pass
+
+class PySlowFlushRawIO(SlowFlushRawIO, pyio.RawIOBase):
+    pass
+
+
 class CloseFailureIO(MockRawIO):
     closed = 0
 
@@ -1725,6 +1741,18 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         b.write(b'spam')
         self.assertRaises(OSError, b.close) # exception not swallowed
         self.assertTrue(b.closed)
+
+    def test_slow_close_from_thread(self):
+        # Issue #31976
+        rawio = self.SlowFlushRawIO()
+        bufio = self.tp(rawio, 8)
+        t = threading.Thread(target=bufio.close)
+        t.start()
+        rawio.in_flush.wait()
+        self.assertRaises(ValueError, bufio.write, b'spam')
+        self.assertTrue(bufio.closed)
+        t.join()
+
 
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
@@ -4085,7 +4113,8 @@ def load_tests(*args):
     # Put the namespaces of the IO module we are testing and some useful mock
     # classes in the __dict__ of each test.
     mocks = (MockRawIO, MisbehavedRawIO, MockFileIO, CloseFailureIO,
-             MockNonBlockWriterIO, MockUnseekableIO, MockRawIOWithoutRead)
+             MockNonBlockWriterIO, MockUnseekableIO, MockRawIOWithoutRead,
+             SlowFlushRawIO)
     all_members = io.__all__ + ["IncrementalNewlineDecoder"]
     c_io_ns = {name : getattr(io, name) for name in all_members}
     py_io_ns = {name : getattr(pyio, name) for name in all_members}
