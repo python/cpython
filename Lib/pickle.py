@@ -217,17 +217,18 @@ class _Framer:
             return self.file_write(data)
 
     def write_large_bytes(self, opcode, size_header, payload):
-        if len(payload) >= self._FRAME_SIZE_TARGET and self.current_frame:
-            # Terminate the current frame to write the next frame directly into
-            # the underlying file to skip the unnecessary memory allocations
-            # of a large temporary buffer.
-            self.commit_frame(force=True)
+        if len(payload) >= self._FRAME_SIZE_TARGET:
             write = self.file_write
-            frame_size = len(opcode) + len(size_header) + len(payload)
-            write(FRAME + pack("<Q", frame_size))
+            if self.current_frame:
+                # Terminate the current frame to write the next frame directly
+                # into the underlying file to skip the unnecessary memory
+                # allocations of a large temporary buffer.
+                self.commit_frame(force=True)
+                frame_size = len(opcode) + len(size_header) + len(payload)
+                write(FRAME + pack("<Q", frame_size))
 
-            # Be careful to not concatenate the header and the payload prior to
-            # calling 'write' as do not want to allocate a large temporary
+            # Be careful not to concatenate the header and the payload prior to
+            # calling 'write' as we do not want to allocate a large temporary
             # bytes object.
             write(opcode + size_header)
             write(payload)
