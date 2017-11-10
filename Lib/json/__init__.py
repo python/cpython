@@ -76,7 +76,8 @@ Specializing JSON object encoding::
     >>> def encode_complex(obj):
     ...     if isinstance(obj, complex):
     ...         return [obj.real, obj.imag]
-    ...     raise TypeError(repr(obj) + " is not JSON serializable")
+    ...     raise TypeError(f'Object of type {obj.__class__.__name__} '
+    ...                     f'is not JSON serializable')
     ...
     >>> json.dumps(2 + 1j, default=encode_complex)
     '[2.0, 1.0]'
@@ -344,8 +345,8 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
                                   s, 0)
     else:
         if not isinstance(s, (bytes, bytearray)):
-            raise TypeError('the JSON object must be str, bytes or bytearray, '
-                            'not {!r}'.format(s.__class__.__name__))
+            raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+                            f'not {s.__class__.__name__}')
         s = s.decode(detect_encoding(s), 'surrogatepass')
 
     if (cls is None and object_hook is None and
