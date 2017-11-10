@@ -13,7 +13,7 @@ import struct
 import subprocess
 import sys
 import tempfile
-from test.support import (captured_stdout, captured_stderr,
+from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           can_symlink, EnvironmentVarGuard, rmtree)
 import threading
 import unittest
@@ -417,6 +417,7 @@ class EnsurePipTest(BaseTest):
 
     # Issue #26610: pip/pep425tags.py requires ctypes
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
+    @requires_zlib
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)
