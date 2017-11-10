@@ -216,24 +216,21 @@ class _Framer:
         else:
             return self.file_write(data)
 
-    def write_large_bytes(self, opcode, size_header, payload):
-        if len(payload) >= self._FRAME_SIZE_TARGET:
-            write = self.file_write
-            if self.current_frame:
-                # Terminate the current frame to write the next frame directly
-                # into the underlying file to skip the unnecessary memory
-                # allocations of a large temporary buffer.
-                self.commit_frame(force=True)
-                frame_size = len(opcode) + len(size_header) + len(payload)
-                write(FRAME + pack("<Q", frame_size))
+    def write_large_bytes(self, header, payload):
+        write = self.file_write
+        if self.current_frame:
+            # Terminate the current frame to write the next frame directly
+            # into the underlying file to skip the unnecessary memory
+            # allocations of a large temporary buffer.
+            self.commit_frame(force=True)
+            frame_size = len(header) + len(payload)
+            write(FRAME + pack("<Q", frame_size))
 
-            # Be careful not to concatenate the header and the payload prior to
-            # calling 'write' as we do not want to allocate a large temporary
-            # bytes object.
-            write(opcode + size_header)
-            write(payload)
-        else:
-            self.write(opcode + size_header + payload)
+        # Be careful not to concatenate the header and the payload prior to
+        # calling 'write' as we do not want to allocate a large temporary
+        # bytes object.
+        write(header)
+        write(payload)
 
 
 class _Unframer:
@@ -716,9 +713,11 @@ class _Pickler:
         if n <= 0xff:
             self.write(SHORT_BINBYTES + pack("<B", n) + obj)
         elif n > 0xffffffff and self.proto >= 4:
-            self._write_large_bytes(BINBYTES8, pack("<Q", n), obj)
+            self._write_large_bytes(BINBYTES8 + pack("<Q", n), obj)
+        elif n > self.framer._FRAME_SIZE_TARGET:
+            self._write_large_bytes(BINBYTES + pack("<I", n), obj)
         else:
-            self._write_large_bytes(BINBYTES, pack("<I", n), obj)
+            self.write(BINBYTES + pack("<I", n) + obj)
         self.memoize(obj)
     dispatch[bytes] = save_bytes
 
@@ -729,9 +728,11 @@ class _Pickler:
             if n <= 0xff and self.proto >= 4:
                 self.write(SHORT_BINUNICODE + pack("<B", n) + encoded)
             elif n > 0xffffffff and self.proto >= 4:
-                self._write_large_bytes(BINUNICODE8, pack("<Q", n), encoded)
+                self._write_large_bytes(BINUNICODE8 + pack("<Q", n), encoded)
+            elif n > self.framer._FRAME_SIZE_TARGET:
+                self._write_large_bytes(BINUNICODE + pack("<I", n), encoded)
             else:
-                self._write_large_bytes(BINUNICODE, pack("<I", n), encoded)
+                self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
             obj = obj.replace("\\", "\\u005c")
             obj = obj.replace("\n", "\\u000a")
