@@ -620,28 +620,7 @@ class Executor(object):
         """
         pass
 
-    def worker_count(self):
-        raise NotImplementedError()
-
-    def active_worker_count(self):
-        raise NotImplementedError()
-
-    def idle_worker_count(self):
-        raise NotImplementedError()
-
-    def task_count(self):
-        raise NotImplementedError()
-
-    def active_task_count(self):
-        raise NotImplementedError()
-
-    def waiting_task_count(self):
-        raise NotImplementedError()
-
-    def active_tasks(self):
-        raise NotImplementedError()
-
-    def waiting_tasks(self):
+    def stat(self):
         raise NotImplementedError()
 
     def __enter__(self):

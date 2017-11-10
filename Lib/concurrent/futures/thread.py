@@ -160,33 +160,22 @@ class ThreadPoolExecutor(_base.Executor):
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
 
-    def worker_count(self):
-        return len(self._threads)
-
-    def active_worker_count(self):
-        return self.active_task_count()
-
-    def idle_worker_count(self):
-        return self.worker_count() - self.active_worker_count()
-
-    def task_count(self):
-        return self.active_task_count() + self.waiting_task_count()
-
-    def active_task_count(self):
-        return sum(1 for t in self._threads if t._work_item)
-
-    def waiting_task_count(self):
-        return self._work_queue.qsize()
-
-    def active_tasks(self):
-        return set(t._work_item for t in self._threads
-                   if t._work_item)
-
-    def waiting_tasks(self):
-        active = self.active_tasks()
+    def stat(self):
+        active_tasks = set(t._work_item for t in self._threads if t._work_item)
         with self._work_queue.mutex:
-            return [task for task in self._work_queue.queue
-                    if task not in active]
+            waiting_tasks = [task for task in self._work_queue.queue
+                             if task not in active_tasks]
+        _stat = dict(
+            worker_count=len(self._threads),
+            active_worker_count=len(active_tasks),
+            idle_worker_count=len(self._threads) - len(active_tasks),
+            task_count=len(active_tasks) + len(waiting_tasks),
+            active_task_count=len(active_tasks),
+            waiting_task_count=len(waiting_tasks),
+            active_tasks=active_tasks,
+            waiting_tasks=waiting_tasks,
+        )
+        return _stat
 
     def _adjust_thread_count(self):
         # When the executor gets lost, the weakref callback will wake up
@@ -197,7 +186,7 @@ class ThreadPoolExecutor(_base.Executor):
         # don't have enough idle threads to handle pending tasks.
         num_threads = len(self._threads)
         if (num_threads < self._max_workers and
-                self.idle_worker_count() < self._work_queue.qsize()):
+                self.stat()["idle_worker_count"] < self._work_queue.qsize()):
             thread_name = '%s_%d' % (self._thread_name_prefix or self,
                                      num_threads)
             t = _Worker(weakref.ref(self, weakref_cb), self._work_queue,

@@ -417,7 +417,7 @@ def _queue_management_worker(executor_reference,
                     work_item.future.set_result(result_item.result)
                 # Delete references to object. See issue16284
                 del work_item
-            
+
             active_work_items.remove(result_item.work_id)
             # Delete reference to result_item
             del result_item
@@ -667,31 +667,22 @@ class ProcessPoolExecutor(_base.Executor):
         self._processes = None
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
-    def worker_count(self):
-        return len(self._processes)
-
-    def active_worker_count(self):
-        return self.active_task_count()
-
-    def idle_worker_count(self):
-        return self.worker_count() - self.active_worker_count()
-
-    def task_count(self):
-        return len(self._pending_work_items)
-
-    def active_task_count(self):
-        return len(self._active_work_items)
-
-    def waiting_task_count(self):
-        return self.task_count() - self.active_task_count()
-
-    def active_tasks(self):
-        return {self._pending_work_items[t] for t in self._active_work_items}
-
-    def waiting_tasks(self):
-        tasks = [v for k, v in self._pending_work_items.items()
-                 if k not in self._active_work_items]
-        return tasks
+    def stat(self):
+        active_tasks = {self._pending_work_items[t]
+                        for t in self._active_work_items}
+        waiting_tasks = [t for t in self._pending_work_items.values()
+                         if t not in active_tasks]
+        _stat = dict(
+            worker_count=len(self._processes),
+            active_worker_count=len(active_tasks),
+            idle_worker_count=len(self._processes) - len(active_tasks),
+            task_count=len(active_tasks) + len(waiting_tasks),
+            active_task_count=len(active_tasks),
+            waiting_task_count=len(waiting_tasks),
+            active_tasks=active_tasks,
+            waiting_tasks=waiting_tasks,
+        )
+        return _stat
 
 
 atexit.register(_python_exit)

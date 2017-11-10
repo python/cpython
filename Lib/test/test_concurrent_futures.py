@@ -960,6 +960,11 @@ def _init_worker(_event):
 
 def event_wait():
     assert "event" in globals()
+
+    # Wait for event to be clear
+    while event.is_set():
+        time.sleep(.01)
+
     t0 = time.time()
     event.wait(timeout=30)
     # We have to check that the event did not timeout because of Event.wait
@@ -996,19 +1001,20 @@ class IntrospectionTests:
         # Because CI can be slow, add a patience mechanism for the task to be
         # activated.
         deadline = time.time() + timeout
-        active_task_count = self.executor.active_task_count()
+        active_task_count = self.executor.stat()["active_task_count"]
         while active_task_count < expected_count and time.time() < deadline:
             time.sleep(.1)
-            active_task_count = self.executor.active_task_count()
+            active_task_count = self.executor.stat()["active_task_count"]
 
     def test_worker_count(self):
-        self.assertEqual(self.executor.worker_count(), self.worker_count)
+        self.assertEqual(self.executor.stat()["worker_count"],
+                         self.worker_count)
         out = self.executor.submit(event_wait)
 
         self._wait_for_active(1, self.initial_patience)
-        self.assertEqual(self.executor.active_worker_count(), 1)
-        self.assertEqual(self.executor.idle_worker_count(),
-                         self.worker_count - 1)
+        stat = self.executor.stat()
+        self.assertEqual(stat["active_worker_count"], 1)
+        self.assertEqual(stat["idle_worker_count"], self.worker_count - 1)
         self.event.set()
 
         # Make sure the test does not pass because of error in workers
@@ -1016,25 +1022,26 @@ class IntrospectionTests:
 
     def test_worker_count_full(self):
         fs = [self.executor.submit(event_wait)
-              for _ in range(self.worker_count + 2)]
+              for _ in range(self.worker_count)]
 
         self._wait_for_active(self.worker_count, self.initial_patience)
-        self.assertEqual(self.executor.active_worker_count(),
-                         self.worker_count)
-        self.assertEqual(self.executor.idle_worker_count(), 0)
+        stat = self.executor.stat()
+        self.assertEqual(stat['active_worker_count'], self.worker_count)
+        self.assertEqual(stat['idle_worker_count'], 0)
         self.event.set()
 
         # Make sure the test does not pass because of error in workers
         self.assertTrue(all([f.result() for f in fs]))
 
     def test_task_count(self):
-        self.assertEqual(self.executor.task_count(), 0)
+        self.assertEqual(self.executor.stat()['task_count'], 0)
         out = self.executor.submit(event_wait)
 
         self._wait_for_active(1, self.initial_patience)
-        self.assertEqual(self.executor.task_count(), 1)
-        self.assertEqual(self.executor.active_task_count(), 1)
-        self.assertEqual(self.executor.waiting_task_count(), 0)
+        stat = self.executor.stat()
+        self.assertEqual(stat['task_count'], 1)
+        self.assertEqual(stat['active_task_count'], 1)
+        self.assertEqual(stat['waiting_task_count'], 0)
         self.event.set()
 
         # Make sure the test does not pass because of error in workers
@@ -1045,9 +1052,10 @@ class IntrospectionTests:
               for _ in range(self.worker_count + 2)]
 
         self._wait_for_active(self.worker_count, self.initial_patience)
-        self.assertEqual(self.executor.task_count(), self.worker_count + 2)
-        self.assertEqual(self.executor.active_task_count(), self.worker_count)
-        self.assertEqual(self.executor.waiting_task_count(), 2)
+        stat = self.executor.stat()
+        self.assertEqual(stat['task_count'], self.worker_count + 2)
+        self.assertEqual(stat['active_task_count'], self.worker_count)
+        self.assertEqual(stat['waiting_task_count'], 2)
         self.event.set()
         self.event.clear()
 
@@ -1057,7 +1065,8 @@ class IntrospectionTests:
 
         # Waiting tasks should become active.
         self._wait_for_active(2, self.initial_patience)
-        self.assertEqual(self.executor.active_task_count(), 2)
+        stat = self.executor.stat()
+        self.assertEqual(stat['active_task_count'], 2)
         self.event.set()
 
         # Make sure the test does not pass because of error in workers
@@ -1068,10 +1077,11 @@ class IntrospectionTests:
         out = self.executor.submit(event_wait_param, param)
 
         self._wait_for_active(1, self.initial_patience)
-        tasks = self.executor.active_tasks()
+        stat = self.executor.stat()
+        tasks = stat['active_tasks']
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks.pop().args, (param,))
-        self.assertEqual(len(self.executor.waiting_tasks()), 0)
+        self.assertEqual(len(stat['waiting_tasks']), 0)
         self.event.set()
 
         # Make sure the test does not pass because of error in workers
@@ -1082,8 +1092,9 @@ class IntrospectionTests:
               for i in range(self.worker_count + 2)]
 
         self._wait_for_active(self.worker_count, self.initial_patience)
-        active_tasks = self.executor.active_tasks()
-        waiting_tasks = self.executor.waiting_tasks()
+        stat = self.executor.stat()
+        active_tasks = stat['active_tasks']
+        waiting_tasks = stat['waiting_tasks']
         active_args = {item.args for item in active_tasks}
         waiting_args = [item.args for item in waiting_tasks]
 
@@ -1109,8 +1120,9 @@ class IntrospectionTests:
         self._wait_for_active(2, self.initial_patience)
         # Waiting tasks should become active.
         expected_args = set(expected_args)
-        active_tasks = self.executor.active_tasks()
-        waiting_tasks = self.executor.waiting_tasks()
+        stat = self.executor.stat()
+        active_tasks = stat['active_tasks']
+        waiting_tasks = stat['waiting_tasks']
         active_args = {item.args for item in active_tasks}
         self.assertEqual(active_args, expected_args)
         self.assertEqual(waiting_tasks, [])
