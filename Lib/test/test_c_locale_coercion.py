@@ -160,11 +160,13 @@ CLI_COERCION_WARNING_FMT = (
 AVAILABLE_TARGETS = None
 CLI_COERCION_TARGET = None
 CLI_COERCION_WARNING = None
+DEFAULT_LC_CTYPE = None
 
 def setUpModule():
     global AVAILABLE_TARGETS
     global CLI_COERCION_TARGET
     global CLI_COERCION_WARNING
+    global DEFAULT_LC_CTYPE
 
     if AVAILABLE_TARGETS is not None:
         # initialization already done
@@ -180,6 +182,22 @@ def setUpModule():
         # Coercion is expected to use the first available target locale
         CLI_COERCION_TARGET = AVAILABLE_TARGETS[0]
         CLI_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(CLI_COERCION_TARGET)
+
+    # Determine the platform's default LC_CTYPE from the default locale.
+    # POSIX provides that there *exists* a default locale to provide when
+    # no environment variables are set, or are set to empty strings.  However,
+    # it does not specify that this default *must* be the "POSIX" locale, or
+    # how the platform selects the default.  In most cases it will be set to
+    # "C"/"POSIX" but this is not necessarily the case.
+    result, py_cmd = run_python_until_end(
+        "-c", "import locale; print(locale.setlocale(locale.LC_CTYPE))",
+        __isolated=True,
+        LANG="", LC_ALL="", LC_CTYPE="", PYTHONCOERCECLOCALE="0"
+    )
+    if not result.rc == 0:
+        result.fail(py_cmd)
+
+    DEFAULT_LC_CTYPE = result.out.decode("ascii").strip().upper()
 
 
 class _LocaleHandlingTestCase(unittest.TestCase):
@@ -300,6 +318,11 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                 #                 POSIX locale, so we skip that for now
                 # See https://bugs.python.org/issue30672 for discussion
                 if locale_to_set == "POSIX":
+                    continue
+                elif locale_to_set == "" and DEFAULT_LC_CTYPE == "C.UTF-8":
+                    # The default locale is already C.UTF-8 so the subsequent tests
+                    # don't behave as expected (they assume the default LC_CTYPE will
+                    # be "C")
                     continue
                 with self.subTest(env_var=env_var,
                                   nominal_locale=locale_to_set,
