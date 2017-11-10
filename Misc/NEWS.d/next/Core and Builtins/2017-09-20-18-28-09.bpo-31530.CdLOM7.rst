@@ -1,0 +1,4 @@
+Fixed crashes when iterating over a file on multiple threads.
+seek() and next() methods of file objects now raise an exception during
+concurrent operation on the same file object.
+A lock can be used to prevent the error.
