@@ -1743,6 +1743,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertTrue(b.closed)
 
     def test_slow_close_from_thread(self):
+        # Issue #31976
         rawio = self.SlowFlushRawIO()
         bufio = self.tp(rawio, 8)
         t = threading.Thread(target=bufio.close)
@@ -1750,6 +1751,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         rawio.in_flush.wait()
         self.assertRaises(ValueError, bufio.write, b'spam')
         self.assertTrue(bufio.closed)
+        t.join()
 
 
 
