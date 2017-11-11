@@ -33,7 +33,7 @@ The :mod:`gc` module provides the following functions:
    Disable automatic garbage collection.
 
 
-.. class:: Disabled()
+.. class:: ensure_disabled()
 
    Return a context manager object that disables the garbage collector and reenables the previous
    state upon completion of the block. This is basically equivalent to::
@@ -41,7 +41,7 @@ The :mod:`gc` module provides the following functions:
      from gc import enable, disable, isenabled
 
      @contextmanager
-     def gc_disabled():
+     def ensure_disabled():
          was_enabled_previously = isenabled()
          gc.disable()
          yield
@@ -50,10 +50,10 @@ The :mod:`gc` module provides the following functions:
 
    And lets you write code like this::
 
-     with gc_disabled():
+     with ensure_disabled():
          run_some_timing()
 
-     with gc_disabled():
+     with ensure_disabled():
          # do_something_that_has_real_time_guarantees
          # such as a pair trade, robotic braking, etc
 

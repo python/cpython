@@ -1007,10 +1007,10 @@ class GCTogglingTests(unittest.TestCase):
             # empty __dict__.
             self.assertEqual(x, None)
 
-    def test_Disabled(self):
+    def test_ensure_disabled(self):
         original_status = gc.isenabled()
 
-        with gc.Disabled():
+        with gc.ensure_disabled():
             inside_status = gc.isenabled()
 
         after_status = gc.isenabled()
@@ -1018,12 +1018,12 @@ class GCTogglingTests(unittest.TestCase):
         self.assertEqual(inside_status, False)
         self.assertEqual(after_status, True)
 
-    def test_Disabled_with_gc_disabled(self):
+    def test_ensure_disabled_with_gc_disabled(self):
         gc.disable()
 
         original_status = gc.isenabled()
 
-        with gc.Disabled():
+        with gc.ensure_disabled():
             inside_status = gc.isenabled()
 
         after_status = gc.isenabled()
@@ -1032,7 +1032,7 @@ class GCTogglingTests(unittest.TestCase):
         self.assertEqual(after_status, False)
 
     @reap_threads
-    def test_Disabled_thread(self):
+    def test_ensure_disabled_thread(self):
 
         thread_original_status = None
         thread_inside_status = None
@@ -1044,15 +1044,14 @@ class GCTogglingTests(unittest.TestCase):
             nonlocal thread_after_status
             thread_original_status = gc.isenabled()
 
-            with gc.Disabled():
+            with gc.ensure_disabled():
                 thread_inside_status = gc.isenabled()
 
             thread_after_status = gc.isenabled()
-            print(thread_after_status)
 
         original_status = gc.isenabled()
 
-        with gc.Disabled():
+        with gc.ensure_disabled():
             inside_status_before_thread = gc.isenabled()
             thread = threading.Thread(target=disabling_thread)
             thread.start()

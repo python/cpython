@@ -1510,11 +1510,11 @@ typedef struct {
     PyObject_HEAD
     int previous_gc_state;
     PyGILState_STATE gstate;
-} disabled_object;
+} ensure_disabled_object;
 
 
 static void
-disabled_object_dealloc(disabled_object *m_obj)
+ensure_disabled_object_dealloc(ensure_disabled_object *m_obj)
 {
     Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
 }
@@ -1522,7 +1522,7 @@ disabled_object_dealloc(disabled_object *m_obj)
 
 
 static PyObject *
-disabled__enter__method(disabled_object *self, PyObject *args)
+ensure_disabled__enter__method(ensure_disabled_object *self, PyObject *args)
 {
     self->gstate = PyGILState_Ensure();
     self->previous_gc_state = _PyRuntime.gc.enabled;
@@ -1531,7 +1531,7 @@ disabled__enter__method(disabled_object *self, PyObject *args)
 }
 
 static PyObject *
-disabled__exit__method(disabled_object *self, PyObject *args)
+ensure_disabled__exit__method(ensure_disabled_object *self, PyObject *args)
 {
     _PyRuntime.gc.enabled = self->previous_gc_state;
     PyGILState_Release(self->gstate);
@@ -1540,26 +1540,26 @@ disabled__exit__method(disabled_object *self, PyObject *args)
 
 
 
-static struct PyMethodDef disabled_object_methods[] = {
-    {"__enter__",       (PyCFunction) disabled__enter__method,      METH_NOARGS},
-    {"__exit__",        (PyCFunction) disabled__exit__method,       METH_VARARGS},
+static struct PyMethodDef ensure_disabled_object_methods[] = {
+    {"__enter__",       (PyCFunction) ensure_disabled__enter__method,      METH_NOARGS},
+    {"__exit__",        (PyCFunction) ensure_disabled__exit__method,       METH_VARARGS},
     {NULL,         NULL}       /* sentinel */
 };
 
 static PyObject *
 new_disabled_obj(PyTypeObject *type, PyObject *args, PyObject *kwdict){
-    disabled_object *self;
-    self = (disabled_object *)type->tp_alloc(type, 0);
+    ensure_disabled_object *self;
+    self = (ensure_disabled_object *)type->tp_alloc(type, 0);
     return (PyObject *) self;
 };
 
-static PyTypeObject gc_disabled_type = {
+static PyTypeObject gc_ensure_disabled_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "gc.disabled",                              /* tp_name */
-    sizeof(disabled_object),                    /* tp_size */
+    "gc.ensure_disabled",                       /* tp_name */
+    sizeof(ensure_disabled_object),             /* tp_size */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor) disabled_object_dealloc,       /* tp_dealloc */
+    (destructor) ensure_disabled_object_dealloc,/* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -1582,7 +1582,7 @@ static PyTypeObject gc_disabled_type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    disabled_object_methods,                    /* tp_methods */
+    ensure_disabled_object_methods,             /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
@@ -1637,9 +1637,9 @@ PyInit_gc(void)
     if (PyModule_AddObject(m, "callbacks", _PyRuntime.gc.callbacks) < 0)
         return NULL;
 
-    if (PyType_Ready(&gc_disabled_type) < 0)
+    if (PyType_Ready(&gc_ensure_disabled_type) < 0)
         return NULL;
-    if (PyModule_AddObject(m, "Disabled", (PyObject*) &gc_disabled_type) < 0)
+    if (PyModule_AddObject(m, "ensure_disabled", (PyObject*) &gc_ensure_disabled_type) < 0)
         return NULL;
 
 
