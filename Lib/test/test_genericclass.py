@@ -1,12 +1,12 @@
 import unittest
 
 
-class TestSubclassBase(unittest.TestCase):
-    def test_subclass_base_signature(self):
+class TestMROEntry(unittest.TestCase):
+    def test_mro_entry_signature(self):
         tested = []
         class B: ...
         class C:
-            def __subclass_base__(self, *args, **kwargs):
+            def __mro_entry__(self, *args, **kwargs):
                 tested.extend([args, kwargs])
                 return C
         c = C()
@@ -15,12 +15,12 @@ class TestSubclassBase(unittest.TestCase):
         self.assertEqual(tested[0], ((B, c),))
         self.assertEqual(tested[1], {})
 
-    def test_subclass_base(self):
+    def test_mro_entry(self):
         tested = []
         class A: ...
         class B: ...
         class C:
-            def __subclass_base__(self, bases):
+            def __mro_entry__(self, bases):
                 tested.append(bases)
                 return self.__class__
         c = C()
@@ -35,12 +35,12 @@ class TestSubclassBase(unittest.TestCase):
         self.assertEqual(tested[-1], (d,))
         self.assertEqual(E.__bases__, (D,))
 
-    def test_subclass_base_none(self):
+    def test_mro_entry_none(self):
         tested = []
         class A: ...
         class B: ...
         class C:
-            def __subclass_base__(self, bases):
+            def __mro_entry__(self, bases):
                 tested.append(bases)
                 return None
         c = C()
@@ -56,11 +56,11 @@ class TestSubclassBase(unittest.TestCase):
         self.assertEqual(E.__orig_bases__, (c,))
         self.assertEqual(E.__mro__, (E, object))
 
-    def test_subclass_base_with_builtins(self):
+    def test_mro_entry_with_builtins(self):
         tested = []
         class A: ...
         class C:
-            def __subclass_base__(self, bases):
+            def __mro_entry__(self, bases):
                 tested.append(bases)
                 return dict
         c = C()
@@ -71,10 +71,10 @@ class TestSubclassBase(unittest.TestCase):
         self.assertEqual(D.__orig_bases__, (A, c))
         self.assertEqual(D.__mro__, (D, A, dict, object))
 
-    def test_subclass_base_with_builtins_2(self):
+    def test_mro_entry_with_builtins_2(self):
         tested = []
         class C:
-            def __subclass_base__(self, bases):
+            def __mro_entry__(self, bases):
                 tested.append(bases)
                 return C
         c = C()
@@ -85,28 +85,28 @@ class TestSubclassBase(unittest.TestCase):
         self.assertEqual(D.__orig_bases__, (c, dict))
         self.assertEqual(D.__mro__, (D, C, dict, object))
 
-    def test_subclass_base_errors(self):
+    def test_mro_entry_errors(self):
         class C_too_many:
-            def __subclass_base__(self, bases, something, other):
+            def __mro_entry__(self, bases, something, other):
                 return None
         c = C_too_many()
         with self.assertRaises(TypeError):
             class D(c): ...
         class C_too_few:
-            def __subclass_base__(self, bases, something, other):
+            def __mro_entry__(self, bases, something, other):
                 return None
         d = C_too_few()
         with self.assertRaises(TypeError):
             class D(d): ...
 
-    def test_subclass_base_errors_2(self):
+    def test_mro_entry_errors_2(self):
         class C_not_callable:
-            __subclass_base__ = "Surprise!"
+            __mro_entry__ = "Surprise!"
         c = C_not_callable()
         with self.assertRaises(TypeError):
             class D(c): ...
 
-    def test_subclass_base_metaclass(self):
+    def test_mro_entry_metaclass(self):
         meta_args = []
         class Meta(type):
             def __new__(mcls, name, bases, ns):
@@ -114,7 +114,7 @@ class TestSubclassBase(unittest.TestCase):
                 return super().__new__(mcls, name, bases, ns)
         class A: ...
         class C:
-            def __subclass_base__(self, bases):
+            def __mro_entry__(self, bases):
                 return A
         c = C()
         class D(c, metaclass=Meta):
@@ -128,10 +128,10 @@ class TestSubclassBase(unittest.TestCase):
         self.assertEqual(D.__mro__, (D, A, object))
         self.assertEqual(D.__class__, Meta)
 
-    def test_subclass_base_type_call(self):
+    def test_mro_entry_type_call(self):
         # Substitution should _not_ happen in direct type call
         class C:
-            def __subclass_base__(self, bases):
+            def __mro_entry__(self, bases):
                 return None
         c = C()
         with self.assertRaises(TypeError):
