@@ -93,7 +93,7 @@ class TestMROEntry(unittest.TestCase):
         with self.assertRaises(TypeError):
             class D(c): ...
         class C_too_few:
-            def __mro_entry__(self, bases, something, other):
+            def __mro_entry__(self):
                 return None
         d = C_too_few()
         with self.assertRaises(TypeError):
