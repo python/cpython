@@ -24,9 +24,6 @@ main(int argc, char **argv)
     wchar_t **argv_copy2;
     int i, res;
     char *oldloc;
-#ifdef __ANDROID__
-    char *env_loc;
-#endif
 
     /* Force malloc() allocator to bootstrap Python */
 #ifdef Py_DEBUG
@@ -57,24 +54,8 @@ main(int argc, char **argv)
         return 1;
     }
 
-#ifdef __ANDROID__
-    /* Locale coercion is not needed when the LANG or the LC_CTYPE environment
-     * variable is correctly set. */
-    env_loc = getenv("LANG");
-    if (env_loc == NULL || strncmp(env_loc, "C.UTF-8", 8) != 0) {
-        env_loc = getenv("LC_CTYPE");
-        if (env_loc == NULL || strncmp(env_loc, "C.UTF-8", 8) != 0) {
-            _Py_CoerceLegacyLocale();
-        }
-    }
-    /* Passing "" to setlocale() on Android requests the C locale rather
-     * than checking environment variables, so request C.UTF-8 explicitly
-     */
-    setlocale(LC_ALL, "C.UTF-8");
-#else
     /* Reconfigure the locale to the default for this process */
-    setlocale(LC_ALL, "");
-#endif
+    _Py_SetLocaleFromEnv(LC_ALL);
 
     /* The legacy C locale assumes ASCII as the default text encoding, which
      * causes problems not only for the CPython runtime, but also other

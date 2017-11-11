@@ -17,7 +17,8 @@ from test.support.script_helper import (
 # Set our expectation for the default encoding used in the C locale
 # for the filesystem encoding and the standard streams
 
-# AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
+# While most *nix platforms default to ASCII in the C locale, some use a
+# different encoding.
 if sys.platform.startswith("aix"):
     C_LOCALE_STREAM_ENCODING = "iso8859-1"
 elif test.support.is_android:
@@ -144,15 +145,12 @@ class EncodingDetails(_EncodingDetails):
 
 
 # Details of the shared library warning emitted at runtime
-if test.support.is_android:
-    LEGACY_LOCALE_WARNING = None
-else:
-    LEGACY_LOCALE_WARNING = (
+LEGACY_LOCALE_WARNING = (
     "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
     "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
     "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
     "locales is recommended."
-    )
+)
 
 # Details of the CLI locale coercion warning emitted at runtime
 CLI_COERCION_WARNING_FMT = (
@@ -305,6 +303,19 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                 # See https://bugs.python.org/issue30672 for discussion
                 if locale_to_set == "POSIX":
                     continue
+
+                # Platforms using UTF-8 in the C locale do not print
+                # CLI_COERCION_WARNING when all the locale envt variables are
+                # not set or set to the empty string.
+                _expected_warnings = expected_warnings
+                for _env_var in base_var_dict:
+                    if base_var_dict[_env_var]:
+                        break
+                else:
+                    if (C_LOCALE_STREAM_ENCODING == "utf-8" and
+                           locale_to_set == "" and coerce_c_locale == "warn"):
+                        _expected_warnings = None
+
                 with self.subTest(env_var=env_var,
                                   nominal_locale=locale_to_set,
                                   PYTHONCOERCECLOCALE=coerce_c_locale):
@@ -316,7 +327,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                     self._check_child_encoding_details(var_dict,
                                                        fs_encoding,
                                                        stream_encoding,
-                                                       expected_warnings,
+                                                       _expected_warnings,
                                                        coercion_expected)
 
     def test_test_PYTHONCOERCECLOCALE_not_set(self):
