@@ -4846,7 +4846,7 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 static int
 compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 {
-    char * kindname = NULL;
+    const char * kindname = NULL;
     switch (s->kind) {
     case Index_kind:
         kindname = "index";
