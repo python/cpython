@@ -1,0 +1,3 @@
+Restrict C locale coercion testing for the empty locale and POSIX locale
+cases to Linux until we better understand the expected behaviour on non-
+Linux platforms.
