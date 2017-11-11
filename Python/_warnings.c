@@ -52,7 +52,9 @@ get_warnings_attr(const char *attr, int try_import)
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get
                the Python implementation */
-            PyErr_Clear();
+            if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+                PyErr_Clear();
+            }
             return NULL;
         }
     }
@@ -62,13 +64,11 @@ get_warnings_attr(const char *attr, int try_import)
             return NULL;
     }
 
-    if (!PyObject_HasAttrString(warnings_module, attr)) {
-        Py_DECREF(warnings_module);
-        return NULL;
-    }
-
     obj = PyObject_GetAttrString(warnings_module, attr);
     Py_DECREF(warnings_module);
+    if (obj == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Clear();
+    }
     return obj;
 }
 
@@ -82,16 +82,18 @@ get_once_registry(void)
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
+        assert(_PyRuntime.warnings.once_registry);
         return _PyRuntime.warnings.once_registry;
     }
     if (!PyDict_Check(registry)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "warnings.onceregistry must be a dict");
+        PyErr_Format(PyExc_TypeError,
+                     MODULE_NAME ".onceregistry must be a dict, "
+                     "not '%.200s'",
+                     Py_TYPE(registry)->tp_name);
         Py_DECREF(registry);
         return NULL;
     }
-    Py_DECREF(_PyRuntime.warnings.once_registry);
-    _PyRuntime.warnings.once_registry = registry;
+    Py_SETREF(_PyRuntime.warnings.once_registry, registry);
     return registry;
 }
 
@@ -106,6 +108,7 @@ get_default_action(void)
         if (PyErr_Occurred()) {
             return NULL;
         }
+        assert(_PyRuntime.warnings.default_action);
         return _PyRuntime.warnings.default_action;
     }
     if (!PyUnicode_Check(default_action)) {
@@ -116,8 +119,7 @@ get_default_action(void)
         Py_DECREF(default_action);
         return NULL;
     }
-    Py_DECREF(_PyRuntime.warnings.default_action);
-    _PyRuntime.warnings.default_action = default_action;
+    Py_SETREF(_PyRuntime.warnings.default_action, default_action);
     return default_action;
 }
 
@@ -137,8 +139,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
             return NULL;
     }
     else {
-        Py_DECREF(_PyRuntime.warnings.filters);
-        _PyRuntime.warnings.filters = warnings_filters;
+        Py_SETREF(_PyRuntime.warnings.filters, warnings_filters);
     }
 
     PyObject *filters = _PyRuntime.warnings.filters;
@@ -408,8 +409,10 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
 
     warnmsg_cls = get_warnings_attr("WarningMessage", 0);
     if (warnmsg_cls == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                "unable to get warnings.WarningMessage");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError,
+                    "unable to get warnings.WarningMessage");
+        }
         goto error;
     }
 
@@ -838,6 +841,68 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
 }
 
 static PyObject *
+get_source_line(PyObject *module_globals, int lineno)
+{
+    _Py_IDENTIFIER(get_source);
+    _Py_IDENTIFIER(__loader__);
+    _Py_IDENTIFIER(__name__);
+    PyObject *loader;
+    PyObject *module_name;
+    PyObject *get_source;
+    PyObject *source;
+    PyObject *source_list;
+    PyObject *source_line;
+
+    /* Check/get the requisite pieces needed for the loader. */
+    loader = _PyDict_GetItemIdWithError(module_globals, &PyId___loader__);
+    if (loader == NULL) {
+        return NULL;
+    }
+    Py_INCREF(loader);
+    module_name = _PyDict_GetItemIdWithError(module_globals, &PyId___name__);
+    if (!module_name) {
+        Py_DECREF(loader);
+        return NULL;
+    }
+    Py_INCREF(module_name);
+
+    /* Make sure the loader implements the optional get_source() method. */
+    get_source = _PyObject_GetAttrId(loader, &PyId_get_source);
+    Py_DECREF(loader);
+    if (!get_source) {
+        Py_DECREF(module_name);
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
+        return NULL;
+    }
+    /* Call get_source() to get the source code. */
+    source = PyObject_CallFunctionObjArgs(get_source, module_name, NULL);
+    Py_DECREF(get_source);
+    Py_DECREF(module_name);
+    if (!source) {
+        return NULL;
+    }
+    if (source == Py_None) {
+        Py_DECREF(source);
+        return NULL;
+    }
+
+    /* Split the source into lines. */
+    source_list = PyUnicode_Splitlines(source, 0);
+    Py_DECREF(source);
+    if (!source_list) {
+        return NULL;
+    }
+
+    /* Get the source line. */
+    source_line = PyList_GetItem(source_list, lineno-1);
+    Py_XINCREF(source_line);
+    Py_DECREF(source_list);
+    return source_line;
+}
+
+static PyObject *
 warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwd_list[] = {"message", "category", "filename", "lineno",
@@ -851,6 +916,8 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *registry = NULL;
     PyObject *module_globals = NULL;
     PyObject *sourceobj = NULL;
+    PyObject *source_line = NULL;
+    PyObject *returned;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOUi|OOOO:warn_explicit",
                 kwd_list, &message, &category, &filename, &lineno, &module,
@@ -858,61 +925,15 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 
     if (module_globals) {
-        _Py_IDENTIFIER(get_source);
-        PyObject *tmp;
-        PyObject *loader;
-        PyObject *module_name;
-        PyObject *source;
-        PyObject *source_list;
-        PyObject *source_line;
-        PyObject *returned;
-
-        if ((tmp = _PyUnicode_FromId(&PyId_get_source)) == NULL)
-            return NULL;
-
-        /* Check/get the requisite pieces needed for the loader. */
-        loader = PyDict_GetItemString(module_globals, "__loader__");
-        module_name = PyDict_GetItemString(module_globals, "__name__");
-
-        if (loader == NULL || module_name == NULL)
-            goto standard_call;
-
-        /* Make sure the loader implements the optional get_source() method. */
-        if (!_PyObject_HasAttrId(loader, &PyId_get_source))
-                goto standard_call;
-        /* Call get_source() to get the source code. */
-        source = PyObject_CallMethodObjArgs(loader, PyId_get_source.object,
-                                            module_name, NULL);
-        if (!source)
-            return NULL;
-        else if (source == Py_None) {
-            Py_DECREF(Py_None);
-            goto standard_call;
-        }
-
-        /* Split the source into lines. */
-        source_list = PyUnicode_Splitlines(source, 0);
-        Py_DECREF(source);
-        if (!source_list)
-            return NULL;
-
-        /* Get the source line. */
-        source_line = PyList_GetItem(source_list, lineno-1);
-        if (!source_line) {
-            Py_DECREF(source_list);
+        source_line = get_source_line(module_globals, lineno);
+        if (source_line == NULL && PyErr_Occurred()) {
             return NULL;
         }
-
-        /* Handle the warning. */
-        returned = warn_explicit(category, message, filename, lineno, module,
-                                 registry, source_line, sourceobj);
-        Py_DECREF(source_list);
-        return returned;
     }
-
- standard_call:
-    return warn_explicit(category, message, filename, lineno, module,
-                         registry, NULL, sourceobj);
+    returned = warn_explicit(category, message, filename, lineno, module,
+                             registry, source_line, sourceobj);
+    Py_XDECREF(source_line);
+    return returned;
 }
 
 static PyObject *
