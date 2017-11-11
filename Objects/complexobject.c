@@ -363,9 +363,9 @@ complex_repr(PyComplexObject *v)
     /* These do not need to be freed. re is either an alias
        for pre or a pointer to a constant.  lead and tail
        are pointers to constants. */
-    char *re = NULL;
-    char *lead = "";
-    char *tail = "";
+    const char *re = NULL;
+    const char *lead = "";
+    const char *tail = "";
 
     if (v->cval.real == 0. && copysign(1.0, v->cval.real)==1.0) {
         /* Real part is +0: just output the imaginary part and do not
