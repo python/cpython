@@ -810,7 +810,7 @@ static PyObject *
 tee(PyObject *self, PyObject *args)
 {
     Py_ssize_t i, n=2;
-    PyObject *it, *iterable, *copyable, *result;
+    PyObject *it, *iterable, *copyable, *copyfunc, *result;
     _Py_IDENTIFIER(__copy__);
 
     if (!PyArg_ParseTuple(args, "O|n", &iterable, &n))
@@ -829,25 +829,43 @@ tee(PyObject *self, PyObject *args)
         Py_DECREF(result);
         return NULL;
     }
-    if (!_PyObject_HasAttrId(it, &PyId___copy__)) {
+
+    copyfunc = _PyObject_GetAttrId(it, &PyId___copy__);
+    if (copyfunc != NULL) {
+        copyable = it;
+    }
+    else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        Py_DECREF(it);
+        Py_DECREF(result);
+        return NULL;
+    }
+    else {
+        PyErr_Clear();
         copyable = tee_fromiterable(it);
         Py_DECREF(it);
         if (copyable == NULL) {
             Py_DECREF(result);
             return NULL;
         }
-    } else
-        copyable = it;
-    PyTuple_SET_ITEM(result, 0, copyable);
-    for (i=1 ; i<n ; i++) {
+        copyfunc = _PyObject_GetAttrId(copyable, &PyId___copy__);
+        if (copyfunc == NULL) {
+            Py_DECREF(copyable);
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
 
-        copyable = _PyObject_CallMethodId(copyable, &PyId___copy__, NULL);
+    PyTuple_SET_ITEM(result, 0, copyable);
+    for (i = 1; i < n; i++) {
+        copyable = _PyObject_CallNoArg(copyfunc);
         if (copyable == NULL) {
+            Py_DECREF(copyfunc);
             Py_DECREF(result);
             return NULL;
         }
         PyTuple_SET_ITEM(result, i, copyable);
     }
+    Py_DECREF(copyfunc);
     return result;
 }
 
