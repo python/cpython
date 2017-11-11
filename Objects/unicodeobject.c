@@ -8396,8 +8396,8 @@ charmap_encoding_error(
     Py_ssize_t collstartpos = *inpos;
     Py_ssize_t collendpos = *inpos+1;
     Py_ssize_t collpos;
-    char *encoding = "charmap";
-    char *reason = "character maps to <undefined>";
+    const char *encoding = "charmap";
+    const char *reason = "character maps to <undefined>";
     charmapencode_result x;
     Py_UCS4 ch;
     int val;
@@ -8928,7 +8928,7 @@ _PyUnicode_TranslateCharmap(PyObject *input,
     /* output buffer */
     _PyUnicodeWriter writer;
     /* error handler */
-    char *reason = "character maps to <undefined>";
+    const char *reason = "character maps to <undefined>";
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     int ignore;

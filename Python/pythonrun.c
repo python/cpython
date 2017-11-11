@@ -1300,7 +1300,7 @@ err_input(perrdetail *err)
 {
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
-    char *msg = NULL;
+    const char *msg = NULL;
     int offset = err->offset;
 
     errtype = PyExc_SyntaxError;

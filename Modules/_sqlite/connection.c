@@ -1550,7 +1550,7 @@ static PyObject *
 pysqlite_connection_exit(pysqlite_Connection* self, PyObject* args)
 {
     PyObject* exc_type, *exc_value, *exc_tb;
-    char* method_name;
+    const char* method_name;
     PyObject* result;
 
     if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_value, &exc_tb)) {

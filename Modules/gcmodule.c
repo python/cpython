@@ -1608,7 +1608,7 @@ _PyGC_DumpShutdownStats(void)
 {
     if (!(_PyRuntime.gc.debug & DEBUG_SAVEALL)
         && _PyRuntime.gc.garbage != NULL && PyList_GET_SIZE(_PyRuntime.gc.garbage) > 0) {
-        char *message;
+        const char *message;
         if (_PyRuntime.gc.debug & DEBUG_UNCOLLECTABLE)
             message = "gc: %zd uncollectable objects at " \
                 "shutdown";

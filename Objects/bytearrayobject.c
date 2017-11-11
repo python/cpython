@@ -1806,7 +1806,8 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1816,7 +1817,7 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1847,7 +1848,8 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1857,7 +1859,7 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1885,7 +1887,8 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
 {
     Py_ssize_t right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1895,7 +1898,7 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);

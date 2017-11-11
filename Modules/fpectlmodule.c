@@ -125,7 +125,8 @@ static void fpe_reset(Sigfunc *handler)
     extern long ieee_handler(const char*, const char*, sigfpe_handler_type);
 #endif
 
-    char *mode="exception", *in="all", *out;
+    const char *mode="exception", *in="all";
+    char *out;
     (void) nonstandard_arithmetic();
     (void) ieee_flags("clearall",mode,in,&out);
     (void) ieee_handler("set","common",(sigfpe_handler_type)handler);

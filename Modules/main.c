@@ -312,7 +312,7 @@ static int
 run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
 {
     PyObject *unicode, *bytes = NULL;
-    char *filename_str;
+    const char *filename_str;
     int run;
 
     /* call pending calls like signal handlers (SIGINT) */
