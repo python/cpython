@@ -727,11 +727,20 @@ module_dir(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(__dict__);
     PyObject *result = NULL;
+	PyObject *module_all = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
-
-    if (dict != NULL) {
-        if (PyDict_Check(dict))
-            result = PyDict_Keys(dict);
+    PyObject *all = PyUnicode_FromString("__all__");
+    if (all != NULL && dict != NULL) {
+        if (PyDict_Check(dict)) {
+            module_all = PyDict_GetItem(dict, all);
+            if (module_all != NULL) {
+                /* We need to actually check if it's a list and then copy the items */
+				Py_INCREF(module_all);
+                result = module_all;
+            }
+            else
+                result = PyDict_Keys(dict);
+        }
         else {
             const char *name = PyModule_GetName(self);
             if (name)
@@ -740,7 +749,7 @@ module_dir(PyObject *self, PyObject *args)
                              name);
         }
     }
-
+    Py_XDECREF(all);
     Py_XDECREF(dict);
     return result;
 }

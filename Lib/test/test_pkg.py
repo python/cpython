@@ -221,16 +221,12 @@ class TestPkg(unittest.TestCase):
 
         import t6
         self.assertEqual(fixdir(dir(t6)),
-                         ['__all__', '__cached__', '__doc__', '__file__',
-                          '__loader__', '__name__', '__package__', '__path__',
-                          '__spec__'])
+                         ['eggs', 'ham', 'spam'])
         s = """
             import t6
             from t6 import *
             self.assertEqual(fixdir(dir(t6)),
-                             ['__all__', '__cached__', '__doc__', '__file__',
-                              '__loader__', '__name__', '__package__',
-                              '__path__', '__spec__', 'eggs', 'ham', 'spam'])
+                             ['eggs', 'ham', 'spam'])
             self.assertEqual(dir(), ['eggs', 'ham', 'self', 'spam', 't6'])
             """
         self.run_code(s)

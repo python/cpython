@@ -1,0 +1,1 @@
+dir(some_module) now returns __all__ if it is defined.
