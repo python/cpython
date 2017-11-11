@@ -1397,10 +1397,10 @@ except ImportError:
 def dump(obj, file, protocol=None):
     if type(file) is FileType and 'b' not in file.mode:
         if protocol and os.linesep != '\n':
-            raise ValueError('File must be open in binary mode')
+            raise ValueError('File must be opened in binary mode')
         if protocol or sys.py3kwarning:
             import warnings
-            warnings.warn('File must be open in binary mode',
+            warnings.warn('File must be opened in binary mode',
                           DeprecationWarning, stacklevel=2)
     Pickler(file, protocol).dump(obj)
 

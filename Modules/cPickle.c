@@ -5744,13 +5744,13 @@ cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
     if (Py_TYPE(file) == &PyFile_Type && !((PyFileObject *)file)->f_binary) {
 #ifdef MS_WINDOWS
         if (proto) {  /* binary protocol */
-            PyErr_SetString(PyExc_ValueError, "File must be open in binary mode");
+            PyErr_SetString(PyExc_ValueError, "File must be opened in binary mode");
             goto finally;
         }
 #endif
         if (proto || Py_Py3kWarningFlag) {
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             "File must be open in binary mode", 1) < 0)
+                             "File must be opened in binary mode", 1) < 0)
             {
                 goto finally;
             }
