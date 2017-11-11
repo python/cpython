@@ -209,7 +209,7 @@ class _LocaleHandlingTestCase(unittest.TestCase):
             env_vars
         )
         self.assertEqual(encoding_details, expected_details)
-        if expected_warnings in (None, [None]):
+        if expected_warnings is None:
             expected_warnings = []
         self.assertEqual(stderr_lines, expected_warnings)
 
