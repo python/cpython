@@ -60,10 +60,30 @@ del sys, _f, _g, _C, _c,                           # Not for export
 # Provide a PEP 3115 compliant mechanism for class creation
 def new_class(name, bases=(), kwds=None, exec_body=None):
     """Create a class object dynamically using the appropriate metaclass."""
-    meta, ns, kwds = prepare_class(name, bases, kwds)
+    resolved_bases = resolve_bases(bases)
+    meta, ns, kwds = prepare_class(name, resolved_bases, kwds)
     if exec_body is not None:
         exec_body(ns)
-    return meta(name, bases, ns, **kwds)
+    cls = meta(name, resolved_bases, ns, **kwds)
+    if resolved_bases is not bases:
+        cls.__orig_bases__ = bases
+    return cls
+
+def resolve_bases(bases):
+    """Resolve MRO entries dynamically as specified by PEP 560."""
+    new_bases = list(bases)
+    updated = False
+    for i, base in enumerate(bases):
+        if isinstance(base, type):
+            continue
+        if not hasattr(base, "__mro_entry__"):
+            continue
+        new_base = base.__mro_entry__(bases)
+        updated = True
+        new_bases[i] = new_base
+    if not updated:
+        return bases
+    return tuple(b for b in new_bases if b is not None)
 
 def prepare_class(name, bases=(), kwds=None):
     """Call the __prepare__ method of the appropriate metaclass.
