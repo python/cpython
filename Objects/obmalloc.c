@@ -1646,7 +1646,7 @@ _PyMem_DebugCheckAddress(char api, const void *p)
 {
     const uint8_t *q = (const uint8_t *)p;
     char msgbuf[64];
-    char *msg;
+    const char *msg;
     size_t nbytes;
     const uint8_t *tail;
     int i;
@@ -1661,7 +1661,7 @@ _PyMem_DebugCheckAddress(char api, const void *p)
     id = (char)q[-SST];
     if (id != api) {
         msg = msgbuf;
-        snprintf(msg, sizeof(msgbuf), "bad ID: Allocated using API '%c', verified using API '%c'", id, api);
+        snprintf(msgbuf, sizeof(msgbuf), "bad ID: Allocated using API '%c', verified using API '%c'", id, api);
         msgbuf[sizeof(msgbuf)-1] = 0;
         goto error;
     }

@@ -543,7 +543,7 @@ instancemethod_repr(PyObject *self)
 {
     PyObject *func = PyInstanceMethod_Function(self);
     PyObject *funcname = NULL , *result = NULL;
-    char *defname = "?";
+    const char *defname = "?";
 
     if (func == NULL) {
         PyErr_BadInternalCall();
