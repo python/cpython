@@ -64,10 +64,9 @@ def new_class(name, bases=(), kwds=None, exec_body=None):
     meta, ns, kwds = prepare_class(name, resolved_bases, kwds)
     if exec_body is not None:
         exec_body(ns)
-    cls = meta(name, resolved_bases, ns, **kwds)
     if resolved_bases is not bases:
-        cls.__orig_bases__ = bases
-    return cls
+        ns['__orig_bases__'] = bases
+    return meta(name, resolved_bases, ns, **kwds)
 
 def resolve_bases(bases):
     """Resolve MRO entries dynamically as specified by PEP 560."""
