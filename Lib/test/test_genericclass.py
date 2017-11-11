@@ -136,7 +136,7 @@ class TestMROEntry(unittest.TestCase):
         c = C()
         with self.assertRaisesRegex(TypeError,
                                     "MRO entry resolution; "
-                                    "use types.new_class()"):
+                                    "use type.new_class()"):
             type('Bad', (c,), {})
 
 
