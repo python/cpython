@@ -636,12 +636,19 @@ def _removeHandlerRef(wr):
     # to prevent race conditions and failures during interpreter shutdown.
     acquire, release, handlers = _acquireLock, _releaseLock, _handlerList
     if acquire and release and handlers:
-        acquire()
         try:
-            if wr in handlers:
-                handlers.remove(wr)
-        finally:
-            release()
+            acquire()
+            try:
+                if wr in handlers:
+                    handlers.remove(wr)
+            finally:
+                release()
+        except TypeError:
+            # https://bugs.python.org/issue21149 - If the RLock object behind
+            # acquire() and release() has been partially finalized you may see
+            # an error about NoneType not being callable.  Absolutely nothing
+            # we can do in this GC during process shutdown situation.  Eat it.
+            pass
 
 def _addHandlerRef(handler):
     """

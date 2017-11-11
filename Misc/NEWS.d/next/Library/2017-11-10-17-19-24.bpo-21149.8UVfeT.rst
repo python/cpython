@@ -1,0 +1,3 @@
+Silence a `'NoneType' object is not callable` in `_removeHandlerRef` error
+that could happen when a logging Handler is destroyed as part of cyclic
+garbage collection during process shutdown.
