@@ -1,0 +1,2 @@
+Use optimized code for BLAKE2 only with SSSE3+. The pure SSE2 implementation
+is slower than the pure C reference implementation.

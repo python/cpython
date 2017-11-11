@@ -1,0 +1,1 @@
+Add an initializer argument to {Process,Thread}PoolExecutor

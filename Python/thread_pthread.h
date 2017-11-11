@@ -35,7 +35,7 @@
 #define THREAD_STACK_SIZE       0x400000
 #endif
 /* for safety, ensure a viable minimum stacksize */
-#define THREAD_STACK_MIN        0x8000  /* 32kB */
+#define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
 #ifdef THREAD_STACK_SIZE
 #error "THREAD_STACK_SIZE defined but _POSIX_THREAD_ATTR_STACKSIZE undefined"
@@ -149,25 +149,6 @@ typedef struct {
 /*
  * Initialization.
  */
-
-#if defined(_HAVE_BSDI)
-static
-void _noop(void)
-{
-}
-
-static void
-PyThread__init_thread(void)
-{
-    /* DO AN INIT BY STARTING THE THREAD */
-    static int dummy = 0;
-    pthread_t thread1;
-    pthread_create(&thread1, NULL, (void *) _noop, &dummy);
-    pthread_join(thread1, NULL);
-}
-
-#else /* !_HAVE_BSDI */
-
 static void
 PyThread__init_thread(void)
 {
@@ -176,8 +157,6 @@ PyThread__init_thread(void)
     pthread_init();
 #endif
 }
-
-#endif /* !_HAVE_BSDI */
 
 /*
  * Thread support.
@@ -339,23 +318,66 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
     struct timespec ts;
+    _PyTime_t deadline = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    if (microseconds > 0)
+    if (microseconds > PY_TIMEOUT_MAX) {
+        Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+    }
+
+    if (microseconds > 0) {
         MICROSECONDS_TO_TIMESPEC(microseconds, ts);
-    do {
-        if (microseconds > 0)
+
+        if (!intr_flag) {
+            /* cannot overflow thanks to (microseconds > PY_TIMEOUT_MAX)
+               check done above */
+            _PyTime_t timeout = _PyTime_FromNanoseconds(microseconds * 1000);
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
+    }
+
+    while (1) {
+        if (microseconds > 0) {
             status = fix_status(sem_timedwait(thelock, &ts));
-        else if (microseconds == 0)
+        }
+        else if (microseconds == 0) {
             status = fix_status(sem_trywait(thelock));
-        else
+        }
+        else {
             status = fix_status(sem_wait(thelock));
+        }
+
         /* Retry if interrupted by a signal, unless the caller wants to be
            notified.  */
-    } while (!intr_flag && status == EINTR);
+        if (intr_flag || status != EINTR) {
+            break;
+        }
+
+        if (microseconds > 0) {
+            /* wait interrupted by a signal (EINTR): recompute the timeout */
+            _PyTime_t dt = deadline - _PyTime_GetMonotonicClock();
+            if (dt < 0) {
+                status = ETIMEDOUT;
+                break;
+            }
+            else if (dt > 0) {
+                _PyTime_t realtime_deadline = _PyTime_GetSystemClock() + dt;
+                if (_PyTime_AsTimespec(realtime_deadline, &ts) < 0) {
+                    /* Cannot occur thanks to (microseconds > PY_TIMEOUT_MAX)
+                       check done above */
+                    Py_UNREACHABLE();
+                }
+                /* no need to update microseconds value, the code only care
+                   if (microseconds > 0 or (microseconds == 0). */
+            }
+            else {
+                microseconds = 0;
+            }
+        }
+    }
 
     /* Don't check the status if we're stopping because of an interrupt.  */
     if (!(intr_flag && status == EINTR)) {
@@ -610,9 +632,25 @@ _pythread_pthread_set_stacksize(size_t size)
 #define THREAD_SET_STACKSIZE(x) _pythread_pthread_set_stacksize(x)
 
 
+/* Thread Local Storage (TLS) API
+
+   This API is DEPRECATED since Python 3.7.  See PEP 539 for details.
+*/
+
+/* Issue #25658: On platforms where native TLS key is defined in a way that
+   cannot be safely cast to int, PyThread_create_key returns immediately a
+   failure status and other TLS functions all are no-ops.  This indicates
+   clearly that the old API is not supported on platforms where it cannot be
+   used reliably, and that no effort will be made to add such support.
+
+   Note: PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT will be unnecessary after
+   removing this API.
+*/
+
 int
 PyThread_create_key(void)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     pthread_key_t key;
     int fail = pthread_key_create(&key, NULL);
     if (fail)
@@ -624,34 +662,102 @@ PyThread_create_key(void)
         return -1;
     }
     return (int)key;
+#else
+    return -1;  /* never return valid key value. */
+#endif
 }
 
 void
 PyThread_delete_key(int key)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     pthread_key_delete(key);
+#endif
 }
 
 void
 PyThread_delete_key_value(int key)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     pthread_setspecific(key, NULL);
+#endif
 }
 
 int
 PyThread_set_key_value(int key, void *value)
 {
-    int fail;
-    fail = pthread_setspecific(key, value);
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+    int fail = pthread_setspecific(key, value);
     return fail ? -1 : 0;
+#else
+    return -1;
+#endif
 }
 
 void *
 PyThread_get_key_value(int key)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     return pthread_getspecific(key);
+#else
+    return NULL;
+#endif
 }
+
 
 void
 PyThread_ReInitTLS(void)
-{}
+{
+}
+
+
+/* Thread Specific Storage (TSS) API
+
+   Platform-specific components of TSS API implementation.
+*/
+
+int
+PyThread_tss_create(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has been created, function is silently skipped. */
+    if (key->_is_initialized) {
+        return 0;
+    }
+
+    int fail = pthread_key_create(&(key->_key), NULL);
+    if (fail) {
+        return -1;
+    }
+    key->_is_initialized = 1;
+    return 0;
+}
+
+void
+PyThread_tss_delete(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has not been created, function is silently skipped. */
+    if (!key->_is_initialized) {
+        return;
+    }
+
+    pthread_key_delete(key->_key);
+    /* pthread has not provided the defined invalid value for the key. */
+    key->_is_initialized = 0;
+}
+
+int
+PyThread_tss_set(Py_tss_t *key, void *value)
+{
+    assert(key != NULL);
+    int fail = pthread_setspecific(key->_key, value);
+    return fail ? -1 : 0;
+}
+
+void *
+PyThread_tss_get(Py_tss_t *key)
+{
+    assert(key != NULL);
+    return pthread_getspecific(key->_key);
+}

@@ -7,7 +7,9 @@ import platform
 import sys
 import sysconfig
 import time
+import threading
 import unittest
+import warnings
 try:
     import _testcapi
 except ImportError:
@@ -32,6 +34,8 @@ class _PyTime(enum.IntEnum):
     ROUND_CEILING = 1
     # Round to nearest with ties going to nearest even integer
     ROUND_HALF_EVEN = 2
+    # Round away from zero
+    ROUND_UP = 3
 
 # Rounding modes supported by PyTime
 ROUNDING_MODES = (
@@ -39,6 +43,7 @@ ROUNDING_MODES = (
     (_PyTime.ROUND_FLOOR, decimal.ROUND_FLOOR),
     (_PyTime.ROUND_CEILING, decimal.ROUND_CEILING),
     (_PyTime.ROUND_HALF_EVEN, decimal.ROUND_HALF_EVEN),
+    (_PyTime.ROUND_UP, decimal.ROUND_UP),
 )
 
 
@@ -59,17 +64,41 @@ class TimeTestCase(unittest.TestCase):
         self.assertFalse(info.monotonic)
         self.assertTrue(info.adjustable)
 
-    def test_clock(self):
-        time.clock()
+    def test_time_ns_type(self):
+        def check_ns(sec, ns):
+            self.assertIsInstance(ns, int)
 
-        info = time.get_clock_info('clock')
+            sec_ns = int(sec * 1e9)
+            # tolerate a difference of 50 ms
+            self.assertLess((sec_ns - ns), 50 ** 6, (sec, ns))
+
+        check_ns(time.time(),
+                 time.time_ns())
+        check_ns(time.monotonic(),
+                 time.monotonic_ns())
+        check_ns(time.perf_counter(),
+                 time.perf_counter_ns())
+        check_ns(time.process_time(),
+                 time.process_time_ns())
+
+        if hasattr(time, 'clock_gettime'):
+            check_ns(time.clock_gettime(time.CLOCK_REALTIME),
+                     time.clock_gettime_ns(time.CLOCK_REALTIME))
+
+    def test_clock(self):
+        with self.assertWarns(DeprecationWarning):
+            time.clock()
+
+        with self.assertWarns(DeprecationWarning):
+            info = time.get_clock_info('clock')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
-        time.clock_gettime(time.CLOCK_REALTIME)
+        t = time.clock_gettime(time.CLOCK_REALTIME)
+        self.assertIsInstance(t, float)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -79,6 +108,18 @@ class TimeTestCase(unittest.TestCase):
         a = time.clock_gettime(time.CLOCK_MONOTONIC)
         b = time.clock_gettime(time.CLOCK_MONOTONIC)
         self.assertLessEqual(a, b)
+
+    @unittest.skipUnless(hasattr(time, 'pthread_getcpuclockid'),
+                         'need time.pthread_getcpuclockid()')
+    @unittest.skipUnless(hasattr(time, 'clock_gettime'),
+                         'need time.clock_gettime()')
+    def test_pthread_getcpuclockid(self):
+        clk_id = time.pthread_getcpuclockid(threading.get_ident())
+        self.assertTrue(type(clk_id) is int)
+        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        t1 = time.clock_gettime(clk_id)
+        t2 = time.clock_gettime(clk_id)
+        self.assertLessEqual(t1, t2)
 
     @unittest.skipUnless(hasattr(time, 'clock_getres'),
                          'need time.clock_getres()')
@@ -411,8 +452,6 @@ class TimeTestCase(unittest.TestCase):
             pass
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     def test_monotonic(self):
         # monotonic() should not go backward
         times = [time.monotonic() for n in range(100)]
@@ -451,8 +490,6 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime')
     def test_monotonic_settime(self):
@@ -490,12 +527,15 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['clock', 'perf_counter', 'process_time', 'time']
-        if hasattr(time, 'monotonic'):
-            clocks.append('monotonic')
+        clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
 
         for name in clocks:
-            info = time.get_clock_info(name)
+            if name == 'clock':
+                with self.assertWarns(DeprecationWarning):
+                    info = time.get_clock_info('clock')
+            else:
+                info = time.get_clock_info(name)
+
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
             self.assertNotEqual(info.implementation, '')

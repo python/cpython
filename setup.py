@@ -615,8 +615,6 @@ class PyBuildExt(build_ext):
 
         math_libs = self.detect_math_libs()
 
-        # XXX Omitted modules: gl, pure, dl, SGI-specific modules
-
         #
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
@@ -909,7 +907,7 @@ class PyBuildExt(build_ext):
                 missing.append('_hashlib')
 
         # We always compile these even when OpenSSL is available (issue #14693).
-        # It's harmless and the object code is tiny (40-50 KB per module,
+        # It's harmless and the object code is tiny (40-50 KiB per module,
         # only loaded when actually used).
         exts.append( Extension('_sha256', ['sha256module.c'],
                                depends=['hashlib.h']) )
@@ -924,19 +922,10 @@ class PyBuildExt(build_ext):
                                         'Modules/_blake2/impl/*'))
         blake2_deps.append('hashlib.h')
 
-        blake2_macros = []
-        if (not cross_compiling and
-                os.uname().machine == "x86_64" and
-                sys.maxsize >  2**32):
-            # Every x86_64 machine has at least SSE2.  Check for sys.maxsize
-            # in case that kernel is 64-bit but userspace is 32-bit.
-            blake2_macros.append(('BLAKE2_USE_SSE', '1'))
-
         exts.append( Extension('_blake2',
                                ['_blake2/blake2module.c',
                                 '_blake2/blake2b_impl.c',
                                 '_blake2/blake2s_impl.c'],
-                               define_macros=blake2_macros,
                                depends=blake2_deps) )
 
         sha3_deps = glob(os.path.join(os.getcwd(), srcdir,
@@ -1667,6 +1656,20 @@ class PyBuildExt(build_ext):
 
         if '_tkinter' not in [e.name for e in self.extensions]:
             missing.append('_tkinter')
+
+        # Build the _uuid module if possible
+        uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
+        if uuid_incs:
+            if self.compiler.find_library_file(lib_dirs, 'uuid'):
+                uuid_libs = ['uuid']
+            else:
+                uuid_libs = []
+        if uuid_incs:
+            self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
+                                   libraries=uuid_libs,
+                                   include_dirs=uuid_incs))
+        else:
+            missing.append('_uuid')
 
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         ext = Extension('xx', ['xxmodule.c'])

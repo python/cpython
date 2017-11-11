@@ -630,9 +630,15 @@ PyErr_PrintEx(int set_sys_last_vars)
         return;
     /* Now we know v != NULL too */
     if (set_sys_last_vars) {
-        _PySys_SetObjectId(&PyId_last_type, exception);
-        _PySys_SetObjectId(&PyId_last_value, v);
-        _PySys_SetObjectId(&PyId_last_traceback, tb);
+        if (_PySys_SetObjectId(&PyId_last_type, exception) < 0) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetObjectId(&PyId_last_value, v) < 0) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetObjectId(&PyId_last_traceback, tb) < 0) {
+            PyErr_Clear();
+        }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
     if (hook) {
@@ -817,13 +823,21 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
 
     if (seen != NULL) {
         /* Exception chaining */
-        if (PySet_Add(seen, value) == -1)
+        PyObject *value_id = PyLong_FromVoidPtr(value);
+        if (value_id == NULL || PySet_Add(seen, value_id) == -1)
             PyErr_Clear();
         else if (PyExceptionInstance_Check(value)) {
+            PyObject *check_id = NULL;
             cause = PyException_GetCause(value);
             context = PyException_GetContext(value);
             if (cause) {
-                res = PySet_Contains(seen, cause);
+                check_id = PyLong_FromVoidPtr(cause);
+                if (check_id == NULL) {
+                    res = -1;
+                } else {
+                    res = PySet_Contains(seen, check_id);
+                    Py_DECREF(check_id);
+                }
                 if (res == -1)
                     PyErr_Clear();
                 if (res == 0) {
@@ -835,7 +849,13 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
             }
             else if (context &&
                 !((PyBaseExceptionObject *)value)->suppress_context) {
-                res = PySet_Contains(seen, context);
+                check_id = PyLong_FromVoidPtr(context);
+                if (check_id == NULL) {
+                    res = -1;
+                } else {
+                    res = PySet_Contains(seen, check_id);
+                    Py_DECREF(check_id);
+                }
                 if (res == -1)
                     PyErr_Clear();
                 if (res == 0) {
@@ -848,6 +868,7 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
             Py_XDECREF(context);
             Py_XDECREF(cause);
         }
+        Py_XDECREF(value_id);
     }
     print_exception(f, value);
     if (err != 0)
@@ -1279,7 +1300,7 @@ err_input(perrdetail *err)
 {
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
-    char *msg = NULL;
+    const char *msg = NULL;
     int offset = err->offset;
 
     errtype = PyExc_SyntaxError;
