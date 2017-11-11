@@ -497,18 +497,15 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
-        if field.opt:
-            check = "exists_not_none(obj, &PyId_%s)" % (field.name,)
+        if not field.opt:
+            self.emit("tmp = _PyObject_GetAttrId(obj, &PyId_%s);" % field.name, depth)
         else:
-            check = "_PyObject_HasAttrId(obj, &PyId_%s)" % (field.name,)
-        self.emit("if (%s) {" % (check,), depth, reflow=False)
+            self.emit("tmp = get_not_none(obj, &PyId_%s);" % field.name, depth)
+        self.emit("if (tmp != NULL) {", depth)
         self.emit("int res;", depth+1)
         if field.seq:
             self.emit("Py_ssize_t len;", depth+1)
             self.emit("Py_ssize_t i;", depth+1)
-        self.emit("tmp = _PyObject_GetAttrId(obj, &PyId_%s);" % field.name, depth+1)
-        self.emit("if (tmp == NULL) goto failed;", depth+1)
-        if field.seq:
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
             self.emit("PyErr_Format(PyExc_TypeError, \"%s field \\\"%s\\\" must "
                       "be a list, not a %%.200s\", tmp->ob_type->tp_name);" %
@@ -542,13 +539,19 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (res != 0) goto failed;", depth+1)
 
         self.emit("Py_CLEAR(tmp);", depth+1)
-        self.emit("} else {", depth)
         if not field.opt:
+            self.emit("} else {", depth)
+            self.emit("if (PyErr_ExceptionMatches(PyExc_AttributeError)) {", depth+1)
             message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
             format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
-            self.emit(format % message, depth+1, reflow=False)
+            self.emit(format % message, depth+2, reflow=False)
+            self.emit("}", depth+1)
             self.emit("return 1;", depth+1)
         else:
+            self.emit("} else if (PyErr_Occurred()) {", depth)
+            self.emit("return 1;", depth+1)
+            self.emit("} else {", depth)
+
             if self.isNumeric(field):
                 self.emit("%s = 0;" % field.name, depth+1)
             elif not self.isSimpleType(field):
@@ -660,12 +663,16 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     int res = -1;
     PyObject *key, *value, *fields;
     fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
-    if (!fields)
-        PyErr_Clear();
     if (fields) {
         numfields = PySequence_Size(fields);
         if (numfields == -1)
             goto cleanup;
+    }
+    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Clear();
+    }
+    else {
+        goto cleanup;
     }
 
     res = 0; /* if no error occurs, this stays 0 to the end */
@@ -958,17 +965,20 @@ static int add_ast_fields(void)
     return 0;
 }
 
-static int exists_not_none(PyObject *obj, _Py_Identifier *id)
+static PyObject *get_not_none(PyObject *obj, _Py_Identifier *id)
 {
-    int isnone;
     PyObject *attr = _PyObject_GetAttrId(obj, id);
     if (!attr) {
-        PyErr_Clear();
-        return 0;
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
+        return NULL;
     }
-    isnone = attr == Py_None;
-    Py_DECREF(attr);
-    return !isnone;
+    else if (attr == Py_None) {
+        Py_DECREF(attr);
+        return NULL;
+    }
+    return attr;
 }
 
 """, 0, reflow=False)
