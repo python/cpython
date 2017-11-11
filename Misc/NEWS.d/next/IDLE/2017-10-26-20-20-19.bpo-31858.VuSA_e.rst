@@ -1,0 +1,4 @@
+IDLE -- Restrict shell prompt manipulaton to the shell. Editor and output
+windows only see an empty last prompt line.  This simplifies the code and
+fixes a minor bug when newline is inserted. Sys.ps1, if present, is read on
+Shell start-up, but is not set or changed.

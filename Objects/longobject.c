@@ -2057,15 +2057,15 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     }
 
     *str = p;
-    /* n <- # of Python digits needed, = ceiling(n/PyLong_SHIFT). */
-    n = digits * bits_per_char + PyLong_SHIFT - 1;
-    if (n / bits_per_char < p - start) {
+    /* n <- the number of Python digits needed,
+            = ceiling((digits * bits_per_char) / PyLong_SHIFT). */
+    if (digits > (PY_SSIZE_T_MAX - (PyLong_SHIFT - 1)) / bits_per_char) {
         PyErr_SetString(PyExc_ValueError,
                         "int string too large to convert");
         *res = NULL;
         return 0;
     }
-    n = n / PyLong_SHIFT;
+    n = (digits * bits_per_char + PyLong_SHIFT - 1) / PyLong_SHIFT;
     z = _PyLong_New(n);
     if (z == NULL) {
         *res = NULL;
@@ -2915,45 +2915,16 @@ long_compare(PyLongObject *a, PyLongObject *b)
     return sign < 0 ? -1 : sign > 0 ? 1 : 0;
 }
 
-#define TEST_COND(cond) \
-    ((cond) ? Py_True : Py_False)
-
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
     int result;
-    PyObject *v;
     CHECK_BINOP(self, other);
     if (self == other)
         result = 0;
     else
         result = long_compare((PyLongObject*)self, (PyLongObject*)other);
-    /* Convert the return value to a Boolean */
-    switch (op) {
-    case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-    case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-    case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-    case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-    case Py_LT:
-        v = TEST_COND(result == -1);
-        break;
-    case Py_GT:
-        v = TEST_COND(result == 1);
-        break;
-    default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 static Py_hash_t

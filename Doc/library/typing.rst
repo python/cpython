@@ -897,17 +897,17 @@ The module defines the following classes, functions and decorators:
 
    See :pep:`484` for details and comparison with other typing semantics.
 
-.. decorator:: no_type_check(arg)
+.. decorator:: no_type_check
 
    Decorator to indicate that annotations are not type hints.
 
-   The argument must be a class or function; if it is a class, it
+   This works as class or function :term:`decorator`.  With a class, it
    applies recursively to all methods defined in that class (but not
    to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 
-.. decorator:: no_type_check_decorator(decorator)
+.. decorator:: no_type_check_decorator
 
    Decorator to give another decorator the :func:`no_type_check` effect.
 
