@@ -388,12 +388,14 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         isPacked = 1;
         pack = _PyLong_AsInt(tmp);
         Py_DECREF(tmp);
-        if (pack < 0 && (!PyErr_Occurred() ||
-                         PyErr_ExceptionMatches(PyExc_TypeError) ||
-                         PyErr_ExceptionMatches(PyExc_OverflowError)))
-        {
-            PyErr_SetString(PyExc_ValueError,
-                            "_pack_ must be a non-negative integer");
+        if (pack < 0) {
+            if (!PyErr_Occurred() ||
+                PyErr_ExceptionMatches(PyExc_TypeError) ||
+                PyErr_ExceptionMatches(PyExc_OverflowError))
+            {
+                PyErr_SetString(PyExc_ValueError,
+                                "_pack_ must be a non-negative integer");
+            }
             return -1;
         }
     }
