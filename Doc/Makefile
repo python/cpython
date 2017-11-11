@@ -122,10 +122,10 @@ clean:
 	-rm -rf build/* $(VENVDIR)/*
 
 venv:
-	@if [ "$(SPHINXBUILD)" == "$(VENVDIR)/bin/sphinx-build" ]; then \
-		@echo "The venv has been created in the $(VENVDIR) directory"
+	@if [ "$(SPHINXBUILD)" == "PATH=$(VENVDIR)/bin:$$PATH sphinx-build" ]; then \
 		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb; \
+		echo "A virtual environment for Docs has been made in the $(VENVDIR) directory"; \
+		$(VENVDIR)/bin/python3 -m pip install Sphinx blurb; \
 	fi
 
 dist:
