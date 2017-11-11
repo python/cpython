@@ -9542,6 +9542,9 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+# 'Real Time' functions on Solaris
+# posix4 on Solaris 2.6
+# pthread (first!) on Linux
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
 $as_echo_n "checking for library containing sem_init... " >&6; }
 if ${ac_cv_search_sem_init+:} false; then :
@@ -9597,9 +9600,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 fi
- # 'Real Time' functions on Solaris
-						# posix4 on Solaris 2.6
-						# pthread (first!) on Linux
+
 
 # check if we need libintl for locale functions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for textdomain in -lintl" >&5

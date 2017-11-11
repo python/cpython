@@ -2688,9 +2688,10 @@ void *x = uuid_generate_time_safe
   [AC_MSG_RESULT(no)]
 )
 
-AC_SEARCH_LIBS(sem_init, pthread rt posix4) 	# 'Real Time' functions on Solaris
-						# posix4 on Solaris 2.6
-						# pthread (first!) on Linux
+# 'Real Time' functions on Solaris
+# posix4 on Solaris 2.6
+# pthread (first!) on Linux
+AC_SEARCH_LIBS(sem_init, pthread rt posix4)
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
