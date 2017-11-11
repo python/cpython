@@ -29,16 +29,20 @@ still needs to be closed when done).
    mapping.
 
 For both the Unix and Windows versions of the constructor, *access* may be
-specified as an optional keyword parameter. *access* accepts one of three
-values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY`
-to specify read-only, write-through or copy-on-write memory respectively.
-*access* can be used on both Unix and Windows.  If *access* is not specified,
-Windows mmap returns a write-through mapping.  The initial memory values for
-all three access types are taken from the specified file.  Assignment to an
-:const:`ACCESS_READ` memory map raises a :exc:`TypeError` exception.
-Assignment to an :const:`ACCESS_WRITE` memory map affects both memory and the
-underlying file.  Assignment to an :const:`ACCESS_COPY` memory map affects
-memory but does not update the underlying file.
+specified as an optional keyword parameter. *access* accepts one of four
+values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY` to
+specify read-only, write-through or copy-on-write memory respectively, or
+:const:`ACCESS_DEFAULT` to defer to *prot*.  *access* can be used on both Unix
+and Windows.  If *access* is not specified, Windows mmap returns a
+write-through mapping.  The initial memory values for all three access types
+are taken from the specified file.  Assignment to an :const:`ACCESS_READ`
+memory map raises a :exc:`TypeError` exception.  Assignment to an
+:const:`ACCESS_WRITE` memory map affects both memory and the underlying file.
+Assignment to an :const:`ACCESS_COPY` memory map affects memory but does not
+update the underlying file.
+
+.. versionchanged:: 3.7
+   Added :const:`ACCESS_DEFAULT` constant.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 

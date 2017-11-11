@@ -594,7 +594,6 @@ struct compiling {
     PyArena *c_arena; /* Arena for allocating memory. */
     PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
-    PyObject *c_normalize_args; /* Normalization argument tuple. */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -631,12 +630,6 @@ init_normalization(struct compiling *c)
     Py_DECREF(m);
     if (!c->c_normalize)
         return 0;
-    c->c_normalize_args = Py_BuildValue("(sN)", "NFKC", Py_None);
-    if (!c->c_normalize_args) {
-        Py_CLEAR(c->c_normalize);
-        return 0;
-    }
-    PyTuple_SET_ITEM(c->c_normalize_args, 1, NULL);
     return 1;
 }
 
@@ -652,15 +645,29 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
+        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyTuple_SET_ITEM(c->c_normalize_args, 1, id);
-        id2 = PyObject_Call(c->c_normalize, c->c_normalize_args, NULL);
+        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        if (form == NULL) {
+            Py_DECREF(id);
+            return NULL;
+        }
+        PyObject *args[2] = {form, id};
+        id2 = _PyObject_FastCall(c->c_normalize, args, 2);
         Py_DECREF(id);
         if (!id2)
             return NULL;
+        if (!PyUnicode_Check(id2)) {
+            PyErr_Format(PyExc_TypeError,
+                         "unicodedata.normalize() must return a string, not "
+                         "%.200s",
+                         Py_TYPE(id2)->tp_name);
+            Py_DECREF(id2);
+            return NULL;
+        }
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
@@ -779,7 +786,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_normalize_args = NULL;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -872,8 +878,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
  out:
     if (c.c_normalize) {
         Py_DECREF(c.c_normalize);
-        PyTuple_SET_ITEM(c.c_normalize_args, 1, NULL);
-        Py_DECREF(c.c_normalize_args);
     }
     return res;
 }
@@ -944,28 +948,6 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
     if (_PyUnicode_EqualToASCIIString(name, "__debug__")) {
         ast_error(c, n, "assignment to keyword");
         return 1;
-    }
-    if (_PyUnicode_EqualToASCIIString(name, "async") ||
-        _PyUnicode_EqualToASCIIString(name, "await"))
-    {
-        PyObject *message = PyUnicode_FromString(
-            "'async' and 'await' will become reserved keywords"
-            " in Python 3.7");
-        int ret;
-        if (message == NULL) {
-            return 1;
-        }
-        ret = PyErr_WarnExplicitObject(
-                PyExc_DeprecationWarning,
-                message,
-                c->c_filename,
-                LINENO(n),
-                NULL,
-                NULL);
-        Py_DECREF(message);
-        if (ret < 0) {
-            return 1;
-        }
     }
     if (full_checks) {
         const char * const *p;
@@ -1638,9 +1620,10 @@ ast_for_funcdef_impl(struct compiling *c, const node *n,
 static stmt_ty
 ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
-    /* async_funcdef: ASYNC funcdef */
+    /* async_funcdef: 'async' funcdef */
     REQ(n, async_funcdef);
-    REQ(CHILD(n, 0), ASYNC);
+    REQ(CHILD(n, 0), NAME);
+    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
     REQ(CHILD(n, 1), funcdef);
 
     return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
@@ -1659,9 +1642,10 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 static stmt_ty
 ast_for_async_stmt(struct compiling *c, const node *n)
 {
-    /* async_stmt: ASYNC (funcdef | with_stmt | for_stmt) */
+    /* async_stmt: 'async' (funcdef | with_stmt | for_stmt) */
     REQ(n, async_stmt);
-    REQ(CHILD(n, 0), ASYNC);
+    REQ(CHILD(n, 0), NAME);
+    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
@@ -1774,17 +1758,23 @@ static int
 count_comp_fors(struct compiling *c, const node *n)
 {
     int n_fors = 0;
-    int is_async;
 
   count_comp_for:
-    is_async = 0;
     n_fors++;
     REQ(n, comp_for);
-    if (TYPE(CHILD(n, 0)) == ASYNC) {
-        is_async = 1;
+    if (NCH(n) == 2) {
+        REQ(CHILD(n, 0), NAME);
+        assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+        n = CHILD(n, 1);
     }
-    if (NCH(n) == (5 + is_async)) {
-        n = CHILD(n, 4 + is_async);
+    else if (NCH(n) == 1) {
+        n = CHILD(n, 0);
+    }
+    else {
+        goto error;
+    }
+    if (NCH(n) == (5)) {
+        n = CHILD(n, 4);
     }
     else {
         return n_fors;
@@ -1803,6 +1793,7 @@ count_comp_fors(struct compiling *c, const node *n)
             return n_fors;
     }
 
+  error:
     /* Should never be reached */
     PyErr_SetString(PyExc_SystemError,
                     "logic error in count_comp_fors");
@@ -1851,19 +1842,27 @@ ast_for_comprehension(struct compiling *c, const node *n)
         asdl_seq *t;
         expr_ty expression, first;
         node *for_ch;
+        node *sync_n;
         int is_async = 0;
 
         REQ(n, comp_for);
 
-        if (TYPE(CHILD(n, 0)) == ASYNC) {
+        if (NCH(n) == 2) {
             is_async = 1;
+            REQ(CHILD(n, 0), NAME);
+            assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+            sync_n = CHILD(n, 1);
         }
+        else {
+            sync_n = CHILD(n, 0);
+        }
+        REQ(sync_n, sync_comp_for);
 
-        for_ch = CHILD(n, 1 + is_async);
+        for_ch = CHILD(sync_n, 1);
         t = ast_for_exprlist(c, for_ch, Store);
         if (!t)
             return NULL;
-        expression = ast_for_expr(c, CHILD(n, 3 + is_async));
+        expression = ast_for_expr(c, CHILD(sync_n, 3));
         if (!expression)
             return NULL;
 
@@ -1880,11 +1879,11 @@ ast_for_comprehension(struct compiling *c, const node *n)
         if (!comp)
             return NULL;
 
-        if (NCH(n) == (5 + is_async)) {
+        if (NCH(sync_n) == 5) {
             int j, n_ifs;
             asdl_seq *ifs;
 
-            n = CHILD(n, 4 + is_async);
+            n = CHILD(sync_n, 4);
             n_ifs = count_comp_ifs(c, n);
             if (n_ifs == -1)
                 return NULL;
@@ -2466,7 +2465,7 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     REQ(n, atom_expr);
     nch = NCH(n);
 
-    if (TYPE(CHILD(n, 0)) == AWAIT) {
+    if (TYPE(CHILD(n, 0)) == NAME && strcmp(STR(CHILD(n, 0)), "await") == 0) {
         start = 1;
         assert(nch > 1);
     }
@@ -2493,7 +2492,7 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     }
 
     if (start) {
-        /* there was an AWAIT */
+        /* there was an 'await' */
         return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
@@ -2558,7 +2557,7 @@ ast_for_expr(struct compiling *c, const node *n)
        term: factor (('*'|'@'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom_expr ['**' factor]
-       atom_expr: [AWAIT] atom trailer*
+       atom_expr: ['await'] atom trailer*
        yield_expr: 'yield' [yield_arg]
     */
 
@@ -4148,7 +4147,7 @@ decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 
 static int
 warn_invalid_escape_sequence(struct compiling *c, const node *n,
-                             char first_invalid_escape_char)
+                             unsigned char first_invalid_escape_char)
 {
     PyObject *msg = PyUnicode_FromFormat("invalid escape sequence \\%c",
                                          first_invalid_escape_char);
@@ -4288,7 +4287,7 @@ static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
 
    `parent` is the enclosing node.
    `n` is the node which locations are going to be fixed relative to parent.
-   `expr_str` is the child node's string representation, incuding braces.
+   `expr_str` is the child node's string representation, including braces.
 */
 static void
 fstring_fix_node_location(const node *parent, node *n, char *expr_str)

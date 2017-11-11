@@ -1,0 +1,4 @@
+Fix timeout rounding in time.sleep(), threading.Lock.acquire() and
+socket.socket.settimeout() to round correctly negative timeouts between -1.0 and
+0.0. The functions now block waiting for events as expected. Previously, the
+call was incorrectly non-blocking. Patch by Pablo Galindo.

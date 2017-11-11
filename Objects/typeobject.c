@@ -206,7 +206,7 @@ PyType_ClearCache(void)
             method_cache_misses, (int) (100.0 * method_cache_misses / total));
     fprintf(stderr, "-- Method cache collisions  = %zd (%d%%)\n",
             method_cache_collisions, (int) (100.0 * method_cache_collisions / total));
-    fprintf(stderr, "-- Method cache size        = %zd KB\n",
+    fprintf(stderr, "-- Method cache size        = %zd KiB\n",
             sizeof(method_cache) / 1024);
 #endif
 
@@ -2367,34 +2367,38 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                           &bases, &PyDict_Type, &orig_dict))
         return NULL;
 
-    /* Determine the proper metatype to deal with this: */
-    winner = _PyType_CalculateMetaclass(metatype, bases);
-    if (winner == NULL) {
-        return NULL;
-    }
-
-    if (winner != metatype) {
-        if (winner->tp_new != type_new) /* Pass it to the winner */
-            return winner->tp_new(winner, args, kwds);
-        metatype = winner;
-    }
-
     /* Adjust for empty tuple bases */
     nbases = PyTuple_GET_SIZE(bases);
     if (nbases == 0) {
-        bases = PyTuple_Pack(1, &PyBaseObject_Type);
+        base = &PyBaseObject_Type;
+        bases = PyTuple_Pack(1, base);
         if (bases == NULL)
-            goto error;
+            return NULL;
         nbases = 1;
     }
-    else
-        Py_INCREF(bases);
+    else {
+        /* Search the bases for the proper metatype to deal with this: */
+        winner = _PyType_CalculateMetaclass(metatype, bases);
+        if (winner == NULL) {
+            return NULL;
+        }
 
-    /* Calculate best base, and check that all bases are type objects */
-    base = best_base(bases);
-    if (base == NULL) {
-        goto error;
+        if (winner != metatype) {
+            if (winner->tp_new != type_new) /* Pass it to the winner */
+                return winner->tp_new(winner, args, kwds);
+            metatype = winner;
+        }
+
+        /* Calculate best base, and check that all bases are type objects */
+        base = best_base(bases);
+        if (base == NULL) {
+            return NULL;
+        }
+
+        Py_INCREF(bases);
     }
+
+    /* Use "goto error" from this point on as we now own the reference to "bases". */
 
     dict = PyDict_Copy(orig_dict);
     if (dict == NULL)
@@ -2945,13 +2949,75 @@ PyType_GetSlot(PyTypeObject *type, int slot)
     return  *(void**)(((char*)type) + slotoffsets[slot]);
 }
 
+/* Internal API to look for a name through the MRO, bypassing the method cache.
+   This returns a borrowed reference, and might set an exception.
+   'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
+static PyObject *
+find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
+{
+    Py_ssize_t i, n;
+    PyObject *mro, *res, *base, *dict;
+    Py_hash_t hash;
+
+    if (!PyUnicode_CheckExact(name) ||
+        (hash = ((PyASCIIObject *) name)->hash) == -1)
+    {
+        hash = PyObject_Hash(name);
+        if (hash == -1) {
+            *error = -1;
+            return NULL;
+        }
+    }
+
+    /* Look in tp_dict of types in MRO */
+    mro = type->tp_mro;
+
+    if (mro == NULL) {
+        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0) {
+            if (PyType_Ready(type) < 0) {
+                *error = -1;
+                return NULL;
+            }
+            mro = type->tp_mro;
+        }
+        if (mro == NULL) {
+            *error = 1;
+            return NULL;
+        }
+    }
+
+    res = NULL;
+    /* Keep a strong reference to mro because type->tp_mro can be replaced
+       during dict lookup, e.g. when comparing to non-string keys. */
+    Py_INCREF(mro);
+    assert(PyTuple_Check(mro));
+    n = PyTuple_GET_SIZE(mro);
+    for (i = 0; i < n; i++) {
+        base = PyTuple_GET_ITEM(mro, i);
+        assert(PyType_Check(base));
+        dict = ((PyTypeObject *)base)->tp_dict;
+        assert(dict && PyDict_Check(dict));
+        res = _PyDict_GetItem_KnownHash(dict, name, hash);
+        if (res != NULL)
+            break;
+        if (PyErr_Occurred()) {
+            *error = -1;
+            goto done;
+        }
+    }
+    *error = 0;
+done:
+    Py_DECREF(mro);
+    return res;
+}
+
 /* Internal API to look for a name through the MRO.
    This returns a borrowed reference, and doesn't set an exception! */
 PyObject *
 _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
-    Py_ssize_t i, n;
-    PyObject *mro, *res, *base, *dict;
+    PyObject *res;
+    int error;
     unsigned int h;
 
     if (MCACHE_CACHEABLE_NAME(name) &&
@@ -2967,45 +3033,25 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         }
     }
 
-    /* Look in tp_dict of types in MRO */
-    mro = type->tp_mro;
+    /* We may end up clearing live exceptions below, so make sure it's ours. */
+    assert(!PyErr_Occurred());
 
-    if (mro == NULL) {
-        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0 &&
-            PyType_Ready(type) < 0) {
-            /* It's not ideal to clear the error condition,
-               but this function is documented as not setting
-               an exception, and I don't want to change that.
-               When PyType_Ready() can't proceed, it won't
-               set the "ready" flag, so future attempts to ready
-               the same type will call it again -- hopefully
-               in a context that propagates the exception out.
-            */
+    res = find_name_in_mro(type, name, &error);
+    /* Only put NULL results into cache if there was no error. */
+    if (error) {
+        /* It's not ideal to clear the error condition,
+           but this function is documented as not setting
+           an exception, and I don't want to change that.
+           E.g., when PyType_Ready() can't proceed, it won't
+           set the "ready" flag, so future attempts to ready
+           the same type will call it again -- hopefully
+           in a context that propagates the exception out.
+        */
+        if (error == -1) {
             PyErr_Clear();
-            return NULL;
         }
-        mro = type->tp_mro;
-        if (mro == NULL) {
-            return NULL;
-        }
+        return NULL;
     }
-
-    res = NULL;
-    /* keep a strong reference to mro because type->tp_mro can be replaced
-       during PyDict_GetItem(dict, name)  */
-    Py_INCREF(mro);
-    assert(PyTuple_Check(mro));
-    n = PyTuple_GET_SIZE(mro);
-    for (i = 0; i < n; i++) {
-        base = PyTuple_GET_ITEM(mro, i);
-        assert(PyType_Check(base));
-        dict = ((PyTypeObject *)base)->tp_dict;
-        assert(dict && PyDict_Check(dict));
-        res = PyDict_GetItem(dict, name);
-        if (res != NULL)
-            break;
-    }
-    Py_DECREF(mro);
 
     if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
         h = MCACHE_HASH_METHOD(type, name);
@@ -6965,6 +7011,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
     void *generic = NULL, *specific = NULL;
     int use_generic = 0;
     int offset = p->offset;
+    int error;
     void **ptr = slotptr(type, offset);
 
     if (ptr == NULL) {
@@ -6973,9 +7020,18 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         } while (p->offset == offset);
         return p;
     }
+    /* We may end up clearing live exceptions below, so make sure it's ours. */
+    assert(!PyErr_Occurred());
     do {
-        descr = _PyType_Lookup(type, p->name_strobj);
+        /* Use faster uncached lookup as we won't get any cache hits during type setup. */
+        descr = find_name_in_mro(type, p->name_strobj, &error);
         if (descr == NULL) {
+            if (error == -1) {
+                /* It is unlikely by not impossible that there has been an exception
+                   during lookup. Since this function originally expected no errors,
+                   we ignore them here in order to keep up the interface. */
+                PyErr_Clear();
+            }
             if (ptr == (void**)&type->tp_iternext) {
                 specific = (void *)_PyObject_NextNotImplemented;
             }

@@ -112,7 +112,7 @@ class ImportTests(unittest.TestCase):
         # Martin von Loewis note what shared library cannot have non-ascii
         # character because init_xxx function cannot be compiled
         # and issue never happens for dynamic modules.
-        # But sources modified to follow generic way for processing pathes.
+        # But sources modified to follow generic way for processing paths.
 
         # the return encoding could be uppercase or None
         fs_encoding = sys.getfilesystemencoding()
@@ -310,8 +310,13 @@ class ImportTests(unittest.TestCase):
         loader.get_data(imp.__file__)  # Will need to create a newly opened file
 
     def test_load_source(self):
-        with self.assertRaisesRegex(ValueError, 'embedded null'):
-            imp.load_source(__name__, __file__ + "\0")
+        # Create a temporary module since load_source(name) modifies
+        # sys.modules[name] attributes like __loader___
+        modname = f"tmp{__name__}"
+        mod = type(sys.modules[__name__])(modname)
+        with support.swap_item(sys.modules, modname, mod):
+            with self.assertRaisesRegex(ValueError, 'embedded null'):
+                imp.load_source(modname, __file__ + "\0")
 
     @support.cpython_only
     def test_issue31315(self):
