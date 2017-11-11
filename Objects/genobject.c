@@ -152,7 +152,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     PyObject *result;
 
     if (gen->gi_running) {
-        char *msg = "generator already executing";
+        const char *msg = "generator already executing";
         if (PyCoro_CheckExact(gen)) {
             msg = "coroutine already executing";
         }
@@ -186,8 +186,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 
     if (f->f_lasti == -1) {
         if (arg && arg != Py_None) {
-            char *msg = "can't send non-None value to a "
-                        "just-started generator";
+            const char *msg = "can't send non-None value to a "
+                              "just-started generator";
             if (PyCoro_CheckExact(gen)) {
                 msg = NON_INIT_CORO_MSG;
             }
@@ -410,7 +410,7 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetNone(PyExc_GeneratorExit);
     retval = gen_send_ex(gen, Py_None, 1, 1);
     if (retval) {
-        char *msg = "generator ignored GeneratorExit";
+        const char *msg = "generator ignored GeneratorExit";
         if (PyCoro_CheckExact(gen)) {
             msg = "coroutine ignored GeneratorExit";
         } else if (PyAsyncGen_CheckExact(gen)) {
