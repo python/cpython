@@ -2347,9 +2347,8 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
         assert(other != NULL);
         Py_INCREF(other);
-        if PyDict_CheckExact(other) {
-            PyObject *items;
-            items = PyDict_Items(other);
+        if (PyDict_CheckExact(other)) {
+            PyObject *items = PyDict_Items(other);
             Py_DECREF(other);
             if (items == NULL)
                 return NULL;
@@ -2357,7 +2356,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_DECREF(items);
             if (res == -1)
                 return NULL;
-            goto handge_kwargs;
+            goto handle_kwargs;
         }
 
         func = _PyObject_GetAttrId(other, &PyId_keys);
@@ -2390,7 +2389,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_DECREF(iterator);
             if (res != 0 || PyErr_Occurred())
                 return NULL;
-            goto handge_kwargs;
+            goto handle_kwargs;
         }
         else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             Py_DECREF(other);
@@ -2412,7 +2411,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_DECREF(items);
             if (res == -1)
                 return NULL;
-            goto handge_kwargs;
+            goto handle_kwargs;
         }
         else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             Py_DECREF(other);
@@ -2428,7 +2427,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             return NULL;
     }
 
-handge_kwargs:
+  handle_kwargs:
     /* now handle kwargs */
     assert(kwargs == NULL || PyDict_Check(kwargs));
     if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {
