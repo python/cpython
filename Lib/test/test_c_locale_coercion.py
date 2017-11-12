@@ -24,9 +24,8 @@ EXPECTED_C_LOCALE_FS_ENCODING = "ascii"
 
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
-    # Linux distros typically use the C locale as their default,
-    # and alias the POSIX locale directly to the C locale
-    EXPECTED_C_LOCALE_EQUIVALENTS.extend(("", "POSIX"))
+    # Linux distros typically alias the POSIX locale directly to the C locale
+    EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
 elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
@@ -303,8 +302,23 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             "LC_ALL": "",
         }
         base_var_dict.update(extra_vars)
-        for env_var in ("LANG", "LC_CTYPE"):
-            for locale_to_set in EXPECTED_C_LOCALE_EQUIVALENTS:
+
+        # Check behaviour for the default locale
+        with self.subTest(default_locale=True,
+                          PYTHONCOERCECLOCALE=coerce_c_locale):
+            var_dict = base_var_dict.copy()
+            if coerce_c_locale is not None:
+                var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
+            # Check behaviour on successful coercion
+            self._check_child_encoding_details(var_dict,
+                                               fs_encoding,
+                                               stream_encoding,
+                                               expected_warnings,
+                                               coercion_expected)
+
+        # Check behaviour for explicitly configured locales
+        for locale_to_set in EXPECTED_C_LOCALE_EQUIVALENTS:
+            for env_var in ("LANG", "LC_CTYPE"):
                 with self.subTest(env_var=env_var,
                                   nominal_locale=locale_to_set,
                                   PYTHONCOERCECLOCALE=coerce_c_locale):
