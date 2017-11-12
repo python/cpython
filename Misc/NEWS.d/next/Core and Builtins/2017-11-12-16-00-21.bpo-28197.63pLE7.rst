@@ -1,1 +1,1 @@
-Add start and stop keywords to range.index method
+Add ``start`` and ``stop`` keywords to ``range.index`` method
