@@ -905,20 +905,6 @@ _Pickler_CommitFrame(PicklerObject *self, size_t frame_extension)
     return 0;
 }
 
-static int
-_Pickler_OpcodeBoundary(PicklerObject *self)
-{
-    Py_ssize_t frame_len;
-
-    if (!self->framing || self->frame_start == -1)
-        return 0;
-    frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
-    if (frame_len >= FRAME_SIZE_TARGET)
-        return _Pickler_CommitFrame(self, 0);
-    else
-        return 0;
-}
-
 static PyObject *
 _Pickler_GetString(PicklerObject *self)
 {
@@ -951,6 +937,33 @@ _Pickler_FlushToFile(PicklerObject *self)
     result = _Pickle_FastCall(self->write, output);
     Py_XDECREF(result);
     return (result == NULL) ? -1 : 0;
+}
+
+static int
+_Pickler_OpcodeBoundary(PicklerObject *self)
+{
+    Py_ssize_t frame_len;
+
+    if (!self->framing || self->frame_start == -1)
+        return 0;
+    frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
+    if (frame_len >= FRAME_SIZE_TARGET) {
+        if(_Pickler_CommitFrame(self, 0)) {
+            return -1;
+        }
+        if (self->write != NULL) {
+            if (_Pickler_FlushToFile(self) < 0) {
+                return -1;
+            }
+            if (_Pickler_ClearBuffer(self) < 0) {
+                return -1;
+            }
+        }
+        return 0;
+    }
+    else {
+        return 0;
+    }
 }
 
 static Py_ssize_t

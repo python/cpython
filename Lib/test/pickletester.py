@@ -2168,6 +2168,37 @@ class AbstractPickleTests(unittest.TestCase):
                             count_opcode(pickle.FRAME, pickled))
             self.assertEqual(obj, self.loads(some_frames_pickle))
 
+    def test_framed_write_sizes(self):
+        if not hasattr(self, 'pickler'):
+            return
+
+        class Writer:
+
+            def __init__(self):
+                self.chunks = []
+
+            def write(self, chunk):
+                self.chunks.append(bytes(chunk))
+
+        small_objects = [(str(i).encode('ascii'), i % 42, {'i': str(i)})
+                         for i in range(int(1e4))]
+
+        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+            # Protocol 4 packs groups of small objects into frames and issues
+            # calls to write only once per frame.
+            w = Writer()
+            self.pickler(w, proto).dump(small_objects)
+            reconstructed = self.loads(b"".join(w.chunks))
+            self.assertEqual(reconstructed, small_objects)
+            self.assertGreater(len(w.chunks), 1)
+            # import pickletools
+            # print(pickletools.dis(b"".join(w.chunks)))
+            for i, chunk in enumerate(w.chunks):
+                self.assertGreater(2 * self.FRAME_SIZE_TARGET, len(chunk))
+                if i < len(w.chunks) - 1:
+                    # The last frame can be smaller than FRAME_SIZE_TARGET.
+                    self.assertGreaterEqual(len(chunk), self.FRAME_SIZE_TARGET)
+
     def test_nested_names(self):
         global Nested
         class Nested:
