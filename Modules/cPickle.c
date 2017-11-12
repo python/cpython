@@ -351,6 +351,7 @@ typedef struct Picklerobject {
     PyObject *dispatch_table;
     int fast_container; /* count nested container dumps */
     PyObject *fast_memo;
+    int saved_newline_mark;
 } Picklerobject;
 
 #ifndef PY_CPICKLE_FAST_LIMIT
@@ -379,6 +380,7 @@ typedef struct Unpicklerobject {
     Py_ssize_t buf_size;
     char *buf;
     PyObject *find_class;
+    int strip_cr;
 } Unpicklerobject;
 
 static PyTypeObject Unpicklertype;
@@ -1267,6 +1269,7 @@ save_string(Picklerobject *self, PyObject *args, int doput)
         if (self->write_func(self, "\n", 1) < 0)
             goto err;
 
+        self->saved_newline_mark = 1;
         Py_XDECREF(repr);
     }
     else {
@@ -1422,6 +1425,12 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
         char *repr_str;
         static char string = UNICODE;
 
+        if (!self->saved_newline_mark) {
+            static const char mark[5] = {STRING, '\'', '\'', '\n', POP};
+            if (self->write_func(self, mark, 5) < 0)
+                goto err;
+            self->saved_newline_mark = 1;
+        }
         repr = modified_EncodeRawUnicodeEscape(
             PyUnicode_AS_UNICODE(args), PyUnicode_GET_SIZE(args));
         if (!repr)
@@ -2133,6 +2142,7 @@ save_inst(Picklerobject *self, PyObject *args)
 
         if (self->write_func(self, "\n", 1) < 0)
             goto finally;
+        self->saved_newline_mark = 1;
     }
     else if (self->write_func(self, &obj, 1) < 0) {
         goto finally;
@@ -2319,6 +2329,7 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
     if (self->write_func(self, "\n", 1) < 0)
         goto finally;
 
+    self->saved_newline_mark = 1;
     if (put(self, args) < 0)
         goto finally;
 
@@ -2372,6 +2383,7 @@ save_pers(Picklerobject *self, PyObject *args, PyObject *f)
             if (self->write_func(self, "\n", 1) < 0)
                 goto finally;
 
+            self->saved_newline_mark = 1;
             res = 1;
             goto finally;
         }
@@ -2850,6 +2862,7 @@ dump(Picklerobject *self, PyObject *args)
 {
     static char stop = STOP;
 
+    self->saved_newline_mark = 0;
     if (self->proto >= 2) {
         char bytes[2];
 
@@ -2858,6 +2871,7 @@ dump(Picklerobject *self, PyObject *args)
         bytes[1] = (char)self->proto;
         if (self->write_func(self, bytes, 2) < 0)
             return -1;
+        self->saved_newline_mark = 1;
     }
 
     if (save(self, args, 0) < 0)
@@ -3381,7 +3395,7 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc)
 }
 
 static PyObject *
-find_class_text(PyObject *module_name, PyObject *global_name, PyObject *fc)
+find_class_text(PyObject *module_name, PyObject *global_name, Unpicklerobject *self)
 {
     PyObject *result;
     Py_ssize_t module_len = PyString_GET_SIZE(module_name);
@@ -3395,6 +3409,7 @@ find_class_text(PyObject *module_name, PyObject *global_name, PyObject *fc)
         {
             return NULL;
         }
+        self->strip_cr = 1;
         module_name = PyString_FromStringAndSize(
                 PyString_AS_STRING(module_name), module_len - 1);
         if (!module_name) {
@@ -3406,13 +3421,13 @@ find_class_text(PyObject *module_name, PyObject *global_name, PyObject *fc)
             Py_DECREF(module_name);
             return NULL;
         }
-        result = find_class(module_name, global_name, fc);
+        result = find_class(module_name, global_name, self->find_class);
         Py_DECREF(module_name);
         Py_DECREF(global_name);
         return result;
     }
     else {
-        return find_class(module_name, global_name, fc);
+        return find_class(module_name, global_name, self->find_class);
     }
 }
 
@@ -3717,9 +3732,13 @@ load_string(Unpicklerobject *self)
     if (!( s=pystrndup(s,len)))  return -1;
 
 
-    /* Strip outermost quotes */
+    /* Strip newline */
+    if (s[len-2] == '\r') {
+        self->strip_cr = 1;
+    }
     while (len > 0 && s[len-1] <= ' ')
         len--;
+    /* Strip outermost quotes */
     if (len > 1 && s[0]=='"' && s[len-1]=='"') {
         s[len-1] = '\0';
         p = s + 1 ;
@@ -3810,6 +3829,15 @@ load_unicode(Unpicklerobject *self)
 
     if ((len = self->readline_func(self, &s)) < 0) return -1;
     if (len < 1) return bad_readline();
+
+    if (self->strip_cr && len >= 2 && s[len - 2] == '\r') {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                            "Pickle was saved in text mode", 1) < 0)
+        {
+            return -1;
+        }
+        len--;
+    }
 
     if (!( str = PyUnicode_DecodeRawUnicodeEscape(s, len - 1, NULL)))
         return -1;
@@ -3999,8 +4027,7 @@ load_inst(Unpicklerobject *self)
             return bad_readline();
         }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
-            class = find_class_text(module_name, class_name,
-                               self->find_class);
+            class = find_class_text(module_name, class_name, self);
             Py_DECREF(class_name);
         }
     }
@@ -4086,8 +4113,7 @@ load_global(Unpicklerobject *self)
             return bad_readline();
         }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
-            class = find_class_text(module_name, class_name,
-                               self->find_class);
+            class = find_class_text(module_name, class_name, self);
             Py_DECREF(class_name);
         }
     }
@@ -4110,6 +4136,15 @@ load_persid(Unpicklerobject *self)
         if ((len = self->readline_func(self, &s)) < 0) return -1;
         if (len < 2) return bad_readline();
 
+        if (s[len-2] == '\r') {
+            if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                             "Pickle was saved in text mode", 1) < 0)
+            {
+                return -1;
+            }
+            self->strip_cr = 1;
+            len--;
+        }
         pid = PyString_FromStringAndSize(s, len - 1);
         if (!pid)  return -1;
 
@@ -4771,6 +4806,7 @@ load(Unpicklerobject *self)
     PyObject *err = 0, *val = 0;
     char *s;
 
+    self->strip_cr = 0;
     self->num_marks = 0;
     if (self->stack->length) Pdata_clear(self->stack, 0);
 

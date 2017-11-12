@@ -1753,8 +1753,8 @@ class AbstractPickleModuleTests(unittest.TestCase):
             support.unlink(TESTFN)
 
     def test_load_text_file(self):
-        def roundtrip(value):
-            pickled = self.module.dumps(value)
+        def roundtrip(value, proto=0):
+            pickled = self.module.dumps(value, proto)
             pickled = pickled.replace('\n', '\r\n')
             return self.module.loads(pickled)
 
@@ -1770,6 +1770,22 @@ class AbstractPickleModuleTests(unittest.TestCase):
             self.assertIsInstance(roundtrip(C()), C)
         with support.check_warnings(('', RuntimeWarning)):
             self.assertIs(roundtrip(C), C)
+        if have_unicode:
+            with support.check_warnings(('', RuntimeWarning)):
+                self.assertEqual(roundtrip(u'a\rb\nc'), u'a\rb\nc')
+                u = unichr(0x03c0)
+                self.assertEqual(roundtrip(u), u)
+                self.assertEqual(roundtrip(u, 1), u)
+                self.assertEqual(roundtrip(u, 2), u)
+                self.assertEqual(roundtrip(['a', u]), ['a', u])
+                x, y = roundtrip([C(), u])
+                self.assertIsInstance(x, C)
+                self.assertEqual(y, u)
+                x, y = roundtrip([C, u])
+                self.assertIs(x, C)
+                self.assertEqual(y, u)
+
+                self.assertEqual(self.module.loads("V\\u03c0\r\n."), u + '\r')
 
     def test_end_of_text_file(self):
         try:

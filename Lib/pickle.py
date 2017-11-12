@@ -220,8 +220,10 @@ class Pickler:
 
     def dump(self, obj):
         """Write a pickled representation of obj to the open file."""
+        self._saved_newline_mark = False
         if self.proto >= 2:
             self.write(PROTO + chr(self.proto))
+            self._saved_newline_mark = True
         self.save(obj)
         self.write(STOP)
 
@@ -342,6 +344,7 @@ class Pickler:
             self.write(BINPERSID)
         else:
             self.write(PERSID + str(pid) + '\n')
+            self._saved_newline_mark = True
 
     def save_reduce(self, func, args, state=None,
                     listitems=None, dictitems=None, obj=None):
@@ -493,6 +496,7 @@ class Pickler:
                 self.write(BINSTRING + pack("<i", n) + obj)
         else:
             self.write(STRING + repr(obj) + '\n')
+            self._saved_newline_mark = True
         self.memoize(obj)
     dispatch[StringType] = save_string
 
@@ -507,6 +511,9 @@ class Pickler:
             obj = obj.replace("\n", "\\u000a")
             obj = obj.replace("\r", "\\u000d")
             obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
+            if not self._saved_newline_mark:
+                self.write(STRING + "''\n" + POP)
+                self._saved_newline_mark = True
             self.write(UNICODE + obj.encode('raw-unicode-escape') + '\n')
         self.memoize(obj)
     dispatch[UnicodeType] = save_unicode
@@ -531,11 +538,18 @@ class Pickler:
             else:
                 if unicode:
                     obj = obj.replace("\\", "\\u005c")
+                    obj = obj.replace("\0", "\\u0000")
                     obj = obj.replace("\n", "\\u000a")
+                    obj = obj.replace("\r", "\\u000d")
+                    obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
+                    if not self._saved_newline_mark:
+                        self.write(STRING + "''\n" + POP)
+                        self._saved_newline_mark = True
                     obj = obj.encode('raw-unicode-escape')
                     self.write(UNICODE + obj + '\n')
                 else:
                     self.write(STRING + repr(obj) + '\n')
+                    self._saved_newline_mark = True
             self.memoize(obj)
         dispatch[StringType] = save_string
 
@@ -722,6 +736,7 @@ class Pickler:
             for arg in args:
                 save(arg)
             write(INST + cls.__module__ + '\n' + cls.__name__ + '\n')
+            self._saved_newline_mark = True
 
         self.memoize(obj)
 
@@ -775,6 +790,7 @@ class Pickler:
                 return
 
         write(GLOBAL + module + '\n' + name + '\n')
+        self._saved_newline_mark = True
         self.memoize(obj)
 
     dispatch[ClassType] = save_global
@@ -862,6 +878,7 @@ class Unpickler:
         self.append = self.stack.append
         read = self.read
         dispatch = self.dispatch
+        self._strip_cr = False
         try:
             while 1:
                 key = read(1)
@@ -898,6 +915,11 @@ class Unpickler:
 
     def load_persid(self):
         pid = self.readline()[:-1]
+        if pid[-1:] == '\r':
+            import warnings
+            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            self._strip_cr = True
+            pid = pid[:-1]
         self.append(self.persistent_load(pid))
     dispatch[PERSID] = load_persid
 
@@ -978,6 +1000,7 @@ class Unpickler:
                 elif len(rep) >= 3 and rep[-1] == '\r' and rep[-2] == q:
                     import warnings
                     warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+                    self._strip_cr = True
                     rep = rep[1:-2]
                     break
         else:
@@ -992,9 +1015,10 @@ class Unpickler:
 
     def load_unicode(self):
         rep = self.readline()[:-1]
-        # Correct pickles saved in Python < 2.7.15 can contain \r.  It is
-        # impossible to distinguish the correct pickle from the broken one and
-        # restore the correct value.
+        if self._strip_cr and rep[-1:] == '\r':
+            import warnings
+            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            rep = rep[:-1]
         self.append(unicode(rep, 'raw-unicode-escape'))
     dispatch[UNICODE] = load_unicode
 
@@ -1087,6 +1111,7 @@ class Unpickler:
         if module[-1:] == '\r' and name[-1:] == '\r':
             import warnings
             warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            self._strip_cr = True
             module = module[:-1]
             name = name[:-1]
         klass = self.find_class(module, name)
@@ -1113,6 +1138,7 @@ class Unpickler:
         if module[-1:] == '\r' and name[-1:] == '\r':
             import warnings
             warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            self._strip_cr = True
             module = module[:-1]
             name = name[:-1]
         klass = self.find_class(module, name)

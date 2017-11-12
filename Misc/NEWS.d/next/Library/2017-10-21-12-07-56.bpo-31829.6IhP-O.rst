@@ -10,6 +10,6 @@ Resolved some portability issues with pickle.
   a file opened in text mode.
 * Fixed unpickling on Unix or in binary mode files writen in text mode on
   Windows.  RuntimeWarning now is emitted in cases that was not unpickleable
-  before.  Files containing Unicode strings will be unpickled incorrectly.
+  before.
 * ``\r``, ``\0`` and ``\x1a`` (end-of-file on Windows) now are escaped in
   Unicode strings in protocol 0.
