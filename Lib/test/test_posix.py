@@ -1,7 +1,6 @@
 "Test posix functions"
 
 from test import support
-android_not_root = support.android_not_root
 
 # Skip these tests if there is no posix module.
 posix = support.import_module('posix')
@@ -423,15 +422,16 @@ class PosixTester(unittest.TestCase):
                 posix.stat, list(os.fsencode(support.TESTFN)))
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_mkfifo(self):
         support.unlink(support.TESTFN)
-        posix.mkfifo(support.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
+        try:
+            posix.mkfifo(support.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
+        except PermissionError as e:
+            self.skipTest('posix.mkfifo(): %s' % e)
         self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
 
     @unittest.skipUnless(hasattr(posix, 'mknod') and hasattr(stat, 'S_IFIFO'),
                          "don't have mknod()/S_IFIFO")
-    @unittest.skipIf(android_not_root, "mknod not allowed, non root user")
     def test_mknod(self):
         # Test using mknod() to create a FIFO (the only use specified
         # by POSIX).
@@ -442,7 +442,7 @@ class PosixTester(unittest.TestCase):
         except OSError as e:
             # Some old systems don't allow unprivileged users to use
             # mknod(), or only support creating device nodes.
-            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
+            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL, errno.EACCES))
         else:
             self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
 
@@ -452,7 +452,7 @@ class PosixTester(unittest.TestCase):
             posix.mknod(path=support.TESTFN, mode=mode, device=0,
                 dir_fd=None)
         except OSError as e:
-            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
+            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL, errno.EACCES))
 
     @unittest.skipUnless(hasattr(posix, 'stat'), 'test needs posix.stat()')
     @unittest.skipUnless(hasattr(posix, 'makedev'), 'test needs posix.makedev()')
@@ -937,11 +937,13 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(os.link in os.supports_dir_fd, "test needs dir_fd support in os.link()")
-    @unittest.skipIf(android_not_root, "hard link not allowed, non root user")
     def test_link_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
             posix.link(support.TESTFN, support.TESTFN + 'link', src_dir_fd=f, dst_dir_fd=f)
+        except PermissionError as e:
+            self.skipTest('posix.link(): %s' % e)
+        else:
             # should have same inodes
             self.assertEqual(posix.stat(support.TESTFN)[1],
                 posix.stat(support.TESTFN + 'link')[1])
@@ -961,7 +963,6 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless((os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
                          "test requires both stat.S_IFIFO and dir_fd support for os.mknod()")
-    @unittest.skipIf(android_not_root, "mknod not allowed, non root user")
     def test_mknod_dir_fd(self):
         # Test using mknodat() to create a FIFO (the only use specified
         # by POSIX).
@@ -973,7 +974,7 @@ class PosixTester(unittest.TestCase):
         except OSError as e:
             # Some old systems don't allow unprivileged users to use
             # mknod(), or only support creating device nodes.
-            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
+            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL, errno.EACCES))
         else:
             self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
         finally:
@@ -1045,12 +1046,15 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_mkfifo_dir_fd(self):
         support.unlink(support.TESTFN)
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
-            posix.mkfifo(support.TESTFN, stat.S_IRUSR | stat.S_IWUSR, dir_fd=f)
+            try:
+                posix.mkfifo(support.TESTFN,
+                             stat.S_IRUSR | stat.S_IWUSR, dir_fd=f)
+            except PermissionError as e:
+                self.skipTest('posix.mkfifo(): %s' % e)
             self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
         finally:
             posix.close(f)
