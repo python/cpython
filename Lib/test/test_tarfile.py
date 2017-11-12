@@ -1147,7 +1147,10 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         target = os.path.join(TEMPDIR, "link_target")
         with open(target, "wb") as fobj:
             fobj.write(b"aaa")
-        os.link(target, link)
+        try:
+            os.link(target, link)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
         try:
             tar = tarfile.open(tmpname, self.mode)
             try:
@@ -1609,7 +1612,10 @@ class HardlinkTest(unittest.TestCase):
         with open(self.foo, "wb") as fobj:
             fobj.write(b"foo")
 
-        os.link(self.foo, self.bar)
+        try:
+            os.link(self.foo, self.bar)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
 
         self.tar = tarfile.open(tmpname, "w")
         self.tar.add(self.foo)
