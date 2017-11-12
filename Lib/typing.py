@@ -666,7 +666,10 @@ class _GenericAlias(_FinalTypingBase, _root=True):
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
 
-    # TODO: __setattr__.
+    def __setattr__(self, attr, val):
+        if attr not in ('__origin__', '__args__', '__parameters__'):
+            setattr(self.__origin__, attr, val)
+        self.__dict__[attr] = val
 
 
 
@@ -675,6 +678,10 @@ def _make_subclasshook(cls):
     the associated __extra__ class in subclass checks performed
     against cls.
     """
+    if cls.__module__ != 'typing':
+        def __extrahook__(subclass):
+            return NotImplemented
+        return __extrahook__
     extra = cls.__bases__[0]
     if isinstance(extra, abc.ABCMeta):
         # The logic mirrors that of ABCMeta.__subclasscheck__.
@@ -686,11 +693,12 @@ def _make_subclasshook(cls):
                 return res
             if extra in subclass.__mro__:
                 return True
+            for rcls in extra._abc_registry:
+                if rcls is not cls and issubclass(subclass, rcls):
+                    return True
             for scls in extra.__subclasses__():
                 if scls is not cls and issubclass(subclass, scls):
                     return True
-            if subclass in extra._abc_registry:
-                return True
             return NotImplemented
     else:
         # For non-ABC extras we'll just call issubclass().
@@ -721,7 +729,6 @@ class Generic(_TypingBase):
           except KeyError:
               return default
     """
-
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
@@ -768,7 +775,7 @@ class Generic(_TypingBase):
         if hasattr(cls, '__orig_bases__'):
             pars = _type_vars(cls.__orig_bases__)
         cls.__parameters__ = tuple(pars)
-        if cls.__module__ == 'typing':
+        if '__subclasshook__' not in cls.__dict__ or self.__subclasshook__.__name__ == '__extrahook__':
             cls.__subclasshook__ = _make_subclasshook(cls)
 
 
@@ -783,7 +790,7 @@ class _TypingEllipsis:
     """Internal placeholder for ... (ellipsis)."""
 
 
-class Tuple(tuple, Generic):
+class Tuple(tuple, Generic, metaclass=abc.ABCMeta):
     """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
 
     Example: Tuple[T1, T2] is a tuple of two elements corresponding
@@ -1278,7 +1285,7 @@ class MutableSequence(collections.abc.MutableSequence, Generic[T]):
 ByteString = collections.abc.ByteString
 
 
-class List(list, Generic[T]):
+class List(list, Generic[T], metaclass=abc.ABCMeta):
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
@@ -1292,7 +1299,7 @@ class Deque(collections.deque, Generic[T]):
     __slots__ = ()
 
 
-class Set(set, Generic[T]):
+class Set(set, Generic[T], metaclass=abc.ABCMeta):
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
@@ -1302,7 +1309,7 @@ class Set(set, Generic[T]):
         return super().__new__(cls, *args, **kwds)
 
 
-class FrozenSet(frozenset, Generic[T_co]):
+class FrozenSet(frozenset, Generic[T_co], metaclass=abc.ABCMeta):
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
@@ -1336,7 +1343,7 @@ class ContextManager(contextlib.AbstractContextManager, Generic[T_co]):
 #    __slots__ = ()
 
 
-class Dict(dict, Generic[KT, VT]):
+class Dict(dict, Generic[KT, VT], metaclass=abc.ABCMeta):
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
