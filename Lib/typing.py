@@ -165,6 +165,18 @@ def _type_repr(obj):
     return repr(obj)
 
 
+def _subs_tvars(tp, tvars, subs):
+    assert isinstance(tp, _GenericAlias)
+    new_args = list(tp.__args__)
+    for a, arg in enumerate(tp.__args__):
+        if isinstance(arg, TypeVar):
+            for i, tvar in enumerate(tvars):
+                if arg == tvar:
+                    new_args[a] = subs
+        new_args[a] = _subs_tvars(arg, tvars, subs)
+    return _GenericAlias(tp.__origin__, tuple(new_args))
+
+
 def _remove_dups_flatten(parameters):
     """An internal helper for Union creation and substitution: flatten Union's
     among parameters, then remove duplicates and strict subclasses.
@@ -668,7 +680,12 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         return self.__origin__
 
     def __getitem__(self, params):
-        return _GenericAlias(self.__origin__, params)
+        if not isinstamce(params, tuple):
+            params = (params,)
+        msg = "Parameters to generic types must be types."
+        params = tuple(_type_check(p, msg) for p in params)
+        _check_generic(self, params)
+        return _subs_tvars(self, self.__parameters__, params)
 
     def __getattr__(self, attr):
         if '__origin__' in self.__dict__:  # We are carefull for copy and pickle
