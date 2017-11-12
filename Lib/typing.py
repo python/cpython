@@ -97,7 +97,7 @@ def _trim_name(nm):
 
 def _get_type_vars(types, tvars):
     for t in types:
-        if isinstance(t, type) and issubclass(t, _TypingBase) or isinstance(t, _TypingBase):
+        if isinstance(t, _TypingBase):
             t._get_type_vars(tvars)
 
 
@@ -108,7 +108,7 @@ def _type_vars(types):
 
 
 def _eval_type(t, globalns, localns):
-    if isinstance(t, type) and issubclass(t, _TypingBase) or isinstance(t, _TypingBase):
+    if isinstance(t, _TypingBase):
         return t._eval_type(globalns, localns)
     return t
 
@@ -340,6 +340,15 @@ class _ForwardRef(_FinalTypingBase, _root=True):
                 "Forward references must evaluate to types.")
             self.__forward_evaluated__ = True
         return self.__forward_value__
+
+    def __eq__(self, other):
+        if not isinstance(other, _ForwardRef):
+            return NotImplemented
+        return (self.__forward_arg__ == other.__forward_arg__ and
+                self.__forward_value__ == other.__forward_value__)
+
+    def __hash__(self):
+        return hash((self.__forward_arg__, self.__forward_value__))
 
     def __repr__(self):
         return '_ForwardRef(%r)' % (self.__forward_arg__,)
@@ -775,7 +784,7 @@ class Generic(_TypingBase):
         if hasattr(cls, '__orig_bases__'):
             pars = _type_vars(cls.__orig_bases__)
         cls.__parameters__ = tuple(pars)
-        if '__subclasshook__' not in cls.__dict__ or self.__subclasshook__.__name__ == '__extrahook__':
+        if cls.__module__ == 'typing' or cls.__subclasshook__.__name__ == '__extrahook__':
             cls.__subclasshook__ = _make_subclasshook(cls)
 
 
@@ -1295,8 +1304,14 @@ class List(list, Generic[T], metaclass=abc.ABCMeta):
         return super().__new__(cls, *args, **kwds)
 
 
-class Deque(collections.deque, Generic[T]):
+class Deque(collections.deque, Generic[T], metaclass=abc.ABCMeta):
     __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Deque:
+            return collections.deque(*args, **kwargs)
+        return super().__new__(cls, *args, **kwargs)
+
 
 
 class Set(set, Generic[T], metaclass=abc.ABCMeta):
@@ -1353,16 +1368,31 @@ class Dict(dict, Generic[KT, VT], metaclass=abc.ABCMeta):
         return super().__new__(cls, *args, **kwds)
 
 
-class DefaultDict(collections.defaultdict, Generic[KT, VT]):
+class DefaultDict(collections.defaultdict, Generic[KT, VT], metaclass=abc.ABCMeta):
     __slots__ = ()
 
+    def __new__(cls, *args, **kwargs):
+        if cls is DefaultDict:
+            return collections.defaultdict(*args, **kwargs)
+        return super().__new__(cls, *args, **kwargs)
 
-class Counter(collections.Counter, Generic[T]):
+
+class Counter(collections.Counter, Generic[T], metaclass=abc.ABCMeta):
     __slots__ = ()
 
+    def __new__(cls, *args, **kwargs):
+        if cls is Counter:
+            return collections.Counter(*args, **kwargs)
+        return super().__new__(cls, *args, **kwargs)
 
-class ChainMap(collections.ChainMap, Generic[KT, VT]):
+
+class ChainMap(collections.ChainMap, Generic[KT, VT], metaclass=abc.ABCMeta):
     __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        if cls is ChainMap:
+            return collections.ChainMap(*args, **kwargs)
+        return super().__new__(cls, *args, **kwargs)
 
 
 class Generator(collections.abc.Generator, Generic[T_co, T_contra, V_co]):
@@ -1695,9 +1725,77 @@ class io:
 io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
-Pattern = _GenericAlias(type(stdlib_re.compile('')), (AnyStr,))
-Match = _GenericAlias(type(stdlib_re.match('', '')), (AnyStr,))
 
+class _TypeAlias(_FinalTypingBase, _root=True):
+    """Internal helper class for defining generic variants of concrete types.
+
+    Note that this is not a type; let's call it a pseudo-type.  It cannot
+    be used in instance and subclass checks in parameterized form, i.e.
+    ``isinstance(42, Match[str])`` raises ``TypeError`` instead of returning
+    ``False``.
+    """
+
+    __slots__ = ('name', 'type_var', 'impl_type', 'type_checker')
+
+    def __init__(self, name, type_var, impl_type, type_checker):
+        """Initializer.
+
+        Args:
+            name: The name, e.g. 'Pattern'.
+            type_var: The type parameter, e.g. AnyStr, or the
+                specific type, e.g. str.
+            impl_type: The implementation type.
+            type_checker: Function that takes an impl_type instance.
+                and returns a value that should be a type_var instance.
+        """
+        assert isinstance(name, str), repr(name)
+        assert isinstance(impl_type, type), repr(impl_type)
+        assert isinstance(type_var, (type, _TypingBase)), repr(type_var)
+        self.name = name
+        self.type_var = type_var
+        self.impl_type = impl_type
+        self.type_checker = type_checker
+
+    def __repr__(self):
+        return "%s[%s]" % (self.name, _type_repr(self.type_var))
+
+    def __getitem__(self, parameter):
+        if not isinstance(self.type_var, TypeVar):
+            raise TypeError("%s cannot be further parameterized." % self)
+        if self.type_var.__constraints__ and isinstance(parameter, type):
+            if not issubclass(parameter, self.type_var.__constraints__):
+                raise TypeError("%s is not a valid substitution for %s." %
+                                (parameter, self.type_var))
+        if isinstance(parameter, TypeVar) and parameter is not self.type_var:
+            raise TypeError("%s cannot be re-parameterized." % self)
+        return self.__class__(self.name, parameter,
+                              self.impl_type, self.type_checker)
+
+    def __eq__(self, other):
+        if not isinstance(other, _TypeAlias):
+            return NotImplemented
+        return self.name == other.name and self.type_var == other.type_var
+
+    def __hash__(self):
+        return hash((self.name, self.type_var))
+
+    def __instancecheck__(self, obj):
+        if not isinstance(self.type_var, TypeVar):
+            raise TypeError("Parameterized type aliases cannot be used "
+                            "with isinstance().")
+        return isinstance(obj, self.impl_type)
+
+    def __subclasscheck__(self, cls):
+        if not isinstance(self.type_var, TypeVar):
+            raise TypeError("Parameterized type aliases cannot be used "
+                            "with issubclass().")
+        return issubclass(cls, self.impl_type)
+
+
+Pattern = _TypeAlias('Pattern', AnyStr, type(stdlib_re.compile('')),
+                     lambda p: p.pattern)
+Match = _TypeAlias('Match', AnyStr, type(stdlib_re.match('', '')),
+                   lambda m: m.re.pattern)
 
 class re:
     """Wrapper namespace for re type aliases."""
