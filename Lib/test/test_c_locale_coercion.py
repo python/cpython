@@ -307,13 +307,16 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         with self.subTest(default_locale=True,
                           PYTHONCOERCECLOCALE=coerce_c_locale):
             var_dict = base_var_dict.copy()
+            _expected_warnings = expected_warnings
             if coerce_c_locale is not None:
                 var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
-            # Check behaviour on successful coercion
+                if (EXPECTED_C_LOCALE_STREAM_ENCODING == "utf-8"
+                        and coerce_c_locale == "warn"):
+                    _expected_warnings = None
             self._check_child_encoding_details(var_dict,
                                                fs_encoding,
                                                stream_encoding,
-                                               expected_warnings,
+                                               _expected_warnings,
                                                coercion_expected)
 
         # Check behaviour for explicitly configured locales
@@ -330,7 +333,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                     self._check_child_encoding_details(var_dict,
                                                        fs_encoding,
                                                        stream_encoding,
-                                                       _expected_warnings,
+                                                       expected_warnings,
                                                        coercion_expected)
 
     def test_test_PYTHONCOERCECLOCALE_not_set(self):
