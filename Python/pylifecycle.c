@@ -459,7 +459,7 @@ _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
     const char *newloc = target->locale_name;
 
     /* Reset locale back to currently configured defaults */
-    setlocale(LC_ALL, "");
+    _Py_SetLocaleFromEnv(LC_ALL);
 
     /* Set the relevant locale environment variable */
     if (setenv("LC_CTYPE", newloc, 1)) {
@@ -472,7 +472,7 @@ _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
     }
 
     /* Reconfigure with the overridden environment variables */
-    setlocale(LC_ALL, "");
+    _Py_SetLocaleFromEnv(LC_ALL);
 }
 #endif
 
@@ -503,13 +503,14 @@ _Py_CoerceLegacyLocale(void)
                 const char *new_locale = setlocale(LC_CTYPE,
                                                    target->locale_name);
                 if (new_locale != NULL) {
-#if !defined(__APPLE__) && defined(HAVE_LANGINFO_H) && defined(CODESET)
+#if !defined(__APPLE__) && !defined(__ANDROID__) && \
+    defined(HAVE_LANGINFO_H) && defined(CODESET)
                     /* Also ensure that nl_langinfo works in this locale */
                     char *codeset = nl_langinfo(CODESET);
                     if (!codeset || *codeset == '\0') {
                         /* CODESET is not set or empty, so skip coercion */
                         new_locale = NULL;
-                        setlocale(LC_CTYPE, "");
+                        _Py_SetLocaleFromEnv(LC_CTYPE);
                         continue;
                     }
 #endif
@@ -522,6 +523,65 @@ _Py_CoerceLegacyLocale(void)
     }
     /* No C locale warning here, as Py_Initialize will emit one later */
 #endif
+}
+
+/* _Py_SetLocaleFromEnv() is a wrapper around setlocale(category, "") to
+ * isolate the idiosyncrasies of different libc implementations. It reads the
+ * appropriate environment variable and uses its value to select the locale for
+ * 'category'. */
+char *
+_Py_SetLocaleFromEnv(int category)
+{
+#ifdef __ANDROID__
+    const char *locale;
+    const char **pvar;
+#ifdef PY_COERCE_C_LOCALE
+    const char *coerce_c_locale;
+#endif
+    const char *utf8_locale = "C.UTF-8";
+    const char *env_var_set[] = {
+        "LC_ALL",
+        "LC_CTYPE",
+        "LANG",
+        NULL,
+    };
+
+    /* Android setlocale(category, "") doesn't check the environment variables
+     * and incorrectly sets the "C" locale at API 24 and older APIs. We only
+     * check the environment variables listed in env_var_set. */
+    for (pvar=env_var_set; *pvar; pvar++) {
+        locale = getenv(*pvar);
+        if (locale != NULL && *locale != '\0') {
+            if (strcmp(locale, utf8_locale) == 0 ||
+                    strcmp(locale, "en_US.UTF-8") == 0) {
+                return setlocale(category, utf8_locale);
+            }
+            return setlocale(category, "C");
+        }
+    }
+
+    /* Android uses UTF-8, so explicitly set the locale to C.UTF-8 if none of
+     * LC_ALL, LC_CTYPE, or LANG is set to a non-empty string.
+     * Quote from POSIX section "8.2 Internationalization Variables":
+     * "4. If the LANG environment variable is not set or is set to the empty
+     * string, the implementation-defined default locale shall be used." */
+
+#ifdef PY_COERCE_C_LOCALE
+    coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    if (coerce_c_locale == NULL || strcmp(coerce_c_locale, "0") != 0) {
+        /* Some other ported code may check the environment variables (e.g. in
+         * extension modules), so we make sure that they match the locale
+         * configuration */
+        if (setenv("LC_CTYPE", utf8_locale, 1)) {
+            fprintf(stderr, "Warning: failed setting the LC_CTYPE "
+                            "environment variable to %s\n", utf8_locale);
+        }
+    }
+#endif
+    return setlocale(category, utf8_locale);
+#else /* __ANDROID__ */
+    return setlocale(category, "");
+#endif /* __ANDROID__ */
 }
 
 
@@ -599,19 +659,12 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
         exit(1);
     }
 
-#ifdef __ANDROID__
-    /* Passing "" to setlocale() on Android requests the C locale rather
-     * than checking environment variables, so request C.UTF-8 explicitly
-     */
-    setlocale(LC_CTYPE, "C.UTF-8");
-#else
 #ifndef MS_WINDOWS
     /* Set up the LC_CTYPE locale, so we can obtain
        the locale's charset without having to switch
        locales. */
-    setlocale(LC_CTYPE, "");
+    _Py_SetLocaleFromEnv(LC_CTYPE);
     _emit_stderr_warning_for_legacy_locale();
-#endif
 #endif
 
     if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
