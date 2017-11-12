@@ -336,7 +336,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                                                        expected_warnings,
                                                        coercion_expected)
 
-    def test_test_PYTHONCOERCECLOCALE_not_set(self):
+    def test_PYTHONCOERCECLOCALE_not_set(self):
         # This should coerce to the first available target locale by default
         self._check_c_locale_coercion("utf-8", "utf-8", coerce_c_locale=None)
 
