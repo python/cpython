@@ -2087,10 +2087,10 @@ _Pickler_write_large_bytes(
     /* Stream write the payload into the file without going through the
        output buffer. */
     result = PyObject_CallFunctionObjArgs(self->write, payload, NULL);
-    Py_XDECREF(result);
     if (result == NULL) {
         return -1;
     }
+    Py_DECREF(result);
 
     /* Reinitialize the buffer for subsequent calls to _Pickler_Write. */
     if (_Pickler_ClearBuffer(self) < 0) {
