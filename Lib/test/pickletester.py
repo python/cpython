@@ -2039,13 +2039,13 @@ class AbstractPickleTests(unittest.TestCase):
 
     FRAME_SIZE_TARGET = 64 * 1024
 
-    def check_frame_opcodes(self, pickled):
+    def check_frame_opcodes(self, pickled, frameless_blobs=True):
         """
         Check the arguments of FRAME opcodes in a protocol 4+ pickle.
 
         Note that binary objects that are larger than FRAME_SIZE_TARGET are not
-        framed and are therefore considered a frame by themselves in the
-        following consistency check.
+        framed by default and are therefore considered a frame by themselves in
+        the following consistency check.
         """
         last_arg = last_pos = last_frame_opcode_size = None
         frameless_opcode_sizes = {
@@ -2055,7 +2055,7 @@ class AbstractPickleTests(unittest.TestCase):
             'BINUNICODE8': 9,
         }
         for op, arg, pos in pickletools.genops(pickled):
-            if op.name in frameless_opcode_sizes:
+            if frameless_blobs and op.name in frameless_opcode_sizes:
                 if len(arg) > self.FRAME_SIZE_TARGET:
                     frame_opcode_size = frameless_opcode_sizes[op.name]
                     arg = len(arg)
@@ -2098,12 +2098,26 @@ class AbstractPickleTests(unittest.TestCase):
         obj = [b'x' * N, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             for fast in [True, False]:
+                if fast and not hasattr(self, 'pickler'):
+                    continue
+
+                # The default picklers do not include large binary objects in
+                # frames.
+                # However some alternative implementation of dump / dumps can
+                # output pickles that include large binary objects inside
+                # protocol 4 frames. The test classes of such implementations
+                # make it explicit by setting the following flag.
+                frameless_blobs = getattr(self, 'frameless_blobs', True)
+
                 with self.subTest(proto=proto, fast=fast):
-                    buf = io.BytesIO()
-                    pickler = self.pickler(buf, protocol=proto)
-                    pickler.fast = fast
-                    pickler.dump(obj)
-                    pickled = buf.getvalue()
+                    if hasattr(self, 'pickler'):
+                        buf = io.BytesIO()
+                        pickler = self.pickler(buf, protocol=proto)
+                        pickler.fast = fast
+                        pickler.dump(obj)
+                        pickled = buf.getvalue()
+                    else:
+                        pickled = self.dumps(obj, proto)
                     unpickled = self.loads(pickled)
                     self.assertEqual(obj, unpickled)
                     n_frames = count_opcode(pickle.FRAME, pickled)
@@ -2113,7 +2127,7 @@ class AbstractPickleTests(unittest.TestCase):
                     else:
                         # One frame at the beginning and one at the end.
                         self.assertGreaterEqual(n_frames, 2)
-                    self.check_frame_opcodes(pickled)
+                    self.check_frame_opcodes(pickled, frameless_blobs)
 
     def test_optional_frames(self):
         if pickle.HIGHEST_PROTOCOL < 4:

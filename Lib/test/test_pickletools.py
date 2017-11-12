@@ -7,6 +7,10 @@ import unittest
 
 class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
+    # pickletools.optimize only works in-memory on pickle strings: it
+    # therefore is ok to include large objects inside a large frame.
+    frameless_blobs = False
+
     def dumps(self, arg, proto=None):
         return pickletools.optimize(pickle.dumps(arg, proto))
 
