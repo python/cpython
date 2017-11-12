@@ -2322,6 +2322,7 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
             return -1;
         }
         if (_Pickler_write_large_bytes(self, header, len, mem, size) < 0) {
+            Py_DECREF(mem);
             return -1;
         }
         Py_DECREF(mem);
