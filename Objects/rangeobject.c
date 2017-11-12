@@ -577,10 +577,9 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
     }
 
     contains = range_contains_long(r, ob);
-    
     if (contains == -1)
         return NULL;
-      
+
     if (contains) {
         PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
         if (tmp == NULL)
