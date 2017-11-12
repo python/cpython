@@ -378,8 +378,6 @@ range_contains_long(rangeobject *r, PyObject *ob)
     return result;
 }
 
-
-
 static int
 range_contains(rangeobject *r, PyObject *ob)
 {
@@ -572,7 +570,7 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
     if (!PyLong_CheckExact(ob) && !PyBool_Check(ob)) {
         Py_ssize_t index;
         index = _PySequence_IterSearch((PyObject*)r, ob, PY_ITERSEARCH_INDEX);
-       if (index == -1)
+        if (index == -1)
             return NULL;
        PyObject *return_value = PyLong_FromSsize_t(index);
        return (start == NULL ? return_value : PyNumber_Add(start, return_value));
@@ -581,16 +579,16 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
     contains = range_contains_long(r, ob);
     
     if (contains == -1)
-      return NULL;
+        return NULL;
       
     if (contains) {
-      PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
-      if (tmp == NULL)
-        return NULL;
-      /* idx = (ob - r.start) // r.step */
-      idx = PyNumber_FloorDivide(tmp, r->step);
-      Py_DECREF(tmp);
-      return (start != NULL ? PyNumber_Add(idx, start) : idx);
+        PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
+        if (tmp == NULL)
+            return NULL;
+        /* idx = (ob - r.start) // r.step */
+        idx = PyNumber_FloorDivide(tmp, r->step);
+        Py_DECREF(tmp);
+        return (start != NULL ? PyNumber_Add(idx, start) : idx);
     }
     /* object is not in the range */
     PyErr_Format(PyExc_ValueError, "%R is not in range", ob);

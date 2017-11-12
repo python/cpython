@@ -280,7 +280,7 @@ class RangeTest(unittest.TestCase):
 
         a = range(-2, 3)
         self.assertEqual(a.index(0), 2)
-        # self.assertEqual(range(1, 10, 3).index(4), 1)
+        self.assertEqual(range(1, 10, 3).index(4), 1)
         self.assertEqual(range(1, -10, -3).index(-5), 2)
 
         self.assertEqual(range(10**20).index(1), 1)
@@ -676,4 +676,4 @@ class RangeTest(unittest.TestCase):
             del rangeobj.step
 
 if __name__ == "__main__":
-    unittest.main(verbosity=20)
+    unittest.main()
