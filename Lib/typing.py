@@ -114,7 +114,12 @@ def _eval_type(t, globalns, localns):
 
 
 Generic = object()
+_GenericAlias = None
 _Protocol = object()
+ClassVar = object()
+Union = object()
+NoReturn = object()
+Optional = object()
 
 def _type_check(arg, msg):
     """Check that the argument is a type, and return it (internal helper).
@@ -131,18 +136,15 @@ def _type_check(arg, msg):
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        arg = _ForwardRef(arg)
+        return _ForwardRef(arg)
     if (
-        isinstance(arg, _TypingBase) and type(arg).__name__ == '_ClassVar' or
-        not isinstance(arg, (type, _TypingBase)) and not callable(arg)
-    ):
-        raise TypeError(msg + " Got %.100r." % (arg,))
-    # Bare Union etc. are not valid as type arguments
-    if (
-        type(arg).__name__ in ('_Union', '_Optional') and
-        not getattr(arg, '__origin__', None) or arg in (Generic, _Protocol)
+        # Bare Union etc. are not valid as type arguments
+        _GenericAlias and isinstance(arg, _GenericAlias) and arg.__origin__ in (Generic, _Protocol, ClassVar) or
+        arg in (Generic, _Protocol, ClassVar, Union, NoReturn, Optional)
     ):
         raise TypeError("Plain %s is not valid as type argument" % arg)
+    if not callable(arg):
+        raise TypeError(msg + " Got %.100r." % (arg,))
     return arg
 
 
@@ -212,7 +214,7 @@ def _remove_dups_flatten(parameters):
     # (In particular, Union[str, AnyStr] != AnyStr.)
     all_params = set(params)
     for t1 in params:
-        if not isinstance(t1, type):
+        if not isinstance(t1, (type, _GenericAlias)):
             continue
         if any(isinstance(t2, type) and issubclass(t1, t2)
                for t2 in all_params - {t1}):
@@ -639,7 +641,9 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         if not isinstance(params, tuple):
             params = (params,)
         self.__origin__ = origin
-        self.__args__ = params
+        self.__args__ = tuple(... if a is _TypingEllipsis else
+                              () if a is _TypingEmpty else
+                              a for a in params)
         self.__parameters__ = _type_vars(params)
 
     def _get_type_vars(self, tvars):
@@ -652,14 +656,25 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         return _GenericAlias(self.__origin__, ev_args)
 
     @_tp_cache
-    def __getitem__(self, parameters):
+    def __getitem__(self, params):
         if self.__origin__ in (Generic, _Protocol):
             # Can't subscript Generic[...] or _Protocol[...].
-            raise TypeError("Cannot subscript already-subscripted %s" %
-                            repr(self))
+            raise TypeError("Cannot subscript already-subscripted {self}")
+        if not isinstance(params, tuple):
+            params = (params,)
+        msg = "Parameters to generic types must be types."
+        params = tuple(_type_check(p, msg) for p in params)
+        _check_generic(self, params)
+        return _subs_tvars(self, self.__parameters__, params)
 
     def __repr__(self):
-        return f'{_type_repr(self.__origin__)}[{", ".join([_type_repr(a) for a in self.__args__])}]'
+        if (self.__origin__ is not Callable or
+                len(self.__args__) == 2 and self.__args__[0] is Ellipsis):
+            return (f'{_type_repr(self.__origin__)}'
+                    f'[{", ".join([_type_repr(a) for a in self.__args__])}]')
+        return (f'typing.Callable'
+                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{_type_repr(self.__args__[-1])}]')
 
     def __eq__(self, other):
         if not isinstance(other, _GenericAlias):
@@ -691,14 +706,6 @@ class _GenericAlias(_FinalTypingBase, _root=True):
                     return None
         return self.__origin__
 
-    def __getitem__(self, params):
-        if not isinstance(params, tuple):
-            params = (params,)
-        msg = "Parameters to generic types must be types."
-        params = tuple(_type_check(p, msg) for p in params)
-        _check_generic(self, params)
-        return _subs_tvars(self, self.__parameters__, params)
-
     def __getattr__(self, attr):
         if '__origin__' in self.__dict__:  # We are carefull for copy and pickle
             return getattr(self.__origin__, attr)
@@ -708,7 +715,6 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         if attr not in ('__origin__', '__args__', '__parameters__'):
             setattr(self.__origin__, attr, val)
         self.__dict__[attr] = val
-
 
 
 def _make_subclasshook(cls):
@@ -745,7 +751,7 @@ def _make_subclasshook(cls):
     return __extrahook__
 
 
-class Generic(_TypingBase):
+class Generic:
     """Abstract base class for generic types.
 
     A generic type is typically declared by inheriting from
@@ -771,7 +777,7 @@ class Generic(_TypingBase):
         if cls is Generic:
             raise TypeError("Type Generic cannot be instantiated; "
                             "it can be used only as a base class")
-        return super().__new__(cls, *args, **kwds)
+        return super().__new__(cls)
 
     @_tp_cache
     def __class_getitem__(cls, params):
@@ -779,7 +785,7 @@ class Generic(_TypingBase):
             params = (params,)
         if not params and cls is not Tuple:
             raise TypeError(
-                "Parameter list to %s[...] cannot be empty" % cls.__qualname__)
+                f"Parameter list to {cls.__qualname__}[...] cannot be empty")
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
         if cls is Generic:
@@ -790,27 +796,49 @@ class Generic(_TypingBase):
             if len(set(params)) != len(params):
                 raise TypeError(
                     "Parameters to Generic[...] must all be unique")
-            tvars = params
-            args = params
         elif cls in (Tuple, Callable):
-            tvars = _type_vars(params)
-            args = params
+            pass
         elif cls is _Protocol:
             # _Protocol is internal, don't check anything.
-            tvars = params
-            args = params
+            pass
         else:
             # Subscripting a regular Generic subclass.
             _check_generic(cls, params)
-            tvars = _type_vars(params)
-            args = params
         return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
-        pars = []
+        tvars = []
+        if (not hasattr(cls, '__orig_bases__') and Generic in cls.__bases__ and
+                cls.__name__ not in ('Tuple', 'Callable') or
+                hasattr(cls, '__orig_bases__') and Generic in cls.__orig_bases__):
+            raise TypeError("Cannot inherit from plain Generic")
         if hasattr(cls, '__orig_bases__'):
-            pars = _type_vars(cls.__orig_bases__)
-        cls.__parameters__ = tuple(pars)
+            tvars = _type_vars(cls.__orig_bases__)
+            # Look for Generic[T1, ..., Tn].
+            # If found, tvars must be a subset of it.
+            # If not found, tvars is it.
+            # Also check for and reject plain Generic,
+            # and reject multiple Generic[...].
+            gvars = None
+            for base in cls.__orig_bases__:
+                if (isinstance(base, _GenericAlias) and
+                        base.__origin__ is Generic):
+                    if gvars is not None:
+                        raise TypeError(
+                            "Cannot inherit from Generic[...] multiple types.")
+                    gvars = base.__parameters__
+            if gvars is None:
+                gvars = tvars
+            else:
+                tvarset = set(tvars)
+                gvarset = set(gvars)
+                if not tvarset <= gvarset:
+                    raise TypeError(
+                        f"Some type variables "
+                        "({', '.join(str(t) for t in tvars if t not in gvarset)}) "
+                        "are not listed in Generic[{', '.join(str(g) for g in gvars)}]")
+                tvars = gvars
+        cls.__parameters__ = tuple(tvars)
         if cls.__module__ == 'typing' or cls.__subclasshook__.__name__ == '__extrahook__':
             cls.__subclasshook__ = _make_subclasshook(cls)
 
@@ -898,8 +926,7 @@ class Callable(collections.abc.Callable, Generic):
             parameters = (Ellipsis, result)
         else:
             if not isinstance(args, list):
-                raise TypeError("Callable[args, result]: args must be a list."
-                                " Got %.100r." % (args,))
+                raise TypeError(f"Callable[args, result]: args must be a list. Got {args}")
             parameters = (tuple(args), result)
         return cls.__getitem_inner__(parameters)
 
@@ -1785,17 +1812,16 @@ class _TypeAlias(_FinalTypingBase, _root=True):
         self.type_checker = type_checker
 
     def __repr__(self):
-        return "%s[%s]" % (self.name, _type_repr(self.type_var))
+        return f"{self.name}[{_type_repr(self.type_var)}]"
 
     def __getitem__(self, parameter):
         if not isinstance(self.type_var, TypeVar):
-            raise TypeError("%s cannot be further parameterized." % self)
+            raise TypeError(f"{self} cannot be further parameterized.")
         if self.type_var.__constraints__ and isinstance(parameter, type):
             if not issubclass(parameter, self.type_var.__constraints__):
-                raise TypeError("%s is not a valid substitution for %s." %
-                                (parameter, self.type_var))
+                raise TypeError(f"{parameter} is not a valid substitution for {self.type_var}.")
         if isinstance(parameter, TypeVar) and parameter is not self.type_var:
-            raise TypeError("%s cannot be re-parameterized." % self)
+            raise TypeError(f"{self} cannot be re-parameterized.")
         return self.__class__(self.name, parameter,
                               self.impl_type, self.type_checker)
 

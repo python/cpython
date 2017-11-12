@@ -399,7 +399,7 @@ class TupleTests(BaseTestCase):
         self.assertIsInstance((0, 0), Tuple)
 
     def test_repr(self):
-        self.assertEqual(repr(Tuple), 'typing.Tuple')
+        self.assertEqual(repr(Tuple), "<class 'typing.Tuple'>")
         self.assertEqual(repr(Tuple[()]), 'typing.Tuple[()]')
         self.assertEqual(repr(Tuple[int, float]), 'typing.Tuple[int, float]')
         self.assertEqual(repr(Tuple[int, ...]), 'typing.Tuple[int, ...]')
@@ -626,9 +626,9 @@ class GenericTests(BaseTestCase):
 
     def test_repr(self):
         self.assertEqual(repr(SimpleMapping),
-                         __name__ + '.' + 'SimpleMapping')
+                         "<class 'test.test_typing.SimpleMapping'>")
         self.assertEqual(repr(MySimpleMapping),
-                         __name__ + '.' + 'MySimpleMapping')
+                         "<class 'test.test_typing.MySimpleMapping'>")
 
     def test_chain_repr(self):
         T = TypeVar('T')
@@ -659,7 +659,7 @@ class GenericTests(BaseTestCase):
         U = TypeVar('U', covariant=True)
         S = TypeVar('S')
 
-        self.assertEqual(repr(List), 'typing.List')
+        self.assertEqual(repr(List), "<class 'typing.List'>")
         self.assertEqual(repr(List[T]), 'typing.List[~T]')
         self.assertEqual(repr(List[U]), 'typing.List[+U]')
         self.assertEqual(repr(List[S][T][int]), 'typing.List[int]')
@@ -907,7 +907,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(repr(Union[Tuple, Callable]).replace('typing.', ''),
                          'Union[Tuple, Callable]')
         self.assertEqual(repr(Union[Tuple, Tuple[int]]).replace('typing.', ''),
-                         'Tuple')
+                         "<class 'Tuple'>")
         self.assertEqual(repr(Callable[..., Optional[T]][int]).replace('typing.', ''),
                          'Callable[..., Union[int, NoneType]]')
         self.assertEqual(repr(Callable[[], List[T]][int]).replace('typing.', ''),
@@ -1111,29 +1111,23 @@ class GenericTests(BaseTestCase):
                 pass
 
     def test_repr_2(self):
-        PY32 = sys.version_info[:2] < (3, 3)
-
         class C(Generic[T]):
             pass
 
         self.assertEqual(C.__module__, __name__)
-        if not PY32:
-            self.assertEqual(C.__qualname__,
-                             'GenericTests.test_repr_2.<locals>.C')
-        self.assertEqual(repr(C).split('.')[-1], 'C')
+        self.assertEqual(C.__qualname__,
+                         'GenericTests.test_repr_2.<locals>.C')
         X = C[int]
         self.assertEqual(X.__module__, __name__)
-        if not PY32:
-            self.assertTrue(X.__qualname__.endswith('.<locals>.C'))
+        self.assertTrue(X.__qualname__.endswith('.<locals>.C'))
         self.assertEqual(repr(X).split('.')[-1], 'C[int]')
 
         class Y(C[int]):
             pass
 
         self.assertEqual(Y.__module__, __name__)
-        if not PY32:
-            self.assertEqual(Y.__qualname__,
-                             'GenericTests.test_repr_2.<locals>.Y')
+        self.assertEqual(Y.__qualname__,
+                         'GenericTests.test_repr_2.<locals>.Y')
         self.assertEqual(repr(Y).split('.')[-1], 'Y')
 
     def test_eq_1(self):
@@ -2475,7 +2469,7 @@ class RETests(BaseTestCase):
                 pass
 
         self.assertEqual(str(ex.exception),
-                         "Cannot subclass typing._TypeAlias")
+                         "Cannot subclass <class 'typing._TypeAlias'>")
 
 
 class AllTests(BaseTestCase):
