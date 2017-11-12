@@ -1,0 +1,3 @@
+The platform dependent handling of setting the locale from the environment is
+now consolidated into the standard behavior on platforms whose `setlocale()`
+function do not set the locale from the environment (e.g. Android).
