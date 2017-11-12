@@ -1,12 +1,12 @@
 import abc
 from abc import abstractmethod, abstractproperty
 import collections
+import collections.abc
 import contextlib
 import functools
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
-import collections.abc as collections_abc
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
 
 # Please keep __all__ alphabetized within each category.
@@ -24,12 +24,10 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
-    'GenericMeta',  # subclass of abc.ABCMeta and a metaclass
-                    # for 'Generic' and ABCs below.
-    'ByteString',
+    'ByteString',  # collections.abc.ByteString.
     'Container',
     'ContextManager',
-    'Hashable',
+    'Hashable',  # collections.abc.Hashable.
     'ItemsView',
     'Iterable',
     'Iterator',
@@ -48,7 +46,7 @@ __all__ = [
     'Coroutine',
     'Collection',
     'AsyncGenerator',
-    'AsyncContextManager',
+    # 'AsyncContextManager',
 
     # Structural checks, a.k.a. protocols.
     'Reversible',
@@ -156,7 +154,7 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
-    if isinstance(obj, type) and not issubclass(obj, _TypingBase):
+    if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
         return '%s.%s' % (obj.__module__, obj.__qualname__)
@@ -267,7 +265,7 @@ class _TypingBase:
 
     def __repr__(self):
         cls = type(self)
-        qname = _trim_name(_qualname(cls))
+        qname = _trim_name(cls.__qualname__)
         return '%s.%s' % (cls.__module__, qname)
 
     def __call__(self, *args, **kwds):
@@ -317,7 +315,6 @@ class _ForwardRef(_FinalTypingBase, _root=True):
                  '__forward_evaluated__', '__forward_value__')
 
     def __init__(self, arg):
-        super().__init__(arg)
         if not isinstance(arg, str):
             raise TypeError('Forward reference must be a string -- got %r' % (arg,))
         try:
@@ -611,22 +608,20 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         keyword arguments that are used for internal bookkeeping, therefore
         an override should pass unused keyword arguments to super().
         """
+        if not isinstance(params, tuple):
+            params = (params,)
         self.__origin__ = origin
         self.__args__ = params
         self.__parameters__ = _type_vars(params)
 
     def _get_type_vars(self, tvars):
-        if self.__origin__ and self.__parameters__:
-            _get_type_vars(self.__parameters__, tvars)
+        _get_type_vars(self.__parameters__, tvars)
 
     def _eval_type(self, globalns, localns):
-        ev_origin = (self.__origin__._eval_type(globalns, localns)
-                     if self.__origin__ else None)
-        ev_args = tuple(_eval_type(a, globalns, localns) for a
-                        in self.__args__) if self.__args__ else None
-        if ev_origin == self.__origin__ and ev_args == self.__args__:
+        ev_args = tuple(_eval_type(a, globalns, localns) for a in self.__args__)
+        if ev_args == self.__args__:
             return self
-        return _GenericAlias()
+        return _GenericAlias(self.__origin__, ev_args)
 
     @_tp_cache
     def __getitem__(self, parameters):
@@ -636,14 +631,74 @@ class _GenericAlias(_FinalTypingBase, _root=True):
                             repr(self))
 
     def __repr__(self):
-        if self.__origin__ is None:
-            return super().__repr__()
-        return self._tree_repr(self._subs_tree())
+        return f'{_type_repr(self.__origin__)}[{", ".join([_type_repr(a) for a in self.__args__])}]'
+
+    def __eq__(self, other):
+        if not isinstance(other, _GenericAlias):
+            return NotImplemented
+        if self.__origin__ != other.__origin__:
+            return False
+        if self.__origin__ is Union and other.__origin__ is Union:
+            return frozenset(self.__args__) == frozenset(other.__args__)
+        return self.__args__ == other.__args__
+
+    def __hash__(self):
+        if self.__origin__ is Union:
+            return hash((Union, frozenset(self.__args__)))
+        return hash((self.__origin__, self.__args__))
+
+    def __call__(self, *args, **kwargs):
+        result = self.__origin__(*args, **kwargs)
+        try:
+            result.__orig_class__ = self
+        except AttributeError:
+            pass
+        return result
 
     def __mro_entry__(self, bases):
         return self.__origin__
 
-    # TODO: __getattr__ and __setattr__.
+    def __getitem__(self, params):
+        return _GenericAlias(self.__origin__, params)
+
+    def __getattr__(self, attr):
+        if '__origin__' in self.__dict__:  # We are carefull for copy and pickle
+            return getattr(self.__origin__, attr)
+        raise AttributeError(attr)
+
+    # TODO: __setattr__.
+
+
+
+def _make_subclasshook(cls):
+    """Construct a __subclasshook__ callable that incorporates
+    the associated __extra__ class in subclass checks performed
+    against cls.
+    """
+    extra = cls.__bases__[0]
+    if isinstance(extra, abc.ABCMeta):
+        # The logic mirrors that of ABCMeta.__subclasscheck__.
+        # Registered classes need not be checked here because
+        # cls and its extra share the same _abc_registry.
+        def __extrahook__(subclass):
+            res = extra.__subclasshook__(subclass)
+            if res is not NotImplemented:
+                return res
+            if extra in subclass.__mro__:
+                return True
+            for scls in extra.__subclasses__():
+                if scls is not cls and issubclass(subclass, scls):
+                    return True
+            if subclass in extra._abc_registry:
+                return True
+            return NotImplemented
+    else:
+        # For non-ABC extras we'll just call issubclass().
+        def __extrahook__(subclass):
+            if issubclass(subclass, extra):
+                return True
+            return NotImplemented
+    return __extrahook__
 
 
 class Generic(_TypingBase):
@@ -713,6 +768,8 @@ class Generic(_TypingBase):
         if hasattr(cls, '__orig_bases__'):
             pars = _type_vars(cls.__orig_bases__)
         cls.__parameters__ = tuple(pars)
+        if cls.__module__ == 'typing':
+            cls.__subclasshook__ = _make_subclasshook(cls)
 
 
 class _TypingEmpty:
@@ -745,22 +802,22 @@ class Tuple(tuple, Generic):
         return super().__new__(cls, *args, **kwds)
 
     @_tp_cache
-    def __class_getitem__(self, parameters):
-        if self.__origin__ is not None or self._gorg is not Tuple:
+    def __class_getitem__(cls, parameters):
+        if cls is not Tuple:
             # Normal generic rules apply if this is not the first subscription
             # or a subscription of a subclass.
-            return super().__getitem__(parameters)
+            return super().__class_getitem__(cls, parameters)
         if parameters == ():
-            return super().__getitem__((_TypingEmpty,))
+            return super().__class_getitem__(cls, (_TypingEmpty,))
         if not isinstance(parameters, tuple):
             parameters = (parameters,)
         if len(parameters) == 2 and parameters[1] is ...:
             msg = "Tuple[t, ...]: t must be a type."
             p = _type_check(parameters[0], msg)
-            return super().__getitem__((p, _TypingEllipsis))
+            return super().__class_getitem__(cls, (p, _TypingEllipsis))
         msg = "Tuple[t0, t1, ...]: each t must be a type."
         parameters = tuple(_type_check(p, msg) for p in parameters)
-        return super().__getitem__(parameters)
+        return super().__class_getitem__(cls, parameters)
 
 
 class Callable(collections.abc.Callable, Generic):
@@ -782,13 +839,13 @@ class Callable(collections.abc.Callable, Generic):
                             "use a non-abstract subclass instead")
         return super().__new__(cls, *args, **kwds)
 
-    def __class_getitem__(self, parameters):
+    def __class_getitem__(cls, parameters):
         """A thin wrapper around __getitem_inner__ to provide the latter
         with hashable arguments to improve speed.
         """
 
-        if self.__origin__ is not None or self._gorg is not Callable:
-            return super().__getitem__(parameters)
+        if cls is not Callable:
+            return super().__class_getitem__(cls, parameters)
         if not isinstance(parameters, tuple) or len(parameters) != 2:
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
@@ -800,19 +857,20 @@ class Callable(collections.abc.Callable, Generic):
                 raise TypeError("Callable[args, result]: args must be a list."
                                 " Got %.100r." % (args,))
             parameters = (tuple(args), result)
-        return self.__getitem_inner__(parameters)
+        return cls.__getitem_inner__(parameters)
 
+    @classmethod
     @_tp_cache
-    def __getitem_inner__(self, parameters):
+    def __getitem_inner__(cls, parameters):
         args, result = parameters
         msg = "Callable[args, result]: result must be a type."
         result = _type_check(result, msg)
         if args is Ellipsis:
-            return super().__getitem__((_TypingEllipsis, result))
+            return super().__class_getitem__(cls, (_TypingEllipsis, result))
         msg = "Callable[[arg, ...], result]: each arg must be a type."
         args = tuple(_type_check(arg, msg) for arg in args)
         parameters = args + (result,)
-        return super().__getitem__(parameters)
+        return super().__class_getitem__(cls, parameters)
 
 
 def cast(typ, val):
