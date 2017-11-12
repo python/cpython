@@ -166,14 +166,18 @@ def _type_repr(obj):
 
 
 def _subs_tvars(tp, tvars, subs):
-    assert isinstance(tp, _GenericAlias)
+    if not isinstance(tp, _GenericAlias):
+        return tp
     new_args = list(tp.__args__)
     for a, arg in enumerate(tp.__args__):
         if isinstance(arg, TypeVar):
             for i, tvar in enumerate(tvars):
                 if arg == tvar:
-                    new_args[a] = subs
-        new_args[a] = _subs_tvars(arg, tvars, subs)
+                    new_args[a] = subs[i]
+        else:
+            new_args[a] = _subs_tvars(arg, tvars, subs)
+    if tp.__origin__ is Union:
+        return Union[tuple(new_args)]
     return _GenericAlias(tp.__origin__, tuple(new_args))
 
 
@@ -285,6 +289,8 @@ class _TypingBase:
 
 
 class _FinalTypingBase(_TypingBase):
+
+    __slots__ = ()
 
     def __init_subclass__(self, *args, **kwds):
         if not kwds.pop('_root', False):
@@ -624,6 +630,7 @@ Optional = _Optional(_root=True)
 
 
 class _GenericAlias(_FinalTypingBase, _root=True):
+
     def __init__(self, origin, params):
         """Create a new generic class. GenericMeta.__new__ accepts
         keyword arguments that are used for internal bookkeeping, therefore
@@ -677,10 +684,15 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         return result
 
     def __mro_entry__(self, bases):
+        if self.__origin__ is Generic:
+            i = bases.index(self)
+            for b in bases[i+1:]:
+                if isinstance(b, _GenericAlias):
+                    return None
         return self.__origin__
 
     def __getitem__(self, params):
-        if not isinstamce(params, tuple):
+        if not isinstance(params, tuple):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
@@ -711,8 +723,6 @@ def _make_subclasshook(cls):
     extra = cls.__bases__[0]
     if isinstance(extra, abc.ABCMeta):
         # The logic mirrors that of ABCMeta.__subclasscheck__.
-        # Registered classes need not be checked here because
-        # cls and its extra share the same _abc_registry.
         def __extrahook__(subclass):
             res = extra.__subclasshook__(subclass)
             if res is not NotImplemented:
@@ -827,6 +837,7 @@ class Tuple(tuple, Generic, metaclass=abc.ABCMeta):
     """
 
     __slots__ = ()
+    __call__ = None
 
     def __new__(cls, *args, **kwds):
         if cls is Tuple:
