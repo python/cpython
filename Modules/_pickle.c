@@ -2269,6 +2269,7 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
 {
     char header[9];
     Py_ssize_t len;
+    PyObject *mem;
 
     assert(size >= 0);
     if (size <= 0xff && self->proto >= 4) {
@@ -2295,11 +2296,22 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
         return -1;
     }
 
-    if (_Pickler_Write(self, header, len) < 0)
-        return -1;
-    if (_Pickler_Write(self, data, size) < 0)
-        return -1;
-
+    if (size < FRAME_SIZE_TARGET || self->write == NULL) {
+        if (_Pickler_Write(self, header, len) < 0)
+            return -1;
+        if (_Pickler_Write(self, data, size) < 0)
+            return -1;
+    }
+    else {
+        // Bypass the in-memory buffer to directly stream large data
+        // into the underlying file object
+        mem = PyMemoryView_FromMemory((char *) data, size, PyBUF_READ);
+        if (mem == NULL)
+            return -1;
+        if (_Pickler_write_large_bytes(self, header, len, mem, size) < 0)
+            return -1;
+        Py_DECREF(mem);
+    }
     return 0;
 }
 
