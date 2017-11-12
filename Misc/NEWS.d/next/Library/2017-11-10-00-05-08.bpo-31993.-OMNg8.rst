@@ -1,3 +1,7 @@
 The picklers do no longer allocate temporary memory when dumping large
 ``bytes`` and ``str`` objects into a file object. Instead the data is
 directly streamed into the underlying file object.
+
+Previously the C implementation would buffer all content and issue a
+single call to ``file.write`` at the end of the dump. With protocol 4
+this behavior has changed to issue one call to ``file.write`` per frame.
