@@ -917,7 +917,8 @@ class Unpickler:
         pid = self.readline()[:-1]
         if pid[-1:] == '\r':
             import warnings
-            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            warnings.warn('Pickle was saved in text mode',
+                          RuntimeWarning, stacklevel=3)
             self._strip_cr = True
             pid = pid[:-1]
         self.append(self.persistent_load(pid))
@@ -999,7 +1000,8 @@ class Unpickler:
                     break
                 elif len(rep) >= 3 and rep[-1] == '\r' and rep[-2] == q:
                     import warnings
-                    warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+                    warnings.warn('Pickle was saved in text mode',
+                                  RuntimeWarning, stacklevel=3)
                     self._strip_cr = True
                     rep = rep[1:-2]
                     break
@@ -1017,7 +1019,8 @@ class Unpickler:
         rep = self.readline()[:-1]
         if self._strip_cr and rep[-1:] == '\r':
             import warnings
-            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            warnings.warn('Pickle was saved in text mode',
+                          RuntimeWarning, stacklevel=3)
             rep = rep[:-1]
         self.append(unicode(rep, 'raw-unicode-escape'))
     dispatch[UNICODE] = load_unicode
@@ -1110,7 +1113,8 @@ class Unpickler:
         name = self.readline()[:-1]
         if module[-1:] == '\r' and name[-1:] == '\r':
             import warnings
-            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            warnings.warn('Pickle was saved in text mode',
+                          RuntimeWarning, stacklevel=3)
             self._strip_cr = True
             module = module[:-1]
             name = name[:-1]
@@ -1137,7 +1141,8 @@ class Unpickler:
         name = self.readline()[:-1]
         if module[-1:] == '\r' and name[-1:] == '\r':
             import warnings
-            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            warnings.warn('Pickle was saved in text mode',
+                          RuntimeWarning, stacklevel=3)
             self._strip_cr = True
             module = module[:-1]
             name = name[:-1]
