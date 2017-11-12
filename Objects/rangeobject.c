@@ -541,6 +541,9 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
 
     PyObject *return_value;
     if(start || stop){
+      /* This means we have to use only a portion of the range. We
+         create a relavant slice of the range and do the indexing on
+         that slice */
         if(start){
             if(!PyLong_CheckExact(start)){
                 PyErr_Format(PyExc_TypeError,
