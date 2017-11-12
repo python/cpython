@@ -2073,21 +2073,14 @@ _Pickler_write_large_bytes(
     if (_Pickler_CommitFrame(self, 0)) {
         return -1;
     }
+    /* Disable frameing temporarily */
+    self->framing = 0;
 
-    /* Create a new frame dedicated to the large bytes. */
     if (_Pickler_Write(self, header, header_size) < 0) {
         return -1;
     }
-    if (_Pickler_CommitFrame(self, payload_size)) {
-        return -1;
-    }
-    /* Dump the buffer to the file. */
+    /* Dump the output buffer to the file. */
     if (_Pickler_FlushToFile(self) < 0) {
-        return -1;
-    }
-
-    /* Reinitialize the buffer for subsequent calls to _Pickler_Write. */
-    if (_Pickler_ClearBuffer(self) < 0) {
         return -1;
     }
 
@@ -2098,6 +2091,14 @@ _Pickler_write_large_bytes(
     if (result == NULL) {
         return -1;
     }
+
+    /* Reinitialize the buffer for subsequent calls to _Pickler_Write. */
+    if (_Pickler_ClearBuffer(self) < 0) {
+        return -1;
+    }
+
+    /* Re-enable framing for subsequent calls to _Pickler_Write. */
+    self->framing = 1;
 
     return 0;
 }

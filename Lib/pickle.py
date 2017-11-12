@@ -219,16 +219,15 @@ class _Framer:
     def write_large_bytes(self, header, payload):
         write = self.file_write
         if self.current_frame:
-            # Terminate the current frame to write the next frame directly
-            # into the underlying file to skip the unnecessary memory
-            # allocations of a large temporary buffer.
+            # Terminate the current frame and flush it to the file.
             self.commit_frame(force=True)
-            frame_size = len(header) + len(payload)
-            write(FRAME + pack("<Q", frame_size))
 
-        # Be careful not to concatenate the header and the payload prior to
-        # calling 'write' as we do not want to allocate a large temporary
-        # bytes object.
+        # Perform direct write of the header and payload of the large binary
+        # object. Be careful not to concatenate the header and the payload
+        # prior to calling 'write' as we do not want to allocate a large
+        # temporary bytes object.
+        # We intentionally do not insert a protocol 4 frame opcode to make
+        # it possible to optimize file.read calls in the loader.
         write(header)
         write(payload)
 
@@ -714,7 +713,7 @@ class _Pickler:
             self.write(SHORT_BINBYTES + pack("<B", n) + obj)
         elif n > 0xffffffff and self.proto >= 4:
             self._write_large_bytes(BINBYTES8 + pack("<Q", n), obj)
-        elif n > self.framer._FRAME_SIZE_TARGET:
+        elif n >= self.framer._FRAME_SIZE_TARGET:
             self._write_large_bytes(BINBYTES + pack("<I", n), obj)
         else:
             self.write(BINBYTES + pack("<I", n) + obj)
@@ -729,7 +728,7 @@ class _Pickler:
                 self.write(SHORT_BINUNICODE + pack("<B", n) + encoded)
             elif n > 0xffffffff and self.proto >= 4:
                 self._write_large_bytes(BINUNICODE8 + pack("<Q", n), encoded)
-            elif n > self.framer._FRAME_SIZE_TARGET:
+            elif n >= self.framer._FRAME_SIZE_TARGET:
                 self._write_large_bytes(BINUNICODE + pack("<I", n), encoded)
             else:
                 self.write(BINUNICODE + pack("<I", n) + encoded)

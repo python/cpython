@@ -2042,21 +2042,40 @@ class AbstractPickleTests(unittest.TestCase):
     def check_frame_opcodes(self, pickled):
         """
         Check the arguments of FRAME opcodes in a protocol 4+ pickle.
+
+        Note that binary objects that are larger than FRAME_SIZE_TARGET are not
+        framed and are therefore considered a frame by themselves in the
+        following consistency check.
         """
-        frame_opcode_size = 9
-        last_arg = last_pos = None
+        last_arg = last_pos = last_frame_opcode_size = None
+        frameless_opcode_sizes = {
+            'BINBYTES': 5,
+            'BINUNICODE': 5,
+            'BINBYTES8': 9,
+            'BINUNICODE8': 9,
+        }
         for op, arg, pos in pickletools.genops(pickled):
-            if op.name != 'FRAME':
+            if op.name in frameless_opcode_sizes:
+                if len(arg) > self.FRAME_SIZE_TARGET:
+                    frame_opcode_size = frameless_opcode_sizes[op.name]
+                    arg = len(arg)
+                else:
+                    continue
+            elif op.name == 'FRAME':
+                frame_opcode_size = 9
+            else:
                 continue
+
             if last_pos is not None:
                 # The previous frame's size should be equal to the number
                 # of bytes up to the current frame.
-                frame_size = pos - last_pos - frame_opcode_size
+                frame_size = pos - last_pos - last_frame_opcode_size
                 self.assertEqual(frame_size, last_arg)
             last_arg, last_pos = arg, pos
+            last_frame_opcode_size = frame_opcode_size
         # The last frame's size should be equal to the number of bytes up
         # to the pickle's end.
-        frame_size = len(pickled) - last_pos - frame_opcode_size
+        frame_size = len(pickled) - last_pos - last_frame_opcode_size
         self.assertEqual(frame_size, last_arg)
 
     def test_framing_many_objects(self):
@@ -2076,15 +2095,25 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_framing_large_objects(self):
         N = 1024 * 1024
-        obj = [b'x' * N, b'y' * N, b'z' * N]
+        obj = [b'x' * N, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
-                pickled = self.dumps(obj, proto)
-                unpickled = self.loads(pickled)
-                self.assertEqual(obj, unpickled)
-                n_frames = count_opcode(pickle.FRAME, pickled)
-                self.assertGreaterEqual(n_frames, len(obj))
-                self.check_frame_opcodes(pickled)
+            for fast in [True, False]:
+                with self.subTest(proto=proto, fast=fast):
+                    buf = io.BytesIO()
+                    pickler = self.pickler(buf, protocol=proto)
+                    pickler.fast = fast
+                    pickler.dump(obj)
+                    pickled = buf.getvalue()
+                    unpickled = self.loads(pickled)
+                    self.assertEqual(obj, unpickled)
+                    n_frames = count_opcode(pickle.FRAME, pickled)
+                    if not fast:
+                        # One frame per memoize for each large object.
+                        self.assertGreaterEqual(n_frames, len(obj))
+                    else:
+                        # One frame at the beginning and one at the end.
+                        self.assertGreaterEqual(n_frames, 2)
+                    self.check_frame_opcodes(pickled)
 
     def test_optional_frames(self):
         if pickle.HIGHEST_PROTOCOL < 4:
