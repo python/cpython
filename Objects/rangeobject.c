@@ -378,6 +378,8 @@ range_contains_long(rangeobject *r, PyObject *ob)
     return result;
 }
 
+
+
 static int
 range_contains(rangeobject *r, PyObject *ob)
 {
@@ -527,32 +529,69 @@ range_count(rangeobject *r, PyObject *ob)
 }
 
 static PyObject *
-range_index(rangeobject *r, PyObject *ob)
+range_index(rangeobject *r, PyObject *args, PyObject *kw)
 {
     int contains;
+    static char *keywords[] = {"value", "start", "stop", NULL};
+    PyObject *ob;               /* ob is the key */
+    PyObject *start = NULL;
+    PyObject *stop = NULL;
+    if(!PyArg_ParseTupleAndKeywords(args, kw, "O|OO:range_index",
+                                    keywords, &ob, &start, &stop)){
+      return NULL;
+    }
 
+    if(start || stop){
+        if(start){
+            if(!PyLong_CheckExact(start)){
+                PyErr_Format(PyExc_TypeError,
+                             "start value must be integer, not %.200s",
+                             start->ob_type->tp_name);
+                return NULL;
+            }
+        }
+        if(stop){
+            if(!PyLong_CheckExact(stop)){
+                PyErr_Format(PyExc_TypeError,
+                             "stop value must be integer, not %.200s",
+                             stop->ob_type->tp_name);
+                return NULL;
+            }
+        }
+        if(!start){
+            start = _PyLong_Zero;
+        }
+        if(!stop){
+            stop = r->length;
+        }
+        PyObject *slice = PySlice_New(start, stop, _PyLong_One);
+        r = (rangeobject*) compute_slice(r, slice);
+        if(!r)
+            return NULL;
+    }
     if (!PyLong_CheckExact(ob) && !PyBool_Check(ob)) {
         Py_ssize_t index;
         index = _PySequence_IterSearch((PyObject*)r, ob, PY_ITERSEARCH_INDEX);
-        if (index == -1)
+       if (index == -1)
             return NULL;
-        return PyLong_FromSsize_t(index);
+       PyObject *return_value = PyLong_FromSsize_t(index);
+       return (start == NULL ? return_value : PyNumber_Add(start, return_value));
     }
 
     contains = range_contains_long(r, ob);
+    
     if (contains == -1)
-        return NULL;
-
+      return NULL;
+      
     if (contains) {
-        PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
-        if (tmp == NULL)
-            return NULL;
-        /* idx = (ob - r.start) // r.step */
-        idx = PyNumber_FloorDivide(tmp, r->step);
-        Py_DECREF(tmp);
-        return idx;
+      PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
+      if (tmp == NULL)
+        return NULL;
+      /* idx = (ob - r.start) // r.step */
+      idx = PyNumber_FloorDivide(tmp, r->step);
+      Py_DECREF(tmp);
+      return (start != NULL ? PyNumber_Add(idx, start) : idx);
     }
-
     /* object is not in the range */
     PyErr_Format(PyExc_ValueError, "%R is not in range", ob);
     return NULL;
