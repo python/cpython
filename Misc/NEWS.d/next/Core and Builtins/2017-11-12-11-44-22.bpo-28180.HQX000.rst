@@ -1,3 +1,4 @@
-The platform dependent handling of setting the locale from the environment is
-now consolidated into the standard behavior on platforms whose `setlocale()`
-function do not set the locale from the environment (e.g. Android).
+A new internal ``_Py_SetLocaleFromEnv(category)`` helper function has been
+added in order to improve the consistency of behaviour across different
+``libc`` implementations (e.g. Android doesn't support setting the locale from
+the environment by default).
