@@ -52,7 +52,7 @@ _C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
 # There's no reliable cross-platform way of checking locale alias
 # lists, so the only way of knowing which of these locales will work
 # is to try them with locale.setlocale(). We do that in a subprocess
-# in setupModule() below to avoid altering the locale of the test runner.
+# in setUpModule() below to avoid altering the locale of the test runner.
 #
 # If the relevant locale module attributes exist, and we're not on a platform
 # where we expect it to always succeed, we also check that
@@ -224,7 +224,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
 
     @classmethod
     def setUpClass(cls):
-        # This relies on setupModule() having been run, so it can't be
+        # This relies on setUpModule() having been run, so it can't be
         # handled via the @unittest.skipUnless decorator
         if not AVAILABLE_TARGETS:
             raise unittest.SkipTest("No C-with-UTF-8 locale available")
