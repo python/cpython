@@ -539,6 +539,7 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
       return NULL;
     }
 
+    PyObject *return_value;
     if(start || stop){
         if(start){
             if(!PyLong_CheckExact(start)){
@@ -564,34 +565,60 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
         }
         PyObject *slice = PySlice_New(start, stop, _PyLong_One);
         r = (rangeobject*) compute_slice(r, slice);
-        if(!r)
-            return NULL;
+        Py_DECREF(slice);
+        if(!r){
+            return_value = NULL;
+            goto over;
+        }
     }
     if (!PyLong_CheckExact(ob) && !PyBool_Check(ob)) {
         Py_ssize_t index;
         index = _PySequence_IterSearch((PyObject*)r, ob, PY_ITERSEARCH_INDEX);
         if (index == -1)
             return NULL;
-       PyObject *return_value = PyLong_FromSsize_t(index);
-       return (start == NULL ? return_value : PyNumber_Add(start, return_value));
+       PyObject *temp = PyLong_FromSsize_t(index);
+       if(start){
+           return_value = PyNumber_Add(start, temp);
+           Py_DECREF(temp);
+       }
+       else{
+           return_value= temp;
+       }
+       goto over;
     }
 
     contains = range_contains_long(r, ob);
-    if (contains == -1)
-        return NULL;
+    if (contains == -1){
+        return_value = NULL;
+        goto over;
+    }
 
     if (contains) {
         PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
-        if (tmp == NULL)
-            return NULL;
+        if (tmp == NULL){
+            return_value = NULL;
+            goto over;
+        }
         /* idx = (ob - r.start) // r.step */
         idx = PyNumber_FloorDivide(tmp, r->step);
         Py_DECREF(tmp);
-        return (start != NULL ? PyNumber_Add(idx, start) : idx);
+        if(start){
+            return_value = PyNumber_Add(idx, start);
+            Py_DECREF(idx);
+        }
+        else{
+            return_value = idx;
+        }
+        goto over;
     }
     /* object is not in the range */
     PyErr_Format(PyExc_ValueError, "%R is not in range", ob);
-    return NULL;
+    return_value = NULL;
+ over:
+    if(start || stop){
+        Py_XDECREF(r);
+    }
+    return return_value;
 }
 
 static PySequenceMethods range_as_sequence = {
