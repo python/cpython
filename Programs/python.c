@@ -54,15 +54,8 @@ main(int argc, char **argv)
         return 1;
     }
 
-#ifdef __ANDROID__
-    /* Passing "" to setlocale() on Android requests the C locale rather
-     * than checking environment variables, so request C.UTF-8 explicitly
-     */
-    setlocale(LC_ALL, "C.UTF-8");
-#else
     /* Reconfigure the locale to the default for this process */
-    setlocale(LC_ALL, "");
-#endif
+    _Py_SetLocaleFromEnv(LC_ALL);
 
     /* The legacy C locale assumes ASCII as the default text encoding, which
      * causes problems not only for the CPython runtime, but also other
