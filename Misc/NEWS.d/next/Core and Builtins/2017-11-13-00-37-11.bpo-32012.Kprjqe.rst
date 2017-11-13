@@ -1,4 +1,7 @@
-SyntaxError is now raised when a generator expression without parenthesis is
-passed as an argument but followed by a trailing comma. A generator expression
+SyntaxError is now correctly raised when a generator expression without
+parenthesis is passed as an argument, but followed by a trailing comma, or
+it is used instead of an argument list in a decorator expression, or
+instead of an inheritance list in a class definition.  A generator expression
 always needs to be directly inside a set of parentheses and cannot have a
-comma on either side.
+comma on either side.  The duplication of the parentheses can be omitted
+only on calls.

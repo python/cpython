@@ -153,6 +153,17 @@ Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
 >>> f((x for x in L), 1)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> def deco(*args):
+...     return lambda f: f
+>>> @deco(x for x in L)
+... def g(*args, **kwargs):
+...     pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+>>> class C(x for x in L):
+...     pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> def g(*args, **kwargs):
 ...     print(args, sorted(kwargs.items()))
