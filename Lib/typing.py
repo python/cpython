@@ -703,7 +703,7 @@ class _GenericAlias(_FinalTypingBase, _root=True):
             i = bases.index(self)
             for b in bases[i+1:]:
                 if isinstance(b, _GenericAlias):
-                    return None
+                    return ()
         return self.__origin__
 
     def __getattr__(self, attr):
