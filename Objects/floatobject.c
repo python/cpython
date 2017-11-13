@@ -177,6 +177,7 @@ PyFloat_FromString(PyObject *v)
         if (s_buffer == NULL)
             return NULL;
         assert(PyUnicode_IS_ASCII(s_buffer));
+        /* Simply get a pointer to existing ASCII characters. */
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
         assert(s != NULL);
     }

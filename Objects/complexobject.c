@@ -915,6 +915,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
             return NULL;
         }
         assert(PyUnicode_IS_ASCII(s_buffer));
+        /* Simply get a pointer to existing ASCII characters. */
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
         assert(s != NULL);
     }

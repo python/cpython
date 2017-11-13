@@ -2510,6 +2510,7 @@ PyLong_FromUnicodeObject(PyObject *u, int base)
     if (asciidig == NULL)
         return NULL;
     assert(PyUnicode_IS_ASCII(asciidig));
+    /* Simply get a pointer to existing ASCII characters. */
     buffer = PyUnicode_AsUTF8AndSize(asciidig, &buflen);
     assert(buffer != NULL);
 
