@@ -860,7 +860,7 @@ class ClassCreationTests(unittest.TestCase):
         class B: pass
         class C:
             def __mro_entry__(self, bases):
-                return None
+                return ()
         c = C()
         D = types.new_class('D', (A, c, B), {})
         self.assertEqual(D.__bases__, (A, B))
@@ -915,7 +915,7 @@ class ClassCreationTests(unittest.TestCase):
         class C:
             def __mro_entry__(self, bases):
                 if A in bases:
-                    return None
+                    return ()
                 return A
         c = C()
         self.assertEqual(types.resolve_bases(()), ())
