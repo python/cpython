@@ -1616,5 +1616,75 @@ class PolicyTests(unittest.TestCase):
         new_loop.close()
 
 
+class TestFunctional(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+        asyncio.set_event_loop(None)
+
+    def test_add_reader_invalid_argument(self):
+        def assert_raises():
+            return self.assertRaisesRegex(ValueError, r'Invalid file object')
+
+        cb = lambda: None
+
+        with assert_raises():
+            self.loop.add_reader(object(), cb)
+        with assert_raises():
+            self.loop.add_writer(object(), cb)
+
+        with assert_raises():
+            self.loop.remove_reader(object())
+        with assert_raises():
+            self.loop.remove_writer(object())
+
+    def test_add_reader_or_writer_transport_fd(self):
+        def assert_raises():
+            return self.assertRaisesRegex(
+                RuntimeError,
+                r'File descriptor .* is used by transport')
+
+        async def runner():
+            tr, pr = await self.loop.create_connection(
+                lambda: asyncio.Protocol(), sock=rsock)
+
+            try:
+                cb = lambda: None
+
+                with assert_raises():
+                    self.loop.add_reader(rsock, cb)
+                with assert_raises():
+                    self.loop.add_reader(rsock.fileno(), cb)
+
+                with assert_raises():
+                    self.loop.remove_reader(rsock)
+                with assert_raises():
+                    self.loop.remove_reader(rsock.fileno())
+
+                with assert_raises():
+                    self.loop.add_writer(rsock, cb)
+                with assert_raises():
+                    self.loop.add_writer(rsock.fileno(), cb)
+
+                with assert_raises():
+                    self.loop.remove_writer(rsock)
+                with assert_raises():
+                    self.loop.remove_writer(rsock.fileno())
+
+            finally:
+                tr.close()
+
+        rsock, wsock = socket.socketpair()
+        try:
+            self.loop.run_until_complete(runner())
+        finally:
+            rsock.close()
+            wsock.close()
+
+
 if __name__ == '__main__':
     unittest.main()
