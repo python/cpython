@@ -214,7 +214,7 @@ def _remove_dups_flatten(parameters):
     # (In particular, Union[str, AnyStr] != AnyStr.)
     all_params = set(params)
     for t1 in params:
-        if not isinstance(t1, (type, _GenericAlias)):
+        if not isinstance(t1, type):
             continue
         if any(isinstance(t2, type) and issubclass(t1, t2)
                for t2 in all_params - {t1}):
@@ -707,12 +707,12 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         return self.__origin__
 
     def __getattr__(self, attr):
-        if '__origin__' in self.__dict__:  # We are carefull for copy and pickle
+        if '__origin__' in self.__dict__ and not(attr.startswith('__') and attr.endswith('__')):  # We are carefull for copy and pickle
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if attr not in ('__origin__', '__args__', '__parameters__'):
+        if not(attr.startswith('__') and attr.endswith('__')):
             setattr(self.__origin__, attr, val)
         self.__dict__[attr] = val
 
