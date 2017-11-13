@@ -176,11 +176,10 @@ PyFloat_FromString(PyObject *v)
         s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
         if (s_buffer == NULL)
             return NULL;
+        assert(PyUnicode_IS_ASCII(s_buffer));
+        /* Simply get a pointer to existing ASCII characters. */
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        if (s == NULL) {
-            Py_DECREF(s_buffer);
-            return NULL;
-        }
+        assert(s != NULL);
     }
     else if (PyBytes_Check(v)) {
         s = PyBytes_AS_STRING(v);
