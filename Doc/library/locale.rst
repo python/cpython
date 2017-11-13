@@ -373,7 +373,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    Please note that this function works like :meth:`format_string` but will
    only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
-   ``'%.0f'`` are both valid specifiers, but ``'%f kB'`` is not.
+   ``'%.0f'`` are both valid specifiers, but ``'%f KiB'`` is not.
 
    For whole format strings, use :func:`format_string`.
 

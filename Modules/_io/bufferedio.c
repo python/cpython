@@ -347,9 +347,10 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
+    (!self->buffer || \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
-     : buffered_closed(self))
+     : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
     if (IS_CLOSED(self)) { \
@@ -1971,13 +1972,16 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     Py_off_t offset;
 
     CHECK_INITIALIZED(self)
-    if (IS_CLOSED(self)) {
-        PyErr_SetString(PyExc_ValueError, "write to closed file");
-        return NULL;
-    }
 
     if (!ENTER_BUFFERED(self))
         return NULL;
+
+    /* Issue #31976: Check for closed file after acquiring the lock. Another
+       thread could be holding the lock while closing the file. */
+    if (IS_CLOSED(self)) {
+        PyErr_SetString(PyExc_ValueError, "write to closed file");
+        goto error;
+    }
 
     /* Fast path: the data to write can be fully buffered. */
     if (!VALID_READ_BUFFER(self) && !VALID_WRITE_BUFFER(self)) {
