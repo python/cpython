@@ -251,7 +251,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             try:
                 fileno = int(fileno.fileno())
             except (AttributeError, TypeError, ValueError):
-                # This code matches `selectors._fileobj_to_fd` function.
+                # This code matches selectors._fileobj_to_fd function.
                 raise ValueError("Invalid file object: "
                                  "{!r}".format(fd)) from None
         try:
