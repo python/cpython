@@ -4808,7 +4808,7 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
         return NULL;
     if ((base != 0 && base < 2) || base > 36) {
         PyErr_SetString(PyExc_ValueError,
-                        "int() base must be >= 2 and <= 36");
+                        "int() base must be >= 2 and <= 36, or 0");
         return NULL;
     }
 
