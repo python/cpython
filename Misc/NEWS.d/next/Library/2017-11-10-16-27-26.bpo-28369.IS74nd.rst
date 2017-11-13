@@ -1,0 +1,4 @@
+Enhance add_reader/writer check that socket is not used by some transport.
+Before, only cases when add_reader/writer were called with an int FD were
+supported.  Now the check is implemented correctly for all file-like
+objects.

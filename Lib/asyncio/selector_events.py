@@ -246,8 +246,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 self.call_exception_handler(context)
 
     def _ensure_fd_no_transport(self, fd):
+        fileno = fd
+        if not isinstance(fileno, int):
+            try:
+                fileno = int(fileno.fileno())
+            except (AttributeError, TypeError, ValueError):
+                # This code matches selectors._fileobj_to_fd function.
+                raise ValueError("Invalid file object: "
+                                 "{!r}".format(fd)) from None
         try:
-            transport = self._transports[fd]
+            transport = self._transports[fileno]
         except KeyError:
             pass
         else:

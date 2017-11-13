@@ -361,6 +361,13 @@ class TestLoop(base_events.BaseEventLoop):
             handle._args, args)
 
     def _ensure_fd_no_transport(self, fd):
+        if not isinstance(fd, int):
+            try:
+                fd = int(fd.fileno())
+            except (AttributeError, TypeError, ValueError):
+                # This code matches selectors._fileobj_to_fd function.
+                raise ValueError("Invalid file object: "
+                                 "{!r}".format(fd)) from None
         try:
             transport = self._transports[fd]
         except KeyError:
