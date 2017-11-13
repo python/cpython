@@ -49,8 +49,8 @@ _Py_IDENTIFIER(stderr);
 static PyObject*
 update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
 {
-    int i, ind, tot_nones = 0;
-    PyObject *base, *meth, *new_base, *new_bases;
+    int i, j, ind, tot_extra = 0;
+    PyObject *base, *meth, *new_base, *new_sub_base, *new_bases;
     PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
 
@@ -78,8 +78,8 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
             Py_DECREF(meth);
             return NULL;
         }
-        if (new_base == Py_None) {
-            tot_nones++;
+        if (PyTuple_Check(new_base)) {
+            tot_extra += PyTuple_Size(new_base) - 1;
         }
         Py_DECREF(base);
         args[i] = new_base;
@@ -89,14 +89,22 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
     if (!*modified_bases){
         return bases;
     }
-    new_bases = PyTuple_New(nargs - 2 - tot_nones);
+    new_bases = PyTuple_New(nargs - 2 + tot_extra);
     ind = 0;
     for (i = 2; i < nargs; i++) {
         new_base = args[i];
-        if (new_base != Py_None) {
+        if (!PyTuple_Check(new_base)) {
             Py_INCREF(new_base);
             PyTuple_SET_ITEM(new_bases, ind, new_base);
             ind++;
+        }
+        else {
+            for (j = 0; j < PyTuple_Size(new_base); j++) {
+                new_sub_base = PyTuple_GET_ITEM(new_base, j);
+                Py_INCREF(new_sub_base);
+                PyTuple_SET_ITEM(new_bases, ind, new_sub_base);
+                ind++;
+            }
         }
     }
     return new_bases;

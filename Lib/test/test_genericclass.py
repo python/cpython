@@ -42,7 +42,7 @@ class TestMROEntry(unittest.TestCase):
         class C:
             def __mro_entry__(self, bases):
                 tested.append(bases)
-                return None
+                return ()
         c = C()
         self.assertEqual(tested, [])
         class D(A, c, B): ...
@@ -88,13 +88,13 @@ class TestMROEntry(unittest.TestCase):
     def test_mro_entry_errors(self):
         class C_too_many:
             def __mro_entry__(self, bases, something, other):
-                return None
+                return ()
         c = C_too_many()
         with self.assertRaises(TypeError):
             class D(c): ...
         class C_too_few:
             def __mro_entry__(self):
-                return None
+                return ()
         d = C_too_few()
         with self.assertRaises(TypeError):
             class D(d): ...
@@ -132,7 +132,7 @@ class TestMROEntry(unittest.TestCase):
         # Substitution should _not_ happen in direct type call
         class C:
             def __mro_entry__(self, bases):
-                return None
+                return ()
         c = C()
         with self.assertRaisesRegex(TypeError,
                                     "MRO entry resolution; "

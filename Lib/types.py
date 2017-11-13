@@ -79,10 +79,13 @@ def resolve_bases(bases):
             continue
         new_base = base.__mro_entry__(bases)
         updated = True
-        new_bases[i] = new_base
+        if not isinstance(new_base, tuple):
+            new_bases[i] = new_base
+        else:
+            new_bases[i:i+1] = new_base
     if not updated:
         return bases
-    return tuple(b for b in new_bases if b is not None)
+    return tuple(new_bases)
 
 def prepare_class(name, bases=(), kwds=None):
     """Call the __prepare__ method of the appropriate metaclass.
