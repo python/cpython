@@ -84,10 +84,6 @@ __all__ = [
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
 
-#
-# Internal helper functions.
-#
-
 def _trim_name(nm):
     whitelist = ('_TypingBase', '_FinalTypingBase', '_SingletonTypingBase', '_ForwardRef')
     if nm.startswith('_') and nm not in whitelist:
@@ -253,9 +249,6 @@ def _tp_cache(func):
         return func(*args, **kwds)
     return inner
 
-#
-# Internal marker base classes: _TypingBase, _FinalTypingBase, _SingletonTypingBase
-#
 
 class _TypingBase:
     """Internal indicator of special typing constructs."""
@@ -323,10 +316,6 @@ class _SingletonTypingBase(_FinalTypingBase, _root=True):
     def __reduce__(self):
         return _trim_name(type(self).__name__)
 
-#
-# Final classes: ForwardRef and TypeVar. These should not be subclassed,
-# but can be instantiated.
-#
 
 class _ForwardRef(_FinalTypingBase, _root=True):
     """Internal wrapper to hold a forward reference."""
@@ -465,10 +454,6 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 # (This one *is* for export!)
 AnyStr = TypeVar('AnyStr', bytes, str)
 
-#
-# Singleton classes: Any and NoReturn.
-# These should not be neither subclassed, nor instantiated.
-#
 
 class _Any(_SingletonTypingBase, _root=True):
     """Special type indicating an unconstrained type.
@@ -505,12 +490,6 @@ class _NoReturn(_SingletonTypingBase, _root=True):
 
 
 NoReturn = _NoReturn(_root=True)
-
-
-#
-# Subscriptable singleton classes: ClassVar, Union, and Optional.
-# Like above, but can be subscripted.
-#
 
 
 class _ClassVar(_SingletonTypingBase, _root=True):
@@ -1227,32 +1206,13 @@ class _Protocol(metaclass=_ProtocolMeta):
 
 
 # Various ABCs mimicking those in collections.abc.
-# A few are simply re-exported for completeness.
-
-Hashable = collections.abc.Hashable  # Not generic.
-
-
-class Awaitable(collections.abc.Awaitable, Generic[T_co]):
-    __slots__ = ()
-
-
-class Coroutine(collections.abc.Coroutine, Generic[T_co, T_contra, V_co]):
-    __slots__ = ()
-
-class AsyncIterable(collections.abc.AsyncIterable, Generic[T_co]):
-    __slots__ = ()
-
-
-class AsyncIterator(collections.abc.AsyncIterator, Generic[T_co]):
-    __slots__ = ()
-
-
-class Iterable(collections.abc.Iterable, Generic[T_co]):
-    __slots__ = ()
-
-
-class Iterator(collections.abc.Iterator, Generic[T_co]):
-    __slots__ = ()
+Hashable = _GenericAlias(collections.abc.Hashable, [])  # Not generic.
+Awaitable = _GenericAlias(collections.abc.Awaitable, [T_co])
+Coroutine = _GenericAlias(collections.abc.Coroutine, [T_co, T_contra, V_co])
+AsyncIterable = _GenericAlias(collections.abc.AsyncIterable, [T_co])
+AsyncIterator = _GenericAlias(collections.abc.AsyncIterator, [T_co])
+Iterable = _GenericAlias(collections.abc.Iterable, [T_co])
+Iterator = _GenericAlias(collections.abc.Iterator, [T_co])
 
 
 class SupportsInt(_Protocol):
@@ -1303,166 +1263,41 @@ class SupportsRound(_Protocol[T_co]):
         pass
 
 
-class Reversible(collections.abc.Reversible, Generic[T_co]):
-    __slots__ = ()
-
-
-Sized = collections.abc.Sized  # Not generic.
-
-
-class Container(collections.abc.Container, Generic[T_co]):
-    __slots__ = ()
-
-
-class Collection(collections.abc.Collection, Generic[T_co]):
-    __slots__ = ()
-
-
+Reversible = _GenericAlias(collections.abc.Reversible, [T_co])
+Sized = _GenericAlias(collections.abc.Sized, [])  # Not generic.
+Container = _GenericAlias(collections.abc.Container, [T_co])
+Collection = _GenericAlias(collections.abc.Collection, [T_co])
 # Callable was defined earlier.
-
-class AbstractSet(collections.abc.Set, Generic[T_co]):
-    __slots__ = ()
-
-
-class MutableSet(collections.abc.MutableSet, Generic[T]):
-    __slots__ = ()
-
-
-# NOTE: It is only covariant in the value type.
-class Mapping(collections.abc.Mapping, Generic[KT, VT_co]):
-    __slots__ = ()
-
-
-class MutableMapping(collections.abc.MutableMapping, Generic[KT, VT]):
-    __slots__ = ()
-
-
-class Sequence(collections.abc.Sequence, Generic[T_co]):
-    __slots__ = ()
-
-
-class MutableSequence(collections.abc.MutableSequence, Generic[T]):
-    __slots__ = ()
-
-
+AbstractSet = _GenericAlias(collections.abc.Set, [T_co])
+MutableSet = _GenericAlias(collections.abc.MutableSet, [T])
+# NOTE: Mapping is only covariant in the value type.
+Mapping = _GenericAlias(collections.abc.Mapping, [KT, VT_co])
+MutableMapping = _GenericAlias(collections.abc.MutableMapping, [KT, VT])
+Sequence = _GenericAlias(collections.abc.Sequence, [T_co])
+MutableSequence = _GenericAlias(collections.abc.MutableSequence, [T])
 # Not generic
-ByteString = collections.abc.ByteString
+ByteString = _GenericAlias(collections.abc.ByteString, [])
+List = _GenericAlias(list, Generic[T])
 
+if False:
+    raise TypeError("Type List cannot be instantiated; "
+                    "use list() instead")
 
-class List(list, Generic[T], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwds):
-        if cls is List:
-            raise TypeError("Type List cannot be instantiated; "
-                            "use list() instead")
-        return super().__new__(cls, *args, **kwds)
-
-
-class Deque(collections.deque, Generic[T], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        if cls is Deque:
-            return collections.deque(*args, **kwargs)
-        return super().__new__(cls, *args, **kwargs)
-
-
-
-class Set(set, Generic[T], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwds):
-        if cls is Set:
-            raise TypeError("Type Set cannot be instantiated; "
-                            "use set() instead")
-        return super().__new__(cls, *args, **kwds)
-
-
-class FrozenSet(frozenset, Generic[T_co], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwds):
-        if cls is FrozenSet:
-            raise TypeError("Type FrozenSet cannot be instantiated; "
-                            "use frozenset() instead")
-        return super().__new__(cls, *args, **kwds)
-
-
-class MappingView(collections.abc.MappingView, Generic[T_co]):
-    __slots__ = ()
-
-
-class KeysView(collections.abc.KeysView, Generic[KT]):
-    __slots__ = ()
-
-
-class ItemsView(collections.abc.ItemsView, Generic[KT, VT_co]):
-    __slots__ = ()
-
-
-class ValuesView(collections.abc.ValuesView, Generic[VT_co]):
-    __slots__ = ()
-
-
-class ContextManager(contextlib.AbstractContextManager, Generic[T_co]):
-    __slots__ = ()
-
-
-#class AsyncContextManager(contextlib.AbstractAsyncContextManager, Generic[T_co]):
-#    __slots__ = ()
-
-
-class Dict(dict, Generic[KT, VT], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwds):
-        if cls is Dict:
-            raise TypeError("Type Dict cannot be instantiated; "
-                            "use dict() instead")
-        return super().__new__(cls, *args, **kwds)
-
-
-class DefaultDict(collections.defaultdict, Generic[KT, VT], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        if cls is DefaultDict:
-            return collections.defaultdict(*args, **kwargs)
-        return super().__new__(cls, *args, **kwargs)
-
-
-class Counter(collections.Counter, Generic[T], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        if cls is Counter:
-            return collections.Counter(*args, **kwargs)
-        return super().__new__(cls, *args, **kwargs)
-
-
-class ChainMap(collections.ChainMap, Generic[KT, VT], metaclass=abc.ABCMeta):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        if cls is ChainMap:
-            return collections.ChainMap(*args, **kwargs)
-        return super().__new__(cls, *args, **kwargs)
-
-
-class Generator(collections.abc.Generator, Generic[T_co, T_contra, V_co]):
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwds):
-        if cls is Generator:
-            raise TypeError("Type Generator cannot be instantiated; "
-                            "create a subclass instead")
-        return super().__new__(cls, *args, **kwds)
-
-
-class AsyncGenerator(collections.abc.AsyncGenerator, Generic[T_co, T_contra]):
-    __slots__ = ()
-
+Deque = _GenericAlias(collections.deque, [T])
+Set = _GenericAlias(set, [T])
+FrozenSet = _GenericAlias(frozenset, [T_co])
+MappingView = _GenericAlias(collections.abc.MappingView, [T_co])
+KeysView = _GenericAlias(collections.abc.KeysView, [KT])
+ItemsView = _GenericAlias(collections.abc.ItemsView, [KT, VT_co])
+ValuesView = _GenericAlias(collections.abc.ValuesView, [VT_co])
+ContextManager = _GenericAlias(contextlib.AbstractContextManager, [T_co])
+#AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, [T_co])
+Dict = _GenericAlias(dict, [KT, VT])
+DefaultDict = _GenericAlias(collections.defaultdict, [KT, VT])
+Counter = _GenericAlias(collections.Counter, [T])
+ChainMap = _GenericAlias(collections.ChainMap, [KT, VT])
+Generator = _GenericAlias(collections.abc.Generator, [T_co, T_contra, V_co])
+AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, [T_co, T_contra])
 
 # Internal type variable used for Type[].
 CT_co = TypeVar('CT_co', covariant=True, bound=type)
