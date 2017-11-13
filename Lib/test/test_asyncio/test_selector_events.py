@@ -202,7 +202,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
 
         self.loop.remove_reader = mock.Mock()
         self.loop._sock_recv(f, 10, sock, 1024)
-        self.assertEqual((True,), self.loop.remove_reader.call_args[0])
+        self.assertEqual((10,), self.loop.remove_reader.call_args[0])
 
     def test__sock_recv_tryagain(self):
         f = asyncio.Future(loop=self.loop)
@@ -262,7 +262,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
 
         self.loop.remove_writer = mock.Mock()
         self.loop._sock_sendall(f, 10, sock, b'data')
-        self.assertEqual((True,), self.loop.remove_writer.call_args[0])
+        self.assertEqual((10,), self.loop.remove_writer.call_args[0])
 
     def test__sock_sendall_tryagain(self):
         f = asyncio.Future(loop=self.loop)
