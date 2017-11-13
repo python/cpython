@@ -51,7 +51,7 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(TypeError, float, {})
         self.assertRaisesRegex(TypeError, "not 'dict'", float, {})
         # Lone surrogate
-        self.assertRaises(UnicodeEncodeError, float, '\uD8F0')
+        self.assertRaises(ValueError, float, '\uD8F0')
         # check that we don't accept alternate exponent markers
         self.assertRaises(ValueError, float, "-1.7d29")
         self.assertRaises(ValueError, float, "3D-14")
