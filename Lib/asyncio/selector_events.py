@@ -253,7 +253,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             except (AttributeError, TypeError, ValueError):
                 # This code matches `selectors._fileobj_to_fd` function.
                 raise ValueError("Invalid file object: "
-                                 "{!r}".format(fileno)) from None
+                                 "{!r}".format(fd)) from None
         try:
             transport = self._transports[fileno]
         except KeyError:

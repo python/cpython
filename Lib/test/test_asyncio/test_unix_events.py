@@ -1626,6 +1626,22 @@ class TestFunctional(unittest.TestCase):
         self.loop.close()
         asyncio.set_event_loop(None)
 
+    def test_add_reader_invalid_argument(self):
+        def assert_raises():
+            return self.assertRaisesRegex(ValueError, r'Invalid file object')
+
+        cb = lambda: None
+
+        with assert_raises():
+            self.loop.add_reader(object(), cb)
+        with assert_raises():
+            self.loop.add_writer(object(), cb)
+
+        with assert_raises():
+            self.loop.remove_reader(object())
+        with assert_raises():
+            self.loop.remove_writer(object())
+
     def test_add_reader_or_writer_transport_fd(self):
         def assert_raises():
             return self.assertRaisesRegex(
