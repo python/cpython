@@ -1065,6 +1065,10 @@ static PyObject *
 gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
+    if(_PyRuntime.gc.disabled_threads){
+        PyErr_WarnEx(PyExc_RuntimeWarning, "Garbage collector enabled while another "
+            "thread is inside gc.ensure_enabled",1);
+    }
     _PyRuntime.gc.enabled = 1;
     Py_RETURN_NONE;
 }
@@ -1509,7 +1513,6 @@ static PyMethodDef GcMethods[] = {
 typedef struct {
     PyObject_HEAD
     int previous_gc_state;
-    PyGILState_STATE gstate;
 } ensure_disabled_object;
 
 
@@ -1519,22 +1522,28 @@ ensure_disabled_object_dealloc(ensure_disabled_object *m_obj)
     Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
 }
 
-
-
 static PyObject *
 ensure_disabled__enter__method(ensure_disabled_object *self, PyObject *args)
 {
-    self->gstate = PyGILState_Ensure();
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    ++_PyRuntime.gc.disabled_threads;
     self->previous_gc_state = _PyRuntime.gc.enabled;
-    _PyRuntime.gc.enabled = 0;
+    gc_disable_impl(NULL);
+    PyGILState_Release(gstate);
     Py_RETURN_NONE;
 }
 
 static PyObject *
 ensure_disabled__exit__method(ensure_disabled_object *self, PyObject *args)
 {
-    _PyRuntime.gc.enabled = self->previous_gc_state;
-    PyGILState_Release(self->gstate);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    --_PyRuntime.gc.disabled_threads;
+    if(self->previous_gc_state){
+        gc_enable_impl(NULL);
+    }else{
+        gc_disable_impl(NULL);
+    }
+    PyGILState_Release(gstate);
     Py_RETURN_NONE;
 }
 

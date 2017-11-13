@@ -9,6 +9,8 @@ import time
 import gc
 import weakref
 import threading
+import warnings
+
 
 try:
     from _testcapi import with_tp_del
@@ -1045,25 +1047,30 @@ class GCTogglingTests(unittest.TestCase):
             thread_original_status = gc.isenabled()
 
             with gc.ensure_disabled():
+                time.sleep(0.01)
                 thread_inside_status = gc.isenabled()
 
             thread_after_status = gc.isenabled()
 
         original_status = gc.isenabled()
 
-        with gc.ensure_disabled():
+        with warnings.catch_warnings(record=True) as w, gc.ensure_disabled():
             inside_status_before_thread = gc.isenabled()
             thread = threading.Thread(target=disabling_thread)
             thread.start()
-            thread.join()
             inside_status_after_thread = gc.isenabled()
 
         after_status = gc.isenabled()
+        thread.join()
 
+        self.assertEqual(len(w), 1)
+        self.assertTrue(issubclass(w[-1].category, RuntimeWarning))
+        self.assertEqual("Garbage collector enabled while another thread is "
+                         "inside gc.ensure_enabled", str(w[-1].message))
         self.assertEqual(original_status, True)
         self.assertEqual(inside_status_before_thread, False)
         self.assertEqual(thread_original_status, False)
-        self.assertEqual(thread_inside_status, False)
+        self.assertEqual(thread_inside_status, True)
         self.assertEqual(thread_after_status, False)
         self.assertEqual(inside_status_after_thread, False)
         self.assertEqual(after_status, True)
