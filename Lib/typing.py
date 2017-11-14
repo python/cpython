@@ -1,3 +1,20 @@
+"""
+The typing module:
+
+* Imports
+* Exports
+* Internal helper functions
+* _SpecialForm and its instances: Any, NoReturn, ClassVar, Union, Optional
+* Two things that can be type arguments in addition to types: ForwardRef and TypeVar
+* The central internal API: _GenericAlias, _VariadicGenericAlias
+* The public counterpart of the API: Generic, Protocol (soon)
+* Public functions: get_type_hints, overload, cast, no_type_check,
+  no_type_check_decorator
+* Generic aliases for collections.abc ABCs and few additional protocols
+* Special types: NewType, NamedTuple, TypedDict (soon)
+* Wrapper re and io related types
+"""
+
 import abc
 from abc import abstractmethod, abstractproperty
 import collections
@@ -1133,6 +1150,8 @@ T_co = TypeVar('T_co', covariant=True)  # Any type covariant containers.
 V_co = TypeVar('V_co', covariant=True)  # Any type covariant containers.
 VT_co = TypeVar('VT_co', covariant=True)  # Value type covariant containers.
 T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
+# Internal type variable used for Type[].
+CT_co = TypeVar('CT_co', covariant=True, bound=type)
 
 # A useful type variable with constraints.  This represents string types.
 # (This one *is* for export!)
@@ -1218,6 +1237,30 @@ Generator = _GenericAlias(collections.abc.Generator, (T_co, T_contra, V_co),
                           name='Generator', special=True)
 AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, (T_co, T_contra),
                                name='AsyncGenerator', special=True)
+Type = _GenericAlias(type, CT_co, name='Type', inst=False, special=True)
+Type.__doc__ = \
+    """A special construct usable to annotate class objects.
+
+    For example, suppose we have the following classes::
+
+      class User: ...  # Abstract base for User classes
+      class BasicUser(User): ...
+      class ProUser(User): ...
+      class TeamUser(User): ...
+
+    And a function that takes a class argument that's a subclass of
+    User and returns an instance of the corresponding class::
+
+      U = TypeVar('U', bound=User)
+      def new_user(user_class: Type[U]) -> U:
+          user = user_class()
+          # (Here we could write the user object to a database)
+          return user
+
+      joe = new_user(BasicUser)
+
+    At this point the type checker knows that joe has type BasicUser.
+    """
 
 
 class SupportsInt(_Protocol):
@@ -1266,38 +1309,6 @@ class SupportsRound(_Protocol[T_co]):
     @abstractmethod
     def __round__(self, ndigits: int = 0) -> T_co:
         pass
-
-
-# Internal type variable used for Type[].
-CT_co = TypeVar('CT_co', covariant=True, bound=type)
-
-
-# This is not a real generic class.  Don't use outside annotations.
-class Type(type, Generic[CT_co]):
-    """A special construct usable to annotate class objects.
-
-    For example, suppose we have the following classes::
-
-      class User: ...  # Abstract base for User classes
-      class BasicUser(User): ...
-      class ProUser(User): ...
-      class TeamUser(User): ...
-
-    And a function that takes a class argument that's a subclass of
-    User and returns an instance of the corresponding class::
-
-      U = TypeVar('U', bound=User)
-      def new_user(user_class: Type[U]) -> U:
-          user = user_class()
-          # (Here we could write the user object to a database)
-          return user
-
-      joe = new_user(BasicUser)
-
-    At this point the type checker knows that joe has type BasicUser.
-    """
-
-    __slots__ = ()
 
 
 def _make_nmtuple(name, types):

@@ -977,8 +977,6 @@ class GenericTests(BaseTestCase):
             Tuple[Generic[T]]
         with self.assertRaises(TypeError):
             List[typing._Protocol]
-        with self.assertRaises(TypeError):
-            isinstance(1, Generic)
 
     def test_type_erasure_special(self):
         T = TypeVar('T')
@@ -2453,7 +2451,7 @@ class RETests(BaseTestCase):
                 pass
 
         self.assertEqual(str(ex.exception),
-                         "Cannot subclass <class 'typing._TypeAlias'>")
+                         "type 're.Match' is not an acceptable base type")
 
 
 class AllTests(BaseTestCase):
