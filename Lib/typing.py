@@ -118,8 +118,10 @@ def _type_check(arg, msg):
     if isinstance(arg, str):
         return ForwardRef(arg)
     if (
-        isinstance(arg, _GenericAlias) and arg.__origin__ in (Generic, _Protocol, ClassVar) or
-        arg in (Generic, _Protocol) or isinstance(arg, _SpecialForm) and arg != Any
+        isinstance(arg, _GenericAlias) and
+        arg.__origin__ in (Generic, _Protocol, ClassVar) or
+        arg in (Generic, _Protocol)
+        or isinstance(arg, _SpecialForm) and arg != Any
     ):
         raise TypeError("Plain %s is not valid as type argument" % arg)
     if isinstance(arg, (type, TypeVar, ForwardRef)):
@@ -367,7 +369,6 @@ Any = _SpecialForm('Any', doc=
     static type checkers. At runtime, Any should not be used with instance
     or class checks.
     """)
-
 NoReturn = _SpecialForm('NoReturn', doc=
     """Special type indicating functions that never return.
     Example::
@@ -380,7 +381,6 @@ NoReturn = _SpecialForm('NoReturn', doc=
     This type is invalid in other positions, e.g., ``List[NoReturn]``
     will fail in static type checkers.
     """)
-
 ClassVar = _SpecialForm('ClassVar', doc=
     """Special type construct to mark class variables.
 
@@ -397,7 +397,6 @@ ClassVar = _SpecialForm('ClassVar', doc=
     Note that ClassVar is not a class itself, and should not
     be used with isinstance() or issubclass().
     """)
-
 Union = _SpecialForm('Union', doc=
     """Union type; Union[X, Y] means either X or Y.
 
@@ -437,7 +436,6 @@ Union = _SpecialForm('Union', doc=
     - You cannot subclass or instantiate a union.
     - You can use Optional[X] as a shorthand for Union[X, None].
     """)
-
 Optional = _SpecialForm('Optional', doc=
     """Optional type.
 
@@ -589,12 +587,20 @@ class TypeVar(_Final, _root=True):
 
 _sentinel = object()
 
+
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
 
 
 class _GenericAlias(_Final, _root=True):
+    """The central part of internal API.
 
+    This represents a generic version of type 'origin' with type arguments 'params'.
+    There are two kind of these aliases: user defined and special. The special ones
+    are wrappers around builtin collections and ABCs in collections.abc. These must
+    have 'name' always set. If 'inst' is False, then the alias can't be instantiated,
+    this is used by e.g. typing.List and typing.Dict.
+    """
     def __init__(self, origin, params, *,
                  name=None, inst=True, special=False):
         self._name = name
@@ -713,7 +719,9 @@ class _GenericAlias(_Final, _root=True):
 
 
 class _VariadicGenericAlias(_GenericAlias, _root=True):
-
+    """Same as _GenericAlias above but for variadic aliases. Currently,
+    this is used only by special internal aliases: Tuple and Callable.
+    """
     def __getitem__(self, params):
         if self._name != 'Callable' or not self._special:
             return self.__getitem_inner__(params)
@@ -777,7 +785,6 @@ class Generic:
           except KeyError:
               return default
     """
-
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
@@ -813,9 +820,8 @@ class Generic:
 
     def __init_subclass__(cls, *args, **kwargs):
         tvars = []
-        if (not '__orig_bases__' in cls.__dict__ and Generic in cls.__bases__ and
-                cls.__name__ not in ('Tuple', 'Callable') or
-                hasattr(cls, '__orig_bases__') and Generic in cls.__orig_bases__):
+        if ('__orig_bases__' in cls.__dict__ and Generic in cls.__orig_bases__ or
+                not '__orig_bases__' in cls.__dict__ and Generic in cls.__bases__):
             raise TypeError("Cannot inherit from plain Generic")
         if '__orig_bases__' in cls.__dict__:
             tvars = _collect_type_vars(cls.__orig_bases__)
@@ -1323,8 +1329,6 @@ def _make_nmtuple(name, types):
     return nm_tpl
 
 
-_PY36 = sys.version_info[:2] >= (3, 6)
-
 # attributes prohibited to set in NamedTuple class syntax
 _prohibited = ('__new__', '__init__', '__slots__', '__getnewargs__',
                '_fields', '_field_defaults', '_field_types',
@@ -1338,9 +1342,6 @@ class NamedTupleMeta(type):
     def __new__(cls, typename, bases, ns):
         if ns.get('_root', False):
             return super().__new__(cls, typename, bases, ns)
-        if not _PY36:
-            raise TypeError("Class syntax for NamedTuple is only supported"
-                            " in Python 3.6+")
         types = ns.get('__annotations__', {})
         nm_tpl = _make_nmtuple(typename, types.items())
         defaults = []
@@ -1395,9 +1396,6 @@ class NamedTuple(metaclass=NamedTupleMeta):
     _root = True
 
     def __new__(self, typename, fields=None, **kwargs):
-        if kwargs and not _PY36:
-            raise TypeError("Keyword syntax for NamedTuple is only supported"
-                            " in Python 3.6+")
         if fields is None:
             fields = kwargs.items()
         elif kwargs:
