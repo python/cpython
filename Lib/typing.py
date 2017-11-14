@@ -118,8 +118,6 @@ def _type_check(arg, msg):
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
-    if isinstance(arg, (type, TypeVar, ForwardRef)):
-        return arg
     if arg is None:
         return type(None)
     if isinstance(arg, str):
@@ -130,6 +128,8 @@ def _type_check(arg, msg):
         arg in (Generic, _Protocol, ClassVar, Union, NoReturn, Optional)
     ):
         raise TypeError("Plain %s is not valid as type argument" % arg)
+    if isinstance(arg, (type, TypeVar, ForwardRef)):
+        return arg
     if not callable(arg):
         raise TypeError(msg + " Got %.100r." % (arg,))
     return arg
@@ -275,6 +275,9 @@ class _SpecialForm(_Final, _root=True):
 
     def __repr__(self):
         return 'typing.' + self._name
+
+    def __copy__(self):
+        return self  # Special forms are immutable.
 
     def __call__(self, *args, **kwds):
         raise TypeError("Cannot instantiate %r" % self)

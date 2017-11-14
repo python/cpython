@@ -908,7 +908,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(repr(Union[Tuple, Callable]).replace('typing.', ''),
                          'Union[Tuple, Callable]')
         self.assertEqual(repr(Union[Tuple, Tuple[int]]).replace('typing.', ''),
-                         "<class 'Tuple'>")
+                         'Union[Tuple, Tuple[int]]')
         self.assertEqual(repr(Callable[..., Optional[T]][int]).replace('typing.', ''),
                          'Callable[..., Union[int, NoneType]]')
         self.assertEqual(repr(Callable[[], List[T]][int]).replace('typing.', ''),
@@ -1051,14 +1051,7 @@ class GenericTests(BaseTestCase):
                   Union['T', int], List['T'], typing.Mapping['T', int]]
         for t in things + [Any]:
             self.assertEqual(t, copy(t))
-            self.assertEqual(t, deepcopy(t))
-            if sys.version_info >= (3, 3):
-                # From copy module documentation:
-                # It does "copy" functions and classes (shallow and deeply), by returning
-                # the original object unchanged; this is compatible with the way these
-                # are treated by the pickle module.
-                self.assertTrue(t is copy(t))
-                self.assertTrue(t is deepcopy(t))
+            self.assertEqual(repr(t), repr(deepcopy(t))) # Use repr() because of TypeVars
 
     def test_weakref_all(self):
         T = TypeVar('T')
