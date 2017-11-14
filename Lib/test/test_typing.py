@@ -766,10 +766,9 @@ class GenericTests(BaseTestCase):
     def test_multiple_bases(self):
         class MM1(MutableMapping[str, str], collections.abc.MutableMapping):
             pass
-        with self.assertRaises(TypeError):
-            # consistent MRO not possible
-            class MM2(collections.abc.MutableMapping, MutableMapping[str, str]):
-                pass
+        class MM2(collections.abc.MutableMapping, MutableMapping[str, str]):
+            pass
+        self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     def test_orig_bases(self):
         T = TypeVar('T')
@@ -1123,7 +1122,6 @@ class GenericTests(BaseTestCase):
                          'GenericTests.test_repr_2.<locals>.C')
         X = C[int]
         self.assertEqual(X.__module__, __name__)
-        self.assertTrue(X.__qualname__.endswith('.<locals>.C'))
         self.assertEqual(repr(X).split('.')[-1], 'C[int]')
 
         class Y(C[int]):
@@ -1132,7 +1130,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Y.__module__, __name__)
         self.assertEqual(Y.__qualname__,
                          'GenericTests.test_repr_2.<locals>.Y')
-        self.assertEqual(repr(Y).split('.')[-1], 'Y')
 
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)

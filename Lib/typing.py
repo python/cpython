@@ -630,6 +630,8 @@ class _GenericAlias(_FinalTypingBase, _root=True):
                               () if a is _TypingEmpty else
                               a for a in params)
         self.__parameters__ = _type_vars(params)
+        if not name:
+            self.__module__ = origin.__module__
 
     def _get_type_vars(self, tvars):
         if not self._special:
@@ -695,15 +697,21 @@ class _GenericAlias(_FinalTypingBase, _root=True):
             pass
         return result
 
-    def __mro_entry__(self, bases):
+    def __mro_entries__(self, bases):
         if self._name:
-            return (self.__origin__, Generic)
+            res = []
+            if self.__origin__ not in bases:
+                res.append(self.__origin__)
+            i = bases.index(self)
+            if not any(isinstance(b, _GenericAlias) for b in bases[i+1:]):
+                res.append(Generic)
+            return tuple(res)
         if self.__origin__ is Generic:
             i = bases.index(self)
             for b in bases[i+1:]:
                 if isinstance(b, _GenericAlias):
                     return ()
-        return self.__origin__
+        return (self.__origin__,)
 
     def __getattr__(self, attr):
         if '__origin__' in self.__dict__ and not _is_dunder(attr):  # We are carefull for copy and pickle
