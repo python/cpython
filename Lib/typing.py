@@ -85,25 +85,6 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _collect_type_vars(types):
-    tvars = []
-    for t in types:
-        if isinstance(t, TypeVar) and t not in tvars:
-            tvars.append(t)
-        if isinstance(t, _GenericAlias) and not t._special:
-            tvars.extend([t for t in t.__parameters__ if t not in tvars])
-    return tuple(tvars)
-
-
-def _eval_type(t, globalns, localns):
-    if isinstance(t, (_GenericAlias, ForwardRef)):
-        return t._eval_type(globalns, localns)
-    return t
-
-_GenericAlias = None
-Generic = object()
-_Protocol = object()
-
 def _type_check(arg, msg):
     """Check that the argument is a type, and return it (internal helper).
 
@@ -206,6 +187,22 @@ def _remove_dups_flatten(parameters):
                for t2 in all_params - {t1}):
             all_params.remove(t1)
     return tuple(t for t in params if t in all_params)
+
+
+def _collect_type_vars(types):
+    tvars = []
+    for t in types:
+        if isinstance(t, TypeVar) and t not in tvars:
+            tvars.append(t)
+        if isinstance(t, _GenericAlias) and not t._special:
+            tvars.extend([t for t in t.__parameters__ if t not in tvars])
+    return tuple(tvars)
+
+
+def _eval_type(t, globalns, localns):
+    if isinstance(t, (_GenericAlias, ForwardRef)):
+        return t._eval_type(globalns, localns)
+    return t
 
 
 def _check_generic(cls, parameters):
@@ -547,20 +544,6 @@ class TypeVar(_Final, _root=True):
             prefix = '~'
         return prefix + self.__name__
 
-
-# Some unconstrained type variables.  These are used by the container types.
-# (These are not for export.)
-T = TypeVar('T')  # Any type.
-KT = TypeVar('KT')  # Key type.
-VT = TypeVar('VT')  # Value type.
-T_co = TypeVar('T_co', covariant=True)  # Any type covariant containers.
-V_co = TypeVar('V_co', covariant=True)  # Any type covariant containers.
-VT_co = TypeVar('VT_co', covariant=True)  # Value type covariant containers.
-T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
-
-# A useful type variable with constraints.  This represents string types.
-# (This one *is* for export!)
-AnyStr = TypeVar('AnyStr', bytes, str)
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
@@ -1131,6 +1114,20 @@ class _Protocol(metaclass=_ProtocolMeta):
     def __class_getitem__(cls, params):
         return Generic.__class_getitem__(cls, params)
 
+
+# Some unconstrained type variables.  These are used by the container types.
+# (These are not for export.)
+T = TypeVar('T')  # Any type.
+KT = TypeVar('KT')  # Key type.
+VT = TypeVar('VT')  # Value type.
+T_co = TypeVar('T_co', covariant=True)  # Any type covariant containers.
+V_co = TypeVar('V_co', covariant=True)  # Any type covariant containers.
+VT_co = TypeVar('VT_co', covariant=True)  # Value type covariant containers.
+T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
+
+# A useful type variable with constraints.  This represents string types.
+# (This one *is* for export!)
+AnyStr = TypeVar('AnyStr', bytes, str)
 
 # Various ABCs mimicking those in collections.abc.
 Hashable = _GenericAlias(collections.abc.Hashable, (),
