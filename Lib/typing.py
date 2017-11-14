@@ -1112,7 +1112,7 @@ class _Protocol(metaclass=_ProtocolMeta):
     _is_protocol = True
 
     def __class_getitem__(cls, params):
-        return cls
+        return Generic.__class_getitem__(cls, params)
 
 
 # Various ABCs mimicking those in collections.abc.
@@ -1123,56 +1123,6 @@ AsyncIterable = _GenericAlias(collections.abc.AsyncIterable, T_co, name='AsyncIt
 AsyncIterator = _GenericAlias(collections.abc.AsyncIterator, T_co, name='AsyncIterator', special=True)
 Iterable = _GenericAlias(collections.abc.Iterable, T_co, name='Iterable', special=True)
 Iterator = _GenericAlias(collections.abc.Iterator, T_co, name='Iterator', special=True)
-
-
-class SupportsInt(_Protocol):
-    __slots__ = ()
-
-    @abstractmethod
-    def __int__(self) -> int:
-        pass
-
-
-class SupportsFloat(_Protocol):
-    __slots__ = ()
-
-    @abstractmethod
-    def __float__(self) -> float:
-        pass
-
-
-class SupportsComplex(_Protocol):
-    __slots__ = ()
-
-    @abstractmethod
-    def __complex__(self) -> complex:
-        pass
-
-
-class SupportsBytes(_Protocol):
-    __slots__ = ()
-
-    @abstractmethod
-    def __bytes__(self) -> bytes:
-        pass
-
-
-class SupportsAbs(_Protocol[T_co]):
-    __slots__ = ()
-
-    @abstractmethod
-    def __abs__(self) -> T_co:
-        pass
-
-
-class SupportsRound(_Protocol[T_co]):
-    __slots__ = ()
-
-    @abstractmethod
-    def __round__(self, ndigits: int = 0) -> T_co:
-        pass
-
-
 Reversible = _GenericAlias(collections.abc.Reversible, T_co, name='Reversible', special=True)
 Sized = _GenericAlias(collections.abc.Sized, (), name='Sized', special=True)  # Not generic.
 Container = _GenericAlias(collections.abc.Container, T_co, name='Container', special=True)
@@ -1223,6 +1173,56 @@ Counter = _GenericAlias(collections.Counter, T, name='Counter', special=True)
 ChainMap = _GenericAlias(collections.ChainMap, (KT, VT), name='ChainMap', special=True)
 Generator = _GenericAlias(collections.abc.Generator, (T_co, T_contra, V_co), name='Generator', special=True)
 AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, (T_co, T_contra), name='AsyncGenerator', special=True)
+
+
+
+class SupportsInt(_Protocol):
+    __slots__ = ()
+
+    @abstractmethod
+    def __int__(self) -> int:
+        pass
+
+
+class SupportsFloat(_Protocol):
+    __slots__ = ()
+
+    @abstractmethod
+    def __float__(self) -> float:
+        pass
+
+
+class SupportsComplex(_Protocol):
+    __slots__ = ()
+
+    @abstractmethod
+    def __complex__(self) -> complex:
+        pass
+
+
+class SupportsBytes(_Protocol):
+    __slots__ = ()
+
+    @abstractmethod
+    def __bytes__(self) -> bytes:
+        pass
+
+
+class SupportsAbs(_Protocol[T_co]):
+    __slots__ = ()
+
+    @abstractmethod
+    def __abs__(self) -> T_co:
+        pass
+
+
+class SupportsRound(_Protocol[T_co]):
+    __slots__ = ()
+
+    @abstractmethod
+    def __round__(self, ndigits: int = 0) -> T_co:
+        pass
+
 
 # Internal type variable used for Type[].
 CT_co = TypeVar('CT_co', covariant=True, bound=type)

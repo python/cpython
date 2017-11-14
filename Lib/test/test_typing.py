@@ -682,7 +682,7 @@ class GenericTests(BaseTestCase):
     def test_new_repr_bare(self):
         T = TypeVar('T')
         self.assertEqual(repr(Generic[T]), 'typing.Generic[~T]')
-        self.assertEqual(repr(typing._Protocol[T]), 'typing.Protocol[~T]')
+        self.assertEqual(repr(typing._Protocol[T]), 'typing._Protocol[~T]')
         class C(typing.Dict[Any, Any]): ...
         # this line should just work
         repr(C.__mro__)
