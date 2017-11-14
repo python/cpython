@@ -61,7 +61,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         if (PyType_Check(base)) {
             continue;
         }
-        if (!(meth = PyObject_GetAttrString(base, "__mro_entry__"))) {
+        if (!(meth = PyObject_GetAttrString(base, "__mro_entries__"))) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 return NULL;
             }
@@ -70,7 +70,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         }
         if (!PyCallable_Check(meth)) {
             PyErr_SetString(PyExc_TypeError,
-                            "__mro_entry__ must be callable");
+                            "__mro_entries__ must be callable");
             Py_DECREF(meth);
             return NULL;
         }
@@ -83,7 +83,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         }
         else {
             PyErr_SetString(PyExc_TypeError,
-                            "__mro_entry__ must return a tuple");
+                            "__mro_entries__ must return a tuple");
             Py_DECREF(meth);
             return NULL;
         }

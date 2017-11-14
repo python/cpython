@@ -6,7 +6,7 @@ class TestMROEntry(unittest.TestCase):
         tested = []
         class B: ...
         class C:
-            def __mro_entry__(self, *args, **kwargs):
+            def __mro_entries__(self, *args, **kwargs):
                 tested.extend([args, kwargs])
                 return (C,)
         c = C()
@@ -20,7 +20,7 @@ class TestMROEntry(unittest.TestCase):
         class A: ...
         class B: ...
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 tested.append(bases)
                 return (self.__class__,)
         c = C()
@@ -40,7 +40,7 @@ class TestMROEntry(unittest.TestCase):
         class A: ...
         class B: ...
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 tested.append(bases)
                 return ()
         c = C()
@@ -60,7 +60,7 @@ class TestMROEntry(unittest.TestCase):
         tested = []
         class A: ...
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 tested.append(bases)
                 return (dict,)
         c = C()
@@ -74,7 +74,7 @@ class TestMROEntry(unittest.TestCase):
     def test_mro_entry_with_builtins_2(self):
         tested = []
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 tested.append(bases)
                 return (C,)
         c = C()
@@ -87,13 +87,13 @@ class TestMROEntry(unittest.TestCase):
 
     def test_mro_entry_errors(self):
         class C_too_many:
-            def __mro_entry__(self, bases, something, other):
+            def __mro_entries__(self, bases, something, other):
                 return ()
         c = C_too_many()
         with self.assertRaises(TypeError):
             class D(c): ...
         class C_too_few:
-            def __mro_entry__(self):
+            def __mro_entries__(self):
                 return ()
         d = C_too_few()
         with self.assertRaises(TypeError):
@@ -101,12 +101,12 @@ class TestMROEntry(unittest.TestCase):
 
     def test_mro_entry_errors_2(self):
         class C_not_callable:
-            __mro_entry__ = "Surprise!"
+            __mro_entries__ = "Surprise!"
         c = C_not_callable()
         with self.assertRaises(TypeError):
             class D(c): ...
         class C_not_tuple:
-            def __mro_entry__(self):
+            def __mro_entries__(self):
                 return object
         c = C_not_tuple()
         with self.assertRaises(TypeError):
@@ -120,7 +120,7 @@ class TestMROEntry(unittest.TestCase):
                 return super().__new__(mcls, name, bases, ns)
         class A: ...
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 return (A,)
         c = C()
         class D(c, metaclass=Meta):
@@ -137,7 +137,7 @@ class TestMROEntry(unittest.TestCase):
     def test_mro_entry_type_call(self):
         # Substitution should _not_ happen in direct type call
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 return ()
         c = C()
         with self.assertRaisesRegex(TypeError,
