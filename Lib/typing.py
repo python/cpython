@@ -124,7 +124,8 @@ def _type_check(arg, msg):
         return ForwardRef(arg)
     if (
         # Bare Union etc. are not valid as type arguments
-        _GenericAlias and isinstance(arg, _GenericAlias) and arg.__origin__ in (Generic, _Protocol, ClassVar) or
+        _GenericAlias and isinstance(arg, _GenericAlias) and
+        arg.__origin__ in (Generic, _Protocol, ClassVar) or
         arg in (Generic, _Protocol, ClassVar, Union, NoReturn, Optional)
     ):
         raise TypeError("Plain %s is not valid as type argument" % arg)
@@ -204,7 +205,8 @@ def _remove_dups_flatten(parameters):
     for t1 in params:
         if not isinstance(t1, type):
             continue
-        if any((isinstance(t2, type) or isinstance(t2, _GenericAlias) and t2._special) and issubclass(t1, t2)
+        if any((isinstance(t2, type) or
+                isinstance(t2, _GenericAlias) and t2._special) and issubclass(t1, t2)
                for t2 in all_params - {t1}):
             all_params.remove(t1)
     return tuple(t for t in params if t in all_params)
@@ -572,7 +574,8 @@ def _is_dunder(attr):
 
 class _GenericAlias(_Final, _root=True):
 
-    def __init__(self, origin, params, *, name=None, subcls=True, inst=True, special=False):
+    def __init__(self, origin, params, *,
+                 name=None, subcls=True, inst=True, special=False):
         self._name = name
         self._subcls = subcls
         self._inst = inst
@@ -609,7 +612,8 @@ class _GenericAlias(_Final, _root=True):
             params = (Ellipsis, result)
         else:
             if not isinstance(args, list):
-                raise TypeError(f"Callable[args, result]: args must be a list. Got {args}")
+                raise TypeError(f"Callable[args, result]: args must be a list."
+                                f" Got {args}")
             params = (tuple(args), result)
         return self.__getitem_inner__(params)
 
@@ -620,16 +624,19 @@ class _GenericAlias(_Final, _root=True):
             raise TypeError("Cannot subscript already-subscripted {self}")
         if self.__origin__ is tuple and self._special:
             if params == ():
-                return _GenericAlias(tuple, (_TypingEmpty,), name=self._name, inst=self._inst, subcls=self._subcls)
+                return _GenericAlias(tuple, (_TypingEmpty,), name=self._name,
+                                     inst=self._inst, subcls=self._subcls)
             if not isinstance(params, tuple):
                 params = (params,)
             if len(params) == 2 and params[1] is ...:
                 msg = "Tuple[t, ...]: t must be a type."
                 p = _type_check(params[0], msg)
-                return _GenericAlias(tuple, (p, _TypingEllipsis), name=self._name, inst=self._inst, subcls=self._subcls)
+                return _GenericAlias(tuple, (p, _TypingEllipsis), name=self._name,
+                                     inst=self._inst, subcls=self._subcls)
             msg = "Tuple[t0, t1, ...]: each t must be a type."
             params = tuple(_type_check(p, msg) for p in params)
-            return _GenericAlias(tuple, params, name=self._name, inst=self._inst, subcls=self._subcls)
+            return _GenericAlias(tuple, params, name=self._name,
+                                 inst=self._inst, subcls=self._subcls)
         if self.__origin__ is collections.abc.Callable and self._special:
             args, result = params
             msg = "Callable[args, result]: result must be a type."
@@ -640,7 +647,8 @@ class _GenericAlias(_Final, _root=True):
             msg = "Callable[[arg, ...], result]: each arg must be a type."
             args = tuple(_type_check(arg, msg) for arg in args)
             params = args + (result,)
-            return _GenericAlias(self.__origin__, params, name=self._name, inst=self._inst, subcls=self._subcls)
+            return _GenericAlias(self.__origin__, params, name=self._name,
+                                 inst=self._inst, subcls=self._subcls)
         if not isinstance(params, tuple):
             params = (params,)
         msg = "Parameters to generic types must be types."
@@ -710,7 +718,8 @@ class _GenericAlias(_Final, _root=True):
         return (self.__origin__,)
 
     def __getattr__(self, attr):
-        if '__origin__' in self.__dict__ and not _is_dunder(attr):  # We are carefull for copy and pickle
+        # We are carefull for copy and pickle.
+        if '__origin__' in self.__dict__ and not _is_dunder(attr):
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
 
@@ -728,7 +737,12 @@ class _GenericAlias(_Final, _root=True):
                 return issubclass(cls, self.__origin__)
             if cls._special:
                 return issubclass(cls.__origin__, self.__origin__)
-        raise TypeError("Subscripted generics cannot be used with class and instance checks")
+        raise TypeError("Subscripted generics cannot be used with"
+                        " class and instance checks")
+
+
+class _VariadicGenericAlias(_GenericAlias, _root=True):
+    pass
 
 
 class Generic:
@@ -777,10 +791,8 @@ class Generic:
             if len(set(params)) != len(params):
                 raise TypeError(
                     "Parameters to Generic[...] must all be unique")
-        elif cls in (Tuple, Callable):
-            pass
         elif cls is _Protocol:
-            # _Protocol is internal, don't check anything.
+            # _Protocol is internal at the moment, just skip the check
             pass
         else:
             # Subscripting a regular Generic subclass.
@@ -1116,18 +1128,28 @@ class _Protocol(metaclass=_ProtocolMeta):
 
 
 # Various ABCs mimicking those in collections.abc.
-Hashable = _GenericAlias(collections.abc.Hashable, (), name='Hashable', special=True)  # Not generic.
-Awaitable = _GenericAlias(collections.abc.Awaitable, T_co, name='Awaitable', special=True)
-Coroutine = _GenericAlias(collections.abc.Coroutine, (T_co, T_contra, V_co), name='Coroutine', special=True)
-AsyncIterable = _GenericAlias(collections.abc.AsyncIterable, T_co, name='AsyncIterable', special=True)
-AsyncIterator = _GenericAlias(collections.abc.AsyncIterator, T_co, name='AsyncIterator', special=True)
+Hashable = _GenericAlias(collections.abc.Hashable, (),
+                         name='Hashable', special=True)  # Not generic.
+Awaitable = _GenericAlias(collections.abc.Awaitable, T_co,
+                          name='Awaitable', special=True)
+Coroutine = _GenericAlias(collections.abc.Coroutine, (T_co, T_contra, V_co),
+                          name='Coroutine', special=True)
+AsyncIterable = _GenericAlias(collections.abc.AsyncIterable, T_co,
+                              name='AsyncIterable', special=True)
+AsyncIterator = _GenericAlias(collections.abc.AsyncIterator, T_co,
+                              name='AsyncIterator', special=True)
 Iterable = _GenericAlias(collections.abc.Iterable, T_co, name='Iterable', special=True)
 Iterator = _GenericAlias(collections.abc.Iterator, T_co, name='Iterator', special=True)
-Reversible = _GenericAlias(collections.abc.Reversible, T_co, name='Reversible', special=True)
-Sized = _GenericAlias(collections.abc.Sized, (), name='Sized', special=True)  # Not generic.
-Container = _GenericAlias(collections.abc.Container, T_co, name='Container', special=True)
-Collection = _GenericAlias(collections.abc.Collection, T_co, name='Collection', special=True)
-Callable = _GenericAlias(collections.abc.Callable, (), name='Callable', special=True)
+Reversible = _GenericAlias(collections.abc.Reversible, T_co,
+                           name='Reversible', special=True)
+Sized = _GenericAlias(collections.abc.Sized, (),
+                      name='Sized', special=True)  # Not generic.
+Container = _GenericAlias(collections.abc.Container, T_co,
+                          name='Container', special=True)
+Collection = _GenericAlias(collections.abc.Collection, T_co,
+                           name='Collection', special=True)
+Callable = _VariadicGenericAlias(collections.abc.Callable, (),
+                                 name='Callable', special=True)
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
@@ -1139,15 +1161,19 @@ Callable.__doc__ = \
     such function types are rarely used as callback types.
     """
 AbstractSet = _GenericAlias(collections.abc.Set, T_co, name='AbstractSet', special=True)
-MutableSet = _GenericAlias(collections.abc.MutableSet, T, name='MutableSet', special=True)
+MutableSet = _GenericAlias(collections.abc.MutableSet, T,
+                           name='MutableSet', special=True)
 # NOTE: Mapping is only covariant in the value type.
-Mapping = _GenericAlias(collections.abc.Mapping, (KT, VT_co), name='Mapping', special=True)
-MutableMapping = _GenericAlias(collections.abc.MutableMapping, (KT, VT), name='MutableMapping', special=True)
+Mapping = _GenericAlias(collections.abc.Mapping, (KT, VT_co),
+                        name='Mapping', special=True)
+MutableMapping = _GenericAlias(collections.abc.MutableMapping, (KT, VT),
+                               name='MutableMapping', special=True)
 Sequence = _GenericAlias(collections.abc.Sequence, T_co, name='Sequence', special=True)
-MutableSequence = _GenericAlias(collections.abc.MutableSequence, T, name='MutableSequence', special=True)
-# Not generic
-ByteString = _GenericAlias(collections.abc.ByteString, (), name='ByteString', special=True)
-Tuple = _GenericAlias(tuple, (), name='Tuple', inst=False, special=True)
+MutableSequence = _GenericAlias(collections.abc.MutableSequence, T,
+                                name='MutableSequence', special=True)
+ByteString = _GenericAlias(collections.abc.ByteString, (),
+                           name='ByteString', special=True)  # Not generic
+Tuple = _VariadicGenericAlias(tuple, (), name='Tuple', inst=False, special=True)
 Tuple.__doc__ = \
     """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
 
@@ -1161,19 +1187,26 @@ List = _GenericAlias(list, T, name='List', inst=False, special=True)
 Deque = _GenericAlias(collections.deque, T, name='Deque', special=True)
 Set = _GenericAlias(set, T, name='Set', inst=False, special=True)
 FrozenSet = _GenericAlias(frozenset, T_co, name='FrozenSet', inst=False, special=True)
-MappingView = _GenericAlias(collections.abc.MappingView, T_co, name='MappingView', special=True)
+MappingView = _GenericAlias(collections.abc.MappingView, T_co,
+                            name='MappingView', special=True)
 KeysView = _GenericAlias(collections.abc.KeysView, KT, name='KeysView', special=True)
-ItemsView = _GenericAlias(collections.abc.ItemsView, (KT, VT_co), name='ItemsView', special=True)
-ValuesView = _GenericAlias(collections.abc.ValuesView, VT_co, name='ValuesView', special=True)
-ContextManager = _GenericAlias(contextlib.AbstractContextManager, T_co, name='ContextManager', special=True)
-#AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, T_co, name='AsyncContextManager')
+ItemsView = _GenericAlias(collections.abc.ItemsView, (KT, VT_co),
+                          name='ItemsView', special=True)
+ValuesView = _GenericAlias(collections.abc.ValuesView, VT_co,
+                           name='ValuesView', special=True)
+ContextManager = _GenericAlias(contextlib.AbstractContextManager, T_co,
+                               name='ContextManager', special=True)
+#AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, T_co,
+#                                    name='AsyncContextManager')
 Dict = _GenericAlias(dict, (KT, VT), name='Dict', inst=False, special=True)
-DefaultDict = _GenericAlias(collections.defaultdict, (KT, VT), name='DefaultDict', special=True)
+DefaultDict = _GenericAlias(collections.defaultdict, (KT, VT),
+                            name='DefaultDict', special=True)
 Counter = _GenericAlias(collections.Counter, T, name='Counter', special=True)
 ChainMap = _GenericAlias(collections.ChainMap, (KT, VT), name='ChainMap', special=True)
-Generator = _GenericAlias(collections.abc.Generator, (T_co, T_contra, V_co), name='Generator', special=True)
-AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, (T_co, T_contra), name='AsyncGenerator', special=True)
-
+Generator = _GenericAlias(collections.abc.Generator, (T_co, T_contra, V_co),
+                          name='Generator', special=True)
+AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, (T_co, T_contra),
+                               name='AsyncGenerator', special=True)
 
 
 class SupportsInt(_Protocol):
@@ -1540,8 +1573,10 @@ class io:
 io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
-Pattern = _GenericAlias(type(stdlib_re.compile('')), AnyStr, name='Pattern', subcls=False, special=True)
-Match = _GenericAlias(type(stdlib_re.match('', '')), AnyStr, name='Match', subcls=False, special=True)
+Pattern = _GenericAlias(type(stdlib_re.compile('')), AnyStr,
+                        name='Pattern', subcls=False, special=True)
+Match = _GenericAlias(type(stdlib_re.match('', '')), AnyStr,
+                      name='Match', subcls=False, special=True)
 
 class re:
     """Wrapper namespace for re type aliases."""
