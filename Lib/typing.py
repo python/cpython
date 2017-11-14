@@ -244,7 +244,6 @@ def _tp_cache(func):
 
 class _Final:
     """Mixin to prohibit subclassing"""
-    __slots__ = ()
 
     def __init_subclass__(self, *args, **kwds):
         if '_root' not in kwds:
@@ -253,8 +252,6 @@ class _Final:
 
 class _SpecialForm(_Final, _root=True):
     """Internal indicator of special typing constructs."""
-
-    __slots__ = ('__weakref__', '_name', '_doc')
 
     def __new__(cls, *args, **kwds):
         """Constructor.
@@ -272,6 +269,14 @@ class _SpecialForm(_Final, _root=True):
     def __init__(self, name, doc):
         self._name = name
         self._doc = doc
+
+    def __eq__(self, other):
+        if not isinstance(other, _SpecialForm):
+            return NotImplemented
+        return self._name == other._name
+
+    def __hash__(self):
+        return hash((self._name,))
 
     def __repr__(self):
         return 'typing.' + self._name
@@ -490,6 +495,20 @@ class TypeVar(_Final, _root=True):
     __slots__ = ('__name__', '__bound__', '__constraints__',
                  '__covariant__', '__contravariant__')
 
+    def __getstate__(self):
+        return {'name': self.__name__,
+                'bound': self.__bound__,
+                'constraints': self.__constraints__,
+                'co': self.__covariant__,
+                'contra': self.__contravariant__}
+
+    def __setstate__(self, state):
+        self.__name__ = state['name']
+        self.__bound__ = state['bound']
+        self.__constraints__ = state['constraints']
+        self.__covariant__ = state['co']
+        self.__contravariant__ = state['contra']
+
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
         self.__name__ = name
@@ -654,6 +673,8 @@ class _GenericAlias(_Final, _root=True):
             return False
         if self.__origin__ is Union and other.__origin__ is Union:
             return frozenset(self.__args__) == frozenset(other.__args__)
+        if self._special and other._special:
+            return True
         return self.__args__ == other.__args__
 
     def __hash__(self):

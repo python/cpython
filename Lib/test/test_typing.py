@@ -1068,7 +1068,6 @@ class GenericTests(BaseTestCase):
 
         c = C()
         c_int = C[int]()
-        self.assertEqual(C.__slots__, C[str].__slots__)
 
         c.potato = 0
         c_int.potato = 0
@@ -1079,8 +1078,6 @@ class GenericTests(BaseTestCase):
 
         def foo(x: C['C']): ...
         self.assertEqual(get_type_hints(foo, globals(), locals())['x'], C[C])
-        self.assertEqual(get_type_hints(foo, globals(), locals())['x'].__slots__,
-                         C.__slots__)
         self.assertEqual(copy(C[int]), deepcopy(C[int]))
 
     def test_parameterized_slots_dict(self):
@@ -1090,7 +1087,6 @@ class GenericTests(BaseTestCase):
 
         d = D()
         d_int = D[int]()
-        self.assertEqual(D.__slots__, D[str].__slots__)
 
         d.banana = 'yes'
         d_int.banana = 'yes'
