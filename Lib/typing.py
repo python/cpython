@@ -84,12 +84,6 @@ __all__ = [
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
 
-def _trim_name(nm):
-    whitelist = ('_TypingBase', '_FinalTypingBase', '_SingletonTypingBase', '_ForwardRef')
-    if nm.startswith('_') and nm not in whitelist:
-        nm = nm[1:]
-    return nm
-
 
 def _get_type_vars(types, tvars):
     for t in types:
@@ -581,8 +575,23 @@ class _GenericAlias(_Final, _root=True):
         return _GenericAlias(self.__origin__, ev_args, name=self._name,
                              subcls=self._subcls, inst=self._inst, special=self._special)
 
-    @_tp_cache
     def __getitem__(self, params):
+        if self._name != 'Callable' or not self._special:
+            return self.__getitem_inner__(params)
+        if not isinstance(params, tuple) or len(params) != 2:
+            raise TypeError("Callable must be used as "
+                            "Callable[[arg, ...], result].")
+        args, result = params
+        if args is Ellipsis:
+            params = (Ellipsis, result)
+        else:
+            if not isinstance(args, list):
+                raise TypeError(f"Callable[args, result]: args must be a list. Got {args}")
+            params = (tuple(args), result)
+        return self.__getitem_inner__(params)
+
+    @_tp_cache
+    def __getitem_inner__(self, params):
         if self.__origin__ in (Generic, _Protocol):
             # Can't subscript Generic[...] or _Protocol[...].
             raise TypeError("Cannot subscript already-subscripted {self}")
@@ -598,6 +607,17 @@ class _GenericAlias(_Final, _root=True):
             msg = "Tuple[t0, t1, ...]: each t must be a type."
             params = tuple(_type_check(p, msg) for p in params)
             return _GenericAlias(tuple, params, name=self._name, inst=self._inst, subcls=self._subcls)
+        if self.__origin__ is collections.abc.Callable and self._special:
+            args, result = params
+            msg = "Callable[args, result]: result must be a type."
+            result = _type_check(result, msg)
+            if args is Ellipsis:
+                return _GenericAlias(self.__origin__, (_TypingEllipsis, result),
+                                     name=self._name, inst=self._inst, subcls=self._subcls)
+            msg = "Callable[[arg, ...], result]: each arg must be a type."
+            args = tuple(_type_check(arg, msg) for arg in args)
+            params = args + (result,)
+            return _GenericAlias(self.__origin__, params, name=self._name, inst=self._inst, subcls=self._subcls)
         if not isinstance(params, tuple):
             params = (params,)
         msg = "Parameters to generic types must be types."
@@ -606,7 +626,7 @@ class _GenericAlias(_Final, _root=True):
         return _subs_tvars(self, self.__parameters__, params)
 
     def __repr__(self):
-        if (self.__origin__ is not Callable or
+        if (self._name != 'Callable' or
                 len(self.__args__) == 2 and self.__args__[0] is Ellipsis):
             if self._name:
                 name = 'typing.' + self._name
@@ -617,6 +637,8 @@ class _GenericAlias(_Final, _root=True):
             else:
                 args = ''
             return (f'{name}{args}')
+        if self._special:
+            return 'typing.Callable'
         return (f'typing.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
                 f'{_type_repr(self.__args__[-1])}]')
@@ -677,9 +699,11 @@ class _GenericAlias(_Final, _root=True):
 
     def __subclasscheck__(self, cls):
         if self._special:
-            return issubclass(cls, self.__origin__)
-        else:
-            raise TypeError("Subscripted generic cannot be used with class and instance checks")
+            if not isinstance(cls, _GenericAlias):
+                return issubclass(cls, self.__origin__)
+            if cls._special:
+                return issubclass(cls.__origin__, self.__origin__)
+        raise TypeError("Subscripted generics cannot be used with class and instance checks")
 
 
 def _make_subclasshook(cls):
@@ -831,7 +855,8 @@ if False:
     """
 
 
-class Callable(collections.abc.Callable, Generic):
+Callable = _GenericAlias(collections.abc.Callable, (), name='Callable', special=True)
+if False:
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
     The subscription syntax must always be used with exactly two
@@ -841,46 +866,6 @@ class Callable(collections.abc.Callable, Generic):
     There is no syntax to indicate optional or keyword arguments,
     such function types are rarely used as callback types.
     """
-
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwds):
-        if cls is Callable:
-            raise TypeError("Type Callable cannot be instantiated; "
-                            "use a non-abstract subclass instead")
-        return super().__new__(cls, *args, **kwds)
-
-    def __class_getitem__(cls, parameters):
-        """A thin wrapper around __getitem_inner__ to provide the latter
-        with hashable arguments to improve speed.
-        """
-
-        if cls is not Callable:
-            return super().__class_getitem__(cls, parameters)
-        if not isinstance(parameters, tuple) or len(parameters) != 2:
-            raise TypeError("Callable must be used as "
-                            "Callable[[arg, ...], result].")
-        args, result = parameters
-        if args is Ellipsis:
-            parameters = (Ellipsis, result)
-        else:
-            if not isinstance(args, list):
-                raise TypeError(f"Callable[args, result]: args must be a list. Got {args}")
-            parameters = (tuple(args), result)
-        return cls.__getitem_inner__(parameters)
-
-    @classmethod
-    @_tp_cache
-    def __getitem_inner__(cls, parameters):
-        args, result = parameters
-        msg = "Callable[args, result]: result must be a type."
-        result = _type_check(result, msg)
-        if args is Ellipsis:
-            return super().__class_getitem__(cls, (_TypingEllipsis, result))
-        msg = "Callable[[arg, ...], result]: each arg must be a type."
-        args = tuple(_type_check(arg, msg) for arg in args)
-        parameters = args + (result,)
-        return super().__class_getitem__(cls, parameters)
 
 
 def cast(typ, val):
