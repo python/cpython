@@ -158,7 +158,6 @@ Database Objects
    `MSIDatabaseOpenView <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370082.aspx>`_
    `MSIDatabaseCommit <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370075.aspx>`_
    `MSIGetSummaryInformation <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370301.aspx>`_
-   `MsiCloseHandle <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370067.aspx>`_
 
 .. _view-objects:
 
