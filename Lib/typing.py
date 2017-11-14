@@ -572,7 +572,6 @@ class TypeVar(_Final, _root=True):
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
 
-_FLAGS = ('_name', '_subcls', '_inst', '_special')
 _sentinel = object()
 
 def _is_dunder(attr):
@@ -582,9 +581,8 @@ def _is_dunder(attr):
 class _GenericAlias(_Final, _root=True):
 
     def __init__(self, origin, params, *,
-                 name=None, subcls=True, inst=True, special=False):
+                 name=None, inst=True, special=False):
         self._name = name
-        self._subcls = subcls
         self._inst = inst
         self._special = special
         if not isinstance(params, tuple):
@@ -611,9 +609,8 @@ class _GenericAlias(_Final, _root=True):
         return _subs_tvars(self, self.__parameters__, params)
 
     def copy_with(self, params):
-        # We don't copy _special.
-        return _GenericAlias(self.__origin__, params, name=self._name,
-                             subcls=self._subcls, inst=self._inst)
+        # We don't copy self._special.
+        return _GenericAlias(self.__origin__, params, name=self._name, inst=self._inst)
 
     def __repr__(self):
         if (self._name != 'Callable' or
@@ -683,7 +680,7 @@ class _GenericAlias(_Final, _root=True):
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if not _is_dunder(attr) and attr not in _FLAGS:
+        if not _is_dunder(attr) and attr not in ('_name', '_inst', '_special'):
             setattr(self.__origin__, attr, val)
         super().__setattr__(attr, val)
 
@@ -1588,9 +1585,9 @@ io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
 Pattern = _GenericAlias(type(stdlib_re.compile('')), AnyStr,
-                        name='Pattern', subcls=False, special=True)
+                        name='Pattern', special=True)
 Match = _GenericAlias(type(stdlib_re.match('', '')), AnyStr,
-                      name='Match', subcls=False, special=True)
+                      name='Match', special=True)
 
 class re:
     """Wrapper namespace for re type aliases."""
