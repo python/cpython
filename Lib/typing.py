@@ -133,7 +133,25 @@ def _type_repr(obj):
     return repr(obj)
 
 
+def _collect_type_vars(types):
+    """Collect all type variable contained in types in order of
+    first appearance (lexicographic order). For example::
+
+        _collect_type_vars((T, List[S, T])) == (T, S)
+    """
+    tvars = []
+    for t in types:
+        if isinstance(t, TypeVar) and t not in tvars:
+            tvars.append(t)
+        if isinstance(t, _GenericAlias) and not t._special:
+            tvars.extend([t for t in t.__parameters__ if t not in tvars])
+    return tuple(tvars)
+
+
 def _subs_tvars(tp, tvars, subs):
+    """Substitute type variables 'tvars' with substitutions 'subs'.
+    These two must have same length.
+    """
     if not isinstance(tp, _GenericAlias):
         return tp
     new_args = list(tp.__args__)
@@ -149,11 +167,23 @@ def _subs_tvars(tp, tvars, subs):
     return tp.copy_with(tuple(new_args))
 
 
+def _check_generic(cls, parameters):
+    """Check correct count for parameters of a generic cls (internal helper).
+    This gives a nice error message in case of count mismatch.
+    """
+    if not cls.__parameters__:
+        raise TypeError("%s is not a generic class" % repr(cls))
+    alen = len(parameters)
+    elen = len(cls.__parameters__)
+    if alen != elen:
+        raise TypeError("Too %s parameters for %s; actual %s, expected %s" %
+                        ("many" if alen > elen else "few", repr(cls), alen, elen))
+
+
 def _remove_dups_flatten(parameters):
     """An internal helper for Union creation and substitution: flatten Union's
     among parameters, then remove duplicates and strict subclasses.
     """
-
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
@@ -189,33 +219,6 @@ def _remove_dups_flatten(parameters):
     return tuple(t for t in params if t in all_params)
 
 
-def _collect_type_vars(types):
-    tvars = []
-    for t in types:
-        if isinstance(t, TypeVar) and t not in tvars:
-            tvars.append(t)
-        if isinstance(t, _GenericAlias) and not t._special:
-            tvars.extend([t for t in t.__parameters__ if t not in tvars])
-    return tuple(tvars)
-
-
-def _eval_type(t, globalns, localns):
-    if isinstance(t, (_GenericAlias, ForwardRef)):
-        return t._eval_type(globalns, localns)
-    return t
-
-
-def _check_generic(cls, parameters):
-    # Check correct count for parameters of a generic cls (internal helper).
-    if not cls.__parameters__:
-        raise TypeError("%s is not a generic class" % repr(cls))
-    alen = len(parameters)
-    elen = len(cls.__parameters__)
-    if alen != elen:
-        raise TypeError("Too %s parameters for %s; actual %s, expected %s" %
-                        ("many" if alen > elen else "few", repr(cls), alen, elen))
-
-
 _cleanups = []
 
 
@@ -223,7 +226,6 @@ def _tp_cache(func):
     """Internal wrapper caching __getitem__ of generic types with a fallback to
     original function for non-hashable arguments.
     """
-
     cached = functools.lru_cache()(func)
     _cleanups.append(cached.cache_clear)
 
@@ -235,6 +237,22 @@ def _tp_cache(func):
             pass  # All real errors (not unhashable args) are raised below.
         return func(*args, **kwds)
     return inner
+
+
+def _eval_type(t, globalns, localns):
+    """Evaluate all forward reverences in the given type t.
+    For use of globalns and localns see the docstring for get_type_hints().
+    """
+    if isinstance(t, ForwardRef):
+        return t._evaluate(globalns, localns)
+    if isinstance(t, _GenericAlias):
+        ev_args = tuple(_eval_type(a, globalns, localns) for a in t.__args__)
+        if ev_args == t.__args__:
+            return t
+        res = t.copy_with(ev_args)
+        res._special = t._special
+        return res
+    return t
 
 
 class _Final:
@@ -431,7 +449,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
 
-    def _eval_type(self, globalns, localns):
+    def _evaluate(self, globalns, localns):
         if not self.__forward_evaluated__ or localns is not globalns:
             if globalns is None and localns is None:
                 globalns = localns = {}
@@ -503,20 +521,6 @@ class TypeVar(_Final, _root=True):
     __slots__ = ('__name__', '__bound__', '__constraints__',
                  '__covariant__', '__contravariant__')
 
-    def __getstate__(self):
-        return {'name': self.__name__,
-                'bound': self.__bound__,
-                'constraints': self.__constraints__,
-                'co': self.__covariant__,
-                'contra': self.__contravariant__}
-
-    def __setstate__(self, state):
-        self.__name__ = state['name']
-        self.__bound__ = state['bound']
-        self.__constraints__ = state['constraints']
-        self.__covariant__ = state['co']
-        self.__contravariant__ = state['contra']
-
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
         self.__name__ = name
@@ -534,6 +538,20 @@ class TypeVar(_Final, _root=True):
             self.__bound__ = _type_check(bound, "Bound must be a type.")
         else:
             self.__bound__ = None
+
+    def __getstate__(self):
+        return {'name': self.__name__,
+                'bound': self.__bound__,
+                'constraints': self.__constraints__,
+                'co': self.__covariant__,
+                'contra': self.__contravariant__}
+
+    def __setstate__(self, state):
+        self.__name__ = state['name']
+        self.__bound__ = state['bound']
+        self.__constraints__ = state['constraints']
+        self.__covariant__ = state['co']
+        self.__contravariant__ = state['contra']
 
     def __repr__(self):
         if self.__covariant__:
@@ -579,12 +597,6 @@ class _GenericAlias(_Final, _root=True):
         self.__slots__ = None  # This is not documented.
         if not name:
             self.__module__ = origin.__module__
-
-    def _eval_type(self, globalns, localns):
-        ev_args = tuple(_eval_type(a, globalns, localns) for a in self.__args__)
-        if ev_args == self.__args__:
-            return self
-        return self.copy_with(ev_args)
 
     @_tp_cache
     def __getitem__(self, params):
