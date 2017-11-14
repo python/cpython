@@ -594,7 +594,9 @@ class GenericTests(BaseTestCase):
         Y[str]
         with self.assertRaises(TypeError):
             Y[str, str]
-        self.assertIsSubclass(SimpleMapping[str, int], SimpleMapping)
+        with self.assertRaises(TypeError):
+            issubclass(SimpleMapping[str, int], SimpleMapping)
+        self.assertIsInstance(SimpleMapping[str, int](), SimpleMapping)
 
     def test_generic_errors(self):
         T = TypeVar('T')
@@ -659,7 +661,7 @@ class GenericTests(BaseTestCase):
         U = TypeVar('U', covariant=True)
         S = TypeVar('S')
 
-        self.assertEqual(repr(List), "<class 'typing.List'>")
+        self.assertEqual(repr(List), 'typing.List')
         self.assertEqual(repr(List[T]), 'typing.List[~T]')
         self.assertEqual(repr(List[U]), 'typing.List[+U]')
         self.assertEqual(repr(List[S][T][int]), 'typing.List[int]')
@@ -822,8 +824,8 @@ class GenericTests(BaseTestCase):
         self.assertEqual(D[int].__parameters__, ())
         self.assertEqual(C[int].__args__, (int,))
         self.assertEqual(D[int].__args__, (int,))
-        self.assertEqual(C.__bases__, (List,))
-        self.assertEqual(D.__bases__, (C, List))
+        self.assertEqual(C.__bases__, (list, Generic))
+        self.assertEqual(D.__bases__, (C, list, Generic))
         self.assertEqual(C.__orig_bases__, (List[T][U][V],))
         self.assertEqual(D.__orig_bases__, (C, List[T][U][V]))
 
@@ -953,8 +955,10 @@ class GenericTests(BaseTestCase):
         self.assertIsSubclass(C1, collections.abc.Callable)
         self.assertIsInstance(T1(), tuple)
         self.assertIsSubclass(T2, tuple)
-        self.assertIsSubclass(Tuple[int, ...], typing.Sequence)
-        self.assertIsSubclass(Tuple[int, ...], typing.Iterable)
+        with self.assertRaises(TypeError):
+            issubclass(Tuple[int, ...], typing.Sequence)
+        with self.assertRaises(TypeError):
+            issubclass(Tuple[int, ...], typing.Iterable)
 
     def test_fail_with_bare_union(self):
         with self.assertRaises(TypeError):
@@ -2078,7 +2082,8 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MMB, collections.abc.Mapping)
         self.assertIsSubclass(MMC, collections.abc.Mapping)
 
-        self.assertIsSubclass(MMB[str, str], typing.Mapping)
+        with self.assertRaises(TypeError):
+            issubclass(MMB[str, str], typing.Mapping)
         self.assertIsSubclass(MMC, MMA)
 
         class I(typing.Iterable): ...

@@ -176,10 +176,8 @@ def _subs_tvars(tp, tvars, subs):
             new_args[a] = _subs_tvars(arg, tvars, subs)
     if tp.__origin__ is Union:
         return Union[tuple(new_args)]
-    result = _GenericAlias(tp.__origin__, tuple(new_args), name=tp._name)
-    if hasattr(tp, '_inst'):
-        result._inst = tp._inst
-    return result
+    return _GenericAlias(tp.__origin__, tuple(new_args),
+                         name=tp._name, subcls=tp._subcls, inst=tp._inst)
 
 
 def _remove_dups_flatten(parameters):
@@ -215,7 +213,7 @@ def _remove_dups_flatten(parameters):
     for t1 in params:
         if not isinstance(t1, type):
             continue
-        if any(isinstance(t2, type) and issubclass(t1, t2)
+        if any((isinstance(t2, type) or isinstance(t2, _GenericAlias) and t2._special) and issubclass(t1, t2)
                for t2 in all_params - {t1}):
             all_params.remove(t1)
     return tuple(t for t in params if t in all_params)
@@ -612,37 +610,37 @@ Optional = _Optional(_root=True)
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
 
+_FLAGS = ('_name', '_subcls', '_inst', '_special')
+
+def _is_dunder(attr):
+    return attr.startswith('__') and attr.endswith('__')
+
 
 class _GenericAlias(_FinalTypingBase, _root=True):
 
-    def __init__(self, origin, params, *, name=None, subcls=True, inst=True):
-        """Create a new generic class. GenericMeta.__new__ accepts
-        keyword arguments that are used for internal bookkeeping, therefore
-        an override should pass unused keyword arguments to super().
-        """
+    def __init__(self, origin, params, *, name=None, subcls=True, inst=True, special=False):
         self._name = name
-        if not isinstance(params, (tuple, list)):
+        self._subcls = subcls
+        self._inst = inst
+        self._special = special
+        if not isinstance(params, tuple):
             params = (params,)
         self.__origin__ = origin
-        if name:
-            self.__args__ = ()
-            self.__parameters__ = tuple(params)
-            self._subcls = subcls
-            self._inst = inst
-        else:
-            self.__args__ = tuple(... if a is _TypingEllipsis else
-                                  () if a is _TypingEmpty else
-                                  a for a in params)
-            self.__parameters__ = _type_vars(params)
+        self.__args__ = tuple(... if a is _TypingEllipsis else
+                              () if a is _TypingEmpty else
+                              a for a in params)
+        self.__parameters__ = _type_vars(params)
 
     def _get_type_vars(self, tvars):
-        _get_type_vars(self.__parameters__, tvars)
+        if not self._special:
+            _get_type_vars(self.__parameters__, tvars)
 
     def _eval_type(self, globalns, localns):
         ev_args = tuple(_eval_type(a, globalns, localns) for a in self.__args__)
         if ev_args == self.__args__:
             return self
-        return _GenericAlias(self.__origin__, ev_args)
+        return _GenericAlias(self.__origin__, ev_args, name=self._name,
+                             subcls=self._subcls, inst=self._inst, special=self._special)
 
     @_tp_cache
     def __getitem__(self, params):
@@ -654,12 +652,7 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
         _check_generic(self, params)
-        if self._name and not self.__args__:
-            origin = _GenericAlias(self.__origin__, self.__parameters__, name=self._name)
-            origin.__args__ = tuple(origin.__parameters__)
-        else:
-            origin = self
-        return _subs_tvars(origin, self.__parameters__, params)
+        return _subs_tvars(self, self.__parameters__, params)
 
     def __repr__(self):
         if (self.__origin__ is not Callable or
@@ -668,7 +661,7 @@ class _GenericAlias(_FinalTypingBase, _root=True):
                 name = 'typing.' + self._name
             else:
                 name = _type_repr(self.__origin__)
-            if self.__args__:
+            if not self._special:
                 args = f'[{", ".join([_type_repr(a) for a in self.__args__])}]'
             else:
                 args = ''
@@ -692,7 +685,7 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         return hash((self.__origin__, self.__args__))
 
     def __call__(self, *args, **kwargs):
-        if self._name and not self._inst:
+        if not self._inst:
             raise TypeError(f"Type {self._name} cannot be instantiated; "
                             f"use {self._name.lower()}() instead")
         result = self.__origin__(*args, **kwargs)
@@ -713,12 +706,12 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         return self.__origin__
 
     def __getattr__(self, attr):
-        if '__origin__' in self.__dict__ and not(attr.startswith('__') and attr.endswith('__')):  # We are carefull for copy and pickle
+        if '__origin__' in self.__dict__ and not _is_dunder(attr):  # We are carefull for copy and pickle
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if not(attr.startswith('__') and attr.endswith('__') or attr in ('_name', '_subcls', '_inst')):
+        if not _is_dunder(attr) and attr not in _FLAGS:
             setattr(self.__origin__, attr, val)
         self.__dict__[attr] = val
 
@@ -726,7 +719,7 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         return self.__subclasscheck__(type(obj))
 
     def __subclasscheck__(self, cls):
-        if not self.__args__:
+        if self._special:
             return issubclass(cls, self.__origin__)
         else:
             raise TypeError("Subscripted generic cannot be used with class and instance checks")
@@ -823,11 +816,11 @@ class Generic:
 
     def __init_subclass__(cls, *args, **kwargs):
         tvars = []
-        if (not hasattr(cls, '__orig_bases__') and Generic in cls.__bases__ and
+        if (not '__orig_bases__' in cls.__dict__ and Generic in cls.__bases__ and
                 cls.__name__ not in ('Tuple', 'Callable') or
                 hasattr(cls, '__orig_bases__') and Generic in cls.__orig_bases__):
             raise TypeError("Cannot inherit from plain Generic")
-        if hasattr(cls, '__orig_bases__'):
+        if '__orig_bases__' in cls.__dict__:
             tvars = _type_vars(cls.__orig_bases__)
             # Look for Generic[T1, ..., Tn].
             # If found, tvars must be a subset of it.
@@ -1242,13 +1235,13 @@ class _Protocol(metaclass=_ProtocolMeta):
 
 
 # Various ABCs mimicking those in collections.abc.
-Hashable = _GenericAlias(collections.abc.Hashable, [], name='Hashable')  # Not generic.
-Awaitable = _GenericAlias(collections.abc.Awaitable, [T_co], name='Awaitable')
-Coroutine = _GenericAlias(collections.abc.Coroutine, [T_co, T_contra, V_co], name='Coroutine')
-AsyncIterable = _GenericAlias(collections.abc.AsyncIterable, [T_co], name='AsyncIterable')
-AsyncIterator = _GenericAlias(collections.abc.AsyncIterator, [T_co], name='AsyncIterator')
-Iterable = _GenericAlias(collections.abc.Iterable, [T_co], name='Iterable')
-Iterator = _GenericAlias(collections.abc.Iterator, [T_co], name='Iterator')
+Hashable = _GenericAlias(collections.abc.Hashable, (), name='Hashable', special=True)  # Not generic.
+Awaitable = _GenericAlias(collections.abc.Awaitable, T_co, name='Awaitable', special=True)
+Coroutine = _GenericAlias(collections.abc.Coroutine, (T_co, T_contra, V_co), name='Coroutine', special=True)
+AsyncIterable = _GenericAlias(collections.abc.AsyncIterable, T_co, name='AsyncIterable', special=True)
+AsyncIterator = _GenericAlias(collections.abc.AsyncIterator, T_co, name='AsyncIterator', special=True)
+Iterable = _GenericAlias(collections.abc.Iterable, T_co, name='Iterable', special=True)
+Iterator = _GenericAlias(collections.abc.Iterator, T_co, name='Iterator', special=True)
 
 
 class SupportsInt(_Protocol):
@@ -1299,36 +1292,36 @@ class SupportsRound(_Protocol[T_co]):
         pass
 
 
-Reversible = _GenericAlias(collections.abc.Reversible, [T_co], name='Reversible')
-Sized = _GenericAlias(collections.abc.Sized, [], name='Sized')  # Not generic.
-Container = _GenericAlias(collections.abc.Container, [T_co], name='Container')
-Collection = _GenericAlias(collections.abc.Collection, [T_co], name='Collection')
+Reversible = _GenericAlias(collections.abc.Reversible, T_co, name='Reversible', special=True)
+Sized = _GenericAlias(collections.abc.Sized, (), name='Sized', special=True)  # Not generic.
+Container = _GenericAlias(collections.abc.Container, T_co, name='Container', special=True)
+Collection = _GenericAlias(collections.abc.Collection, T_co, name='Collection', special=True)
 # Callable was defined earlier.
-AbstractSet = _GenericAlias(collections.abc.Set, [T_co], name='AbstractSet')
-MutableSet = _GenericAlias(collections.abc.MutableSet, [T], name='MutableSet')
+AbstractSet = _GenericAlias(collections.abc.Set, T_co, name='AbstractSet', special=True)
+MutableSet = _GenericAlias(collections.abc.MutableSet, T, name='MutableSet', special=True)
 # NOTE: Mapping is only covariant in the value type.
-Mapping = _GenericAlias(collections.abc.Mapping, [KT, VT_co], name='Mapping')
-MutableMapping = _GenericAlias(collections.abc.MutableMapping, [KT, VT], name='MutableMapping')
-Sequence = _GenericAlias(collections.abc.Sequence, [T_co], name='Sequence')
-MutableSequence = _GenericAlias(collections.abc.MutableSequence, [T], name='MutableSequence')
+Mapping = _GenericAlias(collections.abc.Mapping, (KT, VT_co), name='Mapping', special=True)
+MutableMapping = _GenericAlias(collections.abc.MutableMapping, (KT, VT), name='MutableMapping', special=True)
+Sequence = _GenericAlias(collections.abc.Sequence, T_co, name='Sequence', special=True)
+MutableSequence = _GenericAlias(collections.abc.MutableSequence, T, name='MutableSequence', special=True)
 # Not generic
-ByteString = _GenericAlias(collections.abc.ByteString, [], name='ByteString')
-List = _GenericAlias(list, [T], name='List', inst=False)
-Deque = _GenericAlias(collections.deque, [T], name='Deque')
-Set = _GenericAlias(set, [T], name='Set', inst=False)
-FrozenSet = _GenericAlias(frozenset, [T_co], name='FrozenSet', inst=False)
-MappingView = _GenericAlias(collections.abc.MappingView, [T_co], name='MappingView')
-KeysView = _GenericAlias(collections.abc.KeysView, [KT], name='KeysView')
-ItemsView = _GenericAlias(collections.abc.ItemsView, [KT, VT_co], name='ItemsView')
-ValuesView = _GenericAlias(collections.abc.ValuesView, [VT_co], name='ValuesView')
-ContextManager = _GenericAlias(contextlib.AbstractContextManager, [T_co], name='ContextManager')
-#AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, [T_co], name='AsyncContextManager')
-Dict = _GenericAlias(dict, [KT, VT], name='Dict', inst=False)
-DefaultDict = _GenericAlias(collections.defaultdict, [KT, VT], name='DefaultDict')
-Counter = _GenericAlias(collections.Counter, [T], name='Counter')
-ChainMap = _GenericAlias(collections.ChainMap, [KT, VT], name='ChainMap')
-Generator = _GenericAlias(collections.abc.Generator, [T_co, T_contra, V_co], name='Generator')
-AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, [T_co, T_contra], name='AsyncGenerator')
+ByteString = _GenericAlias(collections.abc.ByteString, (), name='ByteString', special=True)
+List = _GenericAlias(list, T, name='List', inst=False, special=True)
+Deque = _GenericAlias(collections.deque, T, name='Deque', special=True)
+Set = _GenericAlias(set, T, name='Set', inst=False, special=True)
+FrozenSet = _GenericAlias(frozenset, T_co, name='FrozenSet', inst=False, special=True)
+MappingView = _GenericAlias(collections.abc.MappingView, T_co, name='MappingView', special=True)
+KeysView = _GenericAlias(collections.abc.KeysView, KT, name='KeysView', special=True)
+ItemsView = _GenericAlias(collections.abc.ItemsView, (KT, VT_co), name='ItemsView', special=True)
+ValuesView = _GenericAlias(collections.abc.ValuesView, VT_co, name='ValuesView', special=True)
+ContextManager = _GenericAlias(contextlib.AbstractContextManager, T_co, name='ContextManager', special=True)
+#AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, T_co, name='AsyncContextManager')
+Dict = _GenericAlias(dict, (KT, VT), name='Dict', inst=False, special=True)
+DefaultDict = _GenericAlias(collections.defaultdict, (KT, VT), name='DefaultDict', special=True)
+Counter = _GenericAlias(collections.Counter, T, name='Counter', special=True)
+ChainMap = _GenericAlias(collections.ChainMap, (KT, VT), name='ChainMap', special=True)
+Generator = _GenericAlias(collections.abc.Generator, (T_co, T_contra, V_co), name='Generator', special=True)
+AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, (T_co, T_contra), name='AsyncGenerator', special=True)
 
 # Internal type variable used for Type[].
 CT_co = TypeVar('CT_co', covariant=True, bound=type)
