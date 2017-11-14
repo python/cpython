@@ -611,7 +611,7 @@ static stmt_ty ast_for_with_stmt(struct compiling *, const node *, int);
 static stmt_ty ast_for_for_stmt(struct compiling *, const node *, int);
 
 /* Note different signature for ast_for_call */
-static expr_ty ast_for_call(struct compiling *, const node *, expr_ty, int);
+static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
 
 static PyObject *parsenumber(struct compiling *, const char *);
 static expr_ty parsestrplus(struct compiling *, const node *n);
@@ -1545,7 +1545,7 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else {
-        d = ast_for_call(c, CHILD(n, 3), name_expr, 0);
+        d = ast_for_call(c, CHILD(n, 3), name_expr);
         if (!d)
             return NULL;
         name_expr = NULL;
@@ -2368,7 +2368,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             return Call(left_expr, NULL, NULL, LINENO(n),
                         n->n_col_offset, c->c_arena);
         else
-            return ast_for_call(c, CHILD(n, 1), left_expr, 1);
+            return ast_for_call(c, CHILD(n, 1), left_expr);
     }
     else if (TYPE(CHILD(n, 0)) == DOT) {
         PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
@@ -2705,7 +2705,7 @@ ast_for_expr(struct compiling *c, const node *n)
 }
 
 static expr_ty
-ast_for_call(struct compiling *c, const node *n, expr_ty func, int allowgen)
+ast_for_call(struct compiling *c, const node *n, expr_ty func)
 {
     /*
       arglist: argument (',' argument)*  [',']
@@ -2728,10 +2728,6 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, int allowgen)
                 nargs++;
             else if (TYPE(CHILD(ch, 1)) == comp_for) {
                 nargs++;
-                if (!allowgen) {
-                    ast_error(c, ch, "invalid syntax");
-                    return NULL;
-                }
                 if (NCH(n) > 1) {
                     ast_error(c, ch, "Generator expression must be parenthesized");
                     return NULL;
@@ -3977,7 +3973,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (!dummy_name)
             return NULL;
         dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset, c->c_arena);
-        call = ast_for_call(c, CHILD(n, 3), dummy, 0);
+        call = ast_for_call(c, CHILD(n, 3), dummy);
         if (!call)
             return NULL;
     }
