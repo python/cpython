@@ -98,7 +98,7 @@ def _type_vars(types):
 
 
 def _eval_type(t, globalns, localns):
-    if isinstance(t, (_GenericAlias, _ForwardRef)):
+    if isinstance(t, (_GenericAlias, ForwardRef)):
         return t._eval_type(globalns, localns)
     return t
 
@@ -118,12 +118,12 @@ def _type_check(arg, msg):
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
-    if isinstance(arg, (type, TypeVar, _ForwardRef)):
+    if isinstance(arg, (type, TypeVar, ForwardRef)):
         return arg
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return _ForwardRef(arg)
+        return ForwardRef(arg)
     if (
         # Bare Union etc. are not valid as type arguments
         _GenericAlias and isinstance(arg, _GenericAlias) and arg.__origin__ in (Generic, _Protocol, ClassVar) or
@@ -396,7 +396,7 @@ Optional = _SpecialForm('Optional', doc=
     """)
 
 
-class _ForwardRef(_Final, _root=True):
+class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
@@ -430,7 +430,7 @@ class _ForwardRef(_Final, _root=True):
         return self.__forward_value__
 
     def __eq__(self, other):
-        if not isinstance(other, _ForwardRef):
+        if not isinstance(other, ForwardRef):
             return NotImplemented
         return (self.__forward_arg__ == other.__forward_arg__ and
                 self.__forward_value__ == other.__forward_value__)
@@ -439,7 +439,7 @@ class _ForwardRef(_Final, _root=True):
         return hash((self.__forward_arg__, self.__forward_value__))
 
     def __repr__(self):
-        return '_ForwardRef(%r)' % (self.__forward_arg__,)
+        return 'ForwardRef(%r)' % (self.__forward_arg__,)
 
 
 class TypeVar(_Final, _root=True):
@@ -891,7 +891,7 @@ def get_type_hints(obj, globalns=None, localns=None):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = _ForwardRef(value)
+                    value = ForwardRef(value)
                 value = _eval_type(value, base_globals, localns)
                 hints[name] = value
         return hints
@@ -919,7 +919,7 @@ def get_type_hints(obj, globalns=None, localns=None):
         if value is None:
             value = type(None)
         if isinstance(value, str):
-            value = _ForwardRef(value)
+            value = ForwardRef(value)
         value = _eval_type(value, globalns, localns)
         if name in defaults and defaults[name] is None:
             value = Optional[value]

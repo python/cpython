@@ -1332,22 +1332,22 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(right_hints['node'], Optional[Node[T]])
 
     def test_forwardref_instance_type_error(self):
-        fr = typing._ForwardRef('int')
+        fr = typing.ForwardRef('int')
         with self.assertRaises(TypeError):
             isinstance(42, fr)
 
     def test_forwardref_subclass_type_error(self):
-        fr = typing._ForwardRef('int')
+        fr = typing.ForwardRef('int')
         with self.assertRaises(TypeError):
             issubclass(int, fr)
 
     def test_forward_equality(self):
-        fr = typing._ForwardRef('int')
-        self.assertEqual(fr, typing._ForwardRef('int'))
+        fr = typing.ForwardRef('int')
+        self.assertEqual(fr, typing.ForwardRef('int'))
         self.assertNotEqual(List['int'], List[int])
 
     def test_forward_repr(self):
-        self.assertEqual(repr(List['int']), "typing.List[_ForwardRef('int')]")
+        self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
 
     def test_union_forward(self):
 
