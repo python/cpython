@@ -641,7 +641,7 @@ Changes in Python behavior
   Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
   expression always needs to be directly inside a set of parentheses
   and cannot have a comma on either side.
-  (Contributed by Serhiy Storchaka in :issue:`XXXXX`.)
+  (Contributed by Serhiy Storchaka in :issue:`32012`.)
 
 
 Changes in the Python API
