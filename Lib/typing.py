@@ -241,6 +241,7 @@ def _tp_cache(func):
         return func(*args, **kwds)
     return inner
 
+
 class _Final:
     """Mixin to prohibit subclassing"""
     __slots__ = ()
@@ -843,31 +844,6 @@ class _TypingEllipsis:
     """Internal placeholder for ... (ellipsis)."""
 
 
-Tuple = _GenericAlias(tuple, (), name='Tuple', inst=False, special=True)
-if False:
-    """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
-
-    Example: Tuple[T1, T2] is a tuple of two elements corresponding
-    to type variables T1 and T2.  Tuple[int, float, str] is a tuple
-    of an int, a float and a string.
-
-    To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
-    """
-
-
-Callable = _GenericAlias(collections.abc.Callable, (), name='Callable', special=True)
-if False:
-    """Callable type; Callable[[int], str] is a function of (int) -> str.
-
-    The subscription syntax must always be used with exactly two
-    values: the argument list and the return type.  The argument list
-    must be a list of types or ellipsis; the return type must be a single type.
-
-    There is no syntax to indicate optional or keyword arguments,
-    such function types are rarely used as callback types.
-    """
-
-
 def cast(typ, val):
     """Cast a value to a type.
 
@@ -1212,7 +1188,17 @@ Reversible = _GenericAlias(collections.abc.Reversible, T_co, name='Reversible', 
 Sized = _GenericAlias(collections.abc.Sized, (), name='Sized', special=True)  # Not generic.
 Container = _GenericAlias(collections.abc.Container, T_co, name='Container', special=True)
 Collection = _GenericAlias(collections.abc.Collection, T_co, name='Collection', special=True)
-# Callable was defined earlier.
+Callable = _GenericAlias(collections.abc.Callable, (), name='Callable', special=True)
+Callable.__doc__ = \
+    """Callable type; Callable[[int], str] is a function of (int) -> str.
+
+    The subscription syntax must always be used with exactly two
+    values: the argument list and the return type.  The argument list
+    must be a list of types or ellipsis; the return type must be a single type.
+
+    There is no syntax to indicate optional or keyword arguments,
+    such function types are rarely used as callback types.
+    """
 AbstractSet = _GenericAlias(collections.abc.Set, T_co, name='AbstractSet', special=True)
 MutableSet = _GenericAlias(collections.abc.MutableSet, T, name='MutableSet', special=True)
 # NOTE: Mapping is only covariant in the value type.
@@ -1222,6 +1208,16 @@ Sequence = _GenericAlias(collections.abc.Sequence, T_co, name='Sequence', specia
 MutableSequence = _GenericAlias(collections.abc.MutableSequence, T, name='MutableSequence', special=True)
 # Not generic
 ByteString = _GenericAlias(collections.abc.ByteString, (), name='ByteString', special=True)
+Tuple = _GenericAlias(tuple, (), name='Tuple', inst=False, special=True)
+Tuple.__doc__ = \
+    """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
+
+    Example: Tuple[T1, T2] is a tuple of two elements corresponding
+    to type variables T1 and T2.  Tuple[int, float, str] is a tuple
+    of an int, a float and a string.
+
+    To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
+    """
 List = _GenericAlias(list, T, name='List', inst=False, special=True)
 Deque = _GenericAlias(collections.deque, T, name='Deque', special=True)
 Set = _GenericAlias(set, T, name='Set', inst=False, special=True)
