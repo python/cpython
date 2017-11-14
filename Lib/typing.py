@@ -85,15 +85,13 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _get_type_vars(types, tvars):
-    for t in types:
-        if isinstance(t, (_GenericAlias, TypeVar)):
-            t._get_type_vars(tvars)
-
-
-def _type_vars(types):
+def _collect_type_vars(types):
     tvars = []
-    _get_type_vars(types, tvars)
+    for t in types:
+        if isinstance(t, TypeVar) and t not in tvars:
+            tvars.append(t)
+        if isinstance(t, _GenericAlias) and not t._special:
+            tvars.extend([t for t in t.__parameters__ if t not in tvars])
     return tuple(tvars)
 
 
@@ -167,8 +165,7 @@ def _subs_tvars(tp, tvars, subs):
             new_args[a] = _subs_tvars(arg, tvars, subs)
     if tp.__origin__ is Union:
         return Union[tuple(new_args)]
-    return _GenericAlias(tp.__origin__, tuple(new_args),
-                         name=tp._name, subcls=tp._subcls, inst=tp._inst)
+    return tp.copy_with(tuple(new_args))
 
 
 def _remove_dups_flatten(parameters):
@@ -541,10 +538,6 @@ class TypeVar(_Final, _root=True):
         else:
             self.__bound__ = None
 
-    def _get_type_vars(self, tvars):
-        if self not in tvars:
-            tvars.append(self)
-
     def __repr__(self):
         if self.__covariant__:
             prefix = '+'
@@ -579,6 +572,7 @@ AnyStr = TypeVar('AnyStr', bytes, str)
 #   e.g., Dict[T, int].__args__ == (T, int).
 
 _FLAGS = ('_name', '_subcls', '_inst', '_special')
+_sentinel = object()
 
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
@@ -598,33 +592,33 @@ class _GenericAlias(_Final, _root=True):
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               () if a is _TypingEmpty else
                               a for a in params)
-        self.__parameters__ = _type_vars(params)
+        self.__parameters__ = _collect_type_vars(params)
         self.__slots__ = None  # This is not documented.
         if not name:
             self.__module__ = origin.__module__
-
-    def _get_type_vars(self, tvars):
-        if not self._special:
-            _get_type_vars(self.__parameters__, tvars)
 
     def _eval_type(self, globalns, localns):
         ev_args = tuple(_eval_type(a, globalns, localns) for a in self.__args__)
         if ev_args == self.__args__:
             return self
-        return _GenericAlias(self.__origin__, ev_args, name=self._name,
-                             subcls=self._subcls, inst=self._inst, special=self._special)
+        return self.copy_with(ev_args)
 
     @_tp_cache
     def __getitem__(self, params):
         if self.__origin__ in (Generic, _Protocol):
             # Can't subscript Generic[...] or _Protocol[...].
-            raise TypeError("Cannot subscript already-subscripted {self}")
+            raise TypeError(f"Cannot subscript already-subscripted {self}")
         if not isinstance(params, tuple):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
         _check_generic(self, params)
         return _subs_tvars(self, self.__parameters__, params)
+
+    def copy_with(self, params):
+        # We don't copy _special.
+        return _GenericAlias(self.__origin__, params, name=self._name,
+                             subcls=self._subcls, inst=self._inst)
 
     def __repr__(self):
         if (self._name != 'Callable' or
@@ -696,7 +690,7 @@ class _GenericAlias(_Final, _root=True):
     def __setattr__(self, attr, val):
         if not _is_dunder(attr) and attr not in _FLAGS:
             setattr(self.__origin__, attr, val)
-        self.__dict__[attr] = val
+        super().__setattr__(attr, val)
 
     def __instancecheck__(self, obj):
         return self.__subclasscheck__(type(obj))
@@ -733,31 +727,26 @@ class _VariadicGenericAlias(_GenericAlias, _root=True):
     def __getitem_inner__(self, params):
         if self.__origin__ is tuple and self._special:
             if params == ():
-                return _GenericAlias(tuple, (_TypingEmpty,), name=self._name,
-                                     inst=self._inst, subcls=self._subcls)
+                return self.copy_with((_TypingEmpty,))
             if not isinstance(params, tuple):
                 params = (params,)
             if len(params) == 2 and params[1] is ...:
                 msg = "Tuple[t, ...]: t must be a type."
                 p = _type_check(params[0], msg)
-                return _GenericAlias(tuple, (p, _TypingEllipsis), name=self._name,
-                                     inst=self._inst, subcls=self._subcls)
+                return self.copy_with((p, _TypingEllipsis))
             msg = "Tuple[t0, t1, ...]: each t must be a type."
             params = tuple(_type_check(p, msg) for p in params)
-            return _GenericAlias(tuple, params, name=self._name,
-                                 inst=self._inst, subcls=self._subcls)
+            return self.copy_with(params)
         if self.__origin__ is collections.abc.Callable and self._special:
             args, result = params
             msg = "Callable[args, result]: result must be a type."
             result = _type_check(result, msg)
             if args is Ellipsis:
-                return _GenericAlias(self.__origin__, (_TypingEllipsis, result),
-                                     name=self._name, inst=self._inst, subcls=self._subcls)
+                return self.copy_with((_TypingEllipsis, result))
             msg = "Callable[[arg, ...], result]: each arg must be a type."
             args = tuple(_type_check(arg, msg) for arg in args)
             params = args + (result,)
-            return _GenericAlias(self.__origin__, params, name=self._name,
-                                 inst=self._inst, subcls=self._subcls)
+            return self.copy_with(params)
         return super().__getitem__(params)
 
 
@@ -822,7 +811,7 @@ class Generic:
                 hasattr(cls, '__orig_bases__') and Generic in cls.__orig_bases__):
             raise TypeError("Cannot inherit from plain Generic")
         if '__orig_bases__' in cls.__dict__:
-            tvars = _type_vars(cls.__orig_bases__)
+            tvars = _collect_type_vars(cls.__orig_bases__)
             # Look for Generic[T1, ..., Tn].
             # If found, tvars must be a subset of it.
             # If not found, tvars is it.
