@@ -748,8 +748,24 @@ module_dir(PyObject *self, PyObject *args)
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
-        if (PyDict_Check(dict))
-            result = PyDict_Keys(dict);
+        if (PyDict_Check(dict)) {
+            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            if (dirfunc) {
+                if (!PyCallable_Check(dirfunc)) {
+                    PyErr_SetString(PyExc_TypeError,
+                                    "module __dir__ must be callable");
+                    result = NULL;
+                }
+                else {
+                    result = _PyObject_FastCall(dirfunc, NULL, 0);
+                }
+            }
+            else {
+                if (PyErr_Occurred())
+                    PyErr_Clear();
+                result = PyDict_Keys(dict);
+            }
+        }
         else {
             const char *name = PyModule_GetName(self);
             if (name)

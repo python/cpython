@@ -149,6 +149,23 @@ a = A(destroyed)"""
         if 'test.bad_getattr2' in sys.modules:
             del sys.modules['test.bad_getattr2']
 
+    def test_module_dir(self):
+        import test.good_getattr as gga
+        self.assertEqual(dir(gga), ['a', 'b', 'c'])
+        del sys.modules['test.good_getattr']
+
+    def test_module_dir_errors(self):
+        import test.bad_getattr as bga
+        from test import bad_getattr2
+        with self.assertRaises(TypeError):
+            dir(bga)
+        with self.assertRaises(TypeError):
+            dir(bad_getattr2)
+        del sys.modules['test.bad_getattr']
+        if 'test.bad_getattr2' in sys.modules:
+            del sys.modules['test.bad_getattr2']
+
+
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
         m = ModuleType('foo')
