@@ -1928,8 +1928,10 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
         return NULL;
 
     new_args = PyTuple_New(2);
-    if (new_args == NULL)
+    if (new_args == NULL) {
+        Py_DECREF(typecode_obj);
         return NULL;
+    }
     Py_INCREF(items);
     PyTuple_SET_ITEM(new_args, 0, typecode_obj);
     PyTuple_SET_ITEM(new_args, 1, items);
