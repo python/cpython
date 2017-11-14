@@ -628,22 +628,15 @@ class _GenericAlias(_Final, _root=True):
         return _subs_tvars(self, self.__parameters__, params)
 
     def __repr__(self):
-        if (self._name != 'Callable' or
-                len(self.__args__) == 2 and self.__args__[0] is Ellipsis):
-            if self._name:
-                name = 'typing.' + self._name
-            else:
-                name = _type_repr(self.__origin__)
-            if not self._special:
-                args = f'[{", ".join([_type_repr(a) for a in self.__args__])}]'
-            else:
-                args = ''
-            return (f'{name}{args}')
-        if self._special:
-            return 'typing.Callable'
-        return (f'typing.Callable'
-                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
-                f'{_type_repr(self.__args__[-1])}]')
+        if self._name:
+            name = 'typing.' + self._name
+        else:
+            name = _type_repr(self.__origin__)
+        if not self._special:
+            args = f'[{", ".join([_type_repr(a) for a in self.__args__])}]'
+        else:
+            args = ''
+        return (f'{name}{args}')
 
     def __eq__(self, other):
         if not isinstance(other, _GenericAlias):
@@ -713,6 +706,16 @@ class _GenericAlias(_Final, _root=True):
 
 
 class _VariadicGenericAlias(_GenericAlias, _root=True):
+
+    def __repr__(self):
+        if (self._name != 'Callable' or
+                len(self.__args__) == 2 and self.__args__[0] is Ellipsis):
+            return super().__repr__()
+        if self._special:
+            return 'typing.Callable'
+        return (f'typing.Callable'
+                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{_type_repr(self.__args__[-1])}]')
 
     def __getitem__(self, params):
         if self._name != 'Callable' or not self._special:
