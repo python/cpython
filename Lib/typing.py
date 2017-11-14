@@ -118,10 +118,8 @@ def _type_check(arg, msg):
     if isinstance(arg, str):
         return ForwardRef(arg)
     if (
-        # Bare Union etc. are not valid as type arguments
-        _GenericAlias and isinstance(arg, _GenericAlias) and
-        arg.__origin__ in (Generic, _Protocol, ClassVar) or
-        arg in (Generic, _Protocol, ClassVar, Union, NoReturn, Optional)
+        isinstance(arg, _GenericAlias) and arg.__origin__ in (Generic, _Protocol, ClassVar) or
+        arg in (Generic, _Protocol) or isinstance(arg, _SpecialForm) and arg != Any
     ):
         raise TypeError("Plain %s is not valid as type argument" % arg)
     if isinstance(arg, (type, TypeVar, ForwardRef)):
