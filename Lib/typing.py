@@ -707,40 +707,6 @@ class _GenericAlias(_Final, _root=True):
         raise TypeError("Subscripted generics cannot be used with class and instance checks")
 
 
-def _make_subclasshook(cls):
-    """Construct a __subclasshook__ callable that incorporates
-    the associated __extra__ class in subclass checks performed
-    against cls.
-    """
-    if cls.__module__ != 'typing':
-        def __extrahook__(subclass):
-            return NotImplemented
-        return __extrahook__
-    extra = cls.__bases__[0]
-    if isinstance(extra, abc.ABCMeta):
-        # The logic mirrors that of ABCMeta.__subclasscheck__.
-        def __extrahook__(subclass):
-            res = extra.__subclasshook__(subclass)
-            if res is not NotImplemented:
-                return res
-            if extra in subclass.__mro__:
-                return True
-            for rcls in extra._abc_registry:
-                if rcls is not cls and issubclass(subclass, rcls):
-                    return True
-            for scls in extra.__subclasses__():
-                if scls is not cls and issubclass(subclass, scls):
-                    return True
-            return NotImplemented
-    else:
-        # For non-ABC extras we'll just call issubclass().
-        def __extrahook__(subclass):
-            if issubclass(subclass, extra):
-                return True
-            return NotImplemented
-    return __extrahook__
-
-
 class Generic:
     """Abstract base class for generic types.
 
@@ -761,6 +727,7 @@ class Generic:
           except KeyError:
               return default
     """
+
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
@@ -829,8 +796,6 @@ class Generic:
                         "are not listed in Generic[{', '.join(str(g) for g in gvars)}]")
                 tvars = gvars
         cls.__parameters__ = tuple(tvars)
-        if cls.__module__ == 'typing' or cls.__subclasshook__.__name__ == '__extrahook__':
-            cls.__subclasshook__ = _make_subclasshook(cls)
 
 
 class _TypingEmpty:
