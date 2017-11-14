@@ -75,12 +75,12 @@ def resolve_bases(bases):
     for i, base in enumerate(bases):
         if isinstance(base, type):
             continue
-        if not hasattr(base, "__mro_entry__"):
+        if not hasattr(base, "__mro_entries__"):
             continue
-        new_base = base.__mro_entry__(bases)
+        new_base = base.__mro_entries__(bases)
         updated = True
         if not isinstance(new_base, tuple):
-            new_bases[i] = new_base
+            raise TypeError("__mro_entries__ must return a tuple")
         else:
             new_bases[i:i+1] = new_base
     if not updated:

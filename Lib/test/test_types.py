@@ -847,8 +847,8 @@ class ClassCreationTests(unittest.TestCase):
     def test_new_class_with_mro_entry(self):
         class A: pass
         class C:
-            def __mro_entry__(self, bases):
-                return A
+            def __mro_entries__(self, bases):
+                return (A,)
         c = C()
         D = types.new_class('D', (c,), {})
         self.assertEqual(D.__bases__, (A,))
@@ -859,13 +859,22 @@ class ClassCreationTests(unittest.TestCase):
         class A: pass
         class B: pass
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 return ()
         c = C()
         D = types.new_class('D', (A, c, B), {})
         self.assertEqual(D.__bases__, (A, B))
         self.assertEqual(D.__orig_bases__, (A, c, B))
         self.assertEqual(D.__mro__, (D, A, B, object))
+
+    def test_new_class_with_mro_entry_error(self):
+        class A: pass
+        class C:
+            def __mro_entries__(self, bases):
+                return A
+        c = C()
+        with self.assertRaises(TypeError):
+            types.new_class('D', (c,), {})
 
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
@@ -913,10 +922,10 @@ class ClassCreationTests(unittest.TestCase):
         class A: pass
         class B: pass
         class C:
-            def __mro_entry__(self, bases):
+            def __mro_entries__(self, bases):
                 if A in bases:
                     return ()
-                return A
+                return (A,)
         c = C()
         self.assertEqual(types.resolve_bases(()), ())
         self.assertEqual(types.resolve_bases((c,)), (A,))
