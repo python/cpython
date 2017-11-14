@@ -184,6 +184,26 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.assertIsInstance(f, asyncio.Future)
         self.loop._sock_recv.assert_called_with(f, None, sock, 1024)
 
+    def test_sock_recv_reconnection(self):
+        sock = mock.Mock()
+        sock.fileno.return_value = 10
+        sock.recv.side_effect = BlockingIOError
+
+        self.loop.add_reader = mock.Mock()
+        self.loop.remove_reader = mock.Mock()
+        fut = self.loop.sock_recv(sock, 1024)
+        callback = self.loop.add_reader.call_args[0][1]
+        params = self.loop.add_reader.call_args[0][2:]
+
+        # emulate the old socket has closed, but the new one has
+        # the same fileno, so callback is called with old (closed) socket
+        sock.fileno.return_value = -1
+        sock.recv.side_effect = OSError(9)
+        callback(*params)
+
+        self.assertIsInstance(fut.exception(), OSError)
+        self.assertEqual((10,), self.loop.remove_reader.call_args[0])
+
     def test__sock_recv_canceled_fut(self):
         sock = mock.Mock()
 
@@ -243,6 +263,26 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.assertTrue(f.done())
         self.assertIsNone(f.result())
         self.assertFalse(self.loop._sock_sendall.called)
+
+    def test_sock_sendall_reconnection(self):
+        sock = mock.Mock()
+        sock.fileno.return_value = 10
+        sock.send.side_effect = BlockingIOError
+
+        self.loop.add_writer = mock.Mock()
+        self.loop.remove_writer = mock.Mock()
+        fut = self.loop.sock_sendall(sock, b'data')
+        callback = self.loop.add_writer.call_args[0][1]
+        params = self.loop.add_writer.call_args[0][2:]
+
+        # emulate the old socket has closed, but the new one has
+        # the same fileno, so callback is called with old (closed) socket
+        sock.fileno.return_value = -1
+        sock.send.side_effect = OSError(9)
+        callback(*params)
+
+        self.assertIsInstance(fut.exception(), OSError)
+        self.assertEqual((10,), self.loop.remove_writer.call_args[0])
 
     def test__sock_sendall_canceled_fut(self):
         sock = mock.Mock()
