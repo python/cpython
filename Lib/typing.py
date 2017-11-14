@@ -111,8 +111,7 @@ def _type_check(arg, msg):
 
     As a special case, accept None and return type(None) instead.
     Also, _TypeAlias instances (e.g. Match, Pattern) are acceptable.
-
-    The msg argument is a human-readable error message, e.g.
+    The msg argument is a human-readable error message, e.g::
 
         "Union[arg, ...]: arg should be a type."
 
