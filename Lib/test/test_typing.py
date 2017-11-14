@@ -399,7 +399,7 @@ class TupleTests(BaseTestCase):
         self.assertIsInstance((0, 0), Tuple)
 
     def test_repr(self):
-        self.assertEqual(repr(Tuple), "<class 'typing.Tuple'>")
+        self.assertEqual(repr(Tuple), 'typing.Tuple')
         self.assertEqual(repr(Tuple[()]), 'typing.Tuple[()]')
         self.assertEqual(repr(Tuple[int, float]), 'typing.Tuple[int, float]')
         self.assertEqual(repr(Tuple[int, ...]), 'typing.Tuple[int, ...]')
@@ -2432,15 +2432,8 @@ class RETests(BaseTestCase):
         self.assertNotEqual(Pattern[str], str)
 
     def test_errors(self):
-        with self.assertRaises(TypeError):
-            # Doesn't fit AnyStr.
-            Pattern[int]
-        with self.assertRaises(TypeError):
-            # Can't change type vars?
-            Match[T]
         m = Match[Union[str, bytes]]
         with self.assertRaises(TypeError):
-            # Too complicated?
             m[str]
         with self.assertRaises(TypeError):
             # We don't support isinstance().
@@ -2450,12 +2443,12 @@ class RETests(BaseTestCase):
             issubclass(Pattern[bytes], Pattern[str])
 
     def test_repr(self):
-        self.assertEqual(repr(Pattern), 'Pattern[~AnyStr]')
-        self.assertEqual(repr(Pattern[str]), 'Pattern[str]')
-        self.assertEqual(repr(Pattern[bytes]), 'Pattern[bytes]')
-        self.assertEqual(repr(Match), 'Match[~AnyStr]')
-        self.assertEqual(repr(Match[str]), 'Match[str]')
-        self.assertEqual(repr(Match[bytes]), 'Match[bytes]')
+        self.assertEqual(repr(Pattern), 'typing.Pattern')
+        self.assertEqual(repr(Pattern[str]), 'typing.Pattern[str]')
+        self.assertEqual(repr(Pattern[bytes]), 'typing.Pattern[bytes]')
+        self.assertEqual(repr(Match), 'typing.Match')
+        self.assertEqual(repr(Match[str]), 'typing.Match[str]')
+        self.assertEqual(repr(Match[bytes]), 'typing.Match[bytes]')
 
     def test_re_submodule(self):
         from typing.re import Match, Pattern, __all__, __name__

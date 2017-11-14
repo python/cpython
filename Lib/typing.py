@@ -93,7 +93,7 @@ def _trim_name(nm):
 
 def _get_type_vars(types, tvars):
     for t in types:
-        if isinstance(t, _TypingBase):
+        if isinstance(t, (_GenericAlias, TypeVar)):
             t._get_type_vars(tvars)
 
 
@@ -104,18 +104,13 @@ def _type_vars(types):
 
 
 def _eval_type(t, globalns, localns):
-    if isinstance(t, _TypingBase):
+    if isinstance(t, (_GenericAlias, _ForwardRef)):
         return t._eval_type(globalns, localns)
     return t
 
-
-Generic = object()
 _GenericAlias = None
+Generic = object()
 _Protocol = object()
-ClassVar = object()
-Union = object()
-NoReturn = object()
-Optional = object()
 
 def _type_check(arg, msg):
     """Check that the argument is a type, and return it (internal helper).
@@ -129,6 +124,8 @@ def _type_check(arg, msg):
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
+    if isinstance(arg, (type, TypeVar, _ForwardRef)):
+        return arg
     if arg is None:
         return type(None)
     if isinstance(arg, str):
@@ -250,11 +247,19 @@ def _tp_cache(func):
         return func(*args, **kwds)
     return inner
 
+class _Final:
+    """Mixin to prohibit subclassing"""
+    __slots__ = ()
 
-class _TypingBase:
+    def __init_subclass__(self, *args, **kwds):
+        if '_root' not in kwds:
+            raise TypeError("Cannot subclass special typing classes")
+
+
+class _SpecialForm(_Final, _root=True):
     """Internal indicator of special typing constructs."""
 
-    __slots__ = ('__weakref__',)
+    __slots__ = ('__weakref__', '_name', '_doc')
 
     def __new__(cls, *args, **kwds):
         """Constructor.
@@ -269,28 +274,15 @@ class _TypingBase:
             raise TypeError("Cannot subclass %r" % cls)
         return super().__new__(cls)
 
-    def _eval_type(self, globalns, localns):
-        return self
-
-    def _get_type_vars(self, tvars):
-        pass
+    def __init__(self, name, doc):
+        self._name = name
+        self._doc = doc
 
     def __repr__(self):
-        cls = type(self)
-        qname = _trim_name(cls.__qualname__)
-        return '%s.%s' % (cls.__module__, qname)
+        return 'typing.' + self._name
 
     def __call__(self, *args, **kwds):
-        raise TypeError("Cannot instantiate %r" % type(self))
-
-
-class _FinalTypingBase(_TypingBase):
-
-    __slots__ = ()
-
-    def __init_subclass__(self, *args, **kwds):
-        if not kwds.pop('_root', False):
-            raise TypeError("Cannot subclass special typing classes")
+        raise TypeError("Cannot instantiate %r" % self)
 
     def __instancecheck__(self, obj):
         raise TypeError("%r cannot be used with isinstance()." % self)
@@ -298,27 +290,118 @@ class _FinalTypingBase(_TypingBase):
     def __subclasscheck__(self, cls):
         raise TypeError("%r cannot be used with issubclass()." % self)
 
+    @_tp_cache
+    def __getitem__(self, parameters):
+        if self._name == 'ClassVar':
+            item = _type_check(parameters, 'ClassVar accepts only single type.')
+            return _GenericAlias(self, (item,))
+        if self._name == 'Union':
+            if parameters == ():
+                raise TypeError("Cannot take a Union of no types.")
+            if not isinstance(parameters, tuple):
+                parameters = (parameters,)
+            msg = "Union[arg, ...]: each arg must be a type."
+            parameters = tuple(_type_check(p, msg) for p in parameters)
+            parameters = _remove_dups_flatten(parameters)
+            if len(parameters) == 1:
+                return parameters[0]
+            return _GenericAlias(self, parameters)
+        if self._name == 'Optional':
+            arg = _type_check(parameters, "Optional[t] requires a single type.")
+            return Union[arg, type(None)]
+        raise TypeError(f"{self} is not subscriptable")
 
-class _SingletonTypingBase(_FinalTypingBase, _root=True):
-    """Internal mix-in class to prevent instantiation.
 
-    Prevents instantiation unless _root=True is given in class call.
-    It is used to create pseudo-singleton instances Any, Union, Optional, etc.
-    """
+Any = _SpecialForm('Any', doc=
+    """Special type indicating an unconstrained type.
 
-    __slots__ = ()
+    - Any is compatible with every type.
+    - Any assumed to have all methods.
+    - All values assumed to be instances of Any.
 
-    def __new__(cls, *args, _root=False, **kwds):
-        self = super().__new__(cls, *args, **kwds)
-        if _root is True:
-            return self
-        raise TypeError("Cannot instantiate %r" % cls)
+    Note that all the above statements are true from the point of view of
+    static type checkers. At runtime, Any should not be used with instance
+    or class checks.
+    """)
 
-    def __reduce__(self):
-        return _trim_name(type(self).__name__)
+NoReturn = _SpecialForm('NoReturn', doc=
+    """Special type indicating functions that never return.
+    Example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise Exception('no way')
+
+    This type is invalid in other positions, e.g., ``List[NoReturn]``
+    will fail in static type checkers.
+    """)
+
+ClassVar = _SpecialForm('ClassVar', doc=
+    """Special type construct to mark class variables.
+
+    An annotation wrapped in ClassVar indicates that a given
+    attribute is intended to be used as a class variable and
+    should not be set on instances of that class. Usage::
+
+      class Starship:
+          stats: ClassVar[Dict[str, int]] = {} # class variable
+          damage: int = 10                     # instance variable
+
+    ClassVar accepts only types and cannot be further subscribed.
+
+    Note that ClassVar is not a class itself, and should not
+    be used with isinstance() or issubclass().
+    """)
+
+Union = _SpecialForm('Union', doc=
+    """Union type; Union[X, Y] means either X or Y.
+
+    To define a union, use e.g. Union[int, str].  Details:
+    - The arguments must be types and there must be at least one.
+    - None as an argument is a special case and is replaced by
+      type(None).
+    - Unions of unions are flattened, e.g.::
+
+        Union[Union[int, str], float] == Union[int, str, float]
+
+    - Unions of a single argument vanish, e.g.::
+
+        Union[int] == int  # The constructor actually returns int
+
+    - Redundant arguments are skipped, e.g.::
+
+        Union[int, str, int] == Union[int, str]
+
+    - When comparing unions, the argument order is ignored, e.g.::
+
+        Union[int, str] == Union[str, int]
+
+    - When two arguments have a subclass relationship, the least
+      derived argument is kept, e.g.::
+
+        class Employee: pass
+        class Manager(Employee): pass
+        Union[int, Employee, Manager] == Union[int, Employee]
+        Union[Manager, int, Employee] == Union[int, Employee]
+        Union[Employee, Manager] == Employee
+
+    - Similar for object::
+
+        Union[int, object] == object
+
+    - You cannot subclass or instantiate a union.
+    - You can use Optional[X] as a shorthand for Union[X, None].
+    """)
+
+Optional = _SpecialForm('Optional', doc=
+    """Optional type.
+
+    Optional[X] is equivalent to Union[X, None].
+    """)
 
 
-class _ForwardRef(_FinalTypingBase, _root=True):
+class _ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
@@ -364,7 +447,7 @@ class _ForwardRef(_FinalTypingBase, _root=True):
         return '_ForwardRef(%r)' % (self.__forward_arg__,)
 
 
-class TypeVar(_FinalTypingBase, _root=True):
+class TypeVar(_Final, _root=True):
     """Type variable.
 
     Usage::
@@ -455,152 +538,6 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 # (This one *is* for export!)
 AnyStr = TypeVar('AnyStr', bytes, str)
 
-
-class _Any(_SingletonTypingBase, _root=True):
-    """Special type indicating an unconstrained type.
-
-    - Any is compatible with every type.
-    - Any assumed to have all methods.
-    - All values assumed to be instances of Any.
-
-    Note that all the above statements are true from the point of view of
-    static type checkers. At runtime, Any should not be used with instance
-    or class checks.
-    """
-
-    __slots__ = ()
-
-
-Any = _Any(_root=True)
-
-
-class _NoReturn(_SingletonTypingBase, _root=True):
-    """Special type indicating functions that never return.
-    Example::
-
-      from typing import NoReturn
-
-      def stop() -> NoReturn:
-          raise Exception('no way')
-
-    This type is invalid in other positions, e.g., ``List[NoReturn]``
-    will fail in static type checkers.
-    """
-
-    __slots__ = ()
-
-
-NoReturn = _NoReturn(_root=True)
-
-
-class _ClassVar(_SingletonTypingBase, _root=True):
-    """Special type construct to mark class variables.
-
-    An annotation wrapped in ClassVar indicates that a given
-    attribute is intended to be used as a class variable and
-    should not be set on instances of that class. Usage::
-
-      class Starship:
-          stats: ClassVar[Dict[str, int]] = {} # class variable
-          damage: int = 10                     # instance variable
-
-    ClassVar accepts only types and cannot be further subscribed.
-
-    Note that ClassVar is not a class itself, and should not
-    be used with isinstance() or issubclass().
-    """
-
-    __slots__ = ()
-
-    @_tp_cache
-    def __getitem__(self, item):
-        item = _type_check(item, 'ClassVar accepts only single type.')
-        return _GenericAlias(self, (item,))
-
-
-ClassVar = _ClassVar(_root=True)
-
-
-class _Union(_SingletonTypingBase, _root=True):
-    """Union type; Union[X, Y] means either X or Y.
-
-    To define a union, use e.g. Union[int, str].  Details:
-
-    - The arguments must be types and there must be at least one.
-
-    - None as an argument is a special case and is replaced by
-      type(None).
-
-    - Unions of unions are flattened, e.g.::
-
-        Union[Union[int, str], float] == Union[int, str, float]
-
-    - Unions of a single argument vanish, e.g.::
-
-        Union[int] == int  # The constructor actually returns int
-
-    - Redundant arguments are skipped, e.g.::
-
-        Union[int, str, int] == Union[int, str]
-
-    - When comparing unions, the argument order is ignored, e.g.::
-
-        Union[int, str] == Union[str, int]
-
-    - When two arguments have a subclass relationship, the least
-      derived argument is kept, e.g.::
-
-        class Employee: pass
-        class Manager(Employee): pass
-        Union[int, Employee, Manager] == Union[int, Employee]
-        Union[Manager, int, Employee] == Union[int, Employee]
-        Union[Employee, Manager] == Employee
-
-    - Similar for object::
-
-        Union[int, object] == object
-
-    - You cannot subclass or instantiate a union.
-
-    - You can use Optional[X] as a shorthand for Union[X, None].
-    """
-
-    __slots__ = ()
-
-    @_tp_cache
-    def __getitem__(self, parameters):
-        if parameters == ():
-            raise TypeError("Cannot take a Union of no types.")
-        if not isinstance(parameters, tuple):
-            parameters = (parameters,)
-        msg = "Union[arg, ...]: each arg must be a type."
-        parameters = tuple(_type_check(p, msg) for p in parameters)
-        parameters = _remove_dups_flatten(parameters)
-        if len(parameters) == 1:
-            return parameters[0]
-        return _GenericAlias(self, parameters)
-
-
-Union = _Union(_root=True)
-
-
-class _Optional(_SingletonTypingBase, _root=True):
-    """Optional type.
-
-    Optional[X] is equivalent to Union[X, None].
-    """
-
-    __slots__ = ()
-
-    @_tp_cache
-    def __getitem__(self, arg):
-        arg = _type_check(arg, "Optional[t] requires a single type.")
-        return Union[arg, type(None)]
-
-
-Optional = _Optional(_root=True)
-
-
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
 # * __parameters__ is a tuple of unique free type parameters of a generic
@@ -616,7 +553,7 @@ def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
 
 
-class _GenericAlias(_FinalTypingBase, _root=True):
+class _GenericAlias(_Final, _root=True):
 
     def __init__(self, origin, params, *, name=None, subcls=True, inst=True, special=False):
         self._name = name
@@ -649,6 +586,18 @@ class _GenericAlias(_FinalTypingBase, _root=True):
         if self.__origin__ in (Generic, _Protocol):
             # Can't subscript Generic[...] or _Protocol[...].
             raise TypeError("Cannot subscript already-subscripted {self}")
+        if self.__origin__ is tuple and self._special:
+            if params == ():
+                return _GenericAlias(tuple, (_TypingEmpty,), name=self._name, inst=self._inst, subcls=self._subcls)
+            if not isinstance(params, tuple):
+                params = (params,)
+            if len(params) == 2 and params[1] is ...:
+                msg = "Tuple[t, ...]: t must be a type."
+                p = _type_check(params[0], msg)
+                return _GenericAlias(tuple, (p, _TypingEllipsis), name=self._name, inst=self._inst, subcls=self._subcls)
+            msg = "Tuple[t0, t1, ...]: each t must be a type."
+            params = tuple(_type_check(p, msg) for p in params)
+            return _GenericAlias(tuple, params, name=self._name, inst=self._inst, subcls=self._subcls)
         if not isinstance(params, tuple):
             params = (params,)
         msg = "Parameters to generic types must be types."
@@ -870,7 +819,8 @@ class _TypingEllipsis:
     """Internal placeholder for ... (ellipsis)."""
 
 
-class Tuple(tuple, Generic, metaclass=abc.ABCMeta):
+Tuple = _GenericAlias(tuple, (), name='Tuple', inst=False, special=True)
+if False:
     """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
 
     Example: Tuple[T1, T2] is a tuple of two elements corresponding
@@ -879,33 +829,6 @@ class Tuple(tuple, Generic, metaclass=abc.ABCMeta):
 
     To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
     """
-
-    __slots__ = ()
-    __call__ = None
-
-    def __new__(cls, *args, **kwds):
-        if cls is Tuple:
-            raise TypeError("Type Tuple cannot be instantiated; "
-                            "use tuple() instead")
-        return super().__new__(cls, *args, **kwds)
-
-    @_tp_cache
-    def __class_getitem__(cls, parameters):
-        if cls is not Tuple:
-            # Normal generic rules apply if this is not the first subscription
-            # or a subscription of a subclass.
-            return super().__class_getitem__(cls, parameters)
-        if parameters == ():
-            return super().__class_getitem__(cls, (_TypingEmpty,))
-        if not isinstance(parameters, tuple):
-            parameters = (parameters,)
-        if len(parameters) == 2 and parameters[1] is ...:
-            msg = "Tuple[t, ...]: t must be a type."
-            p = _type_check(parameters[0], msg)
-            return super().__class_getitem__(cls, (p, _TypingEllipsis))
-        msg = "Tuple[t0, t1, ...]: each t must be a type."
-        parameters = tuple(_type_check(p, msg) for p in parameters)
-        return super().__class_getitem__(cls, parameters)
 
 
 class Callable(collections.abc.Callable, Generic):
@@ -1647,76 +1570,8 @@ class io:
 io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
-
-class _TypeAlias(_FinalTypingBase, _root=True):
-    """Internal helper class for defining generic variants of concrete types.
-
-    Note that this is not a type; let's call it a pseudo-type.  It cannot
-    be used in instance and subclass checks in parameterized form, i.e.
-    ``isinstance(42, Match[str])`` raises ``TypeError`` instead of returning
-    ``False``.
-    """
-
-    __slots__ = ('name', 'type_var', 'impl_type', 'type_checker')
-
-    def __init__(self, name, type_var, impl_type, type_checker):
-        """Initializer.
-
-        Args:
-            name: The name, e.g. 'Pattern'.
-            type_var: The type parameter, e.g. AnyStr, or the
-                specific type, e.g. str.
-            impl_type: The implementation type.
-            type_checker: Function that takes an impl_type instance.
-                and returns a value that should be a type_var instance.
-        """
-        assert isinstance(name, str), repr(name)
-        assert isinstance(impl_type, type), repr(impl_type)
-        assert isinstance(type_var, (type, _TypingBase)), repr(type_var)
-        self.name = name
-        self.type_var = type_var
-        self.impl_type = impl_type
-        self.type_checker = type_checker
-
-    def __repr__(self):
-        return f"{self.name}[{_type_repr(self.type_var)}]"
-
-    def __getitem__(self, parameter):
-        if not isinstance(self.type_var, TypeVar):
-            raise TypeError(f"{self} cannot be further parameterized.")
-        if self.type_var.__constraints__ and isinstance(parameter, type):
-            if not issubclass(parameter, self.type_var.__constraints__):
-                raise TypeError(f"{parameter} is not a valid substitution for {self.type_var}.")
-        if isinstance(parameter, TypeVar) and parameter is not self.type_var:
-            raise TypeError(f"{self} cannot be re-parameterized.")
-        return self.__class__(self.name, parameter,
-                              self.impl_type, self.type_checker)
-
-    def __eq__(self, other):
-        if not isinstance(other, _TypeAlias):
-            return NotImplemented
-        return self.name == other.name and self.type_var == other.type_var
-
-    def __hash__(self):
-        return hash((self.name, self.type_var))
-
-    def __instancecheck__(self, obj):
-        if not isinstance(self.type_var, TypeVar):
-            raise TypeError("Parameterized type aliases cannot be used "
-                            "with isinstance().")
-        return isinstance(obj, self.impl_type)
-
-    def __subclasscheck__(self, cls):
-        if not isinstance(self.type_var, TypeVar):
-            raise TypeError("Parameterized type aliases cannot be used "
-                            "with issubclass().")
-        return issubclass(cls, self.impl_type)
-
-
-Pattern = _TypeAlias('Pattern', AnyStr, type(stdlib_re.compile('')),
-                     lambda p: p.pattern)
-Match = _TypeAlias('Match', AnyStr, type(stdlib_re.match('', '')),
-                   lambda m: m.re.pattern)
+Pattern = _GenericAlias(type(stdlib_re.compile('')), AnyStr, name='Pattern', subcls=False, special=True)
+Match = _GenericAlias(type(stdlib_re.match('', '')), AnyStr, name='Match', subcls=False, special=True)
 
 class re:
     """Wrapper namespace for re type aliases."""
