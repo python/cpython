@@ -81,6 +81,12 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         if (PyTuple_Check(new_base)) {
             tot_extra += PyTuple_Size(new_base) - 1;
         }
+        else {
+            PyErr_SetString(PyExc_TypeError,
+                            "__mro_entry__ must return a tuple");
+            Py_DECREF(meth);
+            return NULL;
+        }
         Py_DECREF(base);
         args[i] = new_base;
         *modified_bases = 1;

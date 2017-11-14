@@ -8,7 +8,7 @@ class TestMROEntry(unittest.TestCase):
         class C:
             def __mro_entry__(self, *args, **kwargs):
                 tested.extend([args, kwargs])
-                return C
+                return (C,)
         c = C()
         self.assertEqual(tested, [])
         class D(B, c): ...
@@ -22,7 +22,7 @@ class TestMROEntry(unittest.TestCase):
         class C:
             def __mro_entry__(self, bases):
                 tested.append(bases)
-                return self.__class__
+                return (self.__class__,)
         c = C()
         self.assertEqual(tested, [])
         class D(A, c, B): ...
@@ -62,7 +62,7 @@ class TestMROEntry(unittest.TestCase):
         class C:
             def __mro_entry__(self, bases):
                 tested.append(bases)
-                return dict
+                return (dict,)
         c = C()
         self.assertEqual(tested, [])
         class D(A, c): ...
@@ -76,7 +76,7 @@ class TestMROEntry(unittest.TestCase):
         class C:
             def __mro_entry__(self, bases):
                 tested.append(bases)
-                return C
+                return (C,)
         c = C()
         self.assertEqual(tested, [])
         class D(c, dict): ...
@@ -105,6 +105,12 @@ class TestMROEntry(unittest.TestCase):
         c = C_not_callable()
         with self.assertRaises(TypeError):
             class D(c): ...
+        class C_not_tuple:
+            def __mro_entry__(self):
+                return object
+        c = C_not_tuple()
+        with self.assertRaises(TypeError):
+            class D(c): ...
 
     def test_mro_entry_metaclass(self):
         meta_args = []
@@ -115,7 +121,7 @@ class TestMROEntry(unittest.TestCase):
         class A: ...
         class C:
             def __mro_entry__(self, bases):
-                return A
+                return (A,)
         c = C()
         class D(c, metaclass=Meta):
             x = 1
