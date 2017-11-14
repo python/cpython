@@ -247,13 +247,26 @@ def _tp_cache(func):
 class _Final:
     """Mixin to prohibit subclassing"""
 
+    __slots__ = ('__weakref__',)
+
     def __init_subclass__(self, *args, **kwds):
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
 
 class _SpecialForm(_Final, _root=True):
-    """Internal indicator of special typing constructs."""
+    """Internal indicator of special typing constructs.
+    See _doc instance attribute for specific docs.
+    """
+
+    __slots__ = ('_name', '_doc')
+
+    def __getstate__(self):
+        return {'name': self._name, 'doc': self._doc}
+
+    def __setstate__(self, state):
+        self._name = state['name']
+        self._doc = state['doc']
 
     def __new__(cls, *args, **kwds):
         """Constructor.
@@ -587,6 +600,7 @@ class _GenericAlias(_Final, _root=True):
                               () if a is _TypingEmpty else
                               a for a in params)
         self.__parameters__ = _type_vars(params)
+        self.__slots__ = None  # This is not documented.
         if not name:
             self.__module__ = origin.__module__
 
@@ -601,54 +615,11 @@ class _GenericAlias(_Final, _root=True):
         return _GenericAlias(self.__origin__, ev_args, name=self._name,
                              subcls=self._subcls, inst=self._inst, special=self._special)
 
-    def __getitem__(self, params):
-        if self._name != 'Callable' or not self._special:
-            return self.__getitem_inner__(params)
-        if not isinstance(params, tuple) or len(params) != 2:
-            raise TypeError("Callable must be used as "
-                            "Callable[[arg, ...], result].")
-        args, result = params
-        if args is Ellipsis:
-            params = (Ellipsis, result)
-        else:
-            if not isinstance(args, list):
-                raise TypeError(f"Callable[args, result]: args must be a list."
-                                f" Got {args}")
-            params = (tuple(args), result)
-        return self.__getitem_inner__(params)
-
     @_tp_cache
-    def __getitem_inner__(self, params):
+    def __getitem__(self, params):
         if self.__origin__ in (Generic, _Protocol):
             # Can't subscript Generic[...] or _Protocol[...].
             raise TypeError("Cannot subscript already-subscripted {self}")
-        if self.__origin__ is tuple and self._special:
-            if params == ():
-                return _GenericAlias(tuple, (_TypingEmpty,), name=self._name,
-                                     inst=self._inst, subcls=self._subcls)
-            if not isinstance(params, tuple):
-                params = (params,)
-            if len(params) == 2 and params[1] is ...:
-                msg = "Tuple[t, ...]: t must be a type."
-                p = _type_check(params[0], msg)
-                return _GenericAlias(tuple, (p, _TypingEllipsis), name=self._name,
-                                     inst=self._inst, subcls=self._subcls)
-            msg = "Tuple[t0, t1, ...]: each t must be a type."
-            params = tuple(_type_check(p, msg) for p in params)
-            return _GenericAlias(tuple, params, name=self._name,
-                                 inst=self._inst, subcls=self._subcls)
-        if self.__origin__ is collections.abc.Callable and self._special:
-            args, result = params
-            msg = "Callable[args, result]: result must be a type."
-            result = _type_check(result, msg)
-            if args is Ellipsis:
-                return _GenericAlias(self.__origin__, (_TypingEllipsis, result),
-                                     name=self._name, inst=self._inst, subcls=self._subcls)
-            msg = "Callable[[arg, ...], result]: each arg must be a type."
-            args = tuple(_type_check(arg, msg) for arg in args)
-            params = args + (result,)
-            return _GenericAlias(self.__origin__, params, name=self._name,
-                                 inst=self._inst, subcls=self._subcls)
         if not isinstance(params, tuple):
             params = (params,)
         msg = "Parameters to generic types must be types."
@@ -742,7 +713,53 @@ class _GenericAlias(_Final, _root=True):
 
 
 class _VariadicGenericAlias(_GenericAlias, _root=True):
-    pass
+
+    def __getitem__(self, params):
+        if self._name != 'Callable' or not self._special:
+            return self.__getitem_inner__(params)
+        if not isinstance(params, tuple) or len(params) != 2:
+            raise TypeError("Callable must be used as "
+                            "Callable[[arg, ...], result].")
+        args, result = params
+        if args is Ellipsis:
+            params = (Ellipsis, result)
+        else:
+            if not isinstance(args, list):
+                raise TypeError(f"Callable[args, result]: args must be a list."
+                                f" Got {args}")
+            params = (tuple(args), result)
+        return self.__getitem_inner__(params)
+
+    @_tp_cache
+    def __getitem_inner__(self, params):
+        if self.__origin__ is tuple and self._special:
+            if params == ():
+                return _GenericAlias(tuple, (_TypingEmpty,), name=self._name,
+                                     inst=self._inst, subcls=self._subcls)
+            if not isinstance(params, tuple):
+                params = (params,)
+            if len(params) == 2 and params[1] is ...:
+                msg = "Tuple[t, ...]: t must be a type."
+                p = _type_check(params[0], msg)
+                return _GenericAlias(tuple, (p, _TypingEllipsis), name=self._name,
+                                     inst=self._inst, subcls=self._subcls)
+            msg = "Tuple[t0, t1, ...]: each t must be a type."
+            params = tuple(_type_check(p, msg) for p in params)
+            return _GenericAlias(tuple, params, name=self._name,
+                                 inst=self._inst, subcls=self._subcls)
+        if self.__origin__ is collections.abc.Callable and self._special:
+            args, result = params
+            msg = "Callable[args, result]: result must be a type."
+            result = _type_check(result, msg)
+            if args is Ellipsis:
+                return _GenericAlias(self.__origin__, (_TypingEllipsis, result),
+                                     name=self._name, inst=self._inst, subcls=self._subcls)
+            msg = "Callable[[arg, ...], result]: each arg must be a type."
+            args = tuple(_type_check(arg, msg) for arg in args)
+            params = args + (result,)
+            return _GenericAlias(self.__origin__, params, name=self._name,
+                                 inst=self._inst, subcls=self._subcls)
+        return super().__getitem__(params)
 
 
 class Generic:
