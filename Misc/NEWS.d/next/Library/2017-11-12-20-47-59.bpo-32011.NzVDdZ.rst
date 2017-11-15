@@ -1,0 +1,2 @@
+Restored support of loading marshal files with the TYPE_INT64 code. These
+files can be produced in Python 2.7.
