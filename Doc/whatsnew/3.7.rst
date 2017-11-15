@@ -645,7 +645,7 @@ Changes in Python behavior
   expression always needs to be directly inside a set of parentheses
   and cannot have a comma on either side, and the duplication of the
   parentheses can be omitted only on calls.
-  (Contributed by Serhiy Storchaka in :issue:`32012`.)
+  (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
 
 
 Changes in the Python API
