@@ -1,0 +1,2 @@
+inspect.signature should follow PEP 8, if the parameter has an annotation and a
+default value. Patch by Dong-hee Na.
