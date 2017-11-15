@@ -1307,26 +1307,26 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     const clockid_t clk_id = CLOCK_THREAD_CPUTIME_ID;
     const char *function = "clock_gettime(CLOCK_THREAD_CPUTIME_ID)";
 
-    if (clock_gettime(clk_id, &ts) == 0) {
-        if (info) {
-            struct timespec res;
-            info->implementation = function;
-            info->monotonic = 1;
-            info->adjustable = 0;
-            if (clock_getres(clk_id, &res)) {
-                PyErr_SetFromErrno(PyExc_OSError);
-                return -1;
-            }
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-        }
-
-        if (_PyTime_FromTimespec(tp, &ts) < 0) {
+    if (clock_gettime(clk_id, &ts) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    if (info) {
+        struct timespec res;
+        info->implementation = function;
+        info->monotonic = 1;
+        info->adjustable = 0;
+        if (clock_getres(clk_id, &res)) {
+            PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
-        return 0;
+        info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
     }
-    PyErr_SetFromErrno(PyExc_OSError);
-    return -1;
+
+    if (_PyTime_FromTimespec(tp, &ts) < 0) {
+        return -1;
+    }
+    return 0;
 }
 #endif
 

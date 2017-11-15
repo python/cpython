@@ -617,7 +617,8 @@ Functions
    returned value is undefined, so that only the difference between the results
    of consecutive calls in the same thread is valid.
 
-   Availability:  Unix systems supporting CLOCK_THREAD_CPUTIME_ID, Windows.
+   Availability:  Windows, Linux, Unix systems supporting
+   ``CLOCK_THREAD_CPUTIME_ID``.
 
    .. versionadded:: 3.7
 
