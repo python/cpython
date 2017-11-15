@@ -638,10 +638,14 @@ Changes in Python behavior
 
       f(1 for x in [1],)
 
+      class C(1 for x in [1]):
+          pass
+
   Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
   expression always needs to be directly inside a set of parentheses
-  and cannot have a comma on either side.
-  (Contributed by Serhiy Storchaka in :issue:`32012`.)
+  and cannot have a comma on either side, and the duplication of the
+  parentheses can be omitted only on calls.
+  (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
 
 
 Changes in the Python API
