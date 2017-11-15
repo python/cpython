@@ -1311,7 +1311,7 @@ are always available.  They are listed here in alphabetical order.
    arguments starting at ``0``).
 
 
-.. function:: round(number[, ndigits])
+.. function:: round(number, ndigits=None)
 
    Return *number* rounded to *ndigits* precision after the decimal
    point.  If *ndigits* is omitted or is ``None``, it returns the
@@ -1322,8 +1322,8 @@ are always available.  They are listed here in alphabetical order.
    equally close, rounding is done toward the even choice (so, for example,
    both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
    ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
-   negative).  The return value is an integer if called with one argument,
-   otherwise of the same type as *number*.
+   negative).  The return value is an integer if *ndigits* is omitted or is ``None``.
+   Otherwise the return value has the same type as *number*.
 
    For a general Python object ``number``, ``round(number, ndigits)`` delegates to
    ``number.__round__(ndigits)``.

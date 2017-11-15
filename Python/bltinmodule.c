@@ -2116,10 +2116,10 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(round_doc,
-"round(number[, ndigits]) -> number\n\
+"round(number, ndigits=None) -> number\n\
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
-This returns an int when called with one argument, otherwise the\n\
+This returns an int if ndigits is omitted or is None, otherwise the\n\
 same type as the number. ndigits may be negative.");
 
 
