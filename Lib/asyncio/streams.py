@@ -29,7 +29,7 @@ class IncompleteReadError(EOFError):
     - partial: read bytes string before the end of stream was reached
     - expected: total number of expected bytes (or None if unknown)
     """
-    def __init__(self, partial, expected):
+    def __init__(self, partial, expected=None):
         super().__init__("%d bytes read on a total of %r expected bytes"
                          % (len(partial), expected))
         self.partial = partial
