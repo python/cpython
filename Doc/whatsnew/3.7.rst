@@ -630,6 +630,20 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in Python behavior
+--------------------------
+
+* Due to an oversight, earlier Python versions erroneously accepted the
+  following syntax::
+
+      f(1 for x in [1],)
+
+  Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
+  expression always needs to be directly inside a set of parentheses
+  and cannot have a comma on either side.
+  (Contributed by Serhiy Storchaka in :issue:`32012`.)
+
+
 Changes in the Python API
 -------------------------
 

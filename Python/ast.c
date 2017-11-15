@@ -2712,7 +2712,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
       argument: ( test [comp_for] | '*' test | test '=' test | '**' test )
     */
 
-    int i, nargs, nkeywords, ngens;
+    int i, nargs, nkeywords;
     int ndoublestars;
     asdl_seq *args;
     asdl_seq *keywords;
@@ -2721,14 +2721,18 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 
     nargs = 0;
     nkeywords = 0;
-    ngens = 0;
     for (i = 0; i < NCH(n); i++) {
         node *ch = CHILD(n, i);
         if (TYPE(ch) == argument) {
             if (NCH(ch) == 1)
                 nargs++;
-            else if (TYPE(CHILD(ch, 1)) == comp_for)
-                ngens++;
+            else if (TYPE(CHILD(ch, 1)) == comp_for) {
+                nargs++;
+                if (NCH(n) > 1) {
+                    ast_error(c, ch, "Generator expression must be parenthesized");
+                    return NULL;
+                }
+            }
             else if (TYPE(CHILD(ch, 0)) == STAR)
                 nargs++;
             else
@@ -2736,13 +2740,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 nkeywords++;
         }
     }
-    if (ngens > 1 || (ngens && (nargs || nkeywords))) {
-        ast_error(c, n, "Generator expression must be parenthesized "
-                  "if not sole argument");
-        return NULL;
-    }
 
-    args = _Py_asdl_seq_new(nargs + ngens, c->c_arena);
+    args = _Py_asdl_seq_new(nargs, c->c_arena);
     if (!args)
         return NULL;
     keywords = _Py_asdl_seq_new(nkeywords, c->c_arena);
