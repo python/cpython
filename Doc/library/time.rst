@@ -241,6 +241,7 @@ Functions
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
+   * ``'thread_time'``: :func:`time.thread_time`
    * ``'time'``: :func:`time.time`
 
    The result has the following attributes:
@@ -601,6 +602,32 @@ Functions
    :func:`localtime` function. In both cases a
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
+
+
+.. function:: thread_time() -> float
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
+
+   Return the value (in fractional seconds) of the sum of the system and user
+   CPU time of the current thread.  It does not include time elapsed during
+   sleep.  It is thread-specific by definition.  The reference point of the
+   returned value is undefined, so that only the difference between the results
+   of consecutive calls in the same thread is valid.
+
+   Availability:  Windows, Linux, Unix systems supporting
+   ``CLOCK_THREAD_CPUTIME_ID``.
+
+   .. versionadded:: 3.7
+
+
+.. function:: thread_time_ns() -> int
+
+   Similar to :func:`thread_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
 
 
 .. function:: time_ns() -> int
