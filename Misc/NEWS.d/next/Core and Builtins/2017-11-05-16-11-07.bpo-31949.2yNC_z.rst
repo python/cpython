@@ -1,0 +1,9 @@
+Fixed several issues in printing tracebacks (PyTraceBack_Print()).
+
+* Setting sys.tracebacklimit to 0 or less now suppresses printing tracebacks.
+* Setting sys.tracebacklimit to None now causes using the default limit.
+* Setting sys.tracebacklimit to an integer larger than LONG_MAX now means using
+  the limit LONG_MAX rather than the default limit.
+* Fixed integer overflows in the case of more than 2**31 traceback items on
+  Windows.
+* Fixed output errors handling.
