@@ -223,6 +223,10 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
 PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
 #endif
 
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(void) _PyMem_GetDefaultRawAllocator(PyMemAllocatorEx *alloc);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
