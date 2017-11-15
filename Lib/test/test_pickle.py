@@ -32,6 +32,7 @@ class PyPickleTests(AbstractPickleModuleTests):
     load = staticmethod(pickle._load)
     loads = staticmethod(pickle._loads)
     Pickler = pickle._Pickler
+    Unpickler = pickle._Unpickler
 
 
 class PyUnpicklerTests(AbstractUnpickleTests):
@@ -141,19 +142,7 @@ class PyChainDispatchTableTests(AbstractDispatchTableTests):
 
 if has_c_implementation:
     class CPickleTests(AbstractPickleModuleTests):
-        from _pickle import dump, dumps, load, loads, Pickler
-
-        def test_bad_init(self):
-            # Test issue3664 (pickle can segfault from a badly initialized Pickler).
-            # Override initialization without calling __init__() of the superclass.
-            class BadPickler(pickle.Pickler):
-                def __init__(self): pass
-
-            class BadUnpickler(pickle.Unpickler):
-                def __init__(self): pass
-
-            self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
-            self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
+        from _pickle import dump, dumps, load, loads, Pickler, Unpickler
 
     class CUnpicklerTests(PyUnpicklerTests):
         unpickler = _pickle.Unpickler

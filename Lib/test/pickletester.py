@@ -2569,6 +2569,18 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.Pickler(f, -1)
         self.Pickler(f, protocol=-1)
 
+    def test_bad_init(self):
+        # Test issue3664 (pickle can segfault from a badly initialized Pickler).
+        # Override initialization without calling __init__() of the superclass.
+        class BadPickler(self.Pickler):
+            def __init__(self): pass
+
+        class BadUnpickler(self.Unpickler):
+            def __init__(self): pass
+
+        self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
+        self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
+
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
