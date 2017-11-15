@@ -110,7 +110,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         ssl_proto._shutdown_timeout_handle._run()
 
         exc_handler.assert_called_with(
-            self.loop, {'message': 'Can not complete shitdown operation',
+            self.loop, {'message': 'Can not complete shutdown operation',
                         'exception': mock.ANY,
                         'transport': transport,
                         'protocol': ssl_proto}
