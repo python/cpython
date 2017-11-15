@@ -1,6 +1,7 @@
 /* Minimal main program -- everything is loaded from the library */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include <locale.h>
 
 #ifdef __FreeBSD__
@@ -22,8 +23,15 @@ main(int argc, char **argv)
     wchar_t **argv_copy;
     /* We need a second copy, as Python might modify the first one. */
     wchar_t **argv_copy2;
-    int i, res;
+    int i, status;
     char *oldloc;
+
+    _PyInitError err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
+        fflush(stderr);
+        exit(1);
+    }
 
     /* Force malloc() allocator to bootstrap Python */
 #ifdef Py_DEBUG
@@ -88,7 +96,7 @@ main(int argc, char **argv)
     setlocale(LC_ALL, oldloc);
     PyMem_RawFree(oldloc);
 
-    res = Py_Main(argc, argv_copy);
+    status = Py_Main(argc, argv_copy);
 
     /* Force again malloc() allocator to release memory blocks allocated
        before Py_Main() */
@@ -103,6 +111,6 @@ main(int argc, char **argv)
     }
     PyMem_RawFree(argv_copy);
     PyMem_RawFree(argv_copy2);
-    return res;
+    return status;
 }
 #endif
