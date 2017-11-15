@@ -372,6 +372,10 @@ Add new clock identifiers:
   the time the system has been running and not suspended, providing accurate
   uptime measurement, both absolute and interval.
 
+Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
+to get per-thread CPU time measurements.
+(Contributed by Antoine Pitrou in :issue:`32025`.)
+
 unittest.mock
 -------------
 
