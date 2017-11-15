@@ -1307,7 +1307,7 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     const clockid_t clk_id = CLOCK_THREAD_CPUTIME_ID;
     const char *function = "clock_gettime(CLOCK_THREAD_CPUTIME_ID)";
 
-    if (clock_gettime(clk_id, &ts) != 0) {
+    if (clock_gettime(clk_id, &ts)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
