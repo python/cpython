@@ -848,16 +848,20 @@ os.close(fd)
 
     def test_IncompleteReadError_pickleable(self):
         e = asyncio.IncompleteReadError(b'abc', 10)
-        e2 = pickle.loads(pickle.dumps(e))
-        self.assertEqual(str(e), str(e2))
-        self.assertEqual(e.partial, e2.partial)
-        self.assertEqual(e.expected, e2.expected)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_protocol=proto):
+                e2 = pickle.loads(pickle.dumps(e, protocol=proto))
+                self.assertEqual(str(e), str(e2))
+                self.assertEqual(e.partial, e2.partial)
+                self.assertEqual(e.expected, e2.expected)
 
     def test_LimitOverrunError_pickleable(self):
         e = asyncio.LimitOverrunError('message', 10)
-        e2 = pickle.loads(pickle.dumps(e))
-        self.assertEqual(str(e), str(e2))
-        self.assertEqual(e.consumed, e2.consumed)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_protocol=proto):
+                e2 = pickle.loads(pickle.dumps(e, protocol=proto))
+                self.assertEqual(str(e), str(e2))
+                self.assertEqual(e.consumed, e2.consumed)
 
 
 if __name__ == '__main__':
