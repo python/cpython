@@ -41,17 +41,24 @@ are available on all platforms):
 .. data:: METHOD_SHA512
 
    A Modular Crypt Format method with 16 character salt and 86 character
-   hash.  This is the strongest method.
+   hash based on the SHA-512 hash function.  This is the strongest method.
 
 .. data:: METHOD_SHA256
 
    Another Modular Crypt Format method with 16 character salt and 43
-   character hash.
+   character hash based on the SHA-256 hash function.
+
+.. data:: METHOD_BLOWFISH
+
+   Another Modular Crypt Format method with 22 character salt and 31
+   character hash based on the Blowfish cipher.
+
+   .. versionadded:: 3.7
 
 .. data:: METHOD_MD5
 
    Another Modular Crypt Format method with 8 character salt and 22
-   character hash.
+   character hash based on the MD5 hash function.
 
 .. data:: METHOD_CRYPT
 
@@ -109,18 +116,24 @@ The :mod:`crypt` module defines the following functions:
       Accept ``crypt.METHOD_*`` values in addition to strings for *salt*.
 
 
-.. function:: mksalt(method=None)
+.. function:: mksalt(method=None, *, log_rounds=12)
 
    Return a randomly generated salt of the specified method.  If no
    *method* is given, the strongest method available as returned by
    :func:`methods` is used.
 
-   The return value is a string either of 2 characters in length for
-   ``crypt.METHOD_CRYPT``, or 19 characters starting with ``$digit$`` and
-   16 random characters from the set ``[./a-zA-Z0-9]``, suitable for
-   passing as the *salt* argument to :func:`crypt`.
+   The return value is a string suitable for passing as the *salt* argument
+   to :func:`crypt`.
+
+   *log_rounds* specifies the binary logarithm of the number of rounds
+   for ``crypt.METHOD_BLOWFISH``, and is ignored otherwise.  ``8`` specifies
+   ``256`` rounds.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      Added the *log_rounds* parameter.
+
 
 Examples
 --------

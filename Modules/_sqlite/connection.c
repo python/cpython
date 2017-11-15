@@ -76,6 +76,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     };
 
     char* database;
+    PyObject* database_obj;
     int detect_types = 0;
     PyObject* isolation_level = NULL;
     PyObject* factory = NULL;
@@ -85,27 +86,29 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     double timeout = 5.0;
     int rc;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOip", kwlist,
-                                     &database, &timeout, &detect_types,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|diOiOip", kwlist,
+                                     PyUnicode_FSConverter, &database_obj, &timeout, &detect_types,
                                      &isolation_level, &check_same_thread,
                                      &factory, &cached_statements, &uri))
     {
         return -1;
     }
 
+    database = PyBytes_AsString(database_obj);
+
     self->initialized = 1;
 
     self->begin_statement = NULL;
 
-    self->statement_cache = NULL;
-    self->statements = NULL;
-    self->cursors = NULL;
+    Py_CLEAR(self->statement_cache);
+    Py_CLEAR(self->statements);
+    Py_CLEAR(self->cursors);
 
     Py_INCREF(Py_None);
-    self->row_factory = Py_None;
+    Py_XSETREF(self->row_factory, Py_None);
 
     Py_INCREF(&PyUnicode_Type);
-    self->text_factory = (PyObject*)&PyUnicode_Type;
+    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
 
 #ifdef SQLITE_OPEN_URI
     Py_BEGIN_ALLOW_THREADS
@@ -124,6 +127,8 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
 #endif
     Py_END_ALLOW_THREADS
 
+    Py_DECREF(database_obj);
+
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db, NULL);
         return -1;
@@ -137,7 +142,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     } else {
         Py_INCREF(isolation_level);
     }
-    self->isolation_level = NULL;
+    Py_CLEAR(self->isolation_level);
     if (pysqlite_connection_set_isolation_level(self, isolation_level) < 0) {
         Py_DECREF(isolation_level);
         return -1;
@@ -177,12 +182,12 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
     self->check_same_thread = check_same_thread;
 
-    self->function_pinboard = PyDict_New();
+    Py_XSETREF(self->function_pinboard, PyDict_New());
     if (!self->function_pinboard) {
         return -1;
     }
 
-    self->collations = PyDict_New();
+    Py_XSETREF(self->collations, PyDict_New());
     if (!self->collations) {
         return -1;
     }
@@ -1545,7 +1550,7 @@ static PyObject *
 pysqlite_connection_exit(pysqlite_Connection* self, PyObject* args)
 {
     PyObject* exc_type, *exc_value, *exc_tb;
-    char* method_name;
+    const char* method_name;
     PyObject* result;
 
     if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_value, &exc_tb)) {

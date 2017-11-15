@@ -2298,8 +2298,6 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     VISIT(c, expr, s->v.AsyncFor.iter);
     ADDOP(c, GET_AITER);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
-    ADDOP(c, YIELD_FROM);
 
     compiler_use_next_block(c, try);
 
@@ -3867,8 +3865,6 @@ compiler_async_comprehension_generator(struct compiler *c,
         /* Sub-iter - calculate on the fly */
         VISIT(c, expr, gen->iter);
         ADDOP(c, GET_AITER);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
-        ADDOP(c, YIELD_FROM);
     }
 
     compiler_use_next_block(c, try);
@@ -3978,7 +3974,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     is_async_generator = c->u->u_ste->ste_coroutine;
 
-    if (is_async_generator && !is_async_function) {
+    if (is_async_generator && !is_async_function && type != COMP_GENEXP) {
         if (e->lineno > c->u->u_lineno) {
             c->u->u_lineno = e->lineno;
             c->u->u_lineno_set = 0;
@@ -4033,8 +4029,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     if (outermost->is_async) {
         ADDOP(c, GET_AITER);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
-        ADDOP(c, YIELD_FROM);
     } else {
         ADDOP(c, GET_ITER);
     }
@@ -4852,7 +4846,7 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 static int
 compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 {
-    char * kindname = NULL;
+    const char * kindname = NULL;
     switch (s->kind) {
     case Index_kind:
         kindname = "index";

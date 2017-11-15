@@ -1,5 +1,5 @@
 """
-Collect various informations about Python to help debugging test failures.
+Collect various information about Python to help debugging test failures.
 """
 from __future__ import print_function
 import errno
@@ -40,7 +40,7 @@ class PythonInfo:
 
     def get_infos(self):
         """
-        Get informations as a key:value dictionary where values are strings.
+        Get information as a key:value dictionary where values are strings.
         """
         return {key: str(value) for key, value in self.info.items()}
 
@@ -114,6 +114,14 @@ def collect_sys(info_add):
         if errors:
             encoding = '%s/%s' % (encoding, errors)
         info_add('sys.%s.encoding' % name, encoding)
+
+    # Were we compiled --with-pydebug or with #define Py_DEBUG?
+    Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+    if Py_DEBUG:
+        text = 'Yes (sys.gettotalrefcount() present)'
+    else:
+        text = 'No (sys.gettotalrefcount() missing)'
+    info_add('Py_DEBUG', text)
 
 
 def collect_platform(info_add):

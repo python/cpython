@@ -15,20 +15,6 @@ wmain(int argc, wchar_t **argv)
 }
 #else
 
-/* Access private pylifecycle helper API to better handle the legacy C locale
- *
- * The legacy C locale assumes ASCII as the default text encoding, which
- * causes problems not only for the CPython runtime, but also other
- * components like GNU readline.
- *
- * Accordingly, when the CLI detects it, it attempts to coerce it to a
- * more capable UTF-8 based alternative.
- *
- * See the documentation of the PYTHONCOERCECLOCALE setting for more details.
- *
- */
-extern int _Py_LegacyLocaleDetected(void);
-extern void _Py_CoerceLegacyLocale(void);
 
 int
 main(int argc, char **argv)
@@ -68,16 +54,19 @@ main(int argc, char **argv)
         return 1;
     }
 
-#ifdef __ANDROID__
-    /* Passing "" to setlocale() on Android requests the C locale rather
-     * than checking environment variables, so request C.UTF-8 explicitly
-     */
-    setlocale(LC_ALL, "C.UTF-8");
-#else
     /* Reconfigure the locale to the default for this process */
-    setlocale(LC_ALL, "");
-#endif
+    _Py_SetLocaleFromEnv(LC_ALL);
 
+    /* The legacy C locale assumes ASCII as the default text encoding, which
+     * causes problems not only for the CPython runtime, but also other
+     * components like GNU readline.
+     *
+     * Accordingly, when the CLI detects it, it attempts to coerce it to a
+     * more capable UTF-8 based alternative.
+     *
+     * See the documentation of the PYTHONCOERCECLOCALE setting for more
+     * details.
+     */
     if (_Py_LegacyLocaleDetected()) {
         _Py_CoerceLegacyLocale();
     }

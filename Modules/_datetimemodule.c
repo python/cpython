@@ -1442,22 +1442,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 static PyObject *
 diff_to_bool(int diff, int op)
 {
-    PyObject *result;
-    int istrue;
-
-    switch (op) {
-        case Py_EQ: istrue = diff == 0; break;
-        case Py_NE: istrue = diff != 0; break;
-        case Py_LE: istrue = diff <= 0; break;
-        case Py_GE: istrue = diff >= 0; break;
-        case Py_LT: istrue = diff < 0; break;
-        case Py_GT: istrue = diff > 0; break;
-        default:
-            Py_UNREACHABLE();
-    }
-    result = istrue ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    Py_RETURN_RICHCOMPARE(diff, 0, op);
 }
 
 /* Raises a "can't compare" TypeError and returns NULL. */
@@ -1537,6 +1522,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     if (x2 == NULL)
         goto Done;
     result = PyNumber_Add(x1, x2);
+    assert(result == NULL || PyLong_CheckExact(result));
 
 Done:
     Py_XDECREF(x1);
@@ -1559,6 +1545,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
+    assert(PyLong_CheckExact(pyus));
     tuple = PyNumber_Divmod(pyus, us_per_second);
     if (tuple == NULL)
         goto Done;
@@ -1677,8 +1664,9 @@ get_float_as_integer_ratio(PyObject *floatobj)
     return ratio;
 }
 
+/* op is 0 for multiplication, 1 for division */
 static PyObject *
-multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
+multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj, int op)
 {
     PyObject *result = NULL;
     PyObject *pyus_in = NULL, *temp, *pyus_out;
@@ -1691,12 +1679,12 @@ multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
     if (ratio == NULL) {
         goto error;
     }
-    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
+    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, op));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
     if (temp == NULL)
         goto error;
-    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, 1));
+    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, !op));
     Py_DECREF(temp);
     if (pyus_out == NULL)
         goto error;
@@ -1773,38 +1761,6 @@ truedivide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
     result = PyNumber_TrueDivide(pyus_left, pyus_right);
     Py_DECREF(pyus_left);
     Py_DECREF(pyus_right);
-    return result;
-}
-
-static PyObject *
-truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
-{
-    PyObject *result = NULL;
-    PyObject *pyus_in = NULL, *temp, *pyus_out;
-    PyObject *ratio = NULL;
-
-    pyus_in = delta_to_microseconds(delta);
-    if (pyus_in == NULL)
-        return NULL;
-    ratio = get_float_as_integer_ratio(f);
-    if (ratio == NULL) {
-        goto error;
-    }
-    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));
-    Py_DECREF(pyus_in);
-    pyus_in = NULL;
-    if (temp == NULL)
-        goto error;
-    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, 0));
-    Py_DECREF(temp);
-    if (pyus_out == NULL)
-        goto error;
-    result = microseconds_to_delta(pyus_out);
-    Py_DECREF(pyus_out);
- error:
-    Py_XDECREF(pyus_in);
-    Py_XDECREF(ratio);
-
     return result;
 }
 
@@ -1958,15 +1914,15 @@ delta_multiply(PyObject *left, PyObject *right)
             result = multiply_int_timedelta(right,
                             (PyDateTime_Delta *) left);
         else if (PyFloat_Check(right))
-            result = multiply_float_timedelta(right,
-                            (PyDateTime_Delta *) left);
+            result = multiply_truedivide_timedelta_float(
+                            (PyDateTime_Delta *) left, right, 0);
     }
     else if (PyLong_Check(left))
         result = multiply_int_timedelta(left,
                         (PyDateTime_Delta *) right);
     else if (PyFloat_Check(left))
-        result = multiply_float_timedelta(left,
-                        (PyDateTime_Delta *) right);
+        result = multiply_truedivide_timedelta_float(
+                        (PyDateTime_Delta *) right, left, 0);
 
     if (result == Py_NotImplemented)
         Py_INCREF(result);
@@ -2006,8 +1962,8 @@ delta_truedivide(PyObject *left, PyObject *right)
                             (PyDateTime_Delta *)left,
                             (PyDateTime_Delta *)right);
         else if (PyFloat_Check(right))
-            result = truedivide_timedelta_float(
-                            (PyDateTime_Delta *)left, right);
+            result = multiply_truedivide_timedelta_float(
+                            (PyDateTime_Delta *)left, right, 1);
         else if (PyLong_Check(right))
             result = truedivide_timedelta_int(
                             (PyDateTime_Delta *)left, right);
@@ -2112,11 +2068,13 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
     assert(num != NULL);
 
     if (PyLong_Check(num)) {
-        prod = PyNumber_Multiply(num, factor);
+        prod = PyNumber_Multiply(factor, num);
         if (prod == NULL)
             return NULL;
+        assert(PyLong_CheckExact(prod));
         sum = PyNumber_Add(sofar, prod);
         Py_DECREF(prod);
+        assert(sum == NULL || PyLong_CheckExact(sum));
         return sum;
     }
 
@@ -2159,7 +2117,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
          * fractional part requires float arithmetic, and may
          * lose a little info.
          */
-        assert(PyLong_Check(factor));
+        assert(PyLong_CheckExact(factor));
         dnum = PyLong_AsDouble(factor);
 
         dnum *= fracpart;
@@ -2174,6 +2132,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
         Py_DECREF(sum);
         Py_DECREF(x);
         *leftover += fracpart;
+        assert(y == NULL || PyLong_CheckExact(y));
         return y;
     }
 
