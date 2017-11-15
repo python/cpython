@@ -560,7 +560,7 @@ class SSLProtocol(protocols.Protocol):
     def _on_shutdown_timeout(self):
         if self._transport is not None:
             self._fatal_error(
-                futures.TimeoutError(), 'Can not complete shitdown operation')
+                futures.TimeoutError(), 'Can not complete shutdown operation')
 
     def _write_appdata(self, data):
         self._write_backlog.append((data, 0))
