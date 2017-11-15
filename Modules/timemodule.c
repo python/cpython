@@ -1632,8 +1632,10 @@ static PyMethodDef time_methods[] = {
     {"monotonic_ns",    time_monotonic_ns, METH_NOARGS, monotonic_ns_doc},
     {"process_time",    time_process_time, METH_NOARGS, process_time_doc},
     {"process_time_ns", time_process_time_ns, METH_NOARGS, process_time_ns_doc},
+#ifdef HAVE_THREAD_TIME
     {"thread_time",     time_thread_time, METH_NOARGS, thread_time_doc},
     {"thread_time_ns",  time_thread_time_ns, METH_NOARGS, thread_time_ns_doc},
+#endif
     {"perf_counter",    time_perf_counter, METH_NOARGS, perf_counter_doc},
     {"perf_counter_ns", time_perf_counter_ns, METH_NOARGS, perf_counter_ns_doc},
     {"get_clock_info",  time_get_clock_info, METH_VARARGS, get_clock_info_doc},
