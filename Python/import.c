@@ -42,19 +42,23 @@ module _imp
 
 /* Initialize things */
 
-void
+_PyInitError
 _PyImport_Init(void)
 {
     PyInterpreterState *interp = PyThreadState_Get()->interp;
     initstr = PyUnicode_InternFromString("__init__");
-    if (initstr == NULL)
-        Py_FatalError("Can't initialize import variables");
+    if (initstr == NULL) {
+        return _Py_INIT_ERR("Can't initialize import variables");
+    }
+
     interp->builtins_copy = PyDict_Copy(interp->builtins);
-    if (interp->builtins_copy == NULL)
-        Py_FatalError("Can't backup builtins dict");
+    if (interp->builtins_copy == NULL) {
+        return _Py_INIT_ERR("Can't backup builtins dict");
+    }
+    return _Py_INIT_OK();
 }
 
-void
+_PyInitError
 _PyImportHooks_Init(void)
 {
     PyObject *v, *path_hooks = NULL;
@@ -80,15 +84,18 @@ _PyImportHooks_Init(void)
         goto error;
     err = PySys_SetObject("path_hooks", path_hooks);
     if (err) {
-  error:
-    PyErr_Print();
-    Py_FatalError("initializing sys.meta_path, sys.path_hooks, "
-                  "or path_importer_cache failed");
+        goto error;
     }
     Py_DECREF(path_hooks);
+    return _Py_INIT_OK();
+
+  error:
+    PyErr_Print();
+    return _Py_INIT_ERR("initializing sys.meta_path, sys.path_hooks, "
+                        "or path_importer_cache failed");
 }
 
-void
+_PyInitError
 _PyImportZip_Init(void)
 {
     PyObject *path_hooks, *zimpimport;
@@ -133,11 +140,11 @@ _PyImportZip_Init(void)
         }
     }
 
-    return;
+    return _Py_INIT_OK();
 
   error:
     PyErr_Print();
-    Py_FatalError("initializing zipimport failed");
+    return _Py_INIT_ERR("initializing zipimport failed");
 }
 
 /* Locking primitives to prevent parallel imports of the same module
