@@ -700,6 +700,7 @@ class SSLProtocol(protocols.Protocol):
 
         if self._transport is not None:
             self._transport.close()
+            self._transport = None
         if self._shutdown_timeout_handle is not None:
             self._shutdown_timeout_handle.cancel()
             self._shutdown_timeout_handle = None
