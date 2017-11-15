@@ -1,0 +1,2 @@
+asyncio SSL contexts leak sockets after calling close with certain servers.
+Patch by Nikolay Kim
