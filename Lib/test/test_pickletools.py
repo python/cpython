@@ -2,10 +2,9 @@ import pickle
 import pickletools
 from test import support
 from test.pickletester import AbstractPickleTests
-from test.pickletester import AbstractPickleModuleTests
 import unittest
 
-class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
+class OptimizedPickleTests(AbstractPickleTests):
 
     def dumps(self, arg, proto=None):
         return pickletools.optimize(pickle.dumps(arg, proto))
