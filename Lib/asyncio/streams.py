@@ -49,6 +49,9 @@ class LimitOverrunError(Exception):
         super().__init__(message)
         self.consumed = consumed
 
+    def __reduce__(self):
+        return type(self), (self.args[0], self.consumed)
+
 
 @coroutine
 def open_connection(host=None, port=None, *,

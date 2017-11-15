@@ -1,1 +1,1 @@
-Make asyncio.IncompleteReadError pickleable.
+Make asyncio.IncompleteReadError and LimitOverrunError pickleable.

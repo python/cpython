@@ -853,6 +853,12 @@ os.close(fd)
         self.assertEqual(e.partial, e2.partial)
         self.assertEqual(e.expected, e2.expected)
 
+    def test_LimitOverrunError_pickleable(self):
+        e = asyncio.LimitOverrunError('message', 10)
+        e2 = pickle.loads(pickle.dumps(e))
+        self.assertEqual(str(e), str(e2))
+        self.assertEqual(e.consumed, e2.consumed)
+
 
 if __name__ == '__main__':
     unittest.main()
