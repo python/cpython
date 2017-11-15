@@ -16,6 +16,8 @@ PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+PyAPI_FUNC(void*) PyMem_RawAlignedAlloc(size_t alignment, size_t size);
+PyAPI_FUNC(void) PyMem_RawAlignedFree(void *ptr);
 
 /* Configure the Python memory allocators. Pass NULL to use default
    allocators. */
@@ -103,6 +105,8 @@ PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
 #endif
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
+PyAPI_FUNC(void*) PyMem_AlignedAlloc(size_t alignment, size_t size);
+PyAPI_FUNC(void) PyMem_AlignedFree(void *ptr);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
@@ -184,11 +188,17 @@ typedef struct {
 
     /* release a memory block */
     void (*free) (void *ctx, void *ptr);
-} PyMemAllocatorEx;
+
+    /* allocate an aligned memory block */
+    void* (*aligned_alloc) (void *ctx, size_t alignment, size_t size);
+
+    /* free an aligned memory block */
+    void (*aligned_free) (void *ctx, void *ptr);
+} PyMemAllocatorEx2;
 
 /* Get the memory block allocator of the specified domain. */
 PyAPI_FUNC(void) PyMem_GetAllocator(PyMemAllocatorDomain domain,
-                                    PyMemAllocatorEx *allocator);
+                                    PyMemAllocatorEx2 *allocator);
 
 /* Set the memory block allocator of the specified domain.
 
@@ -202,7 +212,7 @@ PyAPI_FUNC(void) PyMem_GetAllocator(PyMemAllocatorDomain domain,
    PyMem_SetupDebugHooks() function must be called to reinstall the debug hooks
    on top on the new allocator. */
 PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
-                                    PyMemAllocatorEx *allocator);
+                                    PyMemAllocatorEx2 *allocator);
 
 /* Setup hooks to detect bugs in the following Python memory allocator
    functions:

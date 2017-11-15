@@ -559,6 +559,10 @@ Deprecated
 Changes in the C API
 --------------------
 
+- The :c:type:`PyMemAllocatorEx` structure was renamed to
+  :c:type:`PyMemAllocatorEx2` and new ``aligned_alloc`` and ``aligned_free``
+  fields were added.
+
 - The type of results of :c:func:`PyThread_start_new_thread` and
   :c:func:`PyThread_get_thread_ident`, and the *id* parameter of
   :c:func:`PyThreadState_SetAsyncExc` changed from :c:type:`long` to

@@ -1,0 +1,9 @@
+Add PyMem_AlignedAlloc():
+
+* Add aligned_alloc and aligned_free fields to PyMemAllocatorEx
+* Rename PyMemAllocatorEx structure to PyMemAllocatorEx2 to make sure
+  that C extensions are upgraded to fill the new aligned_alloc and
+  aligned_free fields
+* Add 6 new functions: PyMem_RawAlignedAlloc(), PyMem_RawAlignedFree(),
+  PyMem_AlignedAlloc(), PyMem_AlignedFree(), PyObject_AlignedAlloc() and
+  PyObject_AlignedFree().

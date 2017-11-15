@@ -156,6 +156,37 @@ The default raw memory block allocator uses the following functions:
    If *p* is *NULL*, no operation is performed.
 
 
+.. c:function:: void* PyMem_RawAlignedAlloc(size_t alignment, size_t n)
+
+   Allocates *n* bytes aligned to *alignment* bytes and returns a pointer of
+   type :c:type:`void\*` to the allocated memory, or *NULL* if the request
+   fails.
+
+   *alignment* must be a power of 2, multiple of ``sizeof(void*)`` and greater
+   than 0. If the *alignment* is invalid, the function fails with an assertion
+   error in debug mode, or returns *NULL* in release mode.
+
+   Requesting zero bytes returns a distinct non-*NULL* pointer if possible, as
+   if ``PyMem_RawAlignedAlloc(alignment, 1)`` had been called instead. The
+   memory will not have been initialized in any way.
+
+   The allocated memory block must be released by :c:func:`PyMem_RawAlignedFree`.
+
+   .. versionadded:: 3.7
+
+
+.. c:function:: void PyMem_RawAlignedFree(void *p)
+
+   Frees the memory block pointed to by *p*, which must have been returned by a
+   previous call to :c:func:`PyMem_RawAlignedAlloc`.  Otherwise, or if
+   ``PyMem_RawAlignedFree(p)`` has been called before, undefined behavior
+   occurs.
+
+   If *p* is *NULL*, no operation is performed.
+
+   .. versionadded:: 3.7
+
+
 .. _memoryinterface:
 
 Memory Interface
@@ -223,6 +254,37 @@ By default, these functions use :ref:`pymalloc memory allocator <pymalloc>`.
    before, undefined behavior occurs.
 
    If *p* is *NULL*, no operation is performed.
+
+.. c:function:: void* PyMem_AlignedAlloc(size_t alignment, size_t n)
+
+   Allocates *n* bytes aligned to *alignment* bytes and returns a pointer of
+   type :c:type:`void\*` to the allocated memory, or *NULL* if the request
+   fails.
+
+   *alignment* must be a power of 2, multiple of ``sizeof(void*)`` and greater
+   than 0. If the *alignment* is invalid, the function fails with an assertion
+   error in debug mode, or returns *NULL* in release mode.
+
+   Requesting zero bytes returns a distinct non-*NULL* pointer if possible, as
+   if ``PyMem_AlignedAlloc(alignment, 1)`` had been called instead. The
+   memory will not have been initialized in any way.
+
+   The allocated memory block must be released by :c:func:`PyMem_AlignedFree`.
+
+   .. versionadded:: 3.7
+
+
+.. c:function:: void PyMem_AlignedFree(void *p)
+
+   Frees the memory block pointed to by *p*, which must have been returned by a
+   previous call to :c:func:`PyMem_AlignedAlloc`.  Otherwise, or if
+   ``PyMem_AlignedFree(p)`` has been called before, undefined behavior
+   occurs.
+
+   If *p* is *NULL*, no operation is performed.
+
+   .. versionadded:: 3.7
+
 
 The following type-oriented macros are provided for convenience.  Note  that
 *TYPE* refers to any C type.
@@ -326,30 +388,71 @@ By default, these functions use :ref:`pymalloc memory allocator <pymalloc>`.
    If *p* is *NULL*, no operation is performed.
 
 
+.. c:function:: void* PyObject_AlignedAlloc(size_t alignment, size_t n)
+
+   Allocates *n* bytes aligned to *alignment* bytes and returns a pointer of
+   type :c:type:`void\*` to the allocated memory, or *NULL* if the request
+   fails.
+
+   *alignment* must be a power of 2, multiple of ``sizeof(void*)`` and greater
+   than 0. If the *alignment* is invalid, the function fails with an assertion
+   error in debug mode, or returns *NULL* in release mode.
+
+   Requesting zero bytes returns a distinct non-*NULL* pointer if possible, as
+   if ``PyObject_AlignedAlloc(alignment, 1)`` had been called instead. The
+   memory will not have been initialized in any way.
+
+   The allocated memory block must be released by
+   :c:func:`PyObject_AlignedFree`.
+
+   .. versionadded:: 3.7
+
+
+.. c:function:: void PyObject_AlignedFree(void *p)
+
+   Frees the memory block pointed to by *p*, which must have been returned by a
+   previous call to :c:func:`PyObject_AlignedAlloc`.  Otherwise, or if
+   ``PyObject_AlignedFree(p)`` has been called before, undefined behavior
+   occurs.
+
+   If *p* is *NULL*, no operation is performed.
+
+   .. versionadded:: 3.7
+
+
 Customize Memory Allocators
 ===========================
 
 .. versionadded:: 3.4
 
-.. c:type:: PyMemAllocatorEx
+.. c:type:: PyMemAllocatorEx2
 
    Structure used to describe a memory block allocator. The structure has
    four fields:
 
-   +----------------------------------------------------------+---------------------------------------+
-   | Field                                                    | Meaning                               |
-   +==========================================================+=======================================+
-   | ``void *ctx``                                            | user context passed as first argument |
-   +----------------------------------------------------------+---------------------------------------+
-   | ``void* malloc(void *ctx, size_t size)``                 | allocate a memory block               |
-   +----------------------------------------------------------+---------------------------------------+
-   | ``void* calloc(void *ctx, size_t nelem, size_t elsize)`` | allocate a memory block initialized   |
-   |                                                          | with zeros                            |
-   +----------------------------------------------------------+---------------------------------------+
-   | ``void* realloc(void *ctx, void *ptr, size_t new_size)`` | allocate or resize a memory block     |
-   +----------------------------------------------------------+---------------------------------------+
-   | ``void free(void *ctx, void *ptr)``                      | free a memory block                   |
-   +----------------------------------------------------------+---------------------------------------+
+   +-------------------------------------------------------------------+---------------------------------------+
+   | Field                                                             | Meaning                               |
+   +===================================================================+=======================================+
+   | ``void *ctx``                                                     | user context passed as first argument |
+   +-------------------------------------------------------------------+---------------------------------------+
+   | ``void* malloc(void *ctx, size_t size)``                          | allocate a memory block               |
+   +-------------------------------------------------------------------+---------------------------------------+
+   | ``void* calloc(void *ctx, size_t nelem, size_t elsize)``          | allocate a memory block initialized   |
+   |                                                                   | with zeros                            |
+   +-------------------------------------------------------------------+---------------------------------------+
+   | ``void* realloc(void *ctx, void *ptr, size_t new_size)``          | allocate or resize a memory block     |
+   +-------------------------------------------------------------------+---------------------------------------+
+   | ``void free(void *ctx, void *ptr)``                               | free a memory block                   |
+   +-------------------------------------------------------------------+---------------------------------------+
+   | ``void* aligned_alloc(void *ctx, size_t alignment, size_t size)`` | allocate an aligned memory block      |
+   +-------------------------------------------------------------------+---------------------------------------+
+   | ``void aligned_free(void *ctx, void *ptr)``                       | free an aligned memory block          |
+   +-------------------------------------------------------------------+---------------------------------------+
+
+   .. versionchanged:: 3.7
+      The :c:type:`PyMemAllocatorEx` structure was renamed to
+      :c:type:`PyMemAllocatorEx2` and new ``aligned_alloc`` and
+      ``aligned_free`` fields were added.
 
    .. versionchanged:: 3.5
       The :c:type:`PyMemAllocator` structure was renamed to
@@ -387,12 +490,12 @@ Customize Memory Allocators
       * :c:func:`PyObject_Calloc`
       * :c:func:`PyObject_Free`
 
-.. c:function:: void PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+.. c:function:: void PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx2 *allocator)
 
    Get the memory block allocator of the specified domain.
 
 
-.. c:function:: void PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+.. c:function:: void PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx2 *allocator)
 
    Set the memory block allocator of the specified domain.
 

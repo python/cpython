@@ -3217,63 +3217,48 @@ test_incref_decref_API(PyObject *ob)
 static PyObject *
 test_pymem_alloc0(PyObject *self)
 {
-    void *ptr;
+#define TEST(ALLOC, FREE) \
+    do { \
+        void *ptr = ALLOC; \
+        if (ptr == NULL) { \
+            PyErr_SetString(PyExc_RuntimeError, #ALLOC " returns NULL"); \
+            return NULL; \
+        } \
+        FREE(ptr); \
+    } while (0)
 
-    ptr = PyMem_RawMalloc(0);
-    if (ptr == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyMem_RawMalloc(0) returns NULL");
-        return NULL;
-    }
-    PyMem_RawFree(ptr);
+    TEST(PyMem_RawMalloc(0), PyMem_RawFree);
+    TEST(PyMem_RawCalloc(0, 0), PyMem_RawFree);
+    TEST(PyMem_RawRealloc(NULL, 0), PyMem_RawFree);
+    TEST(PyMem_RawAlignedAlloc(16, 0), PyMem_RawAlignedFree);
 
-    ptr = PyMem_RawCalloc(0, 0);
-    if (ptr == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyMem_RawCalloc(0, 0) returns NULL");
-        return NULL;
-    }
-    PyMem_RawFree(ptr);
+    TEST(PyMem_Malloc(0), PyMem_Free);
+    TEST(PyMem_Calloc(0, 0), PyMem_Free);
+    TEST(PyMem_Realloc(NULL, 0), PyMem_Free);
+    TEST(PyMem_AlignedAlloc(16, 0), PyMem_AlignedFree);
 
-    ptr = PyMem_Malloc(0);
-    if (ptr == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyMem_Malloc(0) returns NULL");
-        return NULL;
-    }
-    PyMem_Free(ptr);
-
-    ptr = PyMem_Calloc(0, 0);
-    if (ptr == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyMem_Calloc(0, 0) returns NULL");
-        return NULL;
-    }
-    PyMem_Free(ptr);
-
-    ptr = PyObject_Malloc(0);
-    if (ptr == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyObject_Malloc(0) returns NULL");
-        return NULL;
-    }
-    PyObject_Free(ptr);
-
-    ptr = PyObject_Calloc(0, 0);
-    if (ptr == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyObject_Calloc(0, 0) returns NULL");
-        return NULL;
-    }
-    PyObject_Free(ptr);
+    TEST(PyObject_Malloc(0), PyObject_Free);
+    TEST(PyObject_Calloc(0, 0), PyObject_Free);
+    TEST(PyObject_Realloc(NULL, 0), PyObject_Free);
+    TEST(PyObject_AlignedAlloc(16, 0), PyObject_AlignedFree);
 
     Py_RETURN_NONE;
+
+#undef TEST
 }
 
 typedef struct {
-    PyMemAllocatorEx alloc;
-
+    PyMemAllocatorEx2 alloc;
+    void *ctx;
     size_t malloc_size;
     size_t calloc_nelem;
     size_t calloc_elsize;
     void *realloc_ptr;
     size_t realloc_new_size;
     void *free_ptr;
-    void *ctx;
+    size_t aligned_alloc_alignment;
+    size_t aligned_alloc_size;
+    void *aligned_free_ptr;
 } alloc_hook_t;
 
 static void* hook_malloc(void* ctx, size_t size)
@@ -3310,15 +3295,36 @@ static void hook_free(void *ctx, void *ptr)
     hook->alloc.free(hook->alloc.ctx, ptr);
 }
 
+
+static void* hook_aligned_alloc(void* ctx, size_t alignment, size_t size)
+{
+    alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
+    hook->aligned_alloc_alignment = alignment;
+    hook->aligned_alloc_size = size;
+    return hook->alloc.aligned_alloc(hook->alloc.ctx, alignment, size);
+}
+
+
+static void hook_aligned_free(void *ctx, void *ptr)
+{
+    alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
+    hook->free_ptr = ptr;
+    hook->alloc.aligned_free(hook->alloc.ctx, ptr);
+}
+
+
 static PyObject *
 test_setallocators(PyMemAllocatorDomain domain)
 {
     PyObject *res = NULL;
     const char *error_msg;
     alloc_hook_t hook;
-    PyMemAllocatorEx alloc;
+    PyMemAllocatorEx2 alloc;
     size_t size, size2, nelem, elsize;
     void *ptr, *ptr2;
+    size_t alignment;
 
     memset(&hook, 0, sizeof(hook));
 
@@ -3327,6 +3333,8 @@ test_setallocators(PyMemAllocatorDomain domain)
     alloc.calloc = &hook_calloc;
     alloc.realloc = &hook_realloc;
     alloc.free = &hook_free;
+    alloc.aligned_alloc = &hook_aligned_alloc;
+    alloc.aligned_free = &hook_aligned_free;
     PyMem_GetAllocator(domain, &hook.alloc);
     PyMem_SetAllocator(domain, &alloc);
 
@@ -3420,9 +3428,46 @@ test_setallocators(PyMemAllocatorDomain domain)
     case PYMEM_DOMAIN_OBJ: PyObject_Free(ptr); break;
     }
 
+
     CHECK_CTX("calloc free");
     if (hook.free_ptr != ptr) {
         error_msg = "calloc free invalid pointer";
+        goto fail;
+    }
+
+    /* aligned_alloc, aligned_free */
+    alignment = 8;
+    size = 66;
+    switch(domain)
+    {
+    case PYMEM_DOMAIN_RAW: ptr = PyMem_RawAlignedAlloc(alignment, size); break;
+    case PYMEM_DOMAIN_MEM: ptr = PyMem_AlignedAlloc(alignment, size); break;
+    case PYMEM_DOMAIN_OBJ: ptr = PyObject_AlignedAlloc(alignment, size); break;
+    default: ptr = NULL; break;
+    }
+
+    if (ptr == NULL) {
+        error_msg = "aligned_alloc failed";
+        goto fail;
+    }
+    CHECK_CTX("aligned_alloc");
+    if (hook.aligned_alloc_alignment != alignment
+       || hook.aligned_alloc_size != size) {
+        error_msg = "aigned_alloc invalid alignment or size";
+        goto fail;
+    }
+
+    switch(domain)
+    {
+    case PYMEM_DOMAIN_RAW: PyMem_RawAlignedFree(ptr); break;
+    case PYMEM_DOMAIN_MEM: PyMem_AlignedFree(ptr); break;
+    case PYMEM_DOMAIN_OBJ: PyObject_AlignedFree(ptr); break;
+    default: hook.free_ptr = (void*)((Py_uintptr_t)ptr + 1);
+    }
+
+    CHECK_CTX("aligned_free");
+    if (hook.free_ptr != ptr) {
+        error_msg = "aligned_free invalid pointer";
         goto fail;
     }
 
@@ -3462,9 +3507,9 @@ test_pyobject_setallocators(PyObject *self)
  * written by Victor Stinner. */
 static struct {
     int installed;
-    PyMemAllocatorEx raw;
-    PyMemAllocatorEx mem;
-    PyMemAllocatorEx obj;
+    PyMemAllocatorEx2 raw;
+    PyMemAllocatorEx2 mem;
+    PyMemAllocatorEx2 obj;
 } FmHook;
 
 static struct {
@@ -3487,7 +3532,7 @@ fm_nomemory(void)
 static void *
 hook_fmalloc(void *ctx, size_t size)
 {
-    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    PyMemAllocatorEx2 *alloc = (PyMemAllocatorEx2 *)ctx;
     if (fm_nomemory()) {
         return NULL;
     }
@@ -3497,7 +3542,7 @@ hook_fmalloc(void *ctx, size_t size)
 static void *
 hook_fcalloc(void *ctx, size_t nelem, size_t elsize)
 {
-    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    PyMemAllocatorEx2 *alloc = (PyMemAllocatorEx2 *)ctx;
     if (fm_nomemory()) {
         return NULL;
     }
@@ -3507,7 +3552,7 @@ hook_fcalloc(void *ctx, size_t nelem, size_t elsize)
 static void *
 hook_frealloc(void *ctx, void *ptr, size_t new_size)
 {
-    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    PyMemAllocatorEx2 *alloc = (PyMemAllocatorEx2 *)ctx;
     if (fm_nomemory()) {
         return NULL;
     }
@@ -3517,14 +3562,14 @@ hook_frealloc(void *ctx, void *ptr, size_t new_size)
 static void
 hook_ffree(void *ctx, void *ptr)
 {
-    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    PyMemAllocatorEx2 *alloc = (PyMemAllocatorEx2 *)ctx;
     alloc->free(alloc->ctx, ptr);
 }
 
 static void
 fm_setup_hooks(void)
 {
-    PyMemAllocatorEx alloc;
+    PyMemAllocatorEx2 alloc;
 
     if (FmHook.installed) {
         return;
@@ -4089,6 +4134,19 @@ pymem_api_misuse(PyObject *self, PyObject *args)
 }
 
 static PyObject*
+pymem_aligned_api_misuse(PyObject *self, PyObject *args)
+{
+    char *buffer;
+
+    /* Deliberate misusage of Python allocators: allococate with
+       PyMem_AlignedAlloc() but don't release with PyMem_AlignedFree(). */
+    buffer = PyMem_AlignedAlloc(8, 16);
+    PyMem_Free(buffer);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject*
 pymem_malloc_without_gil(PyObject *self, PyObject *args)
 {
     char *buffer;
@@ -4100,6 +4158,57 @@ pymem_malloc_without_gil(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
 
     PyMem_Free(buffer);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+test_pymem_alignedalloc(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    size_t alignments[] = {
+        sizeof(void*), sizeof(void*) * 2, sizeof(void*) * 4,
+        512, 1024, 2048, 4096,
+        1024 * 1024};
+    size_t sizes[] = {
+        0, 1, 3, 8,
+        127, 255, 511, 1023, 2047,
+        128, 256, 512, 1024, 2048,
+        129, 257, 513, 1025, 2049,
+        1024 * 1024};
+    size_t i, j;
+    void *ptr;
+
+    for (i=0; i < Py_ARRAY_LENGTH(alignments); i++) {
+        for (j=0; j < Py_ARRAY_LENGTH(alignments); j++) {
+            size_t alignment = alignments[i];
+            size_t size = sizes[j];
+
+#define TEST_ALLOC(ALLOC, FREE) \
+    do { \
+        ptr = ALLOC(alignment, size); \
+        if (ptr == NULL) { \
+            PyErr_NoMemory(); \
+            return NULL; \
+        } \
+        if (((uintptr_t)ptr & (alignment - 1)) != 0) { \
+            FREE(ptr); \
+            PyErr_Format(PyExc_RuntimeError, \
+                         #ALLOC ": alignment of %zu bytes with size %zu is not respected: " \
+                         "%p, remainder: %zu", \
+                         alignment, size, ptr, \
+                         ((uintptr_t)ptr & (alignment - 1))); \
+            return NULL; \
+        } \
+        FREE(ptr); \
+    } while (0)
+
+            TEST_ALLOC(PyMem_RawAlignedAlloc, PyMem_RawAlignedFree);
+            TEST_ALLOC(PyMem_AlignedAlloc, PyMem_AlignedFree);
+            TEST_ALLOC(PyObject_AlignedAlloc, PyObject_AlignedFree);
+
+#undef TEST_ALLOC
+        }
+    }
 
     Py_RETURN_NONE;
 }
@@ -4623,7 +4732,9 @@ static PyMethodDef TestMethods[] = {
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"pymem_buffer_overflow", pymem_buffer_overflow, METH_NOARGS},
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
+    {"pymem_aligned_api_misuse", pymem_aligned_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
+    {"test_pymem_alignedalloc", test_pymem_alignedalloc, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},

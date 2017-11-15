@@ -19,11 +19,15 @@ static void* _PyMem_DebugRawMalloc(void *ctx, size_t size);
 static void* _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize);
 static void* _PyMem_DebugRawRealloc(void *ctx, void *ptr, size_t size);
 static void _PyMem_DebugRawFree(void *ctx, void *ptr);
+static void* _PyMem_DebugRawAlignedAlloc(void *ctx, size_t alignment, size_t size);
+static void _PyMem_DebugRawAlignedFree(void *ctx, void *ptr);
 
 static void* _PyMem_DebugMalloc(void *ctx, size_t size);
 static void* _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize);
 static void* _PyMem_DebugRealloc(void *ctx, void *ptr, size_t size);
 static void _PyMem_DebugFree(void *ctx, void *p);
+static void* _PyMem_DebugAlignedAlloc(void *ctx, size_t alignment, size_t size);
+static void _PyMem_DebugAlignedFree(void *ctx, void *ptr);
 
 static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(char api_id, const void *p);
@@ -60,6 +64,8 @@ static void* _PyObject_Malloc(void *ctx, size_t size);
 static void* _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize);
 static void _PyObject_Free(void *ctx, void *p);
 static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
+static void * _PyObject_AlignedAlloc(void *ctx, size_t alignment, size_t size);
+static void _PyObject_AlignedFree(void *ctx, void *ptr);
 #endif
 
 
@@ -101,6 +107,71 @@ static void
 _PyMem_RawFree(void *ctx, void *ptr)
 {
     free(ptr);
+}
+
+
+static int
+check_alignment(size_t alignment)
+{
+    /* alignment must be a power of 2, multiple of sizeof(void*)
+       and greater than 0 */
+    return (alignment > 0
+            && (alignment % sizeof(void *)) == 0
+            && (alignment & (alignment - 1)) == 0);
+}
+
+
+static void *
+_PyMem_RawAlignedAlloc(void *ctx, size_t alignment, size_t size)
+{
+    /* Even if posix_memalign() fails with EINVAL is the alignment is invalid,
+       use an assertion in debug mode to be able to distinguish this case
+       from a memory allocation failure */
+    assert(check_alignment(alignment));
+
+    if (size == 0) {
+        size = 1;
+    }
+
+#ifdef MS_WINDOWS
+    /* check the alignment to return NULL, as posix_memalign() */
+    if (!check_alignment(alignment)) {
+        return NULL;
+    }
+
+    return _aligned_malloc(size, alignment);
+#else
+    /* Initialize ptr to NULL to detect bugs: see the comment below */
+    void *ptr = NULL;
+    int res;
+
+    res = posix_memalign(&ptr, alignment, size);
+    if (res) {
+        /* alignment is invalid (res == EINVAL) or the memory allocation
+           failed (res == ENOMEM) */
+        return NULL;
+    }
+    /* posix_memalign() must not allocate memory at 0 (aka "NULL") for non-zero
+       size. If it does, it's a bug in the C library. Use an assertion to
+       detect the bug early rather than crashing the application, or leak
+       memory if the caller handles NULL as an allocation failures and doesn't
+       release the newly allocated memory (allocated at NULL).
+
+       In the Python API, NULL means that the allocation failed, and
+       PyMem_RawAlignedFree(NULL) must do nothing. */
+    assert(ptr != NULL);
+    return ptr;
+#endif
+}
+
+static void
+_PyMem_RawAlignedFree(void *ctx, void *ptr)
+{
+#ifdef MS_WINDOWS
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif
 }
 
 
@@ -152,18 +223,24 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 #endif
 
 
-#define PYRAW_FUNCS _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree
+#define PYRAW_FUNCS \
+    _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree, \
+    _PyMem_RawAlignedAlloc, _PyMem_RawAlignedFree
 #ifdef WITH_PYMALLOC
-#  define PYOBJ_FUNCS _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free
+#  define PYOBJ_FUNCS \
+    _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free, \
+    _PyObject_AlignedAlloc, _PyObject_AlignedFree
 #else
 #  define PYOBJ_FUNCS PYRAW_FUNCS
 #endif
 #define PYMEM_FUNCS PYOBJ_FUNCS
 
 typedef struct {
-    /* We tag each block with an API ID in order to tag API violations */
+    /* We tag each block with an API ID in order to tag API violations:
+       lowercase letter. AlignedAlloc() converts the letter to uppercase
+       to distinguish with non-aligned allocations. */
     char api_id;
-    PyMemAllocatorEx alloc;
+    PyMemAllocatorEx2 alloc;
 } debug_alloc_api_t;
 static struct {
     debug_alloc_api_t raw;
@@ -176,13 +253,15 @@ static struct {
     };
 
 #define PYRAWDBG_FUNCS \
-    _PyMem_DebugRawMalloc, _PyMem_DebugRawCalloc, _PyMem_DebugRawRealloc, _PyMem_DebugRawFree
+    _PyMem_DebugRawMalloc, _PyMem_DebugRawCalloc, _PyMem_DebugRawRealloc, _PyMem_DebugRawFree, \
+    _PyMem_DebugRawAlignedAlloc, _PyMem_DebugRawAlignedFree
 #define PYDBG_FUNCS \
-    _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
+    _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree, \
+    _PyMem_DebugAlignedAlloc, _PyMem_DebugAlignedFree
 
 
 #define _PyMem_Raw _PyRuntime.mem.allocators.raw
-static const PyMemAllocatorEx _pymem_raw = {
+static const PyMemAllocatorEx2 _pymem_raw = {
 #ifdef Py_DEBUG
     &_PyMem_Debug.raw, PYRAWDBG_FUNCS
 #else
@@ -191,7 +270,7 @@ static const PyMemAllocatorEx _pymem_raw = {
     };
 
 #define _PyMem _PyRuntime.mem.allocators.mem
-static const PyMemAllocatorEx _pymem = {
+static const PyMemAllocatorEx2 _pymem = {
 #ifdef Py_DEBUG
     &_PyMem_Debug.mem, PYDBG_FUNCS
 #else
@@ -200,7 +279,7 @@ static const PyMemAllocatorEx _pymem = {
     };
 
 #define _PyObject _PyRuntime.mem.allocators.obj
-static const PyMemAllocatorEx _pyobject = {
+static const PyMemAllocatorEx2 _pyobject = {
 #ifdef Py_DEBUG
     &_PyMem_Debug.obj, PYDBG_FUNCS
 #else
@@ -235,7 +314,7 @@ _PyMem_SetupAllocators(const char *opt)
     }
     else if (strcmp(opt, "malloc") == 0 || strcmp(opt, "malloc_debug") == 0)
     {
-        PyMemAllocatorEx alloc = {NULL, PYRAW_FUNCS};
+        PyMemAllocatorEx2 alloc = {NULL, PYRAW_FUNCS};
 
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &alloc);
@@ -248,9 +327,9 @@ _PyMem_SetupAllocators(const char *opt)
     else if (strcmp(opt, "pymalloc") == 0
              || strcmp(opt, "pymalloc_debug") == 0)
     {
-        PyMemAllocatorEx raw_alloc = {NULL, PYRAW_FUNCS};
-        PyMemAllocatorEx mem_alloc = {NULL, PYMEM_FUNCS};
-        PyMemAllocatorEx obj_alloc = {NULL, PYOBJ_FUNCS};
+        PyMemAllocatorEx2 raw_alloc = {NULL, PYRAW_FUNCS};
+        PyMemAllocatorEx2 mem_alloc = {NULL, PYMEM_FUNCS};
+        PyMemAllocatorEx2 obj_alloc = {NULL, PYOBJ_FUNCS};
 
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &mem_alloc);
@@ -333,12 +412,14 @@ _PyMem_PymallocEnabled(void)
 void
 PyMem_SetupDebugHooks(void)
 {
-    PyMemAllocatorEx alloc;
+    PyMemAllocatorEx2 alloc;
 
     alloc.malloc = _PyMem_DebugRawMalloc;
     alloc.calloc = _PyMem_DebugRawCalloc;
     alloc.realloc = _PyMem_DebugRawRealloc;
     alloc.free = _PyMem_DebugRawFree;
+    alloc.aligned_alloc = _PyMem_DebugRawAlignedAlloc;
+    alloc.aligned_free = _PyMem_DebugRawAlignedFree;
 
     if (_PyMem_Raw.malloc != _PyMem_DebugRawMalloc) {
         alloc.ctx = &_PyMem_Debug.raw;
@@ -350,6 +431,8 @@ PyMem_SetupDebugHooks(void)
     alloc.calloc = _PyMem_DebugCalloc;
     alloc.realloc = _PyMem_DebugRealloc;
     alloc.free = _PyMem_DebugFree;
+    alloc.aligned_alloc = _PyMem_DebugAlignedAlloc;
+    alloc.aligned_free = _PyMem_DebugAlignedFree;
 
     if (_PyMem.malloc != _PyMem_DebugMalloc) {
         alloc.ctx = &_PyMem_Debug.mem;
@@ -365,7 +448,7 @@ PyMem_SetupDebugHooks(void)
 }
 
 void
-PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx2 *allocator)
 {
     switch(domain)
     {
@@ -379,11 +462,13 @@ PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
         allocator->calloc = NULL;
         allocator->realloc = NULL;
         allocator->free = NULL;
+        allocator->aligned_alloc = NULL;
+        allocator->aligned_free = NULL;
     }
 }
 
 void
-PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx2 *allocator)
 {
     switch(domain)
     {
@@ -444,6 +529,22 @@ PyMem_RawFree(void *ptr)
     _PyMem_Raw.free(_PyMem_Raw.ctx, ptr);
 }
 
+void*
+PyMem_RawAlignedAlloc(size_t alignment, size_t size)
+{
+    /* see PyMem_RawMalloc() */
+    if (size > (size_t)PY_SSIZE_T_MAX)
+        return NULL;
+    return _PyMem_Raw.aligned_alloc(_PyMem_Raw.ctx, alignment, size);
+}
+
+
+void
+PyMem_RawAlignedFree(void *ptr)
+{
+    _PyMem_Raw.aligned_free(_PyMem_Raw.ctx, ptr);
+}
+
 
 void *
 PyMem_Malloc(size_t size)
@@ -476,6 +577,24 @@ void
 PyMem_Free(void *ptr)
 {
     _PyMem.free(_PyMem.ctx, ptr);
+}
+
+
+void*
+PyMem_AlignedAlloc(size_t alignment, size_t size)
+{
+    /* see PyMem_RawMalloc() */
+    if (size > (size_t)PY_SSIZE_T_MAX) {
+        return NULL;
+    }
+    return _PyMem.aligned_alloc(_PyMem.ctx, alignment, size);
+}
+
+
+void
+PyMem_AlignedFree(void *ptr)
+{
+    _PyMem.aligned_free(_PyMem.ctx, ptr);
 }
 
 
@@ -538,6 +657,24 @@ void
 PyObject_Free(void *ptr)
 {
     _PyObject.free(_PyObject.ctx, ptr);
+}
+
+
+void*
+PyObject_AlignedAlloc(size_t alignment, size_t size)
+{
+    /* see PyMem_RawMalloc() */
+    if (size > (size_t)PY_SSIZE_T_MAX) {
+        return NULL;
+    }
+    return _PyObject.aligned_alloc(_PyObject.ctx, alignment, size);
+}
+
+
+void
+PyObject_AlignedFree(void *ptr)
+{
+    _PyObject.aligned_free(_PyObject.ctx, ptr);
 }
 
 
@@ -1318,6 +1455,48 @@ _PyObject_Realloc(void *ctx, void *ptr, size_t nbytes)
     return PyMem_RawRealloc(ptr, nbytes);
 }
 
+
+static void *
+_PyObject_AlignedAlloc(void *ctx, size_t alignment, size_t size)
+{
+    assert(check_alignment(alignment));
+
+    void *ptr;
+
+    if (alignment <= ALIGNMENT) {
+        if (!check_alignment(alignment)) {
+            return NULL;
+        }
+
+        if (pymalloc_alloc(ctx, &ptr, size)) {
+            _PyRuntime.mem.num_allocated_blocks++;
+            return ptr;
+        }
+    }
+
+    ptr = PyMem_RawAlignedAlloc(alignment, size);
+    if (ptr != NULL) {
+        _PyRuntime.mem.num_allocated_blocks++;
+    }
+    return ptr;
+}
+
+
+static void
+_PyObject_AlignedFree(void *ctx, void *ptr)
+{
+    /* PyObject_AlignedFree(NULL) has no effect */
+    if (ptr == NULL) {
+        return;
+    }
+
+    _PyRuntime.mem.num_allocated_blocks--;
+    if (!pymalloc_free(ctx, ptr)) {
+        /* pymalloc didn't allocate this address */
+        PyMem_RawAlignedFree(ptr);
+    }
+}
+
 #else   /* ! WITH_PYMALLOC */
 
 /*==========================================================================*/
@@ -1430,7 +1609,8 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     total = nbytes + 4 * SST;
 
     /* Layout: [SSSS IFFF CCCC...CCCC FFFF NNNN]
-     *          ^--- p    ^--- data   ^--- tail
+                ^--- p    ^--- data   ^--- tail
+
        S: nbytes stored as size_t
        I: API identifier (1 byte)
        F: Forbidden bytes (size_t - 1 bytes before, size_t bytes after)
@@ -1483,6 +1663,71 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
 }
 
 
+#define ALIGN_PAD(size, alignment) \
+    (_Py_SIZE_ROUND_UP(size, alignment) - size)
+
+static void *
+_PyMem_DebugRawAlignedAlloc(void *ctx, size_t alignment, size_t nbytes)
+{
+    debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
+    uint8_t *p;           /* base address of malloc'ed block */
+    uint8_t *head;
+    uint8_t *data;        /* pointer to data bytes */
+    uint8_t *tail;        /* p + 3*SST + nbytes == pointer to tail pad bytes */
+    size_t align_pad;
+    size_t total;       /* nbytes + 4*SST */
+
+    align_pad = ALIGN_PAD(3 * SST, alignment);
+    if (nbytes > (size_t)PY_SSIZE_T_MAX - 5 * SST - align_pad) {
+        /* overflow:  can't represent total as a Py_ssize_t */
+        return NULL;
+    }
+    /* align_pad + 3 * SST + nbytes + 2 * SST */
+    total = nbytes + align_pad + 5 * SST;
+
+    /* Layout: [PPPPPP AAAA SSSS IFFF CCCC...CCCC FFFF NNNN]
+                ^-- p  ^-- head       ^-- data    ^-- tail
+
+       P: alignment pad (align_pad bytes)
+       A: alignment stored as size_t
+       S: nbytes stored as size_t
+       I: API identifier (1 byte)
+       F: Forbidden bytes (size_t - 1 bytes before, size_t bytes after)
+       C: Clean bytes used later to store actual data
+       N: Serial number stored as size_t */
+
+    p = (uint8_t *)api->alloc.aligned_alloc(api->alloc.ctx, alignment, total);
+    if (p == NULL) {
+        return NULL;
+    }
+
+    bumpserialno();
+
+    if (align_pad) {
+        memset(p, FORBIDDENBYTE, align_pad);
+    }
+    head = p + align_pad;
+
+    /* at p, write alignment (SST bytes), write size (SST bytes),
+                   id (1 byte), pad (SST-1 bytes) */
+    write_size_t(head, alignment);
+    write_size_t(head + SST, nbytes);
+    head[2 * SST] = (uint8_t)Py_TOUPPER(api->api_id);
+    memset(head + 2 * SST + 1, FORBIDDENBYTE, SST-1);
+    data = head + 3*SST;
+
+    /* data */
+    memset(data, CLEANBYTE, nbytes);
+    tail = data + nbytes;
+
+    /* at tail, write pad (SST bytes) and serialno (SST bytes) */
+    memset(tail, FORBIDDENBYTE, SST);
+    write_size_t(tail + SST, _PyRuntime.mem.serialno);
+
+    return data;
+}
+
+
 /* The debug free first checks the 2*SST bytes on each end for sanity (in
    particular, that the FORBIDDENBYTEs with the api ID are still intact).
    Then fills the original bytes with DEADBYTE.
@@ -1505,6 +1750,31 @@ _PyMem_DebugRawFree(void *ctx, void *p)
     nbytes += 4 * SST;
     memset(q, DEADBYTE, nbytes);
     api->alloc.free(api->alloc.ctx, q);
+}
+
+
+static void
+_PyMem_DebugRawAlignedFree(void *ctx, void *p)
+{
+    debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
+    uint8_t *q = (uint8_t *)p - 3*SST;  /* address returned from malloc */
+    size_t alignment;
+    size_t nbytes;
+    size_t align_pad;
+
+    if (p == NULL) {
+        return;
+    }
+
+    _PyMem_DebugCheckAddress(Py_TOUPPER(api->api_id), p);
+    alignment = read_size_t(q);
+    align_pad = ALIGN_PAD(3 * SST, alignment);
+    nbytes = read_size_t(q + SST);
+    nbytes += align_pad + 5 * SST;
+
+    q -= align_pad;
+    memset(q, DEADBYTE, nbytes);
+    api->alloc.aligned_free(api->alloc.ctx, q);
 }
 
 
@@ -1621,11 +1891,27 @@ _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
 }
 
 
+static void *
+_PyMem_DebugAlignedAlloc(void *ctx, size_t alignment, size_t size)
+{
+    _PyMem_DebugCheckGIL();
+    return _PyMem_DebugRawAlignedAlloc(ctx, alignment, size);
+}
+
+
 static void
 _PyMem_DebugFree(void *ctx, void *ptr)
 {
     _PyMem_DebugCheckGIL();
     _PyMem_DebugRawFree(ctx, ptr);
+}
+
+
+static void
+_PyMem_DebugAlignedFree(void *ctx, void *ptr)
+{
+    _PyMem_DebugCheckGIL();
+    _PyMem_DebugRawAlignedFree(ctx, ptr);
 }
 
 

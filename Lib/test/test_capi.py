@@ -793,18 +793,25 @@ class PyMemDebugTests(unittest.TestCase):
         regex = re.compile(regex, flags=re.DOTALL)
         self.assertRegex(out, regex)
 
-    def test_api_misuse(self):
-        out = self.check('import _testcapi; _testcapi.pymem_api_misuse()')
-        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
+    def check_api_misuse(self, func, alloc_api, free_api):
+        out = self.check(f'import _testcapi; _testcapi.{func}()')
+        regex = (r"Debug memory block at address p={ptr}: API '{alloc_api}'\n"
                  r"    16 bytes originally requested\n"
                  r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
                  r"    The [0-9] pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
                  r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
                  r"    Data at p: cb cb cb .*\n"
                  r"\n"
-                 r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
-        regex = regex.format(ptr=self.PTR_REGEX)
+                 r"Fatal Python error: bad ID: Allocated using API '{alloc_api}',"
+                 r" verified using API '{free_api}'\n")
+        regex = regex.format(ptr=self.PTR_REGEX, alloc_api=alloc_api, free_api=free_api)
         self.assertRegex(out, regex)
+
+    def test_pymem_api_misuse(self):
+        self.check_api_misuse('pymem_api_misuse', 'm', 'r')
+
+    def test_pymem_aligned_api_misuse(self):
+        self.check_api_misuse('pymem_aligned_api_misuse', 'M', 'm')
 
     def check_malloc_without_gil(self, code):
         out = self.check(code)

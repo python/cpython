@@ -15,9 +15,9 @@ extern "C" {
 
 struct _pymem_runtime_state {
     struct _allocator_runtime_state {
-        PyMemAllocatorEx mem;
-        PyMemAllocatorEx obj;
-        PyMemAllocatorEx raw;
+        PyMemAllocatorEx2 mem;
+        PyMemAllocatorEx2 obj;
+        PyMemAllocatorEx2 raw;
     } allocators;
 #ifdef WITH_PYMALLOC
     /* Array of objects used to track chunks of memory (arenas). */
