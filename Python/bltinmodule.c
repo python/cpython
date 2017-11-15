@@ -2217,26 +2217,22 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
 
-/*[clinic input]
-sum as builtin_sum
-
-    iterable: object
-    start: object(c_default="NULL") = 0
-    /
-
+/*
 Return the sum of a 'start' value (default: 0) plus an iterable of numbers
 
 When the iterable is empty, return the start value.
 This function is intended specifically for use with numeric values and may
 reject non-numeric types.
-[clinic start generated code]*/
-
+*/
 static PyObject *
-builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
-/*[clinic end generated code: output=df758cec7d1d302f input=3b5b7a9d7611c73a]*/
+builtin_sum(PyObject *module, PyObject *args, PyObject *kwds)
 {
-    PyObject *result = start;
+    PyObject *iterable, *result = NULL;
     PyObject *temp, *item, *iter;
+    static char *kwlist[] = {"iterable", "start", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:sum", kwlist, &iterable, &result))
+        return NULL;
 
     iter = PyObject_GetIter(iterable);
     if (iter == NULL)
@@ -2392,6 +2388,16 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     Py_DECREF(iter);
     return result;
 }
+
+PyDoc_STRVAR(sum_doc,
+"sum($module, iterable, start=0, /)\n"
+"--\n"
+"\n"
+"Return the sum of a \'start\' value (default: 0) plus an iterable of numbers\n"
+"\n"
+"When the iterable is empty, return the start value.\n"
+"This function is intended specifically for use with numeric values and may\n"
+"reject non-numeric types.");
 
 
 /*[clinic input]
@@ -2682,7 +2688,7 @@ static PyMethodDef builtin_methods[] = {
     {"round",           (PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
-    BUILTIN_SUM_METHODDEF
+    {"sum",             (PyCFunction)builtin_sum,        METH_VARARGS | METH_KEYWORDS, sum_doc},
     {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
     {NULL,              NULL},
 };
