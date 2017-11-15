@@ -125,17 +125,32 @@ SyntaxError: invalid syntax
 
 From ast_for_call():
 
->>> def f(it, *varargs):
+>>> def f(it, *varargs, **kwargs):
 ...     return list(it)
 >>> L = range(10)
 >>> f(x for x in L)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> f(x for x in L, 1)
 Traceback (most recent call last):
-SyntaxError: Generator expression must be parenthesized if not sole argument
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L, y=1)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L, *[])
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L, **{})
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
+>>> f(L, x for x in L)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, y for y in L)
 Traceback (most recent call last):
-SyntaxError: Generator expression must be parenthesized if not sole argument
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L,)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
 >>> f((x for x in L), 1)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
