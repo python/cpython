@@ -23,12 +23,19 @@ Visual Studio 2010 Premium Edition
 Installing Service Pack 1 for Visual Studio 2010 is highly recommended
 to avoid LNK1123 errors.
 
-All you need to do to build is open the solution "pcbuild.sln" in Visual
-Studio, select the desired combination of configuration and platform,
+To build modules that depend on external libraries, you need to download
+(and, for some of them, build) those first. It's thus recommended to build
+from the command line once as specified below under "Getting External Sources"
+as that does this automatically.
+
+Then, to continue development, you can open the solution "pcbuild.sln" in
+Visual Studio, select the desired combination of configuration and platform,
 then build with "Build Solution" or the F7 keyboard shortcut.  You can
 also build from the command line using the "build.bat" script in this
 directory.  The solution is configured to build the projects in the
 correct order.
+
+To build an installer package, refer to the README in the Tools/msi folder.
 
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into this
