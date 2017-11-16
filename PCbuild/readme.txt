@@ -39,6 +39,8 @@ line using the "build.bat" script in this directory; see below for
 details.  The solution is configured to build the projects in the correct
 order.
 
+To build an installer package, refer to the README in the Tools/msi folder.
+
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
 win32 sub-directory.  The x64 platform is used for building 64-bit AMD64
