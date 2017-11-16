@@ -1046,7 +1046,7 @@ def gzip_encode(data):
 # in the HTTP header, as described in RFC 1952
 #
 # @param data The encoded data
-# @keyparam max_decode Maximum bytes to decode (20MB default), use negative
+# @keyparam max_decode Maximum bytes to decode (20 MiB default), use negative
 #    values for unlimited decoding
 # @return the unencoded data
 # @raises ValueError if data is not correctly coded.

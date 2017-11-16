@@ -44,7 +44,7 @@
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
     <ExternalsDir>$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals\`))</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.14.2.0\</sqlite3Dir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.21.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
     <opensslDir>$(ExternalsDir)openssl-1.1.0f\</opensslDir>
@@ -73,14 +73,13 @@
     possible version). Since we limit WINVER to Windows 7 anyway, it doesn't really
     matter which WinSDK version we use.
     -->
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+    <_RegistryVersion>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
+    <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\WOW6432Node\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
+    <DefaultWindowsSDKVersion>10.0.16299.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">

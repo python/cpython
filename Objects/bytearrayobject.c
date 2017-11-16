@@ -104,6 +104,26 @@ PyByteArray_FromObject(PyObject *input)
                                         input, NULL);
 }
 
+static PyObject *
+_PyByteArray_FromBufferObject(PyObject *obj)
+{
+    PyObject *result;
+    Py_buffer view;
+
+    if (PyObject_GetBuffer(obj, &view, PyBUF_FULL_RO) < 0) {
+        return NULL;
+    }
+    result = PyByteArray_FromStringAndSize(NULL, view.len);
+    if (result != NULL &&
+        PyBuffer_ToContiguous(PyByteArray_AS_STRING(result),
+                              &view, view.len, 'C') < 0)
+    {
+        Py_CLEAR(result);
+    }
+    PyBuffer_Release(&view);
+    return result;
+}
+
 PyObject *
 PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
 {
@@ -536,7 +556,8 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
     if (values == (PyObject *)self) {
         /* Make a copy and call this function recursively */
         int err;
-        values = PyByteArray_FromObject(values);
+        values = PyByteArray_FromStringAndSize(PyByteArray_AS_STRING(values),
+                                               PyByteArray_GET_SIZE(values));
         if (values == NULL)
             return -1;
         err = bytearray_setslice(self, lo, hi, values);
@@ -991,8 +1012,6 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
     Py_buffer self_bytes, other_bytes;
-    PyObject *res;
-    Py_ssize_t minsize;
     int cmp, rc;
 
     /* Bytes can be compared to anything that supports the (binary)
@@ -1028,38 +1047,25 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 
     if (self_size != other_size && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the objects differ */
-        cmp = (op == Py_NE);
+        PyBuffer_Release(&self_bytes);
+        PyBuffer_Release(&other_bytes);
+        return PyBool_FromLong((op == Py_NE));
     }
     else {
-        minsize = self_size;
-        if (other_size < minsize)
-            minsize = other_size;
-
-        cmp = memcmp(self_bytes.buf, other_bytes.buf, minsize);
+        cmp = memcmp(self_bytes.buf, other_bytes.buf,
+                     Py_MIN(self_size, other_size));
         /* In ISO C, memcmp() guarantees to use unsigned bytes! */
 
-        if (cmp == 0) {
-            if (self_size < other_size)
-                cmp = -1;
-            else if (self_size > other_size)
-                cmp = 1;
+        PyBuffer_Release(&self_bytes);
+        PyBuffer_Release(&other_bytes);
+
+        if (cmp != 0) {
+            Py_RETURN_RICHCOMPARE(cmp, 0, op);
         }
 
-        switch (op) {
-        case Py_LT: cmp = cmp <  0; break;
-        case Py_LE: cmp = cmp <= 0; break;
-        case Py_EQ: cmp = cmp == 0; break;
-        case Py_NE: cmp = cmp != 0; break;
-        case Py_GT: cmp = cmp >  0; break;
-        case Py_GE: cmp = cmp >= 0; break;
-        }
+        Py_RETURN_RICHCOMPARE(self_size, other_size, op);
     }
 
-    res = cmp ? Py_True : Py_False;
-    PyBuffer_Release(&self_bytes);
-    PyBuffer_Release(&other_bytes);
-    Py_INCREF(res);
-    return res;
 }
 
 static void
@@ -1387,19 +1393,19 @@ Partition the bytearray into three parts using the given separator.
 
 This will search for the separator sep in the bytearray. If the separator is
 found, returns a 3-tuple containing the part before the separator, the
-separator itself, and the part after it.
+separator itself, and the part after it as new bytearray objects.
 
-If the separator is not found, returns a 3-tuple containing the original
-bytearray object and two empty bytearray objects.
+If the separator is not found, returns a 3-tuple containing the copy of the
+original bytearray object and two empty bytearray objects.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_partition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=45d2525ddd35f957 input=86f89223892b70b5]*/
+/*[clinic end generated code: output=45d2525ddd35f957 input=8f644749ee4fc83a]*/
 {
     PyObject *bytesep, *result;
 
-    bytesep = PyByteArray_FromObject(sep);
+    bytesep = _PyByteArray_FromBufferObject(sep);
     if (! bytesep)
         return NULL;
 
@@ -1420,23 +1426,24 @@ bytearray.rpartition
     sep: object
     /
 
-Partition the bytes into three parts using the given separator.
+Partition the bytearray into three parts using the given separator.
 
-This will search for the separator sep in the bytearray, starting and the end.
+This will search for the separator sep in the bytearray, starting at the end.
 If the separator is found, returns a 3-tuple containing the part before the
-separator, the separator itself, and the part after it.
+separator, the separator itself, and the part after it as new bytearray
+objects.
 
 If the separator is not found, returns a 3-tuple containing two empty bytearray
-objects and the original bytearray object.
+objects and the copy of the original bytearray object.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_rpartition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=440de3c9426115e8 input=5f4094f2de87c8f3]*/
+/*[clinic end generated code: output=440de3c9426115e8 input=7e3df3e6cb8fa0ac]*/
 {
     PyObject *bytesep, *result;
 
-    bytesep = PyByteArray_FromObject(sep);
+    bytesep = _PyByteArray_FromBufferObject(sep);
     if (! bytesep)
         return NULL;
 
@@ -1799,7 +1806,8 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1809,7 +1817,7 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1840,7 +1848,8 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1850,7 +1859,7 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1878,7 +1887,8 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
 {
     Py_ssize_t right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1888,7 +1898,7 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);

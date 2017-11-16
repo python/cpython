@@ -30,9 +30,20 @@ typedef struct {
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
     char *allocator;
+    int faulthandler;
+    int tracemalloc;        /* Number of saved frames, 0=don't trace */
+    int importtime;         /* -X importtime */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT {0, -1, 0, 0, NULL}
+#define _PyCoreConfig_INIT \
+    {.ignore_environment = 0, \
+     .use_hash_seed = -1, \
+     .hash_seed = 0, \
+     ._disable_importlib = 0, \
+     .allocator = NULL, \
+     .faulthandler = 0, \
+     .tracemalloc = 0, \
+     .importtime = 0}
 
 /* Placeholders while working on the new configuration API
  *
@@ -123,6 +134,21 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
 #else
+
+typedef struct _err_stackitem {
+    /* This struct represents an entry on the exception stack, which is a
+     * per-coroutine state. (Coroutine in the computer science sense,
+     * including the thread and generators).
+     * This ensures that the exception state is not impacted by "yields"
+     * from an except handler.
+     */
+    PyObject *exc_type, *exc_value, *exc_traceback;
+
+    struct _err_stackitem *previous_item;
+
+} _PyErr_StackItem;
+
+
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -136,6 +162,8 @@ typedef struct _ts {
                         to handle the runtime error. */
     char recursion_critical; /* The current calls must not cause
                                 a stack overflow. */
+    int stackcheck_counter;
+
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
@@ -147,13 +175,19 @@ typedef struct _ts {
     PyObject *c_profileobj;
     PyObject *c_traceobj;
 
+    /* The exception currently being raised */
     PyObject *curexc_type;
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_traceback;
+    /* The exception currently being handled, if no coroutines/generators
+     * are present. Always last element on the stack referred to be exc_info.
+     */
+    _PyErr_StackItem exc_state;
+
+    /* Pointer to the top of the stack of the exceptions currently
+     * being handled */
+    _PyErr_StackItem *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
 

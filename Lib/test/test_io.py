@@ -168,6 +168,22 @@ class PyMisbehavedRawIO(MisbehavedRawIO, pyio.RawIOBase):
     pass
 
 
+class SlowFlushRawIO(MockRawIO):
+    def __init__(self):
+        super().__init__()
+        self.in_flush = threading.Event()
+
+    def flush(self):
+        self.in_flush.set()
+        time.sleep(0.25)
+
+class CSlowFlushRawIO(SlowFlushRawIO, io.RawIOBase):
+    pass
+
+class PySlowFlushRawIO(SlowFlushRawIO, pyio.RawIOBase):
+    pass
+
+
 class CloseFailureIO(MockRawIO):
     closed = 0
 
@@ -564,7 +580,7 @@ class IOTest(unittest.TestCase):
 
     def test_large_file_ops(self):
         # On Windows and Mac OSX this test comsumes large resources; It takes
-        # a long time to build the >2GB file and takes >2GB of disk space
+        # a long time to build the >2 GiB file and takes >2 GiB of disk space
         # therefore the resource must be enabled to run this test.
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
             support.requires(
@@ -736,7 +752,7 @@ class IOTest(unittest.TestCase):
         if sys.maxsize > 0x7FFFFFFF:
             self.skipTest("test can only run in a 32-bit address space")
         if support.real_max_memuse < support._2G:
-            self.skipTest("test requires at least 2GB of memory")
+            self.skipTest("test requires at least 2 GiB of memory")
         with self.open(zero, "rb", buffering=0) as f:
             self.assertRaises(OverflowError, f.read)
         with self.open(zero, "rb") as f:
@@ -1421,7 +1437,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
-        # than 2GB RAM and a 64-bit kernel.
+        # than 2 GiB RAM and a 64-bit kernel.
         if sys.maxsize > 0x7FFFFFFF:
             rawio = self.MockRawIO()
             bufio = self.tp(rawio)
@@ -1726,6 +1742,18 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, b.close) # exception not swallowed
         self.assertTrue(b.closed)
 
+    def test_slow_close_from_thread(self):
+        # Issue #31976
+        rawio = self.SlowFlushRawIO()
+        bufio = self.tp(rawio, 8)
+        t = threading.Thread(target=bufio.close)
+        t.start()
+        rawio.in_flush.wait()
+        self.assertRaises(ValueError, bufio.write, b'spam')
+        self.assertTrue(bufio.closed)
+        t.join()
+
+
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
@@ -1733,7 +1761,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
-        # than 2GB RAM and a 64-bit kernel.
+        # than 2 GiB RAM and a 64-bit kernel.
         if sys.maxsize > 0x7FFFFFFF:
             rawio = self.MockRawIO()
             bufio = self.tp(rawio)
@@ -2206,7 +2234,7 @@ class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
-        # than 2GB RAM and a 64-bit kernel.
+        # than 2 GiB RAM and a 64-bit kernel.
         if sys.maxsize > 0x7FFFFFFF:
             rawio = self.MockRawIO()
             bufio = self.tp(rawio)
@@ -4085,7 +4113,8 @@ def load_tests(*args):
     # Put the namespaces of the IO module we are testing and some useful mock
     # classes in the __dict__ of each test.
     mocks = (MockRawIO, MisbehavedRawIO, MockFileIO, CloseFailureIO,
-             MockNonBlockWriterIO, MockUnseekableIO, MockRawIOWithoutRead)
+             MockNonBlockWriterIO, MockUnseekableIO, MockRawIOWithoutRead,
+             SlowFlushRawIO)
     all_members = io.__all__ + ["IncrementalNewlineDecoder"]
     c_io_ns = {name : getattr(io, name) for name in all_members}
     py_io_ns = {name : getattr(pyio, name) for name in all_members}

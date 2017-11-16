@@ -29,9 +29,9 @@ def text_open(fn, mode, encoding=None):
         return open(fn, mode)
 
 def get_file_sizes():
-    for s in ['20 KB', '400 KB', '10 MB']:
+    for s in ['20 KiB', '400 KiB', '10 MiB']:
         size, unit = s.split()
-        size = int(size) * {'KB': 1024, 'MB': 1024 ** 2}[unit]
+        size = int(size) * {'KiB': 1024, 'MiB': 1024 ** 2}[unit]
         yield s.replace(' ', ''), size
 
 def get_binary_files():
@@ -273,7 +273,7 @@ def run_all_tests(options):
 
     def print_results(size, n, real, cpu):
         bw = n * float(size) / 1024 ** 2 / real
-        bw = ("%4d MB/s" if bw > 100 else "%.3g MB/s") % bw
+        bw = ("%4d MiB/s" if bw > 100 else "%.3g MiB/s") % bw
         out.write(bw.rjust(12) + "\n")
         if cpu < 0.90 * real:
             out.write("   warning: test above used only %d%% CPU, "

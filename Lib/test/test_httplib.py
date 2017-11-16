@@ -497,7 +497,7 @@ class BasicTest(TestCase):
 
     def test_bad_status_repr(self):
         exc = client.BadStatusLine('')
-        self.assertEqual(repr(exc), '''BadStatusLine("\'\'",)''')
+        self.assertEqual(repr(exc), '''BadStatusLine("''")''')
 
     def test_partial_reads(self):
         # if we have Content-Length, HTTPResponse knows when to close itself,
@@ -754,6 +754,29 @@ class BasicTest(TestCase):
         sock = FakeSocket("")
         conn.sock = sock
         conn.request('GET', '/foo', body(), {'Content-Length': '11'})
+        self.assertEqual(sock.data, expected)
+
+    def test_blocksize_request(self):
+        """Check that request() respects the configured block size."""
+        blocksize = 8  # For easy debugging.
+        conn = client.HTTPConnection('example.com', blocksize=blocksize)
+        sock = FakeSocket(None)
+        conn.sock = sock
+        expected = b"a" * blocksize + b"b"
+        conn.request("PUT", "/", io.BytesIO(expected), {"Content-Length": "9"})
+        self.assertEqual(sock.sendall_calls, 3)
+        body = sock.data.split(b"\r\n\r\n", 1)[1]
+        self.assertEqual(body, expected)
+
+    def test_blocksize_send(self):
+        """Check that send() respects the configured block size."""
+        blocksize = 8  # For easy debugging.
+        conn = client.HTTPConnection('example.com', blocksize=blocksize)
+        sock = FakeSocket(None)
+        conn.sock = sock
+        expected = b"a" * blocksize + b"b"
+        conn.send(io.BytesIO(expected))
+        self.assertEqual(sock.sendall_calls, 2)
         self.assertEqual(sock.data, expected)
 
     def test_send_type_error(self):
@@ -1354,6 +1377,7 @@ class OfflineTest(TestCase):
             'UNSUPPORTED_MEDIA_TYPE',
             'REQUESTED_RANGE_NOT_SATISFIABLE',
             'EXPECTATION_FAILED',
+            'MISDIRECTED_REQUEST',
             'UNPROCESSABLE_ENTITY',
             'LOCKED',
             'FAILED_DEPENDENCY',

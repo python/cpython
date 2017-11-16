@@ -621,14 +621,14 @@ then
 		for as_dir in $PATH
 		do
 			IFS=$as_save_IFS
-			if test -x $as_dir/gcc; then
+			if test -x "${as_dir}/gcc"; then
 				if test -z "${found_gcc}"; then
-					found_gcc=$as_dir/gcc
+					found_gcc="${as_dir}/gcc"
 				fi
 			fi
-			if test -x $as_dir/clang; then
+			if test -x "${as_dir}/clang"; then
 				if test -z "${found_clang}"; then
-					found_clang=$as_dir/clang
+					found_clang="${as_dir}/clang"
 				fi
 			fi
 		done
@@ -2263,6 +2263,25 @@ if test "$have_pthread_t" = yes ; then
 #endif
   ])
 fi
+
+# Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
+# This checking will be unnecessary after removing deprecated TLS API.
+AC_CHECK_SIZEOF(pthread_key_t, [], [[#include <pthread.h>]])
+AC_MSG_CHECKING(whether pthread_key_t is compatible with int)
+if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
+    [ac_pthread_key_t_is_arithmetic_type=yes],
+    [ac_pthread_key_t_is_arithmetic_type=no]
+  )
+  AC_MSG_RESULT($ac_pthread_key_t_is_arithmetic_type)
+  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+    AC_DEFINE(PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT, 1,
+              [Define if pthread_key_t is compatible with int.])
+  fi
+else
+  AC_MSG_RESULT(no)
+fi
 CC="$ac_save_cc"
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
@@ -2658,12 +2677,21 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
-# only check for sem_init if thread support is requested
-if test "$with_threads" = "yes" -o -z "$with_threads"; then
-    AC_SEARCH_LIBS(sem_init, pthread rt posix4) # 'Real Time' functions on Solaris
-						# posix4 on Solaris 2.6
-						# pthread (first!) on Linux
-fi
+AC_MSG_CHECKING(for uuid_generate_time_safe)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
+#ifndef uuid_generate_time_safe
+void *x = uuid_generate_time_safe
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# 'Real Time' functions on Solaris
+# posix4 on Solaris 2.6
+# pthread (first!) on Linux
+AC_SEARCH_LIBS(sem_init, pthread rt posix4)
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
@@ -2907,9 +2935,6 @@ then
     fi
     posix_threads=yes
 else
-    if test ! -z "$with_threads" -a -d "$with_threads"
-    then LDFLAGS="$LDFLAGS -L$with_threads"
-    fi
     if test ! -z "$withval" -a -d "$withval"
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
@@ -3024,7 +3049,7 @@ if test "$posix_threads" = "yes"; then
             [Define if pthread_sigmask() does not work on your system.])
             ;;
         esac])
-      AC_CHECK_FUNCS(pthread_atfork)
+      AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
 
@@ -4936,9 +4961,16 @@ then
   [Define if mvwdelch in curses.h is an expression.])
 fi
 
+# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+# structs since version 5.7.  If the macro is defined as zero before including
+# [n]curses.h, ncurses will expose fields of the structs regardless of the
+# configuration.
 AC_MSG_CHECKING(whether WINDOW has _flags)
 AC_CACHE_VAL(ac_cv_window_has_flags,
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+  #define NCURSES_OPAQUE 0
+  #include <curses.h>
+]], [[
   WINDOW *w;
   w->_flags = 0;
 ]])],
@@ -4952,6 +4984,17 @@ then
   AC_DEFINE(WINDOW_HAS_FLAGS, 1,
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
+
+AC_MSG_CHECKING(for is_pad)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef is_pad
+void *x=is_pad
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_IS_PAD, 1, Define if you have the 'is_pad' function or macro.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
 
 AC_MSG_CHECKING(for is_term_resized)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=is_term_resized]])],
@@ -4970,6 +5013,83 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resize_ter
 AC_MSG_CHECKING(for resizeterm)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resizeterm]])],
   [AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, Define if you have the 'resizeterm' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for immedok)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef immedok
+void *x=immedok
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_IMMEDOK, 1, Define if you have the 'immedok' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for syncok)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef syncok
+void *x=syncok
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_SYNCOK, 1, Define if you have the 'syncok' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for wchgat)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef wchgat
+void *x=wchgat
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_WCHGAT, 1, Define if you have the 'wchgat' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for filter)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef filter
+void *x=filter
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_FILTER, 1, Define if you have the 'filter' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for has_key)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef has_key
+void *x=has_key
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_HAS_KEY, 1, Define if you have the 'has_key' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for typeahead)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef typeahead
+void *x=typeahead
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_TYPEAHEAD, 1, Define if you have the 'typeahead' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for use_env)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef use_env
+void *x=use_env
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_USE_ENV, 1, Define if you have the 'use_env' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )

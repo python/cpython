@@ -1,0 +1,2 @@
+Standard repr() of BaseException with a single argument no longer contains
+redundant trailing comma.
