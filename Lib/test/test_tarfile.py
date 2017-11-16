@@ -1265,7 +1265,6 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         self.assertEqual(t.name, cmp_path or path.replace(os.sep, "/"))
 
 
-    @support.skip_unless_symlink
     def test_extractall_symlinks(self):
         # Test if extractall works properly when tarfile contains symlinks
         tempdir = os.path.join(TEMPDIR, "testsymlinks")

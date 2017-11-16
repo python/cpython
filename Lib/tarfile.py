@@ -2198,10 +2198,14 @@ class TarFile(object):
         try:
             # For systems that support symbolic and hard links.
             if tarinfo.issym():
+                if os.path.lexists(targetpath):
+                    os.unlink(targetpath)
                 os.symlink(tarinfo.linkname, targetpath)
             else:
                 # See extract().
                 if os.path.exists(tarinfo._link_target):
+                    if os.path.lexists(targetpath):
+                        os.unlink(targetpath)
                     os.link(tarinfo._link_target, targetpath)
                 else:
                     self._extract_member(self._find_link_target(tarinfo),
