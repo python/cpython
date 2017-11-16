@@ -824,11 +824,17 @@ class GrammarTests(unittest.TestCase):
         test_inner()
 
     def test_return(self):
-        # 'return' [testlist]
+        # 'return' [testlist_star_expr]
         def g1(): return
         def g2(): return 1
+        def g3():
+            z = [2, 3]
+            return 1, *z
+
         g1()
         x = g2()
+        y = g3()
+        self.assertEqual(y, (1, 2, 3), "unparenthesized star expr return")
         check_syntax_error(self, "class foo:return 1")
 
     def test_break_in_finally(self):
