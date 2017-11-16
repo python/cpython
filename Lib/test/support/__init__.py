@@ -1910,7 +1910,7 @@ def _match_test(test):
         return True
     if match_tests != _match_tests:
         match_tests_re = '|'.join(map(fnmatch.translate, match_tests))
-        _match_test1 = re.compile(match_tests_re, re.I).match
+        _match_test1 = re.compile(match_tests_re).match
         _match_tests = match_tests[:]
     test_id = test.id()
     if _match_test1(test_id):
