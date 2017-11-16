@@ -280,6 +280,9 @@ crypt
 Added support for the Blowfish method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
+The :func:`~crypt.mksalt` function now allows to specify the number of rounds
+for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
+
 dis
 ---
 
