@@ -1,0 +1,4 @@
+Integers that fit in a signed 32-bit integer will be now pickled with
+protocol 0 using the INT opcode.  This will decrease the size of a pickle,
+speed up pickling and unpickling, and make these integers be unpickled as
+int instances in Python 2.

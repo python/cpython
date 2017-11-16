@@ -1821,7 +1821,7 @@ class AbstractPickleTests(unittest.TestCase):
             with self.subTest(proto=proto):
                 s = self.dumps(x, proto)
                 if proto < 1:
-                    self.assertIn(b'\nL64206', s)  # LONG
+                    self.assertIn(b'\nI64206', s)  # INT
                 else:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
                 self.assertEqual(opcode_in_pickle(pickle.NEWOBJ, s),
@@ -1837,7 +1837,7 @@ class AbstractPickleTests(unittest.TestCase):
             with self.subTest(proto=proto):
                 s = self.dumps(x, proto)
                 if proto < 1:
-                    self.assertIn(b'\nL64206', s)  # LONG
+                    self.assertIn(b'\nI64206', s)  # INT
                 elif proto < 2:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
                 elif proto < 4:
@@ -1857,7 +1857,7 @@ class AbstractPickleTests(unittest.TestCase):
             with self.subTest(proto=proto):
                 s = self.dumps(x, proto)
                 if proto < 1:
-                    self.assertIn(b'\nL64206', s)  # LONG
+                    self.assertIn(b'\nI64206', s)  # INT
                 elif proto < 2:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
                 elif proto < 4:
