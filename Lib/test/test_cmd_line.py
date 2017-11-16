@@ -2,14 +2,15 @@
 # Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
-import test.support, unittest
 import os
-import sys
 import subprocess
+import sys
 import tempfile
-from test.support import script_helper, is_android
+import unittest
+from test import support
 from test.support.script_helper import (
-    spawn_python, kill_python, assert_python_ok, assert_python_failure
+    spawn_python, kill_python, assert_python_ok, assert_python_failure,
+    interpreter_requires_environment
 )
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -132,11 +133,11 @@ class CmdLineTest(unittest.TestCase):
         # All good if execution is successful
         assert_python_ok('-c', 'pass')
 
-    @unittest.skipUnless(test.support.FS_NONASCII, 'need support.FS_NONASCII')
+    @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
     def test_non_ascii(self):
         # Test handling of non-ascii data
         command = ("assert(ord(%r) == %s)"
-                   % (test.support.FS_NONASCII, ord(test.support.FS_NONASCII)))
+                   % (support.FS_NONASCII, ord(support.FS_NONASCII)))
         assert_python_ok('-c', command)
 
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
@@ -179,7 +180,7 @@ class CmdLineTest(unittest.TestCase):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
     @unittest.skipUnless((sys.platform == 'darwin' or
-                is_android), 'test specific to Mac OS X and Android')
+                support.is_android), 'test specific to Mac OS X and Android')
     def test_osx_android_utf8(self):
         def check_output(text):
             decoded = text.decode('utf-8', 'surrogateescape')
@@ -385,7 +386,7 @@ class CmdLineTest(unittest.TestCase):
             stderr=subprocess.PIPE,
             preexec_fn=preexec)
         out, err = p.communicate()
-        self.assertEqual(test.support.strip_python_stderr(err), b'')
+        self.assertEqual(support.strip_python_stderr(err), b'')
         self.assertEqual(p.returncode, 42)
 
     def test_no_stdin(self):
@@ -433,8 +434,8 @@ class CmdLineTest(unittest.TestCase):
         # Issue #15001: PyRun_SimpleFileExFlags() did crash because it kept a
         # borrowed reference to the dict of __main__ module and later modify
         # the dict whereas the module was destroyed
-        filename = test.support.TESTFN
-        self.addCleanup(test.support.unlink, filename)
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
         with open(filename, "w") as script:
             print("import sys", file=script)
             print("del sys.modules['__main__']", file=script)
@@ -458,7 +459,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
         self.assertEqual(b'', out)
 
-    @unittest.skipIf(script_helper.interpreter_requires_environment(),
+    @unittest.skipIf(interpreter_requires_environment(),
                      'Cannot run -I tests when PYTHON env vars are required.')
     def test_isolatedmode(self):
         self.verify_valid_flag('-I')
@@ -469,7 +470,7 @@ class CmdLineTest(unittest.TestCase):
             # dummyvar to prevent extraneous -E
             dummyvar="")
         self.assertEqual(out.strip(), b'1 1 1')
-        with test.support.temp_cwd() as tmpdir:
+        with support.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
             with open(fake, "w") as f:
@@ -506,6 +507,46 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
+    def run_xdev(self, code, check_exitcode=True):
+        env = dict(os.environ)
+        env.pop('PYTHONWARNINGS', None)
+        # Force malloc() to disable the debug hooks which are enabled
+        # by default for Python compiled in debug mode
+        env['PYTHONMALLOC'] = 'malloc'
+
+        args = (sys.executable, '-X', 'dev', '-c', code)
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        if check_exitcode:
+            self.assertEqual(proc.returncode, 0, proc)
+        return proc.stdout.rstrip()
+
+    def test_xdev(self):
+        out = self.run_xdev("import sys; print(sys.warnoptions)")
+        self.assertEqual(out, "['default']")
+
+        try:
+            import _testcapi
+        except ImportError:
+            pass
+        else:
+            code = "import _testcapi; _testcapi.pymem_api_misuse()"
+            with support.SuppressCrashReport():
+                out = self.run_xdev(code, check_exitcode=False)
+            self.assertIn("Debug memory block at address p=", out)
+
+        try:
+            import faulthandler
+        except ImportError:
+            pass
+        else:
+            code = "import faulthandler; print(faulthandler.is_enabled())"
+            out = self.run_xdev(code)
+            self.assertEqual(out, "True")
+
 class IgnoreEnvironmentTest(unittest.TestCase):
 
     def run_ignoring_vars(self, predicate, **env_vars):
@@ -541,8 +582,8 @@ class IgnoreEnvironmentTest(unittest.TestCase):
 
 
 def test_main():
-    test.support.run_unittest(CmdLineTest, IgnoreEnvironmentTest)
-    test.support.reap_children()
+    support.run_unittest(CmdLineTest, IgnoreEnvironmentTest)
+    support.reap_children()
 
 if __name__ == "__main__":
     test_main()
