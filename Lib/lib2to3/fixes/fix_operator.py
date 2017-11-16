@@ -2,8 +2,8 @@
 
 operator.isCallable(obj)       -> hasattr(obj, '__call__')
 operator.sequenceIncludes(obj) -> operator.contains(obj)
-operator.isSequenceType(obj)   -> isinstance(obj, collections.Sequence)
-operator.isMappingType(obj)    -> isinstance(obj, collections.Mapping)
+operator.isSequenceType(obj)   -> isinstance(obj, collections.abc.Sequence)
+operator.isMappingType(obj)    -> isinstance(obj, collections.abc.Mapping)
 operator.isNumberType(obj)     -> isinstance(obj, numbers.Number)
 operator.repeat(obj, n)        -> operator.mul(obj, n)
 operator.irepeat(obj, n)       -> operator.imul(obj, n)
@@ -63,13 +63,13 @@ class FixOperator(fixer_base.BaseFix):
     def _irepeat(self, node, results):
         return self._handle_rename(node, results, "imul")
 
-    @invocation("isinstance(%s, collections.Sequence)")
+    @invocation("isinstance(%s, collections.abc.Sequence)")
     def _isSequenceType(self, node, results):
-        return self._handle_type2abc(node, results, "collections", "Sequence")
+        return self._handle_type2abc(node, results, "collections.abc", "Sequence")
 
-    @invocation("isinstance(%s, collections.Mapping)")
+    @invocation("isinstance(%s, collections.abc.Mapping)")
     def _isMappingType(self, node, results):
-        return self._handle_type2abc(node, results, "collections", "Mapping")
+        return self._handle_type2abc(node, results, "collections.abc", "Mapping")
 
     @invocation("isinstance(%s, numbers.Number)")
     def _isNumberType(self, node, results):
