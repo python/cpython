@@ -20,7 +20,7 @@ from .log import logger
 _YIELD_FROM = opcode.opmap['YIELD_FROM']
 
 
-def _debug_mode():
+def _is_debug_mode():
     # If you set _DEBUG to true, @coroutine will wrap the resulting
     # generator objects in a CoroWrapper instance (defined below).  That
     # instance will log a message when the generator is never iterated
@@ -37,7 +37,7 @@ def _debug_mode():
     return debug
 
 
-_DEBUG = _debug_mode()
+_DEBUG = _is_debug_mode()
 
 
 try:
