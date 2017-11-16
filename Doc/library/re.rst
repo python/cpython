@@ -200,6 +200,20 @@ The special characters are:
      place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
      ``[]()[{}]`` will both match a parenthesis.
 
+   * Support of nested sets and set operations as in `Unicode Technical
+     Standard #18`_ might be added in the future.  This would change the
+     syntax, so to facilitate this change a :exc:`FutureWarning` will be raised
+     in ambiguous cases for the time being.
+     That include sets starting with a literal ``'['`` or containing literal
+     character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+     avoid a warning escape them with a backslash.
+
+   .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+   .. versionchanged:: 3.7
+      :exc:`FutureWarning` is raised if a character set contains constructs
+      that will change semantically in the future.
+
 ``|``
    ``A|B``, where *A* and *B* can be arbitrary REs, creates a regular expression that
    will match either *A* or *B*.  An arbitrary number of REs can be separated by the
@@ -829,7 +843,7 @@ form.
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
-      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%&'\*\+\-\.\^_`\|~:]+
+      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%\&'\*\+\-\.\^_`\|\~:]+
 
       >>> operators = ['+', '-', '*', '/', '**']
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))

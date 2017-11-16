@@ -700,6 +700,17 @@ Changes in the Python API
   argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
   is failed.
 
+* Support of nested sets and set operations in regular expressions as in
+  `Unicode Technical Standard #18`_ might be added in the future.  This would
+  change the syntax, so to facilitate this change a :exc:`FutureWarning` will
+  be raised in ambiguous cases for the time being.
+  That include sets starting with a literal ``'['`` or containing literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+  avoid a warning escape them with a backslash.
+  (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+.. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
 
 Changes in the C API
 --------------------
