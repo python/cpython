@@ -257,12 +257,12 @@ class Regrtest:
             if isinstance(test, unittest.TestSuite):
                 self._list_cases(test)
             elif isinstance(test, unittest.TestCase):
-                if support._match_test(test):
+                if support.match_test(test):
                     print(test.id())
 
     def list_cases(self):
         support.verbose = False
-        support.match_tests = self.ns.match_tests
+        support.set_match_tests(self.ns.match_tests)
 
         for test in self.selected:
             abstest = get_abs_module(self.ns, test)
