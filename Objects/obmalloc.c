@@ -190,8 +190,14 @@ static struct {
 void
 _PyMem_GetDefaultRawAllocator(PyMemAllocatorEx *alloc_p)
 {
-    PyMemAllocatorEx alloc = {NULL, PYRAW_FUNCS};
-    *alloc_p = alloc;
+    PyMemAllocatorEx pymem_raw = {
+#ifdef Py_DEBUG
+        &_PyMem_Debug.raw, PYRAWDBG_FUNCS
+#else
+        NULL, PYRAW_FUNCS
+#endif
+    };
+    *alloc_p = pymem_raw;
 }
 
 int
@@ -274,13 +280,6 @@ _PyObject_Initialize(struct _pyobj_runtime_state *state)
 void
 _PyMem_Initialize(struct _pymem_runtime_state *state)
 {
-    PyMemAllocatorEx pymem_raw = {
-#ifdef Py_DEBUG
-        &_PyMem_Debug.raw, PYRAWDBG_FUNCS
-#else
-        NULL, PYRAW_FUNCS
-#endif
-    };
     PyMemAllocatorEx pymem = {
 #ifdef Py_DEBUG
         &_PyMem_Debug.mem, PYDBG_FUNCS
@@ -296,7 +295,7 @@ _PyMem_Initialize(struct _pymem_runtime_state *state)
 #endif
     };
 
-    state->allocators.raw = pymem_raw;
+    _PyMem_GetDefaultRawAllocator(&state->allocators.raw);
     state->allocators.mem = pymem;
     state->allocators.obj = pyobject;
 
