@@ -822,6 +822,10 @@ class BaseEventLoopTests(test_utils.TestCase):
                                                PYTHONASYNCIODEBUG='1')
         self.assertEqual(stdout.rstrip(), b'False')
 
+        sts, stdout, stderr = assert_python_ok('-E', '-X', 'dev',
+                                               '-c', code)
+        self.assertEqual(stdout.rstrip(), b'True')
+
     def test_create_task(self):
         class MyTask(asyncio.Task):
             pass

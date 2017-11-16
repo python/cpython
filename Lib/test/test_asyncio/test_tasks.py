@@ -2350,6 +2350,10 @@ class GatherTestsBase:
                                                PYTHONPATH=aio_path)
         self.assertEqual(stdout.rstrip(), b'False')
 
+        sts, stdout, stderr = assert_python_ok('-E', '-X', 'dev',
+                                               '-c', code)
+        self.assertEqual(stdout.rstrip(), b'True')
+
 
 class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
 
