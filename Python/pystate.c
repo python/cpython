@@ -64,10 +64,18 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+    /* Use the same memory allocator than _PyRuntimeState_Init() */
+    PyMemAllocatorEx old_alloc, raw_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyMem_GetDefaultRawAllocator(&raw_alloc);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+
     if (runtime->interpreters.mutex != NULL) {
         PyThread_free_lock(runtime->interpreters.mutex);
         runtime->interpreters.mutex = NULL;
     }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
