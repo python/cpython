@@ -111,7 +111,7 @@ static const char usage_6[] =
 "   locale coercion and locale compatibility warnings on stderr.\n";
 
 static void
-usage(int error, const wchar_t* program)
+pymain_usage(int error, const wchar_t* program)
 {
     FILE *f = error ? stderr : stdout;
 
@@ -127,6 +127,20 @@ usage(int error, const wchar_t* program)
         fputs(usage_6, f);
     }
 }
+
+
+static char*
+pymain_get_env_var(const char *name)
+{
+    char *var = Py_GETENV(name);
+    if (var && var[0] != '\0') {
+        return var;
+    }
+    else {
+        return NULL;
+    }
+}
+
 
 static void
 pymain_run_statup(PyCompilerFlags *cf)
@@ -444,7 +458,7 @@ pymain_free_impl(_PyMain *pymain)
 static void
 pymain_free(_PyMain *pymain)
 {
-    /* Call pymain_free() with the memory allocator used by pymain_init() */
+    /* Force malloc() memory allocator */
     PyMemAllocatorEx old_alloc, raw_alloc;
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     _PyMem_GetDefaultRawAllocator(&raw_alloc);
@@ -488,11 +502,12 @@ error:
 
 
 static wchar_t*
-pymain_strdup(wchar_t *str)
+pymain_strdup(_PyMain *pymain, wchar_t *str)
 {
     size_t len = wcslen(str) + 1;  /* +1 for NUL character */
     wchar_t *str2 = PyMem_RawMalloc(sizeof(wchar_t) * len);
     if (str2 == NULL) {
+        pymain->err = INIT_NO_MEMORY();
         return NULL;
     }
     memcpy(str2, str, len * sizeof(wchar_t));
@@ -501,9 +516,9 @@ pymain_strdup(wchar_t *str)
 
 
 static int
-pymain_optlist_append(_Py_OptList *list, wchar_t *str)
+pymain_optlist_append(_PyMain *pymain, _Py_OptList *list, wchar_t *str)
 {
-    wchar_t *str2 = pymain_strdup(str);
+    wchar_t *str2 = pymain_strdup(pymain, str);
     if (str2 == NULL) {
         return -1;
     }
@@ -512,6 +527,7 @@ pymain_optlist_append(_Py_OptList *list, wchar_t *str)
     wchar_t **options2 = (wchar_t **)PyMem_RawRealloc(list->options, size);
     if (options2 == NULL) {
         PyMem_RawFree(str2);
+        pymain->err = INIT_NO_MEMORY();
         return -1;
     }
     options2[list->len] = str2;
@@ -526,7 +542,7 @@ pymain_optlist_append(_Py_OptList *list, wchar_t *str)
    Return 1 if parsing failed.
    Set pymain->err and return -1 on other errors. */
 static int
-pymain_parse_cmdline(_PyMain *pymain)
+pymain_parse_cmdline_impl(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
@@ -544,7 +560,8 @@ pymain_parse_cmdline(_PyMain *pymain)
             size_t len = wcslen(_PyOS_optarg) + 1 + 1;
             wchar_t *command = PyMem_RawMalloc(sizeof(wchar_t) * len);
             if (command == NULL) {
-                goto out_of_memory;
+                pymain->err = INIT_NO_MEMORY();
+                return -1;
             }
             memcpy(command, _PyOS_optarg, len * sizeof(wchar_t));
             command[len - 2] = '\n';
@@ -629,16 +646,16 @@ pymain_parse_cmdline(_PyMain *pymain)
             break;
 
         case 'W':
-            if (pymain_optlist_append(&cmdline->warning_options,
+            if (pymain_optlist_append(pymain, &cmdline->warning_options,
                                       _PyOS_optarg) < 0) {
-                goto out_of_memory;
+                return -1;
             }
             break;
 
         case 'X':
-            if (pymain_optlist_append(&cmdline->xoptions,
+            if (pymain_optlist_append(pymain, &cmdline->xoptions,
                                       _PyOS_optarg) < 0) {
-                goto out_of_memory;
+                return -1;
             }
             break;
 
@@ -666,10 +683,6 @@ pymain_parse_cmdline(_PyMain *pymain)
     }
 
     return 0;
-
-out_of_memory:
-    pymain->err = INIT_NO_MEMORY();
-    return -1;
 }
 
 
@@ -753,17 +766,18 @@ pymain_warnings_envvar(_PyMain *pymain)
 
         buf = (wchar_t *)PyMem_RawMalloc((wcslen(wp) + 1) * sizeof(wchar_t));
         if (buf == NULL) {
-            goto out_of_memory;
+            pymain->err = INIT_NO_MEMORY();
+            return -1;
         }
         wcscpy(buf, wp);
         for (warning = wcstok_s(buf, L",", &context);
              warning != NULL;
              warning = wcstok_s(NULL, L",", &context)) {
 
-            if (pymain_optlist_append(&pymain->env_warning_options,
+            if (pymain_optlist_append(pymain, &pymain->env_warning_options,
                                       warning) < 0) {
                 PyMem_RawFree(buf);
-                goto out_of_memory;
+                return -1;
             }
         }
         PyMem_RawFree(buf);
@@ -778,7 +792,8 @@ pymain_warnings_envvar(_PyMain *pymain)
            C89 wcstok */
         buf = (char *)PyMem_RawMalloc(strlen(p) + 1);
         if (buf == NULL) {
-            goto out_of_memory;
+            pymain->err = INIT_NO_MEMORY();
+            return -1;
         }
         strcpy(buf, p);
         oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
@@ -793,13 +808,14 @@ pymain_warnings_envvar(_PyMain *pymain)
                     return -1;
                 }
                 else {
-                    goto out_of_memory;
+                    pymain->err = INIT_NO_MEMORY();
+                    return -1;
                 }
             }
-            if (pymain_optlist_append(&pymain->env_warning_options,
+            if (pymain_optlist_append(pymain, &pymain->env_warning_options,
                                       warning) < 0) {
                 PyMem_RawFree(warning);
-                goto out_of_memory;
+                return -1;
             }
             PyMem_RawFree(warning);
         }
@@ -809,10 +825,6 @@ pymain_warnings_envvar(_PyMain *pymain)
     }
 #endif
     return 0;
-
-out_of_memory:
-    pymain->err = INIT_NO_MEMORY();
-    return -1;
 }
 
 
@@ -882,7 +894,8 @@ pymain_get_program_name(_PyMain *pymain)
 
         buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
         if (buffer == NULL) {
-            goto out_of_memory;
+            pymain->err = INIT_NO_MEMORY();
+            return -1;
         }
 
         mbstowcs(buffer, p, len);
@@ -904,7 +917,8 @@ pymain_get_program_name(_PyMain *pymain)
                     return -1;
                 }
                 else {
-                    goto out_of_memory;
+                    pymain->err = INIT_NO_MEMORY();
+                    return -1;
                 }
             }
             pymain->program_name = wbuf;
@@ -915,16 +929,12 @@ pymain_get_program_name(_PyMain *pymain)
 
     if (pymain->program_name == NULL) {
         /* Use argv[0] by default */
-        pymain->program_name = pymain_strdup(pymain->argv[0]);
+        pymain->program_name = pymain_strdup(pymain, pymain->argv[0]);
         if (pymain->program_name == NULL) {
-            goto out_of_memory;
+            return -1;
         }
     }
     return 0;
-
-out_of_memory:
-    pymain->err = INIT_NO_MEMORY();
-    return -1;
 }
 
 
@@ -982,7 +992,7 @@ pymain_header(_PyMain *pymain)
 
 
 static void
-pymain_init_argv(_PyMain *pymain)
+pymain_set_argv(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
@@ -997,10 +1007,6 @@ pymain_init_argv(_PyMain *pymain)
         /* Backup _PyOS_optind and force sys.argv[0] = '-m'*/
         _PyOS_optind--;
         pymain->argv[_PyOS_optind] = L"-m";
-    }
-
-    if (cmdline->filename != NULL) {
-        pymain->main_importer_path = pymain_get_importer(cmdline->filename);
     }
 
     int update_path;
@@ -1036,28 +1042,6 @@ pymain_set_global_config(_PyMain *pymain)
     maybe_set_flag(&Py_QuietFlag, cmdline->quiet_flag);
 
     maybe_set_flag(&Py_IgnoreEnvironmentFlag, pymain->core_config.ignore_environment);
-}
-
-
-/* Propagate options parsed from the command line and environment variables
-   to the Python runtime.
-
-   Return 0 on success, or set pymain->err and return -1 on error. */
-static int
-pymain_configure_pyruntime(_PyMain *pymain)
-{
-    Py_SetProgramName(pymain->program_name);
-    /* Don't free program_name here: the argument to Py_SetProgramName
-       must remain valid until Py_FinalizeEx is called. The string is freed
-       by pymain_free(). */
-
-    if (pymain_add_xoptions(pymain)) {
-        return -1;
-    }
-    if (pymain_add_warnings_options(pymain)) {
-        return -1;
-    }
-    return 0;
 }
 
 
@@ -1135,7 +1119,7 @@ pymain_open_filename(_PyMain *pymain)
 
 
 static void
-pymain_run(_PyMain *pymain)
+pymain_run_filename(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
@@ -1169,24 +1153,22 @@ pymain_run(_PyMain *pymain)
 static void
 pymain_repl(_PyMain *pymain)
 {
-    char *p;
-
     /* Check this environment variable at the end, to give programs the
-     * opportunity to set it from Python.
-     */
-    if (!Py_InspectFlag &&
-        (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
-    {
+       opportunity to set it from Python. */
+    if (!Py_InspectFlag && pymain_get_env_var("PYTHONINSPECT")) {
         Py_InspectFlag = 1;
     }
 
-    if (Py_InspectFlag && pymain->stdin_is_interactive && pymain->run_code) {
-        Py_InspectFlag = 0;
-        pymain_run_interactive_hook();
-        /* XXX */
-        int res = PyRun_AnyFileFlags(stdin, "<stdin>", &pymain->cf);
-        pymain->status = (res != 0);
+    if (!(Py_InspectFlag && pymain->stdin_is_interactive
+          && pymain->run_code)) {
+        return;
     }
+
+    Py_InspectFlag = 0;
+    pymain_run_interactive_hook();
+    /* XXX */
+    int res = PyRun_AnyFileFlags(stdin, "<stdin>", &pymain->cf);
+    pymain->status = (res != 0);
 }
 
 
@@ -1197,22 +1179,22 @@ pymain_repl(_PyMain *pymain)
    Return 0 on success.
    Set pymain->err and return -1 on failure. */
 static int
-pymain_init_cmdline(_PyMain *pymain)
+pymain_parse_cmdline(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
-    int res = pymain_parse_cmdline(pymain);
+    int res = pymain_parse_cmdline_impl(pymain);
     if (res < 0) {
         return -1;
     }
     if (res) {
-        usage(1, pymain->argv[0]);
+        pymain_usage(1, pymain->argv[0]);
         pymain->status = 2;
         return 1;
     }
 
     if (cmdline->print_help) {
-        usage(0, pymain->argv[0]);
+        pymain_usage(0, pymain->argv[0]);
         pymain->status = 0;
         return 1;
     }
@@ -1230,34 +1212,170 @@ pymain_init_cmdline(_PyMain *pymain)
 }
 
 
-/* Initialize Py_Main().
-   This code must not use Python runtime apart PyMem_Raw memory allocator.
-
-   Return 0 on success.
-   Return 1 if Python is done and must exit.
-   Set pymain->err and return -1 on error. */
-static int
-pymain_init_impl(_PyMain *pymain)
+static wchar_t*
+pymain_get_xoption(_PyMain *pymain, wchar_t *name)
 {
-    _PyCoreConfig *core_config = &pymain->core_config;
-    core_config->_disable_importlib = 0;
+    _Py_OptList *list = &pymain->cmdline.xoptions;
+    for (size_t i=0; i < list->len; i++) {
+        wchar_t *option = list->options[i];
+        size_t len;
+        wchar_t *sep = wcschr(option, L'=');
+        if (sep != NULL) {
+            len = (sep - option);
+        }
+        else {
+            len = wcslen(option);
+        }
+        if (wcsncmp(option, name, len) == 0 && name[len] == L'\0') {
+            return option;
+        }
+    }
+    return NULL;
+}
 
-    orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
-    orig_argv = pymain->argv;
 
-    /* Parse the command line */
-    int res = pymain_init_cmdline(pymain);
-    if (res < 0) {
+static int
+pymain_str_to_int(char *str, int *result)
+{
+    errno = 0;
+    char *endptr = str;
+    long value = strtol(str, &endptr, 10);
+    if (*endptr != '\0' || errno == ERANGE) {
         return -1;
     }
-    if (res > 0) {
-        return 1;
+    if (value < INT_MIN || value > INT_MAX) {
+        return -1;
     }
 
-    pymain_set_global_config(pymain);
-    pymain_init_stdio(pymain);
+    *result = (int)value;
+    return 0;
+}
+
+
+static int
+pymain_wstr_to_int(wchar_t *wstr, int *result)
+{
+    errno = 0;
+    wchar_t *endptr = wstr;
+    long value = wcstol(wstr, &endptr, 10);
+    if (*endptr != '\0' || errno == ERANGE) {
+        return -1;
+    }
+    if (value < INT_MIN || value > INT_MAX) {
+        return -1;
+    }
+
+    *result = (int)value;
+    return 0;
+}
+
+
+static int
+pymain_init_tracemalloc(_PyMain *pymain)
+{
+    int nframe;
+    int valid;
+
+    char *env = pymain_get_env_var("PYTHONTRACEMALLOC");
+    if (env) {
+        if (!pymain_str_to_int(env, &nframe)) {
+            valid = (nframe >= 1);
+        }
+        else {
+            valid = 0;
+        }
+        if (!valid) {
+            pymain->err = _Py_INIT_USER_ERR("PYTHONTRACEMALLOC: invalid "
+                                            "number of frames");
+            return -1;
+        }
+        pymain->core_config.tracemalloc = nframe;
+    }
+
+    wchar_t *xoption = pymain_get_xoption(pymain, L"tracemalloc");
+    if (xoption) {
+        wchar_t *sep = wcschr(xoption, L'=');
+        if (sep) {
+            if (!pymain_wstr_to_int(sep + 1, &nframe)) {
+                valid = (nframe >= 1);
+            }
+            else {
+                valid = 0;
+            }
+            if (!valid) {
+                pymain->err = _Py_INIT_USER_ERR("-X tracemalloc=NFRAME: "
+                                                "invalid number of frames");
+                return -1;
+            }
+        }
+        else {
+            /* -X tracemalloc behaves as -X tracemalloc=1 */
+            nframe = 1;
+        }
+        pymain->core_config.tracemalloc = nframe;
+    }
+    return 0;
+}
+
+
+static void
+pymain_set_flag_from_env(int *flag, const char *name)
+{
+    char *var = pymain_get_env_var(name);
+    if (!var) {
+        return;
+    }
+    int value;
+    if (pymain_str_to_int(var, &value) < 0 || value < 0) {
+        /* PYTHONDEBUG=text and PYTHONDEBUG=-2 behave as PYTHONDEBUG=1 */
+        value = 1;
+    }
+    if (*flag < value) {
+        *flag = value;
+    }
+}
+
+
+static void
+pymain_set_flags_from_env(_PyMain *pymain)
+{
+    pymain_set_flag_from_env(&Py_DebugFlag,
+                             "PYTHONDEBUG");
+    pymain_set_flag_from_env(&Py_VerboseFlag,
+                             "PYTHONVERBOSE");
+    pymain_set_flag_from_env(&Py_OptimizeFlag,
+                             "PYTHONOPTIMIZE");
+    pymain_set_flag_from_env(&Py_InspectFlag,
+                             "PYTHONINSPECT");
+    pymain_set_flag_from_env(&Py_DontWriteBytecodeFlag,
+                             "PYTHONDONTWRITEBYTECODE");
+    pymain_set_flag_from_env(&Py_NoUserSiteDirectory,
+                             "PYTHONNOUSERSITE");
+    pymain_set_flag_from_env(&Py_UnbufferedStdioFlag,
+                             "PYTHONUNBUFFERED");
+#ifdef MS_WINDOWS
+    pymain_set_flag_from_env(&Py_LegacyWindowsFSEncodingFlag,
+                             "PYTHONLEGACYWINDOWSFSENCODING");
+    pymain_set_flag_from_env(&Py_LegacyWindowsStdioFlag,
+                             "PYTHONLEGACYWINDOWSSTDIO");
+#endif
+}
+
+
+static int
+pymain_parse_envvars(_PyMain *pymain)
+{
+    _PyCoreConfig *core_config = &pymain->core_config;
 
     /* Get environment variables */
+    pymain_set_flags_from_env(pymain);
+
+    /* The variable is only tested for existence here;
+       _Py_HashRandomization_Init will check its value further. */
+    if (pymain_get_env_var("PYTHONHASHSEED")) {
+        Py_HashRandomizationFlag = 1;
+    }
+
     if (pymain_warnings_envvar(pymain) < 0) {
         return -1;
     }
@@ -1266,7 +1384,119 @@ pymain_init_impl(_PyMain *pymain)
     }
     core_config->allocator = Py_GETENV("PYTHONMALLOC");
 
+    /* More complex options: env var and/or -X option */
+    if (pymain_get_env_var("PYTHONFAULTHANDLER")
+       || pymain_get_xoption(pymain, L"faulthandler")) {
+        core_config->faulthandler = 1;
+    }
+    if (pymain_get_env_var("PYTHONPROFILEIMPORTTIME")
+       || pymain_get_xoption(pymain, L"importtime")) {
+        core_config->importtime = 1;
+    }
+    if (pymain_init_tracemalloc(pymain) < 0) {
+        return -1;
+    }
     return 0;
+}
+
+
+/* Parse command line options and environment variables.
+   This code must not use Python runtime apart PyMem_Raw memory allocator.
+
+   Return 0 on success.
+   Return 1 if Python is done and must exit.
+   Set pymain->err and return -1 on error. */
+static int
+pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
+{
+    int res = pymain_parse_cmdline(pymain);
+    if (res < 0) {
+        return -1;
+    }
+    if (res > 0) {
+        return 1;
+    }
+
+    pymain_set_global_config(pymain);
+
+    if (pymain_parse_envvars(pymain) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
+static int
+pymain_parse_cmdline_envvars(_PyMain *pymain)
+{
+    /* Force malloc() memory allocator */
+    PyMemAllocatorEx old_alloc, raw_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyMem_GetDefaultRawAllocator(&raw_alloc);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+
+    int res = pymain_parse_cmdline_envvars_impl(pymain);
+
+    /* Restore the old memory allocator */
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    return res;
+}
+
+static int
+pymain_init_python(_PyMain *pymain)
+{
+    pymain_init_stdio(pymain);
+
+    pymain->err = _Py_InitializeCore(&pymain->core_config);
+    if (_Py_INIT_FAILED(pymain->err)) {
+        return -1;
+    }
+
+    Py_SetProgramName(pymain->program_name);
+    /* Don't free program_name here: the argument to Py_SetProgramName
+       must remain valid until Py_FinalizeEx is called. The string is freed
+       by pymain_free(). */
+
+    if (pymain_add_xoptions(pymain)) {
+        return -1;
+    }
+    if (pymain_add_warnings_options(pymain)) {
+        return -1;
+    }
+
+    if (pymain_init_main_interpreter(pymain)) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static void
+pymain_run_python(_PyMain *pymain)
+{
+    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
+
+    pymain_header(pymain);
+    pymain_import_readline(pymain);
+
+    if (cmdline->filename != NULL) {
+        pymain->main_importer_path = pymain_get_importer(cmdline->filename);
+    }
+
+    pymain_set_argv(pymain);
+
+    if (cmdline->command) {
+        pymain->status = pymain_run_command(cmdline->command, &pymain->cf);
+    }
+    else if (cmdline->module) {
+        pymain->status = (pymain_run_module(cmdline->module, 1) != 0);
+    }
+    else {
+        pymain_run_filename(pymain);
+    }
+    pymain_repl(pymain);
 }
 
 
@@ -1278,61 +1508,43 @@ pymain_init(_PyMain *pymain)
         return -1;
     }
 
-    /* Make sure that all memory allocated in pymain_init() is allocated
-       by malloc() */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    pymain->core_config._disable_importlib = 0;
 
-    int res = pymain_init_impl(pymain);
-
-    /* Restore the old memory allocator */
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    return res;
+    orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
+    orig_argv = pymain->argv;
+    return 0;
 }
 
+
 static int
-pymain_core(_PyMain *pymain)
+pymain_impl(_PyMain *pymain)
 {
-    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
-
-    pymain->err = _Py_InitializeCore(&pymain->core_config);
-    if (_Py_INIT_FAILED(pymain->err)) {
+    int res = pymain_init(pymain);
+    if (res < 0) {
         return -1;
     }
 
-    if (pymain_configure_pyruntime(pymain)) {
+    res = pymain_parse_cmdline_envvars(pymain);
+    if (res < 0) {
+        return -1;
+    }
+    if (res > 0) {
+        /* --help or --version command: we are done */
+        return 0;
+    }
+
+    res = pymain_init_python(pymain);
+    if (res < 0) {
         return -1;
     }
 
-    if (pymain_init_main_interpreter(pymain)) {
-        return -1;
-    }
-
-    pymain_header(pymain);
-    pymain_import_readline(pymain);
-
-    pymain_init_argv(pymain);
-
-    if (cmdline->command) {
-        pymain->status = pymain_run_command(cmdline->command, &pymain->cf);
-    }
-    else if (cmdline->module) {
-        pymain->status = (pymain_run_module(cmdline->module, 1) != 0);
-    }
-    else {
-        pymain_run(pymain);
-    }
-    pymain_repl(pymain);
+    pymain_run_python(pymain);
 
     if (Py_FinalizeEx() < 0) {
         /* Value unlikely to be confused with a non-error exit status or
-        other special meaning */
+           other special meaning */
         pymain->status = 120;
     }
-
     return 0;
 }
 
@@ -1345,17 +1557,9 @@ Py_Main(int argc, wchar_t **argv)
     pymain.argc = argc;
     pymain.argv = argv;
 
-    int res = pymain_init(&pymain);
-    if (res < 0) {
+    if (pymain_impl(&pymain) < 0) {
         _Py_FatalInitError(pymain.err);
     }
-    if (res == 0) {
-        res = pymain_core(&pymain);
-        if (res < 0) {
-            _Py_FatalInitError(pymain.err);
-        }
-    }
-
     pymain_free(&pymain);
 
     return pymain.status;

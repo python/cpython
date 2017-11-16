@@ -25,6 +25,7 @@ PyAPI_DATA(int) Py_HashRandomizationFlag;
 PyAPI_DATA(int) Py_IsolatedFlag;
 
 #ifdef MS_WINDOWS
+PyAPI_DATA(int) Py_LegacyWindowsFSEncodingFlag;
 PyAPI_DATA(int) Py_LegacyWindowsStdioFlag;
 #endif
 
