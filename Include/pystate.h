@@ -30,9 +30,20 @@ typedef struct {
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
     char *allocator;
+    int faulthandler;
+    int tracemalloc;        /* Number of saved frames, 0=don't trace */
+    int importtime;         /* -X importtime */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT {0, -1, 0, 0, NULL}
+#define _PyCoreConfig_INIT \
+    {.ignore_environment = 0, \
+     .use_hash_seed = -1, \
+     .hash_seed = 0, \
+     ._disable_importlib = 0, \
+     .allocator = NULL, \
+     .faulthandler = 0, \
+     .tracemalloc = 0, \
+     .importtime = 0}
 
 /* Placeholders while working on the new configuration API
  *
