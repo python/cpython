@@ -1491,6 +1491,16 @@ pymain_run_python(_PyMain *pymain)
     pymain_header(pymain);
     pymain_import_readline(pymain);
 
+    if (cmdline->skip_first_line) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "The command line -x option was deprecated "
+                         "in Python 3.7", 1)) {
+            PyErr_Print();
+            pymain->status = 1;
+            return;
+        }
+    }
+
     if (cmdline->filename != NULL) {
         pymain->main_importer_path = pymain_get_importer(cmdline->filename);
     }
