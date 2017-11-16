@@ -914,6 +914,51 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
         self.assertEqual(re.search(r"\s([^a]*)", " bb").group(1), "bb")
 
+    def test_possible_set_operations(self):
+        s = bytes(range(128)).decode()
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9--1]')
+        self.assertEqual(p.findall(s), list('-./0123456789'))
+        self.assertEqual(re.findall(r'[--1]', s), list('-./01'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[%--1]')
+        self.assertEqual(p.findall(s), list("%&'()*+,-1"))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[%--]')
+        self.assertEqual(p.findall(s), list("%&'()*+,-"))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9&&1]')
+        self.assertEqual(p.findall(s), list('&0123456789'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[\d&&1]')
+        self.assertEqual(p.findall(s), list('&0123456789'))
+        self.assertEqual(re.findall(r'[&&1]', s), list('&1'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9||a]')
+        self.assertEqual(p.findall(s), list('0123456789a|'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[\d||a]')
+        self.assertEqual(p.findall(s), list('0123456789a|'))
+        self.assertEqual(re.findall(r'[||1]', s), list('1|'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9~~1]')
+        self.assertEqual(p.findall(s), list('0123456789~'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[\d~~1]')
+        self.assertEqual(p.findall(s), list('0123456789~'))
+        self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[[0-9]|]')
+        self.assertEqual(p.findall(s), list('0123456789[]'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[[:digit:]|]')
+        self.assertEqual(p.findall(s), list(':[]dgit'))
+
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
         self.assertEqual(re.search(r"a\s", "a ").group(0), "a ")
@@ -932,7 +977,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(), match)
         self.assertEqual(m.span(), span)
 
-    LITERAL_CHARS = string.ascii_letters + string.digits + '!"%&\',/:;<=>@_`~'
+    LITERAL_CHARS = string.ascii_letters + string.digits + '!"%\',/:;<=>@_`'
 
     def test_re_escape(self):
         p = ''.join(chr(i) for i in range(256))

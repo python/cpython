@@ -1354,15 +1354,14 @@ RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 _wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(
-    ''.join(ATOM_ENDS).replace('\\','\\\\').replace(']',r'\]'))).match
+    re.escape(''.join(ATOM_ENDS)))).match
 _non_printable_finder = re.compile(r"[\x00-\x20\x7F]").findall
 _non_token_end_matcher = re.compile(r"[^{}]+".format(
-    ''.join(TOKEN_ENDS).replace('\\','\\\\').replace(']',r'\]'))).match
+    re.escape(''.join(TOKEN_ENDS)))).match
 _non_attribute_end_matcher = re.compile(r"[^{}]+".format(
-    ''.join(ATTRIBUTE_ENDS).replace('\\','\\\\').replace(']',r'\]'))).match
+    re.escape(''.join(ATTRIBUTE_ENDS)))).match
 _non_extended_attribute_end_matcher = re.compile(r"[^{}]+".format(
-    ''.join(EXTENDED_ATTRIBUTE_ENDS).replace(
-                                    '\\','\\\\').replace(']',r'\]'))).match
+    re.escape(''.join(EXTENDED_ATTRIBUTE_ENDS)))).match
 
 def _validate_xtext(xtext):
     """If input token contains ASCII non-printables, register a defect."""
