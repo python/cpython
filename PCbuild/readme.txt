@@ -32,12 +32,19 @@ Visual Studio Premium 2015
     Required for building Release configuration builds that make use of
     Profile Guided Optimization (PGO), on either platform.
 
-All you need to do to build is open the solution "pcbuild.sln" in Visual
-Studio, select the desired combination of configuration and platform,
+To build modules that depend on external libraries, you need to download
+(and, for some of them, build) those first. It's thus recommended to build
+from the command line once as specified below under "Getting External Sources"
+as that does this automatically.
+
+Then, to continue development, you can open the solution "pcbuild.sln" in
+Visual Studio, select the desired combination of configuration and platform,
 then build with "Build Solution".  You can also build from the command
 line using the "build.bat" script in this directory; see below for
 details.  The solution is configured to build the projects in the correct
 order.
+
+To build an installer package, refer to the README in the Tools/msi folder.
 
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
