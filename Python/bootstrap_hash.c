@@ -594,8 +594,8 @@ init_hash_secret(int use_hash_seed,
            pyurandom() is non-blocking mode (blocking=0): see the PEP 524. */
         res = pyurandom(secret, secret_size, 0, 0);
         if (res < 0) {
-            return _Py_INIT_ERR("failed to get random numbers "
-                                "to initialize Python");
+            return _Py_INIT_USER_ERR("failed to get random numbers "
+                                     "to initialize Python");
         }
     }
     return _Py_INIT_OK();
