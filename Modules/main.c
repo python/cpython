@@ -1396,6 +1396,16 @@ pymain_parse_envvars(_PyMain *pymain)
     if (pymain_init_tracemalloc(pymain) < 0) {
         return -1;
     }
+    if (pymain_get_xoption(pymain, L"dev")) {
+        /* "python3 -X dev ..." behaves
+           as "PYTHONMALLOC=debug python3 -Wd -X faulthandler ..." */
+        core_config->allocator = "debug";
+        if (pymain_optlist_append(pymain, &pymain->cmdline.warning_options,
+                                  L"default") < 0) {
+            return -1;
+        }
+        core_config->faulthandler = 1;
+    }
     return 0;
 }
 

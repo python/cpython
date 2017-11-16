@@ -185,6 +185,19 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+New Developer Mode: -X dev
+--------------------------
+
+Add a new "developer mode": ``-X dev`` command line option to enable debug
+checks at runtime.
+
+In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
+default -X faulthandler ...``, except that the PYTHONMALLOC environment
+variable is not set in practice.
+
+See :option:`-X` ``dev`` for the details.
+
+
 Other Language Changes
 ======================
 
