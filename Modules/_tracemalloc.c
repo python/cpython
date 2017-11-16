@@ -1066,8 +1066,16 @@ tracemalloc_start(int max_nframe)
     PyMemAllocatorEx alloc;
     size_t size;
 
-    if (tracemalloc_init() < 0)
+    if (max_nframe < 1 || max_nframe > MAX_NFRAME) {
+        PyErr_Format(PyExc_ValueError,
+                     "the number of frames must be in range [1; %i]",
+                     (int)MAX_NFRAME);
         return -1;
+    }
+
+    if (tracemalloc_init() < 0) {
+        return -1;
+    }
 
     if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
@@ -1500,7 +1508,7 @@ _PyMem_DumpTraceback(int fd, const void *ptr)
 /*[clinic input]
 _tracemalloc.start
 
-    nframe: Py_ssize_t = 1
+    nframe: int = 1
     /
 
 Start tracing Python memory allocations.
@@ -1510,22 +1518,12 @@ trace to nframe.
 [clinic start generated code]*/
 
 static PyObject *
-_tracemalloc_start_impl(PyObject *module, Py_ssize_t nframe)
-/*[clinic end generated code: output=0f558d2079511553 input=997841629cc441cb]*/
+_tracemalloc_start_impl(PyObject *module, int nframe)
+/*[clinic end generated code: output=caae05c23c159d3c input=40d849b5b29d1933]*/
 {
-    int nframe_int;
-
-    if (nframe < 1 || nframe > MAX_NFRAME) {
-        PyErr_Format(PyExc_ValueError,
-                     "the number of frames must be in range [1; %i]",
-                     (int)MAX_NFRAME);
+    if (tracemalloc_start(nframe) < 0) {
         return NULL;
     }
-    nframe_int = Py_SAFE_DOWNCAST(nframe, Py_ssize_t, int);
-
-    if (tracemalloc_start(nframe_int) < 0)
-        return NULL;
-
     Py_RETURN_NONE;
 }
 
@@ -1658,87 +1656,13 @@ PyInit__tracemalloc(void)
 }
 
 
-static int
-parse_sys_xoptions(PyObject *value)
-{
-    PyObject *valuelong;
-    long nframe;
-
-    if (value == Py_True)
-        return 1;
-
-    assert(PyUnicode_Check(value));
-    if (PyUnicode_GetLength(value) == 0)
-        return -1;
-
-    valuelong = PyLong_FromUnicodeObject(value, 10);
-    if (valuelong == NULL)
-        return -1;
-
-    nframe = PyLong_AsLong(valuelong);
-    Py_DECREF(valuelong);
-    if (nframe == -1 && PyErr_Occurred())
-        return -1;
-
-    if (nframe < 1 || nframe > MAX_NFRAME)
-        return -1;
-
-    return Py_SAFE_DOWNCAST(nframe, long, int);
-}
-
-
 int
-_PyTraceMalloc_Init(void)
+_PyTraceMalloc_Init(int nframe)
 {
-    char *p;
-    int nframe;
-
     assert(PyGILState_Check());
-
-    if ((p = Py_GETENV("PYTHONTRACEMALLOC")) && *p != '\0') {
-        char *endptr = p;
-        long value;
-
-        errno = 0;
-        value = strtol(p, &endptr, 10);
-        if (*endptr != '\0'
-            || value < 1
-            || value > MAX_NFRAME
-            || errno == ERANGE)
-        {
-            Py_FatalError("PYTHONTRACEMALLOC: invalid number of frames");
-            return -1;
-        }
-
-        nframe = (int)value;
+    if (nframe == 0) {
+        return 0;
     }
-    else {
-        PyObject *xoptions, *key, *value;
-
-        xoptions = PySys_GetXOptions();
-        if (xoptions == NULL)
-            return -1;
-
-        key = PyUnicode_FromString("tracemalloc");
-        if (key == NULL)
-            return -1;
-
-        value = PyDict_GetItemWithError(xoptions, key); /* borrowed */
-        Py_DECREF(key);
-        if (value == NULL) {
-            if (PyErr_Occurred())
-                return -1;
-
-            /* -X tracemalloc is not used */
-            return 0;
-        }
-
-        nframe = parse_sys_xoptions(value);
-        if (nframe < 0) {
-            Py_FatalError("-X tracemalloc=NFRAME: invalid number of frames");
-        }
-    }
-
     return tracemalloc_start(nframe);
 }
 

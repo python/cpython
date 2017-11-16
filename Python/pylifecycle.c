@@ -56,7 +56,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static _PyInitError add_main_module(PyInterpreterState *interp);
 static _PyInitError initfsencoding(PyInterpreterState *interp);
 static _PyInitError initsite(void);
-static int initstdio(void);
+static _PyInitError init_sys_streams(void);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(void);
 static void wait_for_thread_shutdown(void);
@@ -66,10 +66,10 @@ extern int _PyStructSequence_Init(void);
 extern void _PyUnicode_Fini(void);
 extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
-extern _PyInitError _PyFaulthandler_Init(void);
+extern _PyInitError _PyFaulthandler_Init(int enable);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
-extern int _PyTraceMalloc_Init(void);
+extern int _PyTraceMalloc_Init(int enable);
 extern int _PyTraceMalloc_Fini(void);
 extern void _Py_ReadyTypes(void);
 
@@ -219,20 +219,6 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
 
 */
 
-static void
-set_flag(int *flag, const char *envs)
-{
-    /* Helper to set flag variables from environment variables:
-    *   - uses the higher of the two values if they're both set
-    *   - otherwise sets the flag to 1
-    */
-    int env = atoi(envs);
-    if (*flag < env)
-        *flag = env;
-    if (*flag < 1)
-        *flag = 1;
-}
-
 static char*
 get_codec_name(const char *encoding)
 {
@@ -284,7 +270,6 @@ get_locale_encoding(void)
 #endif
 }
 
-/* Return NULL on success, or return an error message on failure */
 static _PyInitError
 initimport(PyInterpreterState *interp, PyObject *sysmod)
 {
@@ -346,7 +331,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     return _Py_INIT_OK();
 }
 
-/* Return NULL on success, or return an error message on failure */
 static _PyInitError
 initexternalimport(PyInterpreterState *interp)
 {
@@ -623,8 +607,6 @@ _Py_SetLocaleFromEnv(int category)
  * Any code invoked from this function should *not* assume it has access
  * to the Python C API (unless the API is explicitly listed as being
  * safe to call without calling Py_Initialize first)
- *
- * Return NULL on success, or return an error message on failure.
  */
 
 /* TODO: Progressively move functionality from Py_BeginInitialization to
@@ -637,7 +619,6 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     PyInterpreterState *interp;
     PyThreadState *tstate;
     PyObject *bimod, *sysmod, *pstderr;
-    char *p;
     _PyCoreConfig core_config = _PyCoreConfig_INIT;
     _PyMainInterpreterConfig preinit_config = _PyMainInterpreterConfig_INIT;
     _PyInitError err;
@@ -681,31 +662,6 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     _emit_stderr_warning_for_legacy_locale();
 #endif
 
-    if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
-        set_flag(&Py_DebugFlag, p);
-    if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
-        set_flag(&Py_VerboseFlag, p);
-    if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
-        set_flag(&Py_OptimizeFlag, p);
-    if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
-        set_flag(&Py_InspectFlag, p);
-    if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
-        set_flag(&Py_DontWriteBytecodeFlag, p);
-    if ((p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
-        set_flag(&Py_NoUserSiteDirectory, p);
-    if ((p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
-        set_flag(&Py_UnbufferedStdioFlag, p);
-    /* The variable is only tested for existence here;
-       _Py_HashRandomization_Init will check its value further. */
-    if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
-        set_flag(&Py_HashRandomizationFlag, p);
-#ifdef MS_WINDOWS
-    if ((p = Py_GETENV("PYTHONLEGACYWINDOWSFSENCODING")) && *p != '\0')
-        set_flag(&Py_LegacyWindowsFSEncodingFlag, p);
-    if ((p = Py_GETENV("PYTHONLEGACYWINDOWSSTDIO")) && *p != '\0')
-        set_flag(&Py_LegacyWindowsStdioFlag, p);
-#endif
-
     err = _Py_HashRandomization_Init(&core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -716,7 +672,11 @@ _Py_InitializeCore(const _PyCoreConfig *config)
         Py_HashRandomizationFlag = 1;
     }
 
-    _PyInterpreterState_Enable(&_PyRuntime);
+    err = _PyInterpreterState_Enable(&_PyRuntime);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     interp = PyInterpreterState_New();
     if (interp == NULL)
         return _Py_INIT_ERR("can't make main interpreter");
@@ -834,8 +794,6 @@ _Py_InitializeCore(const _PyCoreConfig *config)
  *
  * More advanced selective initialization tricks are possible by calling
  * this function multiple times with various preconfigured settings.
- *
- * Return NULL on success, or return an error message on failure.
  */
 
 _PyInitError
@@ -858,8 +816,6 @@ _Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *config)
  * initialized or without a valid current thread state is a fatal error.
  * Other errors should be reported as normal Python exceptions with a
  * non-zero return code.
- *
- * Return NULL on success, or return an error message on failure.
  */
 _PyInitError
 _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
@@ -907,13 +863,14 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     PySys_SetPath(Py_GetPath());
     if (_PySys_EndInit(interp->sysdict) < 0)
         return _Py_INIT_ERR("can't finish initializing sys");
+
     err = initexternalimport(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
     /* initialize the faulthandler module */
-    err = _PyFaulthandler_Init();
+    err = _PyFaulthandler_Init(interp->core_config.faulthandler);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -930,15 +887,17 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         }
     }
 
-    if (_PyTraceMalloc_Init() < 0)
+    if (_PyTraceMalloc_Init(interp->core_config.tracemalloc) < 0)
         return _Py_INIT_ERR("can't initialize tracemalloc");
 
     err = add_main_module(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
-    if (initstdio() < 0) {
-        return _Py_INIT_ERR("can't initialize sys standard streams");
+
+    err = init_sys_streams();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
 
     /* Initialize warnings. */
@@ -1302,29 +1261,32 @@ Py_Finalize(void)
 
 */
 
-PyThreadState *
-Py_NewInterpreter(void)
+static _PyInitError
+new_interpreter(PyThreadState **tstate_p)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate, *save_tstate;
     PyObject *bimod, *sysmod;
-    _PyInitError err = _Py_INIT_OK();
 
-    if (!_PyRuntime.initialized)
-        Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
+    if (!_PyRuntime.initialized) {
+        return _Py_INIT_ERR("Py_Initialize must be called first");
+    }
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
     _PyGILState_check_enabled = 0;
 
     interp = PyInterpreterState_New();
-    if (interp == NULL)
-        return NULL;
+    if (interp == NULL) {
+        *tstate_p = NULL;
+        return _Py_INIT_OK();
+    }
 
     tstate = PyThreadState_New(interp);
     if (tstate == NULL) {
         PyInterpreterState_Delete(interp);
-        return NULL;
+        *tstate_p = NULL;
+        return _Py_INIT_OK();
     }
 
     save_tstate = PyThreadState_Swap(tstate);
@@ -1343,8 +1305,9 @@ Py_NewInterpreter(void)
     /* XXX The following is lax in error checking */
 
     PyObject *modules = PyDict_New();
-    if (modules == NULL)
-        Py_FatalError("Py_NewInterpreter: can't make modules dictionary");
+    if (modules == NULL) {
+        return _Py_INIT_ERR("can't make modules dictionary");
+    }
     interp->modules = modules;
 
     sysmod = _PyImport_FindBuiltin("sys", modules);
@@ -1371,59 +1334,62 @@ Py_NewInterpreter(void)
 
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
+        _PyInitError err;
 
         /* Set up a preliminary stderr printer until we have enough
            infrastructure for the io module in place. */
         pstderr = PyFile_NewStdPrinter(fileno(stderr));
-        if (pstderr == NULL)
-            Py_FatalError("Py_NewInterpreter: can't set preliminary stderr");
+        if (pstderr == NULL) {
+            return _Py_INIT_ERR("can't set preliminary stderr");
+        }
         _PySys_SetObjectId(&PyId_stderr, pstderr);
         PySys_SetObject("__stderr__", pstderr);
         Py_DECREF(pstderr);
 
         err = _PyImportHooks_Init();
         if (_Py_INIT_FAILED(err)) {
-            goto init_failed;
+            return err;
         }
 
         err = initimport(interp, sysmod);
         if (_Py_INIT_FAILED(err)) {
-            goto init_failed;
+            return err;
         }
 
         err = initexternalimport(interp);
         if (_Py_INIT_FAILED(err)) {
-            goto init_failed;
+            return err;
         }
 
         err = initfsencoding(interp);
         if (_Py_INIT_FAILED(err)) {
-            goto init_failed;
+            return err;
         }
 
-        if (initstdio() < 0) {
-            err = _Py_INIT_ERR("can't initialize sys standard streams");
-            goto init_failed;
+        err = init_sys_streams();
+        if (_Py_INIT_FAILED(err)) {
+            return err;
         }
 
         err = add_main_module(interp);
         if (_Py_INIT_FAILED(err)) {
-            goto init_failed;
+            return err;
         }
 
         if (!Py_NoSiteFlag) {
             err = initsite();
             if (_Py_INIT_FAILED(err)) {
-                goto init_failed;
+                return err;
             }
         }
     }
 
-    if (!PyErr_Occurred())
-        return tstate;
+    if (PyErr_Occurred()) {
+        goto handle_error;
+    }
 
-init_failed:
-    _Py_FatalInitError(err);
+    *tstate_p = tstate;
+    return _Py_INIT_OK();
 
 handle_error:
     /* Oops, it didn't work.  Undo it all. */
@@ -1434,7 +1400,20 @@ handle_error:
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
 
-    return NULL;
+    *tstate_p = NULL;
+    return _Py_INIT_OK();
+}
+
+PyThreadState *
+Py_NewInterpreter(void)
+{
+    PyThreadState *tstate;
+    _PyInitError err = new_interpreter(&tstate);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
+    return tstate;
+
 }
 
 /* Delete an interpreter and its last thread.  This requires that the
@@ -1770,16 +1749,17 @@ error:
 }
 
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
-static int
-initstdio(void)
+static _PyInitError
+init_sys_streams(void)
 {
     PyObject *iomod = NULL, *wrapper;
     PyObject *bimod = NULL;
     PyObject *m;
     PyObject *std = NULL;
-    int status = 0, fd;
+    int fd;
     PyObject * encoding_attr;
     char *pythonioencoding = NULL, *encoding, *errors;
+    _PyInitError res = _Py_INIT_OK();
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -1893,11 +1873,12 @@ initstdio(void)
     Py_DECREF(std);
 #endif
 
-    if (0) {
-  error:
-        status = -1;
-    }
+    goto done;
 
+error:
+    res = _Py_INIT_ERR("can't initialize sys standard streams");
+
+done:
     /* We won't need them anymore. */
     if (_Py_StandardStreamEncoding) {
         PyMem_RawFree(_Py_StandardStreamEncoding);
@@ -1910,7 +1891,7 @@ initstdio(void)
     PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
-    return status;
+    return res;
 }
 
 

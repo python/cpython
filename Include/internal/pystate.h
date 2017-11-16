@@ -90,7 +90,7 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
 /* Other */
 
-PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
+PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
 
 #ifdef __cplusplus
 }

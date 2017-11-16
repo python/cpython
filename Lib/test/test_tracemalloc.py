@@ -829,16 +829,23 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'10')
 
+    def check_env_var_invalid(self, nframe):
+        with support.SuppressCrashReport():
+            ok, stdout, stderr = assert_python_failure(
+                '-c', 'pass',
+                PYTHONTRACEMALLOC=str(nframe))
+
+        if b'ValueError: the number of frames must be in range' in stderr:
+            return
+        if b'PYTHONTRACEMALLOC: invalid number of frames' in stderr:
+            return
+        self.fail(f"unexpeced output: {stderr!a}")
+
+
     def test_env_var_invalid(self):
         for nframe in (-1, 0, 2**30):
             with self.subTest(nframe=nframe):
-                with support.SuppressCrashReport():
-                    ok, stdout, stderr = assert_python_failure(
-                        '-c', 'pass',
-                        PYTHONTRACEMALLOC=str(nframe))
-                    self.assertIn(b'PYTHONTRACEMALLOC: invalid '
-                                  b'number of frames',
-                                  stderr)
+                self.check_env_var_invalid(nframe)
 
     def test_sys_xoptions(self):
         for xoptions, nframe in (
@@ -852,15 +859,21 @@ class TestCommandLine(unittest.TestCase):
                 stdout = stdout.rstrip()
                 self.assertEqual(stdout, str(nframe).encode('ascii'))
 
+    def check_sys_xoptions_invalid(self, nframe):
+        args = ('-X', 'tracemalloc=%s' % nframe, '-c', 'pass')
+        with support.SuppressCrashReport():
+            ok, stdout, stderr = assert_python_failure(*args)
+
+        if b'ValueError: the number of frames must be in range' in stderr:
+            return
+        if b'-X tracemalloc=NFRAME: invalid number of frames' in stderr:
+            return
+        self.fail(f"unexpeced output: {stderr!a}")
+
     def test_sys_xoptions_invalid(self):
         for nframe in (-1, 0, 2**30):
             with self.subTest(nframe=nframe):
-                with support.SuppressCrashReport():
-                    args = ('-X', 'tracemalloc=%s' % nframe, '-c', 'pass')
-                    ok, stdout, stderr = assert_python_failure(*args)
-                    self.assertIn(b'-X tracemalloc=NFRAME: invalid '
-                                  b'number of frames',
-                                  stderr)
+                self.check_sys_xoptions_invalid(nframe)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     def test_pymem_alloc0(self):

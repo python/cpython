@@ -76,7 +76,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
-void
+_PyInitError
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     runtime->interpreters.next_id = 0;
@@ -85,9 +85,11 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
        initialized here. */
     if (runtime->interpreters.mutex == NULL) {
         runtime->interpreters.mutex = PyThread_allocate_lock();
-        if (runtime->interpreters.mutex == NULL)
-            Py_FatalError("Can't initialize threads for interpreter");
+        if (runtime->interpreters.mutex == NULL) {
+            return _Py_INIT_ERR("Can't initialize threads for interpreter");
+        }
     }
+    return _Py_INIT_OK();
 }
 
 PyInterpreterState *

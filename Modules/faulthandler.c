@@ -1299,36 +1299,8 @@ faulthandler_init_enable(void)
     return 0;
 }
 
-/* Call faulthandler.enable() if the PYTHONFAULTHANDLER environment variable
-   is defined, or if sys._xoptions has a 'faulthandler' key. */
-
-static int
-faulthandler_init_parse(void)
-{
-    char *p = Py_GETENV("PYTHONFAULTHANDLER");
-    if (p && *p != '\0') {
-        return 1;
-    }
-
-    /* PYTHONFAULTHANDLER environment variable is missing
-       or an empty string */
-    PyObject *xoptions = PySys_GetXOptions();
-    if (xoptions == NULL) {
-        return -1;
-    }
-
-    PyObject *key = PyUnicode_FromString("faulthandler");
-    if (key == NULL) {
-        return -1;
-    }
-
-    int has_key = PyDict_Contains(xoptions, key);
-    Py_DECREF(key);
-    return has_key;
-}
-
 _PyInitError
-_PyFaulthandler_Init(void)
+_PyFaulthandler_Init(int enable)
 {
 #ifdef HAVE_SIGALTSTACK
     int err;
@@ -1356,11 +1328,6 @@ _PyFaulthandler_Init(void)
     }
     PyThread_acquire_lock(thread.cancel_event, 1);
 #endif
-
-    int enable = faulthandler_init_parse();
-    if (enable < 0) {
-        return _Py_INIT_ERR("failed to parse faulthandler env var and cmdline");
-    }
 
     if (enable) {
         if (faulthandler_init_enable() < 0) {
