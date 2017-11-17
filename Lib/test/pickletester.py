@@ -2113,6 +2113,10 @@ class AbstractPickleTests(unittest.TestCase):
                     else:
                         pickled = self.dumps(obj, proto)
                     unpickled = self.loads(pickled)
+                    # More informative error message in case of failure.
+                    self.assertEqual([len(x) for x in obj],
+                                     [len(x) for x in unpickled])
+                    # Perform full equality check if the lengths match.
                     self.assertEqual(obj, unpickled)
                     n_frames = count_opcode(pickle.FRAME, pickled)
                     if not fast:

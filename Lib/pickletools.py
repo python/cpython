@@ -2251,7 +2251,7 @@ def genops(pickle):
 ##############################################################################
 # A pickle optimizer.
 
-def optimize(p):
+def optimize(pickled):
     'Optimize a pickle string by removing unused PUT opcodes'
     put = 'PUT'
     get = 'GET'
@@ -2260,7 +2260,7 @@ def optimize(p):
     opcodes = []            # (op, idx) or (pos, end_pos)
     proto = 0
     protoheader = b''
-    for opcode, arg, pos, end_pos in _genops(p, yield_end_pos=True):
+    for opcode, arg, pos, end_pos in _genops(pickled, yield_end_pos=True):
         if 'PUT' in opcode.name:
             oldids.add(arg)
             opcodes.append((put, arg))
@@ -2279,7 +2279,7 @@ def optimize(p):
             if arg > proto:
                 proto = arg
             if pos == 0:
-                protoheader = p[pos: end_pos]
+                protoheader = pickled[pos:end_pos]
             else:
                 opcodes.append((pos, end_pos))
         else:
@@ -2295,6 +2295,7 @@ def optimize(p):
         pickler.framer.start_framing()
     idx = 0
     for op, arg in opcodes:
+        frameless = False
         if op is put:
             if arg not in newids:
                 continue
@@ -2304,9 +2305,13 @@ def optimize(p):
         elif op is get:
             data = pickler.get(newids[arg])
         else:
-            data = p[op:arg]
-        pickler.framer.commit_frame()
-        pickler.write(data)
+            data = pickled[op:arg]
+            frameless = len(data) > pickler.framer._FRAME_SIZE_TARGET
+        pickler.framer.commit_frame(force=frameless)
+        if frameless:
+            pickler.framer.file_write(data)
+        else:
+            pickler.write(data)
     pickler.framer.end_framing()
     return out.getvalue()
 
