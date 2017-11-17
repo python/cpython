@@ -1115,18 +1115,42 @@ array_array_count(arrayobject *self, PyObject *v)
 array.array.index
 
     v: object
+    start: Py_ssize_t = 0
+    stop: Py_ssize_t = 9223372036854775807
     /
 
 Return index of first occurrence of v in the array.
+
+Raises ValueError if the value is not present.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_index(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=d48498d325602167 input=cf619898c6649d08]*/
+array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
+                       Py_ssize_t stop)
+/*[clinic end generated code: output=c45e777880c99f52 input=a7bf73bb0f02d9ae]*/
 {
-    Py_ssize_t i;
+    Py_ssize_t i, len;
 
-    for (i = 0; i < Py_SIZE(self); i++) {
+    len = Py_SIZE(self);
+
+    // interpret negative indicies as indexing from the end, in the
+    // usual way. TODO: Clean up - can this be written better/faster?
+    if (start < 0) {
+        start += len;
+
+        // wrap to the start if we are still negative
+        if (start < 0) {
+            start = 0;
+        }
+    }
+
+    if (stop < 0) {
+        stop += len;
+    } else if (stop > len) {
+        stop = len;
+    }
+
+    for (i = start; i < stop; i++) {
         PyObject *selfi;
         int cmp;
 

@@ -39,13 +39,37 @@ PyDoc_STRVAR(array_array_count__doc__,
     {"count", (PyCFunction)array_array_count, METH_O, array_array_count__doc__},
 
 PyDoc_STRVAR(array_array_index__doc__,
-"index($self, v, /)\n"
+"index($self, v, start=0, stop=9223372036854775807, /)\n"
 "--\n"
 "\n"
-"Return index of first occurrence of v in the array.");
+"Return index of first occurrence of v in the array.\n"
+"\n"
+"Raises ValueError if the value is not present.");
 
 #define ARRAY_ARRAY_INDEX_METHODDEF    \
-    {"index", (PyCFunction)array_array_index, METH_O, array_array_index__doc__},
+    {"index", (PyCFunction)array_array_index, METH_FASTCALL, array_array_index__doc__},
+
+static PyObject *
+array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
+                       Py_ssize_t stop);
+
+static PyObject *
+array_array_index(arrayobject *self, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v;
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = 9223372036854775807;
+
+    if (!_PyArg_ParseStack(args, nargs, "O|nn:index",
+        &v, &start, &stop)) {
+        goto exit;
+    }
+    return_value = array_array_index_impl(self, v, start, stop);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_remove__doc__,
 "remove($self, v, /)\n"
@@ -505,4 +529,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c7dfe61312b236a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6127c0b463de1ed4 input=a9049054013a1b77]*/
