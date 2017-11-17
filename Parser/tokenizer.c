@@ -18,6 +18,9 @@
 #include "abstract.h"
 #endif /* PGEN */
 
+/* Alternate tab spacing */
+#define ALTTABSIZE 1
+
 #define is_potential_identifier_start(c) (\
               (c >= 'a' && c <= 'z')\
                || (c >= 'A' && c <= 'Z')\
@@ -133,9 +136,6 @@ tok_new(void)
     tok->prompt = tok->nextprompt = NULL;
     tok->lineno = 0;
     tok->level = 0;
-    tok->altwarning = 1;
-    tok->alterror = 1;
-    tok->alttabsize = 1;
     tok->altindstack[0] = 0;
     tok->decoding_state = STATE_INIT;
     tok->decoding_erred = 0;
@@ -1283,22 +1283,9 @@ PyToken_ThreeChars(int c1, int c2, int c3)
 static int
 indenterror(struct tok_state *tok)
 {
-    if (tok->alterror) {
-        tok->done = E_TABSPACE;
-        tok->cur = tok->inp;
-        return 1;
-    }
-    if (tok->altwarning) {
-#ifdef PGEN
-        PySys_WriteStderr("inconsistent use of tabs and spaces "
-                          "in indentation\n");
-#else
-        PySys_FormatStderr("%U: inconsistent use of tabs and spaces "
-                          "in indentation\n", tok->filename);
-#endif
-        tok->altwarning = 0;
-    }
-    return 0;
+    tok->done = E_TABSPACE;
+    tok->cur = tok->inp;
+    return ERRORTOKEN;
 }
 
 #ifdef PGEN
@@ -1378,9 +1365,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 col++, altcol++;
             }
             else if (c == '\t') {
-                col = (col/tok->tabsize + 1) * tok->tabsize;
-                altcol = (altcol/tok->alttabsize + 1)
-                    * tok->alttabsize;
+                col = (col / tok->tabsize + 1) * tok->tabsize;
+                altcol = (altcol / ALTTABSIZE + 1) * ALTTABSIZE;
             }
             else if (c == '\014')  {/* Control-L (formfeed) */
                 col = altcol = 0; /* For Emacs users */
@@ -1409,9 +1395,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             if (col == tok->indstack[tok->indent]) {
                 /* No change */
                 if (altcol != tok->altindstack[tok->indent]) {
-                    if (indenterror(tok)) {
-                        return ERRORTOKEN;
-                    }
+                    return indenterror(tok);
                 }
             }
             else if (col > tok->indstack[tok->indent]) {
@@ -1422,9 +1406,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     return ERRORTOKEN;
                 }
                 if (altcol <= tok->altindstack[tok->indent]) {
-                    if (indenterror(tok)) {
-                        return ERRORTOKEN;
-                    }
+                    return indenterror(tok);
                 }
                 tok->pendin++;
                 tok->indstack[++tok->indent] = col;
@@ -1443,9 +1425,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     return ERRORTOKEN;
                 }
                 if (altcol != tok->altindstack[tok->indent]) {
-                    if (indenterror(tok)) {
-                        return ERRORTOKEN;
-                    }
+                    return indenterror(tok);
                 }
             }
         }
