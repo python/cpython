@@ -1,0 +1,4 @@
+array.index() now supports optional start and stop arguments.
+As with general sequences, they can be negative, and the
+returned index is still relative to the start of the array,
+not the start of the subsection of it.
