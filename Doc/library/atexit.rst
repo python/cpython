@@ -37,7 +37,7 @@ simplest way to convert code that sets ``sys.exitfunc`` is to import
 :mod:`atexit` and register the function that had been bound to ``sys.exitfunc``.
 
 
-.. function:: register(func[, *args[, **kargs]])
+.. function:: register(func[, *args[, **kwargs]])
 
    Register *func* as a function to be executed at termination.  Any optional
    arguments that are to be passed to *func* must be passed as arguments to
