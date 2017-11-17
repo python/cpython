@@ -197,7 +197,7 @@ The following data items and methods are also supported:
    Raises :exc:`ValueError` if *x* is not found.
 
    .. versionchanged:: 3.7
-      Added optional start and stop parameters.
+      Added optional *start* and *stop* parameters.
 
 .. method:: array.insert(i, x)
 
