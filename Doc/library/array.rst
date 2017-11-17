@@ -192,8 +192,7 @@ The following data items and methods are also supported:
 
    Return the smallest *i* such that *i* is the index of the first occurrence of
    *x* in the array. The optional arguments *start* and *stop* can be specified to
-   search for *x* within a subsection of the array, but the returned index is
-   still relative to the start of the array, not the subsection.
+   search for *x* within a subsection of the array.
 
    Raises :exc:`ValueError` if *x* is not found.
 
