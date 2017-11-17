@@ -2105,9 +2105,11 @@ class AbstractPickleTests(unittest.TestCase):
                         pickler.fast = fast
                         pickler.dump(obj)
                         pickled = buf.getvalue()
+                    elif fast:
+                        continue
                     else:
-                        # Note that we cannot set the fast flag to True in
-                        # this case.
+                        # Fallback to self.dumps when fast=False and
+                        # self.pickler is not available.
                         pickled = self.dumps(obj, proto)
                     unpickled = self.loads(pickled)
                     # More informative error message in case of failure.
@@ -2165,8 +2167,9 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_framed_write_sizes(self):
         if not hasattr(self, 'pickler'):
+            # This test requires passing a custom file-object to measure
+            # the number of calls to file.write and the size of each chunk.
             return
-
         class Writer:
 
             def __init__(self):
