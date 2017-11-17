@@ -10,13 +10,10 @@ import pathlib
 import random
 import shutil
 import subprocess
+import threading
 from test.support import unlink
 import _compression
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 # Skip tests if the bz2 module doesn't exist.
 bz2 = support.import_module('bz2')
@@ -65,7 +62,7 @@ class BaseTest(unittest.TestCase):
     BAD_DATA = b'this is not a valid bzip2 file'
 
     # Some tests need more than one block of uncompressed data. Since one block
-    # is at least 100 kB, we gather some data dynamically and compress it.
+    # is at least 100,000 bytes, we gather some data dynamically and compress it.
     # Note that this assumes that compression works correctly, so we cannot
     # simply use the bigger test data for all tests.
     test_size = 0
@@ -491,7 +488,6 @@ class BZ2FileTest(BaseTest):
         else:
             self.fail("1/0 didn't raise an exception")
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def testThreading(self):
         # Issue #7205: Using a BZ2File from several threads shouldn't deadlock.
         data = b"1" * 2**20
@@ -503,13 +499,6 @@ class BZ2FileTest(BaseTest):
             threads = [threading.Thread(target=comp) for i in range(nthreads)]
             with support.start_threads(threads):
                 pass
-
-    def testWithoutThreading(self):
-        module = support.import_fresh_module("bz2", blocked=("threading",))
-        with module.BZ2File(self.filename, "wb") as f:
-            f.write(b"abc")
-        with module.BZ2File(self.filename, "rb") as f:
-            self.assertEqual(f.read(), b"abc")
 
     def testMixedIterationAndReads(self):
         self.createTempFile()

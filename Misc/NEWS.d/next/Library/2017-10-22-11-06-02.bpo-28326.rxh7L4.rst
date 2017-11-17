@@ -1,0 +1,1 @@
+Fix multiprocessing.Process when stdout and/or stderr is closed or None.

@@ -2,6 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
+#include "internal/pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -414,56 +415,67 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
 }
 
 static int
+tb_print_line_repeated(PyObject *f, long cnt)
+{
+    int err;
+    PyObject *line = PyUnicode_FromFormat(
+            "  [Previous line repeated %ld more times]\n", cnt-3);
+    if (line == NULL) {
+        return -1;
+    }
+    err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+    Py_DECREF(line);
+    return err;
+}
+
+static int
 tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
 {
     int err = 0;
-    long depth = 0;
+    Py_ssize_t depth = 0;
     PyObject *last_file = NULL;
     int last_line = -1;
     PyObject *last_name = NULL;
     long cnt = 0;
-    PyObject *line;
     PyTracebackObject *tb1 = tb;
     while (tb1 != NULL) {
         depth++;
         tb1 = tb1->tb_next;
     }
-    while (tb != NULL && err == 0) {
-        if (depth <= limit) {
-            if (last_file != NULL &&
-                tb->tb_frame->f_code->co_filename == last_file &&
-                last_line != -1 && tb->tb_lineno == last_line &&
-                last_name != NULL &&
-                tb->tb_frame->f_code->co_name == last_name) {
-                    cnt++;
-                } else {
-                    if (cnt > 3) {
-                        line = PyUnicode_FromFormat(
-                        "  [Previous line repeated %d more times]\n", cnt-3);
-                        err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
-                        Py_DECREF(line);
-                    }
-                    last_file = tb->tb_frame->f_code->co_filename;
-                    last_line = tb->tb_lineno;
-                    last_name = tb->tb_frame->f_code->co_name;
-                    cnt = 0;
-                }
-            if (cnt < 3)
-                err = tb_displayline(f,
-                                     tb->tb_frame->f_code->co_filename,
-                                     tb->tb_lineno,
-                                     tb->tb_frame->f_code->co_name);
-        }
+    while (tb != NULL && depth > limit) {
         depth--;
         tb = tb->tb_next;
-        if (err == 0)
-            err = PyErr_CheckSignals();
     }
-    if (cnt > 3) {
-        line = PyUnicode_FromFormat(
-        "  [Previous line repeated %d more times]\n", cnt-3);
-        err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
-        Py_DECREF(line);
+    while (tb != NULL && err == 0) {
+        if (last_file != NULL &&
+            tb->tb_frame->f_code->co_filename == last_file &&
+            last_line != -1 && tb->tb_lineno == last_line &&
+            last_name != NULL && tb->tb_frame->f_code->co_name == last_name)
+        {
+            cnt++;
+        }
+        else {
+            if (cnt > 3) {
+                err = tb_print_line_repeated(f, cnt);
+            }
+            last_file = tb->tb_frame->f_code->co_filename;
+            last_line = tb->tb_lineno;
+            last_name = tb->tb_frame->f_code->co_name;
+            cnt = 0;
+        }
+        if (err == 0 && cnt < 3) {
+            err = tb_displayline(f,
+                                 tb->tb_frame->f_code->co_filename,
+                                 tb->tb_lineno,
+                                 tb->tb_frame->f_code->co_name);
+            if (err == 0) {
+                err = PyErr_CheckSignals();
+            }
+        }
+        tb = tb->tb_next;
+    }
+    if (err == 0 && cnt > 3) {
+        err = tb_print_line_repeated(f, cnt);
     }
     return err;
 }
@@ -484,26 +496,15 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
         return -1;
     }
     limitv = PySys_GetObject("tracebacklimit");
-    if (limitv) {
-        PyObject *exc_type, *exc_value, *exc_tb;
-
-        PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
-        limit = PyLong_AsLong(limitv);
-        if (limit == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                limit = PyTraceBack_LIMIT;
-            }
-            else {
-                Py_XDECREF(exc_type);
-                Py_XDECREF(exc_value);
-                Py_XDECREF(exc_tb);
-                return 0;
-            }
+    if (limitv && PyLong_Check(limitv)) {
+        int overflow;
+        limit = PyLong_AsLongAndOverflow(limitv, &overflow);
+        if (overflow > 0) {
+            limit = LONG_MAX;
         }
         else if (limit <= 0) {
-            limit = PyTraceBack_LIMIT;
+            return 0;
         }
-        PyErr_Restore(exc_type, exc_value, exc_tb);
     }
     err = PyFile_WriteString("Traceback (most recent call last):\n", f);
     if (!err)
@@ -749,7 +750,6 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     PyThreadState *tstate;
     unsigned int nthreads;
 
-#ifdef WITH_THREAD
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
@@ -760,7 +760,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
 
            PyThreadState_Get() doesn't give the state of the thread that caused
            the fault if the thread released the GIL, and so this function
-           cannot be used. Read the thread local storage (TLS) instead: call
+           cannot be used. Read the thread specific storage (TSS) instead: call
            PyGILState_GetThisThreadState(). */
         current_tstate = PyGILState_GetThisThreadState();
     }
@@ -777,21 +777,6 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             interp = current_tstate->interp;
         }
     }
-#else
-    if (current_tstate == NULL) {
-        /* Call _PyThreadState_UncheckedGet() instead of PyThreadState_Get()
-           to not fail with a fatal error if the thread state is NULL. */
-        current_tstate = _PyThreadState_UncheckedGet();
-    }
-
-    if (interp == NULL) {
-        if (current_tstate == NULL) {
-            /* We need the interpreter state to get Python threads */
-            return "unable to get the interpreter state";
-        }
-        interp = current_tstate->interp;
-    }
-#endif
     assert(interp != NULL);
 
     /* Get the current interpreter from the current thread */

@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 
 
@@ -314,7 +315,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (co->co_kwonlyargcount == 0 &&
         (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
         if (argdefs == NULL && co->co_argcount == nargs) {
@@ -401,7 +402,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
        be unique */
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
@@ -854,9 +855,9 @@ _PyObject_FastCall_Prepend(PyObject *callable,
 
     /* use borrowed references */
     args2[0] = obj;
-    memcpy(&args2[1],
-           args,
-           (nargs - 1)* sizeof(PyObject *));
+    if (nargs > 1) {
+        memcpy(&args2[1], args, (nargs - 1) * sizeof(PyObject *));
+    }
 
     result = _PyObject_FastCall(callable, args2, nargs);
     if (args2 != small_stack) {

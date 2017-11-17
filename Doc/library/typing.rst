@@ -111,8 +111,7 @@ More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
 This also means that it is not possible to create a subtype of ``Derived``
-since it is an identity function at runtime, not an actual type. Similarly, it
-is not possible to create another :func:`NewType` based on a ``Derived`` type::
+since it is an identity function at runtime, not an actual type::
 
    from typing import NewType
 
@@ -121,8 +120,15 @@ is not possible to create another :func:`NewType` based on a ``Derived`` type::
    # Fails at runtime and does not typecheck
    class AdminUserId(UserId): pass
 
-   # Also does not typecheck
+However, it is possible to create a :func:`NewType` based on a 'derived' ``NewType``::
+
+   from typing import NewType
+
+   UserId = NewType('UserId', int)
+
    ProUserId = NewType('ProUserId', UserId)
+
+and typechecking for ``ProUserId`` will work as expected.
 
 See :pep:`484` for more details.
 
@@ -891,17 +897,17 @@ The module defines the following classes, functions and decorators:
 
    See :pep:`484` for details and comparison with other typing semantics.
 
-.. decorator:: no_type_check(arg)
+.. decorator:: no_type_check
 
    Decorator to indicate that annotations are not type hints.
 
-   The argument must be a class or function; if it is a class, it
+   This works as class or function :term:`decorator`.  With a class, it
    applies recursively to all methods defined in that class (but not
    to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 
-.. decorator:: no_type_check_decorator(decorator)
+.. decorator:: no_type_check_decorator
 
    Decorator to give another decorator the :func:`no_type_check` effect.
 

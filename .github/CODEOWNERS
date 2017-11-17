@@ -24,19 +24,30 @@
 Python/bootstrap_hash.c       @python/crypto-team
 
 # Email and related
-**/*mail*                     @bitdancer
-**/*smtp*                     @bitdancer
-**/*mime*                     @bitdancer
-**/*imap*                     @bitdancer
-**/*poplib*                   @bitdancer
+**/*mail*                     @python/email-team
+**/*smtp*                     @python/email-team
+**/*mime*                     @python/email-team
+**/*imap*                     @python/email-team
+**/*poplib*                   @python/email-team
 
 # subprocess
 **/*subprocess*               @gpshead
 
 # Windows
 /PC/                          @python/windows-team
-/PCBuild/                     @python/windows-team
+/PCbuild/                     @python/windows-team
 
 # Windows installer packages
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
+
+**/*itertools*                @rhettinger
+**/*collections*              @rhettinger
+**/*random*                   @rhettinger
+**/*queue*                    @rhettinger
+**/*bisect*                   @rhettinger
+**/*heapq*                    @rhettinger
+**/*functools*                @ncoghlan @rhettinger
+**/*decimal*                  @rhettinger @skrah
+
+**/*idlelib*                  @terryjreedy

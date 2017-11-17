@@ -77,6 +77,7 @@ class OutputWindow(EditorWindow):
     def __init__(self, *args):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
+        self.text.unbind("<<toggle-code-context>>")
 
     # Customize EditorWindow
     def ispythonsource(self, filename):

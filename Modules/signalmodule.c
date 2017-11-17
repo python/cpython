@@ -85,12 +85,10 @@ module signal
    thread.  XXX This is a hack.
 */
 
-#ifdef WITH_THREAD
 #include <sys/types.h> /* For pid_t */
 #include "pythread.h"
 static unsigned long main_thread;
 static pid_t main_pid;
-#endif
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -133,16 +131,21 @@ static HANDLE sigint_event = NULL;
 #ifdef HAVE_GETITIMER
 static PyObject *ItimerError;
 
-/* auxiliary functions for setitimer/getitimer */
-static void
-timeval_from_double(double d, struct timeval *tv)
+/* auxiliary functions for setitimer */
+static int
+timeval_from_double(PyObject *obj, struct timeval *tv)
 {
-    tv->tv_sec = floor(d);
-    tv->tv_usec = fmod(d, 1.0) * 1000000.0;
-    /* Don't disable the timer if the computation above rounds down to zero. */
-    if (d > 0.0 && tv->tv_sec == 0 && tv->tv_usec == 0) {
-        tv->tv_usec = 1;
+    if (obj == NULL) {
+        tv->tv_sec = 0;
+        tv->tv_usec = 0;
+        return 0;
     }
+
+    _PyTime_t t;
+    if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_CEILING) < 0) {
+        return -1;
+    }
+    return _PyTime_AsTimeval(t, tv, _PyTime_ROUND_CEILING);
 }
 
 Py_LOCAL_INLINE(double)
@@ -316,10 +319,8 @@ signal_handler(int sig_num)
 {
     int save_errno = errno;
 
-#ifdef WITH_THREAD
     /* See NOTES section above */
     if (getpid() == main_pid)
-#endif
     {
         trip_signal(sig_num);
     }
@@ -439,13 +440,11 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread) {
         PyErr_SetString(PyExc_ValueError,
                         "signal only works in main thread");
         return NULL;
     }
-#endif
     if (signalnum < 1 || signalnum >= NSIG) {
         PyErr_SetString(PyExc_ValueError,
                         "signal number out of range");
@@ -462,12 +461,15 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     }
     else
         func = signal_handler;
+    /* Check for pending signals before changing signal handler */
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (PyOS_setsig(signalnum, func) == SIG_ERR) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     old_handler = Handlers[signalnum].func;
-    _Py_atomic_store_relaxed(&Handlers[signalnum].tripped, 0);
     Py_INCREF(handler);
     Handlers[signalnum].func = handler;
     if (old_handler != NULL)
@@ -571,13 +573,11 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         return NULL;
 #endif
 
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread) {
         PyErr_SetString(PyExc_ValueError,
                         "set_wakeup_fd only works in main thread");
         return NULL;
     }
-#endif
 
 #ifdef MS_WINDOWS
     is_socket = 0;
@@ -685,8 +685,8 @@ PySignal_SetWakeupFd(int fd)
 signal.setitimer
 
     which:    int
-    seconds:  double
-    interval: double = 0.0
+    seconds:  object
+    interval: object(c_default="NULL") = 0.0
     /
 
 Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).
@@ -698,14 +698,19 @@ Returns old values as a tuple: (delay, interval).
 [clinic start generated code]*/
 
 static PyObject *
-signal_setitimer_impl(PyObject *module, int which, double seconds,
-                      double interval)
-/*[clinic end generated code: output=6f51da0fe0787f2c input=0d27d417cfcbd51a]*/
+signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
+                      PyObject *interval)
+/*[clinic end generated code: output=65f9dcbddc35527b input=de43daf194e6f66f]*/
 {
     struct itimerval new, old;
 
-    timeval_from_double(seconds, &new.it_value);
-    timeval_from_double(interval, &new.it_interval);
+    if (timeval_from_double(seconds, &new.it_value) < 0) {
+        return NULL;
+    }
+    if (timeval_from_double(interval, &new.it_interval) < 0) {
+        return NULL;
+    }
+
     /* Let OS check "which" value */
     if (setitimer(which, &new, &old) != 0) {
         PyErr_SetFromErrno(ItimerError);
@@ -1104,7 +1109,7 @@ signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
 #endif   /* #ifdef HAVE_SIGTIMEDWAIT */
 
 
-#if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)
+#if defined(HAVE_PTHREAD_KILL)
 
 /*[clinic input]
 signal.pthread_kill
@@ -1137,7 +1142,7 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
     Py_RETURN_NONE;
 }
 
-#endif   /* #if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD) */
+#endif   /* #if defined(HAVE_PTHREAD_KILL) */
 
 
 
@@ -1217,10 +1222,8 @@ PyInit__signal(void)
     PyObject *m, *d, *x;
     int i;
 
-#ifdef WITH_THREAD
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-#endif
 
     /* Create the module and add the functions */
     m = PyModule_Create(&signalmodule);
@@ -1523,10 +1526,8 @@ PyErr_CheckSignals(void)
     if (!_Py_atomic_load(&is_tripped))
         return 0;
 
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread)
         return 0;
-#endif
 
     /*
      * The is_tripped variable is meant to speed up the calls to
@@ -1599,10 +1600,8 @@ int
 PyOS_InterruptOccurred(void)
 {
     if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
-#ifdef WITH_THREAD
         if (PyThread_get_thread_ident() != main_thread)
             return 0;
-#endif
         _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
         return 1;
     }
@@ -1628,20 +1627,14 @@ _PySignal_AfterFork(void)
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
-#ifdef WITH_THREAD
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-#endif
 }
 
 int
 _PyOS_IsMainThread(void)
 {
-#ifdef WITH_THREAD
     return PyThread_get_thread_ident() == main_thread;
-#else
-    return 1;
-#endif
 }
 
 #ifdef MS_WINDOWS
