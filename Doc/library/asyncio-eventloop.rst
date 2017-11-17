@@ -391,7 +391,7 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
