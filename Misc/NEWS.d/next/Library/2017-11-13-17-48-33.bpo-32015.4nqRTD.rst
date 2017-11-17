@@ -1,0 +1,2 @@
+Fixed the looping of asyncio in the case of reconnection the socket during
+waiting async read/write from/to the socket.

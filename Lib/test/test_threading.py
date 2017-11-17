@@ -132,10 +132,10 @@ class ThreadTests(BaseTestCase):
         # Kill the "immortal" _DummyThread
         del threading._active[ident[0]]
 
-    # run with a small(ish) thread stack size (256kB)
+    # run with a small(ish) thread stack size (256 KiB)
     def test_various_ops_small_stack(self):
         if verbose:
-            print('with 256kB thread stack size...')
+            print('with 256 KiB thread stack size...')
         try:
             threading.stack_size(262144)
         except _thread.error:
@@ -144,10 +144,10 @@ class ThreadTests(BaseTestCase):
         self.test_various_ops()
         threading.stack_size(0)
 
-    # run with a large thread stack size (1MB)
+    # run with a large thread stack size (1 MiB)
     def test_various_ops_large_stack(self):
         if verbose:
-            print('with 1MB thread stack size...')
+            print('with 1 MiB thread stack size...')
         try:
             threading.stack_size(0x100000)
         except _thread.error:
@@ -427,7 +427,7 @@ class ThreadTests(BaseTestCase):
         t.daemon = True
         self.assertIn('daemon', repr(t))
 
-    def test_deamon_param(self):
+    def test_daemon_param(self):
         t = threading.Thread()
         self.assertFalse(t.daemon)
         t = threading.Thread(daemon=False)
@@ -546,6 +546,35 @@ class ThreadTests(BaseTestCase):
         data = out.decode().replace('\r', '')
         self.assertEqual(err, b"")
         self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
+
+    def test_main_thread_during_shutdown(self):
+        # bpo-31516: current_thread() should still point to the main thread
+        # at shutdown
+        code = """if 1:
+            import gc, threading
+
+            main_thread = threading.current_thread()
+            assert main_thread is threading.main_thread()  # sanity check
+
+            class RefCycle:
+                def __init__(self):
+                    self.cycle = self
+
+                def __del__(self):
+                    print("GC:",
+                          threading.current_thread() is main_thread,
+                          threading.main_thread() is main_thread,
+                          threading.enumerate() == [main_thread])
+
+            RefCycle()
+            gc.collect()  # sanity check
+            x = RefCycle()
+        """
+        _, out, err = assert_python_ok("-c", code)
+        data = out.decode()
+        self.assertEqual(err, b"")
+        self.assertEqual(data.splitlines(),
+                         ["GC: True True True"] * 2)
 
     def test_tstate_lock(self):
         # Test an implementation detail of Thread objects.

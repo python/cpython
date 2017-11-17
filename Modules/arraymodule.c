@@ -1928,8 +1928,10 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
         return NULL;
 
     new_args = PyTuple_New(2);
-    if (new_args == NULL)
+    if (new_args == NULL) {
+        Py_DECREF(typecode_obj);
         return NULL;
+    }
     Py_INCREF(items);
     PyTuple_SET_ITEM(new_args, 0, typecode_obj);
     PyTuple_SET_ITEM(new_args, 1, items);
@@ -2307,7 +2309,8 @@ array_repr(arrayobject *a)
     len = Py_SIZE(a);
     typecode = a->ob_descr->typecode;
     if (len == 0) {
-        return PyUnicode_FromFormat("array('%c')", (int)typecode);
+        return PyUnicode_FromFormat("%s('%c')",
+                                    _PyType_Name(Py_TYPE(a)), (int)typecode);
     }
     if (typecode == 'u') {
         v = array_array_tounicode_impl(a);
@@ -2317,7 +2320,8 @@ array_repr(arrayobject *a)
     if (v == NULL)
         return NULL;
 
-    s = PyUnicode_FromFormat("array('%c', %R)", (int)typecode, v);
+    s = PyUnicode_FromFormat("%s('%c', %R)",
+                             _PyType_Name(Py_TYPE(a)), (int)typecode, v);
     Py_DECREF(v);
     return s;
 }

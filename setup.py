@@ -501,13 +501,6 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
-    def detect_math_libs(self):
-        # Check for MacOS X, which doesn't need libm.a at all
-        if host_platform == 'darwin':
-            return []
-        else:
-            return ['m']
-
     def detect_modules(self):
         # Ensure that /usr/local is always used, but the local build
         # directories (i.e. '.' and 'Include') must be first.  See issue
@@ -613,10 +606,6 @@ class PyBuildExt(build_ext):
                 if item.startswith('-L'):
                     lib_dirs.append(item[2:])
 
-        math_libs = self.detect_math_libs()
-
-        # XXX Omitted modules: gl, pure, dl, SGI-specific modules
-
         #
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
@@ -630,12 +619,12 @@ class PyBuildExt(build_ext):
         exts.append( Extension('cmath', ['cmathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=math_libs) )
+                               libraries=['m']) )
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=math_libs) )
+                               libraries=['m']) )
 
         # time libraries: librt may be needed for clock_gettime()
         time_libs = []
@@ -646,10 +635,10 @@ class PyBuildExt(build_ext):
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
                                libraries=time_libs) )
-        # math_libs is needed by delta_new() that uses round() and by accum()
-        # that uses modf().
+        # libm is needed by delta_new() that uses round() and by accum() that
+        # uses modf().
         exts.append( Extension('_datetime', ['_datetimemodule.c'],
-                               libraries=math_libs) )
+                               libraries=['m']) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # bisect
@@ -734,9 +723,9 @@ class PyBuildExt(build_ext):
         # According to #993173, this one should actually work fine on
         # 64-bit platforms.
         #
-        # audioop needs math_libs for floor() in multiple functions.
+        # audioop needs libm for floor() in multiple functions.
         exts.append( Extension('audioop', ['audioop.c'],
-                               libraries=math_libs) )
+                               libraries=['m']) )
 
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
@@ -909,7 +898,7 @@ class PyBuildExt(build_ext):
                 missing.append('_hashlib')
 
         # We always compile these even when OpenSSL is available (issue #14693).
-        # It's harmless and the object code is tiny (40-50 KB per module,
+        # It's harmless and the object code is tiny (40-50 KiB per module,
         # only loaded when actually used).
         exts.append( Extension('_sha256', ['sha256module.c'],
                                depends=['hashlib.h']) )
@@ -924,19 +913,10 @@ class PyBuildExt(build_ext):
                                         'Modules/_blake2/impl/*'))
         blake2_deps.append('hashlib.h')
 
-        blake2_macros = []
-        if (not cross_compiling and
-                os.uname().machine == "x86_64" and
-                sys.maxsize >  2**32):
-            # Every x86_64 machine has at least SSE2.  Check for sys.maxsize
-            # in case that kernel is 64-bit but userspace is 32-bit.
-            blake2_macros.append(('BLAKE2_USE_SSE', '1'))
-
         exts.append( Extension('_blake2',
                                ['_blake2/blake2module.c',
                                 '_blake2/blake2b_impl.c',
                                 '_blake2/blake2s_impl.c'],
-                               define_macros=blake2_macros,
                                depends=blake2_deps) )
 
         sha3_deps = glob(os.path.join(os.getcwd(), srcdir,
@@ -1668,6 +1648,20 @@ class PyBuildExt(build_ext):
         if '_tkinter' not in [e.name for e in self.extensions]:
             missing.append('_tkinter')
 
+        # Build the _uuid module if possible
+        uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
+        if uuid_incs:
+            if self.compiler.find_library_file(lib_dirs, 'uuid'):
+                uuid_libs = ['uuid']
+            else:
+                uuid_libs = []
+        if uuid_incs:
+            self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
+                                   libraries=uuid_libs,
+                                   include_dirs=uuid_incs))
+        else:
+            missing.append('_uuid')
+
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         ext = Extension('xx', ['xxmodule.c'])
 ##         self.extensions.append(ext)
@@ -1969,7 +1963,6 @@ class PyBuildExt(build_ext):
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c']
         depends = ['_ctypes/ctypes.h']
-        math_libs = self.detect_math_libs()
 
         if host_platform == 'darwin':
             sources.append('_ctypes/malloc_closure.c')
@@ -2000,10 +1993,10 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources,
                         depends=depends)
-        # function my_sqrt() needs math library for sqrt()
+        # function my_sqrt() needs libm for sqrt()
         ext_test = Extension('_ctypes_test',
                      sources=['_ctypes/_ctypes_test.c'],
-                     libraries=math_libs)
+                     libraries=['m'])
         self.extensions.extend([ext, ext_test])
 
         if host_platform == 'darwin':
@@ -2047,7 +2040,6 @@ class PyBuildExt(build_ext):
                                                          'Modules',
                                                          '_decimal',
                                                          'libmpdec'))]
-            libraries = self.detect_math_libs()
             sources = [
               '_decimal/_decimal.c',
               '_decimal/libmpdec/basearith.c',
@@ -2143,7 +2135,7 @@ class PyBuildExt(build_ext):
         ext = Extension (
             '_decimal',
             include_dirs=include_dirs,
-            libraries=libraries,
+            libraries=['m'],
             define_macros=define_macros,
             undef_macros=undef_macros,
             extra_compile_args=extra_compile_args,

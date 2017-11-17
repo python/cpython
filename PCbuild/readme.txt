@@ -25,6 +25,8 @@ external dependencies. To build, simply run the "build.bat" script without
 any arguments. After this succeeds, you can open the "pcbuild.sln"
 solution in Visual Studio to continue development.
 
+To build an installer package, refer to the README in the Tools/msi folder.
+
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
 win32 sub-directory.  The x64 platform is used for building 64-bit AMD64
@@ -182,7 +184,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.14.2.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.21.0.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter

@@ -130,9 +130,6 @@ library/exceptions,,:err,err.object[err.start:err.end]
 library/functions,,:step,a[start:stop:step]
 library/functions,,:stop,"a[start:stop, i]"
 library/functions,,:stop,a[start:stop:step]
-library/hashlib,,:vatrogasac,>>> cookie = b'user:vatrogasac'
-library/hashlib,,:vatrogasac,"user:vatrogasac,349cf904533767ed2d755279a8df84d0"
-library/hashlib,,:policajac,">>> compare_digest(b'user:policajac', sig)"
 library/hashlib,,:LEAF,"h00 = blake2b(buf[0:LEAF_SIZE], fanout=FANOUT, depth=DEPTH,"
 library/http.client,,:port,host:port
 library/http.cookies,,`,!#$%&'*+-.^_`|~:
@@ -303,7 +300,7 @@ whatsnew/3.2,,:gz,">>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') a
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 library/re,,`,!#$%&'*+-.^_`|~:
-library/re,,`,!\#\$%&'\*\+\-\.\^_`\|~:
+library/re,,`,!\#\$%\&'\*\+\-\.\^_`\|\~:
 library/tarfile,,:xz,'x:xz'
 library/xml.etree.elementtree,,:sometag,prefix:sometag
 library/xml.etree.elementtree,,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""

@@ -1777,8 +1777,10 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             }
         }
         key = PyLong_FromVoidPtr(obj);
-        if (key == NULL)
+        if (key == NULL) {
+            self->fast_nesting = -1;
             return 0;
+        }
         if (PyDict_GetItemWithError(self->fast_memo, key)) {
             Py_DECREF(key);
             PyErr_Format(PyExc_ValueError,
@@ -1789,6 +1791,8 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             return 0;
         }
         if (PyErr_Occurred()) {
+            Py_DECREF(key);
+            self->fast_nesting = -1;
             return 0;
         }
         if (PyDict_SetItem(self->fast_memo, key, Py_None) < 0) {
@@ -1854,18 +1858,13 @@ save_long(PicklerObject *self, PyObject *obj)
     PyObject *repr = NULL;
     Py_ssize_t size;
     long val;
+    int overflow;
     int status = 0;
 
-    const char long_op = LONG;
-
-    val= PyLong_AsLong(obj);
-    if (val == -1 && PyErr_Occurred()) {
-        /* out of range for int pickling */
-        PyErr_Clear();
-    }
-    else if (self->bin &&
-             (sizeof(long) <= 4 ||
-              (val <= 0x7fffffffL && val >= (-0x7fffffffL - 1)))) {
+    val= PyLong_AsLongAndOverflow(obj, &overflow);
+    if (!overflow && (sizeof(long) <= 4 ||
+            (val <= 0x7fffffffL && val >= (-0x7fffffffL - 1))))
+    {
         /* result fits in a signed 4-byte integer.
 
            Note: we can't use -0x80000000L in the above condition because some
@@ -1878,31 +1877,35 @@ save_long(PicklerObject *self, PyObject *obj)
         char pdata[32];
         Py_ssize_t len = 0;
 
-        pdata[1] = (unsigned char)(val & 0xff);
-        pdata[2] = (unsigned char)((val >> 8) & 0xff);
-        pdata[3] = (unsigned char)((val >> 16) & 0xff);
-        pdata[4] = (unsigned char)((val >> 24) & 0xff);
+        if (self->bin) {
+            pdata[1] = (unsigned char)(val & 0xff);
+            pdata[2] = (unsigned char)((val >> 8) & 0xff);
+            pdata[3] = (unsigned char)((val >> 16) & 0xff);
+            pdata[4] = (unsigned char)((val >> 24) & 0xff);
 
-        if ((pdata[4] == 0) && (pdata[3] == 0)) {
-            if (pdata[2] == 0) {
-                pdata[0] = BININT1;
-                len = 2;
+            if ((pdata[4] != 0) || (pdata[3] != 0)) {
+                pdata[0] = BININT;
+                len = 5;
             }
-            else {
+            else if (pdata[2] != 0) {
                 pdata[0] = BININT2;
                 len = 3;
             }
+            else {
+                pdata[0] = BININT1;
+                len = 2;
+            }
         }
         else {
-            pdata[0] = BININT;
-            len = 5;
+            sprintf(pdata, "%c%ld\n", INT,  val);
+            len = strlen(pdata);
         }
-
         if (_Pickler_Write(self, pdata, len) < 0)
             return -1;
 
         return 0;
     }
+    assert(!PyErr_Occurred());
 
     if (self->proto >= 2) {
         /* Linear-time pickling. */
@@ -1982,6 +1985,7 @@ save_long(PicklerObject *self, PyObject *obj)
             goto error;
     }
     else {
+        const char long_op = LONG;
         const char *string;
 
         /* proto < 2: write the repr and newline.  This is quadratic-time (in
@@ -4241,19 +4245,23 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast = 0;
     self->fast_nesting = 0;
     self->fast_memo = NULL;
-    self->pers_func = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_id)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_id);
-        if (self->pers_func == NULL)
+
+    self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                          &PyId_persistent_id);
+    if (self->pers_func == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
+        }
+        PyErr_Clear();
     }
-    self->dispatch_table = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_dispatch_table)) {
-        self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
-                                                   &PyId_dispatch_table);
-        if (self->dispatch_table == NULL)
+
+    self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
+                                               &PyId_dispatch_table);
+    if (self->dispatch_table == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
+        }
+        PyErr_Clear();
     }
 
     return 0;
@@ -5208,22 +5216,24 @@ load_frozenset(UnpicklerObject *self)
 static PyObject *
 instantiate(PyObject *cls, PyObject *args)
 {
-    PyObject *result = NULL;
-    _Py_IDENTIFIER(__getinitargs__);
     /* Caller must assure args are a tuple.  Normally, args come from
        Pdata_poptuple which packs objects from the top of the stack
        into a newly created tuple. */
     assert(PyTuple_Check(args));
-    if (PyTuple_GET_SIZE(args) > 0 || !PyType_Check(cls) ||
-        _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
-        result = PyObject_CallObject(cls, args);
-    }
-    else {
+    if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
+        _Py_IDENTIFIER(__getinitargs__);
         _Py_IDENTIFIER(__new__);
-
-        result = _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+        PyObject *func = _PyObject_GetAttrId(cls, &PyId___getinitargs__);
+        if (func == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                return NULL;
+            }
+            PyErr_Clear();
+            return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+        }
+        Py_DECREF(func);
     }
-    return result;
+    return PyObject_CallObject(cls, args);
 }
 
 static int
@@ -6679,17 +6689,14 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
         return -1;
 
     self->fix_imports = fix_imports;
-    if (self->fix_imports == -1)
-        return -1;
 
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_load);
-        if (self->pers_func == NULL)
-            return 1;
-    }
-    else {
-        self->pers_func = NULL;
+    self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                          &PyId_persistent_load);
+    if (self->pers_func == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
     }
 
     self->stack = (Pdata *)Pdata_New();

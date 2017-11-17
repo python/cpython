@@ -79,6 +79,15 @@ The following options are understood:
 
    :option:`--main` cannot be specified when copying an archive.
 
+.. cmdoption:: -c, --compress
+
+   Compress files with the deflate method, reducing the size of the output
+   file. By default, files are stored uncompressed in the archive.
+
+   :option:`--compress` has no effect when copying an archive.
+
+   .. versionadded:: 3.7
+
 .. cmdoption:: --info
 
    Display the interpreter embedded in the archive, for diagnostic purposes.  In
@@ -98,8 +107,7 @@ Python API
 The module defines two convenience functions:
 
 
-.. function:: create_archive(source, target=None, interpreter=None, main=None,
-                             filter=None)
+.. function:: create_archive(source, target=None, interpreter=None, main=None, filter=None, compressed=False)
 
    Create an application archive from *source*.  The source can be any
    of the following:
@@ -149,6 +157,11 @@ The module defines two convenience functions:
    (relative to the source directory).  It should return ``True`` if the
    file is to be added.
 
+   The optional *compressed* argument determines whether files are
+   compressed.  If set to ``True``, files in the archive are compressed
+   with the deflate method; otherwise, files are stored uncompressed.
+   This argument has no effect when copying an existing archive.
+
    If a file object is specified for *source* or *target*, it is the
    caller's responsibility to close it after calling create_archive.
 
@@ -159,7 +172,7 @@ The module defines two convenience functions:
    needed by that class.
 
    .. versionadded:: 3.7
-      Added the *filter* argument.
+      Added the *filter* and *compressed* arguments.
 
 .. function:: get_interpreter(archive)
 
