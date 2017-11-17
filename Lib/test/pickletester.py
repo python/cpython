@@ -2039,7 +2039,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     FRAME_SIZE_TARGET = 64 * 1024
 
-    def check_frame_opcodes(self, pickled, frameless_blobs=True):
+    def check_frame_opcodes(self, pickled):
         """
         Check the arguments of FRAME opcodes in a protocol 4+ pickle.
 
@@ -2055,7 +2055,7 @@ class AbstractPickleTests(unittest.TestCase):
             'BINUNICODE8': 9,
         }
         for op, arg, pos in pickletools.genops(pickled):
-            if frameless_blobs and op.name in frameless_opcode_sizes:
+            if op.name in frameless_opcode_sizes:
                 if len(arg) > self.FRAME_SIZE_TARGET:
                     frame_opcode_size = frameless_opcode_sizes[op.name]
                     arg = len(arg)
@@ -2099,15 +2099,9 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             for fast in [True, False]:
                 if fast and not hasattr(self, 'pickler'):
+                    # The fast flag cannot be changed for test classes that
+                    # only expose the `self.dumps` method.
                     continue
-
-                # The default picklers do not include large binary objects in
-                # frames.
-                # However some alternative implementation of dump / dumps can
-                # output pickles that include large binary objects inside
-                # protocol 4 frames. The test classes of such implementations
-                # make it explicit by setting the following flag.
-                frameless_blobs = getattr(self, 'frameless_blobs', True)
 
                 with self.subTest(proto=proto, fast=fast):
                     if hasattr(self, 'pickler'):
@@ -2127,7 +2121,7 @@ class AbstractPickleTests(unittest.TestCase):
                     else:
                         # One frame at the beginning and one at the end.
                         self.assertGreaterEqual(n_frames, 2)
-                    self.check_frame_opcodes(pickled, frameless_blobs)
+                    self.check_frame_opcodes(pickled)
 
     def test_optional_frames(self):
         if pickle.HIGHEST_PROTOCOL < 4:
