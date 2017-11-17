@@ -188,7 +188,6 @@ class _Framer:
     def __init__(self, file_write):
         self.file_write = file_write
         self.current_frame = None
-        self.delayed_proto_opcode = None
 
     def start_framing(self):
         self.current_frame = io.BytesIO()
@@ -203,24 +202,10 @@ class _Framer:
             f = self.current_frame
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
                 with f.getbuffer() as data:
-                    n = len(data)
-                    po = self.delayed_proto_opcode
-                    if po is None:
-                        self.file_write(FRAME + pack("<Q", n) + data)
-                    else:
-                        self.file_write(po + FRAME + pack("<Q", n) + data)
-                        self.delayed_proto_opcode = None
+                    self.file_write(FRAME + pack("<Q", len(data)))
+                    self.file_write(data)
                 f.seek(0)
                 f.truncate()
-
-    def write_proto(self, data):
-        if self.current_frame:
-            # Store proto opcode to delay write when committing the first
-            # frame. The protocol opcode is inserted before the first frame
-            # opcode.
-            self.delayed_proto_opcode = data
-        else:
-            self.file_write(data)
 
     def write(self, data):
         if self.current_frame:
@@ -430,10 +415,10 @@ class _Pickler:
         if not hasattr(self, "_file_write"):
             raise PicklingError("Pickler.__init__() was not called by "
                                 "%s.__init__()" % (self.__class__.__name__,))
+        if self.proto >= 2:
+            self.write(PROTO + pack("<B", self.proto))
         if self.proto >= 4:
             self.framer.start_framing()
-        if self.proto >= 2:
-            self.framer.write_proto(PROTO + pack("<B", self.proto))
         self.save(obj)
         self.write(STOP)
         self.framer.end_framing()

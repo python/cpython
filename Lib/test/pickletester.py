@@ -2188,16 +2188,39 @@ class AbstractPickleTests(unittest.TestCase):
             # calls to write only once per frame.
             w = Writer()
             self.pickler(w, proto).dump(small_objects)
-            reconstructed = self.loads(b"".join(w.chunks))
+            pickled = b"".join(w.chunks)
+            reconstructed = self.loads(pickled)
             self.assertEqual(reconstructed, small_objects)
             self.assertGreater(len(w.chunks), 1)
-            # import pickletools
-            # print(pickletools.dis(b"".join(w.chunks)))
-            for i, chunk in enumerate(w.chunks):
-                self.assertGreater(2 * self.FRAME_SIZE_TARGET, len(chunk))
-                if i < len(w.chunks) - 1:
-                    # The last frame can be smaller than FRAME_SIZE_TARGET.
-                    self.assertGreaterEqual(len(chunk), self.FRAME_SIZE_TARGET)
+
+            n_frames, remainder = divmod(len(pickled), self.FRAME_SIZE_TARGET)
+            if remainder > 0:
+                n_frames += 1
+
+            # There should be at least one call to write per frame
+            self.assertGreaterEqual(len(w.chunks), n_frames)
+
+            # but not too many either: there can be one for the proto,
+            # one per-frame header and one per frame for the actual contents.
+            self.assertGreaterEqual(2 * n_frames + 1, len(w.chunks))
+
+            chunk_sizes = [len(c) for c in w.chunks[:-1]]
+            large_sizes = [s for s in chunk_sizes
+                           if s >= self.FRAME_SIZE_TARGET]
+            small_sizes = [s for s in chunk_sizes
+                           if s < self.FRAME_SIZE_TARGET]
+
+            # Large chunks should not be too large:
+            for chunk_size in large_sizes:
+                self.assertGreater(2 * self.FRAME_SIZE_TARGET, chunk_size)
+
+            last_chunk_size = len(w.chunks[-1])
+            self.assertGreater(2 * self.FRAME_SIZE_TARGET, last_chunk_size)
+
+            # Small chunks (if any) should be very small
+            # (only proto and frame headers)
+            for chunk_size in small_sizes:
+                self.assertGreaterEqual(9, chunk_size)
 
     def test_nested_names(self):
         global Nested
