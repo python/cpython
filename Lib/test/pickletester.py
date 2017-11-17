@@ -2098,11 +2098,6 @@ class AbstractPickleTests(unittest.TestCase):
         obj = [b'x' * N, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             for fast in [True, False]:
-                if fast and not hasattr(self, 'pickler'):
-                    # The fast flag cannot be changed for test classes that
-                    # only expose the `self.dumps` method.
-                    continue
-
                 with self.subTest(proto=proto, fast=fast):
                     if hasattr(self, 'pickler'):
                         buf = io.BytesIO()
@@ -2111,6 +2106,8 @@ class AbstractPickleTests(unittest.TestCase):
                         pickler.dump(obj)
                         pickled = buf.getvalue()
                     else:
+                        # Note that we cannot set the fast flag to fast flag
+                        # to True in this case.
                         pickled = self.dumps(obj, proto)
                     unpickled = self.loads(pickled)
                     # More informative error message in case of failure.
