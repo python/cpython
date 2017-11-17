@@ -202,8 +202,9 @@ class _Framer:
             f = self.current_frame
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
                 with f.getbuffer() as data:
-                    self.file_write(FRAME + pack("<Q", len(data)))
-                    self.file_write(data)
+                    write = self.file_write
+                    write(FRAME + pack("<Q", len(data)))
+                    write(data)
                 f.seek(0)
                 f.truncate()
 
