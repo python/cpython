@@ -1129,25 +1129,17 @@ array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
                        Py_ssize_t stop)
 /*[clinic end generated code: output=c45e777880c99f52 input=6efdb3dae558556c]*/
 {
-    Py_ssize_t i, len;
-
-    len = Py_SIZE(self);
+    Py_ssize_t i;
 
     if (start < 0) {
-        start += len;
-
-        if (start < 0) {
+        start += Py_SIZE(self);
+        if (start < 0)
             start = 0;
-        }
     }
-
     if (stop < 0) {
-        stop += len;
-    } else if (stop > len) {
-        stop = len;
+        stop += Py_SIZE(self);
     }
-
-    for (i = start; i < stop; i++) {
+    for (i = start; i < stop && i < Py_SIZE(self); i++) {
         PyObject *selfi;
         int cmp;
 
