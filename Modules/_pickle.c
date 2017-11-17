@@ -890,7 +890,7 @@ _Pickler_WriteFrameHeader(PicklerObject *self, char *qdata, size_t frame_len)
 }
 
 static int
-_Pickler_CommitFrame(PicklerObject *self, size_t frame_extension)
+_Pickler_CommitFrame(PicklerObject *self)
 {
     size_t frame_len;
     char *qdata;
@@ -898,7 +898,6 @@ _Pickler_CommitFrame(PicklerObject *self, size_t frame_extension)
     if (!self->framing || self->frame_start == -1)
         return 0;
     frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
-    frame_len += frame_extension;
     qdata = PyBytes_AS_STRING(self->output_buffer) + self->frame_start;
     _Pickler_WriteFrameHeader(self, qdata, frame_len);
     self->frame_start = -1;
@@ -912,7 +911,7 @@ _Pickler_GetString(PicklerObject *self)
 
     assert(self->output_buffer != NULL);
 
-    if (_Pickler_CommitFrame(self, 0))
+    if (_Pickler_CommitFrame(self))
         return NULL;
 
     self->output_buffer = NULL;
@@ -948,7 +947,7 @@ _Pickler_OpcodeBoundary(PicklerObject *self)
         return 0;
     frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
     if (frame_len >= FRAME_SIZE_TARGET) {
-        if(_Pickler_CommitFrame(self, 0)) {
+        if(_Pickler_CommitFrame(self)) {
             return -1;
         }
         if (self->write != NULL) {
@@ -959,11 +958,8 @@ _Pickler_OpcodeBoundary(PicklerObject *self)
                 return -1;
             }
         }
-        return 0;
     }
-    else {
-        return 0;
-    }
+    return 0;
 }
 
 static Py_ssize_t
@@ -2083,7 +2079,7 @@ _Pickler_write_large_bytes(
     PyObject *result;
 
     /* Commit the previous frame. */
-    if (_Pickler_CommitFrame(self, 0)) {
+    if (_Pickler_CommitFrame(self)) {
         return -1;
     }
     /* Disable frameing temporarily */
