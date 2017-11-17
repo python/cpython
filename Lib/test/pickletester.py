@@ -2106,8 +2106,8 @@ class AbstractPickleTests(unittest.TestCase):
                         pickler.dump(obj)
                         pickled = buf.getvalue()
                     else:
-                        # Note that we cannot set the fast flag to fast flag
-                        # to True in this case.
+                        # Note that we cannot set the fast flag to True in
+                        # this case.
                         pickled = self.dumps(obj, proto)
                     unpickled = self.loads(pickled)
                     # More informative error message in case of failure.
