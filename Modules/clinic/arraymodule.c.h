@@ -39,7 +39,7 @@ PyDoc_STRVAR(array_array_count__doc__,
     {"count", (PyCFunction)array_array_count, METH_O, array_array_count__doc__},
 
 PyDoc_STRVAR(array_array_index__doc__,
-"index($self, v, start=0, stop=9223372036854775807, /)\n"
+"index($self, v, start=0, stop=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return index of first occurrence of v in the array.\n"
@@ -59,10 +59,10 @@ array_array_index(arrayobject *self, PyObject **args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *v;
     Py_ssize_t start = 0;
-    Py_ssize_t stop = 9223372036854775807;
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|nn:index",
-        &v, &start, &stop)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
+        &v, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
         goto exit;
     }
     return_value = array_array_index_impl(self, v, start, stop);
@@ -529,4 +529,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=6127c0b463de1ed4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6ceae8ae18fa3034 input=a9049054013a1b77]*/
