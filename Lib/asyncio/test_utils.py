@@ -508,8 +508,3 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
-
-
-def force_legacy_ssl_support():
-    return mock.patch('asyncio.sslproto._is_sslproto_available',
-                      return_value=False)

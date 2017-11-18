@@ -33,10 +33,6 @@ def _create_transport_context(server_side, server_hostname):
     return sslcontext
 
 
-def _is_sslproto_available():
-    return hasattr(ssl, "MemoryBIO")
-
-
 # States of an _SSLPipe.
 _UNWRAPPED = "UNWRAPPED"
 _DO_HANDSHAKE = "DO_HANDSHAKE"
