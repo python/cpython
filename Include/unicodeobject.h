@@ -1723,6 +1723,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
 
 #endif /* MS_WINDOWS */
 
+#ifndef Py_LIMITED_API
 /* --- Decimal Encoder ---------------------------------------------------- */
 
 /* Takes a Unicode string holding a decimal value and writes it into
@@ -1747,14 +1748,12 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
 
 */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     char *output,               /* Output buffer; must have size >= length */
     const char *errors          /* error handling */
     ) /* Py_DEPRECATED(3.3) */;
-#endif
 
 /* Transforms code points that have decimal digit property to the
    corresponding ASCII digit code points.
@@ -1762,19 +1761,18 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
    Returns a new Unicode string on success, NULL on failure.
 */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
     ) /* Py_DEPRECATED(3.3) */;
-#endif
 
-/* Similar to PyUnicode_TransformDecimalToASCII(), but takes a PyObject
-   as argument instead of a raw buffer and length.  This function additionally
-   transforms spaces to ASCII because this is what the callers in longobject,
-   floatobject, and complexobject did anyways. */
+/* Coverts a Unicode object holding a decimal value to an ASCII string
+   for using in int, float and complex parsers.
+   Transforms code points that have decimal digit property to the
+   corresponding ASCII digit code points.  Transforms spaces to ASCII.
+   Transforms code points starting from the first non-ASCII code point that
+   is neither a decimal digit nor a space to the end into '?'. */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
     PyObject *unicode           /* Unicode object */
     );

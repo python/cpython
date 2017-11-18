@@ -35,7 +35,7 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-void
+_PyInitError
 _PyRuntimeState_Init(_PyRuntimeState *runtime)
 {
     memset(runtime, 0, sizeof(*runtime));
@@ -46,26 +46,36 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     _PyEval_Initialize(&runtime->ceval);
 
     runtime->gilstate.check_enabled = 1;
+
     /* A TSS key must be initialized with Py_tss_NEEDS_INIT
        in accordance with the specification. */
-    {
-        Py_tss_t initial = Py_tss_NEEDS_INIT;
-        runtime->gilstate.autoTSSkey = initial;
-    }
+    Py_tss_t initial = Py_tss_NEEDS_INIT;
+    runtime->gilstate.autoTSSkey = initial;
 
     runtime->interpreters.mutex = PyThread_allocate_lock();
-    if (runtime->interpreters.mutex == NULL)
-        Py_FatalError("Can't initialize threads for interpreter");
+    if (runtime->interpreters.mutex == NULL) {
+        return _Py_INIT_ERR("Can't initialize threads for interpreter");
+    }
+
     runtime->interpreters.next_id = -1;
+    return _Py_INIT_OK();
 }
 
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+    /* Use the same memory allocator than _PyRuntimeState_Init() */
+    PyMemAllocatorEx old_alloc, raw_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyMem_GetDefaultRawAllocator(&raw_alloc);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+
     if (runtime->interpreters.mutex != NULL) {
         PyThread_free_lock(runtime->interpreters.mutex);
         runtime->interpreters.mutex = NULL;
     }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
@@ -74,7 +84,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
-void
+_PyInitError
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     runtime->interpreters.next_id = 0;
@@ -83,9 +93,11 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
        initialized here. */
     if (runtime->interpreters.mutex == NULL) {
         runtime->interpreters.mutex = PyThread_allocate_lock();
-        if (runtime->interpreters.mutex == NULL)
-            Py_FatalError("Can't initialize threads for interpreter");
+        if (runtime->interpreters.mutex == NULL) {
+            return _Py_INIT_ERR("Can't initialize threads for interpreter");
+        }
     }
+    return _Py_INIT_OK();
 }
 
 PyInterpreterState *

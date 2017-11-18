@@ -1,0 +1,3 @@
+FutureWarning is now emitted if a regular expression contains character set
+constructs that will change semantically in the future (nested sets and set
+operations).

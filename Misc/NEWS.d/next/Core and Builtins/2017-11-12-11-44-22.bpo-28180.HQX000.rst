@@ -1,0 +1,4 @@
+A new internal ``_Py_SetLocaleFromEnv(category)`` helper function has been
+added in order to improve the consistency of behaviour across different
+``libc`` implementations (e.g. Android doesn't support setting the locale from
+the environment by default).
