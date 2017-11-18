@@ -7,6 +7,7 @@ import importlib._bootstrap
 import importlib.util
 import sysconfig
 
+import distutils
 from distutils import log
 from distutils.errors import *
 from distutils.core import Extension, setup
@@ -59,6 +60,34 @@ def add_dir_to_list(dirlist, dir):
             dirlist.insert(i + 1, dir)
             return
     dirlist.insert(0, dir)
+
+def sysroot_paths(make_vars, subdirs):
+    """Get the paths of sysroot sub-directories.
+
+    * make_vars: a sequence of names of variables of the Makefile where
+      sysroot may be set.
+    * subdirs: a sequence of names of subdirectories used as the location for
+      headers or libraries.
+    """
+
+    dirs = []
+    for var_name in make_vars:
+        # When cross-compiling, the variables from the sysconfig module are
+        # those of the native python process. We need those of the current
+        # build instead and use distutils.sysconfig.
+        var = distutils.sysconfig.get_config_var(var_name)
+        if var is not None:
+            m = re.search(r'--sysroot=([^"]\S*|"[^"]+")', var)
+            if m is not None:
+                sysroot = m.group(1).strip('"')
+                for subdir in subdirs:
+                    if os.path.isabs(subdir):
+                        subdir = subdir[1:]
+                    path = os.path.join(sysroot, subdir)
+                    if os.path.isdir(path):
+                        dirs.append(path)
+                break
+    return dirs
 
 def macosx_sdk_root():
     """
@@ -559,18 +588,25 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.include_dirs,
                             sysconfig.get_config_var("INCLUDEDIR"))
 
+        system_lib_dirs = ['/lib64', '/usr/lib64', '/lib', '/usr/lib']
+        system_include_dirs = ['/usr/include']
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
         if not cross_compiling:
-            lib_dirs = self.compiler.library_dirs + [
-                '/lib64', '/usr/lib64',
-                '/lib', '/usr/lib',
-                ]
-            inc_dirs = self.compiler.include_dirs + ['/usr/include']
+            lib_dirs = self.compiler.library_dirs + system_lib_dirs
+            inc_dirs = self.compiler.include_dirs + system_include_dirs
         else:
-            lib_dirs = self.compiler.library_dirs[:]
-            inc_dirs = self.compiler.include_dirs[:]
+            # Add the sysroot paths. 'sysroot' is a compiler option used to
+            # set the logical path of the standard system headers and
+            # libraries. The 'CFLAGS', 'LDFLAGS' and 'CPPFLAGS' variables are
+            # the 'PY_CFLAGS', 'PY_LDFLAGS' and 'PY_CPPFLAGS' of the Makefile
+            # when they are obtained from distutils.sysconfig.
+            lib_dirs = (self.compiler.library_dirs +
+                        sysroot_paths(('LDFLAGS', 'CC'), system_lib_dirs))
+            inc_dirs = (self.compiler.include_dirs +
+                        sysroot_paths(('CPPFLAGS', 'CFLAGS', 'CC'),
+                                      system_include_dirs))
         exts = []
         missing = []
 
