@@ -3392,11 +3392,14 @@ then
 	esac
 fi
 AC_MSG_RESULT($DYNLOADFILE)
+HAVE_DYNAMIC_LOADING=0
 if test "$DYNLOADFILE" != "dynload_stub.o"
 then
 	AC_DEFINE(HAVE_DYNAMIC_LOADING, 1,
         [Defined when any dynamic module loading is enabled.])
+	HAVE_DYNAMIC_LOADING=1
 fi
+AC_SUBST(HAVE_DYNAMIC_LOADING)
 
 # MACHDEP_OBJS can be set to platform-specific object files needed by Python
 

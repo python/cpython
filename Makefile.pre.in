@@ -100,11 +100,18 @@ PY_LDFLAGS=	$(CONFIGURE_LDFLAGS) $(LDFLAGS)
 NO_AS_NEEDED=	@NO_AS_NEEDED@
 LDLAST=		@LDLAST@
 SGI_ABI=	@SGI_ABI@
+HAVE_DYNAMIC_LOADING = @HAVE_DYNAMIC_LOADING@
+ifeq ($(HAVE_DYNAMIC_LOADING),1)
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-ARFLAGS=	@ARFLAGS@
 # Extra C flags added for building the interpreter object files.
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
+else
+CCSHARED=
+LINKFORSHARED=
+CFLAGSFORSHARED=
+endif
+ARFLAGS=	@ARFLAGS@
 # C flags used for building the interpreter object files
 PY_CORE_CFLAGS=	$(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFORSHARED) -DPy_BUILD_CORE
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
@@ -440,8 +447,13 @@ DTRACE_DEPS = \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
+
+build_all:	check-clean-src $(BUILDPYTHON) gdbhooks \
 		Programs/_testembed python-config
+
+ifeq ($(HAVE_DYNAMIC_LOADING),1)
+build_all:	oldsharedmods sharedmods
+endif
 
 # Check that the source is clean when building out of source.
 check-clean-src:
@@ -1112,8 +1124,12 @@ altinstall: commoninstall
 
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
-		sharedinstall oldsharedinstall altmaninstall \
+		altmaninstall \
 		@FRAMEWORKALTINSTALLLAST@
+
+ifeq ($(HAVE_DYNAMIC_LOADING),1)
+commoninstall:  sharedinstall oldsharedinstall
+endif
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)

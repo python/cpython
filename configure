@@ -632,6 +632,7 @@ EXT_SUFFIX
 SOABI
 LIBC
 LIBM
+HAVE_DYNAMIC_LOADING
 HAVE_GETHOSTBYNAME
 HAVE_GETHOSTBYNAME_R
 HAVE_GETHOSTBYNAME_R_3_ARG
@@ -11131,10 +11132,12 @@ then
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DYNLOADFILE" >&5
 $as_echo "$DYNLOADFILE" >&6; }
+HAVE_DYNAMIC_LOADING=0
 if test "$DYNLOADFILE" != "dynload_stub.o"
 then
 
 $as_echo "#define HAVE_DYNAMIC_LOADING 1" >>confdefs.h
+HAVE_DYNAMIC_LOADING=1
 
 fi
 
