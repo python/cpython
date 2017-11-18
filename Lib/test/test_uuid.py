@@ -305,7 +305,7 @@ class BaseTestUUID:
 
     def test_getnode(self):
         node1 = self.uuid.getnode()
-        self.assertTrue(0 <= node1 < (1 << 48), '%012x' % node1)
+        self.check_node(node1)
 
         # Test it again to ensure consistency.
         node2 = self.uuid.getnode()
