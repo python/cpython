@@ -162,7 +162,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         # now create another tarball using `tar`
         tarball2 = os.path.join(tmpdir, 'archive2.tar.gz')
         tar_cmd = ['tar', '-cf', 'archive2.tar', 'dist']
-        gzip_cmd = ['gzip', '-f9', 'archive2.tar']
+        gzip_cmd = ['gzip', '-f', '-9', 'archive2.tar']
         old_dir = os.getcwd()
         os.chdir(tmpdir)
         try:
