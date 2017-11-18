@@ -1,0 +1,1 @@
+Add time.thread_time() and time.thread_time_ns()

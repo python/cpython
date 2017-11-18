@@ -117,7 +117,11 @@ static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
     const char *name = _PyType_Name(Py_TYPE(self));
-    return PyUnicode_FromFormat("%s%R", name, self->args);
+    if (PyTuple_GET_SIZE(self->args) == 1)
+        return PyUnicode_FromFormat("%s(%R)", name,
+                                    PyTuple_GET_ITEM(self->args, 0));
+    else
+        return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */

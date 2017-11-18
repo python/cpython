@@ -1,0 +1,2 @@
+crypt.mksalt() now allows to specify the number of rounds for SHA-256 and
+SHA-512 hashing.

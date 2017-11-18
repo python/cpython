@@ -182,31 +182,23 @@ static struct {
 
 
 #define _PyMem_Raw _PyRuntime.mem.allocators.raw
-static const PyMemAllocatorEx _pymem_raw = {
-#ifdef Py_DEBUG
-    &_PyMem_Debug.raw, PYRAWDBG_FUNCS
-#else
-    NULL, PYRAW_FUNCS
-#endif
-    };
 
 #define _PyMem _PyRuntime.mem.allocators.mem
-static const PyMemAllocatorEx _pymem = {
-#ifdef Py_DEBUG
-    &_PyMem_Debug.mem, PYDBG_FUNCS
-#else
-    NULL, PYMEM_FUNCS
-#endif
-    };
 
 #define _PyObject _PyRuntime.mem.allocators.obj
-static const PyMemAllocatorEx _pyobject = {
+
+void
+_PyMem_GetDefaultRawAllocator(PyMemAllocatorEx *alloc_p)
+{
+    PyMemAllocatorEx pymem_raw = {
 #ifdef Py_DEBUG
-    &_PyMem_Debug.obj, PYDBG_FUNCS
+        &_PyMem_Debug.raw, PYRAWDBG_FUNCS
 #else
-    NULL, PYOBJ_FUNCS
+        NULL, PYRAW_FUNCS
 #endif
     };
+    *alloc_p = pymem_raw;
+}
 
 int
 _PyMem_SetupAllocators(const char *opt)
@@ -267,34 +259,45 @@ _PyMem_SetupAllocators(const char *opt)
     return 0;
 }
 
-#undef PYRAW_FUNCS
-#undef PYMEM_FUNCS
-#undef PYOBJ_FUNCS
-#undef PYRAWDBG_FUNCS
-#undef PYDBG_FUNCS
-
-static const PyObjectArenaAllocator _PyObject_Arena = {NULL,
-#ifdef MS_WINDOWS
-    _PyObject_ArenaVirtualAlloc, _PyObject_ArenaVirtualFree
-#elif defined(ARENAS_USE_MMAP)
-    _PyObject_ArenaMmap, _PyObject_ArenaMunmap
-#else
-    _PyObject_ArenaMalloc, _PyObject_ArenaFree
-#endif
-    };
 
 void
 _PyObject_Initialize(struct _pyobj_runtime_state *state)
 {
+    PyObjectArenaAllocator _PyObject_Arena = {NULL,
+#ifdef MS_WINDOWS
+        _PyObject_ArenaVirtualAlloc, _PyObject_ArenaVirtualFree
+#elif defined(ARENAS_USE_MMAP)
+        _PyObject_ArenaMmap, _PyObject_ArenaMunmap
+#else
+        _PyObject_ArenaMalloc, _PyObject_ArenaFree
+#endif
+    };
+
     state->allocator_arenas = _PyObject_Arena;
 }
+
 
 void
 _PyMem_Initialize(struct _pymem_runtime_state *state)
 {
-    state->allocators.raw = _pymem_raw;
-    state->allocators.mem = _pymem;
-    state->allocators.obj = _pyobject;
+    PyMemAllocatorEx pymem = {
+#ifdef Py_DEBUG
+        &_PyMem_Debug.mem, PYDBG_FUNCS
+#else
+        NULL, PYMEM_FUNCS
+#endif
+    };
+    PyMemAllocatorEx pyobject = {
+#ifdef Py_DEBUG
+        &_PyMem_Debug.obj, PYDBG_FUNCS
+#else
+        NULL, PYOBJ_FUNCS
+#endif
+    };
+
+    _PyMem_GetDefaultRawAllocator(&state->allocators.raw);
+    state->allocators.mem = pymem;
+    state->allocators.obj = pyobject;
 
 #ifdef WITH_PYMALLOC
     Py_BUILD_ASSERT(NB_SMALL_SIZE_CLASSES == 64);
@@ -310,6 +313,7 @@ _PyMem_Initialize(struct _pymem_runtime_state *state)
     };
 #endif /* WITH_PYMALLOC */
 }
+
 
 #ifdef WITH_PYMALLOC
 static int
