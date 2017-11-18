@@ -271,7 +271,8 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
-             ignore_dangling_symlinks=False):
+             ignore_dangling_symlinks=False,
+             copy_directory_metadata=True):
     """Recursively copy a directory tree.
 
     The destination directory must not already exist.
@@ -305,6 +306,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     destination path as arguments. By default, copy2() is used, but any
     function that supports the same signature (like copy()) can be used.
 
+    The optional copy_directory_metadata argument, which defaults to True, will
+    instruct copytree() to copy directory metadata using the copystat() function.
+
     """
     names = os.listdir(src)
     if ignore is not None:
@@ -335,11 +339,13 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                     # otherwise let the copy occurs. copy2 will raise an error
                     if os.path.isdir(srcname):
                         copytree(srcname, dstname, symlinks, ignore,
-                                 copy_function)
+                                 copy_function,
+                                 copy_directory_metadata=copy_directory_metadata)
                     else:
                         copy_function(srcname, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore, copy_function)
+                copytree(srcname, dstname, symlinks, ignore, copy_function,
+                         copy_directory_metadata=copy_directory_metadata)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcname, dstname)
@@ -349,12 +355,13 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
             errors.extend(err.args[0])
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
-    try:
-        copystat(src, dst)
-    except OSError as why:
-        # Copying file access times may fail on Windows
-        if getattr(why, 'winerror', None) is None:
-            errors.append((src, dst, str(why)))
+    if copy_directory_metadata:
+        try:
+            copystat(src, dst)
+        except OSError as why:
+            # Copying file access times may fail on Windows
+            if getattr(why, 'winerror', None) is None:
+                errors.append((src, dst, str(why)))
     if errors:
         raise Error(errors)
     return dst
@@ -516,7 +523,7 @@ def _basename(path):
     sep = os.path.sep + (os.path.altsep or '')
     return os.path.basename(path.rstrip(sep))
 
-def move(src, dst, copy_function=copy2):
+def move(src, dst, copy_function=copy2, copy_directory_metadata=True):
     """Recursively move a file or directory to another location. This is
     similar to the Unix "mv" command. Return the file or directory's
     destination.
@@ -537,6 +544,10 @@ def move(src, dst, copy_function=copy2):
     to copy the source or it will be delegated to `copytree`.
     By default, copy2() is used, but any function that supports the same
     signature (like copy()) can be used.
+
+    The optional copy_directory_metadata argument, which defaults to True, will
+    instruct move() to copy any directory metadata using the copystat()
+    function if needed.
 
     A lot more could be done here...  A look at a mv.c shows a lot of
     the issues this implementation glosses over.
@@ -565,7 +576,8 @@ def move(src, dst, copy_function=copy2):
                 raise Error("Cannot move a directory '%s' into itself"
                             " '%s'." % (src, dst))
             copytree(src, real_dst, copy_function=copy_function,
-                     symlinks=True)
+                     symlinks=True,
+                     copy_directory_metadata=copy_directory_metadata)
             rmtree(src)
         else:
             copy_function(src, real_dst)
