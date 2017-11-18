@@ -844,7 +844,7 @@ backreferences in a RE.
 
 For example, the following RE detects doubled words in a string. ::
 
-   >>> p = re.compile(r'(\b\w+)\s+\1\b')
+   >>> p = re.compile(r'\b(\w+)\s+\1\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
