@@ -581,7 +581,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
         node = self.uuid._windll_getnode()
-        self.check_node(node)
+        self.check_node(node, network=True)
 
 
 class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
