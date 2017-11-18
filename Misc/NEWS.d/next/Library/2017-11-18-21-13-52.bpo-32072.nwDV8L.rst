@@ -1,0 +1,6 @@
+Fixed issues with binary plists:
+
+* Fixed saving bytearrays.
+* Identical objects will be saved only once.
+* Equal references will be load as identical objects.
+* Added support for saving and loading recursive data structures.
