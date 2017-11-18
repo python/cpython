@@ -358,6 +358,10 @@ The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
 can be set within the scope of a group.
 (Contributed by Serhiy Storchaka in :issue:`31690`.)
 
+:func:`re.split` now supports splitting on a pattern that matches an empty
+string like ``r'\b'``, ``'^$'`` or ``(?=-)``.
+(Contributed by Serhiy Storchaka in :issue:`25054`.)
+
 string
 ------
 
@@ -724,6 +728,15 @@ Changes in the Python API
   character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
   avoid a warning escape them with a backslash.
   (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+* The result of splitting a string on a :mod:`regular expression <re>`
+  that could match an empty string like has been changed.  For example
+  splitting on ``r'\s*'`` will now split not only on whitespaces as it
+  did previously, but also between any pair of non-whitespace
+  characters.  The previous behavior can be restored by changing the pattern
+  to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
+  Python 3.5.
+  (Contributed by Serhiy Storchaka in :issue:`25054`.)
 
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
