@@ -11,7 +11,6 @@ except ImportError:
 
 import asyncio
 from asyncio import selectors
-from asyncio import sslproto
 from asyncio import test_utils
 from asyncio.selector_events import BaseSelectorEventLoop
 from asyncio.selector_events import _SelectorTransport
