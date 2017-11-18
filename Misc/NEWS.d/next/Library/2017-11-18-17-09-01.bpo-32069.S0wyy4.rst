@@ -1,0 +1,1 @@
+Drop legacy SSL transport from asyncio, ssl.MemoryBIO is always used anyway.
