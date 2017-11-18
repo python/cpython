@@ -943,9 +943,9 @@ number of the group.  There's naturally a variant that uses the group name
 instead of the number. This is another Python extension: ``(?P=name)`` indicates
 that the contents of the group called *name* should again be matched at the
 current point.  The regular expression for finding doubled words,
-``(\b\w+)\s+\1`` can also be written as ``(?P<word>\b\w+)\s+(?P=word)\b``::
+``\b(\w+)\s+\1\b`` can also be written as ``\b(?P<word>\w+)\s+(?P=word)\b``::
 
-   >>> p = re.compile(r'(?P<word>\b\w+)\s+(?P=word)\b')
+   >>> p = re.compile(r'\b(?P<word>\w+)\s+(?P=word)\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
