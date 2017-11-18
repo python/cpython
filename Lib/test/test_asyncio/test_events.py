@@ -2122,37 +2122,6 @@ if sys.platform == 'win32':
         def create_event_loop(self):
             return asyncio.ProactorEventLoop()
 
-        if not sslproto._is_sslproto_available():
-            def test_create_ssl_connection(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl_verify_failed(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl_match_failed(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl_verified(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-        def test_legacy_create_ssl_connection(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl_verify_failed(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl_match_failed(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl_verified(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
         def test_reader_callback(self):
             raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
 
