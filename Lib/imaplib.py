@@ -109,7 +109,7 @@ InternalDate = re.compile(br'.*INTERNALDATE "'
         br' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
         br'"')
 # Literal is no longer used; kept for backward compatibility.
-Literal = re.compile(br'.*{(?P<size>\d+)}$', re.ASCII)
+Literal = re.compile(br'.*\{(?P<size>\d+)}$', re.ASCII)
 MapCRLF = re.compile(br'\r\n|\r|\n')
 # We no longer exclude the ']' character from the data portion of the response
 # code, even though it violates the RFC.  Popular IMAP servers such as Gmail
@@ -125,7 +125,7 @@ Untagged_response = re.compile(br'\* (?P<type>[A-Z-]+)( (?P<data>.*))?')
 Untagged_status = re.compile(
     br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?', re.ASCII)
 # We compile these in _mode_xxx.
-_Literal = br'.*{(?P<size>\d+)}$'
+_Literal = br'.*\{(?P<size>\d+)}$'
 _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
 
 

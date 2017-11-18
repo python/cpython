@@ -1704,7 +1704,7 @@ class HTMLHelp:
     Favorites tabs.
     """
 
-    codeprog = re.compile('@code{(.*?)}')
+    codeprog = re.compile(r'@code\{(.*?)}')
 
     def __init__(self,helpbase,dirname):
         self.helpbase    = helpbase

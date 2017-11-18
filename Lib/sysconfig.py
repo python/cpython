@@ -211,7 +211,7 @@ def _parse_makefile(filename, vars=None):
     import re
     _variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
     _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-    _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
+    _findvar2_rx = re.compile(r"\$\{([A-Za-z][A-Za-z0-9_]*)}")
 
     if vars is None:
         vars = {}

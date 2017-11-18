@@ -621,8 +621,18 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r"^x{1,4}?$", "xxx"))
         self.assertTrue(re.match(r"^x{3,4}?$", "xxx"))
 
-        self.assertIsNone(re.match(r"^x{}$", "xxx"))
-        self.assertTrue(re.match(r"^x{}$", "x{}"))
+        with self.assertWarns(PendingDeprecationWarning):
+            p = re.compile(r"^x{}$")
+        self.assertIsNone(p.match("xxx"))
+        self.assertTrue(p.match("x{}"))
+        with self.assertWarns(PendingDeprecationWarning):
+            self.assertTrue(re.match(r"^x{a}$", "x{a}"))
+        with self.assertWarns(PendingDeprecationWarning):
+            self.assertTrue(re.match(r"^x{2$", "x{2"))
+        with self.assertWarns(PendingDeprecationWarning):
+            self.assertTrue(re.match(r"^x{2,3$", "x{2,3"))
+        with self.assertWarns(PendingDeprecationWarning):
+            self.assertTrue(re.match(r"^x{,}$", "x{,}"))
 
         self.checkPatternError(r'x{2,1}',
                                'min repeat greater than max repeat', 2)

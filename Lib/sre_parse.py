@@ -610,10 +610,6 @@ def _parse(source, state, verbose, nested, first=False):
             elif this == "+":
                 min, max = 1, MAXREPEAT
             elif this == "{":
-                if source.next == "}":
-                    subpatternappend((LITERAL, _ord(this)))
-                    continue
-
                 min, max = 0, MAXREPEAT
                 lo = hi = ""
                 while source.next in DIGITS:
@@ -623,7 +619,13 @@ def _parse(source, state, verbose, nested, first=False):
                         hi += sourceget()
                 else:
                     hi = lo
-                if not sourcematch("}"):
+                if not (lo or hi) or not sourcematch("}"):
+                    import warnings
+                    msg = "missing }" if lo or hi else "missing repetition number"
+                    warnings.warn(
+                        '%s at position %d' % (msg, source.tell()),
+                        PendingDeprecationWarning, stacklevel=nested + 6
+                    )
                     subpatternappend((LITERAL, _ord(this)))
                     source.seek(here)
                     continue

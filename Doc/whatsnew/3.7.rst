@@ -575,6 +575,12 @@ Deprecated
 
 - The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
 
+- Using non-escaped opening brace ``{`` in a :mod:`regular expression <re>`
+  outside of a character class and not as a part of constructions ``{m}``,
+  ``{m,n}``, ``{m,}`` and ``{,n}`` where *m* and *n* are non-negative
+  decimal numbers will cause emitting a :exc:`PendingDeprecationWarning`.
+  (Contributed by Serhiy Storchaka in :issue:`32067`.)
+
 
 Changes in the C API
 --------------------

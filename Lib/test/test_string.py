@@ -317,7 +317,7 @@ class TestTemplate(unittest.TestCase):
             pattern = r"""
             (?P<escaped>@{2})                   |
             @(?P<named>[_a-z][._a-z0-9]*)       |
-            @{(?P<braced>[_a-z][._a-z0-9]*)}    |
+            @\{(?P<braced>[_a-z][._a-z0-9]*)}   |
             (?P<invalid>@)
             """
         m = Mapping()
@@ -333,7 +333,7 @@ class TestTemplate(unittest.TestCase):
             (?P<badname>.*)                     |
             (?P<escaped>@{2})                   |
             @(?P<named>[_a-z][._a-z0-9]*)       |
-            @{(?P<braced>[_a-z][._a-z0-9]*)}    |
+            @\{(?P<braced>[_a-z][._a-z0-9]*)}   |
             (?P<invalid>@)                      |
             """
         s = BadPattern('@bag.foo.who likes to eat a bag of @bag.what')

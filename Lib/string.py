@@ -57,7 +57,7 @@ class _TemplateMetaclass(type):
     %(delim)s(?:
       (?P<escaped>%(delim)s) |   # Escape sequence of two delimiters
       (?P<named>%(id)s)      |   # delimiter and a Python identifier
-      {(?P<braced>%(bid)s)}  |   # delimiter and a braced identifier
+      \{(?P<braced>%(bid)s)} |   # delimiter and a braced identifier
       (?P<invalid>)              # Other ill-formed delimiter exprs
     )
     """

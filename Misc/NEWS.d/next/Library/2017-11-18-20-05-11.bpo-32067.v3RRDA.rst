@@ -1,0 +1,5 @@
+In regular expressions the character '{' outside of a character class is
+used for specifying the number of repetition numbers. If the following
+characters are not recognized as repetition numbers it will interpreted as a
+literal '{'. Now literal no-escaped '{' will emit a
+PendingDeprecationWarning.

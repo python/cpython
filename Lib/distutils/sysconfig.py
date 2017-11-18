@@ -277,7 +277,7 @@ def parse_config_h(fp, g=None):
 # like old-style Setup files).
 _variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
 _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-_findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
+_findvar2_rx = re.compile(r"\$\{([A-Za-z][A-Za-z0-9_]*)}")
 
 def parse_makefile(fn, g=None):
     """Parse a Makefile-style file.
