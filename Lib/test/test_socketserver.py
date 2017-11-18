@@ -60,10 +60,14 @@ def simple_subprocess(testcase):
     if pid == 0:
         # Don't raise an exception; it would be caught by the test harness.
         os._exit(72)
-    yield None
-    pid2, status = os.waitpid(pid, 0)
-    testcase.assertEqual(pid2, pid)
-    testcase.assertEqual(72 << 8, status)
+    try:
+        yield None
+    except:
+        raise
+    finally:
+        pid2, status = os.waitpid(pid, 0)
+        testcase.assertEqual(pid2, pid)
+        testcase.assertEqual(72 << 8, status)
 
 
 class SocketServerTest(unittest.TestCase):
@@ -108,7 +112,12 @@ class SocketServerTest(unittest.TestCase):
                 self.wfile.write(line)
 
         if verbose: print("creating server")
-        server = MyServer(addr, MyHandler)
+        try:
+            server = MyServer(addr, MyHandler)
+        except PermissionError as e:
+            # Issue 29184: cannot bind() a Unix socket on Android.
+            self.skipTest('Cannot create server (%s, %s): %s' %
+                          (svrcls, addr, e))
         self.assertEqual(server.server_address, server.socket.getsockname())
         return server
 
