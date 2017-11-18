@@ -305,7 +305,7 @@ class BaseTestUUID:
 
     def test_getnode(self):
         node1 = self.uuid.getnode()
-        self.assertTrue(0 < node1 < (1 << 48), '%012x' % node1)
+        self.assertTrue(0 <= node1 < (1 << 48), '%012x' % node1)
 
         # Test it again to ensure consistency.
         node2 = self.uuid.getnode()
@@ -522,7 +522,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
             # 47 bit will never be set in IEEE 802 addresses obtained
             # from network cards.
             self.assertFalse(node & 0x010000000000, hex)
-        self.assertTrue(0 < node < (1 << 48),
+        self.assertTrue(0 <= node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
