@@ -6,8 +6,6 @@ extern "C" {
 
 /* zipimporter object definition and support */
 
-typedef struct _zipimporter ZipImporter;
-
 struct _zipimporter {
     PyObject_HEAD
     PyObject *archive;  /* pathname of the Zip archive,
@@ -17,6 +15,7 @@ struct _zipimporter {
     PyObject *files;    /* dict with file info {path: toc_entry} */
 };
 
+typedef struct _zipimporter ZipImporter;
 static PyTypeObject ZipImporter_Type;
 
 #define ZipImporter_Check(op) PyObject_TypeCheck(op, &ZipImporter_Type)
