@@ -32,19 +32,6 @@ static struct st_zip_searchorder zip_searchorder[] = {
     {"", 0}
 };
 
-/* zipimporter object definition and support */
-
-typedef struct _zipimporter ZipImporter;
-
-struct _zipimporter {
-    PyObject_HEAD
-    PyObject *archive;  /* pathname of the Zip archive,
-                           decoded from the filesystem encoding */
-    PyObject *prefix;   /* file prefix: "a/sub/directory/",
-                           encoded to the filesystem encoding */
-    PyObject *files;    /* dict with file info {path: toc_entry} */
-};
-
 static PyObject *ZipImportError;
 /* read_directory() cache */
 static PyObject *zip_directory_cache = NULL;
@@ -54,10 +41,6 @@ static PyObject *read_directory(PyObject *archive);
 static PyObject *get_data(PyObject *archive, PyObject *toc_entry);
 static PyObject *get_module_code(ZipImporter *self, PyObject *fullname,
                                  int *p_ispackage, PyObject **p_modpath);
-
-static PyTypeObject ZipImporter_Type;
-
-#define ZipImporter_Check(op) PyObject_TypeCheck(op, &ZipImporter_Type)
 
 /*[clinic input]
 module zipimport

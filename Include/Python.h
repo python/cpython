@@ -123,6 +123,10 @@
 
 #include "abstract.h"
 #include "bltinmodule.h"
+/* bpo-32075: Expose ZipImporter Type Object in
+ * the include header files.
+ */
+#include "zipimport.h"
 
 #include "eval.h"
 
