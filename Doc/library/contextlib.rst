@@ -142,14 +142,16 @@ Functions and classes provided:
     Return a context manager that just returns *thing*. It is intended to be used
     as a stand-in for an optional context manager, for example::
 
-        def debug_trace(details):
-            if __debug__:
-                return TraceContext(details)
-            # Don't do anything special with the context in release mode
-            return nullcontext(details)
+        def process_file(file_or_path):
+            if isinstance(file_or_path, str):
+                # If string, open file
+                cm = open(file_or_path)
+            else:
+                # Caller is responsible for closing file
+                cm = nullcontext(file_or_path)
 
-        with debug_trace(details) as d:
-            # Suite is traced in debug mode, but runs normally otherwise
+            with cm as file:
+                # Perform processing on the file
 
 
 .. function:: suppress(*exceptions)
