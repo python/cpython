@@ -137,6 +137,21 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
+.. function:: nullcontext(thing=None)
+
+    Return a context manager that just returns *thing*. It is intended to be used 
+    as a standin for an optional context manager, for example::
+
+        def debug_trace(details):
+            if __debug__:
+                return TraceContext(details)
+            # Don't do anything special with the context in release mode
+            return nullcontext(details)
+
+        with debug_trace(details) as d:
+            # Suite is traced in debug mode, but runs normally otherwise
+
+
 .. function:: suppress(*exceptions)
 
    Return a context manager that suppresses any of the specified exceptions
@@ -431,24 +446,6 @@ some of the context managers being optional::
 As shown, :class:`ExitStack` also makes it quite easy to use :keyword:`with`
 statements to manage arbitrary resources that don't natively support the
 context management protocol.
-
-
-Simplifying support for single optional context managers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In the specific case of a single optional context manager, :class:`ExitStack`
-instances can be used as a "do nothing" context manager, allowing a context
-manager to easily be omitted without affecting the overall structure of
-the source code::
-
-   def debug_trace(details):
-       if __debug__:
-           return TraceContext(details)
-       # Don't do anything special with the context in release mode
-       return ExitStack()
-
-   with debug_trace():
-       # Suite is traced in debug mode, but runs normally otherwise
 
 
 Catching exceptions from ``__enter__`` methods
