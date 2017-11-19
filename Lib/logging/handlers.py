@@ -1180,7 +1180,9 @@ class HTTPHandler(logging.Handler):
             i = host.find(":")
             if i >= 0:
                 host = host[:i]
-            h.putheader("Host", host)
+            # See issue #30904: putrequest call above already adds this header
+            # on Python 3.x.
+            # h.putheader("Host", host)
             if self.method == "POST":
                 h.putheader("Content-type",
                             "application/x-www-form-urlencoded")
