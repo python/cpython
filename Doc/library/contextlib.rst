@@ -139,7 +139,7 @@ Functions and classes provided:
 
 .. function:: nullcontext(thing=None)
 
-    Return a context manager that just returns *thing*. It is intended to be used 
+    Return a context manager that just returns *thing*. It is intended to be used
     as a standin for an optional context manager, for example::
 
         def debug_trace(details):
