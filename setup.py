@@ -120,6 +120,13 @@ def find_file(filename, std_dirs, paths):
     # Not found anywhere
     return None
 
+def mathlib():
+    # VxWorks has no libm
+    if host_platform == 'vxworks':
+        return []
+    else:
+        return ['m']
+
 def find_library_file(compiler, libname, std_dirs, paths):
     result = compiler.find_library_file(std_dirs + paths, libname)
     if result is None:
@@ -636,12 +643,12 @@ class PyBuildExt(build_ext):
         exts.append( Extension('cmath', ['cmathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=['m']) )
+                               libraries=mathlib()) )
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=['m']) )
+                               libraries=mathlib()) )
 
         # time libraries: librt may be needed for clock_gettime()
         time_libs = []
@@ -655,7 +662,7 @@ class PyBuildExt(build_ext):
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         exts.append( Extension('_datetime', ['_datetimemodule.c'],
-                               libraries=['m']) )
+                               libraries=mathlib()) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # bisect
@@ -743,7 +750,7 @@ class PyBuildExt(build_ext):
         #
         # audioop needs libm for floor() in multiple functions.
         exts.append( Extension('audioop', ['audioop.c'],
-                               libraries=['m']) )
+                               libraries=mathlib()) )
 
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
@@ -2022,7 +2029,7 @@ class PyBuildExt(build_ext):
         # function my_sqrt() needs libm for sqrt()
         ext_test = Extension('_ctypes_test',
                      sources=['_ctypes/_ctypes_test.c'],
-                     libraries=['m'])
+                     libraries=mathlib())
         self.extensions.extend([ext, ext_test])
 
         if host_platform == 'darwin':
@@ -2161,7 +2168,7 @@ class PyBuildExt(build_ext):
         ext = Extension (
             '_decimal',
             include_dirs=include_dirs,
-            libraries=['m'],
+            libraries=mathlib(),
             define_macros=define_macros,
             undef_macros=undef_macros,
             extra_compile_args=extra_compile_args,
