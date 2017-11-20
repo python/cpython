@@ -212,7 +212,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
     @coroutine
-    def create_unix_connection(self, protocol_factory, path, *,
+    def create_unix_connection(self, protocol_factory, path=None, *,
                                ssl=None, sock=None,
                                server_hostname=None):
         assert server_hostname is None or isinstance(server_hostname, str)
@@ -229,6 +229,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
+            path = _fspath(path)
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
             try:
                 sock.setblocking(False)
