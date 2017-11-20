@@ -75,6 +75,6 @@ $(py_install_dir)/lib/libffi.a: $(BUILD_DIR)/$(LIBFFI).tar.gz
 	    ./configure --host=$(ANDROID_HOST) --build=$(ANDROID_BUILD) \
 	    --prefix=$(py_install_dir) \
 	    --disable-shared
-	-$(MAKE) -C $(BUILD_DIR)/$(LIBFFI)-$(BUILD_TYPE) all install
+	-$(MAKE) -C $(BUILD_DIR)/$(LIBFFI)-$(BUILD_TYPE) all install install-pkgconfigDATA
 
 .PHONY: all
