@@ -324,6 +324,17 @@ def test():
             print(cdll.LoadLibrary("libcrypto.dylib"))
             print(cdll.LoadLibrary("libSystem.dylib"))
             print(cdll.LoadLibrary("System.framework/System"))
+        # issue-26439 - fix broken test call for AIX
+        elif sys.platform.startswith("aix"):
+            from ctypes import CDLL
+            RTLD_MEMBER =  0x00040000
+            # print("crypto\t:: %s" % cdll.LoadLibrary(find_library("crypto")))
+            if (sys.maxsize < 2**32):
+                # print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr.o)"))
+                print CDLL("libc.a(shr.o)", RTLD_MEMBER)
+            else:
+                # print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
+                print CDLL("libc.a(shr_64.o)", RTLD_MEMBER)
         else:
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
