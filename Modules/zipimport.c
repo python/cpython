@@ -57,9 +57,9 @@ static PyObject *get_module_code(ZipImporter *self, PyObject *fullname,
 
 /*[clinic input]
 module zipimport
-class zipimport.zipimporter "ZipImporter *" "&ZipImporter_Type"
+class zipimport.zipimporter "ZipImporter *" "&PyZipImporter_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9db8b61557d911e7]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=618e0df7e36f8749]*/
 #include "clinic/zipimport.c.h"
 
 
