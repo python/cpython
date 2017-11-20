@@ -326,14 +326,16 @@ range(10) for y in bar(x))``.
 The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for details.
 
-Since Python 3.6, if the generator appears in an :keyword:`async def` function,
-then :keyword:`async for` clauses and :keyword:`await` expressions are permitted
-as with an asynchronous comprehension.  If a generator expression
-contains either :keyword:`async for` clauses or :keyword:`await` expressions
-it is called an :dfn:`asynchronous generator expression`.
-An asynchronous generator expression yields a new asynchronous
-generator object, which is an asynchronous iterator
-(see :ref:`async-iterators`).
+If a generator expression contains either :keyword:`async for`
+clauses or :keyword:`await` expressions it is called an
+:dfn:`asynchronous generator expression`.  An asynchronous generator
+expression returns a new asynchronous generator object,
+which is an asynchronous iterator (see :ref:`async-iterators`).
+
+.. versionchanged:: 3.7
+   Prior to Python 3.7, asynchronous generator expressions could
+   only appear in :keyword:`async def` coroutines.  Starting
+   with 3.7, any function can use asynchronous generator expressions.
 
 .. _yieldexpr:
 
@@ -1687,8 +1689,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``+``, ``-``                                  | Addition and subtraction            |
 +-----------------------------------------------+-------------------------------------+
 | ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
-|                                               | multiplication division,            |
-|                                               | remainder [#]_                      |
+|                                               | multiplication, division, floor     |
+|                                               | division, remainder [#]_            |
 +-----------------------------------------------+-------------------------------------+
 | ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
 +-----------------------------------------------+-------------------------------------+

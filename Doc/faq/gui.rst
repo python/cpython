@@ -94,15 +94,6 @@ Python bindings for `the FLTK toolkit <http://www.fltk.org>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
 PyFLTK project <http://pyfltk.sourceforge.net>`_.
 
-
-FOX
-----
-
-A wrapper for `the FOX toolkit <http://www.fox-toolkit.org/>`_ called `FXpy
-<http://fxpy.sourceforge.net/>`_ is available.  FOX supports both Unix variants
-and Windows.
-
-
 OpenGL
 ------
 

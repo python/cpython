@@ -13,16 +13,11 @@ import struct
 import subprocess
 import sys
 import tempfile
-from test.support import (captured_stdout, captured_stderr,
+from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           can_symlink, EnvironmentVarGuard, rmtree)
+import threading
 import unittest
 import venv
-
-
-try:
-    import threading
-except ImportError:
-    threading = None
 
 try:
     import ctypes
@@ -420,10 +415,9 @@ class EnsurePipTest(BaseTest):
         if not system_site_packages:
             self.assert_pip_not_installed()
 
-    @unittest.skipUnless(threading, 'some dependencies of pip import threading'
-                                    ' module unconditionally')
     # Issue #26610: pip/pep425tags.py requires ctypes
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
+    @requires_zlib
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

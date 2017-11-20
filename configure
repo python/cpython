@@ -646,9 +646,7 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
-THREADOBJ
 LDLAST
-USE_THREAD_MODULE
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -681,7 +679,6 @@ LLVM_PROF_FILE
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
-LTOFLAGS
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 ABIFLAGS
@@ -695,7 +692,6 @@ READELF
 ARFLAGS
 ac_ct_AR
 AR
-RANLIB
 GNULD
 LINKCC
 LDVERSION
@@ -728,7 +724,6 @@ CFLAGS
 CC
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
-SGI_ABI
 _PYTHON_HOST_PLATFORM
 MACHDEP
 FRAMEWORKINSTALLAPPSPREFIX
@@ -783,6 +778,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -829,8 +825,6 @@ enable_loadable_sqlite_extensions
 with_tcltk_includes
 with_tcltk_libs
 with_dbmliborder
-with_threads
-with_thread
 enable_ipv6
 with_doc_strings
 with_pymalloc
@@ -896,6 +890,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1148,6 +1143,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1285,7 +1289,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1438,6 +1442,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1504,8 +1509,8 @@ Optional Packages:
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
   --with-assertions       build with C assertions enabled
-  --with-lto              Enable Link Time Optimization in PGO builds.
-                          Disabled by default.
+  --with-lto              Enable Link Time Optimization in any build. Disabled
+                          by default.
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm
   --with-address-sanitizer
@@ -1524,10 +1529,6 @@ Optional Packages:
                           order to check db backends for dbm. Valid value is a
                           colon separated string with the backend names
                           `ndbm', `gdbm' and `bdb'.
-  --with(out)-threads[=DIRECTORY]
-                          disable/enable thread support
-  --with(out)-thread[=DIRECTORY]
-                          deprecated; use --with(out)-threads
   --with(out)-doc-strings disable/enable documentation strings
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with(out)-c-locale-coercion
@@ -2983,12 +2984,6 @@ $as_echo "#define __BSD_VISIBLE 1" >>confdefs.h
 
 
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
-# u_int on Irix 5.3. Defining _BSD_TYPES brings it back.
-
-$as_echo "#define _BSD_TYPES 1" >>confdefs.h
-
-
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 
@@ -3231,6 +3226,12 @@ fi
 
 
 
+
+cat >>confdefs.h <<_ACEOF
+#define _PYTHONFRAMEWORK "${PYTHONFRAMEWORK}"
+_ACEOF
+
+
 ##AC_ARG_WITH(dyld,
 ##            AS_HELP_STRING([--with-dyld],
 ##                           [Use (OpenStep|Rhapsody) dynamic linker]))
@@ -3281,7 +3282,6 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
-	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
 fi
@@ -3430,25 +3430,6 @@ $as_echo "#define _INCLUDE__STDC_A1_SOURCE 1" >>confdefs.h
 
 fi
 
-#
-# SGI compilers allow the specification of the both the ABI and the
-# ISA on the command line.  Depending on the values of these switches,
-# different and often incompatible code will be generated.
-#
-# The SGI_ABI variable can be used to modify the CC and LDFLAGS and
-# thus supply support for various ABI/ISA combinations.  The MACHDEP
-# variable is also adjusted.
-#
-
-if test ! -z "$SGI_ABI"
-then
-        CC="cc $SGI_ABI"
-        LDFLAGS="$SGI_ABI $LDFLAGS"
-        MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACHDEP" >&5
-$as_echo "$MACHDEP" >&6; }
-
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
 # needs to check it
@@ -3543,14 +3524,14 @@ then
 		for as_dir in $PATH
 		do
 			IFS=$as_save_IFS
-			if test -x $as_dir/gcc; then
+			if test -x "${as_dir}/gcc"; then
 				if test -z "${found_gcc}"; then
-					found_gcc=$as_dir/gcc
+					found_gcc="${as_dir}/gcc"
 				fi
 			fi
-			if test -x $as_dir/clang; then
+			if test -x "${as_dir}/clang"; then
 				if test -z "${found_clang}"; then
-					found_clang=$as_dir/clang
+					found_clang="${as_dir}/clang"
 				fi
 			fi
 		done
@@ -5721,13 +5702,6 @@ $as_echo "no" >&6; }
 fi
 rmdir CaseSensitiveTestDir
 
-case $MACHDEP in
-bsdos*)
-    case $CC in
-    gcc) CC="$CC -D_HAVE_BSDI";;
-    esac;;
-esac
-
 case $ac_sys_system in
 hp*|HP*)
     case $CC in
@@ -5969,98 +5943,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
 
-if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
-set dummy ${ac_tool_prefix}ranlib; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_RANLIB+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$RANLIB"; then
-  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-RANLIB=$ac_cv_prog_RANLIB
-if test -n "$RANLIB"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
-$as_echo "$RANLIB" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_RANLIB"; then
-  ac_ct_RANLIB=$RANLIB
-  # Extract the first word of "ranlib", so it can be a program name with args.
-set dummy ranlib; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_RANLIB+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_RANLIB"; then
-  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_RANLIB="ranlib"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
-if test -n "$ac_ct_RANLIB"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_RANLIB" >&5
-$as_echo "$ac_ct_RANLIB" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_RANLIB" = x; then
-    RANLIB=":"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    RANLIB=$ac_ct_RANLIB
-  fi
-else
-  RANLIB="$ac_cv_prog_RANLIB"
-fi
-
 
 if test -n "$ac_tool_prefix"; then
   for ac_prog in ar aal
@@ -6167,7 +6049,7 @@ fi
 
 if test -z "$ARFLAGS"
 then
-        ARFLAGS="rc"
+        ARFLAGS="rcs"
 fi
 
 if test -n "$ac_tool_prefix"; then
@@ -6281,8 +6163,8 @@ fi
 
 
 case $MACHDEP in
-bsdos*|hp*|HP*)
-	# install -d does not work on BSDI or HP-UX
+hp*|HP*)
+	# install -d does not work on HP-UX
 	if test -z "$INSTALL"
 	then
 		INSTALL="${srcdir}/install-sh -c"
@@ -6528,7 +6410,6 @@ else
 fi
 
 # Enable LTO flags
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-lto" >&5
 $as_echo_n "checking for --with-lto... " >&6; }
 
@@ -6574,6 +6455,8 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+  CFLAGS="$CFLAGS $LTOFLAGS"
+  LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
 # Enable PGO flags.
@@ -7820,7 +7703,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h
+sys/endian.h sys/sysmacros.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -8109,6 +7992,24 @@ fi
 done
 
 
+for ac_header in linux/vm_sockets.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "linux/vm_sockets.h" "ac_cv_header_linux_vm_sockets_h" "
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+"
+if test "x$ac_cv_header_linux_vm_sockets_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LINUX_VM_SOCKETS_H 1
+_ACEOF
+
+fi
+
+done
+
+
 # On Linux, can.h and can/raw.h require sys/socket.h
 for ac_header in linux/can.h linux/can/raw.h linux/can/bcm.h
 do :
@@ -8228,43 +8129,7 @@ $as_echo "#define HAVE_HTOLE64 1" >>confdefs.h
 
 fi
 
-# Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
-# the system headers: If _XOPEN_SOURCE and _LARGEFILE_SOURCE are
-# defined, but the compiler does not support pragma redefine_extname,
-# and _LARGEFILE64_SOURCE is not defined, the headers refer to 64-bit
-# structures (such as rlimit64) without declaring them. As a
-# work-around, disable LFS on such configurations
-
 use_lfs=yes
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Solaris LFS bug" >&5
-$as_echo_n "checking Solaris LFS bug... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define _LARGEFILE_SOURCE 1
-#define _FILE_OFFSET_BITS 64
-#include <sys/resource.h>
-
-int
-main ()
-{
-struct rlimit foo;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  sol_lfs_bug=no
-else
-  sol_lfs_bug=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $sol_lfs_bug" >&5
-$as_echo "$sol_lfs_bug" >&6; }
-if test "$sol_lfs_bug" = "yes"; then
-  use_lfs=no
-fi
-
 # Don't use largefile support for GNU/Hurd
 case $ac_sys_system in GNU*)
   use_lfs=no
@@ -9019,6 +8884,75 @@ _ACEOF
 
 
 fi
+
+# Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
+# This checking will be unnecessary after removing deprecated TLS API.
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of pthread_key_t" >&5
+$as_echo_n "checking size of pthread_key_t... " >&6; }
+if ${ac_cv_sizeof_pthread_key_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (pthread_key_t))" "ac_cv_sizeof_pthread_key_t"        "#include <pthread.h>
+"; then :
+
+else
+  if test "$ac_cv_type_pthread_key_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (pthread_key_t)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_pthread_key_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_pthread_key_t" >&5
+$as_echo "$ac_cv_sizeof_pthread_key_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_PTHREAD_KEY_T $ac_cv_sizeof_pthread_key_t
+_ACEOF
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthread_key_t is compatible with int" >&5
+$as_echo_n "checking whether pthread_key_t is compatible with int... " >&6; }
+if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread.h>
+int
+main ()
+{
+pthread_key_t k; k * 1;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_pthread_key_t_is_arithmetic_type=yes
+else
+  ac_pthread_key_t_is_arithmetic_type=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pthread_key_t_is_arithmetic_type" >&5
+$as_echo "$ac_pthread_key_t_is_arithmetic_type" >&6; }
+  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+
+$as_echo "#define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
+
+  fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
 CC="$ac_save_cc"
 
 
@@ -9174,7 +9108,7 @@ fi
 $as_echo "$SHLIB_SUFFIX" >&6; }
 
 # LDSHARED is the ld *command* used to create shared library
-# -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# -- "cc -G" on SunOS 5.x.
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDSHARED" >&5
@@ -9186,8 +9120,6 @@ then
 		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
-	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -9265,9 +9197,6 @@ then
 	Linux*|GNU*|QNX*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	BSD/OS*/4*)
-		LDSHARED="gcc -shared"
-		LDCXXSHARED="g++ -shared";;
 	FreeBSD*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
@@ -9335,7 +9264,6 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
-	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
@@ -9347,10 +9275,6 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
-	IRIX*/6*)  case $CC in
-		   *gcc*) CCSHARED="-shared";;
-		   *) CCSHARED="";;
-		   esac;;
 	esac
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CCSHARED" >&5
@@ -9366,7 +9290,6 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s";;
 #	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
-	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
@@ -9589,9 +9512,40 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-# only check for sem_init if thread support is requested
-if test "$with_threads" = "yes" -o -z "$with_threads"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
+$as_echo_n "checking for uuid_generate_time_safe... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <uuid/uuid.h>
+int
+main ()
+{
+
+#ifndef uuid_generate_time_safe
+void *x = uuid_generate_time_safe
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+# 'Real Time' functions on Solaris
+# posix4 on Solaris 2.6
+# pthread (first!) on Linux
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
 $as_echo_n "checking for library containing sem_init... " >&6; }
 if ${ac_cv_search_sem_init+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -9646,10 +9600,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 fi
- # 'Real Time' functions on Solaris
-						# posix4 on Solaris 2.6
-						# pthread (first!) on Linux
-fi
+
 
 # check if we need libintl for locale functions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for textdomain in -lintl" >&5
@@ -10193,87 +10144,40 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
 
-# This is used to generate Setup.config
-
-USE_THREAD_MODULE=""
-
 
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
 
 
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-threads" >&5
-$as_echo_n "checking for --with-threads... " >&6; }
-
-# Check whether --with-threads was given.
-if test "${with_threads+set}" = set; then :
-  withval=$with_threads;
-fi
-
-
-# --with-thread is deprecated, but check for it anyway
-
-# Check whether --with-thread was given.
-if test "${with_thread+set}" = set; then :
-  withval=$with_thread; with_threads=$with_thread
-fi
-
-
-if test -z "$with_threads"
-then with_threads="yes"
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_threads" >&5
-$as_echo "$with_threads" >&6; }
-
-
-if test "$with_threads" = "no"
+if test "$ac_cv_pthread_is_default" = yes
 then
-    USE_THREAD_MODULE="#"
-elif test "$ac_cv_pthread_is_default" = yes
-then
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     $as_echo "#define _REENTRANT 1" >>confdefs.h
 
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kpthread"
     fi
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kthread"
     fi
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -pthread"
     fi
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 else
-    if test ! -z "$with_threads" -a -d "$with_threads"
-    then LDFLAGS="$LDFLAGS -L$with_threads"
-    fi
     if test ! -z "$withval" -a -d "$withval"
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
@@ -10332,19 +10236,16 @@ if ac_fn_c_try_link "$LINENO"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
+
 else
 
     LIBS=$_libs
     ac_fn_c_check_func "$LINENO" "pthread_detach" "ac_cv_func_pthread_detach"
 if test "x$ac_cv_func_pthread_detach" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthreads" >&5
@@ -10384,11 +10285,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthreads_pthread_create" >&5
 $as_echo "$ac_cv_lib_pthreads_pthread_create" >&6; }
 if test "x$ac_cv_lib_pthreads_pthread_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lc_r" >&5
@@ -10428,11 +10328,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_r_pthread_create" >&5
 $as_echo "$ac_cv_lib_c_r_pthread_create" >&6; }
 if test "x$ac_cv_lib_c_r_pthread_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lc_r"
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __pthread_create_system in -lpthread" >&5
@@ -10472,11 +10371,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthread___pthread_create_system" >&5
 $as_echo "$ac_cv_lib_pthread___pthread_create_system" >&6; }
 if test "x$ac_cv_lib_pthread___pthread_create_system" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lpthread"
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lcma" >&5
@@ -10516,14 +10414,14 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_cma_pthread_create" >&5
 $as_echo "$ac_cv_lib_cma_pthread_create" >&6; }
 if test "x$ac_cv_lib_cma_pthread_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lcma"
-    THREADOBJ="Python/thread.o"
+
 else
 
-    USE_THREAD_MODULE="#"
+    as_fn_error $? "could not find pthreads on your system" "$LINENO" 5
+
 fi
 
 
@@ -10576,60 +10474,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpc_usconfig" >&5
 $as_echo "$ac_cv_lib_mpc_usconfig" >&6; }
 if test "x$ac_cv_lib_mpc_usconfig" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     LIBS="$LIBS -lmpc"
-    THREADOBJ="Python/thread.o"
-    USE_THREAD_MODULE=""
+
 fi
 
 
-    if test "$posix_threads" != "yes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for thr_create in -lthread" >&5
-$as_echo_n "checking for thr_create in -lthread... " >&6; }
-if ${ac_cv_lib_thread_thr_create+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lthread  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char thr_create ();
-int
-main ()
-{
-return thr_create ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_thread_thr_create=yes
-else
-  ac_cv_lib_thread_thr_create=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_thread_thr_create" >&5
-$as_echo "$ac_cv_lib_thread_thr_create" >&6; }
-if test "x$ac_cv_lib_thread_thr_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
-      LIBS="$LIBS -lthread"
-      THREADOBJ="Python/thread.o"
-      USE_THREAD_MODULE=""
-fi
-
-    fi
 fi
 
 if test "$posix_threads" = "yes"; then
@@ -10716,12 +10566,12 @@ $as_echo "#define HAVE_BROKEN_PTHREAD_SIGMASK 1" >>confdefs.h
 fi
 done
 
-      for ac_func in pthread_atfork
+      for ac_func in pthread_getcpuclockid
 do :
-  ac_fn_c_check_func "$LINENO" "pthread_atfork" "ac_cv_func_pthread_atfork"
-if test "x$ac_cv_func_pthread_atfork" = xyes; then :
+  ac_fn_c_check_func "$LINENO" "pthread_getcpuclockid" "ac_cv_func_pthread_getcpuclockid"
+if test "x$ac_cv_func_pthread_getcpuclockid" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_PTHREAD_ATFORK 1
+#define HAVE_PTHREAD_GETCPUCLOCKID 1
 _ACEOF
 
 fi
@@ -11310,7 +11160,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
  pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
- select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
@@ -12387,19 +12237,6 @@ fi
 
 fi
 
-
-fi
-done
-
-
-# Stuff for expat.
-for ac_func in memmove
-do :
-  ac_fn_c_check_func "$LINENO" "memmove" "ac_cv_func_memmove"
-if test "x$ac_cv_func_memmove" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_MEMMOVE 1
-_ACEOF
 
 fi
 done
@@ -13524,32 +13361,6 @@ $as_echo "#define const /**/" >>confdefs.h
 
 fi
 
-
-works=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for working volatile" >&5
-$as_echo_n "checking for working volatile... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-volatile int x; x = 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  works=yes
-else
-
-$as_echo "#define volatile /**/" >>confdefs.h
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
-$as_echo "$works" >&6; }
 
 works=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working signed char" >&5
@@ -15210,50 +15021,6 @@ $as_echo "#define HAVE_LIBREADLINE 1" >>confdefs.h
 
 fi
 
-# check for readline 2.1
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_callback_handler_install in -lreadline" >&5
-$as_echo_n "checking for rl_callback_handler_install in -lreadline... " >&6; }
-if ${ac_cv_lib_readline_rl_callback_handler_install+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lreadline $READLINE_LIBS $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char rl_callback_handler_install ();
-int
-main ()
-{
-return rl_callback_handler_install ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_readline_rl_callback_handler_install=yes
-else
-  ac_cv_lib_readline_rl_callback_handler_install=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_readline_rl_callback_handler_install" >&5
-$as_echo "$ac_cv_lib_readline_rl_callback_handler_install" >&6; }
-if test "x$ac_cv_lib_readline_rl_callback_handler_install" = xyes; then :
-
-$as_echo "#define HAVE_RL_CALLBACK 1" >>confdefs.h
-
-fi
-
-
 # check for readline 2.2
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -15957,6 +15724,10 @@ $as_echo "#define MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
 
 fi
 
+# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+# structs since version 5.7.  If the macro is defined as zero before including
+# [n]curses.h, ncurses will expose fields of the structs regardless of the
+# configuration.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether WINDOW has _flags" >&5
 $as_echo_n "checking whether WINDOW has _flags... " >&6; }
 if ${ac_cv_window_has_flags+:} false; then :
@@ -15964,7 +15735,10 @@ if ${ac_cv_window_has_flags+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+  #define NCURSES_OPAQUE 0
+  #include <curses.h>
+
 int
 main ()
 {
@@ -15994,6 +15768,36 @@ then
 $as_echo "#define WINDOW_HAS_FLAGS 1" >>confdefs.h
 
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for is_pad" >&5
+$as_echo_n "checking for is_pad... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef is_pad
+void *x=is_pad
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_IS_PAD 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for is_term_resized" >&5
 $as_echo_n "checking for is_term_resized... " >&6; }
@@ -16063,6 +15867,216 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_CURSES_RESIZETERM 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for immedok" >&5
+$as_echo_n "checking for immedok... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef immedok
+void *x=immedok
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_IMMEDOK 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for syncok" >&5
+$as_echo_n "checking for syncok... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef syncok
+void *x=syncok
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_SYNCOK 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for wchgat" >&5
+$as_echo_n "checking for wchgat... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef wchgat
+void *x=wchgat
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_WCHGAT 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for filter" >&5
+$as_echo_n "checking for filter... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef filter
+void *x=filter
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_FILTER 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for has_key" >&5
+$as_echo_n "checking for has_key... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef has_key
+void *x=has_key
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_HAS_KEY 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for typeahead" >&5
+$as_echo_n "checking for typeahead... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef typeahead
+void *x=typeahead
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_TYPEAHEAD 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for use_env" >&5
+$as_echo_n "checking for use_env... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef use_env
+void *x=use_env
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -16706,7 +16720,7 @@ $as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 fi
 
 # generate output files
-ac_config_files="$ac_config_files Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh"
+ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-config.sh"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
@@ -17408,7 +17422,6 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
-    "Modules/Setup.config") CONFIG_FILES="$CONFIG_FILES Modules/Setup.config" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
     "Modules/ld_so_aix") CONFIG_FILES="$CONFIG_FILES Modules/ld_so_aix" ;;
@@ -18024,7 +18037,7 @@ fi
 
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
-			-s Modules Modules/Setup.config \
+			-s Modules \
 			Modules/Setup.local Modules/Setup
 mv config.c Modules
 

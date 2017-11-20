@@ -15,9 +15,7 @@
 
 #include "Python.h"
 #include "pystrhex.h"
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif
 
 #include "../hashlib.h"
 #include "blake2ns.h"
@@ -28,7 +26,9 @@
 #include "impl/blake2.h"
 #include "impl/blake2-impl.h" /* for secure_zero_memory() and store48() */
 
-#ifdef BLAKE2_USE_SSE
+/* pure SSE2 implementation is very slow, so only use the more optimized SSSE3+
+ * https://bugs.python.org/issue31834 */
+#if defined(__SSSE3__) || defined(__SSE4_1__) || defined(__AVX__) || defined(__XOP__)
 #include "impl/blake2s.c"
 #else
 #include "impl/blake2s-ref.c"
@@ -41,9 +41,7 @@ typedef struct {
     PyObject_HEAD
     blake2s_param    param;
     blake2s_state    state;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } BLAKE2sObject;
 
 #include "clinic/blake2s_impl.c.h"
@@ -60,11 +58,9 @@ new_BLAKE2sObject(PyTypeObject *type)
 {
     BLAKE2sObject *self;
     self = (BLAKE2sObject *)type->tp_alloc(type, 0);
-#ifdef WITH_THREAD
     if (self != NULL) {
         self->lock = NULL;
     }
-#endif
     return self;
 }
 
@@ -166,7 +162,8 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
             goto error;
         }
     }
-    self->param.leaf_length = (unsigned int)leaf_size;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store32(&(self->param.leaf_length), leaf_size);
 
     if (node_offset_obj != NULL) {
         node_offset = PyLong_AsUnsignedLongLong(node_offset_obj);
@@ -182,7 +179,8 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
      }
     store48(&(self->param.node_offset), node_offset);
 #else
-    self->param.node_offset = node_offset;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store64(&(self->param.node_offset), node_offset);
 #endif
 
     if (node_depth < 0 || node_depth > 255) {
@@ -292,7 +290,6 @@ _blake2s_blake2s_update(BLAKE2sObject *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-#ifdef WITH_THREAD
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE)
         self->lock = PyThread_allocate_lock();
 
@@ -305,9 +302,6 @@ _blake2s_blake2s_update(BLAKE2sObject *self, PyObject *obj)
     } else {
         blake2s_update(&self->state, buf.buf, buf.len);
     }
-#else
-    blake2s_update(&self->state, buf.buf, buf.len);
-#endif /* !WITH_THREAD */
     PyBuffer_Release(&buf);
 
     Py_RETURN_NONE;
@@ -407,12 +401,10 @@ py_blake2s_dealloc(PyObject *self)
     /* Try not to leave state in memory. */
     secure_zero_memory(&obj->param, sizeof(obj->param));
     secure_zero_memory(&obj->state, sizeof(obj->state));
-#ifdef WITH_THREAD
     if (obj->lock) {
         PyThread_free_lock(obj->lock);
         obj->lock = NULL;
     }
-#endif
     PyObject_Del(self);
 }
 

@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 
 
@@ -314,7 +315,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (co->co_kwonlyargcount == 0 &&
         (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
         if (argdefs == NULL && co->co_argcount == nargs) {
@@ -374,7 +375,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                       args, nargs,
-                                      k, k + 1, nk, 2,
+                                      k, k != NULL ? k + 1 : NULL, nk, 2,
                                       d, nd, kwdefs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
@@ -401,7 +402,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
        be unique */
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
@@ -499,7 +500,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             goto no_keyword_error;
         }
-        /* fall through next case */
+        /* fall through */
 
     case METH_VARARGS | METH_KEYWORDS:
     {
@@ -521,9 +522,19 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
 
     case METH_FASTCALL:
     {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            goto no_keyword_error;
+        }
+
+        result = (*(_PyCFunctionFast)meth) (self, args, nargs);
+        break;
+    }
+
+    case METH_FASTCALL | METH_KEYWORDS:
+    {
         PyObject **stack;
         PyObject *kwnames;
-        _PyCFunctionFast fastmeth = (_PyCFunctionFast)meth;
+        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)meth;
 
         if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
             goto exit;
@@ -631,15 +642,22 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
         break;
 
     case METH_FASTCALL:
+        if (nkwargs) {
+            goto no_keyword_error;
+        }
+        result = ((_PyCFunctionFast)meth) (self, args, nargs);
+        break;
+
+    case METH_FASTCALL | METH_KEYWORDS:
         /* Fast-path: avoid temporary dict to pass keyword arguments */
-        result = ((_PyCFunctionFast)meth) (self, args, nargs, kwnames);
+        result = ((_PyCFunctionFastWithKeywords)meth) (self, args, nargs, kwnames);
         break;
 
     case METH_VARARGS:
         if (nkwargs) {
             goto no_keyword_error;
         }
-        /* fall through next case */
+        /* fall through */
 
     case METH_VARARGS | METH_KEYWORDS:
     {
@@ -837,9 +855,9 @@ _PyObject_FastCall_Prepend(PyObject *callable,
 
     /* use borrowed references */
     args2[0] = obj;
-    memcpy(&args2[1],
-           args,
-           (nargs - 1)* sizeof(PyObject *));
+    if (nargs > 1) {
+        memcpy(&args2[1], args, (nargs - 1) * sizeof(PyObject *));
+    }
 
     result = _PyObject_FastCall(callable, args2, nargs);
     if (args2 != small_stack) {

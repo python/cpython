@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "pythread.h"
 #include "_iomodule.h"
@@ -196,7 +197,7 @@ bufferediobase_write(PyObject *self, PyObject *args)
 }
 
 
-typedef struct {
+typedef struct _buffered {
     PyObject_HEAD
 
     PyObject *raw;
@@ -230,17 +231,25 @@ typedef struct {
        isn't ready for writing. */
     Py_off_t write_end;
 
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
     volatile unsigned long owner;
-#endif
 
     Py_ssize_t buffer_size;
     Py_ssize_t buffer_mask;
 
     PyObject *dict;
     PyObject *weakreflist;
+
+    /* a doubly-linked chained list of "buffered" objects that need to
+       be flushed when the process exits */
+    struct _buffered *next, *prev;
 } buffered;
+
+/* the actual list of buffered objects */
+static buffered buffer_list_end = {
+    .next = &buffer_list_end,
+    .prev = &buffer_list_end
+};
 
 /*
     Implementation notes:
@@ -267,8 +276,6 @@ typedef struct {
 
 /* These macros protect the buffered object against concurrent operations. */
 
-#ifdef WITH_THREAD
-
 static int
 _enter_buffered_busy(buffered *self)
 {
@@ -279,7 +286,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    relax_locking = (_Py_Finalizing != NULL);
+    relax_locking = _Py_IsFinalizing();
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
         st = PyThread_acquire_lock(self->lock, 1);
@@ -315,11 +322,6 @@ _enter_buffered_busy(buffered *self)
         PyThread_release_lock(self->lock); \
     } while(0);
 
-#else
-#define ENTER_BUFFERED(self) 1
-#define LEAVE_BUFFERED(self)
-#endif
-
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
         if (self->detached) { \
@@ -345,9 +347,10 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
+    (!self->buffer || \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
-     : buffered_closed(self))
+     : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
     if (IS_CLOSED(self)) { \
@@ -387,9 +390,20 @@ _enter_buffered_busy(buffered *self)
 
 
 static void
+remove_from_linked_list(buffered *self)
+{
+    self->next->prev = self->prev;
+    self->prev->next = self->next;
+    self->prev = NULL;
+    self->next = NULL;
+}
+
+static void
 buffered_dealloc(buffered *self)
 {
     self->finalizing = 1;
+    if (self->next != NULL)
+        remove_from_linked_list(self);
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
@@ -401,12 +415,10 @@ buffered_dealloc(buffered *self)
         PyMem_Free(self->buffer);
         self->buffer = NULL;
     }
-#ifdef WITH_THREAD
     if (self->lock) {
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-#endif
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -753,7 +765,6 @@ _buffered_init(buffered *self)
         PyErr_NoMemory();
         return -1;
     }
-#ifdef WITH_THREAD
     if (self->lock)
         PyThread_free_lock(self->lock);
     self->lock = PyThread_allocate_lock();
@@ -762,7 +773,6 @@ _buffered_init(buffered *self)
         return -1;
     }
     self->owner = 0;
-#endif
     /* Find out whether buffer_size is a power of 2 */
     /* XXX is this optimization useful? */
     for (n = self->buffer_size - 1; n & 1; n >>= 1)
@@ -1817,8 +1827,36 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedWriter_Type &&
                                 Py_TYPE(raw) == &PyFileIO_Type);
 
+    if (self->next == NULL) {
+        self->prev = &buffer_list_end;
+        self->next = buffer_list_end.next;
+        buffer_list_end.next->prev = self;
+        buffer_list_end.next = self;
+    }
+
     self->ok = 1;
     return 0;
+}
+
+/*
+* Ensure all buffered writers are flushed before proceeding with
+* normal shutdown.  Otherwise, if the underlying file objects get
+* finalized before the buffered writer wrapping it then any buffered
+* data will be lost.
+*/
+void _PyIO_atexit_flush(void)
+{
+    while (buffer_list_end.next != &buffer_list_end) {
+        buffered *buf = buffer_list_end.next;
+        remove_from_linked_list(buf);
+        if (buf->ok && !buf->finalizing) {
+            /* good state and not finalizing */
+            Py_INCREF(buf);
+            buffered_flush(buf, NULL);
+            Py_DECREF(buf);
+            PyErr_Clear();
+        }
+    }
 }
 
 static Py_ssize_t
@@ -1934,13 +1972,16 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     Py_off_t offset;
 
     CHECK_INITIALIZED(self)
-    if (IS_CLOSED(self)) {
-        PyErr_SetString(PyExc_ValueError, "write to closed file");
-        return NULL;
-    }
 
     if (!ENTER_BUFFERED(self))
         return NULL;
+
+    /* Issue #31976: Check for closed file after acquiring the lock. Another
+       thread could be holding the lock while closing the file. */
+    if (IS_CLOSED(self)) {
+        PyErr_SetString(PyExc_ValueError, "write to closed file");
+        goto error;
+    }
 
     /* Fast path: the data to write can be fully buffered. */
     if (!VALID_READ_BUFFER(self) && !VALID_WRITE_BUFFER(self)) {

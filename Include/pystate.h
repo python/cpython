@@ -29,9 +29,21 @@ typedef struct {
     int use_hash_seed;
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
+    char *allocator;
+    int faulthandler;
+    int tracemalloc;        /* Number of saved frames, 0=don't trace */
+    int importtime;         /* -X importtime */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT {0, -1, 0, 0}
+#define _PyCoreConfig_INIT \
+    {.ignore_environment = 0, \
+     .use_hash_seed = -1, \
+     .hash_seed = 0, \
+     ._disable_importlib = 0, \
+     .allocator = NULL, \
+     .faulthandler = 0, \
+     .tracemalloc = 0, \
+     .importtime = 0}
 
 /* Placeholders while working on the new configuration API
  *
@@ -58,6 +70,17 @@ typedef struct _is {
     PyObject *builtins;
     PyObject *importlib;
 
+    /* Used in Python/sysmodule.c. */
+    int check_interval;
+
+    /* Used in Modules/_threadmodule.c. */
+    long num_threads;
+    /* Support for runtime thread stack size tuning.
+       A value of 0 means using the platform's default stack size
+       or the size specified by the THREAD_STACK_SIZE macro. */
+    /* Used in Python/thread.c. */
+    size_t pythread_stacksize;
+
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
@@ -74,6 +97,10 @@ typedef struct _is {
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
     _PyFrameEvalFunction eval_frame;
+
+    Py_ssize_t co_extra_user_count;
+    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+
 #ifdef HAVE_FORK
     PyObject *before_forkers;
     PyObject *after_forkers_parent;
@@ -89,7 +116,11 @@ typedef struct _is {
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
 typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 
-/* The following values are used for 'what' for tracefunc functions: */
+/* The following values are used for 'what' for tracefunc functions
+ *
+ * To add a new kind of trace event, also update "trace_init" in
+ * Python/sysmodule.c to define the Python level event name
+ */
 #define PyTrace_CALL 0
 #define PyTrace_EXCEPTION 1
 #define PyTrace_LINE 2
@@ -97,11 +128,27 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_CALL 4
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
+#define PyTrace_OPCODE 7
 #endif
 
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
 #else
+
+typedef struct _err_stackitem {
+    /* This struct represents an entry on the exception stack, which is a
+     * per-coroutine state. (Coroutine in the computer science sense,
+     * including the thread and generators).
+     * This ensures that the exception state is not impacted by "yields"
+     * from an except handler.
+     */
+    PyObject *exc_type, *exc_value, *exc_traceback;
+
+    struct _err_stackitem *previous_item;
+
+} _PyErr_StackItem;
+
+
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -115,6 +162,8 @@ typedef struct _ts {
                         to handle the runtime error. */
     char recursion_critical; /* The current calls must not cause
                                 a stack overflow. */
+    int stackcheck_counter;
+
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
@@ -126,13 +175,19 @@ typedef struct _ts {
     PyObject *c_profileobj;
     PyObject *c_traceobj;
 
+    /* The exception currently being raised */
     PyObject *curexc_type;
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_traceback;
+    /* The exception currently being handled, if no coroutines/generators
+     * are present. Always last element on the stack referred to be exc_info.
+     */
+    _PyErr_StackItem exc_state;
+
+    /* Pointer to the top of the stack of the exceptions currently
+     * being handled */
+    _PyErr_StackItem *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
 
@@ -173,9 +228,6 @@ typedef struct _ts {
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 
-    Py_ssize_t co_extra_user_count;
-    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
-
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 
@@ -185,9 +237,6 @@ typedef struct _ts {
 #endif
 
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyInterpreterState_Init(void);
-#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
@@ -218,12 +267,10 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 #endif /* !Py_LIMITED_API */
-#ifdef WITH_THREAD
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
 #endif /* !Py_LIMITED_API */
-#endif
 
 /* Return the current thread state. The global interpreter lock must be held.
  * When the current thread state is NULL, this issues a fatal error (so that
@@ -246,7 +293,7 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
 #ifdef Py_BUILD_CORE
-PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
+#  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
 #  define PyThreadState_GET() \
              ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
 #else
@@ -257,7 +304,6 @@ typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}
         PyGILState_STATE;
 
-#ifdef WITH_THREAD
 
 /* Ensure that the current thread is ready to call the Python
    C API, regardless of the current state of Python, or of its
@@ -301,10 +347,6 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 #ifndef Py_LIMITED_API
-/* Issue #26558: Flag to disable PyGILState_Check().
-   If set to non-zero, PyGILState_Check() always return 1. */
-PyAPI_DATA(int) _PyGILState_check_enabled;
-
 /* Helper/diagnostic function - return 1 if the current thread
    currently holds the GIL, 0 otherwise.
 
@@ -319,7 +361,6 @@ PyAPI_FUNC(int) PyGILState_Check(void);
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif
 
-#endif   /* #ifdef WITH_THREAD */
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
    thread id to that thread's current frame.
@@ -338,11 +379,6 @@ PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
-#endif
-
-/* hook for PyEval_GetFrame(), requested for Psyco */
-#ifndef Py_LIMITED_API
-PyAPI_DATA(PyThreadFrameGetter) _PyThreadState_GetFrame;
 #endif
 
 #ifdef __cplusplus

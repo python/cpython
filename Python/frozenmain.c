@@ -2,6 +2,7 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -15,6 +16,13 @@ extern int PyInitFrozenExtensions(void);
 int
 Py_FrozenMain(int argc, char **argv)
 {
+    _PyInitError err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
+        fflush(stderr);
+        exit(1);
+    }
+
     char *p;
     int i, n, sts = 1;
     int inspect = 0;

@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
@@ -28,20 +29,23 @@ _Py_GetRefTotal(void)
     return total;
 }
 
+PyObject *
+_PyDebug_XOptionShowRefCount(void)
+{
+    PyObject *xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return NULL;
+
+    _Py_IDENTIFIER(showrefcount);
+    return _PyDict_GetItemId(xoptions, &PyId_showrefcount);
+}
+
 void
 _PyDebug_PrintTotalRefs(void) {
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showrefcount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
-        return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showrefcount);
-    if (value == Py_True)
-        fprintf(stderr,
-                "[%" PY_FORMAT_SIZE_T "d refs, "
-                "%" PY_FORMAT_SIZE_T "d blocks]\n",
-                _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+    fprintf(stderr,
+            "[%" PY_FORMAT_SIZE_T "d refs, "
+            "%" PY_FORMAT_SIZE_T "d blocks]\n",
+            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
 
@@ -428,23 +432,17 @@ _PyObject_Dump(PyObject* op)
     if (op == NULL)
         fprintf(stderr, "NULL\n");
     else {
-#ifdef WITH_THREAD
         PyGILState_STATE gil;
-#endif
         PyObject *error_type, *error_value, *error_traceback;
 
         fprintf(stderr, "object  : ");
-#ifdef WITH_THREAD
         gil = PyGILState_Ensure();
-#endif
 
         PyErr_Fetch(&error_type, &error_value, &error_traceback);
         (void)PyObject_Print(op, stderr, 0);
         PyErr_Restore(error_type, error_value, error_traceback);
 
-#ifdef WITH_THREAD
         PyGILState_Release(gil);
-#endif
         /* XXX(twouters) cast refcount to long until %zd is
            universally available */
         fprintf(stderr, "\n"
@@ -2028,14 +2026,6 @@ finally:
 
 /* Trashcan support. */
 
-/* Current call-stack depth of tp_dealloc calls. */
-int _PyTrash_delete_nesting = 0;
-
-/* List of objects that still need to be cleaned up, singly linked via their
- * gc headers' gc_prev pointers.
- */
-PyObject *_PyTrash_delete_later = NULL;
-
 /* Add op to the _PyTrash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
@@ -2046,8 +2036,8 @@ _PyTrash_deposit_object(PyObject *op)
     assert(PyObject_IS_GC(op));
     assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
     assert(op->ob_refcnt == 0);
-    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
-    _PyTrash_delete_later = op;
+    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyRuntime.gc.trash_delete_later;
+    _PyRuntime.gc.trash_delete_later = op;
 }
 
 /* The equivalent API, using per-thread state recursion info */
@@ -2068,11 +2058,11 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    while (_PyTrash_delete_later) {
-        PyObject *op = _PyTrash_delete_later;
+    while (_PyRuntime.gc.trash_delete_later) {
+        PyObject *op = _PyRuntime.gc.trash_delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        _PyTrash_delete_later =
+        _PyRuntime.gc.trash_delete_later =
             (PyObject*) _Py_AS_GC(op)->gc.gc_prev;
 
         /* Call the deallocator directly.  This used to try to
@@ -2082,9 +2072,9 @@ _PyTrash_destroy_chain(void)
          * up distorting allocation statistics.
          */
         assert(op->ob_refcnt == 0);
-        ++_PyTrash_delete_nesting;
+        ++_PyRuntime.gc.trash_delete_nesting;
         (*dealloc)(op);
-        --_PyTrash_delete_nesting;
+        --_PyRuntime.gc.trash_delete_nesting;
     }
 }
 

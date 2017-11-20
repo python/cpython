@@ -1,0 +1,2 @@
+Make the behavior of USE_STACKCHECK deterministic in a multi-threaded
+environment.

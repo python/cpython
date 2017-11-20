@@ -3,6 +3,7 @@
 import collections
 import contextlib
 import functools
+import gc
 import io
 import os
 import re
@@ -90,6 +91,20 @@ class BaseTaskTests:
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
+
+    def test_task_del_collect(self):
+        class Evil:
+            def __del__(self):
+                gc.collect()
+
+        @asyncio.coroutine
+        def run():
+            return Evil()
+
+        self.loop.run_until_complete(
+            asyncio.gather(*[
+                self.new_task(self.loop, run()) for _ in range(100)
+            ], loop=self.loop))
 
     def test_other_loop_future(self):
         other_loop = asyncio.new_event_loop()
@@ -215,12 +230,6 @@ class BaseTaskTests:
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
             asyncio.ensure_future('ok')
-
-    def test_async_warning(self):
-        f = self.new_future(self.loop)
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   'function is deprecated, use ensure_'):
-            self.assertIs(f, asyncio.async(f))
 
     def test_get_stack(self):
         T = None
@@ -645,6 +654,76 @@ class BaseTaskTests:
             w.close()
         t.cancel()
         self.assertRaises(asyncio.CancelledError, loop.run_until_complete, t)
+
+    def test_wait_for_timeout_less_then_0_or_0_future_done(self):
+        def gen():
+            when = yield
+            self.assertAlmostEqual(0, when)
+
+        loop = self.new_test_loop(gen)
+
+        fut = self.new_future(loop)
+        fut.set_result('done')
+
+        ret = loop.run_until_complete(asyncio.wait_for(fut, 0, loop=loop))
+
+        self.assertEqual(ret, 'done')
+        self.assertTrue(fut.done())
+        self.assertAlmostEqual(0, loop.time())
+
+    def test_wait_for_timeout_less_then_0_or_0_coroutine_do_not_started(self):
+        def gen():
+            when = yield
+            self.assertAlmostEqual(0, when)
+
+        loop = self.new_test_loop(gen)
+
+        foo_started = False
+
+        @asyncio.coroutine
+        def foo():
+            nonlocal foo_started
+            foo_started = True
+
+        with self.assertRaises(asyncio.TimeoutError):
+            loop.run_until_complete(asyncio.wait_for(foo(), 0, loop=loop))
+
+        self.assertAlmostEqual(0, loop.time())
+        self.assertEqual(foo_started, False)
+
+    def test_wait_for_timeout_less_then_0_or_0(self):
+        def gen():
+            when = yield
+            self.assertAlmostEqual(0.2, when)
+            when = yield 0
+            self.assertAlmostEqual(0, when)
+
+        for timeout in [0, -1]:
+            with self.subTest(timeout=timeout):
+                loop = self.new_test_loop(gen)
+
+                foo_running = None
+
+                @asyncio.coroutine
+                def foo():
+                    nonlocal foo_running
+                    foo_running = True
+                    try:
+                        yield from asyncio.sleep(0.2, loop=loop)
+                    finally:
+                        foo_running = False
+                    return 'done'
+
+                fut = self.new_task(loop, foo())
+
+                with self.assertRaises(asyncio.TimeoutError):
+                    loop.run_until_complete(asyncio.wait_for(
+                        fut, timeout, loop=loop))
+                self.assertTrue(fut.done())
+                # it should have been cancelled due to the timeout
+                self.assertTrue(fut.cancelled())
+                self.assertAlmostEqual(0, loop.time())
+                self.assertEqual(foo_running, False)
 
     def test_wait_for(self):
 
@@ -1902,7 +1981,7 @@ class BaseTaskTests:
 
         regex = (r'^<CoroWrapper %s\(?\)? .* at %s:%s, .*> '
                     r'was never yielded from\n'
-                 r'Coroutine object created at \(most recent call last\):\n'
+                 r'Coroutine object created at \(most recent call last, truncated to \d+ last lines\):\n'
                  r'.*\n'
                  r'  File "%s", line %s, in test_coroutine_never_yielded\n'
                  r'    coro_noop\(\)$'
@@ -2270,6 +2349,10 @@ class GatherTestsBase:
                                                PYTHONASYNCIODEBUG='1',
                                                PYTHONPATH=aio_path)
         self.assertEqual(stdout.rstrip(), b'False')
+
+        sts, stdout, stderr = assert_python_ok('-E', '-X', 'dev',
+                                               '-c', code)
+        self.assertEqual(stdout.rstrip(), b'True')
 
 
 class FutureGatherTests(GatherTestsBase, test_utils.TestCase):

@@ -1,0 +1,1 @@
+Added support for the Blowfish hashing in the crypt module.

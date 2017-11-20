@@ -303,12 +303,13 @@ Miscellaneous options
 
 .. cmdoption:: -u
 
-   Force the binary layer of the stdout and stderr streams (which is
-   available as their ``buffer`` attribute) to be unbuffered. The text I/O
-   layer will still be line-buffered if writing to the console, or
-   block-buffered if redirected to a non-interactive file.
+   Force the stdout and stderr streams to be unbuffered.  This option has no
+   effect on the stdin stream.
 
    See also :envvar:`PYTHONUNBUFFERED`.
+
+   .. versionchanged:: 3.7
+      The text layer of the stdout and stderr streams now is unbuffered.
 
 
 .. cmdoption:: -v
@@ -387,8 +388,6 @@ Miscellaneous options
    Skip the first line of the source, allowing use of non-Unix forms of
    ``#!cmd``.  This is intended for a DOS specific hack only.
 
-   .. note:: The line numbers in error messages will be off by one.
-
 
 .. cmdoption:: -X
 
@@ -407,6 +406,24 @@ Miscellaneous options
    * ``-X showalloccount`` to output the total count of allocated objects for
      each type when the program finishes. This only works when Python was built with
      ``COUNT_ALLOCS`` defined.
+   * ``-X importtime`` to show how long each import takes. It shows module
+     name, cumulative time (including nested imports) and self time (excluding
+     nested imports).  Note that its output may be broken in multi-threaded
+     application.  Typical usage is ``python3 -X importtime -c 'import
+     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+   * ``-X dev`` enables the "developer mode": enable debug checks at runtime.
+     In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python3
+     -W default -X faulthandler ...``, except that the :envvar:`PYTHONMALLOC`
+     and :envvar:`PYTHONASYNCIODEBUG` environment variables are not set in
+     practice. Developer mode:
+
+     * Add ``default`` warnings option. For example, display
+       :exc:`DeprecationWarning` and :exc:`ResourceWarning` warnings.
+     * Install debug hooks on memory allocators: see the
+       :c:func:`PyMem_SetupDebugHooks` C function.
+     * Enable the :mod:`faulthandler` module to dump the Python traceback
+       on a crash.
+     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -422,6 +439,10 @@ Miscellaneous options
 
    .. versionadded:: 3.6
       The ``-X showalloccount`` option.
+
+   .. versionadded:: 3.7
+      The ``-X importtime``, ``-X dev`` and :envvar:`PYTHONPROFILEIMPORTTIME`
+      options.
 
 
 Options you shouldn't use
@@ -494,6 +515,18 @@ conflict.
    :option:`-O` option.  If set to an integer, it is equivalent to specifying
    :option:`-O` multiple times.
 
+
+.. envvar:: PYTHONBREAKPOINT
+
+   If this is set, it names a callable using dotted-path notation.  The module
+   containing the callable will be imported and then the callable will be run
+   by the default implementation of :func:`sys.breakpointhook` which itself is
+   called by built-in :func:`breakpoint`.  If not set, or set to the empty
+   string, it is equivalent to the value "pdb.set_trace".  Setting this to the
+   string "0" causes the default implementation of :func:`sys.breakpointhook`
+   to do nothing but return immediately.
+
+   .. versionadded:: 3.7
 
 .. envvar:: PYTHONDEBUG
 
@@ -630,6 +663,15 @@ conflict.
    .. versionadded:: 3.4
 
 
+.. envvar:: PYTHONPROFILEIMPORTTIME
+
+   If this environment variable is set to a non-empty string, Python will
+   show how long each import takes.  This is exactly equivalent to setting
+   ``-X importtime`` on the command line.
+
+   .. versionadded:: 3.7
+
+
 .. envvar:: PYTHONASYNCIODEBUG
 
    If this environment variable is set to a non-empty string, enable the
@@ -743,6 +785,11 @@ conflict.
    implicit locale coercion) will automatically set the error handler for
    :data:`sys.stdin` and :data:`sys.stdout` to ``surrogateescape``. This
    behavior can be overridden using :envvar:`PYTHONIOENCODING` as usual.
+
+   For debugging purposes, setting ``PYTHONCOERCECLOCALE=warn`` will cause
+   Python to emit warning messages on ``stderr`` if either the locale coercion
+   activates, or else if a locale that *would* have triggered coercion is
+   still active when the Python runtime is initialized.
 
    Availability: \*nix
 

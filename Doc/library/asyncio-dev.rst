@@ -21,7 +21,9 @@ enable *debug mode*.
 To enable all debug checks for an application:
 
 * Enable the asyncio debug mode globally by setting the environment variable
-  :envvar:`PYTHONASYNCIODEBUG` to ``1``, or by calling :meth:`AbstractEventLoop.set_debug`.
+  :envvar:`PYTHONASYNCIODEBUG` to ``1``, using ``-X dev`` command line option
+  (see the :option:`-X` option), or by calling
+  :meth:`AbstractEventLoop.set_debug`.
 * Set the log level of the :ref:`asyncio logger <asyncio-logger>` to
   :py:data:`logging.DEBUG`. For example, call
   ``logging.basicConfig(level=logging.DEBUG)`` at startup.
@@ -42,6 +44,11 @@ Examples debug checks:
 * :exc:`ResourceWarning` warnings are emitted when transports and event loops
   are :ref:`not closed explicitly <asyncio-close-transports>`.
 
+.. versionchanged:: 3.7
+
+   The new ``-X dev`` command line option can now also be used to enable
+   the debug mode.
+
 .. seealso::
 
    The :meth:`AbstractEventLoop.set_debug` method and the :ref:`asyncio logger
@@ -52,7 +59,7 @@ Cancellation
 ------------
 
 Cancellation of tasks is not common in classic programming. In asynchronous
-programming, not only it is something common, but you have to prepare your
+programming, not only is it something common, but you have to prepare your
 code to handle it.
 
 Futures and tasks can be cancelled explicitly with their :meth:`Future.cancel`

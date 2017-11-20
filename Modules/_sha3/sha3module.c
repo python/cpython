@@ -139,9 +139,7 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 typedef struct {
     PyObject_HEAD
     SHA3_state hash_state;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } SHA3object;
 
 static PyTypeObject SHA3_224type;
@@ -167,9 +165,7 @@ newSHA3object(PyTypeObject *type)
     if (newobj == NULL) {
         return NULL;
     }
-#ifdef WITH_THREAD
     newobj->lock = NULL;
-#endif
     return newobj;
 }
 
@@ -224,7 +220,6 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data)
 
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
-#ifdef WITH_THREAD
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
             /* invariant: New objects can't be accessed by other code yet,
              * thus it's safe to release the GIL without locking the object.
@@ -236,9 +231,6 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data)
         else {
             res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
         }
-#else
-        res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
-#endif
         if (res != SUCCESS) {
             PyErr_SetString(PyExc_RuntimeError,
                             "internal error in SHA3 Update()");
@@ -265,11 +257,9 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data)
 static void
 SHA3_dealloc(SHA3object *self)
 {
-#ifdef WITH_THREAD
     if (self->lock) {
         PyThread_free_lock(self->lock);
     }
-#endif
     PyObject_Del(self);
 }
 
@@ -373,7 +363,6 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
     /* add new data, the function takes the length in bits not bytes */
-#ifdef WITH_THREAD
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
     }
@@ -391,9 +380,6 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *obj)
     else {
         res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
     }
-#else
-    res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
-#endif
 
     if (res != SUCCESS) {
         PyBuffer_Release(&buf);

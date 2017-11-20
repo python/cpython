@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include <ctype.h>
+#include <float.h>
 
 
 #ifdef __cplusplus
@@ -1654,11 +1655,14 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     nargs = PyTuple_GET_SIZE(args);
     nkwargs = (kwargs == NULL) ? 0 : PyDict_GET_SIZE(kwargs);
     if (nargs + nkwargs > len) {
+        /* Adding "keyword" (when nargs == 0) prevents producing wrong error
+           messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes at most %d argument%s (%zd given)",
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,
+                     (nargs == 0) ? "keyword " : "",
                      (len == 1) ? "" : "s",
                      nargs + nkwargs);
         return cleanreturn(0, &freelist);
@@ -2055,7 +2059,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
 
     kwtuple = parser->kwtuple;
     pos = parser->pos;
-    len = pos + PyTuple_GET_SIZE(kwtuple);
+    len = pos + (int)PyTuple_GET_SIZE(kwtuple);
 
     if (len > STATIC_FREELIST_ENTRIES) {
         freelist.entries = PyMem_NEW(freelistentry_t, len);
@@ -2077,11 +2081,14 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
         nkwargs = 0;
     }
     if (nargs + nkwargs > len) {
+        /* Adding "keyword" (when nargs == 0) prevents producing wrong error
+           messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes at most %d argument%s (%zd given)",
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      len,
+                     (nargs == 0) ? "keyword " : "",
                      (len == 1) ? "" : "s",
                      nargs + nkwargs);
         return cleanreturn(0, &freelist);
@@ -2304,8 +2311,8 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 /* after 'e', only 's' and 't' is allowed */
                 goto err;
             format++;
-            /* explicit fallthrough to string cases */
         }
+        /* fall through */
 
     case 's': /* string */
     case 'z': /* string or None */
@@ -2483,7 +2490,6 @@ _PyArg_UnpackStack(PyObject **args, Py_ssize_t nargs, const char *name,
 
 
 #undef _PyArg_NoKeywords
-#undef _PyArg_NoStackKeywords
 #undef _PyArg_NoPositional
 
 /* For type constructors that don't take keyword args
@@ -2502,23 +2508,6 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
         return 0;
     }
     if (PyDict_GET_SIZE(kwargs) == 0) {
-        return 1;
-    }
-
-    PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                    funcname);
-    return 0;
-}
-
-
-int
-_PyArg_NoStackKeywords(const char *funcname, PyObject *kwnames)
-{
-    if (kwnames == NULL) {
-        return 1;
-    }
-    assert(PyTuple_CheckExact(kwnames));
-    if (PyTuple_GET_SIZE(kwnames) == 0) {
         return 1;
     }
 

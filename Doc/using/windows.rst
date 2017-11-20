@@ -896,7 +896,7 @@ Compiling Python on Windows
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<https://docs.python.org/devguide/setup.html#getting-the-source-code>`_.
+<https://devguide.python.org/setup/#getting-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
 Visual Studio 2015, which is the compiler used to build the official Python

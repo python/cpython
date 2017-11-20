@@ -46,7 +46,7 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_decode__doc__,
 "\n");
 
 #define _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)_io_IncrementalNewlineDecoder_decode, METH_FASTCALL, _io_IncrementalNewlineDecoder_decode__doc__},
+    {"decode", (PyCFunction)_io_IncrementalNewlineDecoder_decode, METH_FASTCALL|METH_KEYWORDS, _io_IncrementalNewlineDecoder_decode__doc__},
 
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
@@ -185,7 +185,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_reconfigure__doc__,
 "This also does an implicit stream flush.");
 
 #define _IO_TEXTIOWRAPPER_RECONFIGURE_METHODDEF    \
-    {"reconfigure", (PyCFunction)_io_TextIOWrapper_reconfigure, METH_FASTCALL, _io_TextIOWrapper_reconfigure__doc__},
+    {"reconfigure", (PyCFunction)_io_TextIOWrapper_reconfigure, METH_FASTCALL|METH_KEYWORDS, _io_TextIOWrapper_reconfigure__doc__},
 
 static PyObject *
 _io_TextIOWrapper_reconfigure_impl(textio *self,
@@ -266,14 +266,10 @@ static PyObject *
 _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n);
 
 static PyObject *
-_io_TextIOWrapper_read(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_TextIOWrapper_read(textio *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
-
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
         _Py_convert_optional_to_ssize_t, &n)) {
@@ -297,14 +293,10 @@ static PyObject *
 _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size);
 
 static PyObject *
-_io_TextIOWrapper_readline(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_TextIOWrapper_readline(textio *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
-
-    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "|n:readline",
         &size)) {
@@ -328,15 +320,11 @@ static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence);
 
 static PyObject *
-_io_TextIOWrapper_seek(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_TextIOWrapper_seek(textio *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *cookieObj;
     int whence = 0;
-
-    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
         &cookieObj, &whence)) {
@@ -377,14 +365,10 @@ static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos);
 
 static PyObject *
-_io_TextIOWrapper_truncate(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_TextIOWrapper_truncate(textio *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
-
-    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "truncate",
         0, 1,
@@ -515,4 +499,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=8ffc6d2557c9c620 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=937989df0a8abfc3 input=a9049054013a1b77]*/

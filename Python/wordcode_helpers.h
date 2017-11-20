@@ -28,14 +28,17 @@ write_op_arg(_Py_CODEUNIT *codestr, unsigned char opcode,
     switch (ilen) {
         case 4:
             *codestr++ = PACKOPARG(EXTENDED_ARG, (oparg >> 24) & 0xff);
+            /* fall through */
         case 3:
             *codestr++ = PACKOPARG(EXTENDED_ARG, (oparg >> 16) & 0xff);
+            /* fall through */
         case 2:
             *codestr++ = PACKOPARG(EXTENDED_ARG, (oparg >> 8) & 0xff);
+            /* fall through */
         case 1:
             *codestr++ = PACKOPARG(opcode, oparg & 0xff);
             break;
         default:
-            assert(0);
+            Py_UNREACHABLE();
     }
 }

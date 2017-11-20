@@ -2,18 +2,19 @@ import importlib.machinery
 import os
 import sys
 
-from idlelib.browser import ClassBrowser, ModuleBrowserTreeItem
+from idlelib.browser import ModuleBrowser, ModuleBrowserTreeItem
 from idlelib.pyshell import PyShellFileList
 from idlelib.tree import TreeItem
 
 
-class PathBrowser(ClassBrowser):
+class PathBrowser(ModuleBrowser):
 
-    def __init__(self, flist, _htest=False):
+    def __init__(self, flist, *, _htest=False, _utest=False):
         """
         _htest - bool, change box location when running htest
         """
         self._htest = _htest
+        self._utest = _utest
         self.init(flist)
 
     def settitle(self):

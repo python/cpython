@@ -755,28 +755,35 @@ class UrlParseTestCase(unittest.TestCase):
     def test_parse_fragments(self):
         # Exercise the allow_fragments parameter of urlparse() and urlsplit()
         tests = (
-            ("http:#frag", "path"),
-            ("//example.net#frag", "path"),
-            ("index.html#frag", "path"),
-            (";a=b#frag", "params"),
-            ("?a=b#frag", "query"),
-            ("#frag", "path"),
+            ("http:#frag", "path", "frag"),
+            ("//example.net#frag", "path", "frag"),
+            ("index.html#frag", "path", "frag"),
+            (";a=b#frag", "params", "frag"),
+            ("?a=b#frag", "query", "frag"),
+            ("#frag", "path", "frag"),
+            ("abc#@frag", "path", "@frag"),
+            ("//abc#@frag", "path", "@frag"),
+            ("//abc:80#@frag", "path", "@frag"),
+            ("//abc#@frag:80", "path", "@frag:80"),
         )
-        for url, attr in tests:
+        for url, attr, expected_frag in tests:
             for func in (urllib.parse.urlparse, urllib.parse.urlsplit):
                 if attr == "params" and func is urllib.parse.urlsplit:
                     attr = "path"
                 with self.subTest(url=url, function=func):
                     result = func(url, allow_fragments=False)
                     self.assertEqual(result.fragment, "")
-                    self.assertTrue(getattr(result, attr).endswith("#frag"))
+                    self.assertTrue(
+                            getattr(result, attr).endswith("#" + expected_frag))
                     self.assertEqual(func(url, "", False).fragment, "")
 
                     result = func(url, allow_fragments=True)
-                    self.assertEqual(result.fragment, "frag")
-                    self.assertFalse(getattr(result, attr).endswith("frag"))
-                    self.assertEqual(func(url, "", True).fragment, "frag")
-                    self.assertEqual(func(url).fragment, "frag")
+                    self.assertEqual(result.fragment, expected_frag)
+                    self.assertFalse(
+                            getattr(result, attr).endswith(expected_frag))
+                    self.assertEqual(func(url, "", True).fragment,
+                                     expected_frag)
+                    self.assertEqual(func(url).fragment, expected_frag)
 
     def test_mixed_types_rejected(self):
         # Several functions that process either strings or ASCII encoded bytes
@@ -982,6 +989,26 @@ class Utility_Tests(unittest.TestCase):
                          ('www.example.org:80', ''))
         self.assertEqual(splithost('/foo/bar/baz.html'),
                          (None, '/foo/bar/baz.html'))
+
+        # bpo-30500: # starts a fragment.
+        self.assertEqual(splithost('//127.0.0.1#@host.com'),
+                         ('127.0.0.1', '/#@host.com'))
+        self.assertEqual(splithost('//127.0.0.1#@host.com:80'),
+                         ('127.0.0.1', '/#@host.com:80'))
+        self.assertEqual(splithost('//127.0.0.1:80#@host.com'),
+                         ('127.0.0.1:80', '/#@host.com'))
+
+        # Empty host is returned as empty string.
+        self.assertEqual(splithost("///file"),
+                         ('', '/file'))
+
+        # Trailing semicolon, question mark and hash symbol are kept.
+        self.assertEqual(splithost("//example.net/file;"),
+                         ('example.net', '/file;'))
+        self.assertEqual(splithost("//example.net/file?"),
+                         ('example.net', '/file?'))
+        self.assertEqual(splithost("//example.net/file#"),
+                         ('example.net', '/file#'))
 
     def test_splituser(self):
         splituser = urllib.parse.splituser

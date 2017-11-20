@@ -412,6 +412,9 @@ Filter
 
       Address space of a memory block (``int`` or ``None``).
 
+      tracemalloc uses the domain ``0`` to trace memory allocations made by
+      Python. C extensions can use other domains to trace other resources.
+
    .. attribute:: inclusive
 
       If *inclusive* is ``True`` (include), only match memory blocks allocated
@@ -621,6 +624,16 @@ Trace
 
    The :attr:`Snapshot.traces` attribute is a sequence of :class:`Trace`
    instances.
+
+   .. versionchanged:: 3.6
+      Added the :attr:`domain` attribute.
+
+   .. attribute:: domain
+
+      Address space of a memory block (``int``). Read-only property.
+
+      tracemalloc uses the domain ``0`` to trace memory allocations made by
+      Python. C extensions can use other domains to trace other resources.
 
    .. attribute:: size
 

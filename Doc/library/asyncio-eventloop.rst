@@ -5,6 +5,8 @@
 Base Event Loop
 ===============
 
+**Source code:** :source:`Lib/asyncio/events.py`
+
 The event loop is the central execution device provided by :mod:`asyncio`.
 It provides multiple facilities, including:
 
@@ -339,9 +341,10 @@ Creating connections
 
 .. coroutinemethod:: AbstractEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
 
-   Create datagram connection: socket family :py:data:`~socket.AF_INET` or
-   :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
-   socket type :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
+   Create datagram connection: socket family :py:data:`~socket.AF_INET`,
+   :py:data:`~socket.AF_INET6` or :py:data:`~socket.AF_UNIX` depending on
+   *host* (or *family* if specified), socket type
+   :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method is a :ref:`coroutine <coroutine>` which will try to
@@ -551,6 +554,21 @@ Low-level socket operations
    non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
+
+.. coroutinemethod:: AbstractEventLoop.sock_recv_into(sock, buf)
+
+   Receive data from the socket.  Modeled after blocking
+   :meth:`socket.socket.recv_into` method.
+
+   The received data is written into *buf* (a writable buffer).
+   The return value is the number of bytes written.
+
+   With :class:`SelectorEventLoop` event loop, the socket *sock* must be
+   non-blocking.
+
+   This method is a :ref:`coroutine <coroutine>`.
+
+   .. versionadded:: 3.7
 
 .. coroutinemethod:: AbstractEventLoop.sock_sendall(sock, data)
 
@@ -848,6 +866,12 @@ Handle
 
       Cancel the call.  If the callback is already canceled or executed,
       this method has no effect.
+
+   .. method:: cancelled()
+
+      Return ``True`` if the call was cancelled.
+
+      .. versionadded:: 3.7
 
 
 Event loop examples

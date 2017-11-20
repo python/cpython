@@ -1,0 +1,2 @@
+Prevent a crash when calling the ``__init__()`` method of a
+``sqlite3.Cursor`` object more than once. Patch by Oren Milman.

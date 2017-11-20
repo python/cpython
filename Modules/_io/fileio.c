@@ -41,7 +41,7 @@
 #if BUFSIZ < (8*1024)
 #define SMALLCHUNK (8*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64MB defined"
+#error "unreasonable BUFSIZ > 64 MiB defined"
 #else
 #define SMALLCHUNK BUFSIZ
 #endif
@@ -271,11 +271,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
     if (fd < 0) {
 #ifdef MS_WINDOWS
-        Py_ssize_t length;
         if (!PyUnicode_FSDecoder(nameobj, &stringobj)) {
             return -1;
         }
-        widename = PyUnicode_AsUnicodeAndSize(stringobj, &length);
+        widename = PyUnicode_AsUnicode(stringobj);
         if (widename == NULL)
             return -1;
 #else

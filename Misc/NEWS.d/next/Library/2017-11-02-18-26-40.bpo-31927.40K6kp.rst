@@ -1,0 +1,3 @@
+Fixed compilation of the socket module on NetBSD 8.  Fixed assertion failure
+or reading arbitrary data when parse a AF_BLUETOOTH address on NetBSD and
+DragonFly BSD.

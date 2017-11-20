@@ -264,9 +264,9 @@ The :mod:`functools` module defines the following functions:
           return value
 
 
-.. decorator:: singledispatch(default)
+.. decorator:: singledispatch
 
-   Transforms a function into a :term:`single-dispatch <single
+   Transform a function into a :term:`single-dispatch <single
    dispatch>` :term:`generic function`.
 
    To define a generic function, decorate it with the ``@singledispatch``

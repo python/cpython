@@ -194,7 +194,7 @@ class WStringTestCase(unittest.TestCase):
 
 def run_test(rep, msg, func, arg):
     items = range(rep)
-    from time import clock
+    from time import perf_counter as clock
     start = clock()
     for i in items:
         func(arg); func(arg); func(arg); func(arg); func(arg)

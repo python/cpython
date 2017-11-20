@@ -1,0 +1,2 @@
+The shutil.rmtree() function has been sped up to 20--40%. This was done
+using the os.scandir() function.
