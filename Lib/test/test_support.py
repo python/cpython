@@ -456,10 +456,17 @@ class TestSupport(unittest.TestCase):
             # same option multiple times
             ['-bb'],
             ['-vvv'],
-            # -W and -X dev
+            # -W options
             ['-Wignore'],
+            # -X options
             ['-X', 'dev'],
             ['-Wignore', '-X', 'dev'],
+            ['-X', 'faulthandler'],
+            ['-X', 'importtime'],
+            ['-X', 'showalloccount'],
+            ['-X', 'showrefcount'],
+            ['-X', 'tracemalloc'],
+            ['-X', 'tracemalloc=3'],
         ):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')

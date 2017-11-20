@@ -261,19 +261,28 @@ def _args_from_interpreter_flags():
         if v > 0:
             args.append('-' + opt * v)
 
-    if hasattr(sys, '_xoptions'):
-        xdev = ('dev' in sys._xoptions)
-    else:
-        xdev = False
-
+    # -W options
     warnoptions = sys.warnoptions
-    if xdev and warnoptions and warnoptions[-1] == 'default':
+    xoptions = getattr(sys, '_xoptions', {})
+    if 'dev' in xoptions and warnoptions and warnoptions[-1] == 'default':
         # special case: -X dev adds 'default' to sys.warnoptions
         warnoptions = warnoptions[:-1]
     for opt in warnoptions:
         args.append('-W' + opt)
-    if xdev:
+
+    # -X options
+    if 'dev' in xoptions:
         args.extend(('-X', 'dev'))
+    for opt in ('faulthandler', 'tracemalloc', 'importtime',
+                'showalloccount', 'showrefcount'):
+        if opt in xoptions:
+            value = xoptions[opt]
+            if value is True:
+                arg = opt
+            else:
+                arg = '%s=%s' % (opt, value)
+            args.extend(('-X', arg))
+
     return args
 
 
