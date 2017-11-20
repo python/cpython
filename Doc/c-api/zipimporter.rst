@@ -7,8 +7,9 @@ ZipImporter Objects
 
 Python for the longest of time had an zipimporter that could not be
 subclassed using the C Python API but could in the Python Layer.
-Since Python 3.7 users can now subclass it in their C code as now
-it is an exported Type in the Python Core.
+On Python 3.6.4 users can subclass it in their C code as it is an
+exported Type in the Python Core. On Python 3.7 ZipImporter *might*
+be reimplemented in Pure Python instead of C.
 
 .. c:var:: PyTypeObject PyZipImporter_Type
 
