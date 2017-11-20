@@ -362,12 +362,12 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
-    def create_unix_connection(self, protocol_factory, path, *,
+    def create_unix_connection(self, protocol_factory, path=None, *,
                                ssl=None, sock=None,
                                server_hostname=None):
         raise NotImplementedError
 
-    def create_unix_server(self, protocol_factory, path, *,
+    def create_unix_server(self, protocol_factory, path=None, *,
                            sock=None, backlog=100, ssl=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
