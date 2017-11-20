@@ -414,16 +414,18 @@ Miscellaneous options
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
    * ``-X dev`` enables the "developer mode": enable debug checks at runtime.
-     In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3
+     In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python3
      -W default -X faulthandler ...``, except that the :envvar:`PYTHONMALLOC`
-     environment variable is not set in practice. Developer mode:
+     and :envvar:`PYTHONASYNCIODEBUG` environment variables are not set in
+     practice. Developer mode:
 
      * Add ``default`` warnings option. For example, display
        :exc:`DeprecationWarning` and :exc:`ResourceWarning` warnings.
-     * Install debug hooks on memory allocators as if :envvar:`PYTHONMALLOC`
-       is set to ``debug``.
+     * Install debug hooks on memory allocators: see the
+       :c:func:`PyMem_SetupDebugHooks` C function.
      * Enable the :mod:`faulthandler` module to dump the Python traceback
        on a crash.
+     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
