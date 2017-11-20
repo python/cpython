@@ -291,4 +291,4 @@ zipimport_zipimporter_get_source(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bac6c9144950eaec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ade5cceba9be63d input=a9049054013a1b77]*/
