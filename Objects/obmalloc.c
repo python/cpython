@@ -63,7 +63,7 @@ static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #endif
 
 
-static void *
+void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
     /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
@@ -97,7 +97,7 @@ _PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
     return realloc(ptr, size);
 }
 
-static void
+void
 _PyMem_RawFree(void *ctx, void *ptr)
 {
     free(ptr);

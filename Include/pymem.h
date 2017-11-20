@@ -105,6 +105,8 @@ PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(void *) _PyMem_RawMalloc(void *ctx, size_t size);
+PyAPI_FUNC(void) _PyMem_RawFree(void *ctx, void *ptr);
 PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
 PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
 #endif
