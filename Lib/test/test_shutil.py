@@ -1403,6 +1403,14 @@ class TestShutil(unittest.TestCase):
         # But Error should work too, to stay backward compatible.
         self.assertRaises(Error, shutil.copyfile, src_file, src_file)
 
+    def test_copy_w_different_length(self):
+        # copy and copy2 both accept an alternate buffer `length`
+        for fn in (shutil.copy, shutil.copy2):
+            with tempfile.NamedTemporaryFile() as src:
+                with tempfile.NamedTemporaryFile() as dst:
+                    write_file(src.name, b'x' * 100, binary=True)
+                    fn(src.name, dst.name, length=20)
+
     def test_copytree_return_value(self):
         # copytree returns its destination path.
         src_dir = self.mkdtemp()
@@ -1829,6 +1837,7 @@ class TestCopyFile(unittest.TestCase):
             self.assertTrue(os.path.isdir(dst_dir))
         finally:
             os.rmdir(dst_dir)
+
 
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
