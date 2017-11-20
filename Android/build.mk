@@ -127,6 +127,13 @@ configure: native_python external_libraries openssl
 
 host:
 	@echo "---> Build Python for $(BUILD_TYPE)."
+ifeq ($(ANDROID_ARCH), x86_64)
+	# All the long double tests fail on x86_64.
+	setup_file=$(py_host_dir)/Modules/Setup; \
+	cp $(py_srcdir)/Modules/Setup.dist $$setup_file; \
+	    echo "*disabled*" >> $$setup_file; \
+	    echo "_ctypes" >> $$setup_file
+endif
 	@if test -f $(config_status); then \
 	    $(MAKE) -C $(py_host_dir) all; \
 	else \
