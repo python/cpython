@@ -788,7 +788,7 @@ static PyMemberDef zipimporter_members[] = {
 
 #define DEFERRED_ADDRESS(ADDR) 0
 
-static PyTypeObject ZipImporter_Type = {
+PyTypeObject ZipImporter_Type = {
     PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
     "zipimport.zipimporter",
     sizeof(ZipImporter),
