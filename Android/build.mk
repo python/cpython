@@ -129,7 +129,8 @@ disabled_modules:
 	setup_file=$(py_host_dir)/Modules/Setup; \
 	cp $(py_srcdir)/Modules/Setup.dist $$setup_file; \
 	    echo "*disabled*" >> $$setup_file; \
-	    echo "_uuid" >> $$setup_file
+	    echo "_uuid" >> $$setup_file; \
+	    echo "grp" >> $$setup_file
 ifeq ($(ANDROID_ARCH), x86_64)
 	echo "_ctypes" >> $(py_host_dir)/Modules/Setup
 endif
