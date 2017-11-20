@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "internal/pystate.h"
 #include "structmember.h"
-#include "zipimport.h"
 #include "osdefs.h"
 #include "marshal.h"
 #include <time.h>

@@ -16,7 +16,7 @@ struct _zipimporter {
 };
 
 typedef struct _zipimporter ZipImporter;
-static PyTypeObject ZipImporter_Type;
+PyAPI_DATA(PyTypeObject) ZipImporter_Type;
 
 #define ZipImporter_Check(op) PyObject_TypeCheck(op, &ZipImporter_Type)
 
