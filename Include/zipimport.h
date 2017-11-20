@@ -4,21 +4,9 @@
 extern "C" {
 #endif
 
-/* zipimporter object definition and support */
+PyAPI_DATA(PyTypeObject) PyZipImporter_Type;
 
-struct _zipimporter {
-    PyObject_HEAD
-    PyObject *archive;  /* pathname of the Zip archive,
-                           decoded from the filesystem encoding */
-    PyObject *prefix;   /* file prefix: "a/sub/directory/",
-                           encoded to the filesystem encoding */
-    PyObject *files;    /* dict with file info {path: toc_entry} */
-};
-
-typedef struct _zipimporter ZipImporter;
-PyAPI_DATA(PyTypeObject) ZipImporter_Type;
-
-#define ZipImporter_Check(op) PyObject_TypeCheck(op, &ZipImporter_Type)
+#define ZipImporter_Check(op) PyObject_TypeCheck(op, &PyZipImporter_Type)
 
 #ifdef __cplusplus
 }

@@ -32,7 +32,7 @@ zipimport_zipimporter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     PyObject *path;
 
-    if ((Py_TYPE(self) == &ZipImporter_Type) &&
+    if ((Py_TYPE(self) == &PyZipImporter_Type) &&
         !_PyArg_NoKeywords("zipimporter", kwargs)) {
         goto exit;
     }
