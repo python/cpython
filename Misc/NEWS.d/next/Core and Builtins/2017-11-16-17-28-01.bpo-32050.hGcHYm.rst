@@ -1,0 +1,2 @@
+Deprecate the command line -x option. Using the option now emits a
+DeprecationWarning warning.

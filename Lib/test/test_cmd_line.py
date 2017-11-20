@@ -19,6 +19,16 @@ def _kill_python_and_exit_code(p):
     returncode = p.wait()
     return data, returncode
 
+
+def run_python(args, **kw):
+    args = (sys.executable,) + tuple(args)
+    return subprocess.run(args,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          universal_newlines=True,
+                          **kw)
+
+
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
@@ -514,12 +524,8 @@ class CmdLineTest(unittest.TestCase):
         # by default for Python compiled in debug mode
         env['PYTHONMALLOC'] = 'malloc'
 
-        args = (sys.executable, '-X', 'dev', '-c', code)
-        proc = subprocess.run(args,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              universal_newlines=True,
-                              env=env)
+        args = ('-X', 'dev', '-c', code)
+        proc = run_python(args, env=env)
         if check_exitcode:
             self.assertEqual(proc.returncode, 0, proc)
         return proc.stdout.rstrip()
@@ -546,6 +552,42 @@ class CmdLineTest(unittest.TestCase):
             code = "import faulthandler; print(faulthandler.is_enabled())"
             out = self.run_xdev(code)
             self.assertEqual(out, "True")
+
+    def test_skipfirst(self):
+        filename = support.TESTFN
+
+        # Test the -x command line option
+        self.addCleanup(support.unlink, filename)
+
+        lines = ['First line', 'Second line', 'Last line']
+
+        with open(filename, "w") as fp:
+            for line in lines:
+                print(f"print({line!r})", file=fp)
+
+        def check(skipfirst, expected):
+            args = ['-E']
+            if skipfirst:
+                args.append('-x')
+            args.append(filename)
+
+            proc = run_python(args)
+            self.assertEqual(proc.stdout.splitlines(), expected)
+            self.assertEqual(proc.returncode, 0)
+
+        check(False, lines)
+        check(True, lines[1:])
+
+    def test_skipfirst_deprecated(self):
+        for error in (False, True):
+            with self.subTest(error=error):
+                action = 'error' if error else 'default'
+                proc = run_python(('-E', '-W', action, '-x', '-c', 'pass'))
+                self.assertIn('The command line -x option was deprecated',
+                              proc.stdout)
+                exitcode = 1 if error else 0
+                self.assertEqual(proc.returncode, exitcode)
+
 
 class IgnoreEnvironmentTest(unittest.TestCase):
 
