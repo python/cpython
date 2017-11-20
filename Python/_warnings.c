@@ -1196,7 +1196,11 @@ create_filter(PyObject *category, const char *action)
 static PyObject *
 init_filters(void)
 {
+#ifndef Py_DEBUG
     PyObject *filters = PyList_New(5);
+#else
+    PyObject *filters = PyList_New(2);
+#endif
     unsigned int pos = 0;  /* Post-incremented in each use. */
     unsigned int x;
     const char *bytes_action, *resource_action;
@@ -1204,12 +1208,15 @@ init_filters(void)
     if (filters == NULL)
         return NULL;
 
+#ifndef Py_DEBUG
     PyList_SET_ITEM(filters, pos++,
                     create_filter(PyExc_DeprecationWarning, "ignore"));
     PyList_SET_ITEM(filters, pos++,
                     create_filter(PyExc_PendingDeprecationWarning, "ignore"));
     PyList_SET_ITEM(filters, pos++,
                     create_filter(PyExc_ImportWarning, "ignore"));
+#endif
+
     if (Py_BytesWarningFlag > 1)
         bytes_action = "error";
     else if (Py_BytesWarningFlag)
