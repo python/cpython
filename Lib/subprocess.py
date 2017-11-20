@@ -260,8 +260,20 @@ def _args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
-    for opt in sys.warnoptions:
+
+    if hasattr(sys, '_xoptions'):
+        xdev = ('dev' in sys._xoptions)
+    else:
+        xdev = False
+
+    warnoptions = sys.warnoptions
+    if xdev and warnoptions and warnoptions[-1] == 'default':
+        # special case: -X dev adds 'default' to sys.warnoptions
+        warnoptions = warnoptions[:-1]
+    for opt in warnoptions:
         args.append('-W' + opt)
+    if xdev:
+        args.extend(('-X', 'dev'))
     return args
 
 
