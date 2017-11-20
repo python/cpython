@@ -6,6 +6,7 @@ import os
 import shutil
 import socket
 import stat
+import subprocess
 import sys
 import tempfile
 import time
@@ -426,6 +427,62 @@ class TestSupport(unittest.TestCase):
         # pending child process
         support.reap_children()
 
+    def check_options(self, args, func):
+        code = f'from test.support import {func}; print(repr({func}()))'
+        cmd = [sys.executable, *args, '-c', code]
+        env = {key: value for key, value in os.environ.items()
+               if not key.startswith('PYTHON')}
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.stdout.rstrip(), repr(args))
+        self.assertEqual(proc.returncode, 0)
+
+    def test_args_from_interpreter_flags(self):
+        # Test test.support.args_from_interpreter_flags()
+        for opts in (
+            # no option
+            [],
+            # single option
+            ['-B'],
+            ['-s'],
+            ['-S'],
+            ['-E'],
+            ['-v'],
+            ['-b'],
+            ['-q'],
+            # same option multiple times
+            ['-bb'],
+            ['-vvv'],
+            # -W options
+            ['-Wignore'],
+            # -X options
+            ['-X', 'dev'],
+            ['-Wignore', '-X', 'dev'],
+            ['-X', 'faulthandler'],
+            ['-X', 'importtime'],
+            ['-X', 'showalloccount'],
+            ['-X', 'showrefcount'],
+            ['-X', 'tracemalloc'],
+            ['-X', 'tracemalloc=3'],
+        ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'args_from_interpreter_flags')
+
+    def test_optim_args_from_interpreter_flags(self):
+        # Test test.support.optim_args_from_interpreter_flags()
+        for opts in (
+            # no option
+            [],
+            ['-O'],
+            ['-OO'],
+            ['-OOOO'],
+        ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'optim_args_from_interpreter_flags')
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
@@ -447,7 +504,6 @@ class TestSupport(unittest.TestCase):
     # threading_cleanup
     # reap_threads
     # strip_python_stderr
-    # args_from_interpreter_flags
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport
