@@ -736,6 +736,13 @@ Changes in the Python API
   characters.  The previous behavior can be restored by changing the pattern
   to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
   Python 3.5.
+
+  The result of repeated searching patterns that could match empty and
+  non-empty strings also can be changed.  For example ``r'(?m)^\s*?$'``
+  will match in string ``'a\n\n'`` not only empty strings at positions
+  2 and 3, but also the string ``'\n'`` at positions 2--3.  For matching
+  only blank lines the pattern should be rewritten as ``r'(?m)^[\S\n]*?$'``.
+
   (Contributed by Serhiy Storchaka in :issue:`25054`.)
 
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
