@@ -2,8 +2,8 @@
 
 .. zipimporter:
 
-ZipImporter Type Object
------------------------
+ZipImporter Objects
+-------------------
 
 Python for the longest of time had an zipimporter that could not be
 subclassed using the C Python API but could in the Python Layer.
