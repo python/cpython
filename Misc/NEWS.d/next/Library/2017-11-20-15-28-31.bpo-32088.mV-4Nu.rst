@@ -1,0 +1,3 @@
+warnings:  When Python is build is debug mode (``Py_DEBUG``),
+:exc:`DeprecationWarning`, :exc:`PendingDeprecationWarning` and
+:exc:`ImportWarning` warnings are now displayed by default.
