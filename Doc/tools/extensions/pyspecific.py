@@ -208,7 +208,7 @@ class DeprecatedRemoved(Directive):
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
                                                       self.lineno+1)
-            para = nodes.paragraph(self.arguments[2], '', *inodes)
+            para = nodes.paragraph(self.arguments[2], '', *inodes, translatable=False)
             node.append(para)
         else:
             messages = []
@@ -220,13 +220,14 @@ class DeprecatedRemoved(Directive):
                 content.source = node[0].source
                 content.line = node[0].line
                 content += node[0].children
-                node[0].replace_self(nodes.paragraph('', '', content))
+                node[0].replace_self(nodes.paragraph('', '', content, translatable=False))
             node[0].insert(0, nodes.inline('', '%s: ' % text,
-                                           classes=['versionmodified']))
+                                           classes=['versionmodified'], translatable=True))
         else:
             para = nodes.paragraph('', '',
                                    nodes.inline('', '%s.' % text,
-                                                classes=['versionmodified']))
+                                                classes=['versionmodified'], translatable=True),
+                                   translatable=False)
             node.append(para)
         env = self.state.document.settings.env
         env.note_versionchange('deprecated', version[0], node, self.lineno)
