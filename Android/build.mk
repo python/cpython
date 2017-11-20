@@ -125,15 +125,17 @@ configure: native_python external_libraries openssl
 	@rm -f $(config_status)
 	$(MAKE) $(config_status)
 
-host:
-	@echo "---> Build Python for $(BUILD_TYPE)."
-ifeq ($(ANDROID_ARCH), x86_64)
-	# All the long double tests fail on x86_64.
+disabled_modules:
 	setup_file=$(py_host_dir)/Modules/Setup; \
 	cp $(py_srcdir)/Modules/Setup.dist $$setup_file; \
 	    echo "*disabled*" >> $$setup_file; \
-	    echo "_ctypes" >> $$setup_file
+	    echo "_uuid" >> $$setup_file
+ifeq ($(ANDROID_ARCH), x86_64)
+	echo "_ctypes" >> $(py_host_dir)/Modules/Setup
 endif
+
+host: disabled_modules
+	@echo "---> Build Python for $(BUILD_TYPE)."
 	@if test -f $(config_status); then \
 	    $(MAKE) -C $(py_host_dir) all; \
 	else \
