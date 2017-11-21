@@ -486,7 +486,6 @@ class catch_warnings(object):
 # - a compiled regex that must match the module that is being warned
 # - a line number for the line being warning, or 0 to mean any line
 # If either if the compiled regexs are None, match anything.
-_warnings_defaults = False
 try:
     from _warnings import (filters, _defaultaction, _onceregistry,
                            warn, warn_explicit, _filters_mutated)
@@ -504,12 +503,16 @@ except ImportError:
         global _filters_version
         _filters_version += 1
 
+    _warnings_defaults = False
+
 
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
+    dev_mode = ('dev' in getattr(sys, '_xoptions', {}))
     py_debug = hasattr(sys, 'gettotalrefcount')
-    if not py_debug:
+
+    if not(dev_mode or py_debug):
         silence = [ImportWarning, PendingDeprecationWarning]
         silence.append(DeprecationWarning)
         for cls in silence:
@@ -525,10 +528,15 @@ if not _warnings_defaults:
     simplefilter(bytes_action, category=BytesWarning, append=1)
 
     # resource usage warnings are enabled by default in pydebug mode
-    if py_debug:
+    if dev_mode or py_debug:
         resource_action = "always"
     else:
         resource_action = "ignore"
     simplefilter(resource_action, category=ResourceWarning, append=1)
+
+    if dev_mode:
+        simplefilter("default", category=Warning, append=1)
+
+    del py_debug, dev_mode
 
 del _warnings_defaults
