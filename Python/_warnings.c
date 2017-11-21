@@ -35,7 +35,7 @@ check_matched(PyObject *obj, PyObject *arg)
    A NULL return value can mean false or an error.
 */
 static PyObject *
-get_warnings_attr(const char *attr, int try_import)
+get_warnings_attr(_Py_Identifier *attr_id, int try_import)
 {
     static PyObject *warnings_str = NULL;
     PyObject *warnings_module, *obj;
@@ -64,7 +64,7 @@ get_warnings_attr(const char *attr, int try_import)
             return NULL;
     }
 
-    obj = PyObject_GetAttrString(warnings_module, attr);
+    obj = _PyObject_GetAttrId(warnings_module, attr_id);
     Py_DECREF(warnings_module);
     if (obj == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
@@ -77,8 +77,9 @@ static PyObject *
 get_once_registry(void)
 {
     PyObject *registry;
+    _Py_IDENTIFIER(onceregistry);
 
-    registry = get_warnings_attr("onceregistry", 0);
+    registry = get_warnings_attr(&PyId_onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -102,8 +103,9 @@ static PyObject *
 get_default_action(void)
 {
     PyObject *default_action;
+    _Py_IDENTIFIER(defaultaction);
 
-    default_action = get_warnings_attr("defaultaction", 0);
+    default_action = get_warnings_attr(&PyId_defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -132,8 +134,9 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
     PyObject *action;
     Py_ssize_t i;
     PyObject *warnings_filters;
+    _Py_IDENTIFIER(filters);
 
-    warnings_filters = get_warnings_attr("filters", 0);
+    warnings_filters = get_warnings_attr(&PyId_filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -389,11 +392,13 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
                   PyObject *sourceline, PyObject *source)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
+    _Py_IDENTIFIER(_showwarnmsg);
+    _Py_IDENTIFIER(WarningMessage);
 
     /* If the source parameter is set, try to get the Python implementation.
        The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = get_warnings_attr("_showwarnmsg", source != NULL);
+    show_fn = get_warnings_attr(&PyId__showwarnmsg, source != NULL);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -407,7 +412,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
         goto error;
     }
 
-    warnmsg_cls = get_warnings_attr("WarningMessage", 0);
+    warnmsg_cls = get_warnings_attr(&PyId_WarningMessage, 0);
     if (warnmsg_cls == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_RuntimeError,
