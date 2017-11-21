@@ -519,9 +519,16 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         if support.verbose >= 2:
             print(hex, end=' ')
         if network:
-            # 47 bit will never be set in IEEE 802 addresses obtained
-            # from network cards.
-            self.assertFalse(node & 0x010000000000, hex)
+            # The second least significant bit of the first octet signifies
+            # whether the MAC (IEEE 802, or EUI-48) address is universally (0)
+            # or locally (1) administered.  Network cards from hardware
+            # manufacturers will always be universally administered to
+            # guarantee global uniqueness of the MAC address.  This bit works
+            # out to be the 42nd bit counting from 1 being the least
+            # significant, or 1<<41.  For a good, simple explanation, see the
+            # section on Universal vs. local in this page:
+            # https://en.wikipedia.org/wiki/MAC_address
+            self.assertFalse(node & (1 << 41), hex)
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
