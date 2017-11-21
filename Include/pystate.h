@@ -33,6 +33,7 @@ typedef struct {
     int faulthandler;
     int tracemalloc;        /* Number of saved frames, 0=don't trace */
     int importtime;         /* -X importtime */
+    int dev_mode;           /* -X dev */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
@@ -43,7 +44,8 @@ typedef struct {
      .allocator = NULL, \
      .faulthandler = 0, \
      .tracemalloc = 0, \
-     .importtime = 0}
+     .importtime = 0, \
+     .dev_mode = 0}
 
 /* Placeholders while working on the new configuration API
  *
