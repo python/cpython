@@ -1,0 +1,6 @@
+Since the recent global runtime state consolidation, calls to
+PyMem_RawMalloc() and PyMem_RawFree() made before runtime initialization
+have been crashing.  This is because they rely on the raw memory allocator
+having been initialized already.  Before the runtime state change the
+default raw allocator was initialized statically.  This has now been fixed
+by falling back to the defaults in PyMem_RawMalloc() and PyMem_RawFree().
