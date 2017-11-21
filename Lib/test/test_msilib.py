@@ -3,6 +3,7 @@ import pathlib
 import unittest
 from test.support import TESTFN, import_module, unlink
 msilib = import_module('msilib')
+import msilib.schema
 
 
 def initialize_db():
