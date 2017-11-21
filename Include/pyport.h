@@ -784,7 +784,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-#include <android/api-level.h>
+/* nl_langinfo() is declared as __INTRODUCED_IN_FUTURE in langinfo.h. */
+#undef HAVE_LANGINFO_H
+#undef CODESET
 #endif
 
 /* Maximum value of the Windows DWORD type */
