@@ -494,8 +494,7 @@ class TestSupport(unittest.TestCase):
         test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
 
-        old_match = support._match_test_func
-        try:
+        with support.swap_attr(support, '_match_test_func', None):
             # match all
             support.set_match_tests([])
             self.assertTrue(support.match_test(test_access))
@@ -521,8 +520,20 @@ class TestSupport(unittest.TestCase):
             self.assertFalse(support.match_test(test_access))
             support.set_match_tests(['FileTests'])
             self.assertTrue(support.match_test(test_access))
-        finally:
-            support._match_test_func = old_match
+
+            # Test pattern containing '.' and a '*' metacharacter
+            support.set_match_tests(['*test_os.*.test_*'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Multiple patterns
+            support.set_match_tests([test_access.id(), test_chdir.id()])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            support.set_match_tests(['test_access', 'DONTMATCH'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
 
 
     # XXX -follows a list of untested API
