@@ -1193,9 +1193,9 @@ class UserString(Sequence):
             sub = sub.data
         return self.data.find(sub, start, end)
     def format(self, *args, **kwds):
-        return self.data.format(*args, **kwds)
+        return self.__class__(self.data.format(*args, **kwds))
     def format_map(self, mapping):
-        return self.data.format_map(mapping)
+        return self.__class__(self.data.format_map(mapping))
     def index(self, sub, start=0, end=_sys.maxsize):
         return self.data.index(sub, start, end)
     def isalpha(self): return self.data.isalpha()
