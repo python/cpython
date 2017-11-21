@@ -106,55 +106,60 @@ PyInterpreterState_New(void)
     PyInterpreterState *interp = (PyInterpreterState *)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
-    if (interp != NULL) {
-        interp->modules = NULL;
-        interp->modules_by_index = NULL;
-        interp->sysdict = NULL;
-        interp->builtins = NULL;
-        interp->builtins_copy = NULL;
-        interp->tstate_head = NULL;
-        interp->check_interval = 100;
-        interp->num_threads = 0;
-        interp->pythread_stacksize = 0;
-        interp->codec_search_path = NULL;
-        interp->codec_search_cache = NULL;
-        interp->codec_error_registry = NULL;
-        interp->codecs_initialized = 0;
-        interp->fscodec_initialized = 0;
-        interp->importlib = NULL;
-        interp->import_func = NULL;
-        interp->eval_frame = _PyEval_EvalFrameDefault;
-        interp->co_extra_user_count = 0;
+    if (interp == NULL) {
+        return NULL;
+    }
+
+
+    interp->modules = NULL;
+    interp->modules_by_index = NULL;
+    interp->sysdict = NULL;
+    interp->builtins = NULL;
+    interp->builtins_copy = NULL;
+    interp->tstate_head = NULL;
+    interp->check_interval = 100;
+    interp->num_threads = 0;
+    interp->pythread_stacksize = 0;
+    interp->codec_search_path = NULL;
+    interp->codec_search_cache = NULL;
+    interp->codec_error_registry = NULL;
+    interp->codecs_initialized = 0;
+    interp->fscodec_initialized = 0;
+    interp->core_config = _PyCoreConfig_INIT;
+    interp->config = _PyMainInterpreterConfig_INIT;
+    interp->importlib = NULL;
+    interp->import_func = NULL;
+    interp->eval_frame = _PyEval_EvalFrameDefault;
+    interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
-        interp->dlopenflags = RTLD_NOW;
+    interp->dlopenflags = RTLD_NOW;
 #else
-        interp->dlopenflags = RTLD_LAZY;
+    interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
 #ifdef HAVE_FORK
-        interp->before_forkers = NULL;
-        interp->after_forkers_parent = NULL;
-        interp->after_forkers_child = NULL;
+    interp->before_forkers = NULL;
+    interp->after_forkers_parent = NULL;
+    interp->after_forkers_child = NULL;
 #endif
 
-        HEAD_LOCK();
-        interp->next = _PyRuntime.interpreters.head;
-        if (_PyRuntime.interpreters.main == NULL) {
-            _PyRuntime.interpreters.main = interp;
-        }
-        _PyRuntime.interpreters.head = interp;
-        if (_PyRuntime.interpreters.next_id < 0) {
-            /* overflow or Py_Initialize() not called! */
-            PyErr_SetString(PyExc_RuntimeError,
-                            "failed to get an interpreter ID");
-            interp = NULL;
-        } else {
-            interp->id = _PyRuntime.interpreters.next_id;
-            _PyRuntime.interpreters.next_id += 1;
-        }
-        HEAD_UNLOCK();
+    HEAD_LOCK();
+    interp->next = _PyRuntime.interpreters.head;
+    if (_PyRuntime.interpreters.main == NULL) {
+        _PyRuntime.interpreters.main = interp;
     }
+    _PyRuntime.interpreters.head = interp;
+    if (_PyRuntime.interpreters.next_id < 0) {
+        /* overflow or Py_Initialize() not called! */
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to get an interpreter ID");
+        interp = NULL;
+    } else {
+        interp->id = _PyRuntime.interpreters.next_id;
+        _PyRuntime.interpreters.next_id += 1;
+    }
+    HEAD_UNLOCK();
 
     return interp;
 }
