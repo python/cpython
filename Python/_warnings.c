@@ -35,15 +35,15 @@ check_matched(PyObject *obj, PyObject *arg)
    A NULL return value can mean false or an error.
 */
 static PyObject *
-get_warnings_attr(const char *attr, int try_import)
+get_warnings_attr(_Py_Identifier *attr_id, int try_import)
 {
-    static PyObject *warnings_str = NULL;
+    PyObject *warnings_str;
     PyObject *warnings_module, *obj;
+    _Py_IDENTIFIER(warnings);
 
+    warnings_str = _PyUnicode_FromId(&PyId_warnings);
     if (warnings_str == NULL) {
-        warnings_str = PyUnicode_InternFromString("warnings");
-        if (warnings_str == NULL)
-            return NULL;
+        return NULL;
     }
 
     /* don't try to import after the start of the Python finallization */
@@ -64,7 +64,7 @@ get_warnings_attr(const char *attr, int try_import)
             return NULL;
     }
 
-    obj = PyObject_GetAttrString(warnings_module, attr);
+    obj = _PyObject_GetAttrId(warnings_module, attr_id);
     Py_DECREF(warnings_module);
     if (obj == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
@@ -77,8 +77,9 @@ static PyObject *
 get_once_registry(void)
 {
     PyObject *registry;
+    _Py_IDENTIFIER(onceregistry);
 
-    registry = get_warnings_attr("onceregistry", 0);
+    registry = get_warnings_attr(&PyId_onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -102,8 +103,9 @@ static PyObject *
 get_default_action(void)
 {
     PyObject *default_action;
+    _Py_IDENTIFIER(defaultaction);
 
-    default_action = get_warnings_attr("defaultaction", 0);
+    default_action = get_warnings_attr(&PyId_defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -132,8 +134,9 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
     PyObject *action;
     Py_ssize_t i;
     PyObject *warnings_filters;
+    _Py_IDENTIFIER(filters);
 
-    warnings_filters = get_warnings_attr("filters", 0);
+    warnings_filters = get_warnings_attr(&PyId_filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -389,11 +392,13 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
                   PyObject *sourceline, PyObject *source)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
+    _Py_IDENTIFIER(_showwarnmsg);
+    _Py_IDENTIFIER(WarningMessage);
 
     /* If the source parameter is set, try to get the Python implementation.
        The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = get_warnings_attr("_showwarnmsg", source != NULL);
+    show_fn = get_warnings_attr(&PyId__showwarnmsg, source != NULL);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -407,7 +412,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
         goto error;
     }
 
-    warnmsg_cls = get_warnings_attr("WarningMessage", 0);
+    warnmsg_cls = get_warnings_attr(&PyId_WarningMessage, 0);
     if (warnmsg_cls == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_RuntimeError,
@@ -1146,50 +1151,36 @@ static PyMethodDef warnings_functions[] = {
 static PyObject *
 create_filter(PyObject *category, const char *action)
 {
-    static PyObject *ignore_str = NULL;
-    static PyObject *error_str = NULL;
-    static PyObject *default_str = NULL;
-    static PyObject *always_str = NULL;
-    PyObject *action_obj = NULL;
+    _Py_IDENTIFIER(ignore);
+    _Py_IDENTIFIER(error);
+    _Py_IDENTIFIER(always);
+    _Py_static_string(PyId_default, "default");
+    _Py_Identifier *id;
 
     if (!strcmp(action, "ignore")) {
-        if (ignore_str == NULL) {
-            ignore_str = PyUnicode_InternFromString("ignore");
-            if (ignore_str == NULL)
-                return NULL;
-        }
-        action_obj = ignore_str;
+        id = &PyId_ignore;
     }
     else if (!strcmp(action, "error")) {
-        if (error_str == NULL) {
-            error_str = PyUnicode_InternFromString("error");
-            if (error_str == NULL)
-                return NULL;
-        }
-        action_obj = error_str;
+        id = &PyId_error;
     }
     else if (!strcmp(action, "default")) {
-        if (default_str == NULL) {
-            default_str = PyUnicode_InternFromString("default");
-            if (default_str == NULL)
-                return NULL;
-        }
-        action_obj = default_str;
+        id = &PyId_default;
     }
     else if (!strcmp(action, "always")) {
-        if (always_str == NULL) {
-            always_str = PyUnicode_InternFromString("always");
-            if (always_str == NULL)
-                return NULL;
-        }
-        action_obj = always_str;
+        id = &PyId_always;
     }
     else {
-        Py_FatalError("unknown action");
+        PyErr_SetString(PyExc_ValueError, "unknown action");
+        return NULL;
+    }
+
+    PyObject *action_str = _PyUnicode_FromId(id);
+    if (action_str == NULL) {
+        return NULL;
     }
 
     /* This assumes the line number is zero for now. */
-    return PyTuple_Pack(5, action_obj, Py_None,
+    return PyTuple_Pack(5, action_str, Py_None,
                         category, Py_None, _PyLong_Zero);
 }
 
