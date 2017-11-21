@@ -1901,6 +1901,7 @@ def _run_suite(suite):
 
 # By default, don't filter tests
 _match_test_func = None
+_match_test_patterns = None
 
 
 def match_test(test):
@@ -1921,14 +1922,18 @@ def _is_full_match_test(pattern):
 
 
 def set_match_tests(patterns):
-    global _match_test_func
+    global _match_test_func, _match_test_patterns
+
+    if patterns == _match_test_patterns:
+        # No change: no need to recompile patterns.
+        return
 
     if not patterns:
-        _match_test_func = None
+        func = None
     elif all(_is_full_match_test(pattern) for pattern in patterns):
         # Simple case: all patterns are full test identifier.
         # The test.bisect utility only uses such full test identifiers.
-        _match_test_func = set(patterns).__contains__
+        func = set(patterns).__contains__
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
         # The search *is* case sensitive on purpose:
@@ -1946,7 +1951,11 @@ def set_match_tests(patterns):
                 # into: 'test', 'test_os', 'FileTests' and 'test_access'.
                 return any(map(regex_match, test_id.split(".")))
 
-        _match_test_func = match_test_regex
+        func = match_test_regex
+
+    _match_test_patterns = patterns
+    _match_test_func = func
+
 
 
 def run_unittest(*classes):
