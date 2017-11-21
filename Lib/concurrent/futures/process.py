@@ -73,11 +73,11 @@ import traceback
 # workers to exit when their work queues are empty and then waits until the
 # threads/processes finish.
 
-_threads_queues = weakref.WeakKeyDictionary()
+_threads_sentinels = weakref.WeakKeyDictionary()
 _global_shutdown = False
 
 
-# This constants control the maximal wakeup. If a job is submitted to the
+# This constant controls the maximal wakeup. If a job is submitted to the
 # Executor, it might take up to _POLL_TIMEOUT for the executor to notice and
 # start launching the job. This _POLL_TIMEOUT is to be cumulated with the
 # communication overhead.
@@ -103,7 +103,7 @@ class _Sentinel:
 def _python_exit():
     global _global_shutdown
     _global_shutdown = True
-    items = list(_threads_queues.items())
+    items = list(_threads_sentinels.items())
     for t, wakeup in items:
         wakeup.set()
     for t, q in items:
@@ -349,7 +349,7 @@ def _queue_management_worker(executor_reference,
                                 call_queue)
 
         # Wait for a result to be ready in the result_queue while checking
-        # that worker process are still running.
+        # that all worker processes are still running.
         worker_sentinels = [p.sentinel for p in processes.values()]
         received_item = False
         while not wakeup.get_and_unset():
@@ -460,7 +460,8 @@ def _check_system_limits():
         # minimum number of semaphores available
         # according to POSIX
         return
-    _system_limited = "system provides too few semaphores (%d available, 256 necessary)" % nsems_max
+    _system_limited = ("system provides too few semaphores (%d"
+                       " available, 256 necessary)" % nsems_max)
     raise NotImplementedError(_system_limited)
 
 
@@ -548,13 +549,13 @@ class ProcessPoolExecutor(_base.Executor):
         # result_queue state. This avoid deadlocks caused by the non
         # transmission of wakeup signal when a worker died with the
         # _result_queue write lock.
-        self._wakeup = _Sentinel()
+        self._queue_management_thread_sentinel = _Sentinel()
 
     def _start_queue_management_thread(self):
         if self._queue_management_thread is None:
             # When the executor gets lost, the weakref callback will wake up
             # the queue management thread.
-            def weakref_cb(_, wakeup=self._wakeup):
+            def weakref_cb(_, wakeup=self._queue_management_thread_sentinel):
                 mp.util.debug('Executor collected: triggering callback for'
                               ' QueueManager wakeup')
                 wakeup.set()
@@ -568,11 +569,12 @@ class ProcessPoolExecutor(_base.Executor):
                       self._work_ids,
                       self._call_queue,
                       self._result_queue,
-                      self._wakeup),
+                      self._queue_management_thread_sentinel),
                 name="QueueManagerThread")
             self._queue_management_thread.daemon = True
             self._queue_management_thread.start()
-            _threads_queues[self._queue_management_thread] = self._wakeup
+            _threads_sentinels[self._queue_management_thread] = \
+                self._queue_management_thread_sentinel
 
     def _adjust_process_count(self):
         for _ in range(len(self._processes), self._max_workers):
@@ -599,7 +601,7 @@ class ProcessPoolExecutor(_base.Executor):
             self._work_ids.put(self._queue_count)
             self._queue_count += 1
             # Wake up queue management thread
-            self._wakeup.set()
+            self._queue_management_thread_sentinel.set()
 
             self._start_queue_management_thread()
             return f
@@ -639,7 +641,7 @@ class ProcessPoolExecutor(_base.Executor):
             self._shutdown_thread = True
         if self._queue_management_thread:
             # Wake up queue management thread
-            self._wakeup.set()
+            self._queue_management_thread_sentinel.set()
             if wait:
                 self._queue_management_thread.join()
         # To reduce the risk of opening too many files, remove references to

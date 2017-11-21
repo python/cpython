@@ -870,7 +870,7 @@ class ExecutorDeadlockTest:
             p.terminate()
         executor.shutdown(wait=True)
         print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
-        self.fail(f"Deadlock executor:\n\n{tb}")
+        self.fail(f"Executor deadlock:\n\n{tb}")
 
     def test_crash(self):
         # extensive testing for deadlock caused by crash in a pool
