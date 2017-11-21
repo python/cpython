@@ -421,6 +421,11 @@ PyMem_RawMalloc(size_t size)
      */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    // If this is used before the Python runtime is initialized, fall
+    // back to the default behavior.
+    if (_PyMem_Raw.malloc == NULL) {
+        return _PyMem_RawMalloc(NULL, size);
+    }
     return _PyMem_Raw.malloc(_PyMem_Raw.ctx, size);
 }
 
@@ -445,6 +450,12 @@ PyMem_RawRealloc(void *ptr, size_t new_size)
 void
 PyMem_RawFree(void *ptr)
 {
+    // If this is used before the Python runtime is initialized, fall
+    // back to the default behavior.
+    if (_PyMem_Raw.free == NULL) {
+        _PyMem_RawFree(NULL, ptr);
+        return;
+    }
     _PyMem_Raw.free(_PyMem_Raw.ctx, ptr);
 }
 
