@@ -83,7 +83,7 @@ class Template(metaclass=_TemplateMetaclass):
     # but without ASCII flag.  We can't add re.ASCII to flags because of
     # backward compatibility.  So we use local -i flag and [a-zA-Z] pattern.
     # See https://bugs.python.org/issue31672
-    idpattern = r'(?-i:[_a-zA-Z][_a-zA-Z0-9]*)'
+    idpattern = r'(?a:[_a-zA-Z][_a-zA-Z0-9]*)'
     braceidpattern = None
     flags = _re.IGNORECASE
 
