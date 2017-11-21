@@ -1913,12 +1913,13 @@ def match_test(test):
 
 
 def _is_full_match_test(pattern):
-    # If a pattern contains at least one dot, it's considered as a full test
-    # identifier like 'test.test_os.FileTests.test_access'.
+    # If a pattern contains at least one dot, it's considered
+    # as a full test identifier.
+    # Example: 'test.test_os.FileTests.test_access'.
     #
     # Reject patterns which contain fnmatch patterns: '*', '?', '[...]'
     # or '[!...]'. For example, reject 'test_access*'.
-    return ('.' in pattern) and all(char not in '?*[]' for char in pattern)
+    return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
 def set_match_tests(patterns):
@@ -1930,7 +1931,7 @@ def set_match_tests(patterns):
 
     if not patterns:
         func = None
-    elif all(_is_full_match_test(pattern) for pattern in patterns):
+    elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
         # The test.bisect utility only uses such full test identifiers.
         func = set(patterns).__contains__
