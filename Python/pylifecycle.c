@@ -1101,10 +1101,6 @@ Py_FinalizeEx(void)
         /* nothing */;
 #endif
 
-#ifdef Py_REF_DEBUG
-    PyObject *showrefcount = _PyDebug_XOptionShowRefCount();
-#endif
-
     /* Destroy all modules */
     PyImport_Cleanup();
 
@@ -1153,8 +1149,9 @@ Py_FinalizeEx(void)
     _PyHash_Fini();
 
 #ifdef Py_REF_DEBUG
-        if (showrefcount == Py_True)
-            _PyDebug_PrintTotalRefs();
+    if (interp->core_config.show_ref_count) {
+        _PyDebug_PrintTotalRefs();
+    }
 #endif
 
 #ifdef Py_TRACE_REFS
