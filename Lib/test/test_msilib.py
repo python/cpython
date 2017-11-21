@@ -9,7 +9,12 @@ import msilib.schema
 def initialize_db():
     path = pathlib.Path(TESTFN) / 'test.msi'
     db = msilib.init_database(
-        path, msilib.schema, 'Python Tests', 'product_code', '1.0', 'PSF',
+        str(path),  # TODO: OpenDatabase() doesn't accept PathLike objects.
+        msilib.schema,
+        'Python Tests',
+        'product_code',
+        '1.0',
+        'PSF',
     )
     return db, path
 
