@@ -414,10 +414,11 @@ Miscellaneous options
    * ``-X dev`` enables the "developer mode": enable debug checks at runtime.
      Developer mode:
 
-     * Add a warnings filter with the ``"default"`` action to display all
-       warnings, except of :exc:`BytesWarning` which still depends on the
-       :option:`-b` option. For example, display :exc:`DeprecationWarning` and
-       :exc:`ResourceWarning` warnings.
+     * Warning filters: add a filter to display all warnings (``"default"``
+       action), except of :exc:`BytesWarning` which still depends on the
+       :option:`-b` option, and use ``"always"`` action for
+       :exc:`ResourceWarning` warnings. For example, display
+       :exc:`DeprecationWarning` warnings.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
      * Enable the :mod:`faulthandler` module to dump the Python traceback

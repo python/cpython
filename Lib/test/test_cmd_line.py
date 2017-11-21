@@ -528,26 +528,31 @@ class CmdLineTest(unittest.TestCase):
         code = ("import sys, warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
-        out = self.run_xdev("-Werror", "-c", code)
-        self.assertEqual(out,
-                         "error::Warning "
-                         "ignore::BytesWarning "
-                         "always::ResourceWarning default::Warning")
 
         out = self.run_xdev("-c", code)
         self.assertEqual(out,
                          "ignore::BytesWarning "
-                         "always::ResourceWarning default::Warning")
+                         "always::ResourceWarning "
+                         "default::Warning")
 
         out = self.run_xdev("-b", "-c", code)
         self.assertEqual(out,
                          "default::BytesWarning "
-                         "always::ResourceWarning default::Warning")
+                         "always::ResourceWarning "
+                         "default::Warning")
 
         out = self.run_xdev("-bb", "-c", code)
         self.assertEqual(out,
                          "error::BytesWarning "
-                         "always::ResourceWarning default::Warning")
+                         "always::ResourceWarning "
+                         "default::Warning")
+
+        out = self.run_xdev("-Werror", "-c", code)
+        self.assertEqual(out,
+                         "error::Warning "
+                         "ignore::BytesWarning "
+                         "always::ResourceWarning "
+                         "default::Warning")
 
         try:
             import _testcapi

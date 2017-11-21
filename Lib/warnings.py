@@ -512,7 +512,7 @@ if not _warnings_defaults:
     dev_mode = ('dev' in getattr(sys, '_xoptions', {}))
     py_debug = hasattr(sys, 'gettotalrefcount')
 
-    if not py_debug and not dev_mode:
+    if not(dev_mode or py_debug):
         silence = [ImportWarning, PendingDeprecationWarning]
         silence.append(DeprecationWarning)
         for cls in silence:
@@ -528,7 +528,7 @@ if not _warnings_defaults:
     simplefilter(bytes_action, category=BytesWarning, append=1)
 
     # resource usage warnings are enabled by default in pydebug mode
-    if py_debug:
+    if dev_mode or py_debug:
         resource_action = "always"
     else:
         resource_action = "ignore"

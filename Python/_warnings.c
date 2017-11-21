@@ -1240,7 +1240,7 @@ init_filters(void)
 #ifdef Py_DEBUG
     resource_action = "always";
 #else
-    resource_action = "ignore";
+    resource_action = (dev_mode ? "always" : "ignore");
 #endif
     PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
                     resource_action));
