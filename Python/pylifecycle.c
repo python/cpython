@@ -82,8 +82,8 @@ _PyRuntimeState _PyRuntime = {
     .initialized = 0,
     .core_initialized = 0,
     // Py_DecodeLocale() relies on PyMem_RawMalloc() and PyMem_RawFree()
-    // and may be needed before before runtime initialization.  To allow
-    // for this we pre-initialize the raw allocator statically here.
+    // and may be needed before runtime initialization.  To allow for
+    // this we pre-initialize the raw allocator statically here.
     .mem = {
         .allocators = {
             .raw = {
