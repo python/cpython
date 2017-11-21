@@ -1,15 +1,14 @@
 """ Test suite for the code in msilib """
-import pathlib
 import unittest
 from test.support import TESTFN, import_module, unlink
 msilib = import_module('msilib')
 import msilib.schema
 
 
-def initialize_db():
-    path = pathlib.Path(TESTFN) / 'test.msi'
+def init_database():
+    path = TESTFN + '.msi'
     db = msilib.init_database(
-        str(path),  # TODO: OpenDatabase() doesn't accept PathLike objects.
+        path,
         msilib.schema,
         'Python Tests',
         'product_code',
@@ -19,30 +18,27 @@ def initialize_db():
     return db, path
 
 
-class MsiTestCase(unittest.TestCase):
+class MsiDatabaseTestCase(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.db, cls.db_path = initialize_db()
-
-    @classmethod
-    def tearDownClass(cls):
-        unlink(cls.db_path)
-
-    def test_view_fetch(self):
+    def test_view_fetch_returns_none(self):
+        db, db_path = init_database()
         properties = []
-        view = self.db.OpenView('SELECT Value FROM Property')
+        view = db.OpenView('SELECT Property, Value FROM Property')
         view.Execute(None)
         while True:
-            cur_record = view.Fetch()
-            if cur_record is None:
+            record = view.Fetch()
+            if record is None:
                 break
-            properties.append(cur_record.GetString(0))
+            properties.append(record.GetString(1))
         self.assertEqual(
             properties,
-            ['ProductName', 'ProductCode', 'ProductVersion',
-             'Manufacturer', 'ProductLanguage']
+            [
+                'ProductName', 'ProductCode', 'ProductVersion',
+                'Manufacturer', 'ProductLanguage',
+            ]
         )
+        view.Close()
+        self.addCleanup(unlink, db_path)
 
 
 class Test_make_id(unittest.TestCase):
