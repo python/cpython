@@ -5264,16 +5264,6 @@ Added missed names to PC/python3.def.
 
 ..
 
-.. bpo: 28762
-.. date: 0035
-.. nonce: Ru0YN_
-.. section: Build
-
-lockf() is available on Android API level 24, but the F_LOCK macro is not
-defined in android-ndk-r13.
-
-..
-
 .. bpo: 28538
 .. date: 0034
 .. nonce: FqtN7v
