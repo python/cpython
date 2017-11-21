@@ -1900,21 +1900,22 @@ def _run_suite(suite):
         raise TestFailed(err)
 
 
+_match_tests = None
+_match_test1 = None
+
 def _match_test(test):
-    global match_tests
+    global _match_tests, _match_test1
 
     if match_tests is None:
         return True
+    if match_tests != _match_tests:
+        match_tests_re = '|'.join(map(fnmatch.translate, match_tests))
+        _match_test1 = re.compile(match_tests_re).match
+        _match_tests = match_tests[:]
     test_id = test.id()
-
-    for match_test in match_tests:
-        if fnmatch.fnmatchcase(test_id, match_test):
-            return True
-
-        for name in test_id.split("."):
-            if fnmatch.fnmatchcase(name, match_test):
-                return True
-    return False
+    if _match_test1(test_id):
+        return True
+    return any(map(_match_test1, test_id.split(".")))
 
 
 def run_unittest(*classes):
