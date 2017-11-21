@@ -79,9 +79,6 @@ class ModuleBrowser:
                 creating ModuleBrowserTreeItem as the rootnode for
                 the tree and subsequently in the children.
         """
-        global file_open
-        if not (_htest or _utest):
-            file_open = pyshell.flist.open
         self.master = master
         self.path = path
         self._htest = _htest
@@ -95,6 +92,9 @@ class ModuleBrowser:
 
     def init(self):
         "Create browser tkinter widgets, including the tree."
+        global file_open
+        if not (self._htest or self._utest):
+            file_open = pyshell.flist.open
         root = self.master
         # reset pyclbr
         pyclbr._modules.clear()
