@@ -404,7 +404,8 @@ def _arp_getnode():
     # This works on Linux, FreeBSD and NetBSD
     mac = _find_mac('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
                     lambda i: i+2)
-    return mac
+    # Return None instead of 0.
+    return mac if mac else None
 
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
