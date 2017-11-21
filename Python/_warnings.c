@@ -520,14 +520,20 @@ warn_explicit(PyObject *category, PyObject *message,
         goto cleanup;
     }
 
+    if (_PyUnicode_EqualToASCIIString(action, "ignore")) {
+        goto return_none;
+    }
+
     /* Store in the registry that we've been here, *except* when the action
        is "always". */
     rc = 0;
     if (!_PyUnicode_EqualToASCIIString(action, "always")) {
         if (registry != NULL && registry != Py_None &&
-                PyDict_SetItem(registry, key, Py_True) < 0)
+                PyDict_SetItem(registry, key, Py_True) < 0) {
             goto cleanup;
-        else if (_PyUnicode_EqualToASCIIString(action, "ignore"))
+        }
+
+        if (_PyUnicode_EqualToASCIIString(action, "ignore"))
             goto return_none;
         else if (_PyUnicode_EqualToASCIIString(action, "once")) {
             if (registry == NULL || registry == Py_None) {
