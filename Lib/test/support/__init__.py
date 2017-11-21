@@ -1954,7 +1954,8 @@ def set_match_tests(patterns):
 
         func = match_test_regex
 
-    _match_test_patterns = patterns
+    # Create a copy since patterns can be mutable and so modified later
+    _match_test_patterns = tuple(patterns)
     _match_test_func = func
 
 
