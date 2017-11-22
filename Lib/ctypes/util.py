@@ -333,6 +333,8 @@ def test():
             else:
                 print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
                 # print CDLL("libc.a(shr_64.o)", RTLD_MEMBER)
+            print(find_library("rpm"))
+            print(cdll.LoadLibrary("librpm.so"))
         else:
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
