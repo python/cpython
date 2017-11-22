@@ -1931,6 +1931,8 @@ def set_match_tests(patterns):
 
     if not patterns:
         func = None
+        # set_match_tests(None) behaves as set_match_tests(())
+        patterns = ()
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
         # The test.bisect utility only uses such full test identifiers.
