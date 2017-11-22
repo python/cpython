@@ -1,5 +1,7 @@
 # Two-trick pony for OSX and other case insensitive file systems:
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
+.buildaix
+buildaix
 /python
 !/Python/
 *.cover
@@ -35,6 +37,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix
+Modules/python.exp
 Programs/_freeze_importlib
 Programs/_freeze_importlib.exe
 Programs/_testembed

@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import sys
+from ctypes._util import _last_version
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -79,6 +80,14 @@ if os.name == "posix" and sys.platform == "darwin":
             except ValueError:
                 continue
         return None
+
+if sys.platform.startswith("aix"):
+    # find .so members in .a files
+    # using dump loader header information + sys.
+    import ctypes._aix as aix
+
+    def find_library(name):
+        return aix.find_library(name)
 
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
@@ -170,17 +179,6 @@ elif os.name == "posix":
 
     if sys.platform.startswith(("freebsd", "openbsd", "dragonfly")):
 
-        def _num_version(libname):
-            # "libxyz.so.MAJOR.MINOR" => [ MAJOR, MINOR ]
-            parts = libname.split(b".")
-            nums = []
-            try:
-                while parts:
-                    nums.insert(0, int(parts.pop()))
-            except ValueError:
-                pass
-            return nums or [sys.maxsize]
-
         def find_library(name):
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
@@ -199,7 +197,7 @@ elif os.name == "posix":
             res = re.findall(expr, data)
             if not res:
                 return _get_soname(_findLib_gcc(name))
-            res.sort(key=_num_version)
+            res.sort(key=_last_version)
             return os.fsdecode(res[-1])
 
     elif sys.platform == "sunos5":
@@ -330,11 +328,11 @@ def test():
             RTLD_MEMBER =  0x00040000
             # print("crypto\t:: %s" % cdll.LoadLibrary(find_library("crypto")))
             if (sys.maxsize < 2**32):
-                # print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr.o)"))
-                print CDLL("libc.a(shr.o)", RTLD_MEMBER)
+                print (CDLL("libc.a(shr.o)", RTLD_MEMBER))
+                print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr.o)"))
             else:
-                # print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
-                print CDLL("libc.a(shr_64.o)", RTLD_MEMBER)
+                print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
+                # print CDLL("libc.a(shr_64.o)", RTLD_MEMBER)
         else:
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
