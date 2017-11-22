@@ -938,11 +938,13 @@ class ExecutorDeadlockTest:
             from signal import SIGKILL
         except ImportError:
             from signal import SIGTERM as SIGKILL
+        # Try to kill a process in the pool, if it is not finished yet
         try:
             os.kill(pid, SIGKILL)
-            time.sleep(.01)
         except (ProcessLookupError, PermissionError):
             pass
+        # Give some time for the Executor to detect the failure
+        time.sleep(.5)
 
     def test_crash_races(self):
 
