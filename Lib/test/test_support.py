@@ -500,6 +500,11 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
+            # match all using None
+            support.set_match_tests(None)
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
             # match the full test identifier
             support.set_match_tests([test_access.id()])
             self.assertTrue(support.match_test(test_access))
