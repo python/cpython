@@ -147,4 +147,4 @@ comp_if: 'if' test_nocond [comp_iter]
 encoding_decl: NAME
 
 yield_expr: 'yield' [yield_arg]
-yield_arg: 'from' test | testlist
+yield_arg: 'from' test | testlist_star_expr
