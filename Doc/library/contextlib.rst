@@ -137,10 +137,13 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
-.. function:: nullcontext(thing=None)
+.. _simplifying-support-for-single-optional-context-managers:
 
-    Return a context manager that just returns *thing*. It is intended to be used
-    as a stand-in for an optional context manager, for example::
+.. function:: nullcontext(enter_result=None)
+
+    Return a context manager that returns enter_result from ``__enter__``, but
+    otherwise does nothing. It is intended to be used as a stand-in for an
+    optional context manager, for example::
 
         def process_file(file_or_path):
             if isinstance(file_or_path, str):
@@ -152,6 +155,8 @@ Functions and classes provided:
 
             with cm as file:
                 # Perform processing on the file
+
+    .. versionadded: 3.7
 
 
 .. function:: suppress(*exceptions)

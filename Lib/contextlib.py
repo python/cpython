@@ -482,11 +482,11 @@ class nullcontext(AbstractContextManager):
         # Perform operation, using optional_cm if condition is True
     """
 
-    def __init__(self, thing=None):
-        self.thing = thing
+    def __init__(self, enter_result=None):
+        self.enter_result = enter_result
 
     def __enter__(self):
-        return self.thing
+        return self.enter_result
 
     def __exit__(self, *excinfo):
         pass
