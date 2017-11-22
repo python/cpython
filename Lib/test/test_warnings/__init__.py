@@ -707,6 +707,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 self.module.defaultaction = "ignore"
                 __warningregistry__ = {}
                 registry = {}
+                self.module._filters_mutated()
                 self.module.warn_explicit(message, UserWarning, "<test>", 44,
                                             registry=registry)
                 self.assertEqual(len(w), 0)
@@ -851,11 +852,13 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         with original_warnings.catch_warnings(module=wmod):
             wmod.filters = [(None, None, Warning, None, 0)]
             with self.assertRaises(TypeError):
+                wmod._filters_mutated()
                 wmod.warn_explicit('foo', Warning, 'bar', 1)
 
             wmod.filters = []
             with support.swap_attr(wmod, 'defaultaction', None), \
                  self.assertRaises(TypeError):
+                wmod._filters_mutated()
                 wmod.warn_explicit('foo', Warning, 'bar', 1)
 
     @support.cpython_only
