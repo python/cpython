@@ -619,11 +619,11 @@ added elements by appending to the right and popping to the left::
             yield s / n
 
 A `round-robin scheduler
-<https://en.wikipedia.org/wiki/Round-robin_scheduling>`_ can be implemented
-with input iterators kept in a :class:`deque`.  Values are yielded from the
-active iterator in position zero.  If the iterator is exhausted, it can be
-removed with :meth:`popleft`; otherwise, it can be cycled back to the end with
-the :meth:`rotate` method::
+<https://en.wikipedia.org/wiki/Round-robin_scheduling>`_ can be implemented with
+input iterators stored in a :class:`deque`.  Values are yielded from the active
+iterator in position zero.  If that iterator is exhausted, it can be removed
+with :meth:`~deque.popleft`; otherwise, it can be cycled back to the end with
+the :meth:`~deque.rotate` method::
 
     def roundrobin(*iterables):
         "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
