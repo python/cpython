@@ -8,7 +8,7 @@ import unittest
 import re
 from test import support
 from test.support import TESTFN, Error, captured_output, unlink, cpython_only
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, make_script
 import textwrap
 
 import traceback
@@ -1091,6 +1091,71 @@ class TestTracebackException(unittest.TestCase):
         # see issue #24695
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
+
+
+class IgnoredModulesTest(unittest.TestCase):
+
+    def test_namespace_package(self):
+        with support.temp_dir() as pkg_container, \
+             support.temp_dir(f'{pkg_container}/pkg') as pkg, \
+             support.temp_dir(f'{pkg}/subpkg') as subpkg, \
+             support.change_cwd(path=pkg_container):
+            make_script(subpkg, 'module', '1/0')
+            try:
+                from pkg.subpkg import module
+            except Exception as e:
+                tb_exc = traceback.TracebackException.from_exception(e)
+
+            _, *original_stack, _ = tb_exc.format()
+
+            for mod in ('pkg', 'pkg.subpkg', 'pkg.subpkg.module'):
+                with self.subTest(ignored=mod):
+                    _, *clean_stack, error = tb_exc.format(ignore_modules=(mod,))
+                    self.assertEqual(clean_stack, original_stack[:1])
+                    self.assertIn('ZeroDivisionError', error)
+
+            # The first part of the name isn't our top-level package, nothing
+            # should be removed
+            for mod in ('pk', 'subpkg.module'):
+                with self.subTest(ignored=mod):
+                    _, *clean_stack, error = tb_exc.format(ignore_modules=(mod,))
+                    self.assertEqual(clean_stack, original_stack)
+                    self.assertIn('ZeroDivisionError', error)
+
+    def test_single_file_module(self):
+        with support.temp_dir() as script_dir:
+            import runpy
+            script_name = make_script(script_dir, 'script', '1/0')
+            try:
+                runpy.run_path(script_name)
+            except Exception as e:
+                tb_exc = traceback.TracebackException.from_exception(e)
+
+            _, *original_stack, _ = tb_exc.format()
+            _, *clean_stack, error = tb_exc.format(ignore_modules=('runpy',))
+            self.assertEqual(clean_stack, [original_stack[0], original_stack[-1]])
+            self.assertIn('ZeroDivisionError', error)
+
+    def test_frozen_module(self):
+        with support.temp_dir() as script_dir, \
+             support.change_cwd(path=script_dir):
+            make_script(script_dir, 'module', '1/0')
+            import _frozen_importlib
+            try:
+                _frozen_importlib.__import__('module')
+            except Exception as e:
+                tb_exc = traceback.TracebackException.from_exception(e)
+
+            _, *original_stack, _ = tb_exc.format()
+            # Ignoring these frozen modules and their parent package must
+            # produce the same traceback
+            ignored = [('_frozen_importlib', '_frozen_importlib_external'),
+                       ('importlib',)]
+            for mod in ignored:
+                with self.subTest(ignored=mod):
+                    _, *clean_stack, error = tb_exc.format(ignore_modules=mod)
+                    self.assertEqual(clean_stack, [original_stack[0], original_stack[-1]])
+                    self.assertIn('ZeroDivisionError', error)
 
 
 class MiscTest(unittest.TestCase):
