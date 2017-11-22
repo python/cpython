@@ -1468,7 +1468,6 @@ Py_GetProgramName(void)
 }
 
 static wchar_t *default_home = NULL;
-static wchar_t env_home[MAXPATHLEN+1];
 
 void
 Py_SetPythonHome(wchar_t *home)
@@ -1477,20 +1476,40 @@ Py_SetPythonHome(wchar_t *home)
 }
 
 wchar_t *
+_Py_GetPythonHomeWithConfig(_PyMainInterpreterConfig *config)
+{
+    /* Use a static buffer to avoid heap memory allocation failure.
+       Py_GetPythonHome() doesn't allow to report error, and the caller
+       doesn't release memory. */
+    static wchar_t buffer[MAXPATHLEN+1];
+
+    if (default_home) {
+        return default_home;
+    }
+
+    if (config) {
+        return config->pythonhome;
+    }
+
+    char *home = Py_GETENV("PYTHONHOME");
+    if (!home) {
+        return NULL;
+    }
+
+    size_t size = Py_ARRAY_LENGTH(buffer);
+    size_t r = mbstowcs(buffer, home, size);
+    if (r == (size_t)-1 || r >= size) {
+        /* conversion failed or the static buffer is too small */
+        return NULL;
+    }
+
+    return buffer;
+}
+
+wchar_t *
 Py_GetPythonHome(void)
 {
-    wchar_t *home = default_home;
-    if (home == NULL && !Py_IgnoreEnvironmentFlag) {
-        char* chome = Py_GETENV("PYTHONHOME");
-        if (chome) {
-            size_t size = Py_ARRAY_LENGTH(env_home);
-            size_t r = mbstowcs(env_home, chome, size);
-            if (r != (size_t)-1 && r < size)
-                home = env_home;
-        }
-
-    }
-    return home;
+    return _Py_GetPythonHomeWithConfig(NULL);
 }
 
 /* Add the __main__ module */

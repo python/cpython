@@ -462,7 +462,7 @@ calculate_path(_PyMainInterpreterConfig *config)
 
     static const wchar_t delimiter[2] = {DELIM, '\0'};
     static const wchar_t separator[2] = {SEP, '\0'};
-    wchar_t *home = Py_GetPythonHome();
+    wchar_t *home = _Py_GetPythonHomeWithConfig(config);
     char *_path = getenv("PATH");
     wchar_t *path_buffer = NULL;
     wchar_t *path = NULL;

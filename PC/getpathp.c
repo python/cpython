@@ -629,7 +629,7 @@ calculate_path(_PyMainInterpreterConfig *config)
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t *buf;
     size_t bufsz;
-    wchar_t *pythonhome = Py_GetPythonHome();
+    wchar_t *pythonhome = _Py_GetPythonHomeWithConfig(config);
     wchar_t *envpath = NULL;
 
     int skiphome, skipdefault;
