@@ -156,7 +156,7 @@ Functions and classes provided:
           with cm as file:
               # Perform processing on the file
 
-   .. versionadded: 3.7
+   .. versionadded:: 3.7
 
 
 .. function:: suppress(*exceptions)
