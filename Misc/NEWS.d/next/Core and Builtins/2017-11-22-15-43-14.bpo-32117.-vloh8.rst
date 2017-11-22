@@ -1,0 +1,2 @@
+Tuple unpacking is now allowed without parenthesis in yield and return
+statements, e.g. ``yield 1, 2, 3, *rest``.
