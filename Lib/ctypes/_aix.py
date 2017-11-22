@@ -208,7 +208,7 @@ def getExecLibPath_aix():
 
 def find_library(name):
     """AIX specific routine - to find an archive member that will dlopen()
-    
+
     find_library() looks first for an archive (.a) with a suitable member.
     If no archive is found, look for a .so file.
     """
