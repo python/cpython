@@ -364,11 +364,11 @@ class CCompiler:
         cc_args = pp_opts + ['-c']
         if debug:
             cc_args[:0] = ['-g']
-            cc_args += self.cc_args_debug
+            cc_args.expand(self.cc_args_debug)
         if before:
             cc_args[:0] = before
 
-        cc_args += self.cc_args
+        cc_args.expand(self.cc_args)
 
         return cc_args
 
