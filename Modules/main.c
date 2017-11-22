@@ -399,6 +399,7 @@ typedef struct {
     _PyInitError err;
     /* PYTHONWARNINGS env var */
     _Py_OptList env_warning_options;
+    /* PYTHONPATH env var */
     int argc;
     wchar_t **argv;
 } _PyMain;
@@ -440,6 +441,8 @@ pymain_free_impl(_PyMain *pymain)
     pymain_optlist_clear(&pymain->env_warning_options);
     Py_CLEAR(pymain->main_importer_path);
     PyMem_RawFree(pymain->program_name);
+
+    PyMem_RawFree(pymain->core_config.module_search_path_env);
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
@@ -502,15 +505,22 @@ error:
 
 
 static wchar_t*
-pymain_strdup(_PyMain *pymain, wchar_t *str)
+pymain_wstrdup(_PyMain *pymain, wchar_t *str)
 {
     size_t len = wcslen(str) + 1;  /* +1 for NUL character */
-    wchar_t *str2 = PyMem_RawMalloc(sizeof(wchar_t) * len);
+    if (len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+        pymain->err = INIT_NO_MEMORY();
+        return NULL;
+    }
+
+    size_t size = len * sizeof(wchar_t);
+    wchar_t *str2 = PyMem_RawMalloc(size);
     if (str2 == NULL) {
         pymain->err = INIT_NO_MEMORY();
         return NULL;
     }
-    memcpy(str2, str, len * sizeof(wchar_t));
+
+    memcpy(str2, str, size);
     return str2;
 }
 
@@ -518,7 +528,7 @@ pymain_strdup(_PyMain *pymain, wchar_t *str)
 static int
 pymain_optlist_append(_PyMain *pymain, _Py_OptList *list, wchar_t *str)
 {
-    wchar_t *str2 = pymain_strdup(pymain, str);
+    wchar_t *str2 = pymain_wstrdup(pymain, str);
     if (str2 == NULL) {
         return -1;
     }
@@ -762,14 +772,12 @@ pymain_warnings_envvar(_PyMain *pymain)
     wchar_t *wp;
 
     if ((wp = _wgetenv(L"PYTHONWARNINGS")) && *wp != L'\0') {
-        wchar_t *buf, *warning, *context = NULL;
+        wchar_t *warning, *context = NULL;
 
-        buf = (wchar_t *)PyMem_RawMalloc((wcslen(wp) + 1) * sizeof(wchar_t));
+        wchar_t *buf = pymain_wstrdup(pymain, wp);
         if (buf == NULL) {
-            pymain->err = INIT_NO_MEMORY();
             return -1;
         }
-        wcscpy(buf, wp);
         for (warning = wcstok_s(buf, L",", &context);
              warning != NULL;
              warning = wcstok_s(NULL, L",", &context)) {
@@ -805,12 +813,11 @@ pymain_warnings_envvar(_PyMain *pymain)
                 if (len == (size_t)-2) {
                     pymain->err = _Py_INIT_ERR("failed to decode "
                                                "PYTHONWARNINGS");
-                    return -1;
                 }
                 else {
                     pymain->err = INIT_NO_MEMORY();
-                    return -1;
                 }
+                return -1;
             }
             if (pymain_optlist_append(pymain, &pymain->env_warning_options,
                                       warning) < 0) {
@@ -929,7 +936,7 @@ pymain_get_program_name(_PyMain *pymain)
 
     if (pymain->program_name == NULL) {
         /* Use argv[0] by default */
-        pymain->program_name = pymain_strdup(pymain, pymain->argv[0]);
+        pymain->program_name = pymain_wstrdup(pymain, pymain->argv[0]);
         if (pymain->program_name == NULL) {
             return -1;
         }
@@ -1363,6 +1370,48 @@ pymain_set_flags_from_env(_PyMain *pymain)
 
 
 static int
+pymain_init_pythonpath(_PyMain *pymain)
+{
+    if (Py_IgnoreEnvironmentFlag) {
+        return 0;
+    }
+
+#ifdef MS_WINDOWS
+    wchar_t *path = _wgetenv(L"PYTHONPATH");
+    if (!path || path[0] == '\0') {
+        return 0;
+    }
+
+    wchar_t *path2 = pymain_wstrdup(pymain, path);
+    if (path2 == NULL) {
+        return -1;
+    }
+
+    pymain->core_config.module_search_path_env = path2;
+#else
+    char *path = pymain_get_env_var("PYTHONPATH");
+    if (!path) {
+        return 0;
+    }
+
+    size_t len;
+    wchar_t *wpath = Py_DecodeLocale(path, &len);
+    if (!wpath) {
+        if (len == (size_t)-2) {
+            pymain->err = _Py_INIT_ERR("failed to decode PYTHONHOME");
+        }
+        else {
+            pymain->err = INIT_NO_MEMORY();
+        }
+        return -1;
+    }
+    pymain->core_config.module_search_path_env = wpath;
+#endif
+    return 0;
+}
+
+
+static int
 pymain_parse_envvars(_PyMain *pymain)
 {
     _PyCoreConfig *core_config = &pymain->core_config;
@@ -1383,6 +1432,9 @@ pymain_parse_envvars(_PyMain *pymain)
         return -1;
     }
     core_config->allocator = Py_GETENV("PYTHONMALLOC");
+    if (pymain_init_pythonpath(pymain) < 0) {
+        return -1;
+    }
 
     /* -X options */
     if (pymain_get_xoption(pymain, L"showrefcount")) {

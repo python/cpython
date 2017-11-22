@@ -30,6 +30,7 @@ typedef struct {
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
     const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
+    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
     int dev_mode;           /* -X dev */
     int faulthandler;       /* -X faulthandler */
     int tracemalloc;        /* -X tracemalloc=N */
@@ -39,11 +40,13 @@ typedef struct {
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
-    {.ignore_environment = 0, \
+    (_PyCoreConfig){\
+     .ignore_environment = 0, \
      .use_hash_seed = -1, \
      .hash_seed = 0, \
      ._disable_importlib = 0, \
      .allocator = NULL, \
+     .module_search_path_env = NULL, \
      .dev_mode = 0, \
      .faulthandler = 0, \
      .tracemalloc = 0, \
@@ -61,7 +64,9 @@ typedef struct {
     int install_signal_handlers;
 } _PyMainInterpreterConfig;
 
-#define _PyMainInterpreterConfig_INIT {-1}
+#define _PyMainInterpreterConfig_INIT \
+    (_PyMainInterpreterConfig){\
+     .install_signal_handlers = -1}
 
 typedef struct _is {
 
