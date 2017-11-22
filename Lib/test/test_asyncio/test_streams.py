@@ -652,10 +652,13 @@ class StreamReaderTests(test_utils.TestCase):
                 client_writer.close()
 
             def start(self):
-                self.server = self.loop.run_until_complete(
-                    asyncio.start_unix_server(self.handle_client,
+                try:
+                    self.server = self.loop.run_until_complete(
+                        asyncio.start_unix_server(self.handle_client,
                                               path=self.path,
                                               loop=self.loop))
+                except PermissionError as e:
+                    raise unittest.SkipTest('run_until_complete(): %s' % e)
 
             def handle_client_callback(self, client_reader, client_writer):
                 self.loop.create_task(self.handle_client(client_reader,

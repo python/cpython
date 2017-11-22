@@ -1,0 +1,2 @@
+The asyncio tests now handle PermissionError raised when binding a unix
+socket.

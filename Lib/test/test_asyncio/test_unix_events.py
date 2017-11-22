@@ -17,6 +17,13 @@ from unittest import mock
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
 
+try:
+    from test.support import unlink
+except ImportError:
+    def unlink(fn):
+        if os.path.exists(fn):
+            os.unlink(fn)
+
 
 import asyncio
 from asyncio import log
@@ -241,10 +248,12 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def test_create_unix_server_existing_path_sock(self):
         with test_utils.unix_socket_path() as path:
-            sock = socket.socket(socket.AF_UNIX)
-            sock.bind(path)
-            sock.listen(1)
-            sock.close()
+            with socket.socket(socket.AF_UNIX) as sock:
+                try:
+                    sock.bind(path)
+                except PermissionError as e:
+                    self.skipTest('bind(): %s' % e)
+                sock.listen(1)
 
             coro = self.loop.create_unix_server(lambda: None, path)
             srv = self.loop.run_until_complete(coro)
@@ -256,7 +265,10 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         with test_utils.unix_socket_path() as path:
             path = pathlib.Path(path)
             srv_coro = self.loop.create_unix_server(lambda: None, path)
-            srv = self.loop.run_until_complete(srv_coro)
+            try:
+                srv = self.loop.run_until_complete(srv_coro)
+            except PermissionError as e:
+                self.skipTest('run_until_complete(): %s' % e)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
@@ -307,14 +319,17 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             fn = file.name
         try:
             with sock:
-                sock.bind(fn)
+                try:
+                    sock.bind(fn)
+                except PermissionError as e:
+                    self.skipTest('bind(): %s' % e)
                 coro = self.loop.create_unix_server(lambda: None, path=None,
                                                     sock=sock)
                 srv = self.loop.run_until_complete(coro)
                 srv.close()
                 self.loop.run_until_complete(srv.wait_closed())
         finally:
-            os.unlink(fn)
+            unlink(fn)
 
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()

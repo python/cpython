@@ -957,7 +957,10 @@ class EventLoopTestsMixin:
         self.addCleanup(lambda: os.path.exists(path) and os.unlink(path))
 
         f = self.loop.create_unix_server(factory, path, **kwargs)
-        server = self.loop.run_until_complete(f)
+        try:
+            server = self.loop.run_until_complete(f)
+        except PermissionError as e:
+            self.skipTest('run_until_complete(): %s' % e)
 
         return server, path
 
