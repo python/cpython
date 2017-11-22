@@ -517,13 +517,15 @@ class StreamReader(Codec):
             if not newdata:
                 break
         if chars < 0:
-            # Return everything we've got
-            result = self.charbuffer
-            self.charbuffer = self._empty_charbuffer
-        else:
-            # Return the first chars characters
-            result = self.charbuffer[:chars]
-            self.charbuffer = self.charbuffer[chars:]
+            if size < 0:
+                # Return everything we've got
+                result = self.charbuffer
+                self.charbuffer = self._empty_charbuffer
+                return result
+            chars = size
+        # Return the first chars characters
+        result = self.charbuffer[:chars]
+        self.charbuffer = self.charbuffer[chars:]
         return result
 
     def readline(self, size=None, keepends=True):
