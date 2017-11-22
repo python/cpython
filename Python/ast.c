@@ -2631,6 +2631,23 @@ ast_for_expr(struct compiling *c, const node *n)
                     if (!newoperator) {
                         return NULL;
                     }
+                    if ((newoperator == In || newoperator == NotIn) &&
+                        NCH(n) > 3)
+                    {
+                        PyObject *msg = PyUnicode_FromString(newoperator == In
+                                ? "chained `in' is ambiguous"
+                                : "chained `not in' is ambiguous");
+                        if (msg == NULL)
+                            return NULL;
+                        if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning,
+                                    msg, c->c_filename, CHILD(n, i)->n_lineno,
+                                    NULL, NULL) == -1)
+                        {
+                            Py_DECREF(msg);
+                            return NULL;
+                        }
+                        Py_DECREF(msg);
+                    }
 
                     expression = ast_for_expr(c, CHILD(n, i + 1));
                     if (!expression) {
