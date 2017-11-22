@@ -128,7 +128,6 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    import re
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(message, str), "message must be a string"
@@ -137,8 +136,20 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     assert isinstance(module, str), "module must be a string"
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
-    _add_filter(action, re.compile(message, re.I), category,
-            re.compile(module), lineno, append=append)
+
+    if message or module:
+        import re
+
+    if message:
+        message = re.compile(message, re.I)
+    else:
+        message = None
+    if module:
+        module = re.compile(module)
+    else:
+        module = None
+
+    _add_filter(action, message, category, module, lineno, append=append)
 
 def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
