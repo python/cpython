@@ -93,6 +93,9 @@ PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
 PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(wchar_t *) _Py_GetPathWithConfig(_PyCoreConfig *config);
+#endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
 int _Py_CheckPython3();

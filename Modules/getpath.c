@@ -456,14 +456,12 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
 }
 
 static void
-calculate_path(void)
+calculate_path(_PyCoreConfig *core_config)
 {
     extern wchar_t *Py_GetProgramName(void);
 
     static const wchar_t delimiter[2] = {DELIM, '\0'};
     static const wchar_t separator[2] = {SEP, '\0'};
-    char *_rtpypath = Py_GETENV("PYTHONPATH"); /* XXX use wide version on Windows */
-    wchar_t *rtpypath = NULL;
     wchar_t *home = Py_GetPythonHome();
     char *_path = getenv("PATH");
     wchar_t *path_buffer = NULL;
@@ -707,11 +705,22 @@ calculate_path(void)
      */
     bufsz = 0;
 
-    if (_rtpypath && _rtpypath[0] != '\0') {
-        size_t rtpypath_len;
-        rtpypath = Py_DecodeLocale(_rtpypath, &rtpypath_len);
-        if (rtpypath != NULL)
-            bufsz += rtpypath_len + 1;
+    wchar_t *env_path = NULL;
+    if (core_config) {
+        if (core_config->module_search_path_env) {
+            bufsz += wcslen(core_config->module_search_path_env) + 1;
+        }
+    }
+    else {
+        char *env_pathb = Py_GETENV("PYTHONPATH");
+        if (env_pathb && env_pathb[0] != '\0') {
+            size_t env_path_len;
+            env_path = Py_DecodeLocale(env_pathb, &env_path_len);
+            /* FIXME: handle decoding and memory error */
+            if (env_path != NULL) {
+                bufsz += env_path_len + 1;
+            }
+        }
     }
 
     defpath = _pythonpath;
@@ -742,12 +751,20 @@ calculate_path(void)
     }
 
     /* Run-time value of $PYTHONPATH goes first */
-    if (rtpypath) {
-        wcscpy(buf, rtpypath);
-        wcscat(buf, delimiter);
+    buf[0] = '\0';
+    if (core_config) {
+        if (core_config->module_search_path_env) {
+            wcscpy(buf, core_config->module_search_path_env);
+            wcscat(buf, delimiter);
+        }
     }
-    else
-        buf[0] = '\0';
+    else {
+        if (env_path) {
+            wcscpy(buf, env_path);
+            wcscat(buf, delimiter);
+        }
+    }
+    PyMem_RawFree(env_path);
 
     /* Next is the default zip path */
     wcscat(buf, zip_path);
@@ -818,7 +835,6 @@ calculate_path(void)
     PyMem_RawFree(_prefix);
     PyMem_RawFree(_exec_prefix);
     PyMem_RawFree(lib_python);
-    PyMem_RawFree(rtpypath);
 }
 
 
@@ -842,10 +858,19 @@ Py_SetPath(const wchar_t *path)
 }
 
 wchar_t *
+_Py_GetPathWithConfig(_PyCoreConfig *core_config)
+{
+    if (!module_search_path) {
+        calculate_path(core_config);
+    }
+    return module_search_path;
+}
+
+wchar_t *
 Py_GetPath(void)
 {
     if (!module_search_path)
-        calculate_path();
+        calculate_path(NULL);
     return module_search_path;
 }
 
@@ -853,7 +878,7 @@ wchar_t *
 Py_GetPrefix(void)
 {
     if (!module_search_path)
-        calculate_path();
+        calculate_path(NULL);
     return prefix;
 }
 
@@ -861,7 +886,7 @@ wchar_t *
 Py_GetExecPrefix(void)
 {
     if (!module_search_path)
-        calculate_path();
+        calculate_path(NULL);
     return exec_prefix;
 }
 
@@ -869,7 +894,7 @@ wchar_t *
 Py_GetProgramFullPath(void)
 {
     if (!module_search_path)
-        calculate_path();
+        calculate_path(NULL);
     return progpath;
 }
 

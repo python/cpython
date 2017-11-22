@@ -48,8 +48,6 @@ _Py_IDENTIFIER(threading);
 extern "C" {
 #endif
 
-extern wchar_t *Py_GetPath(void);
-
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
@@ -842,6 +840,11 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     /* Now finish configuring the main interpreter */
     interp->config = *config;
 
+    /* GetPath may initialize state that _PySys_EndInit locks
+       in, and so has to be called first. */
+    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
+    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->core_config);
+
     if (interp->core_config._disable_importlib) {
         /* Special mode for freeze_importlib: run with no import system
          *
@@ -857,10 +860,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_ERR("can't initialize time");
 
     /* Finish setting up the sys module and import system */
-    /* GetPath may initialize state that _PySys_EndInit locks
-       in, and so has to be called first. */
-    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
-    PySys_SetPath(Py_GetPath());
+    PySys_SetPath(sys_path);
     if (_PySys_EndInit(interp->sysdict) < 0)
         return _Py_INIT_ERR("can't finish initializing sys");
 
@@ -1301,6 +1301,8 @@ new_interpreter(PyThreadState **tstate_p)
 
     /* XXX The following is lax in error checking */
 
+    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->core_config);
+
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
         return _Py_INIT_ERR("can't make modules dictionary");
@@ -1314,7 +1316,7 @@ new_interpreter(PyThreadState **tstate_p)
             goto handle_error;
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        PySys_SetPath(Py_GetPath());
+        PySys_SetPath(sys_path);
         _PySys_EndInit(interp->sysdict);
     }
 

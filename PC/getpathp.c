@@ -624,7 +624,7 @@ error:
 
 
 static void
-calculate_path(void)
+calculate_path(_PyCoreConfig *core_config)
 {
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t *buf;
@@ -637,8 +637,13 @@ calculate_path(void)
     wchar_t *userpath = NULL;
     wchar_t zip_path[MAXPATHLEN+1];
 
-    if (!Py_IgnoreEnvironmentFlag) {
+    if (core_config) {
+        envpath = core_config->module_search_path_env;
+    }
+    else if (!Py_IgnoreEnvironmentFlag) {
         envpath = _wgetenv(L"PYTHONPATH");
+        if (envpath && *envpath == '\0')
+            envpath = NULL;
     }
 
     get_progpath();
@@ -708,9 +713,6 @@ calculate_path(void)
     }
     else
         wcscpy_s(prefix, MAXPATHLEN+1, pythonhome);
-
-    if (envpath && *envpath == '\0')
-        envpath = NULL;
 
 
     skiphome = pythonhome==NULL ? 0 : 1;
@@ -897,10 +899,19 @@ Py_SetPath(const wchar_t *path)
 }
 
 wchar_t *
+_Py_GetPathWithConfig(_PyCoreConfig *core_config)
+{
+    if (!module_search_path) {
+        calculate_path(core_config);
+    }
+    return module_search_path;
+}
+
+wchar_t *
 Py_GetPath(void)
 {
     if (!module_search_path)
-        calculate_path();
+        calculate_path(NULL);
     return module_search_path;
 }
 
@@ -908,7 +919,7 @@ wchar_t *
 Py_GetPrefix(void)
 {
     if (!module_search_path)
-        calculate_path();
+        calculate_path(NULL);
     return prefix;
 }
 
@@ -922,7 +933,7 @@ wchar_t *
 Py_GetProgramFullPath(void)
 {
     if (!module_search_path)
-        calculate_path();
+        calculate_path(NULL);
     return progpath;
 }
 
