@@ -35,7 +35,7 @@ check_matched(PyObject *obj, PyObject *arg)
    A NULL return value can mean false or an error.
 */
 static PyObject *
-get_warnings_attr(const char *attr, int try_import)
+get_warnings_attr(_Py_Identifier *attr_id, int try_import)
 {
     static PyObject *warnings_str = NULL;
     PyObject *warnings_module, *obj;
@@ -64,7 +64,7 @@ get_warnings_attr(const char *attr, int try_import)
             return NULL;
     }
 
-    obj = PyObject_GetAttrString(warnings_module, attr);
+    obj = _PyObject_GetAttrId(warnings_module, attr_id);
     Py_DECREF(warnings_module);
     if (obj == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
@@ -77,8 +77,9 @@ static PyObject *
 get_once_registry(void)
 {
     PyObject *registry;
+    _Py_IDENTIFIER(onceregistry);
 
-    registry = get_warnings_attr("onceregistry", 0);
+    registry = get_warnings_attr(&PyId_onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -98,18 +99,65 @@ get_once_registry(void)
 }
 
 
-static PyObject *
+typedef struct {
+    char *action;
+    PyObject *message;
+    PyObject *category;
+    PyObject *module;
+    Py_ssize_t lineno;
+} WarningFilter;
+
+typedef struct {
+    Py_ssize_t nfilter;
+    WarningFilter *filters;
+    long version;
+    char *default_action;
+} WarningFilters;
+
+#define WarningFilters_INIT (WarningFilters){-1, NULL, -1, NULL}
+
+static WarningFilters cache_filters = WarningFilters_INIT;
+
+
+static char*
+unicode_as_ascii(PyObject *unicode)
+{
+    PyObject *bytes = PyUnicode_AsASCIIString(unicode);
+    if (bytes == NULL) {
+        return NULL;
+    }
+
+    char *str = _PyMem_Strdup(PyBytes_AS_STRING(bytes));
+    Py_DECREF(bytes);
+    if (str == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    return str;
+}
+
+
+static const char*
 get_default_action(void)
 {
     PyObject *default_action;
+    _Py_IDENTIFIER(defaultaction);
 
-    default_action = get_warnings_attr("defaultaction", 0);
+    default_action = get_warnings_attr(&PyId_defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
         }
         assert(_PyRuntime.warnings.default_action);
-        return _PyRuntime.warnings.default_action;
+
+        char *action_str = unicode_as_ascii(_PyRuntime.warnings.default_action);
+        if (action_str == NULL) {
+            return NULL;
+        }
+        PyMem_Free(cache_filters.default_action);
+        cache_filters.default_action = action_str;
+
+        return action_str;
     }
     if (!PyUnicode_Check(default_action)) {
         PyErr_Format(PyExc_TypeError,
@@ -120,104 +168,201 @@ get_default_action(void)
         return NULL;
     }
     Py_SETREF(_PyRuntime.warnings.default_action, default_action);
-    return default_action;
+
+    char *action_str = unicode_as_ascii(default_action);
+    if (action_str == NULL) {
+        return NULL;
+    }
+    PyMem_Free(cache_filters.default_action);
+    cache_filters.default_action = action_str;
+
+    return action_str;
+}
+
+
+static void
+warning_filters_clear(WarningFilters *filters)
+{
+    for (Py_ssize_t i=0; i < filters->nfilter; i++) {
+        WarningFilter *filter = &filters->filters[i];
+
+        PyMem_Free(filter->action);
+        Py_DECREF(filter->message);
+        Py_DECREF(filter->category);
+        Py_DECREF(filter->module);
+    }
+    PyMem_Free(filters->filters);
+    PyMem_Free(filters->default_action);
+    *filters = WarningFilters_INIT;
 }
 
 
 /* The item is a new reference. */
-static PyObject*
-get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
-           PyObject *module, PyObject **item)
+static int
+get_filter(PyObject *item, WarningFilter *filter)
 {
-    PyObject *action;
-    Py_ssize_t i;
-    PyObject *warnings_filters;
+    PyObject *action, *msg, *cat, *mod, *lineno_obj;
+    Py_ssize_t lineno;
 
-    warnings_filters = get_warnings_attr("filters", 0);
+    /* Python code: action, msg, cat, mod, lineno = item */
+    action = PyTuple_GET_ITEM(item, 0);
+    msg = PyTuple_GET_ITEM(item, 1);
+    cat = PyTuple_GET_ITEM(item, 2);
+    mod = PyTuple_GET_ITEM(item, 3);
+    lineno_obj = PyTuple_GET_ITEM(item, 4);
+
+    if (!PyUnicode_Check(action)) {
+        PyErr_Format(PyExc_TypeError,
+                     "action must be a string, not '%.200s'",
+                     Py_TYPE(action)->tp_name);
+        return -1;
+    }
+
+    lineno = PyLong_AsSsize_t(lineno_obj);
+    if (lineno == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+
+    char *action_str = unicode_as_ascii(action);
+    if (action_str == NULL) {
+        return -1;
+    }
+
+    if (strcmp(action_str, "always") != 0
+       && strcmp(action_str, "ignore") == 0
+       && strcmp(action_str, "once") == 0
+       && strcmp(action_str, "module") == 0
+       && strcmp(action_str, "default") != 0) {
+        PyErr_Format(PyExc_RuntimeError,
+                    "Unrecognized action (%R) in warnings.filters:\n %R",
+                    action, item);
+        PyMem_Free(action_str);
+        return -1;
+    }
+
+    filter->action = action_str;
+    Py_INCREF(msg);
+    filter->message = msg;
+    Py_INCREF(cat);
+    filter->category = cat;
+    Py_INCREF(mod);
+    filter->module = mod;
+    filter->lineno = lineno;
+    return 0;
+}
+
+static WarningFilters*
+get_filters(void)
+{
+    if (cache_filters.version == _PyRuntime.warnings.filters_version) {
+        return &cache_filters;
+    }
+
+
+    /* Update _PyRuntime.warnings.filters */
+    _Py_IDENTIFIER(filters);
+    PyObject *warnings_filters = get_warnings_attr(&PyId_filters, 0);
     if (warnings_filters == NULL) {
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
             return NULL;
+        }
     }
     else {
         Py_SETREF(_PyRuntime.warnings.filters, warnings_filters);
     }
 
-    PyObject *filters = _PyRuntime.warnings.filters;
-    if (filters == NULL || !PyList_Check(filters)) {
+    PyObject *filters_tuple = _PyRuntime.warnings.filters;
+    if (filters_tuple == NULL || !PyTuple_Check(filters_tuple)) {
         PyErr_SetString(PyExc_ValueError,
-                        MODULE_NAME ".filters must be a list");
+                        MODULE_NAME ".filters must be a tuple");
         return NULL;
     }
 
-    /* _PyRuntime.warnings.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
-        PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
-        Py_ssize_t ln;
-        int is_subclass, good_msg, good_mod;
+    WarningFilters new_filters = WarningFilters_INIT;
+    new_filters.nfilter = 0;
+    new_filters.version = _PyRuntime.warnings.filters_version;
 
-        tmp_item = PyList_GET_ITEM(filters, i);
-        if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
+    /* _PyRuntime.warnings.filters could change while we are iterating over it. */
+    Py_ssize_t nfilter = PyTuple_GET_SIZE(filters_tuple);
+    for (Py_ssize_t i = 0; i < nfilter; i++) {
+        PyObject *item = PyTuple_GET_ITEM(filters_tuple, i);
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 5) {
             PyErr_Format(PyExc_ValueError,
                          MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
             return NULL;
         }
 
-        /* Python code: action, msg, cat, mod, ln = item */
-        Py_INCREF(tmp_item);
-        action = PyTuple_GET_ITEM(tmp_item, 0);
-        msg = PyTuple_GET_ITEM(tmp_item, 1);
-        cat = PyTuple_GET_ITEM(tmp_item, 2);
-        mod = PyTuple_GET_ITEM(tmp_item, 3);
-        ln_obj = PyTuple_GET_ITEM(tmp_item, 4);
-
-        if (!PyUnicode_Check(action)) {
-            PyErr_Format(PyExc_TypeError,
-                         "action must be a string, not '%.200s'",
-                         Py_TYPE(action)->tp_name);
-            Py_DECREF(tmp_item);
-            return NULL;
+        /* Keep a strong reference */
+        Py_INCREF(item);
+        WarningFilter filter;
+        if (get_filter(item, &filter) < 0) {
+            Py_DECREF(item);
+            goto error;
         }
+        Py_DECREF(item);
 
-        good_msg = check_matched(msg, text);
-        if (good_msg == -1) {
-            Py_DECREF(tmp_item);
-            return NULL;
+        WarningFilter *new_array;
+        Py_ssize_t size;
+
+        size = (new_filters.nfilter + 1) * sizeof(new_filters.filters[0]);
+        new_array = PyMem_Realloc(new_filters.filters, size);
+        if (new_array == NULL) {
+            PyErr_NoMemory();
+            goto error;
         }
-
-        good_mod = check_matched(mod, module);
-        if (good_mod == -1) {
-            Py_DECREF(tmp_item);
-            return NULL;
-        }
-
-        is_subclass = PyObject_IsSubclass(category, cat);
-        if (is_subclass == -1) {
-            Py_DECREF(tmp_item);
-            return NULL;
-        }
-
-        ln = PyLong_AsSsize_t(ln_obj);
-        if (ln == -1 && PyErr_Occurred()) {
-            Py_DECREF(tmp_item);
-            return NULL;
-        }
-
-        if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln)) {
-            *item = tmp_item;
-            return action;
-        }
-
-        Py_DECREF(tmp_item);
+        new_filters.filters = new_array;
+        new_filters.filters[new_filters.nfilter] = filter;
+        new_filters.nfilter++;
     }
 
-    action = get_default_action();
-    if (action != NULL) {
-        Py_INCREF(Py_None);
-        *item = Py_None;
-        return action;
-    }
+    /* FIXME: retry or raise an error in that case? */
+    assert(new_filters.version == _PyRuntime.warnings.filters_version);
 
+    warning_filters_clear(&cache_filters);
+    cache_filters = new_filters;
+
+    return &cache_filters;
+
+error:
+    warning_filters_clear(&new_filters);
     return NULL;
+}
+
+
+static const char*
+get_action(PyObject *category, PyObject *text, Py_ssize_t lineno,
+           PyObject *module)
+{
+    WarningFilters *filters = get_filters();
+    if (filters == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < filters->nfilter; i++) {
+        WarningFilter *filter = &filters->filters[i];
+        int is_subclass, good_msg, good_mod;
+
+        good_msg = check_matched(filter->message, text);
+        if (good_msg == -1) {
+            return NULL;
+        }
+
+        good_mod = check_matched(filter->module, module);
+        if (good_mod == -1) {
+            return NULL;
+        }
+
+        is_subclass = PyObject_IsSubclass(category, filter->category);
+        if (is_subclass == -1) {
+            return NULL;
+        }
+
+        if (good_msg && is_subclass && good_mod && (filter->lineno == 0 || lineno == filter->lineno)) {
+            return filter->action;
+        }
+    }
+
+    return get_default_action();
 }
 
 
@@ -389,11 +534,13 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
                   PyObject *sourceline, PyObject *source)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
+    _Py_IDENTIFIER(_showwarnmsg);
+    _Py_IDENTIFIER(WarningMessage);
 
     /* If the source parameter is set, try to get the Python implementation.
        The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = get_warnings_attr("_showwarnmsg", source != NULL);
+    show_fn = get_warnings_attr(&PyId__showwarnmsg, source != NULL);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -407,7 +554,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
         goto error;
     }
 
-    warnmsg_cls = get_warnings_attr("WarningMessage", 0);
+    warnmsg_cls = get_warnings_attr(&PyId_WarningMessage, 0);
     if (warnmsg_cls == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_RuntimeError,
@@ -445,8 +592,7 @@ warn_explicit(PyObject *category, PyObject *message,
               PyObject *source)
 {
     PyObject *key = NULL, *text = NULL, *result = NULL, *lineno_obj = NULL;
-    PyObject *item = NULL;
-    PyObject *action;
+    const char *action;
     int rc;
 
     /* module can be None if a warning is emitted late during Python shutdown.
@@ -511,25 +657,31 @@ warn_explicit(PyObject *category, PyObject *message,
         /* Else this warning hasn't been generated before. */
     }
 
-    action = get_filter(category, text, lineno, module, &item);
+    action = get_action(category, text, lineno, module);
     if (action == NULL)
         goto cleanup;
 
-    if (_PyUnicode_EqualToASCIIString(action, "error")) {
+    if (strcmp(action, "error") == 0) {
         PyErr_SetObject(category, message);
         goto cleanup;
+    }
+
+    if (strcmp(action, "ignore") == 0) {
+        goto return_none;
     }
 
     /* Store in the registry that we've been here, *except* when the action
        is "always". */
     rc = 0;
-    if (!_PyUnicode_EqualToASCIIString(action, "always")) {
+    if (strcmp(action, "always") != 0) {
         if (registry != NULL && registry != Py_None &&
-                PyDict_SetItem(registry, key, Py_True) < 0)
+                PyDict_SetItem(registry, key, Py_True) < 0) {
             goto cleanup;
-        else if (_PyUnicode_EqualToASCIIString(action, "ignore"))
+        }
+
+        if (strcmp(action, "ignore") == 0)
             goto return_none;
-        else if (_PyUnicode_EqualToASCIIString(action, "once")) {
+        else if (strcmp(action, "once") == 0) {
             if (registry == NULL || registry == Py_None) {
                 registry = get_once_registry();
                 if (registry == NULL)
@@ -538,16 +690,13 @@ warn_explicit(PyObject *category, PyObject *message,
             /* _PyRuntime.warnings.once_registry[(text, category)] = 1 */
             rc = update_registry(registry, text, category, 0);
         }
-        else if (_PyUnicode_EqualToASCIIString(action, "module")) {
+        else if (strcmp(action, "module") == 0) {
             /* registry[(text, category, 0)] = 1 */
             if (registry != NULL && registry != Py_None)
                 rc = update_registry(registry, text, category, 0);
         }
-        else if (!_PyUnicode_EqualToASCIIString(action, "default")) {
-            PyErr_Format(PyExc_RuntimeError,
-                        "Unrecognized action (%R) in warnings.filters:\n %R",
-                        action, item);
-            goto cleanup;
+        else {
+            /* action == "default" */
         }
     }
 
@@ -566,7 +715,6 @@ warn_explicit(PyObject *category, PyObject *message,
     Py_INCREF(result);
 
  cleanup:
-    Py_XDECREF(item);
     Py_XDECREF(key);
     Py_XDECREF(text);
     Py_XDECREF(lineno_obj);
@@ -940,6 +1088,10 @@ static PyObject *
 warnings_filters_mutated(PyObject *self, PyObject *args)
 {
     _PyRuntime.warnings.filters_version++;
+    warning_filters_clear(&cache_filters);
+    if (get_filters() == NULL) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1257,7 +1409,10 @@ init_filters(void)
         }
     }
 
-    return filters;
+    PyObject *filters_tuple = PyList_AsTuple(filters);
+    Py_DECREF(filters);
+
+    return filters_tuple;
 }
 
 static struct PyModuleDef warningsmodule = {
