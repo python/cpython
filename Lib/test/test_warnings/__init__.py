@@ -850,15 +850,14 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # bad warnings.filters or warnings.defaultaction.
         wmod = self.module
         with original_warnings.catch_warnings(module=wmod):
-            wmod.filters = [(None, None, Warning, None, 0)]
             with self.assertRaises(TypeError):
-                wmod._filters_mutated()
+                wmod._add_filter(None, None, Warning, None, 0)
                 wmod.warn_explicit('foo', Warning, 'bar', 1)
 
-            wmod.filters = []
+        with original_warnings.catch_warnings(module=wmod):
             with support.swap_attr(wmod, 'defaultaction', None), \
                  self.assertRaises(TypeError):
-                wmod._filters_mutated()
+                wmod.resetwarnings()
                 wmod.warn_explicit('foo', Warning, 'bar', 1)
 
     @support.cpython_only
@@ -1016,14 +1015,14 @@ class CatchWarningTests(BaseTest):
         with wmod.catch_warnings(module=wmod) as w:
             self.assertIsNone(w)
             self.assertIs(wmod.showwarning, orig_showwarning)
-            self.assertIsNot(wmod.filters, orig_filters)
+            self.assertIs(wmod.filters, orig_filters)
         self.assertIs(wmod.filters, orig_filters)
         if wmod is sys.modules['warnings']:
             # Ensure the default module is this one
             with wmod.catch_warnings() as w:
                 self.assertIsNone(w)
                 self.assertIs(wmod.showwarning, orig_showwarning)
-                self.assertIsNot(wmod.filters, orig_filters)
+                self.assertIs(wmod.filters, orig_filters)
             self.assertIs(wmod.filters, orig_filters)
 
     def test_record_override_showwarning_before(self):

@@ -271,10 +271,10 @@ get_filters(void)
         Py_SETREF(_PyRuntime.warnings.filters, warnings_filters);
     }
 
-    PyObject *filters_list = _PyRuntime.warnings.filters;
-    if (filters_list == NULL || !PyList_Check(filters_list)) {
+    PyObject *filters_tuple = _PyRuntime.warnings.filters;
+    if (filters_tuple == NULL || !PyTuple_Check(filters_tuple)) {
         PyErr_SetString(PyExc_ValueError,
-                        MODULE_NAME ".filters must be a list");
+                        MODULE_NAME ".filters must be a tuple");
         return NULL;
     }
 
@@ -283,8 +283,9 @@ get_filters(void)
     new_filters.version = _PyRuntime.warnings.filters_version;
 
     /* _PyRuntime.warnings.filters could change while we are iterating over it. */
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters_list); i++) {
-        PyObject *item = PyList_GET_ITEM(filters_list, i);
+    Py_ssize_t nfilter = PyTuple_GET_SIZE(filters_tuple);
+    for (Py_ssize_t i = 0; i < nfilter; i++) {
+        PyObject *item = PyTuple_GET_ITEM(filters_tuple, i);
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 5) {
             PyErr_Format(PyExc_ValueError,
                          MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
@@ -1408,7 +1409,10 @@ init_filters(void)
         }
     }
 
-    return filters;
+    PyObject *filters_tuple = PyList_AsTuple(filters);
+    Py_DECREF(filters);
+
+    return filters_tuple;
 }
 
 static struct PyModuleDef warningsmodule = {

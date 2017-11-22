@@ -165,22 +165,26 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     _add_filter(action, None, category, None, lineno, append=append)
 
 def _add_filter(*item, append):
+    global filters
     # Remove possible duplicate filters, so new one will be placed
     # in correct place. If append=True and duplicate exists, do nothing.
+    filters_list = list(filters)
     if not append:
         try:
-            filters.remove(item)
+            filters_list.remove(item)
         except ValueError:
             pass
-        filters.insert(0, item)
+        filters_list.insert(0, item)
     else:
-        if item not in filters:
-            filters.append(item)
+        if item not in filters_list:
+            filters_list.append(item)
+    filters = tuple(filters_list)
     _filters_mutated()
 
 def resetwarnings():
     """Clear the list of warning filters, so that no filters are active."""
-    filters[:] = []
+    global filters
+    filters = ()
     _filters_mutated()
 
 class _OptionError(Exception):
@@ -462,7 +466,7 @@ class catch_warnings(object):
             raise RuntimeError("Cannot enter %r twice" % self)
         self._entered = True
         self._filters = self._module.filters
-        self._module.filters = self._filters[:]
+        self._module.filters = tuple(self._filters)
         self._module._filters_mutated()
         self._showwarning = self._module.showwarning
         self._showwarnmsg_impl = self._module._showwarnmsg_impl
@@ -499,8 +503,9 @@ try:
     defaultaction = _defaultaction
     onceregistry = _onceregistry
     _warnings_defaults = True
+    filters = tuple(filters)
 except ImportError:
-    filters = []
+    filters = ()
     defaultaction = "default"
     onceregistry = {}
 
