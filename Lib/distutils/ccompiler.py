@@ -118,6 +118,15 @@ class CCompiler:
         for key in self.executables.keys():
             self.set_executable(key, self.executables[key])
 
+
+        #adding these variables to bring it closer to how distutils.MSVCCompiler
+        #handles compiler arguments, to make it easier for users to customize
+        #their compile arguments, without breaking tests (some tests need to remove
+        #certain flags while keeping the others)
+
+        self.cc_args = []
+        self.cc_args_debug = []
+
     def set_executables(self, **kwargs):
         """Define the executables (and options for them) that will be run
         to perform the various stages of compilation.  The exact set of
@@ -355,8 +364,12 @@ class CCompiler:
         cc_args = pp_opts + ['-c']
         if debug:
             cc_args[:0] = ['-g']
+            cc_args += self.cc_args_debug
         if before:
             cc_args[:0] = before
+
+        cc_args += self.cc_args
+
         return cc_args
 
     def _fix_compile_args(self, output_dir, macros, include_dirs):
