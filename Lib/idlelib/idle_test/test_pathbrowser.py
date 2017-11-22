@@ -1,17 +1,20 @@
 """ Test idlelib.pathbrowser.
 """
 
-import unittest
-import os
-import sys
-import pyclbr
 
-import idlelib
+import os.path
+import pyclbr  # for _modules
+import sys  # for sys.path
+from tkinter import Tk
+
+from test.support import requires
+import unittest
+from idlelib.idle_test.mock_idle import Func
+
+import idlelib  # for __file__
+from idlelib import browser
 from idlelib import pathbrowser
 from idlelib.tree import TreeNode
-from test.support import requires
-from tkinter import Tk
-from idlelib.idle_test.mock_idle import Func
 
 
 class PathBrowserTest(unittest.TestCase):
@@ -26,6 +29,7 @@ class PathBrowserTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.pb.close()
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root, cls.pb
 
@@ -35,6 +39,7 @@ class PathBrowserTest(unittest.TestCase):
         eq(pb.master, self.root)
         eq(pyclbr._modules, {})
         self.assertIsInstance(pb.node, TreeNode)
+        self.assertIsNotNone(browser.file_open)
 
     def test_settitle(self):
         pb = self.pb
