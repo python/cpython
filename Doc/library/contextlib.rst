@@ -145,16 +145,16 @@ Functions and classes provided:
    otherwise does nothing. It is intended to be used as a stand-in for an
    optional context manager, for example::
 
-       def process_file(file_or_path):
-           if isinstance(file_or_path, str):
-               # If string, open file
-               cm = open(file_or_path)
-           else:
-               # Caller is responsible for closing file
-               cm = nullcontext(file_or_path)
+      def process_file(file_or_path):
+          if isinstance(file_or_path, str):
+              # If string, open file
+              cm = open(file_or_path)
+          else:
+              # Caller is responsible for closing file
+              cm = nullcontext(file_or_path)
 
-           with cm as file:
-               # Perform processing on the file
+          with cm as file:
+              # Perform processing on the file
 
    .. versionadded: 3.7
 
