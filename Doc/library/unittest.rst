@@ -246,7 +246,7 @@ Command-line options
    The command-line option ``--locals``.
 
 .. versionadded:: 3.7
-  The command-line option ``-k``.
+   The command-line option ``-k``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -1769,7 +1769,7 @@ Loading and running tests
       List of Unix shell-style wildcard test name patterns that test methods
       have to match to be included in test suites (see ``-v`` option).
 
-      If this attribute is not `None` (the default), all test methods to be
+      If this attribute is not ``None`` (the default), all test methods to be
       included in test suites must match one of the patterns in this list.
       Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
       so unlike patterns passed to the ``-v`` option, simple substring patterns
