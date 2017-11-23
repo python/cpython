@@ -231,7 +231,7 @@ Command-line options
 
    Patterns are matched against the fully qualified test method name as
    imported by the test loader.
-   
+
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
    ``bar_tests.SomeTest.test_foo``, but not `bar_tests.FooTest.test_something``.
 
