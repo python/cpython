@@ -1221,7 +1221,7 @@ init_filters(void)
                         create_filter(PyExc_Warning, &PyId_default));
     }
 
-    for (size_t x = 0; x < pos; x += 1) {
+    for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {
             Py_DECREF(filters);
             return NULL;
