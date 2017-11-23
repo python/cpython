@@ -3415,7 +3415,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
@@ -3762,15 +3762,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   AC_MSG_RESULT(yes)
 ],[
   AC_MSG_RESULT(no)
-])
-
-# Issue #28762: lockf() is available on Android API level 24, but the F_LOCK
-# macro is not defined in android-ndk-r13.
-AC_MSG_CHECKING(for lockf)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h> ]],[[lockf(0, F_LOCK, 0);]])],
-  [AC_DEFINE(HAVE_LOCKF, 1, Define to 1 if you have the 'lockf' function and the F_LOCK macro.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
