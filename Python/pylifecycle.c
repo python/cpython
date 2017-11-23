@@ -767,7 +767,9 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     }
 
     /* Initialize _warnings. */
-    _PyWarnings_Init();
+    if (_PyWarnings_InitWithConfig(&interp->core_config) == NULL) {
+        return _Py_INIT_ERR("can't initialize warnings");
+    }
 
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
@@ -880,7 +882,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return err;
     }
 
-    if (config->install_signal_handlers) {
+    if (interp->config.install_signal_handlers) {
         err = initsigs(); /* Signal handling stuff, including initintr() */
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -1468,7 +1470,6 @@ Py_GetProgramName(void)
 }
 
 static wchar_t *default_home = NULL;
-static wchar_t env_home[MAXPATHLEN+1];
 
 void
 Py_SetPythonHome(wchar_t *home)
@@ -1477,20 +1478,40 @@ Py_SetPythonHome(wchar_t *home)
 }
 
 wchar_t *
+_Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config)
+{
+    /* Use a static buffer to avoid heap memory allocation failure.
+       Py_GetPythonHome() doesn't allow to report error, and the caller
+       doesn't release memory. */
+    static wchar_t buffer[MAXPATHLEN+1];
+
+    if (default_home) {
+        return default_home;
+    }
+
+    if (config) {
+        return config->pythonhome;
+    }
+
+    char *home = Py_GETENV("PYTHONHOME");
+    if (!home) {
+        return NULL;
+    }
+
+    size_t size = Py_ARRAY_LENGTH(buffer);
+    size_t r = mbstowcs(buffer, home, size);
+    if (r == (size_t)-1 || r >= size) {
+        /* conversion failed or the static buffer is too small */
+        return NULL;
+    }
+
+    return buffer;
+}
+
+wchar_t *
 Py_GetPythonHome(void)
 {
-    wchar_t *home = default_home;
-    if (home == NULL && !Py_IgnoreEnvironmentFlag) {
-        char* chome = Py_GETENV("PYTHONHOME");
-        if (chome) {
-            size_t size = Py_ARRAY_LENGTH(env_home);
-            size_t r = mbstowcs(env_home, chome, size);
-            if (r != (size_t)-1 && r < size)
-                home = env_home;
-        }
-
-    }
-    return home;
+    return _Py_GetPythonHomeWithConfig(NULL);
 }
 
 /* Add the __main__ module */

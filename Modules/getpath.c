@@ -456,13 +456,13 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
 }
 
 static void
-calculate_path(_PyMainInterpreterConfig *config)
+calculate_path(const _PyMainInterpreterConfig *config)
 {
     extern wchar_t *Py_GetProgramName(void);
 
     static const wchar_t delimiter[2] = {DELIM, '\0'};
     static const wchar_t separator[2] = {SEP, '\0'};
-    wchar_t *home = Py_GetPythonHome();
+    wchar_t *home = _Py_GetPythonHomeWithConfig(config);
     char *_path = getenv("PATH");
     wchar_t *path_buffer = NULL;
     wchar_t *path = NULL;
@@ -858,7 +858,7 @@ Py_SetPath(const wchar_t *path)
 }
 
 wchar_t *
-_Py_GetPathWithConfig(_PyMainInterpreterConfig *config)
+_Py_GetPathWithConfig(const _PyMainInterpreterConfig *config)
 {
     if (!module_search_path) {
         calculate_path(config);

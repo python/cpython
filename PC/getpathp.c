@@ -624,12 +624,12 @@ error:
 
 
 static void
-calculate_path(_PyMainInterpreterConfig *config)
+calculate_path(const _PyMainInterpreterConfig *config)
 {
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t *buf;
     size_t bufsz;
-    wchar_t *pythonhome = Py_GetPythonHome();
+    wchar_t *pythonhome = _Py_GetPythonHomeWithConfig(config);
     wchar_t *envpath = NULL;
 
     int skiphome, skipdefault;
@@ -899,7 +899,7 @@ Py_SetPath(const wchar_t *path)
 }
 
 wchar_t *
-_Py_GetPathWithConfig(_PyMainInterpreterConfig *config)
+_Py_GetPathWithConfig(const _PyMainInterpreterConfig *config)
 {
     if (!module_search_path) {
         calculate_path(config);
