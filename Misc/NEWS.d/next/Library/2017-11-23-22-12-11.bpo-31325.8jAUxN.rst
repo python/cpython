@@ -1,0 +1,5 @@
+Fix wrong usage of :func:`collections.namedtuple` in
+the :meth:`RobotFileParser.parse() <urllib.robotparser.RobotFileParser.parse>`
+method.
+
+Initial patch by Robin Wellner.

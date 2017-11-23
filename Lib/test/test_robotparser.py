@@ -3,7 +3,6 @@ import os
 import threading
 import unittest
 import urllib.robotparser
-from collections import namedtuple
 from test import support
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -87,6 +86,10 @@ class BaseRequestRateTest(BaseRobotTest):
                         self.parser.crawl_delay(agent), self.crawl_delay
                     )
                 if self.request_rate:
+                    self.assertIsInstance(
+                        self.parser.request_rate(agent),
+                        urllib.robotparser.RequestRate
+                    )
                     self.assertEqual(
                         self.parser.request_rate(agent).requests,
                         self.request_rate.requests
@@ -108,7 +111,7 @@ Disallow: /a%2fb.html
 Disallow: /%7ejoe/index.html
     """
     agent = 'figtree'
-    request_rate = namedtuple('req_rate', 'requests seconds')(9, 30)
+    request_rate = urllib.robotparser.RequestRate(9, 30)
     crawl_delay = 3
     good = [('figtree', '/foo.html')]
     bad = ['/tmp', '/tmp.html', '/tmp/a.html', '/a%3cd.html', '/a%3Cd.html',
@@ -237,7 +240,7 @@ Crawl-delay: 1
 Request-rate: 3/15
 Disallow: /cyberworld/map/
     """
-    request_rate = namedtuple('req_rate', 'requests seconds')(3, 15)
+    request_rate = urllib.robotparser.RequestRate(3, 15)
     crawl_delay = 1
     good = ['/', '/test.html']
     bad = ['/cyberworld/map/index.html']
