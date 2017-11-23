@@ -5,6 +5,7 @@
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
 #include "internal/pystate.h"
+#include "internal/mem.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -74,7 +75,22 @@ extern void _Py_ReadyTypes(void);
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
 extern void _PyGILState_Fini(void);
 
-_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
+//_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
+_PyRuntimeState _PyRuntime = {
+    .initialized = 0,
+    .core_initialized = 0,
+    // Py_DecodeLocale() relies on PyMem_RawMalloc() and PyMem_RawFree()
+    // and may be needed before runtime initialization.  To allow for
+    // this we pre-initialize the raw allocator statically here.
+    .mem = {
+        .allocators = {
+            .raw = {
+                .malloc = _PyMem_RawMalloc,
+                .free = _PyMem_RawFree
+            }
+        }
+    }
+};
 
 _PyInitError
 _PyRuntime_Initialize(void)

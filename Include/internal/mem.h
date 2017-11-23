@@ -44,6 +44,8 @@ struct _pymem_runtime_state {
     size_t serialno;     /* incremented on each debug {m,re}alloc */
 };
 
+PyAPI_FUNC(void *) _PyMem_RawMalloc(void *ctx, size_t size);
+PyAPI_FUNC(void) _PyMem_RawFree(void *ctx, void *ptr);
 PyAPI_FUNC(void) _PyMem_Initialize(struct _pymem_runtime_state *);
 
 
