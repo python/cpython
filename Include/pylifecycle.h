@@ -7,23 +7,7 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(void) Py_SetProgramName(wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
-
-PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(wchar_t *) _Py_GetPythonHomeWithConfig(
-    const _PyMainInterpreterConfig *config);
-#endif
-
 #ifndef Py_LIMITED_API
-/* Only used by applications that embed the interpreter and need to
- * override the standard encoding determination mechanism
- */
-PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
-                                             const char *errors);
-
 typedef struct {
     const char *prefix;
     const char *msg;
@@ -46,8 +30,30 @@ typedef struct {
    Don't abort() the process on such error. */
 #define _Py_INIT_USER_ERR(MSG) \
     (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1}
+#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL)
+
+#endif
+
+
+PyAPI_FUNC(void) Py_SetProgramName(wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
+
+PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(_PyInitError) _Py_GetPythonHomeWithConfig(
+    const _PyMainInterpreterConfig *config,
+    wchar_t **home);
+#endif
+
+#ifndef Py_LIMITED_API
+/* Only used by applications that embed the interpreter and need to
+ * override the standard encoding determination mechanism
+ */
+PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
+                                             const char *errors);
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
