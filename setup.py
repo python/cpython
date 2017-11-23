@@ -273,7 +273,7 @@ class PyBuildExt(build_ext):
         # unfortunately, distutils doesn't let us provide separate C and C++
         # compilers
         if compiler is not None:
-            (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
+            (ccshared, cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
         self.compiler.set_executables(**args)
 
@@ -840,7 +840,7 @@ class PyBuildExt(build_ext):
                                ['/usr/kerberos/include'])
             if krb5_h:
                 ssl_incs += krb5_h
-        ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
+        ssl_libs = find_library_file(self.compiler, 'ssl', lib_dirs,
                                      ['/usr/local/ssl/lib',
                                       '/usr/contrib/ssl/lib/'
                                      ] )
@@ -1278,7 +1278,7 @@ class PyBuildExt(build_ext):
                         if dbm_setup_debug: print("building dbm using ndbm")
                         dbmext = Extension('_dbm', ['_dbmmodule.c'],
                                            define_macros=[
-                                               ('HAVE_NDBM_H',None),
+                                               ('HAVE_NDBM_H', None),
                                                ],
                                            libraries=ndbm_libs)
                         break
@@ -2246,7 +2246,7 @@ Topic :: Software Development
 def main():
     # turn off warnings when deprecated modules are imported
     import warnings
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     setup(# PyPI Metadata (PEP 301)
           name = "Python",
           version = sys.version.split()[0],
