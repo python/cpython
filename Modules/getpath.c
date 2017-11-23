@@ -456,7 +456,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
 }
 
 static void
-calculate_path(_PyCoreConfig *core_config)
+calculate_path(_PyMainInterpreterConfig *config)
 {
     extern wchar_t *Py_GetProgramName(void);
 
@@ -706,9 +706,9 @@ calculate_path(_PyCoreConfig *core_config)
     bufsz = 0;
 
     wchar_t *env_path = NULL;
-    if (core_config) {
-        if (core_config->module_search_path_env) {
-            bufsz += wcslen(core_config->module_search_path_env) + 1;
+    if (config) {
+        if (config->module_search_path_env) {
+            bufsz += wcslen(config->module_search_path_env) + 1;
         }
     }
     else {
@@ -752,9 +752,9 @@ calculate_path(_PyCoreConfig *core_config)
 
     /* Run-time value of $PYTHONPATH goes first */
     buf[0] = '\0';
-    if (core_config) {
-        if (core_config->module_search_path_env) {
-            wcscpy(buf, core_config->module_search_path_env);
+    if (config) {
+        if (config->module_search_path_env) {
+            wcscpy(buf, config->module_search_path_env);
             wcscat(buf, delimiter);
         }
     }
@@ -858,10 +858,10 @@ Py_SetPath(const wchar_t *path)
 }
 
 wchar_t *
-_Py_GetPathWithConfig(_PyCoreConfig *core_config)
+_Py_GetPathWithConfig(_PyMainInterpreterConfig *config)
 {
     if (!module_search_path) {
-        calculate_path(core_config);
+        calculate_path(config);
     }
     return module_search_path;
 }

@@ -624,7 +624,7 @@ error:
 
 
 static void
-calculate_path(_PyCoreConfig *core_config)
+calculate_path(_PyMainInterpreterConfig *config)
 {
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t *buf;
@@ -637,8 +637,8 @@ calculate_path(_PyCoreConfig *core_config)
     wchar_t *userpath = NULL;
     wchar_t zip_path[MAXPATHLEN+1];
 
-    if (core_config) {
-        envpath = core_config->module_search_path_env;
+    if (config) {
+        envpath = config->module_search_path_env;
     }
     else if (!Py_IgnoreEnvironmentFlag) {
         envpath = _wgetenv(L"PYTHONPATH");
@@ -899,10 +899,10 @@ Py_SetPath(const wchar_t *path)
 }
 
 wchar_t *
-_Py_GetPathWithConfig(_PyCoreConfig *core_config)
+_Py_GetPathWithConfig(_PyMainInterpreterConfig *config)
 {
     if (!module_search_path) {
-        calculate_path(core_config);
+        calculate_path(config);
     }
     return module_search_path;
 }

@@ -389,6 +389,7 @@ typedef struct {
     /* non-zero is stdin is a TTY or if -i option is used */
     int stdin_is_interactive;
     _PyCoreConfig core_config;
+    _PyMainInterpreterConfig config;
     _Py_CommandLineDetails cmdline;
     PyObject *main_importer_path;
     /* non-zero if filename, command (-c) or module (-m) is set
@@ -409,6 +410,7 @@ typedef struct {
     {.status = 0, \
      .cf = {.cf_flags = 0}, \
      .core_config = _PyCoreConfig_INIT, \
+     .config = _PyMainInterpreterConfig_INIT, \
      .main_importer_path = NULL, \
      .run_code = -1, \
      .program_name = NULL, \
@@ -442,7 +444,7 @@ pymain_free_impl(_PyMain *pymain)
     Py_CLEAR(pymain->main_importer_path);
     PyMem_RawFree(pymain->program_name);
 
-    PyMem_RawFree(pymain->core_config.module_search_path_env);
+    PyMem_RawFree(pymain->config.module_search_path_env);
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
@@ -957,20 +959,16 @@ pymain_get_program_name(_PyMain *pymain)
 static int
 pymain_init_main_interpreter(_PyMain *pymain)
 {
-    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
     _PyInitError err;
 
-    /* TODO: Moar config options! */
-    config.install_signal_handlers = 1;
-
     /* TODO: Print any exceptions raised by these operations */
-    err = _Py_ReadMainInterpreterConfig(&config);
+    err = _Py_ReadMainInterpreterConfig(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
     }
 
-    err = _Py_InitializeMainInterpreter(&config);
+    err = _Py_InitializeMainInterpreter(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
@@ -1387,7 +1385,7 @@ pymain_init_pythonpath(_PyMain *pymain)
         return -1;
     }
 
-    pymain->core_config.module_search_path_env = path2;
+    pymain->config.module_search_path_env = path2;
 #else
     char *path = pymain_get_env_var("PYTHONPATH");
     if (!path) {
@@ -1405,7 +1403,7 @@ pymain_init_pythonpath(_PyMain *pymain)
         }
         return -1;
     }
-    pymain->core_config.module_search_path_env = wpath;
+    pymain->config.module_search_path_env = wpath;
 #endif
     return 0;
 }
@@ -1574,6 +1572,8 @@ pymain_init(_PyMain *pymain)
     }
 
     pymain->core_config._disable_importlib = 0;
+    /* TODO: Moar config options! */
+    pymain->config.install_signal_handlers = 1;
 
     orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
     orig_argv = pymain->argv;
