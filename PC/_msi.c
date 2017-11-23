@@ -545,7 +545,7 @@ summary_getproperty(msiobj* si, PyObject *args)
     FILETIME fval;
     char sbuf[1000];
     char *sval = sbuf;
-    DWORD ssize = sizeof(sval);
+    DWORD ssize = sizeof(sbuf);
 
     if (!PyArg_ParseTuple(args, "i:GetProperty", &field))
         return NULL;
@@ -553,6 +553,7 @@ summary_getproperty(msiobj* si, PyObject *args)
     status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
         &fval, sval, &ssize);
     if (status == ERROR_MORE_DATA) {
+        ssize++;
         sval = malloc(ssize);
         status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
             &fval, sval, &ssize);
