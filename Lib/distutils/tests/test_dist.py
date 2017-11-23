@@ -195,6 +195,13 @@ class DistributionTestCase(support.LoggingSilencer,
         self.assertEqual(dist.metadata.platforms, ['one', 'two'])
         self.assertEqual(dist.metadata.keywords, ['one', 'two'])
 
+        attrs = {'keywords': 'foo bar',
+                 'platforms': 'foo bar'}
+        dist = Distribution(attrs=attrs)
+        dist.finalize_options()
+        self.assertEqual(dist.metadata.platforms, ['foo bar'])
+        self.assertEqual(dist.metadata.keywords, ['foo bar'])
+
     def test_get_command_packages(self):
         dist = Distribution()
         self.assertEqual(dist.command_packages, None)
@@ -338,8 +345,45 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         attrs = {'name': 'Boa', 'version': '3.0',
                  'classifiers': ['Programming Language :: Python :: 3']}
         dist = Distribution(attrs)
+        self.assertEqual(dist.get_classifiers(),
+                         ['Programming Language :: Python :: 3'])
         meta = self.format_metadata(dist)
         self.assertIn('Metadata-Version: 1.1', meta)
+
+    def test_classifier_invalid_type(self):
+        attrs = {'name': 'Boa', 'version': '3.0',
+                 'classifiers': ('Programming Language :: Python :: 3',)}
+        msg = "'classifiers' should be a 'list', not 'tuple'"
+        with self.assertRaises(TypeError, msg=msg):
+            Distribution(attrs)
+
+    def test_keywords(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'keywords': ['spam', 'eggs', 'life of brian']}
+        dist = Distribution(attrs)
+        self.assertEqual(dist.get_keywords(),
+                         ['spam', 'eggs', 'life of brian'])
+
+    def test_keywords_invalid_type(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'keywords': ('spam', 'eggs', 'life of brian')}
+        msg = "'keywords' should be a 'list', not 'tuple'"
+        with self.assertRaises(TypeError, msg=msg):
+            Distribution(attrs)
+
+    def test_platforms(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'platforms': ['GNU/Linux', 'Some Evil Platform']}
+        dist = Distribution(attrs)
+        self.assertEqual(dist.get_platforms(),
+                         ['GNU/Linux', 'Some Evil Platform'])
+
+    def test_platforms_invalid_types(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'platforms': ('GNU/Linux', 'Some Evil Platform')}
+        msg = "'platforms' should be a 'list', not 'tuple'"
+        with self.assertRaises(TypeError, msg=msg):
+            Distribution(attrs)
 
     def test_download_url(self):
         attrs = {'name': 'Boa', 'version': '3.0',

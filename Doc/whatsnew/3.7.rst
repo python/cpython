@@ -298,6 +298,12 @@ README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
 
+:class:`distutils.core.setup` now raises a :exc:`TypeError` if
+``classifiers``, ``keywords`` and ``platforms`` fields are not specified
+as a list.  However, to minimize backwards incompatibility concerns,
+``keywords`` and ``platforms`` fields still accept a comma separated string.
+(Contributed by Berker Peksag in :issue:`19610`.)
+
 http.client
 -----------
 

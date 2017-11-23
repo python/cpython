@@ -581,17 +581,19 @@ This information includes:
 |                      | description of the        |                 |        |
 |                      | package                   |                 |        |
 +----------------------+---------------------------+-----------------+--------+
-| ``long_description`` | longer description of the | long string     | \(5)   |
+| ``long_description`` | longer description of the | long string     | \(4)   |
 |                      | package                   |                 |        |
 +----------------------+---------------------------+-----------------+--------+
-| ``download_url``     | location where the        | URL             | \(4)   |
+| ``download_url``     | location where the        | URL             |        |
 |                      | package may be downloaded |                 |        |
 +----------------------+---------------------------+-----------------+--------+
-| ``classifiers``      | a list of classifiers     | list of strings | \(4)   |
+| ``classifiers``      | a list of classifiers     | list of strings | (6)(7) |
 +----------------------+---------------------------+-----------------+--------+
-| ``platforms``        | a list of platforms       | list of strings |        |
+| ``platforms``        | a list of platforms       | list of strings | (6)(8) |
 +----------------------+---------------------------+-----------------+--------+
-| ``license``          | license for the package   | short string    | \(6)   |
+| ``keywords``         | a list of keywords        | list of strings | (6)(8) |
++----------------------+---------------------------+-----------------+--------+
+| ``license``          | license for the package   | short string    | \(5)   |
 +----------------------+---------------------------+-----------------+--------+
 
 Notes:
@@ -607,21 +609,29 @@ Notes:
     provided, distutils lists it as the author in :file:`PKG-INFO`.
 
 (4)
-    These fields should not be used if your package is to be compatible with Python
-    versions prior to 2.2.3 or 2.3.  The list is available from the `PyPI website
-    <https://pypi.python.org/pypi>`_.
-
-(5)
     The ``long_description`` field is used by PyPI when you are
     :ref:`registering <package-register>` a package, to
     :ref:`build its home page <package-display>`.
 
-(6)
+(5)
     The ``license`` field is a text indicating the license covering the
     package where the license is not a selection from the "License" Trove
     classifiers. See the ``Classifier`` field. Notice that
     there's a ``licence`` distribution option which is deprecated but still
     acts as an alias for ``license``.
+
+(6)
+    This field must be a list.
+
+(7)
+    The valid classifiers are listed on
+    `PyPI <http://pypi.python.org/pypi?:action=list_classifiers>`_.
+
+(8)
+    To preserve backward compatibility, this field also accepts a string. If
+    you pass a comma-separated string ``'foo, bar'``, it will be converted to
+    ``['foo', 'bar']``, Otherwise, it will be converted to a list of one
+    string.
 
 'short string'
     A single line of text, not more than 200 characters.
@@ -650,7 +660,7 @@ information is sometimes used to indicate sub-releases.  These are
 1.0.1a2
     the second alpha release of the first patch version of 1.0
 
-``classifiers`` are specified in a Python list::
+``classifiers`` must be specified in a list::
 
     setup(...,
           classifiers=[
@@ -670,6 +680,11 @@ information is sometimes used to indicate sub-releases.  These are
               'Topic :: Software Development :: Bug Tracking',
               ],
           )
+
+.. versionchanged:: 3.7
+   :class:`~distutils.core.setup` now raises a :exc:`TypeError` if
+   ``classifiers``, ``keywords`` and ``platforms`` fields are not specified
+   as a list.
 
 .. _debug-setup-script:
 

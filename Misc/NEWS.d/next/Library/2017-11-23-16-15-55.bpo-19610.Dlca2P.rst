@@ -1,0 +1,5 @@
+``setup()`` now raises :exc:`TypeError` for invalid types.
+
+The ``distutils.dist.Distribution`` class now explicitly raises an exception
+when ``classifiers``, ``keywords`` and ``platforms`` fields are not
+specified as a list.
