@@ -36,6 +36,16 @@
 extern "C" {
 #endif
 
+#define SET_DECODE_ERROR(NAME, LEN) \
+    do { \
+        if ((LEN) == (size_t)-2) { \
+            pymain->err = _Py_INIT_ERR("failed to decode " #NAME); \
+        } \
+        else { \
+            pymain->err = _Py_INIT_NO_MEMORY(); \
+        } \
+    } while (0)
+
 /* For Py_GetArgcArgv(); set by main() */
 static wchar_t **orig_argv;
 static int orig_argc;
@@ -417,9 +427,6 @@ typedef struct {
      .env_warning_options = {0, NULL}}
 
 
-#define INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
-
-
 static void
 pymain_optlist_clear(_Py_OptList *list)
 {
@@ -510,14 +517,14 @@ pymain_wstrdup(_PyMain *pymain, wchar_t *str)
 {
     size_t len = wcslen(str) + 1;  /* +1 for NUL character */
     if (len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return NULL;
     }
 
     size_t size = len * sizeof(wchar_t);
     wchar_t *str2 = PyMem_RawMalloc(size);
     if (str2 == NULL) {
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return NULL;
     }
 
@@ -538,7 +545,7 @@ pymain_optlist_append(_PyMain *pymain, _Py_OptList *list, wchar_t *str)
     wchar_t **options2 = (wchar_t **)PyMem_RawRealloc(list->options, size);
     if (options2 == NULL) {
         PyMem_RawFree(str2);
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     options2[list->len] = str2;
@@ -571,7 +578,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
             size_t len = wcslen(_PyOS_optarg) + 1 + 1;
             wchar_t *command = PyMem_RawMalloc(sizeof(wchar_t) * len);
             if (command == NULL) {
-                pymain->err = INIT_NO_MEMORY();
+                pymain->err = _Py_INIT_NO_MEMORY();
                 return -1;
             }
             memcpy(command, _PyOS_optarg, len * sizeof(wchar_t));
@@ -717,7 +724,7 @@ pymain_add_xoptions(_PyMain *pymain)
     for (size_t i=0; i < options->len; i++) {
         wchar_t *option = options->options[i];
         if (_PySys_AddXOptionWithError(option) < 0) {
-            pymain->err = INIT_NO_MEMORY();
+            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
     }
@@ -748,11 +755,11 @@ pymain_add_warnings_options(_PyMain *pymain)
     PySys_ResetWarnOptions();
 
     if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     if (pymain_add_warnings_optlist(&pymain->cmdline.warning_options) < 0) {
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     return 0;
@@ -801,7 +808,7 @@ pymain_warnings_envvar(_PyMain *pymain)
            C89 wcstok */
         buf = (char *)PyMem_RawMalloc(strlen(p) + 1);
         if (buf == NULL) {
-            pymain->err = INIT_NO_MEMORY();
+            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
         strcpy(buf, p);
@@ -811,13 +818,7 @@ pymain_warnings_envvar(_PyMain *pymain)
             size_t len;
             wchar_t *warning = Py_DecodeLocale(p, &len);
             if (warning == NULL) {
-                if (len == (size_t)-2) {
-                    pymain->err = _Py_INIT_ERR("failed to decode "
-                                               "PYTHONWARNINGS");
-                }
-                else {
-                    pymain->err = INIT_NO_MEMORY();
-                }
+                SET_DECODE_ERROR("PYTHONWARNINGS environment variable", len);
                 return -1;
             }
             if (pymain_optlist_append(pymain, &pymain->env_warning_options,
@@ -902,7 +903,7 @@ pymain_get_program_name(_PyMain *pymain)
 
         buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
         if (buffer == NULL) {
-            pymain->err = INIT_NO_MEMORY();
+            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
 
@@ -919,15 +920,8 @@ pymain_get_program_name(_PyMain *pymain)
             size_t len;
             wchar_t* wbuf = Py_DecodeLocale(pyvenv_launcher, &len);
             if (wbuf == NULL) {
-                if (len == (size_t)-2) {
-                    pymain->err = _Py_INIT_ERR("failed to decode "
-                                               "__PYVENV_LAUNCHER__");
-                    return -1;
-                }
-                else {
-                    pymain->err = INIT_NO_MEMORY();
-                    return -1;
-                }
+                SET_DECODE_ERROR("__PYVENV_LAUNCHER__", len);
+                return -1;
             }
             pymain->program_name = wbuf;
         }
@@ -1403,7 +1397,7 @@ pymain_get_env_var_dup(_PyMain *pymain, wchar_t **dest,
             return -2;
         }
         else {
-            pymain->err = INIT_NO_MEMORY();
+            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
     }
@@ -1421,7 +1415,7 @@ pymain_init_pythonpath(_PyMain *pymain)
                                      L"PYTHONPATH", "PYTHONPATH");
     if (res < 0) {
         if (res == -2) {
-            pymain->err = _Py_INIT_ERR("failed to decode PYTHONPATH");
+            SET_DECODE_ERROR("PYTHONPATH", (size_t)-2);
         }
         return -1;
     }
@@ -1450,7 +1444,7 @@ pymain_init_pythonhome(_PyMain *pymain)
                                      L"PYTHONHOME", "PYTHONHOME");
     if (res < 0) {
         if (res == -2) {
-            pymain->err = _Py_INIT_ERR("failed to decode PYTHONHOME");
+            SET_DECODE_ERROR("PYTHONHOME", (size_t)-2);
         }
         return -1;
     }
