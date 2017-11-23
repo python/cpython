@@ -7,7 +7,6 @@ import importlib._bootstrap
 import importlib.util
 import sysconfig
 
-import distutils
 from distutils import log
 from distutils.errors import *
 from distutils.core import Extension, setup
@@ -72,10 +71,7 @@ def sysroot_paths(make_vars, subdirs):
 
     dirs = []
     for var_name in make_vars:
-        # When cross-compiling, the variables from the sysconfig module are
-        # those of the native python process. We need those of the current
-        # build instead and use distutils.sysconfig.
-        var = distutils.sysconfig.get_config_var(var_name)
+        var = sysconfig.get_config_var(var_name)
         if var is not None:
             m = re.search(r'--sysroot=([^"]\S*|"[^"]+")', var)
             if m is not None:
@@ -599,9 +595,7 @@ class PyBuildExt(build_ext):
         else:
             # Add the sysroot paths. 'sysroot' is a compiler option used to
             # set the logical path of the standard system headers and
-            # libraries. The 'CFLAGS', 'LDFLAGS' and 'CPPFLAGS' variables are
-            # the 'PY_CFLAGS', 'PY_LDFLAGS' and 'PY_CPPFLAGS' of the Makefile
-            # when they are obtained from distutils.sysconfig.
+            # libraries.
             lib_dirs = (self.compiler.library_dirs +
                         sysroot_paths(('LDFLAGS', 'CC'), system_lib_dirs))
             inc_dirs = (self.compiler.include_dirs +
