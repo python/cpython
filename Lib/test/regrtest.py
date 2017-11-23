@@ -1037,7 +1037,7 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         test_support.use_resources = use_resources
     try:
-        test_support.match_tests = match_tests
+        test_support.set_match_tests(match_tests)
         if failfast:
             test_support.failfast = True
         return runtest_inner(test, verbose, quiet, huntrleaks, pgo, testdir)
@@ -1580,12 +1580,12 @@ def _list_cases(suite):
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            if test_support._match_test(test):
+            if test_support.match_test(test):
                 print(test.id())
 
 def list_cases(testdir, selected, match_tests):
     test_support.verbose = False
-    test_support.match_tests = match_tests
+    test_support.set_match_tests(match_tests)
 
     save_modules = set(sys.modules)
     skipped = []
