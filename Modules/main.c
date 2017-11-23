@@ -400,7 +400,6 @@ typedef struct {
     _PyInitError err;
     /* PYTHONWARNINGS env var */
     _Py_OptList env_warning_options;
-    /* PYTHONPATH env var */
     int argc;
     wchar_t **argv;
 } _PyMain;
@@ -1368,43 +1367,94 @@ pymain_set_flags_from_env(_PyMain *pymain)
 
 
 static int
-pymain_init_pythonpath(_PyMain *pymain)
+pymain_get_env_var_dup(_PyMain *pymain, wchar_t **dest,
+                       wchar_t *wname, char *name)
 {
     if (Py_IgnoreEnvironmentFlag) {
+        *dest = NULL;
         return 0;
     }
 
 #ifdef MS_WINDOWS
-    wchar_t *path = _wgetenv(L"PYTHONPATH");
-    if (!path || path[0] == '\0') {
+    wchar_t *var = _wgetenv(wname);
+    if (!var || var[0] == '\0') {
+        *dest = NULL;
         return 0;
     }
 
-    wchar_t *path2 = pymain_wstrdup(pymain, path);
-    if (path2 == NULL) {
+    wchar_t *copy = pymain_wstrdup(pymain, var);
+    if (copy == NULL) {
         return -1;
     }
 
-    pymain->config.module_search_path_env = path2;
+    *dest = copy;
 #else
-    char *path = pymain_get_env_var("PYTHONPATH");
-    if (!path) {
+    char *var = getenv(name);
+    if (!var || var[0] == '\0') {
+        *dest = NULL;
         return 0;
     }
 
     size_t len;
-    wchar_t *wpath = Py_DecodeLocale(path, &len);
-    if (!wpath) {
+    wchar_t *wvar = Py_DecodeLocale(var, &len);
+    if (!wvar) {
         if (len == (size_t)-2) {
-            pymain->err = _Py_INIT_ERR("failed to decode PYTHONHOME");
+            /* don't set pymain->err */
+            return -2;
         }
         else {
             pymain->err = INIT_NO_MEMORY();
+            return -1;
+        }
+    }
+    *dest = wvar;
+#endif
+    return 0;
+}
+
+
+static int
+pymain_init_pythonpath(_PyMain *pymain)
+{
+    wchar_t *path;
+    int res = pymain_get_env_var_dup(pymain, &path,
+                                     L"PYTHONPATH", "PYTHONPATH");
+    if (res < 0) {
+        if (res == -2) {
+            pymain->err = _Py_INIT_ERR("failed to decode PYTHONPATH");
         }
         return -1;
     }
-    pymain->config.module_search_path_env = wpath;
-#endif
+    pymain->config.module_search_path_env = path;
+    return 0;
+}
+
+
+static int
+pymain_init_pythonhome(_PyMain *pymain)
+{
+    wchar_t *home;
+
+    home = Py_GetPythonHome();
+    if (home) {
+        /* Py_SetPythonHome() has been called before Py_Main(),
+           use its value */
+        pymain->config.pythonhome = pymain_wstrdup(pymain, home);
+        if (pymain->config.pythonhome == NULL) {
+            return -1;
+        }
+        return 0;
+    }
+
+    int res = pymain_get_env_var_dup(pymain, &home,
+                                     L"PYTHONHOME", "PYTHONHOME");
+    if (res < 0) {
+        if (res == -2) {
+            pymain->err = _Py_INIT_ERR("failed to decode PYTHONHOME");
+        }
+        return -1;
+    }
+    pymain->config.pythonhome = home;
     return 0;
 }
 
@@ -1431,6 +1481,9 @@ pymain_parse_envvars(_PyMain *pymain)
     }
     core_config->allocator = Py_GETENV("PYTHONMALLOC");
     if (pymain_init_pythonpath(pymain) < 0) {
+        return -1;
+    }
+    if (pymain_init_pythonhome(pymain) < 0) {
         return -1;
     }
 

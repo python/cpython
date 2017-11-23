@@ -7,6 +7,9 @@ extern "C" {
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
 #endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(PyObject*) _PyWarnings_InitWithConfig(const _PyCoreConfig *config);
+#endif
 
 PyAPI_FUNC(int) PyErr_WarnEx(
     PyObject *category,

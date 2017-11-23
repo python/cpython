@@ -12,6 +12,10 @@ PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 
 PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(wchar_t *) _Py_GetPythonHomeWithConfig(
+    const _PyMainInterpreterConfig *config);
+#endif
 
 #ifndef Py_LIMITED_API
 /* Only used by applications that embed the interpreter and need to
@@ -94,7 +98,8 @@ PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(wchar_t *) _Py_GetPathWithConfig(_PyMainInterpreterConfig *config);
+PyAPI_FUNC(wchar_t *) _Py_GetPathWithConfig(
+    const _PyMainInterpreterConfig *config);
 #endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
