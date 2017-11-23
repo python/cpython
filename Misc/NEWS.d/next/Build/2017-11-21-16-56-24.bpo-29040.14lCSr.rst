@@ -1,0 +1,2 @@
+Support building Android with Unified Headers. The first NDK release to
+support Unified Headers is android-ndk-r14.
