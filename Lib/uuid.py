@@ -525,7 +525,7 @@ def _netbios_getnode():
         if _is_universal(mac):
             return mac
         first_local_mac = first_local_mac or mac
-    return None
+    return first_local_mac or None
 
 
 _generate_time_safe = _UuidCreate = None
