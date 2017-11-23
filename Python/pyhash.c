@@ -196,7 +196,7 @@ _PyHash_Fini(void)
 #ifdef Py_HASH_STATS
     int i;
     Py_ssize_t total = 0;
-    char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
+    const char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
 
     fprintf(stderr, "len   calls    total\n");
     for (i = 1; i <= Py_HASH_STATS_MAX; i++) {

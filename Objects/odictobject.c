@@ -1625,7 +1625,7 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (len == -1)
         return -1;
     if (len > 1) {
-        char *msg = "expected at most 1 arguments, got %d";
+        const char *msg = "expected at most 1 arguments, got %d";
         PyErr_Format(PyExc_TypeError, msg, len);
         return -1;
     }
@@ -2337,21 +2337,18 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
     assert(args == NULL || PyTuple_Check(args));
     len = (args != NULL) ? PyTuple_GET_SIZE(args) : 0;
     if (len > 1) {
-        char *msg = "update() takes at most 1 positional argument (%d given)";
+        const char *msg = "update() takes at most 1 positional argument (%d given)";
         PyErr_Format(PyExc_TypeError, msg, len);
         return NULL;
     }
 
     if (len) {
+        PyObject *func;
         PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
         assert(other != NULL);
         Py_INCREF(other);
-        if PyDict_CheckExact(other) {
-            PyObject *items;
-            if (PyDict_CheckExact(other))
-                items = PyDict_Items(other);
-            else
-                items = _PyObject_CallMethodId(other, &PyId_items, NULL);
+        if (PyDict_CheckExact(other)) {
+            PyObject *items = PyDict_Items(other);
             Py_DECREF(other);
             if (items == NULL)
                 return NULL;
@@ -2359,10 +2356,14 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_DECREF(items);
             if (res == -1)
                 return NULL;
+            goto handle_kwargs;
         }
-        else if (_PyObject_HasAttrId(other, &PyId_keys)) {  /* never fails */
+
+        func = _PyObject_GetAttrId(other, &PyId_keys);
+        if (func != NULL) {
             PyObject *keys, *iterator, *key;
-            keys = _PyObject_CallMethodIdObjArgs(other, &PyId_keys, NULL);
+            keys = _PyObject_CallNoArg(func);
+            Py_DECREF(func);
             if (keys == NULL) {
                 Py_DECREF(other);
                 return NULL;
@@ -2388,29 +2389,45 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_DECREF(iterator);
             if (res != 0 || PyErr_Occurred())
                 return NULL;
+            goto handle_kwargs;
         }
-        else if (_PyObject_HasAttrId(other, &PyId_items)) {  /* never fails */
-            PyObject *items;
-            if (PyDict_CheckExact(other))
-                items = PyDict_Items(other);
-            else
-                items = _PyObject_CallMethodId(other, &PyId_items, NULL);
+        else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             Py_DECREF(other);
+            return NULL;
+        }
+        else {
+            PyErr_Clear();
+        }
+
+        func = _PyObject_GetAttrId(other, &PyId_items);
+        if (func != NULL) {
+            PyObject *items;
+            Py_DECREF(other);
+            items = _PyObject_CallNoArg(func);
+            Py_DECREF(func);
             if (items == NULL)
                 return NULL;
             res = mutablemapping_add_pairs(self, items);
             Py_DECREF(items);
             if (res == -1)
                 return NULL;
+            goto handle_kwargs;
+        }
+        else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            Py_DECREF(other);
+            return NULL;
         }
         else {
-            res = mutablemapping_add_pairs(self, other);
-            Py_DECREF(other);
-            if (res != 0)
-                return NULL;
+            PyErr_Clear();
         }
+
+        res = mutablemapping_add_pairs(self, other);
+        Py_DECREF(other);
+        if (res != 0)
+            return NULL;
     }
 
+  handle_kwargs:
     /* now handle kwargs */
     assert(kwargs == NULL || PyDict_Check(kwargs));
     if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {

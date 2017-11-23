@@ -361,6 +361,13 @@ class TestLoop(base_events.BaseEventLoop):
             handle._args, args)
 
     def _ensure_fd_no_transport(self, fd):
+        if not isinstance(fd, int):
+            try:
+                fd = int(fd.fileno())
+            except (AttributeError, TypeError, ValueError):
+                # This code matches selectors._fileobj_to_fd function.
+                raise ValueError("Invalid file object: "
+                                 "{!r}".format(fd)) from None
         try:
             transport = self._transports[fd]
         except KeyError:
@@ -501,8 +508,3 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
-
-
-def force_legacy_ssl_support():
-    return mock.patch('asyncio.sslproto._is_sslproto_available',
-                      return_value=False)

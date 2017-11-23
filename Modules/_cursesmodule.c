@@ -96,7 +96,7 @@
 
 /* Release Number */
 
-char *PyCursesVersion = "2.2";
+static const char PyCursesVersion[] = "2.2";
 
 /* Includes */
 
@@ -2562,7 +2562,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
     }
 
     if (!initialised_setupterm && setupterm(termstr,fd,&err) == ERR) {
-        char* s = "setupterm: unknown error";
+        const char* s = "setupterm: unknown error";
 
         if (err == 0) {
             s = "setupterm: could not find terminal";

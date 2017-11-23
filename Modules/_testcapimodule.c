@@ -2413,7 +2413,7 @@ test_with_docstring(PyObject *self)
 static PyObject *
 test_string_to_double(PyObject *self) {
     double result;
-    char *msg;
+    const char *msg;
 
 #define CHECK_STRING(STR, expected)                             \
     result = PyOS_string_to_double(STR, NULL, NULL);            \

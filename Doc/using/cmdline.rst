@@ -388,8 +388,6 @@ Miscellaneous options
    Skip the first line of the source, allowing use of non-Unix forms of
    ``#!cmd``.  This is intended for a DOS specific hack only.
 
-   .. note:: The line numbers in error messages will be off by one.
-
 
 .. cmdoption:: -X
 
@@ -413,6 +411,21 @@ Miscellaneous options
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+   * ``-X dev``: enable CPython's "developer mode", introducing additional
+     runtime checks which are too expensive to be enabled by default. It should
+     not be more verbose than the default if the code is correct: new warnings
+     are only emitted when an issue is detected. Effect of the developer mode:
+
+     * Warning filters: add a filter to display all warnings (``"default"``
+       action), except of :exc:`BytesWarning` which still depends on the
+       :option:`-b` option, and use ``"always"`` action for
+       :exc:`ResourceWarning` warnings. For example, display
+       :exc:`DeprecationWarning` warnings.
+     * Install debug hooks on memory allocators: see the
+       :c:func:`PyMem_SetupDebugHooks` C function.
+     * Enable the :mod:`faulthandler` module to dump the Python traceback
+       on a crash.
+     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -430,7 +443,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importtime`` and :envvar:`PYTHONPROFILEIMPORTTIME` options.
+      The ``-X importtime`` and ``-X dev`` options.
 
 
 Options you shouldn't use

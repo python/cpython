@@ -2480,35 +2480,35 @@ _dis_test = r"""
     0: (    MARK
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
-    5: L    LONG       1
-    9: a    APPEND
-   10: L    LONG       2
-   14: a    APPEND
-   15: (    MARK
-   16: L        LONG       3
-   20: L        LONG       4
-   24: t        TUPLE      (MARK at 15)
-   25: p    PUT        1
-   28: a    APPEND
-   29: (    MARK
-   30: d        DICT       (MARK at 29)
-   31: p    PUT        2
-   34: c    GLOBAL     '_codecs encode'
-   50: p    PUT        3
-   53: (    MARK
-   54: V        UNICODE    'abc'
-   59: p        PUT        4
-   62: V        UNICODE    'latin1'
-   70: p        PUT        5
-   73: t        TUPLE      (MARK at 53)
-   74: p    PUT        6
-   77: R    REDUCE
-   78: p    PUT        7
-   81: V    UNICODE    'def'
-   86: p    PUT        8
-   89: s    SETITEM
-   90: a    APPEND
-   91: .    STOP
+    5: I    INT        1
+    8: a    APPEND
+    9: I    INT        2
+   12: a    APPEND
+   13: (    MARK
+   14: I        INT        3
+   17: I        INT        4
+   20: t        TUPLE      (MARK at 13)
+   21: p    PUT        1
+   24: a    APPEND
+   25: (    MARK
+   26: d        DICT       (MARK at 25)
+   27: p    PUT        2
+   30: c    GLOBAL     '_codecs encode'
+   46: p    PUT        3
+   49: (    MARK
+   50: V        UNICODE    'abc'
+   55: p        PUT        4
+   58: V        UNICODE    'latin1'
+   66: p        PUT        5
+   69: t        TUPLE      (MARK at 49)
+   70: p    PUT        6
+   73: R    REDUCE
+   74: p    PUT        7
+   77: V    UNICODE    'def'
+   82: p    PUT        8
+   85: s    SETITEM
+   86: a    APPEND
+   87: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
@@ -2577,13 +2577,13 @@ highest protocol among opcodes = 0
    93: p    PUT        6
    96: V    UNICODE    'value'
   103: p    PUT        7
-  106: L    LONG       42
-  111: s    SETITEM
-  112: b    BUILD
-  113: a    APPEND
-  114: g    GET        5
-  117: a    APPEND
-  118: .    STOP
+  106: I    INT        42
+  110: s    SETITEM
+  111: b    BUILD
+  112: a    APPEND
+  113: g    GET        5
+  116: a    APPEND
+  117: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))

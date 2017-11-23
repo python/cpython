@@ -1582,13 +1582,23 @@ PySys_ResetWarnOptions(void)
     PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
 }
 
-void
-PySys_AddWarnOptionUnicode(PyObject *unicode)
+int
+_PySys_AddWarnOptionWithError(PyObject *option)
 {
     PyObject *warnoptions = get_warnoptions();
-    if (warnoptions == NULL)
-        return;
-    PyList_Append(warnoptions, unicode);
+    if (warnoptions == NULL) {
+        return -1;
+    }
+    if (PyList_Append(warnoptions, option)) {
+        return -1;
+    }
+    return 0;
+}
+
+void
+PySys_AddWarnOptionUnicode(PyObject *option)
+{
+    (void)_PySys_AddWarnOptionWithError(option);
 }
 
 void
@@ -1627,18 +1637,17 @@ get_xoptions(void)
     return xoptions;
 }
 
-void
-PySys_AddXOption(const wchar_t *s)
+int
+_PySys_AddXOptionWithError(const wchar_t *s)
 {
-    PyObject *opts;
     PyObject *name = NULL, *value = NULL;
-    const wchar_t *name_end;
 
-    opts = get_xoptions();
-    if (opts == NULL)
+    PyObject *opts = get_xoptions();
+    if (opts == NULL) {
         goto error;
+    }
 
-    name_end = wcschr(s, L'=');
+    const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
         value = Py_True;
@@ -1648,19 +1657,30 @@ PySys_AddXOption(const wchar_t *s)
         name = PyUnicode_FromWideChar(s, name_end - s);
         value = PyUnicode_FromWideChar(name_end + 1, -1);
     }
-    if (name == NULL || value == NULL)
+    if (name == NULL || value == NULL) {
         goto error;
-    PyDict_SetItem(opts, name, value);
+    }
+    if (PyDict_SetItem(opts, name, value) < 0) {
+        goto error;
+    }
     Py_DECREF(name);
     Py_DECREF(value);
-    return;
+    return 0;
 
 error:
     Py_XDECREF(name);
     Py_XDECREF(value);
-    /* No return value, therefore clear error state if possible */
-    if (_PyThreadState_UncheckedGet()) {
-        PyErr_Clear();
+    return -1;
+}
+
+void
+PySys_AddXOption(const wchar_t *s)
+{
+    if (_PySys_AddXOptionWithError(s) < 0) {
+        /* No return value, therefore clear error state if possible */
+        if (_PyThreadState_UncheckedGet()) {
+            PyErr_Clear();
+        }
     }
 }
 
@@ -1999,50 +2019,52 @@ static struct PyModuleDef sysmodule = {
 #define SET_SYS_FROM_STRING_BORROW(key, value)             \
     do {                                                   \
         PyObject *v = (value);                             \
-        if (v == NULL)                                     \
-            return NULL;                                   \
+        if (v == NULL) {                                   \
+            goto err_occurred;                             \
+        }                                                  \
         res = PyDict_SetItemString(sysdict, key, v);       \
         if (res < 0) {                                     \
-            return NULL;                                   \
+            goto err_occurred;                             \
         }                                                  \
     } while (0)
 #define SET_SYS_FROM_STRING(key, value)                    \
     do {                                                   \
         PyObject *v = (value);                             \
-        if (v == NULL)                                     \
-            return NULL;                                   \
+        if (v == NULL) {                                   \
+            goto err_occurred;                             \
+        }                                                  \
         res = PyDict_SetItemString(sysdict, key, v);       \
         Py_DECREF(v);                                      \
         if (res < 0) {                                     \
-            return NULL;                                   \
+            goto err_occurred;                             \
         }                                                  \
     } while (0)
 
-PyObject *
-_PySys_BeginInit(void)
+
+_PyInitError
+_PySys_BeginInit(PyObject **sysmod)
 {
     PyObject *m, *sysdict, *version_info;
     int res;
 
     m = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
-    if (m == NULL)
-        return NULL;
+    if (m == NULL) {
+        return _Py_INIT_ERR("failed to create a module object");
+    }
     sysdict = PyModule_GetDict(m);
 
     /* Check that stdin is not a directory
-    Using shell redirection, you can redirect stdin to a directory,
-    crashing the Python interpreter. Catch this common mistake here
-    and output a useful error message. Note that under MS Windows,
-    the shell already prevents that. */
-#if !defined(MS_WINDOWS)
+       Using shell redirection, you can redirect stdin to a directory,
+       crashing the Python interpreter. Catch this common mistake here
+       and output a useful error message. Note that under MS Windows,
+       the shell already prevents that. */
+#ifndef MS_WINDOWS
     {
         struct _Py_stat_struct sb;
         if (_Py_fstat_noraise(fileno(stdin), &sb) == 0 &&
             S_ISDIR(sb.st_mode)) {
-            /* There's nothing more we can do. */
-            /* Py_FatalError() will core dump, so just exit. */
-            PySys_WriteStderr("Python error: <stdin> is a directory, cannot continue\n");
-            exit(EXIT_FAILURE);
+            return _Py_INIT_USER_ERR("<stdin> is a directory, "
+                                     "cannot continue");
         }
     }
 #endif
@@ -2078,8 +2100,9 @@ _PySys_BeginInit(void)
                         PyLong_GetInfo());
     /* initialize hash_info */
     if (Hash_InfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&Hash_InfoType, &hash_info_desc) < 0)
-            return NULL;
+        if (PyStructSequence_InitType2(&Hash_InfoType, &hash_info_desc) < 0) {
+            goto type_init_failed;
+        }
     }
     SET_SYS_FROM_STRING("hash_info",
                         get_hash_info());
@@ -2109,8 +2132,9 @@ _PySys_BeginInit(void)
     /* version_info */
     if (VersionInfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&VersionInfoType,
-                                       &version_info_desc) < 0)
-            return NULL;
+                                       &version_info_desc) < 0) {
+            goto type_init_failed;
+        }
     }
     version_info = make_version_info();
     SET_SYS_FROM_STRING("version_info", version_info);
@@ -2126,8 +2150,9 @@ _PySys_BeginInit(void)
 
     /* flags */
     if (FlagsType.tp_name == 0) {
-        if (PyStructSequence_InitType2(&FlagsType, &flags_desc) < 0)
-            return NULL;
+        if (PyStructSequence_InitType2(&FlagsType, &flags_desc) < 0) {
+            goto type_init_failed;
+        }
     }
     /* Set flags to their default values */
     SET_SYS_FROM_STRING("flags", make_flags());
@@ -2136,14 +2161,17 @@ _PySys_BeginInit(void)
     /* getwindowsversion */
     if (WindowsVersionType.tp_name == 0)
         if (PyStructSequence_InitType2(&WindowsVersionType,
-                                       &windows_version_desc) < 0)
-            return NULL;
+                                       &windows_version_desc) < 0) {
+            goto type_init_failed;
+        }
     /* prevent user from creating new instances */
     WindowsVersionType.tp_init = NULL;
     WindowsVersionType.tp_new = NULL;
+    assert(!PyErr_Occurred());
     res = PyDict_DelItemString(WindowsVersionType.tp_dict, "__new__");
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Clear();
+    }
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
@@ -2161,13 +2189,22 @@ _PySys_BeginInit(void)
     if (AsyncGenHooksType.tp_name == NULL) {
         if (PyStructSequence_InitType2(
                 &AsyncGenHooksType, &asyncgen_hooks_desc) < 0) {
-            return NULL;
+            goto type_init_failed;
         }
     }
 
-    if (PyErr_Occurred())
-        return NULL;
-    return m;
+    if (PyErr_Occurred()) {
+        goto err_occurred;
+    }
+
+    *sysmod = m;
+    return _Py_INIT_OK();
+
+type_init_failed:
+    return _Py_INIT_ERR("failed to initialize a type");
+
+err_occurred:
+    return _Py_INIT_ERR("can't initialize sys module");
 }
 
 #undef SET_SYS_FROM_STRING
