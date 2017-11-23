@@ -843,7 +843,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     /* GetPath may initialize state that _PySys_EndInit locks
        in, and so has to be called first. */
     /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
-    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->core_config);
+    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->config);
 
     if (interp->core_config._disable_importlib) {
         /* Special mode for freeze_importlib: run with no import system
@@ -1301,7 +1301,7 @@ new_interpreter(PyThreadState **tstate_p)
 
     /* XXX The following is lax in error checking */
 
-    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->core_config);
+    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->config);
 
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
