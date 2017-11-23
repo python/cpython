@@ -1477,8 +1477,9 @@ Py_SetPythonHome(wchar_t *home)
     default_home = home;
 }
 
-wchar_t *
-_Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config)
+
+_PyInitError
+_Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config, wchar_t **homep)
 {
     /* Use a static buffer to avoid heap memory allocation failure.
        Py_GetPythonHome() doesn't allow to report error, and the caller
@@ -1486,32 +1487,40 @@ _Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config)
     static wchar_t buffer[MAXPATHLEN+1];
 
     if (default_home) {
-        return default_home;
+        *homep = default_home;
+        return _Py_INIT_OK();
     }
 
     if (config) {
-        return config->pythonhome;
+        *homep = config->pythonhome;
+        return _Py_INIT_OK();
     }
 
     char *home = Py_GETENV("PYTHONHOME");
     if (!home) {
-        return NULL;
+        *homep = NULL;
+        return _Py_INIT_OK();
     }
 
     size_t size = Py_ARRAY_LENGTH(buffer);
     size_t r = mbstowcs(buffer, home, size);
     if (r == (size_t)-1 || r >= size) {
         /* conversion failed or the static buffer is too small */
-        return NULL;
+        *homep = NULL;
+        return _Py_INIT_ERR("failed to decode PYTHONHOME environment variable");
     }
 
-    return buffer;
+    *homep = buffer;
+    return _Py_INIT_OK();
 }
 
 wchar_t *
 Py_GetPythonHome(void)
 {
-    return _Py_GetPythonHomeWithConfig(NULL);
+    wchar_t *home;
+    /* Ignore error */
+    (void)_Py_GetPythonHomeWithConfig(NULL, &home);
+    return home;
 }
 
 /* Add the __main__ module */
