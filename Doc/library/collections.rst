@@ -618,6 +618,25 @@ added elements by appending to the right and popping to the left::
             d.append(elem)
             yield s / n
 
+A `round-robin scheduler
+<https://en.wikipedia.org/wiki/Round-robin_scheduling>`_ can be implemented with
+input iterators stored in a :class:`deque`.  Values are yielded from the active
+iterator in position zero.  If that iterator is exhausted, it can be removed
+with :meth:`~deque.popleft`; otherwise, it can be cycled back to the end with
+the :meth:`~deque.rotate` method::
+
+    def roundrobin(*iterables):
+        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+        iterators = deque(map(iter, iterables))
+        while iterators:
+            try:
+                while True:
+                    yield next(iterators[0])
+                    iterators.rotate(-1)
+            except StopIteration:
+                # Remove an exhausted iterator.
+                iterators.popleft()
+
 The :meth:`rotate` method provides a way to implement :class:`deque` slicing and
 deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
 the :meth:`rotate` method to position elements to be popped::
