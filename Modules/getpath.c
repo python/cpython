@@ -456,7 +456,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
 }
 
 static void
-calculate_path(_PyMainInterpreterConfig *config)
+calculate_path(const _PyMainInterpreterConfig *config)
 {
     extern wchar_t *Py_GetProgramName(void);
 
@@ -858,7 +858,7 @@ Py_SetPath(const wchar_t *path)
 }
 
 wchar_t *
-_Py_GetPathWithConfig(_PyMainInterpreterConfig *config)
+_Py_GetPathWithConfig(const _PyMainInterpreterConfig *config)
 {
     if (!module_search_path) {
         calculate_path(config);

@@ -767,7 +767,9 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     }
 
     /* Initialize _warnings. */
-    _PyWarnings_Init();
+    if (_PyWarnings_InitWithConfig(&interp->core_config) == NULL) {
+        return _Py_INIT_ERR("can't initialize warnings");
+    }
 
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
@@ -880,7 +882,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return err;
     }
 
-    if (config->install_signal_handlers) {
+    if (interp->config.install_signal_handlers) {
         err = initsigs(); /* Signal handling stuff, including initintr() */
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -1476,7 +1478,7 @@ Py_SetPythonHome(wchar_t *home)
 }
 
 wchar_t *
-_Py_GetPythonHomeWithConfig(_PyMainInterpreterConfig *config)
+_Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config)
 {
     /* Use a static buffer to avoid heap memory allocation failure.
        Py_GetPythonHome() doesn't allow to report error, and the caller
