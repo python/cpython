@@ -639,13 +639,13 @@ def _windll_getnode():
 
 def _random_getnode():
     """Get a random node ID."""
-    # RFC 4122, $4.1.6. says "For systems with no IEEE address, a randomly or
+    # RFC 4122, $4.1.6 says "For systems with no IEEE address, a randomly or
     # pseudo-randomly generated value may be used; see Section 4.5.  The
     # multicast bit must be set in such addresses, in order that they will
     # never conflict with addresses obtained from network cards."
     #
     # The "multicast bit" of a MAC address is defined to be "the least
-    # significant bit of the first octet".  This worlds out to be the 41st bit
+    # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
     # See https://en.wikipedia.org/wiki/MAC_address#Unicast_vs._multicast
