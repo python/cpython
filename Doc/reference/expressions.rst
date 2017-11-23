@@ -1741,7 +1741,7 @@ precedence and have a left-to-right chaining feature as described in the
 .. [#] The Unicode standard distinguishes between :dfn:`code points`
    (e.g. U+0041) and :dfn:`abstract characters` (e.g. "LATIN CAPITAL LETTER A").
    While most abstract characters in Unicode are only represented using one
-   code point, there is a number of abstract characters that can in addition be
+   code point, there are a number of abstract characters that can in addition be
    represented using a sequence of more than one code point.  For example, the
    abstract character "LATIN CAPITAL LETTER C WITH CEDILLA" can be represented
    as a single :dfn:`precomposed character` at code position U+00C7, or as a
