@@ -362,63 +362,63 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
    bytes long.
 */
 static int
-search_for_prefix(PyCalculatePath *calculate, wchar_t *prefix)
+search_for_prefix(PyCalculatePath *calculate, PyPathConfig *config)
 {
     size_t n;
     wchar_t *vpath;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (calculate->home) {
-        wcsncpy(prefix, calculate->home, MAXPATHLEN);
-        prefix[MAXPATHLEN] = L'\0';
-        wchar_t *delim = wcschr(prefix, DELIM);
+        wcsncpy(config->prefix, calculate->home, MAXPATHLEN);
+        config->prefix[MAXPATHLEN] = L'\0';
+        wchar_t *delim = wcschr(config->prefix, DELIM);
         if (delim) {
             *delim = L'\0';
         }
-        joinpath(prefix, calculate->lib_python);
-        joinpath(prefix, LANDMARK);
+        joinpath(config->prefix, calculate->lib_python);
+        joinpath(config->prefix, LANDMARK);
         return 1;
     }
 
     /* Check to see if argv[0] is in the build directory */
-    wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
-    prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, L"Modules/Setup");
-    if (isfile(prefix)) {
+    wcsncpy(config->prefix, calculate->argv0_path, MAXPATHLEN);
+    config->prefix[MAXPATHLEN] = L'\0';
+    joinpath(config->prefix, L"Modules/Setup");
+    if (isfile(config->prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = Py_DecodeLocale(VPATH, NULL);
         if (vpath != NULL) {
-            wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
-            prefix[MAXPATHLEN] = L'\0';
-            joinpath(prefix, vpath);
+            wcsncpy(config->prefix, calculate->argv0_path, MAXPATHLEN);
+            config->prefix[MAXPATHLEN] = L'\0';
+            joinpath(config->prefix, vpath);
             PyMem_RawFree(vpath);
-            joinpath(prefix, L"Lib");
-            joinpath(prefix, LANDMARK);
-            if (ismodule(prefix)) {
+            joinpath(config->prefix, L"Lib");
+            joinpath(config->prefix, LANDMARK);
+            if (ismodule(config->prefix)) {
                 return -1;
             }
         }
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(prefix, calculate->argv0_path, MAXPATHLEN+1);
+    copy_absolute(config->prefix, calculate->argv0_path, MAXPATHLEN+1);
     do {
-        n = wcslen(prefix);
-        joinpath(prefix, calculate->lib_python);
-        joinpath(prefix, LANDMARK);
-        if (ismodule(prefix)) {
+        n = wcslen(config->prefix);
+        joinpath(config->prefix, calculate->lib_python);
+        joinpath(config->prefix, LANDMARK);
+        if (ismodule(config->prefix)) {
             return 1;
         }
-        prefix[n] = L'\0';
-        reduce(prefix);
-    } while (prefix[0]);
+        config->prefix[n] = L'\0';
+        reduce(config->prefix);
+    } while (config->prefix[0]);
 
     /* Look at configure's PREFIX */
-    wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
-    prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, calculate->lib_python);
-    joinpath(prefix, LANDMARK);
-    if (ismodule(prefix)) {
+    wcsncpy(config->prefix, calculate->prefix, MAXPATHLEN);
+    config->prefix[MAXPATHLEN] = L'\0';
+    joinpath(config->prefix, calculate->lib_python);
+    joinpath(config->prefix, LANDMARK);
+    if (ismodule(config->prefix)) {
         return 1;
     }
 
@@ -428,25 +428,25 @@ search_for_prefix(PyCalculatePath *calculate, wchar_t *prefix)
 
 
 static void
-calculate_prefix(PyCalculatePath *calculate, wchar_t *prefix)
+calculate_prefix(PyCalculatePath *calculate, PyPathConfig *config)
 {
-    calculate->prefix_found = search_for_prefix(calculate, prefix);
+    calculate->prefix_found = search_for_prefix(calculate, config);
     if (!calculate->prefix_found) {
         if (!Py_FrozenFlag) {
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
         }
-        wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
-        joinpath(prefix, calculate->lib_python);
+        wcsncpy(config->prefix, calculate->prefix, MAXPATHLEN);
+        joinpath(config->prefix, calculate->lib_python);
     }
     else {
-        reduce(prefix);
+        reduce(config->prefix);
     }
 }
 
 
 static void
-calculate_reduce_prefix(PyCalculatePath *calculate, wchar_t *prefix)
+calculate_reduce_prefix(PyCalculatePath *calculate, PyPathConfig *config)
 {
     /* Reduce prefix and exec_prefix to their essence,
      * e.g. /usr/local/lib/python1.5 is reduced to /usr/local.
@@ -454,16 +454,16 @@ calculate_reduce_prefix(PyCalculatePath *calculate, wchar_t *prefix)
      * return the compiled-in defaults instead.
      */
     if (calculate->prefix_found > 0) {
-        reduce(prefix);
-        reduce(prefix);
+        reduce(config->prefix);
+        reduce(config->prefix);
         /* The prefix is the root directory, but reduce() chopped
          * off the "/". */
-        if (!prefix[0]) {
-            wcscpy(prefix, separator);
+        if (!config->prefix[0]) {
+            wcscpy(config->prefix, separator);
         }
     }
     else {
-        wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
+        wcsncpy(config->prefix, calculate->prefix, MAXPATHLEN);
     }
 }
 
@@ -472,7 +472,7 @@ calculate_reduce_prefix(PyCalculatePath *calculate, wchar_t *prefix)
    MAXPATHLEN bytes long.
 */
 static int
-search_for_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
+search_for_exec_prefix(PyCalculatePath *calculate, PyPathConfig *config)
 {
     size_t n;
 
@@ -480,25 +480,25 @@ search_for_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
     if (calculate->home) {
         wchar_t *delim = wcschr(calculate->home, DELIM);
         if (delim) {
-            wcsncpy(exec_prefix, delim+1, MAXPATHLEN);
+            wcsncpy(config->exec_prefix, delim+1, MAXPATHLEN);
         }
         else {
-            wcsncpy(exec_prefix, calculate->home, MAXPATHLEN);
+            wcsncpy(config->exec_prefix, calculate->home, MAXPATHLEN);
         }
-        exec_prefix[MAXPATHLEN] = L'\0';
-        joinpath(exec_prefix, calculate->lib_python);
-        joinpath(exec_prefix, L"lib-dynload");
+        config->exec_prefix[MAXPATHLEN] = L'\0';
+        joinpath(config->exec_prefix, calculate->lib_python);
+        joinpath(config->exec_prefix, L"lib-dynload");
         return 1;
     }
 
     /* Check to see if argv[0] is in the build directory. "pybuilddir.txt"
        is written by setup.py and contains the relative path to the location
        of shared library modules. */
-    wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
-    exec_prefix[MAXPATHLEN] = L'\0';
-    joinpath(exec_prefix, L"pybuilddir.txt");
-    if (isfile(exec_prefix)) {
-        FILE *f = _Py_wfopen(exec_prefix, L"rb");
+    wcsncpy(config->exec_prefix, calculate->argv0_path, MAXPATHLEN);
+    config->exec_prefix[MAXPATHLEN] = L'\0';
+    joinpath(config->exec_prefix, L"pybuilddir.txt");
+    if (isfile(config->exec_prefix)) {
+        FILE *f = _Py_wfopen(config->exec_prefix, L"rb");
         if (f == NULL) {
             errno = 0;
         }
@@ -517,9 +517,9 @@ search_for_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
                 Py_DECREF(decoded);
                 if (k >= 0) {
                     rel_builddir_path[k] = L'\0';
-                    wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
-                    exec_prefix[MAXPATHLEN] = L'\0';
-                    joinpath(exec_prefix, rel_builddir_path);
+                    wcsncpy(config->exec_prefix, calculate->argv0_path, MAXPATHLEN);
+                    config->exec_prefix[MAXPATHLEN] = L'\0';
+                    joinpath(config->exec_prefix, rel_builddir_path);
                     return -1;
                 }
             }
@@ -527,24 +527,24 @@ search_for_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
+    copy_absolute(config->exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
     do {
-        n = wcslen(exec_prefix);
-        joinpath(exec_prefix, calculate->lib_python);
-        joinpath(exec_prefix, L"lib-dynload");
-        if (isdir(exec_prefix)) {
+        n = wcslen(config->exec_prefix);
+        joinpath(config->exec_prefix, calculate->lib_python);
+        joinpath(config->exec_prefix, L"lib-dynload");
+        if (isdir(config->exec_prefix)) {
             return 1;
         }
-        exec_prefix[n] = L'\0';
-        reduce(exec_prefix);
-    } while (exec_prefix[0]);
+        config->exec_prefix[n] = L'\0';
+        reduce(config->exec_prefix);
+    } while (config->exec_prefix[0]);
 
     /* Look at configure's EXEC_PREFIX */
-    wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
-    exec_prefix[MAXPATHLEN] = L'\0';
-    joinpath(exec_prefix, calculate->lib_python);
-    joinpath(exec_prefix, L"lib-dynload");
-    if (isdir(exec_prefix)) {
+    wcsncpy(config->exec_prefix, calculate->exec_prefix, MAXPATHLEN);
+    config->exec_prefix[MAXPATHLEN] = L'\0';
+    joinpath(config->exec_prefix, calculate->lib_python);
+    joinpath(config->exec_prefix, L"lib-dynload");
+    if (isdir(config->exec_prefix)) {
         return 1;
     }
 
@@ -554,40 +554,40 @@ search_for_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
 
 
 static void
-calculate_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
+calculate_exec_prefix(PyCalculatePath *calculate, PyPathConfig *config)
 {
-    calculate->exec_prefix_found = search_for_exec_prefix(calculate, exec_prefix);
+    calculate->exec_prefix_found = search_for_exec_prefix(calculate, config);
     if (!calculate->exec_prefix_found) {
         if (!Py_FrozenFlag) {
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
-        wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
-        joinpath(exec_prefix, L"lib/lib-dynload");
+        wcsncpy(config->exec_prefix, calculate->exec_prefix, MAXPATHLEN);
+        joinpath(config->exec_prefix, L"lib/lib-dynload");
     }
     /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
 }
 
 
 static void
-calculate_reduce_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
+calculate_reduce_exec_prefix(PyCalculatePath *calculate, PyPathConfig *config)
 {
     if (calculate->exec_prefix_found > 0) {
-        reduce(exec_prefix);
-        reduce(exec_prefix);
-        reduce(exec_prefix);
-        if (!exec_prefix[0]) {
-            wcscpy(exec_prefix, separator);
+        reduce(config->exec_prefix);
+        reduce(config->exec_prefix);
+        reduce(config->exec_prefix);
+        if (!config->exec_prefix[0]) {
+            wcscpy(config->exec_prefix, separator);
         }
     }
     else {
-        wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
+        wcsncpy(config->exec_prefix, calculate->exec_prefix, MAXPATHLEN);
     }
 }
 
 
 static void
-calculate_progpath(PyCalculatePath *calculate, wchar_t *progpath)
+calculate_progpath(PyCalculatePath *calculate, PyPathConfig *config)
 {
     /* If there is no slash in the argv0 path, then we have to
      * assume python is on the user's $PATH, since there's no
@@ -595,7 +595,7 @@ calculate_progpath(PyCalculatePath *calculate, wchar_t *progpath)
      * $PATH isn't exported, you lose.
      */
     if (wcschr(calculate->prog, SEP)) {
-        wcsncpy(progpath, calculate->prog, MAXPATHLEN);
+        wcsncpy(config->progpath, calculate->prog, MAXPATHLEN);
     }
 
 #ifdef __APPLE__
@@ -617,10 +617,10 @@ calculate_progpath(PyCalculatePath *calculate, wchar_t *progpath)
       * absolutize() should help us out below
       */
     else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) && execpath[0] == SEP) {
-        size_t r = mbstowcs(progpath, execpath, MAXPATHLEN+1);
+        size_t r = mbstowcs(config->progpath, execpath, MAXPATHLEN+1);
         if (r == (size_t)-1 || r > MAXPATHLEN) {
             /* Could not convert execpath, or it's too long. */
-            progpath[0] = '\0';
+            config->progpath[0] = '\0';
         }
     }
 #endif /* __APPLE__ */
@@ -634,38 +634,38 @@ calculate_progpath(PyCalculatePath *calculate, wchar_t *progpath)
                 if (len > MAXPATHLEN) {
                     len = MAXPATHLEN;
                 }
-                wcsncpy(progpath, path, len);
-                *(progpath + len) = '\0';
+                wcsncpy(config->progpath, path, len);
+                *(config->progpath + len) = '\0';
             }
             else {
-                wcsncpy(progpath, path, MAXPATHLEN);
+                wcsncpy(config->progpath, path, MAXPATHLEN);
             }
 
-            joinpath(progpath, calculate->prog);
-            if (isxfile(progpath)) {
+            joinpath(config->progpath, calculate->prog);
+            if (isxfile(config->progpath)) {
                 break;
             }
 
             if (!delim) {
-                progpath[0] = L'\0';
+                config->progpath[0] = L'\0';
                 break;
             }
             path = delim + 1;
         }
     }
     else {
-        progpath[0] = '\0';
+        config->progpath[0] = '\0';
     }
-    if (progpath[0] != SEP && progpath[0] != '\0') {
-        absolutize(progpath);
+    if (config->progpath[0] != SEP && config->progpath[0] != '\0') {
+        absolutize(config->progpath);
     }
 }
 
 
 static void
-calculate_argv0_path(PyCalculatePath *calculate, wchar_t *progpath)
+calculate_argv0_path(PyCalculatePath *calculate, PyPathConfig *config)
 {
-    wcsncpy(calculate->argv0_path, progpath, MAXPATHLEN);
+    wcsncpy(calculate->argv0_path, config->progpath, MAXPATHLEN);
     calculate->argv0_path[MAXPATHLEN] = '\0';
 
 #ifdef WITH_NEXT_FRAMEWORK
@@ -700,7 +700,7 @@ calculate_argv0_path(PyCalculatePath *calculate, wchar_t *progpath)
         if (!ismodule(calculate->argv0_path)) {
             /* We are in the build directory so use the name of the
                executable - we know that the absolute path is passed */
-            wcsncpy(calculate->argv0_path, progpath, MAXPATHLEN);
+            wcsncpy(calculate->argv0_path, config->progpath, MAXPATHLEN);
         }
         else {
             /* Use the location of the library as the progpath */
@@ -712,7 +712,7 @@ calculate_argv0_path(PyCalculatePath *calculate, wchar_t *progpath)
 
 #if HAVE_READLINK
     wchar_t tmpbuffer[MAXPATHLEN+1];
-    int linklen = _Py_wreadlink(progpath, tmpbuffer, MAXPATHLEN);
+    int linklen = _Py_wreadlink(config->progpath, tmpbuffer, MAXPATHLEN);
     while (linklen != -1) {
         if (tmpbuffer[0] == SEP) {
             /* tmpbuffer should never be longer than MAXPATHLEN,
@@ -775,9 +775,9 @@ calculate_read_pyenv(PyCalculatePath *calculate)
 
 
 static void
-calculate_zip_path(PyCalculatePath *calculate, wchar_t *prefix)
+calculate_zip_path(PyCalculatePath *calculate, PyPathConfig *config)
 {
-    wcsncpy(calculate->zip_path, prefix, MAXPATHLEN);
+    wcsncpy(calculate->zip_path, config->prefix, MAXPATHLEN);
     calculate->zip_path[MAXPATHLEN] = L'\0';
 
     if (calculate->prefix_found > 0) {
@@ -966,12 +966,12 @@ calculate_free(PyCalculatePath *calculate)
 static void
 calculate_path_impl(PyCalculatePath *calculate, PyPathConfig *config)
 {
-    calculate_progpath(calculate, config->progpath);
-    calculate_argv0_path(calculate, config->progpath);
+    calculate_progpath(calculate, config);
+    calculate_argv0_path(calculate, config);
     calculate_read_pyenv(calculate);
-    calculate_prefix(calculate, config->prefix);
-    calculate_zip_path(calculate, config->prefix);
-    calculate_exec_prefix(calculate, config->exec_prefix);
+    calculate_prefix(calculate, config);
+    calculate_zip_path(calculate, config);
+    calculate_exec_prefix(calculate, config);
 
     if ((!calculate->prefix_found || !calculate->exec_prefix_found) && !Py_FrozenFlag) {
         fprintf(stderr,
@@ -979,8 +979,8 @@ calculate_path_impl(PyCalculatePath *calculate, PyPathConfig *config)
     }
 
     config->module_search_path = calculate_module_search_path(calculate, config);
-    calculate_reduce_prefix(calculate, config->prefix);
-    calculate_reduce_exec_prefix(calculate, config->exec_prefix);
+    calculate_reduce_prefix(calculate, config);
+    calculate_reduce_exec_prefix(calculate, config);
 }
 
 
