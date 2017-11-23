@@ -31,7 +31,6 @@ class MsiDatabaseTestCase(unittest.TestCase):
                 break
             properties.append(record.GetString(1))
         view.Close()
-        db.Close()
         self.assertEqual(
             properties,
             [
