@@ -797,7 +797,7 @@ calculate_zip_path(PyCalculatePath *calculate, PyPathConfig *config)
 }
 
 
-wchar_t *
+static wchar_t *
 calculate_module_search_path(PyCalculatePath *calculate, PyPathConfig *config)
 {
     /* Calculate size of return buffer */
