@@ -589,6 +589,15 @@ calculate_reduce_exec_prefix(PyCalculatePath *calculate, PyPathConfig *config)
 static void
 calculate_progpath(PyCalculatePath *calculate, PyPathConfig *config)
 {
+#ifdef __APPLE__
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
+    uint32_t nsexeclength = MAXPATHLEN;
+#else
+    unsigned long nsexeclength = MAXPATHLEN;
+#endif
+    char execpath[MAXPATHLEN+1];
+#endif
+
     /* If there is no slash in the argv0 path, then we have to
      * assume python is on the user's $PATH, since there's no
      * other way to find a directory to start the search from.  If
@@ -597,15 +606,7 @@ calculate_progpath(PyCalculatePath *calculate, PyPathConfig *config)
     if (wcschr(calculate->prog, SEP)) {
         wcsncpy(config->progpath, calculate->prog, MAXPATHLEN);
     }
-
 #ifdef __APPLE__
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
-    uint32_t nsexeclength = MAXPATHLEN;
-#else
-    unsigned long nsexeclength = MAXPATHLEN;
-#endif
-    char execpath[MAXPATHLEN+1];
-
      /* On Mac OS X, if a script uses an interpreter of the form
       * "#!/opt/python2.3/bin/python", the kernel only passes "python"
       * as argv[0], which falls through to the $PATH search below.
