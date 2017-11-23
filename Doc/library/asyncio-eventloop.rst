@@ -391,7 +391,7 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
@@ -403,12 +403,16 @@ Creating connections
    coroutine returns a ``(transport, protocol)`` pair.
 
    *path* is the name of a UNIX domain socket, and is required unless a *sock*
-   parameter is specified.  Abstract UNIX sockets, :class:`str`, and
-   :class:`bytes` paths are supported.
+   parameter is specified.  Abstract UNIX sockets, :class:`str`,
+   :class:`bytes`, and :class:`~pathlib.Path` paths are supported.
 
    See the :meth:`AbstractEventLoop.create_connection` method for parameters.
 
    Availability: UNIX.
+
+   .. versionchanged:: 3.7
+
+      The *path* parameter can now be a :class:`~pathlib.Path` object.
 
 
 Creating listening connections
@@ -479,9 +483,17 @@ Creating listening connections
    Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
 
+   *path* is the name of a UNIX domain socket, and is required unless a *sock*
+   parameter is specified.  Abstract UNIX sockets, :class:`str`,
+   :class:`bytes`, and :class:`~pathlib.Path` paths are supported.
+
    This method is a :ref:`coroutine <coroutine>`.
 
    Availability: UNIX.
+
+   .. versionchanged:: 3.7
+
+      The *path* parameter can now be a :class:`~pathlib.Path` object.
 
 .. coroutinemethod:: BaseEventLoop.connect_accepted_socket(protocol_factory, sock, \*, ssl=None)
 
@@ -500,6 +512,9 @@ Creating listening connections
 
    This method is a :ref:`coroutine <coroutine>`.  When completed, the
    coroutine returns a ``(transport, protocol)`` pair.
+
+   .. versionadded:: 3.5.3
+
 
 Watch file descriptors
 ----------------------
