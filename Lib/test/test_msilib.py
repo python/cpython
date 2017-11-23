@@ -1,7 +1,46 @@
 """ Test suite for the code in msilib """
 import unittest
-from test.support import import_module
+from test.support import TESTFN, import_module, unlink
 msilib = import_module('msilib')
+import msilib.schema
+
+
+def init_database():
+    path = TESTFN + '.msi'
+    db = msilib.init_database(
+        path,
+        msilib.schema,
+        'Python Tests',
+        'product_code',
+        '1.0',
+        'PSF',
+    )
+    return db, path
+
+
+class MsiDatabaseTestCase(unittest.TestCase):
+
+    def test_view_fetch_returns_none(self):
+        db, db_path = init_database()
+        properties = []
+        view = db.OpenView('SELECT Property, Value FROM Property')
+        view.Execute(None)
+        while True:
+            record = view.Fetch()
+            if record is None:
+                break
+            properties.append(record.GetString(1))
+        view.Close()
+        db.Close()
+        self.assertEqual(
+            properties,
+            [
+                'ProductName', 'ProductCode', 'ProductVersion',
+                'Manufacturer', 'ProductLanguage',
+            ]
+        )
+        self.addCleanup(unlink, db_path)
+
 
 class Test_make_id(unittest.TestCase):
     #http://msdn.microsoft.com/en-us/library/aa369212(v=vs.85).aspx
