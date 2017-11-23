@@ -560,19 +560,25 @@ summary_getproperty(msiobj* si, PyObject *args)
     }
 
     switch(type) {
-        case VT_I2: case VT_I4:
-            return PyLong_FromLong(ival);
+        case VT_I2:
+        case VT_I4:
+            result = PyLong_FromLong(ival);
+            break;
         case VT_FILETIME:
             PyErr_SetString(PyExc_NotImplementedError, "FILETIME result");
-            return NULL;
+            result = NULL;
+            break;
         case VT_LPSTR:
             result = PyBytes_FromStringAndSize(sval, ssize);
-            if (sval != sbuf)
-                free(sval);
-            return result;
+            break;
+        default:
+            PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
+            result = NULL;
+            break;
     }
-    PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
-    return NULL;
+    if (sval != sbuf)
+        free(sval);
+    return result;
 }
 
 static PyObject*
