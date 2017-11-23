@@ -330,6 +330,64 @@ class TestSupport(unittest.TestCase):
             del D["y"]
         self.assertNotIn("y", D)
 
+    def test_match_test(self):
+        class Test:
+            def __init__(self, test_id):
+                self.test_id = test_id
+
+            def id(self):
+                return self.test_id
+
+        test_access = Test('test.test_os.FileTests.test_access')
+        test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
+
+        with support.swap_attr(support, '_match_test_func', None):
+            # match all
+            support.set_match_tests([])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match all using None
+            support.set_match_tests(None)
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match the full test identifier
+            support.set_match_tests([test_access.id()])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # match the module name
+            support.set_match_tests(['test_os'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Test '*' pattern
+            support.set_match_tests(['test_*'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Test case sensitivity
+            support.set_match_tests(['filetests'])
+            self.assertFalse(support.match_test(test_access))
+            support.set_match_tests(['FileTests'])
+            self.assertTrue(support.match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            support.set_match_tests(['*test_os.*.test_*'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Multiple patterns
+            support.set_match_tests([test_access.id(), test_chdir.id()])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            support.set_match_tests(['test_access', 'DONTMATCH'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
