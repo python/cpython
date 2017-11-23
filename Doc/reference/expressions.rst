@@ -1351,6 +1351,20 @@ built-in types.
     shorter collection is ordered first (for example, ``[1,2] < [1,2,3]`` is
     true).
 
+  - Enforcement of reflexivity also means that otherwise non-orderable
+    singletons are effectively ignored in ordered comparison::
+
+      >>> None is None
+      True
+      >>> None == None
+      True                  <-- None is reflexive, but not orderable:
+      >>> None < None
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: unorderable types: NoneType() < NoneType()
+      >>> [None, 1] < [None, 2]
+      True                  <-- lists are ordered despite unorderable elements
+
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
   equal `(key, value)` pairs. Equality comparison of the keys and values
   enforces reflexivity.
