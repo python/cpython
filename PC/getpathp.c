@@ -132,6 +132,7 @@ typedef struct {
     wchar_t *machine_path;   /* from HKEY_LOCAL_MACHINE */
     wchar_t *user_path;      /* from HKEY_CURRENT_USER */
 
+    wchar_t *prog;                     /* Program name */
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t zip_path[MAXPATHLEN+1];
 } PyCalculatePath;
@@ -485,9 +486,7 @@ done:
 static void
 get_progpath(PyCalculatePath *calculate, wchar_t *progpath, wchar_t *dllpath)
 {
-    extern wchar_t *Py_GetProgramName(void);
     wchar_t *path = calculate->path_env;
-    wchar_t *prog = Py_GetProgramName();
 
 #ifdef Py_ENABLE_SHARED
     extern HANDLE PyWin_DLLhModule;
@@ -503,9 +502,6 @@ get_progpath(PyCalculatePath *calculate, wchar_t *progpath, wchar_t *dllpath)
     if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN)) {
         return;
     }
-    if (prog == NULL || *prog == '\0') {
-        prog = L"python";
-    }
 
     /* If there is no slash in the argv0 path, then we have to
      * assume python is on the user's $PATH, since there's no
@@ -513,12 +509,12 @@ get_progpath(PyCalculatePath *calculate, wchar_t *progpath, wchar_t *dllpath)
      * $PATH isn't exported, you lose.
      */
 #ifdef ALTSEP
-    if (wcschr(prog, SEP) || wcschr(prog, ALTSEP))
+    if (wcschr(calculate->prog, SEP) || wcschr(calculate->prog, ALTSEP))
 #else
-    if (wcschr(prog, SEP))
+    if (wcschr(calculate->prog, SEP))
 #endif
     {
-        wcsncpy(progpath, prog, MAXPATHLEN);
+        wcsncpy(progpath, calculate->prog, MAXPATHLEN);
     }
     else if (path) {
         while (1) {
@@ -536,7 +532,7 @@ get_progpath(PyCalculatePath *calculate, wchar_t *progpath, wchar_t *dllpath)
             }
 
             /* join() is safe for MAXPATHLEN+1 size buffer */
-            join(progpath, prog);
+            join(progpath, calculate->prog);
             if (exists(progpath)) {
                 break;
             }
@@ -575,7 +571,8 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
             /* line has overflowed - bail */
             break;
         }
-        if (p[0] == '#')    /* Comment - skip */ {
+        if (p[0] == '#') {
+            /* Comment - skip */
             continue;
         }
         decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
@@ -714,6 +711,13 @@ calculate_init(PyCalculatePath *calculate,
     }
 
     calculate->path_env = _wgetenv(L"PATH");
+
+    wchar_t *prog = Py_GetProgramName();
+    if (prog == NULL || *prog == '\0') {
+        prog = L"python";
+    }
+    calculate->prog = prog;
+
     return _Py_INIT_OK();
 }
 
@@ -1025,7 +1029,12 @@ calculate_path(const _PyMainInterpreterConfig *main_config)
         _Py_FatalInitError(err);
     }
 
-    calculate_path_impl(&calculate, &path_config, main_config);
+    PyPathConfig new_path_config;
+    memset(&new_path_config, 0, sizeof(new_path_config));
+
+    calculate_path_impl(&calculate, &new_path_config, main_config);
+    path_config = new_path_config;
+
     calculate_free(&calculate);
 }
 
@@ -1041,15 +1050,16 @@ Py_SetPath(const wchar_t *path)
         path_config.module_search_path = NULL;
     }
 
-    if (path != NULL) {
-        extern wchar_t *Py_GetProgramName(void);
-        wchar_t *prog = Py_GetProgramName();
-        wcsncpy(path_config.progpath, prog, MAXPATHLEN);
-        path_config.prefix[0] = L'\0';
-        path_config.module_search_path = PyMem_RawMalloc((wcslen(path) + 1) * sizeof(wchar_t));
-        if (path_config.module_search_path != NULL) {
-            wcscpy(path_config.module_search_path, path);
-        }
+    if (path == NULL) {
+        return;
+    }
+
+    wchar_t *prog = Py_GetProgramName();
+    wcsncpy(path_config.progpath, prog, MAXPATHLEN);
+    path_config.prefix[0] = L'\0';
+    path_config.module_search_path = PyMem_RawMalloc((wcslen(path) + 1) * sizeof(wchar_t));
+    if (path_config.module_search_path != NULL) {
+        wcscpy(path_config.module_search_path, path);
     }
 }
 
