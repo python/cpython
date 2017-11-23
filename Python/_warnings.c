@@ -11,6 +11,10 @@ MODULE_NAME " provides basic warning filtering support.\n"
 
 _Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(ignore);
+_Py_IDENTIFIER(error);
+_Py_IDENTIFIER(always);
+_Py_static_string(PyId_default, "default");
 
 static int
 check_matched(PyObject *obj, PyObject *arg)
@@ -1149,31 +1153,8 @@ static PyMethodDef warnings_functions[] = {
 
 
 static PyObject *
-create_filter(PyObject *category, const char *action)
+create_filter(PyObject *category, _Py_Identifier *id)
 {
-    _Py_IDENTIFIER(ignore);
-    _Py_IDENTIFIER(error);
-    _Py_IDENTIFIER(always);
-    _Py_static_string(PyId_default, "default");
-    _Py_Identifier *id;
-
-    if (!strcmp(action, "ignore")) {
-        id = &PyId_ignore;
-    }
-    else if (!strcmp(action, "error")) {
-        id = &PyId_error;
-    }
-    else if (!strcmp(action, "default")) {
-        id = &PyId_default;
-    }
-    else if (!strcmp(action, "always")) {
-        id = &PyId_always;
-    }
-    else {
-        PyErr_SetString(PyExc_ValueError, "unknown action");
-        return NULL;
-    }
-
     PyObject *action_str = _PyUnicode_FromId(id);
     if (action_str == NULL) {
         return NULL;
@@ -1199,48 +1180,47 @@ init_filters(const _PyCoreConfig *config)
     }
 #endif
     PyObject *filters = PyList_New(count);
-    unsigned int pos = 0;  /* Post-incremented in each use. */
-    unsigned int x;
-    const char *bytes_action, *resource_action;
-
     if (filters == NULL)
         return NULL;
 
+    size_t pos = 0;  /* Post-incremented in each use. */
 #ifndef Py_DEBUG
     if (!dev_mode) {
         PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_DeprecationWarning, "ignore"));
+                        create_filter(PyExc_DeprecationWarning, &PyId_ignore));
         PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_PendingDeprecationWarning, "ignore"));
+                        create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
         PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_ImportWarning, "ignore"));
+                        create_filter(PyExc_ImportWarning, &PyId_ignore));
     }
 #endif
 
+    _Py_Identifier *bytes_action;
     if (Py_BytesWarningFlag > 1)
-        bytes_action = "error";
+        bytes_action = &PyId_error;
     else if (Py_BytesWarningFlag)
-        bytes_action = "default";
+        bytes_action = &PyId_default;
     else
-        bytes_action = "ignore";
+        bytes_action = &PyId_ignore;
     PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
                     bytes_action));
 
+    _Py_Identifier *resource_action;
     /* resource usage warnings are enabled by default in pydebug mode */
 #ifdef Py_DEBUG
-    resource_action = "always";
+    resource_action = &PyId_always;
 #else
-    resource_action = (dev_mode ? "always" : "ignore");
+    resource_action = (dev_mode ? &PyId_always : &PyId_ignore);
 #endif
     PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
                     resource_action));
 
     if (dev_mode) {
         PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_Warning, "default"));
+                        create_filter(PyExc_Warning, &PyId_default));
     }
 
-    for (x = 0; x < pos; x += 1) {
+    for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {
             Py_DECREF(filters);
             return NULL;
