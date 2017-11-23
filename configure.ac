@@ -885,7 +885,6 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_MSG_CHECKING([for the Android API level])
 cat >> conftest.c <<EOF
 #ifdef __ANDROID__
-#include <android/api-level.h>
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
 #else
@@ -897,6 +896,10 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ANDROID_API_LEVEL=`sed -n -e '/__ANDROID_API__/d' -e 's/^android_api = //p' conftest.out`
   _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   AC_MSG_RESULT([$ANDROID_API_LEVEL])
+  if test -z "$ANDROID_API_LEVEL"; then
+    echo 'Fatal: you must define __ANDROID_API__'
+    exit 1
+  fi
   AC_DEFINE_UNQUOTED(ANDROID_API_LEVEL, $ANDROID_API_LEVEL, [The Android API level.])
 
   AC_MSG_CHECKING([for the Android arm ABI])
