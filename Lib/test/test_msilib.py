@@ -30,6 +30,8 @@ class MsiDatabaseTestCase(unittest.TestCase):
             if record is None:
                 break
             properties.append(record.GetString(1))
+        view.Close()
+        db.Close()
         self.assertEqual(
             properties,
             [
@@ -37,7 +39,6 @@ class MsiDatabaseTestCase(unittest.TestCase):
                 'Manufacturer', 'ProductLanguage',
             ]
         )
-        view.Close()
         self.addCleanup(unlink, db_path)
 
 
