@@ -116,7 +116,6 @@
     <ClInclude Include="..\Include\internal\condvar.h" />
     <ClInclude Include="..\Include\internal\gil.h" />
     <ClInclude Include="..\Include\internal\mem.h" />
-    <ClInclude Include="..\Include\internal\pymalloc.h" />
     <ClInclude Include="..\Include\internal\pystate.h" />
     <ClInclude Include="..\Include\internal\warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />

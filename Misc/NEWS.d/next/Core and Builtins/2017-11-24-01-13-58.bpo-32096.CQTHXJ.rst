@@ -1,0 +1,4 @@
+Revert memory allocator changes in the C API: move structures back from
+_PyRuntime to Objects/obmalloc.c. The memory allocators are once again initialized
+statically, and so PyMem_RawMalloc() and Py_DecodeLocale() can be
+called before _PyRuntime_Initialize().
