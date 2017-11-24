@@ -40,8 +40,6 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 {
     memset(runtime, 0, sizeof(*runtime));
 
-    _PyObject_Initialize(&runtime->obj);
-    _PyMem_Initialize(&runtime->mem);
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
 
