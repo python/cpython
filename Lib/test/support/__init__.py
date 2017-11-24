@@ -2444,7 +2444,7 @@ def skip_unless_bind_unix_socket(test):
         with socket.socket(socket.AF_UNIX) as sock:
             try:
                 sock.bind(path)
-                _bind_nix_socket_error = ''
+                _bind_nix_socket_error = False
             except OSError as e:
                 _bind_nix_socket_error = e
             finally:
