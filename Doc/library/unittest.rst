@@ -233,7 +233,7 @@ Command-line options
    imported by the test loader.
 
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
-   ``bar_tests.SomeTest.test_foo``, but not `bar_tests.FooTest.test_something``.
+   ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
 
 .. cmdoption:: --locals
 
