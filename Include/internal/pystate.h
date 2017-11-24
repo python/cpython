@@ -64,9 +64,7 @@ typedef struct pyruntimestate {
     int nexitfuncs;
     void (*pyexitfunc)(void);
 
-    struct _pyobj_runtime_state obj;
     struct _gc_runtime_state gc;
-    struct _pymem_runtime_state mem;
     struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
