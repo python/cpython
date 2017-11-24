@@ -1452,6 +1452,13 @@ _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
         return err;
     }
 
+    /* FIXME: _PyMainInterpreterConfig_Read() has the same code. Remove it
+       here? See also pymain_get_program_name() and pymain_parse_envvars(). */
+    config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+    if (config->program_name == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
     return _Py_INIT_OK();
 }
 
@@ -1479,6 +1486,15 @@ pymain_parse_envvars(_PyMain *pymain)
         return -1;
     }
     core_config->allocator = Py_GETENV("PYTHONMALLOC");
+
+    /* FIXME: move pymain_get_program_name() code into
+       _PyMainInterpreterConfig_ReadEnv().
+       Problem: _PyMainInterpreterConfig_ReadEnv() doesn't have access
+       to argv[0]. */
+    Py_SetProgramName(pymain->program_name);
+    /* Don't free program_name here: the argument to Py_SetProgramName
+       must remain valid until Py_FinalizeEx is called. The string is freed
+       by pymain_free(). */
 
     _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&pymain->config);
     if (_Py_INIT_FAILED(pymain->err)) {
@@ -1568,11 +1584,6 @@ pymain_init_python(_PyMain *pymain)
     if (_Py_INIT_FAILED(pymain->err)) {
         return -1;
     }
-
-    Py_SetProgramName(pymain->program_name);
-    /* Don't free program_name here: the argument to Py_SetProgramName
-       must remain valid until Py_FinalizeEx is called. The string is freed
-       by pymain_free(). */
 
     if (pymain_add_xoptions(pymain)) {
         return -1;

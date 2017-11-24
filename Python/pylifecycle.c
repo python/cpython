@@ -802,6 +802,14 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
     if (config->install_signal_handlers < 0) {
         config->install_signal_handlers = 1;
     }
+
+    if (config->program_name == NULL) {
+        config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+        if (config->program_name == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
     return _Py_INIT_OK();
 }
 
@@ -809,10 +817,16 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
 void
 _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
 {
-    PyMem_RawFree(config->module_search_path_env);
-    config->module_search_path_env = NULL;
-    PyMem_RawFree(config->home);
-    config->home = NULL;
+#define CLEAR(ATTR) \
+    do { \
+        PyMem_RawFree(ATTR); \
+        ATTR = NULL; \
+    } while (0)
+
+    CLEAR(config->module_search_path_env);
+    CLEAR(config->home);
+    CLEAR(config->program_name);
+#undef CLEAR
 }
 
 
