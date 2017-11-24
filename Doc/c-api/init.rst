@@ -16,28 +16,31 @@ In an application embedding  Python, the :c:func:`Py_Initialize` function must
 be called before using any other Python/C API functions; with the exception of
 a few functions and the :ref:`global configuration variables <global-conf-vars>`:
 
-The following functions can be safetely called before Python is initialized:
+The following functions can be safely called before Python is initialized:
 
 * Configuration functions:
 
   * :c:func:`PyImport_AppendInittab`
   * :c:func:`PyImport_ExtendInittab`
   * :c:func:`PyInitFrozenExtensions`
-  * :c:func:`PyMem_GetAllocator`
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
-  * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`PyObject_SetArenaAllocator`
+  * :c:func:`Py_SetPath`
+  * :c:func:`Py_SetProgramName`
+  * :c:func:`Py_SetPythonHome`
+  * :c:func:`Py_SetStandardStreamEncoding`
+
+* Informative functions:
+
+  * :c:func:`PyMem_GetAllocator`
+  * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`Py_GetBuildInfo`
   * :c:func:`Py_GetCompiler`
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
   * :c:func:`Py_GetProgramName`
   * :c:func:`Py_GetVersion`
-  * :c:func:`Py_SetPath`
-  * :c:func:`Py_SetProgramName`
-  * :c:func:`Py_SetPythonHome`
-  * :c:func:`Py_SetStandardStreamEncoding`
 
 * Utilities:
 
@@ -61,9 +64,10 @@ The following functions can be safetely called before Python is initialized:
 
 .. note::
 
-   :c:func:`Py_GetPath`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix` and
-   :c:func:`Py_GetProgramFullPath` and :c:func:`Py_GetPythonHome` **should not
-   be called** before :c:func:`Py_Initialize`.
+   The following functions **should not be called** before
+   :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
+   :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix` and
+   :c:func:`Py_GetProgramFullPath` and :c:func:`Py_GetPythonHome`.
 
 
 .. _global-conf-vars:
@@ -89,7 +93,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 .. c:var:: Py_DebugFlag
 
-   Turn on parser debugging output (for wizards only, depending on compilation
+   Turn on parser debugging output (for expert only, depending on compilation
    options).
 
    Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
@@ -102,6 +106,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
    environment variable.
+
+.. c:var:: Py_FrozenFlag
+
+   Suppress error messages when calculating the module search path in
+   :c:func:`Py_GetPath`.
+
+   Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
 
 .. c:var:: Py_HashRandomizationFlag
 
@@ -148,7 +159,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
    variable is set to a non-empty string.
 
-   See also the :pep:`529`.
+   See :pep:`529` for more details.
 
    Availability: Windows.
 
@@ -160,7 +171,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
    variable is set to a non-empty string.
 
-   See also the :pep:`528`.
+   See :pep:`528` for more details.
 
    Availability: Windows.
 
@@ -210,23 +221,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
    variable.
-
-
-Other variables:
-
-.. c:var:: Py_FrozenFlag
-
-   Suppress error messages when calculating the module search path in
-   :c:func:`Py_GetPath`.
-
-   Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
-
-.. c:var:: Py_UseClassExceptionsFlag
-
-   Deprecated and ignored flag, used to enable class exceptions prior Python
-   2.0.
-
-   .. deprecated:: 2.0
 
 
 Initializing and finalizing the interpreter
@@ -1315,7 +1309,7 @@ Python-level trace functions in previous versions.
    +------------------------------+--------------------------------------+
 
 
-.. c:var::: int PyTrace_CALL
+.. c:var:: int PyTrace_CALL
 
    The value of the *what* parameter to a :c:type:`Py_tracefunc` function when a new
    call to a function or method is being reported, or a new entry into a generator.
@@ -1324,7 +1318,7 @@ Python-level trace functions in previous versions.
    frame.
 
 
-.. c:var::: int PyTrace_EXCEPTION
+.. c:var:: int PyTrace_EXCEPTION
 
    The value of the *what* parameter to a :c:type:`Py_tracefunc` function when an
    exception has been raised.  The callback function is called with this value for
@@ -1335,31 +1329,31 @@ Python-level trace functions in previous versions.
    these events; they are not needed by the profiler.
 
 
-.. c:var::: int PyTrace_LINE
+.. c:var:: int PyTrace_LINE
 
    The value passed as the *what* parameter to a trace function (but not a
    profiling function) when a line-number event is being reported.
 
 
-.. c:var::: int PyTrace_RETURN
+.. c:var:: int PyTrace_RETURN
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a
    call is returning without propagating an exception.
 
 
-.. c:var::: int PyTrace_C_CALL
+.. c:var:: int PyTrace_C_CALL
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a C
    function is about to be called.
 
 
-.. c:var::: int PyTrace_C_EXCEPTION
+.. c:var:: int PyTrace_C_EXCEPTION
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a C
    function has raised an exception.
 
 
-.. c:var::: int PyTrace_C_RETURN
+.. c:var:: int PyTrace_C_RETURN
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a C
    function has returned.
