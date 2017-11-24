@@ -14,29 +14,40 @@ Before Python Initialization
 
 In an application embedding  Python, the :c:func:`Py_Initialize` function must
 be called before using any other Python/C API functions; with the exception of
-a few functions and flags listed below.
+a few functions and the :ref:`global configuration variables <global-conf-vars>`:
 
 The following functions can be safetely called before Python is initialized:
 
-* Functions:
+* Configuration functions:
 
+  * :c:func:`PyImport_AppendInittab`
+  * :c:func:`PyImport_ExtendInittab`
+  * :c:func:`PyInitFrozenExtensions`
   * :c:func:`PyMem_GetAllocator`
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`PyObject_SetArenaAllocator`
-  * :c:func:`Py_DecodeLocale`
+  * :c:func:`Py_GetBuildInfo`
+  * :c:func:`Py_GetCompiler`
+  * :c:func:`Py_GetCopyright`
+  * :c:func:`Py_GetPlatform`
   * :c:func:`Py_GetProgramName`
+  * :c:func:`Py_GetVersion`
   * :c:func:`Py_SetPath`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
   * :c:func:`Py_SetStandardStreamEncoding`
 
+* Utilities:
+
+  * :c:func:`Py_DecodeLocale`
+
 * Memory allocators:
 
   * :c:func:`PyMem_RawMalloc`
   * :c:func:`PyMem_RawRealloc`
-    :c:func:`PyMem_RawCalloc`
+  * :c:func:`PyMem_RawCalloc`
   * :c:func:`PyMem_RawFree`
   * :c:func:`PyMem_Malloc`
   * :c:func:`PyMem_Realloc`
@@ -47,22 +58,15 @@ The following functions can be safetely called before Python is initialized:
   * :c:func:`PyObject_Calloc`
   * :c:func:`PyObject_Free`
 
-The following flags can also be set:
 
-* :c:data:`Py_BytesWarningFlag`
-* :c:data:`Py_DebugFlag`
-* :c:data:`Py_InspectFlag`
-* :c:data:`Py_InteractiveFlag`
-* :c:data:`Py_IsolatedFlag`
-* :c:data:`Py_OptimizeFlag`
-* :c:data:`Py_DontWriteBytecodeFlag`
-* :c:data:`Py_NoUserSiteDirectory`
-* :c:data:`Py_NoSiteFlag`
-* :c:data:`Py_UnbufferedStdioFlag`
-* :c:data:`Py_VerboseFlag`
-* :c:data:`Py_QuietFlag`
-* :c:data:`Py_IgnoreEnvironmentFlag`
+.. note::
 
+   :c:func:`Py_GetPath`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix` and
+   :c:func:`Py_GetProgramFullPath` and :c:func:`Py_GetPythonHome` **should not
+   be called** before :c:func:`Py_Initialize`.
+
+
+.. _global-conf-vars:
 
 Global configuration variables
 ==============================
@@ -71,61 +75,158 @@ Python has variables for the global configuration to control different features
 and options. By default, these flags are controlled by :ref:`command line
 options <using-on-interface-options>`.
 
-.. :c:data: Py_BytesWarningFlag
+When a flag is set by an option, the value of the flag is the number of times
+that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
+to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
-  The :option:`-b` option.
+.. c:var:: Py_BytesWarningFlag
 
-.. :c:data: Py_DebugFlag
+   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
+   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
+   or equal to ``2``.
 
-  The :option:`-d` option.
+   Set by the :option:`-b` option.
 
-.. :c:data: Py_InspectFlag
+.. c:var:: Py_DebugFlag
 
-  The :option:`-i` option.
+   Turn on parser debugging output (for wizards only, depending on compilation
+   options).
 
-.. :c:data: Py_InteractiveFlag
+   Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
+   variable.
 
-  The :option:`-i` option.
+.. c:var:: Py_DontWriteBytecodeFlag
 
-.. :c:data: Py_IsolatedFlag
+   If set to non-zero, Python won't try to write ``.pyc`` files on the
+   import of source modules.
 
-  The :option:`-I` option.
+   Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
+   environment variable.
+
+.. c:var:: Py_HashRandomizationFlag
+
+   Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
+   a non-empty string.
+
+   If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
+   variable to initialize the secret hash seed.
+
+.. c:var:: Py_IgnoreEnvironmentFlag
+
+   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
+
+   Set by the :option:`-E` and :option:`-I` options.
+
+.. c:var:: Py_InspectFlag
+
+   When a script is passed as first argument or the :option:`-c` option is used,
+   enter interactive mode after executing the script or the command, even when
+   :data:`sys.stdin` does not appear to be a terminal.
+
+   Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
+   variable.
+
+.. c:var:: Py_InteractiveFlag
+
+   Set by the :option:`-i` option.
+
+.. c:var:: Py_IsolatedFlag
+
+   Run Python in isolated mode. In isolated mode :data:`sys.path` contains
+   neither the script's directory nor the user's site-packages directory.
+
+   Set by the :option:`-I` option.
 
    .. versionadded:: 3.4
 
-.. :c:data: Py_OptimizeFlag
+.. c:var:: Py_LegacyWindowsFSEncodingFlag
 
-  The :option:`-O` option.
+   If the flag is non-zero, use the ``mbcs`` encoding instead of the UTF-8
+   encoding for the filesystem encoding.
 
-.. :c:data: Py_DontWriteBytecodeFlag
+   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
+   variable is set to a non-empty string.
 
-  The :option:`-B` option.
+   See also the :pep:`529`.
 
-.. :c:data: Py_NoUserSiteDirectory
+   Availability: Windows.
 
-  The :option:`-s` option.
+.. c:var:: Py_LegacyWindowsStdioFlag
 
-.. :c:data: Py_NoSiteFlag
+   If the flag is non-zero, use :class:`io.FileIO` instead of
+   :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
 
-  The :option:`-S` option.
+   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
+   variable is set to a non-empty string.
 
-.. :c:data: Py_UnbufferedStdioFlag
+   See also the :pep:`528`.
 
-  The :option:`-u` option.
+   Availability: Windows.
 
-.. :c:data: Py_VerboseFlag
+.. c:var:: Py_NoSiteFlag
 
-  The :option:`-v` option.
+   Disable the import of the module :mod:`site` and the site-dependent
+   manipulations of :data:`sys.path` that it entails.  Also disable these
+   manipulations if :mod:`site` is explicitly imported later (call
+   :func:`site.main` if you want them to be triggered).
 
-.. :c:data: Py_QuietFlag
+   Set by the :option:`-S` option.
 
-  The :option:`-q` option.
+.. c:var:: Py_NoUserSiteDirectory
+
+   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
+
+   Set by the :option:`-s` and :option:`-I` options, and the
+   :envvar:`PYTHONNOUSERSITE` environment variable.
+
+.. c:var:: Py_OptimizeFlag
+
+   Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
+   variable.
+
+.. c:var:: Py_QuietFlag
+
+   Don't display the copyright and version messages even in interactive mode.
+
+   Set by the :option:`-q` option.
 
    .. versionadded:: 3.2
 
-.. :c:data: Py_IgnoreEnvironmentFlag
+.. c:var:: Py_UnbufferedStdioFlag
 
-  The :option:`-E` and :option:`-I` options.
+   Force the stdout and stderr streams to be unbuffered.
+
+   Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
+   environment variable.
+
+.. c:var:: Py_VerboseFlag
+
+   Print a message each time a module is initialized, showing the place
+   (filename or built-in module) from which it is loaded.  If greater or equal
+   to ``2``, print a message for each file that is checked for when
+   searching for a module. Also provides information on module cleanup at exit.
+
+   Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
+   variable.
+
+
+Other variables:
+
+.. c:var:: Py_FrozenFlag
+
+   Suppress error messages when calculating the module search path in
+   :c:func:`Py_GetPath`.
+
+   Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
+
+.. c:var:: Py_UseClassExceptionsFlag
+
+   Deprecated and ignored flag, used to enable class exceptions prior Python
+   2.0.
+
+   .. deprecated:: 2.0
 
 
 Initializing and finalizing the interpreter
@@ -1214,7 +1315,7 @@ Python-level trace functions in previous versions.
    +------------------------------+--------------------------------------+
 
 
-.. c:var:: int PyTrace_CALL
+.. c:var::: int PyTrace_CALL
 
    The value of the *what* parameter to a :c:type:`Py_tracefunc` function when a new
    call to a function or method is being reported, or a new entry into a generator.
@@ -1223,7 +1324,7 @@ Python-level trace functions in previous versions.
    frame.
 
 
-.. c:var:: int PyTrace_EXCEPTION
+.. c:var::: int PyTrace_EXCEPTION
 
    The value of the *what* parameter to a :c:type:`Py_tracefunc` function when an
    exception has been raised.  The callback function is called with this value for
@@ -1234,31 +1335,31 @@ Python-level trace functions in previous versions.
    these events; they are not needed by the profiler.
 
 
-.. c:var:: int PyTrace_LINE
+.. c:var::: int PyTrace_LINE
 
    The value passed as the *what* parameter to a trace function (but not a
    profiling function) when a line-number event is being reported.
 
 
-.. c:var:: int PyTrace_RETURN
+.. c:var::: int PyTrace_RETURN
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a
    call is returning without propagating an exception.
 
 
-.. c:var:: int PyTrace_C_CALL
+.. c:var::: int PyTrace_C_CALL
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a C
    function is about to be called.
 
 
-.. c:var:: int PyTrace_C_EXCEPTION
+.. c:var::: int PyTrace_C_EXCEPTION
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a C
    function has raised an exception.
 
 
-.. c:var:: int PyTrace_C_RETURN
+.. c:var::: int PyTrace_C_RETURN
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a C
    function has returned.
