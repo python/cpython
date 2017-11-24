@@ -689,26 +689,12 @@ error:
 }
 
 
-static _PyInitError
+static void
 calculate_init(PyCalculatePath *calculate,
                const _PyMainInterpreterConfig *main_config)
 {
-    _PyInitError err;
-
-    err = _Py_GetPythonHomeWithConfig(main_config, &calculate->home);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    if (main_config) {
-        calculate->module_search_path_env = main_config->module_search_path_env;
-    }
-    else if (!Py_IgnoreEnvironmentFlag) {
-        wchar_t *path = _wgetenv(L"PYTHONPATH");
-        if (path && *path != '\0') {
-            calculate->module_search_path_env = path;
-        }
-    }
+    calculate->home = main_config->home;
+    calculate->module_search_path_env = main_config->module_search_path_env;
 
     calculate->path_env = _wgetenv(L"PATH");
 
@@ -717,8 +703,6 @@ calculate_init(PyCalculatePath *calculate,
         prog = L"python";
     }
     calculate->prog = prog;
-
-    return _Py_INIT_OK();
 }
 
 
@@ -1020,14 +1004,22 @@ calculate_free(PyCalculatePath *calculate)
 static void
 calculate_path(const _PyMainInterpreterConfig *main_config)
 {
+    _PyInitError err;
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
-    _PyInitError err = calculate_init(&calculate, main_config);
-    if (_Py_INIT_FAILED(err)) {
-        calculate_free(&calculate);
-        _Py_FatalInitError(err);
+    _PyMainInterpreterConfig tmp_config;
+    int use_tmp = (main_config == NULL);
+    if (use_tmp) {
+        tmp_config = _PyMainInterpreterConfig_INIT;
+        err = _PyMainInterpreterConfig_ReadEnv(&tmp_config);
+        if (_Py_INIT_FAILED(err)) {
+            goto fatal_error;
+        }
+        main_config = &tmp_config;
     }
+
+    calculate_init(&calculate, main_config);
 
     PyPathConfig new_path_config;
     memset(&new_path_config, 0, sizeof(new_path_config));
@@ -1035,7 +1027,18 @@ calculate_path(const _PyMainInterpreterConfig *main_config)
     calculate_path_impl(&calculate, &new_path_config, main_config);
     path_config = new_path_config;
 
+    if (use_tmp) {
+        _PyMainInterpreterConfig_Clear(&tmp_config);
+    }
     calculate_free(&calculate);
+    return;
+
+fatal_error:
+    if (use_tmp) {
+        _PyMainInterpreterConfig_Clear(&tmp_config);
+    }
+    calculate_free(&calculate);
+    _Py_FatalInitError(err);
 }
 
 
