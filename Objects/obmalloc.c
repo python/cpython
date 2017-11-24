@@ -208,7 +208,7 @@ _PyMem_GetDefaultRawAllocator(PyMemAllocatorEx *alloc_p)
 #ifdef Py_DEBUG
     PyMemAllocatorEx alloc = {&_PyMem_Debug.raw, PYDBG_FUNCS};
 #else
-    PyMemAllocatorEx alloc = {NULL, PYMEM_FUNCS};
+    PyMemAllocatorEx alloc = {NULL, PYRAW_FUNCS};
 #endif
     *alloc_p = alloc;
 }
