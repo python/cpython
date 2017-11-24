@@ -212,7 +212,7 @@ Miscellaneous options
 
 .. cmdoption:: -d
 
-   Turn on parser debugging output (for wizards only, depending on compilation
+   Turn on parser debugging output (for expert only, depending on compilation
    options).  See also :envvar:`PYTHONDEBUG`.
 
 
