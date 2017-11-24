@@ -447,3 +447,19 @@ class Sniffer:
                     hasHeader -= 1
 
         return hasHeader > 0
+
+def csv2list(file_name):
+    # import csv file to a list
+    list_name=[] 
+    with open(file_name) as csvfile:
+        readerfile = reader(csvfile)
+        for row in readerfile:
+            list_name.append(row)
+    return list_name
+
+def list2csv(list_name,file_name):
+    #write list to csv
+    with open(file_name, 'w', newline='') as csvfile:
+        writerfile = csv.writer(csvfile)
+        writerfile.writerows(list_name)
+    #it's a procedure, nothing returned
