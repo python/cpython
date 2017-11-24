@@ -2251,7 +2251,7 @@ def genops(pickle):
 ##############################################################################
 # A pickle optimizer.
 
-def optimize(pickled):
+def optimize(p):
     'Optimize a pickle string by removing unused PUT opcodes'
     put = 'PUT'
     get = 'GET'
@@ -2260,7 +2260,7 @@ def optimize(pickled):
     opcodes = []            # (op, idx) or (pos, end_pos)
     proto = 0
     protoheader = b''
-    for opcode, arg, pos, end_pos in _genops(pickled, yield_end_pos=True):
+    for opcode, arg, pos, end_pos in _genops(p, yield_end_pos=True):
         if 'PUT' in opcode.name:
             oldids.add(arg)
             opcodes.append((put, arg))
@@ -2279,7 +2279,7 @@ def optimize(pickled):
             if arg > proto:
                 proto = arg
             if pos == 0:
-                protoheader = pickled[pos:end_pos]
+                protoheader = p[pos:end_pos]
             else:
                 opcodes.append((pos, end_pos))
         else:
@@ -2305,7 +2305,7 @@ def optimize(pickled):
         elif op is get:
             data = pickler.get(newids[arg])
         else:
-            data = pickled[op:arg]
+            data = p[op:arg]
             frameless = len(data) > pickler.framer._FRAME_SIZE_TARGET
         pickler.framer.commit_frame(force=frameless)
         if frameless:
