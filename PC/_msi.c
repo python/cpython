@@ -315,6 +315,12 @@ msierror(int status)
         case ERROR_INVALID_PARAMETER:
             PyErr_SetString(MSIError, "invalid parameter");
             return NULL;
+        case ERROR_OPEN_FAILED:
+            PyErr_SetString(MSIError, "open failed");
+            return NULL;
+        case ERROR_CREATE_FAILED:
+            PyErr_SetString(MSIError, "create failed");
+            return NULL;
         default:
             PyErr_Format(MSIError, "unknown error %x", status);
             return NULL;
