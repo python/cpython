@@ -2166,10 +2166,6 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(obj, self.loads(some_frames_pickle))
 
     def test_framed_write_sizes(self):
-        if not hasattr(self, 'pickler'):
-            # This test requires passing a custom file-object to measure
-            # the number of calls to file.write and the size of each chunk.
-            return
         class Writer:
 
             def __init__(self):
