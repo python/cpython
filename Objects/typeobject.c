@@ -5353,6 +5353,19 @@ check_num_args(PyObject *ob, int n)
     return 0;
 }
 
+static int
+check_fast_num_args(Py_ssize_t nargs, Py_ssize_t n)
+{
+    if (n == nargs) {
+        return 1;
+    }
+
+    PyErr_Format(
+        PyExc_TypeError,
+        "expected %d arguments, got %zd", n, nargs);
+    return 0;
+}
+
 /* Generic wrappers for overloadable 'operators' such as __getitem__ */
 
 /* There's a wrapper *function* for each distinct function typedef used
@@ -5372,6 +5385,23 @@ wrap_lenfunc(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self);
     if (res == -1 && PyErr_Occurred())
         return NULL;
+    return PyLong_FromLong((long)res);
+}
+
+static PyObject *
+fastwrap_lenfunc(PyObject *self, PyObject **args, Py_ssize_t nargs,
+                 void *wrapped)
+{
+    lenfunc func = (lenfunc)wrapped;
+    Py_ssize_t res;
+
+    if (!check_fast_num_args(nargs, 0)) {
+        return NULL;
+    }
+    res = (*func)(self);
+    if (res == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
     return PyLong_FromLong((long)res);
 }
 
@@ -5402,6 +5432,18 @@ wrap_binaryfunc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
+fastwrap_binaryfunc(PyObject *self, PyObject **args, Py_ssize_t nargs,
+                    void *wrapped)
+{
+    binaryfunc func = (binaryfunc)wrapped;
+
+    if (!check_fast_num_args(nargs, 1)) {
+        return NULL;
+    }
+    return (*func)(self, args[0]);
+}
+
+static PyObject *
 wrap_binaryfunc_l(PyObject *self, PyObject *args, void *wrapped)
 {
     binaryfunc func = (binaryfunc)wrapped;
@@ -5414,6 +5456,18 @@ wrap_binaryfunc_l(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
+fastwrap_binaryfunc_l(PyObject *self, PyObject **args, Py_ssize_t nargs,
+                      void *wrapped)
+{
+    binaryfunc func = (binaryfunc)wrapped;
+
+    if (!check_fast_num_args(nargs, 1)) {
+        return NULL;
+    }
+    return (*func)(self, args[0]);
+}
+
+static PyObject *
 wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 {
     binaryfunc func = (binaryfunc)wrapped;
@@ -5423,6 +5477,18 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     other = PyTuple_GET_ITEM(args, 0);
     return (*func)(other, self);
+}
+
+static PyObject *
+fastwrap_binaryfunc_r(PyObject *self, PyObject **args, Py_ssize_t nargs,
+                      void *wrapped)
+{
+    binaryfunc func = (binaryfunc)wrapped;
+
+    if (!check_fast_num_args(nargs, 1)) {
+        return NULL;
+    }
+    return (*func)(args[0], self);
 }
 
 static PyObject *
@@ -5460,6 +5526,18 @@ wrap_unaryfunc(PyObject *self, PyObject *args, void *wrapped)
 
     if (!check_num_args(args, 0))
         return NULL;
+    return (*func)(self);
+}
+
+static PyObject *
+fastwrap_unaryfunc(PyObject *self, PyObject **args, Py_ssize_t nargs,
+                   void *wrapped)
+{
+    unaryfunc func = (unaryfunc)wrapped;
+
+    if (!check_fast_num_args(nargs, 0)) {
+        return NULL;
+    }
     return (*func)(self);
 }
 
@@ -5690,6 +5768,18 @@ wrap_del(PyObject *self, PyObject *args, void *wrapped)
     destructor func = (destructor)wrapped;
 
     if (!check_num_args(args, 0))
+        return NULL;
+
+    (*func)(self);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+fastwrap_del(PyObject *self, PyObject **args, Py_ssize_t nargs, void *wrapped)
+{
+    destructor func = (destructor)wrapped;
+
+    if (!check_fast_num_args(nargs, 0))
         return NULL;
 
     (*func)(self);
@@ -7122,6 +7212,25 @@ init_slotdefs(void)
         p->name_strobj = PyUnicode_InternFromString(p->name);
         if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
             Py_FatalError("Out of memory interning slotdef names");
+        /* FIXME: update directly slotdefs. It's just that I was too lazy :-) */
+        if (p->wrapper == wrap_unaryfunc) {
+            p->fastwrapper = fastwrap_unaryfunc;
+        }
+        else if (p->wrapper == wrap_binaryfunc) {
+            p->fastwrapper = fastwrap_binaryfunc;
+        }
+        else if (p->wrapper == wrap_binaryfunc_l) {
+            p->fastwrapper = fastwrap_binaryfunc_l;
+        }
+        else if (p->wrapper == wrap_binaryfunc_r) {
+            p->fastwrapper = fastwrap_binaryfunc_r;
+        }
+        else if (p->wrapper == wrap_lenfunc) {
+            p->fastwrapper = fastwrap_lenfunc;
+        }
+        else if (p->wrapper == wrap_del) {
+            p->fastwrapper = fastwrap_del;
+        }
     }
     slotdefs_initialized = 1;
 }

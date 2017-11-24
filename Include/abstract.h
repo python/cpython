@@ -180,6 +180,15 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
     PyObject **values,
     PyObject *kwnames);
 
+/* Combine _PyStack_AsTuple() with _PyStack_AsDict().
+   Return 0 on success, or -1 on error. */
+PyAPI_FUNC(int) _PyStack_AsTupleAndDict(
+    PyObject **args,
+    Py_ssize_t nargs,
+    PyObject *kwnames,
+    PyObject **tuple,
+    PyObject **dict);
+
 /* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
 
    Return 0 on success, raise an exception and return -1 on error.

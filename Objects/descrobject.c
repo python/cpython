@@ -357,11 +357,68 @@ wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
     return (*wrapper)(self, args, descr->d_wrapped);
 }
 
+Py_LOCAL_INLINE(PyObject *)
+wrapperdescr_raw_fastcall_dict(PyWrapperDescrObject *descr, PyObject *self,
+                               PyObject **args, Py_ssize_t nargs,
+                               PyObject *kwds)
+{
+    PyObject *args_tuple, *res;
+
+    if (descr->d_base->fastwrapper) {
+        if (kwds != NULL && (!PyDict_Check(kwds) || PyDict_GET_SIZE(kwds) != 0)) {
+            PyErr_Format(PyExc_TypeError,
+                         "wrapper %s() takes no keyword arguments",
+                         descr->d_base->name);
+            return NULL;
+        }
+
+        return descr->d_base->fastwrapper(self, args, nargs, descr->d_wrapped);
+    }
+
+    args_tuple = _PyStack_AsTuple(args, nargs);
+    if (args_tuple == NULL) {
+        return NULL;
+    }
+    res = wrapperdescr_raw_call(descr, self, args_tuple, kwds);
+    Py_DECREF(args_tuple);
+    return res;
+}
+
+Py_LOCAL_INLINE(PyObject *)
+wrapperdescr_raw_fastcall_keywords(PyWrapperDescrObject *descr, PyObject *self,
+                                   PyObject **args, Py_ssize_t nargs,
+                                   PyObject *kwnames)
+{
+    PyObject *argtuple, *kwdict, *res;
+
+    if (descr->d_base->fastwrapper) {
+        assert(kwnames == NULL || PyTuple_Check(kwnames));
+        if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "wrapper %s() takes no keyword arguments",
+                         descr->d_base->name);
+            return NULL;
+        }
+
+        return descr->d_base->fastwrapper(self, args, nargs, descr->d_wrapped);
+    }
+
+    if (_PyStack_AsTupleAndDict(args, nargs, kwnames,
+                                &argtuple, &kwdict) < 0) {
+        return NULL;
+    }
+    res = wrapperdescr_raw_call(descr, self, argtuple, kwdict);
+    Py_DECREF(argtuple);
+    Py_XDECREF(kwdict);
+
+    return res;
+}
+
 static PyObject *
 wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t argc;
-    PyObject *self, *result;
+    PyObject *self, **stack;
 
     /* Make sure that the first argument is acceptable as 'self' */
     assert(PyTuple_Check(args));
@@ -387,13 +444,93 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    args = PyTuple_GetSlice(args, 1, argc);
-    if (args == NULL) {
+    if (argc > 1) {
+        stack = &PyTuple_GET_ITEM(args, 1);
+    }
+    else {
+        stack = NULL;
+    }
+    return wrapperdescr_raw_fastcall_dict(descr, self,
+                                          stack,
+                                          argc - 1,
+                                          kwds);
+}
+
+PyObject *
+_PyWrapperDesr_FastCallKeywords(PyObject *descro,
+                                PyObject **args, Py_ssize_t argc,
+                                PyObject *kwnames)
+{
+    PyObject *self;
+
+    assert(Py_TYPE(descro) == &PyWrapperDescr_Type);
+    PyWrapperDescrObject *descr = (PyWrapperDescrObject *)descro;
+
+    /* Make sure that the first argument is acceptable as 'self' */
+    if (argc < 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' of '%.100s' "
+                     "object needs an argument",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name);
         return NULL;
     }
-    result = wrapperdescr_raw_call(descr, self, args, kwds);
-    Py_DECREF(args);
-    return result;
+    self = args[0];
+    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                  (PyObject *)PyDescr_TYPE(descr))) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' "
+                     "requires a '%.100s' object "
+                     "but received a '%.100s'",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name,
+                     self->ob_type->tp_name);
+        return NULL;
+    }
+
+    return wrapperdescr_raw_fastcall_keywords(descr, self,
+                                              args + 1,
+                                              argc - 1,
+                                              kwnames);
+}
+
+
+PyObject *
+_PyWrapperDesr_FastCallDict(PyObject *descro,
+                            PyObject **args, Py_ssize_t argc,
+                            PyObject *kwargs)
+{
+    PyObject *self;
+
+    assert(Py_TYPE(descro) == &PyWrapperDescr_Type);
+    PyWrapperDescrObject *descr = (PyWrapperDescrObject *)descro;
+
+    /* Make sure that the first argument is acceptable as 'self' */
+    if (argc < 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' of '%.100s' "
+                     "object needs an argument",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name);
+        return NULL;
+    }
+    self = args[0];
+    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                  (PyObject *)PyDescr_TYPE(descr))) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' "
+                     "requires a '%.100s' object "
+                     "but received a '%.100s'",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name,
+                     self->ob_type->tp_name);
+        return NULL;
+    }
+
+    return wrapperdescr_raw_fastcall_dict(descr, self,
+                                          args + 1,
+                                          argc - 1,
+                                          kwargs);
 }
 
 

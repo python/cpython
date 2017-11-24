@@ -23,6 +23,9 @@ typedef PyObject *(*wrapperfunc)(PyObject *self, PyObject *args,
 typedef PyObject *(*wrapperfunc_kwds)(PyObject *self, PyObject *args,
                                       void *wrapped, PyObject *kwds);
 
+typedef PyObject *(*wrapperfastfunc)(PyObject *self, PyObject **args,
+                                     Py_ssize_t nargs, void *wrapped);
+
 struct wrapperbase {
     const char *name;
     int offset;
@@ -31,6 +34,7 @@ struct wrapperbase {
     const char *doc;
     int flags;
     PyObject *name_strobj;
+    wrapperfastfunc fastwrapper;
 };
 
 /* Flags for above struct */
