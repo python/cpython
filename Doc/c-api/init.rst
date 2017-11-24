@@ -53,15 +53,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_RawRealloc`
   * :c:func:`PyMem_RawCalloc`
   * :c:func:`PyMem_RawFree`
-  * :c:func:`PyMem_Malloc`
-  * :c:func:`PyMem_Realloc`
-  * :c:func:`PyMem_Calloc`
-  * :c:func:`PyMem_Free`
-  * :c:func:`PyObject_Malloc`
-  * :c:func:`PyObject_Realloc`
-  * :c:func:`PyObject_Calloc`
-  * :c:func:`PyObject_Free`
-
 
 .. note::
 
