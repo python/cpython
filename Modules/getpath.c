@@ -941,7 +941,7 @@ calculate_free(PyCalculatePath *calculate)
 }
 
 
-static void
+static _PyInitError
 calculate_path_impl(PyCalculatePath *calculate, PyPathConfig *config)
 {
     calculate_progpath(calculate, config);
@@ -961,50 +961,77 @@ calculate_path_impl(PyCalculatePath *calculate, PyPathConfig *config)
     config->module_search_path = calculate_module_search_path(calculate, config);
     calculate_reduce_prefix(calculate, config);
     calculate_reduce_exec_prefix(calculate, config);
+    return _Py_INIT_OK();
 }
 
 
 static void
-calculate_path(const _PyMainInterpreterConfig *main_config)
+pathconfig_clear(PyPathConfig *config)
 {
-    _PyInitError err;
+    memset(config->prefix, 0, sizeof(config->prefix));
+    memset(config->exec_prefix, 0, sizeof(config->exec_prefix));
+    memset(config->program_name, 0, sizeof(config->program_name));
+
+    PyMem_RawFree(config->module_search_path);
+    config->module_search_path = NULL;
+}
+
+
+/* Initialize paths for Py_GetPath(), Py_GetPrefix(), Py_GetExecPrefix()
+   and Py_GetProgramFullPath() */
+_PyInitError
+_PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
+{
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
-
-    _PyMainInterpreterConfig tmp_config;
-    int use_tmp = (main_config == NULL);
-    if (use_tmp) {
-        tmp_config = _PyMainInterpreterConfig_INIT;
-        err = _PyMainInterpreterConfig_ReadEnv(&tmp_config);
-        if (_Py_INIT_FAILED(err)) {
-            goto fatal_error;
-        }
-        main_config = &tmp_config;
-    }
-
-    err = calculate_init(&calculate, main_config);
-    if (_Py_INIT_FAILED(err)) {
-        goto fatal_error;
-    }
 
     PyPathConfig new_path_config;
     memset(&new_path_config, 0, sizeof(new_path_config));
 
-    calculate_path_impl(&calculate, &new_path_config);
+    _PyInitError err = calculate_init(&calculate, main_config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = calculate_path_impl(&calculate, &new_path_config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
     path_config = new_path_config;
 
-    if (use_tmp) {
-        _PyMainInterpreterConfig_Clear(&tmp_config);
-    }
-    calculate_free(&calculate);
-    return;
+    err = _Py_INIT_OK();
 
-fatal_error:
-    if (use_tmp) {
-        _PyMainInterpreterConfig_Clear(&tmp_config);
+done:
+    if (_Py_INIT_FAILED(err)) {
+        pathconfig_clear(&new_path_config);
     }
     calculate_free(&calculate);
-    _Py_FatalInitError(err);
+    return err;
+}
+
+
+static void
+calculate_path(void)
+{
+    _PyInitError err;
+    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
+
+    err = _PyMainInterpreterConfig_ReadEnv(&config);
+    if (!_Py_INIT_FAILED(err)) {
+        err = _PyPathConfig_Init(&config);
+    }
+    _PyMainInterpreterConfig_Clear(&config);
+
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
+}
+
+
+void
+_PyPathConfig_Fini(void)
+{
+    pathconfig_clear(&path_config);
 }
 
 
@@ -1013,8 +1040,7 @@ void
 Py_SetPath(const wchar_t *path)
 {
     if (path_config.module_search_path != NULL) {
-        PyMem_RawFree(path_config.module_search_path);
-        path_config.module_search_path = NULL;
+        pathconfig_clear(&path_config);
     }
 
     if (path == NULL) {
@@ -1033,20 +1059,10 @@ Py_SetPath(const wchar_t *path)
 
 
 wchar_t *
-_Py_GetPathWithConfig(const _PyMainInterpreterConfig *main_config)
-{
-    if (!path_config.module_search_path) {
-        calculate_path(main_config);
-    }
-    return path_config.module_search_path;
-}
-
-
-wchar_t *
 Py_GetPath(void)
 {
     if (!path_config.module_search_path) {
-        calculate_path(NULL);
+        calculate_path();
     }
     return path_config.module_search_path;
 }
@@ -1056,7 +1072,7 @@ wchar_t *
 Py_GetPrefix(void)
 {
     if (!path_config.module_search_path) {
-        calculate_path(NULL);
+        calculate_path();
     }
     return path_config.prefix;
 }
@@ -1066,7 +1082,7 @@ wchar_t *
 Py_GetExecPrefix(void)
 {
     if (!path_config.module_search_path) {
-        calculate_path(NULL);
+        calculate_path();
     }
     return path_config.exec_prefix;
 }
@@ -1076,7 +1092,7 @@ wchar_t *
 Py_GetProgramFullPath(void)
 {
     if (!path_config.module_search_path) {
-        calculate_path(NULL);
+        calculate_path();
     }
     return path_config.program_name;
 }
