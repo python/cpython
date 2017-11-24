@@ -575,6 +575,8 @@ summary_getproperty(msiobj* si, PyObject *args)
             if (sval != sbuf)
                 free(sval);
             return result;
+        case VT_EMPTY:
+            Py_RETURN_NONE;
     }
     PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
     return NULL;

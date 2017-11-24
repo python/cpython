@@ -53,6 +53,13 @@ class MsiDatabaseTestCase(unittest.TestCase):
             msilib.OpenDatabase(db_path, msilib.MSIDBOPEN_CREATE)
         self.assertEqual(str(cm.exception), 'create failed')
 
+    def test_get_property_vt_empty(self):
+        db, db_path = init_database()
+        summary = db.GetSummaryInformation(0)
+        self.assertIsNone(summary.GetProperty(msilib.PID_SECURITY))
+        db.Close()
+        self.addCleanup(unlink, db_path)
+
 
 class Test_make_id(unittest.TestCase):
     #http://msdn.microsoft.com/en-us/library/aa369212(v=vs.85).aspx

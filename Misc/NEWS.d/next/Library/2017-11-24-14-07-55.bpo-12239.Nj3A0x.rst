@@ -1,0 +1,2 @@
+Make :meth:`msilib.SummaryInformation.GetProperty` return ``None`` when the
+value of property is ``VT_EMPTY``.  Initial patch by Mark Mc Mahon.
