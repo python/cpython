@@ -797,7 +797,7 @@ _Py_InitializeCore(const _PyCoreConfig *config)
  */
 
 _PyInitError
-_Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *config)
+_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
 {
     /* Signal handlers are installed by default */
     if (config->install_signal_handlers < 0) {
@@ -805,6 +805,17 @@ _Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *config)
     }
     return _Py_INIT_OK();
 }
+
+
+void
+_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+{
+    PyMem_RawFree(config->module_search_path_env);
+    config->module_search_path_env = NULL;
+    PyMem_RawFree(config->home);
+    config->home = NULL;
+}
+
 
 /* Update interpreter state based on supplied configuration settings
  *
@@ -944,7 +955,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     }
 
     /* TODO: Print any exceptions raised by these operations */
-    err = _Py_ReadMainInterpreterConfig(&config);
+    err = _PyMainInterpreterConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1478,8 +1489,8 @@ Py_SetPythonHome(wchar_t *home)
 }
 
 
-_PyInitError
-_Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config, wchar_t **homep)
+wchar_t*
+Py_GetPythonHome(void)
 {
     /* Use a static buffer to avoid heap memory allocation failure.
        Py_GetPythonHome() doesn't allow to report error, and the caller
@@ -1487,40 +1498,22 @@ _Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config, wchar_t **ho
     static wchar_t buffer[MAXPATHLEN+1];
 
     if (default_home) {
-        *homep = default_home;
-        return _Py_INIT_OK();
-    }
-
-    if (config) {
-        *homep = config->pythonhome;
-        return _Py_INIT_OK();
+        return default_home;
     }
 
     char *home = Py_GETENV("PYTHONHOME");
     if (!home) {
-        *homep = NULL;
-        return _Py_INIT_OK();
+        return NULL;
     }
 
     size_t size = Py_ARRAY_LENGTH(buffer);
     size_t r = mbstowcs(buffer, home, size);
     if (r == (size_t)-1 || r >= size) {
         /* conversion failed or the static buffer is too small */
-        *homep = NULL;
-        return _Py_INIT_ERR("failed to decode PYTHONHOME environment variable");
+        return NULL;
     }
 
-    *homep = buffer;
-    return _Py_INIT_OK();
-}
-
-wchar_t *
-Py_GetPythonHome(void)
-{
-    wchar_t *home;
-    /* Ignore error */
-    (void)_Py_GetPythonHomeWithConfig(NULL, &home);
-    return home;
+    return buffer;
 }
 
 /* Add the __main__ module */

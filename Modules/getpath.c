@@ -120,7 +120,6 @@ typedef struct {
     wchar_t *path_env;                 /* PATH environment variable */
     wchar_t *home;                     /* PYTHONHOME environment variable */
     wchar_t *module_search_path_env;   /* PYTHONPATH environment variable */
-    wchar_t *module_search_path_buffer;
 
     wchar_t *prog;                     /* Program name */
     wchar_t *pythonpath;               /* PYTHONPATH define */
@@ -886,9 +885,9 @@ calculate_module_search_path(PyCalculatePath *calculate, PyPathConfig *config)
 }
 
 
-#define DECODE_FAILED(NAME, LEN) \
+#define DECODE_LOCALE_ERR(NAME, LEN) \
     ((LEN) == (size_t)-2) \
-     ? _Py_INIT_ERR("failed to decode " #NAME) \
+     ? _Py_INIT_USER_ERR("failed to decode " #NAME) \
      : _Py_INIT_NO_MEMORY()
 
 
@@ -896,19 +895,15 @@ static _PyInitError
 calculate_init(PyCalculatePath *calculate,
                const _PyMainInterpreterConfig *main_config)
 {
-    _PyInitError err;
-
-    err = _Py_GetPythonHomeWithConfig(main_config, &calculate->home);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
+    calculate->home = main_config->home;
+    calculate->module_search_path_env = main_config->module_search_path_env;
 
     size_t len;
     char *path = getenv("PATH");
     if (path) {
         calculate->path_env = Py_DecodeLocale(path, &len);
         if (!calculate->path_env) {
-            return DECODE_FAILED("PATH environment variable", len);
+            return DECODE_LOCALE_ERR("PATH environment variable", len);
         }
     }
 
@@ -916,37 +911,19 @@ calculate_init(PyCalculatePath *calculate,
 
     calculate->pythonpath = Py_DecodeLocale(PYTHONPATH, &len);
     if (!calculate->pythonpath) {
-        return DECODE_FAILED("PYTHONPATH define", len);
+        return DECODE_LOCALE_ERR("PYTHONPATH define", len);
     }
     calculate->prefix = Py_DecodeLocale(PREFIX, &len);
     if (!calculate->prefix) {
-        return DECODE_FAILED("PREFIX define", len);
+        return DECODE_LOCALE_ERR("PREFIX define", len);
     }
     calculate->exec_prefix = Py_DecodeLocale(EXEC_PREFIX, &len);
     if (!calculate->prefix) {
-        return DECODE_FAILED("EXEC_PREFIX define", len);
+        return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
     calculate->lib_python = Py_DecodeLocale("lib/python" VERSION, &len);
     if (!calculate->lib_python) {
-        return DECODE_FAILED("EXEC_PREFIX define", len);
-    }
-
-    calculate->module_search_path_env = NULL;
-    if (main_config) {
-        if (main_config->module_search_path_env) {
-            calculate->module_search_path_env = main_config->module_search_path_env;
-        }
-
-    }
-    else {
-        char *pythonpath = Py_GETENV("PYTHONPATH");
-        if (pythonpath && pythonpath[0] != '\0') {
-            calculate->module_search_path_buffer = Py_DecodeLocale(pythonpath, &len);
-            if (!calculate->module_search_path_buffer) {
-                return DECODE_FAILED("PYTHONPATH environment variable", len);
-            }
-            calculate->module_search_path_env = calculate->module_search_path_buffer;
-        }
+        return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
     return _Py_INIT_OK();
 }
@@ -960,7 +937,6 @@ calculate_free(PyCalculatePath *calculate)
     PyMem_RawFree(calculate->exec_prefix);
     PyMem_RawFree(calculate->lib_python);
     PyMem_RawFree(calculate->path_env);
-    PyMem_RawFree(calculate->module_search_path_buffer);
 }
 
 
@@ -988,13 +964,24 @@ calculate_path_impl(PyCalculatePath *calculate, PyPathConfig *config)
 static void
 calculate_path(const _PyMainInterpreterConfig *main_config)
 {
+    _PyInitError err;
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
-    _PyInitError err = calculate_init(&calculate, main_config);
+    _PyMainInterpreterConfig tmp_config;
+    int use_tmp = (main_config == NULL);
+    if (use_tmp) {
+        tmp_config = _PyMainInterpreterConfig_INIT;
+        err = _PyMainInterpreterConfig_ReadEnv(&tmp_config);
+        if (_Py_INIT_FAILED(err)) {
+            goto fatal_error;
+        }
+        main_config = &tmp_config;
+    }
+
+    err = calculate_init(&calculate, main_config);
     if (_Py_INIT_FAILED(err)) {
-        calculate_free(&calculate);
-        _Py_FatalInitError(err);
+        goto fatal_error;
     }
 
     PyPathConfig new_path_config;
@@ -1003,7 +990,18 @@ calculate_path(const _PyMainInterpreterConfig *main_config)
     calculate_path_impl(&calculate, &new_path_config);
     path_config = new_path_config;
 
+    if (use_tmp) {
+        _PyMainInterpreterConfig_Clear(&tmp_config);
+    }
     calculate_free(&calculate);
+    return;
+
+fatal_error:
+    if (use_tmp) {
+        _PyMainInterpreterConfig_Clear(&tmp_config);
+    }
+    calculate_free(&calculate);
+    _Py_FatalInitError(err);
 }
 
 
