@@ -1,0 +1,3 @@
+When Python is built in debug mode, the memory debug hooks now fail with a
+fatal error if realloc() fails to shrink a memory block, because the debug
+hook just erased freed bytes without keeping a copy of them.
