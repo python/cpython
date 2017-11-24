@@ -1,0 +1,2 @@
+The ``Py_UseClassExceptionsFlag`` flag has been removed. It was deprecated
+and wasn't used anymore since Python 2.0.
