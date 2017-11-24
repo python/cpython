@@ -1,0 +1,5 @@
+The new test.support.skip_unless_bind_unix_socket() decorator is used here to
+skip asyncio tests that fail because the platform lacks a functional bind()
+function for unix domain sockets (as it is the case for non root users on the
+recent Android versions that run now SELinux in enforcing mode).
+
