@@ -56,7 +56,7 @@ class MsiDatabaseTestCase(unittest.TestCase):
         db, db_path = init_database()
         summary = db.GetSummaryInformation(0)
         self.assertIsNone(summary.GetProperty(msilib.PID_SECURITY))
-        db.Close()
+        del db
         self.addCleanup(unlink, db_path)
 
 
