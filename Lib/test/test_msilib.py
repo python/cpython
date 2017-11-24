@@ -1,4 +1,5 @@
 """ Test suite for the code in msilib """
+import os.path
 import unittest
 from test.support import TESTFN, import_module, unlink
 msilib = import_module('msilib')
@@ -40,6 +41,17 @@ class MsiDatabaseTestCase(unittest.TestCase):
             ]
         )
         self.addCleanup(unlink, db_path)
+
+    def test_database_open_failed(self):
+        with self.assertRaises(msilib.MSIError) as cm:
+            msilib.OpenDatabase('non-existent.msi', msilib.MSIDBOPEN_READONLY)
+        self.assertEqual(str(cm.exception), 'open failed')
+
+    def test_database_create_failed(self):
+        db_path = os.path.join(TESTFN, 'test.msi')
+        with self.assertRaises(msilib.MSIError) as cm:
+            msilib.OpenDatabase(db_path, msilib.MSIDBOPEN_CREATE)
+        self.assertEqual(str(cm.exception), 'create failed')
 
 
 class Test_make_id(unittest.TestCase):
