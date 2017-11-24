@@ -124,7 +124,7 @@ This terminates the option list (following options are passed as
 arguments to the command).
 .TP
 .B \-d
-Turn on parser debugging output (for wizards only, depending on
+Turn on parser debugging output (for expert only, depending on
 compilation options).
 .TP
 .B \-E
