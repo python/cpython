@@ -593,6 +593,16 @@ class EmbeddingTests(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
 
+    def test_pre_initialization_api(self):
+        """
+        Checks the few parts of the C-API that work before the runtine
+        is initialized (via Py_Initialize()).
+        """
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
+        out, err = self.run_embedded_interpreter("pre_initialization_api", env=env)
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
 
 class SkipitemTest(unittest.TestCase):
 
