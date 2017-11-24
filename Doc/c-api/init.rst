@@ -14,7 +14,8 @@ Before Python Initialization
 
 In an application embedding  Python, the :c:func:`Py_Initialize` function must
 be called before using any other Python/C API functions; with the exception of
-a few functions and the :ref:`global configuration variables <global-conf-vars>`:
+a few functions and the :ref:`global configuration variables
+<global-conf-vars>`.
 
 The following functions can be safely called before Python is initialized:
 
