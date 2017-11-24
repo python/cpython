@@ -1011,7 +1011,7 @@ calculate_path(const _PyMainInterpreterConfig *main_config)
     int use_tmp = (main_config == NULL);
     if (use_tmp) {
         tmp_config = _PyMainInterpreterConfig_INIT;
-        err = _PyMainInterpreterConfig_ReadEnv(&tmp_config);
+        _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&tmp_config);
         if (_Py_INIT_FAILED(err)) {
             goto fatal_error;
         }
