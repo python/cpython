@@ -7,6 +7,213 @@
 Initialization, Finalization, and Threads
 *****************************************
 
+.. _pre-init-safe:
+
+Before Python Initialization
+============================
+
+In an application embedding  Python, the :c:func:`Py_Initialize` function must
+be called before using any other Python/C API functions; with the exception of
+a few functions and the :ref:`global configuration variables
+<global-conf-vars>`.
+
+The following functions can be safely called before Python is initialized:
+
+* Configuration functions:
+
+  * :c:func:`PyImport_AppendInittab`
+  * :c:func:`PyImport_ExtendInittab`
+  * :c:func:`PyInitFrozenExtensions`
+  * :c:func:`PyMem_SetAllocator`
+  * :c:func:`PyMem_SetupDebugHooks`
+  * :c:func:`PyObject_SetArenaAllocator`
+  * :c:func:`Py_SetPath`
+  * :c:func:`Py_SetProgramName`
+  * :c:func:`Py_SetPythonHome`
+  * :c:func:`Py_SetStandardStreamEncoding`
+
+* Informative functions:
+
+  * :c:func:`PyMem_GetAllocator`
+  * :c:func:`PyObject_GetArenaAllocator`
+  * :c:func:`Py_GetBuildInfo`
+  * :c:func:`Py_GetCompiler`
+  * :c:func:`Py_GetCopyright`
+  * :c:func:`Py_GetPlatform`
+  * :c:func:`Py_GetProgramName`
+  * :c:func:`Py_GetVersion`
+
+* Utilities:
+
+  * :c:func:`Py_DecodeLocale`
+
+* Memory allocators:
+
+  * :c:func:`PyMem_RawMalloc`
+  * :c:func:`PyMem_RawRealloc`
+  * :c:func:`PyMem_RawCalloc`
+  * :c:func:`PyMem_RawFree`
+
+.. note::
+
+   The following functions **should not be called** before
+   :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
+   :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix` and
+   :c:func:`Py_GetProgramFullPath` and :c:func:`Py_GetPythonHome`.
+
+
+.. _global-conf-vars:
+
+Global configuration variables
+==============================
+
+Python has variables for the global configuration to control different features
+and options. By default, these flags are controlled by :ref:`command line
+options <using-on-interface-options>`.
+
+When a flag is set by an option, the value of the flag is the number of times
+that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
+to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
+
+.. c:var:: Py_BytesWarningFlag
+
+   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
+   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
+   or equal to ``2``.
+
+   Set by the :option:`-b` option.
+
+.. c:var:: Py_DebugFlag
+
+   Turn on parser debugging output (for expert only, depending on compilation
+   options).
+
+   Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
+   variable.
+
+.. c:var:: Py_DontWriteBytecodeFlag
+
+   If set to non-zero, Python won't try to write ``.pyc`` files on the
+   import of source modules.
+
+   Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
+   environment variable.
+
+.. c:var:: Py_FrozenFlag
+
+   Suppress error messages when calculating the module search path in
+   :c:func:`Py_GetPath`.
+
+   Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
+
+.. c:var:: Py_HashRandomizationFlag
+
+   Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
+   a non-empty string.
+
+   If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
+   variable to initialize the secret hash seed.
+
+.. c:var:: Py_IgnoreEnvironmentFlag
+
+   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
+
+   Set by the :option:`-E` and :option:`-I` options.
+
+.. c:var:: Py_InspectFlag
+
+   When a script is passed as first argument or the :option:`-c` option is used,
+   enter interactive mode after executing the script or the command, even when
+   :data:`sys.stdin` does not appear to be a terminal.
+
+   Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
+   variable.
+
+.. c:var:: Py_InteractiveFlag
+
+   Set by the :option:`-i` option.
+
+.. c:var:: Py_IsolatedFlag
+
+   Run Python in isolated mode. In isolated mode :data:`sys.path` contains
+   neither the script's directory nor the user's site-packages directory.
+
+   Set by the :option:`-I` option.
+
+   .. versionadded:: 3.4
+
+.. c:var:: Py_LegacyWindowsFSEncodingFlag
+
+   If the flag is non-zero, use the ``mbcs`` encoding instead of the UTF-8
+   encoding for the filesystem encoding.
+
+   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
+   variable is set to a non-empty string.
+
+   See :pep:`529` for more details.
+
+   Availability: Windows.
+
+.. c:var:: Py_LegacyWindowsStdioFlag
+
+   If the flag is non-zero, use :class:`io.FileIO` instead of
+   :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
+
+   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
+   variable is set to a non-empty string.
+
+   See :pep:`528` for more details.
+
+   Availability: Windows.
+
+.. c:var:: Py_NoSiteFlag
+
+   Disable the import of the module :mod:`site` and the site-dependent
+   manipulations of :data:`sys.path` that it entails.  Also disable these
+   manipulations if :mod:`site` is explicitly imported later (call
+   :func:`site.main` if you want them to be triggered).
+
+   Set by the :option:`-S` option.
+
+.. c:var:: Py_NoUserSiteDirectory
+
+   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
+
+   Set by the :option:`-s` and :option:`-I` options, and the
+   :envvar:`PYTHONNOUSERSITE` environment variable.
+
+.. c:var:: Py_OptimizeFlag
+
+   Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
+   variable.
+
+.. c:var:: Py_QuietFlag
+
+   Don't display the copyright and version messages even in interactive mode.
+
+   Set by the :option:`-q` option.
+
+   .. versionadded:: 3.2
+
+.. c:var:: Py_UnbufferedStdioFlag
+
+   Force the stdout and stderr streams to be unbuffered.
+
+   Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
+   environment variable.
+
+.. c:var:: Py_VerboseFlag
+
+   Print a message each time a module is initialized, showing the place
+   (filename or built-in module) from which it is loaded.  If greater or equal
+   to ``2``, print a message for each file that is checked for when
+   searching for a module. Also provides information on module cleanup at exit.
+
+   Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
+   variable.
+
 
 Initializing and finalizing the interpreter
 ===========================================
@@ -27,9 +234,11 @@ Initializing and finalizing the interpreter
       single: PySys_SetArgvEx()
       single: Py_FinalizeEx()
 
-   Initialize the Python interpreter.  In an application embedding  Python, this
-   should be called before using any other Python/C API functions; with the
-   exception of :c:func:`Py_SetProgramName`, :c:func:`Py_SetPythonHome` and :c:func:`Py_SetPath`.  This initializes
+   Initialize the Python interpreter.  In an application embedding  Python,
+   this should be called before using any other Python/C API functions; see
+   :ref:`Before Python Initialization <pre-init-safe>` for the few exceptions.
+
+   This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
