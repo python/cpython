@@ -7,6 +7,116 @@
 Initialization, Finalization, and Threads
 *****************************************
 
+.. _pre-init-safe:
+
+Before Python Initialization
+============================
+
+In an application embedding  Python, the :c:func:`Py_Initialize` function must
+be called before using any other Python/C API functions; with the exception of
+a few functions and flags listed below.
+
+The following functions can be safetely called before Python is initialized:
+
+* Configuration functions:
+
+  * :c:func:`Py_SetStandardStreamEncoding`
+  * :c:func:`Py_GetProgramName`, :c:func:`Py_SetProgramName`
+  * :c:func:`Py_SetPythonHome`
+  * :c:func:`Py_SetPath`
+
+* Memory allocators functions:
+
+  * :c:func:`PyMem_GetAllocator`, :c:func:`PyMem_SetAllocator`
+  * :c:func:`PyMem_SetupDebugHooks`
+  * :c:func:`PyObject_GetArenaAllocator`, :c:func:`PyObject_SetArenaAllocator`
+  * :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc`,
+    :c:func:`PyMem_RawCalloc`, :c:func:`PyMem_RawFree`
+  * :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc`, :c:func:`PyMem_Calloc`,
+    :c:func:`PyMem_Free`
+  * :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc`,
+    :c:func:`PyObject_Calloc`, :c:func:`PyObject_Free`
+
+The following flags can also be set:
+
+* :c:data:`Py_BytesWarningFlag`
+* :c:data:`Py_DebugFlag`
+* :c:data:`Py_InspectFlag`
+* :c:data:`Py_InteractiveFlag`
+* :c:data:`Py_IsolatedFlag`
+* :c:data:`Py_OptimizeFlag`
+* :c:data:`Py_DontWriteBytecodeFlag`
+* :c:data:`Py_NoUserSiteDirectory`
+* :c:data:`Py_NoSiteFlag`
+* :c:data:`Py_UnbufferedStdioFlag`
+* :c:data:`Py_VerboseFlag`
+* :c:data:`Py_QuietFlag`
+* :c:data:`Py_IgnoreEnvironmentFlag`
+
+
+Global configuration variables
+==============================
+
+Python has variables for the global configuration to control different features
+and options. By default, these flags are controlled by :ref:`command line
+options <using-on-interface-options>`.
+
+.. :c:data: Py_BytesWarningFlag
+
+  The :option:`-b` option.
+
+.. :c:data: Py_DebugFlag
+
+  The :option:`-d` option.
+
+.. :c:data: Py_InspectFlag
+
+  The :option:`-i` option.
+
+.. :c:data: Py_InteractiveFlag
+
+  The :option:`-i` option.
+
+.. :c:data: Py_IsolatedFlag
+
+  The :option:`-I` option.
+
+   .. versionadded:: 3.4
+
+.. :c:data: Py_OptimizeFlag
+
+  The :option:`-O` option.
+
+.. :c:data: Py_DontWriteBytecodeFlag
+
+  The :option:`-B` option.
+
+.. :c:data: Py_NoUserSiteDirectory
+
+  The :option:`-s` option.
+
+.. :c:data: Py_NoSiteFlag
+
+  The :option:`-S` option.
+
+.. :c:data: Py_UnbufferedStdioFlag
+
+  The :option:`-u` option.
+
+.. :c:data: Py_VerboseFlag
+
+  The :option:`-v` option.
+
+.. :c:data: Py_QuietFlag
+
+  The :option:`-q` option.
+
+   .. versionadded:: 3.2
+
+.. :c:data: Py_IgnoreEnvironmentFlag
+
+  The :option:`-E` and :option:`-I` options.
+
 
 Initializing and finalizing the interpreter
 ===========================================
@@ -27,9 +137,11 @@ Initializing and finalizing the interpreter
       single: PySys_SetArgvEx()
       single: Py_FinalizeEx()
 
-   Initialize the Python interpreter.  In an application embedding  Python, this
-   should be called before using any other Python/C API functions; with the
-   exception of :c:func:`Py_SetProgramName`, :c:func:`Py_SetPythonHome` and :c:func:`Py_SetPath`.  This initializes
+   Initialize the Python interpreter.  In an application embedding  Python,
+   this should be called before using any other Python/C API functions; see
+   :ref:`Before Python Initialization <pre-init-safe>` for the few exceptions.
+
+   This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
