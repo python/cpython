@@ -13,6 +13,7 @@ import tempfile
 import threading
 import unittest
 from unittest import mock
+from test import support
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -239,6 +240,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_existing_path_sock(self):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX)
@@ -251,6 +253,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_pathlib(self):
         with test_utils.unix_socket_path() as path:
             path = pathlib.Path(path)
@@ -308,6 +311,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'no socket.SOCK_NONBLOCK (linux only)')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
         sock = socket.socket(
             socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
