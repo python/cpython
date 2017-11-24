@@ -216,9 +216,9 @@ The fix is to call the :func:`ensure_future` function or the
 Detect exceptions never consumed
 --------------------------------
 
-Python usually calls :func:`sys.displayhook` on unhandled exceptions. If
+Python usually calls :func:`sys.excepthook` on unhandled exceptions. If
 :meth:`Future.set_exception` is called, but the exception is never consumed,
-:func:`sys.displayhook` is not called. Instead, :ref:`a log is emitted
+:func:`sys.excepthook` is not called. Instead, :ref:`a log is emitted
 <asyncio-logger>` when the future is deleted by the garbage collector, with the
 traceback where the exception was raised.
 
