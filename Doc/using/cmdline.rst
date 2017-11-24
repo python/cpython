@@ -411,14 +411,16 @@ Miscellaneous options
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
-   * ``-X dev`` enables the "developer mode": enable debug checks at runtime.
-     In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python3
-     -W default -X faulthandler ...``, except that the :envvar:`PYTHONMALLOC`
-     and :envvar:`PYTHONASYNCIODEBUG` environment variables are not set in
-     practice. Developer mode:
+   * ``-X dev``: enable CPython's "developer mode", introducing additional
+     runtime checks which are too expensive to be enabled by default. It should
+     not be more verbose than the default if the code is correct: new warnings
+     are only emitted when an issue is detected. Effect of the developer mode:
 
-     * Add ``default`` warnings option. For example, display
-       :exc:`DeprecationWarning` and :exc:`ResourceWarning` warnings.
+     * Warning filters: add a filter to display all warnings (``"default"``
+       action), except of :exc:`BytesWarning` which still depends on the
+       :option:`-b` option, and use ``"always"`` action for
+       :exc:`ResourceWarning` warnings. For example, display
+       :exc:`DeprecationWarning` warnings.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
      * Enable the :mod:`faulthandler` module to dump the Python traceback
@@ -441,8 +443,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importtime``, ``-X dev`` and :envvar:`PYTHONPROFILEIMPORTTIME`
-      options.
+      The ``-X importtime`` and ``-X dev`` options.
 
 
 Options you shouldn't use

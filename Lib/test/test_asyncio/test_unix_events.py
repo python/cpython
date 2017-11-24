@@ -253,7 +253,6 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
-    @unittest.skipUnless(hasattr(os, 'fspath'), 'no os.fspath')
     @support.skip_unless_bind_unix_socket
     def test_create_unix_server_pathlib(self):
         with test_utils.unix_socket_path() as path:
@@ -262,6 +261,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             srv = self.loop.run_until_complete(srv_coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
+
+    def test_create_unix_connection_pathlib(self):
+        with test_utils.unix_socket_path() as path:
+            path = pathlib.Path(path)
+            coro = self.loop.create_unix_connection(lambda: None, path)
+            with self.assertRaises(FileNotFoundError):
+                # If pathlib.Path wasn't supported, the exception would be
+                # different.
+                self.loop.run_until_complete(coro)
 
     def test_create_unix_server_existing_path_nonsock(self):
         with tempfile.NamedTemporaryFile() as file:
@@ -323,7 +331,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()
         with sock:
-            coro = self.loop.create_unix_connection(lambda: None, path=None,
+            coro = self.loop.create_unix_connection(lambda: None,
                                                     sock=sock)
             with self.assertRaisesRegex(ValueError,
                                         'A UNIX Domain Stream.*was expected'):

@@ -116,14 +116,34 @@
 #define LANDMARK L"lib\\os.py"
 #endif
 
-static wchar_t prefix[MAXPATHLEN+1];
-static wchar_t progpath[MAXPATHLEN+1];
-static wchar_t dllpath[MAXPATHLEN+1];
-static wchar_t *module_search_path = NULL;
+typedef struct {
+    wchar_t prefix[MAXPATHLEN+1];
+    wchar_t progpath[MAXPATHLEN+1];
+    wchar_t dllpath[MAXPATHLEN+1];
+    wchar_t *module_search_path;
+} PyPathConfig;
+
+typedef struct {
+    wchar_t *module_search_path_env;   /* PYTHONPATH environment variable */
+    wchar_t *path_env;                 /* PATH environment variable */
+    wchar_t *home;                     /* PYTHONHOME environment variable */
+
+    /* Registry key "Software\Python\PythonCore\PythonPath" */
+    wchar_t *machine_path;   /* from HKEY_LOCAL_MACHINE */
+    wchar_t *user_path;      /* from HKEY_CURRENT_USER */
+
+    wchar_t *prog;                     /* Program name */
+    wchar_t argv0_path[MAXPATHLEN+1];
+    wchar_t zip_path[MAXPATHLEN+1];
+} PyCalculatePath;
 
 
+static PyPathConfig path_config = {.module_search_path = NULL};
+
+
+/* determine if "ch" is a separator character */
 static int
-is_sep(wchar_t ch)      /* determine if "ch" is a separator character */
+is_sep(wchar_t ch)
 {
 #ifdef ALTSEP
     return ch == SEP || ch == ALTSEP;
@@ -132,28 +152,31 @@ is_sep(wchar_t ch)      /* determine if "ch" is a separator character */
 #endif
 }
 
+
 /* assumes 'dir' null terminated in bounds.  Never writes
-   beyond existing terminator.
-*/
+   beyond existing terminator. */
 static void
 reduce(wchar_t *dir)
 {
     size_t i = wcsnlen_s(dir, MAXPATHLEN+1);
-    if (i >= MAXPATHLEN+1)
+    if (i >= MAXPATHLEN+1) {
         Py_FatalError("buffer overflow in getpathp.c's reduce()");
+    }
 
     while (i > 0 && !is_sep(dir[i]))
         --i;
     dir[i] = '\0';
 }
 
+
 static int
 change_ext(wchar_t *dest, const wchar_t *src, const wchar_t *ext)
 {
     size_t src_len = wcsnlen_s(src, MAXPATHLEN+1);
     size_t i = src_len;
-    if (i >= MAXPATHLEN+1)
+    if (i >= MAXPATHLEN+1) {
         Py_FatalError("buffer overflow in getpathp.c's reduce()");
+    }
 
     while (i > 0 && src[i] != '.' && !is_sep(src[i]))
         --i;
@@ -163,11 +186,13 @@ change_ext(wchar_t *dest, const wchar_t *src, const wchar_t *ext)
         return -1;
     }
 
-    if (is_sep(src[i]))
+    if (is_sep(src[i])) {
         i = src_len;
+    }
 
     if (wcsncpy_s(dest, MAXPATHLEN+1, src, i) ||
-        wcscat_s(dest, MAXPATHLEN+1, ext)) {
+        wcscat_s(dest, MAXPATHLEN+1, ext))
+    {
         dest[0] = '\0';
         return -1;
     }
@@ -175,22 +200,25 @@ change_ext(wchar_t *dest, const wchar_t *src, const wchar_t *ext)
     return 0;
 }
 
+
 static int
 exists(wchar_t *filename)
 {
     return GetFileAttributesW(filename) != 0xFFFFFFFF;
 }
 
-/* Assumes 'filename' MAXPATHLEN+1 bytes long -
-   may extend 'filename' by one character.
-*/
+
+/* Is module -- check for .pyc too.
+   Assumes 'filename' MAXPATHLEN+1 bytes long -
+   may extend 'filename' by one character. */
 static int
-ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc too */
+ismodule(wchar_t *filename, int update_filename)
 {
     size_t n;
 
-    if (exists(filename))
+    if (exists(filename)) {
         return 1;
+    }
 
     /* Check for the compiled version of prefix. */
     n = wcsnlen_s(filename, MAXPATHLEN+1);
@@ -199,12 +227,14 @@ ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc 
         filename[n] = L'c';
         filename[n + 1] = L'\0';
         exist = exists(filename);
-        if (!update_filename)
+        if (!update_filename) {
             filename[n] = L'\0';
+        }
         return exist;
     }
     return 0;
 }
+
 
 /* Add a path component, by appending stuff to buffer.
    buffer must have at least MAXPATHLEN + 1 bytes allocated, and contain a
@@ -217,7 +247,9 @@ ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc 
 */
 
 static int _PathCchCombineEx_Initialized = 0;
-typedef HRESULT(__stdcall *PPathCchCombineEx)(PWSTR pszPathOut, size_t cchPathOut, PCWSTR pszPathIn, PCWSTR pszMore, unsigned long dwFlags);
+typedef HRESULT(__stdcall *PPathCchCombineEx) (PWSTR pszPathOut, size_t cchPathOut,
+                                               PCWSTR pszPathIn, PCWSTR pszMore,
+                                               unsigned long dwFlags);
 static PPathCchCombineEx _PathCchCombineEx;
 
 static void
@@ -225,28 +257,32 @@ join(wchar_t *buffer, const wchar_t *stuff)
 {
     if (_PathCchCombineEx_Initialized == 0) {
         HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
-        if (pathapi)
+        if (pathapi) {
             _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(pathapi, "PathCchCombineEx");
-        else
+        }
+        else {
             _PathCchCombineEx = NULL;
+        }
         _PathCchCombineEx_Initialized = 1;
     }
 
     if (_PathCchCombineEx) {
-        if (FAILED(_PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0)))
+        if (FAILED(_PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0))) {
             Py_FatalError("buffer overflow in getpathp.c's join()");
+        }
     } else {
-        if (!PathCombineW(buffer, buffer, stuff))
+        if (!PathCombineW(buffer, buffer, stuff)) {
             Py_FatalError("buffer overflow in getpathp.c's join()");
+        }
     }
 }
 
+
 /* gotlandmark only called by search_for_prefix, which ensures
    'prefix' is null terminated in bounds.  join() ensures
-   'landmark' can not overflow prefix if too long.
-*/
+   'landmark' can not overflow prefix if too long. */
 static int
-gotlandmark(const wchar_t *landmark)
+gotlandmark(wchar_t *prefix, const wchar_t *landmark)
 {
     int ok;
     Py_ssize_t n = wcsnlen_s(prefix, MAXPATHLEN);
@@ -257,26 +293,28 @@ gotlandmark(const wchar_t *landmark)
     return ok;
 }
 
+
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
-search_for_prefix(wchar_t *argv0_path, const wchar_t *landmark)
+search_for_prefix(wchar_t *prefix, wchar_t *argv0_path, const wchar_t *landmark)
 {
     /* Search from argv0_path, until landmark is found */
     wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
     do {
-        if (gotlandmark(landmark))
+        if (gotlandmark(prefix, landmark)) {
             return 1;
+        }
         reduce(prefix);
     } while (prefix[0]);
     return 0;
 }
 
+
 #ifdef Py_ENABLE_SHARED
 
 /* a string loaded from the DLL at startup.*/
 extern const char *PyWin_DLLVersionString;
-
 
 /* Load a PYTHONPATH value from the registry.
    Load from either HKEY_LOCAL_MACHINE or HKEY_CURRENT_USER.
@@ -290,7 +328,6 @@ extern const char *PyWin_DLLVersionString;
    work on Win16, where the buffer sizes werent available
    in advance.  It could be simplied now Win16/Win32s is dead!
 */
-
 static wchar_t *
 getpythonregpath(HKEY keyBase, int skipcore)
 {
@@ -315,7 +352,9 @@ getpythonregpath(HKEY keyBase, int skipcore)
                 sizeof(WCHAR)*(versionLen-1) +
                 sizeof(keySuffix);
     keyBuf = keyBufPtr = PyMem_RawMalloc(keyBufLen);
-    if (keyBuf==NULL) goto done;
+    if (keyBuf==NULL) {
+        goto done;
+    }
 
     memcpy_s(keyBufPtr, keyBufLen, keyPrefix, sizeof(keyPrefix)-sizeof(WCHAR));
     keyBufPtr += Py_ARRAY_LENGTH(keyPrefix) - 1;
@@ -329,17 +368,25 @@ getpythonregpath(HKEY keyBase, int skipcore)
             0, /* reserved */
             KEY_READ,
             &newKey);
-    if (rc!=ERROR_SUCCESS) goto done;
+    if (rc!=ERROR_SUCCESS) {
+        goto done;
+    }
     /* Find out how big our core buffer is, and how many subkeys we have */
     rc = RegQueryInfoKey(newKey, NULL, NULL, NULL, &numKeys, NULL, NULL,
                     NULL, NULL, &dataSize, NULL, NULL);
-    if (rc!=ERROR_SUCCESS) goto done;
-    if (skipcore) dataSize = 0; /* Only count core ones if we want them! */
+    if (rc!=ERROR_SUCCESS) {
+        goto done;
+    }
+    if (skipcore) {
+        dataSize = 0; /* Only count core ones if we want them! */
+    }
     /* Allocate a temp array of char buffers, so we only need to loop
        reading the registry once
     */
     ppPaths = PyMem_RawMalloc( sizeof(WCHAR *) * numKeys );
-    if (ppPaths==NULL) goto done;
+    if (ppPaths==NULL) {
+        goto done;
+    }
     memset(ppPaths, 0, sizeof(WCHAR *) * numKeys);
     /* Loop over all subkeys, allocating a temp sub-buffer. */
     for(index=0;index<numKeys;index++) {
@@ -349,14 +396,18 @@ getpythonregpath(HKEY keyBase, int skipcore)
         /* Get the sub-key name */
         DWORD rc = RegEnumKeyExW(newKey, index, keyBuf, &reqdSize,
                                  NULL, NULL, NULL, NULL );
-        if (rc!=ERROR_SUCCESS) goto done;
+        if (rc!=ERROR_SUCCESS) {
+            goto done;
+        }
         /* Open the sub-key */
         rc=RegOpenKeyExW(newKey,
                                         keyBuf, /* subkey */
                         0, /* reserved */
                         KEY_READ,
                         &subKey);
-        if (rc!=ERROR_SUCCESS) goto done;
+        if (rc!=ERROR_SUCCESS) {
+            goto done;
+        }
         /* Find the value of the buffer size, malloc, then read it */
         RegQueryValueExW(subKey, NULL, 0, NULL, NULL, &reqdSize);
         if (reqdSize) {
@@ -372,7 +423,9 @@ getpythonregpath(HKEY keyBase, int skipcore)
     }
 
     /* return null if no path to return */
-    if (dataSize == 0) goto done;
+    if (dataSize == 0) {
+        goto done;
+    }
 
     /* original datasize from RegQueryInfo doesn't include the \0 */
     dataBuf = PyMem_RawMalloc((dataSize+1) * sizeof(WCHAR));
@@ -392,8 +445,9 @@ getpythonregpath(HKEY keyBase, int skipcore)
                 dataSize -= (DWORD)len;
             }
         }
-        if (skipcore)
+        if (skipcore) {
             *szCur = '\0';
+        }
         else {
             /* If we have no values, we don't need a ';' */
             if (numKeys) {
@@ -420,33 +474,34 @@ done:
             PyMem_RawFree(ppPaths[index]);
         PyMem_RawFree(ppPaths);
     }
-    if (newKey)
+    if (newKey) {
         RegCloseKey(newKey);
+    }
     PyMem_RawFree(keyBuf);
     return retval;
 }
 #endif /* Py_ENABLE_SHARED */
 
+
 static void
-get_progpath(void)
+get_progpath(PyCalculatePath *calculate, wchar_t *progpath, wchar_t *dllpath)
 {
-    extern wchar_t *Py_GetProgramName(void);
-    wchar_t *path = _wgetenv(L"PATH");
-    wchar_t *prog = Py_GetProgramName();
+    wchar_t *path = calculate->path_env;
 
 #ifdef Py_ENABLE_SHARED
     extern HANDLE PyWin_DLLhModule;
     /* static init of progpath ensures final char remains \0 */
-    if (PyWin_DLLhModule)
-        if (!GetModuleFileNameW(PyWin_DLLhModule, dllpath, MAXPATHLEN))
+    if (PyWin_DLLhModule) {
+        if (!GetModuleFileNameW(PyWin_DLLhModule, dllpath, MAXPATHLEN)) {
             dllpath[0] = 0;
+        }
+    }
 #else
     dllpath[0] = 0;
 #endif
-    if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
+    if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN)) {
         return;
-    if (prog == NULL || *prog == '\0')
-        prog = L"python";
+    }
 
     /* If there is no slash in the argv0 path, then we have to
      * assume python is on the user's $PATH, since there's no
@@ -454,11 +509,13 @@ get_progpath(void)
      * $PATH isn't exported, you lose.
      */
 #ifdef ALTSEP
-    if (wcschr(prog, SEP) || wcschr(prog, ALTSEP))
+    if (wcschr(calculate->prog, SEP) || wcschr(calculate->prog, ALTSEP))
 #else
-    if (wcschr(prog, SEP))
+    if (wcschr(calculate->prog, SEP))
 #endif
-        wcsncpy(progpath, prog, MAXPATHLEN);
+    {
+        wcsncpy(progpath, calculate->prog, MAXPATHLEN);
+    }
     else if (path) {
         while (1) {
             wchar_t *delim = wcschr(path, DELIM);
@@ -470,13 +527,15 @@ get_progpath(void)
                 wcsncpy(progpath, path, len);
                 *(progpath + len) = '\0';
             }
-            else
+            else {
                 wcsncpy(progpath, path, MAXPATHLEN);
+            }
 
             /* join() is safe for MAXPATHLEN+1 size buffer */
-            join(progpath, prog);
-            if (exists(progpath))
+            join(progpath, calculate->prog);
+            if (exists(progpath)) {
                 break;
+            }
 
             if (!delim) {
                 progpath[0] = '\0';
@@ -485,9 +544,11 @@ get_progpath(void)
             path = delim + 1;
         }
     }
-    else
+    else {
         progpath[0] = '\0';
+    }
 }
+
 
 static int
 find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
@@ -502,15 +563,18 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
         PyObject * decoded;
         size_t n;
 
-        if (p == NULL)
+        if (p == NULL) {
             break;
+        }
         n = strlen(p);
         if (p[n - 1] != '\n') {
             /* line has overflowed - bail */
             break;
         }
-        if (p[0] == '#')    /* Comment - skip */
+        if (p[0] == '#') {
+            /* Comment - skip */
             continue;
+        }
         decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
         if (decoded != NULL) {
             Py_ssize_t k;
@@ -537,12 +601,14 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
     return result;
 }
 
-static int
+
+static wchar_t*
 read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
 {
     FILE *sp_file = _Py_wfopen(path, L"r");
-    if (sp_file == NULL)
-        return -1;
+    if (sp_file == NULL) {
+        return NULL;
+    }
 
     wcscpy_s(prefix, MAXPATHLEN+1, path);
     reduce(prefix);
@@ -558,10 +624,12 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
     while (!feof(sp_file)) {
         char line[MAXPATHLEN + 1];
         char *p = fgets(line, MAXPATHLEN + 1, sp_file);
-        if (!p)
+        if (!p) {
             break;
-        if (*p == '\0' || *p == '\r' || *p == '\n' || *p == '#')
+        }
+        if (*p == '\0' || *p == '\r' || *p == '\n' || *p == '#') {
             continue;
+        }
         while (*++p) {
             if (*p == '\r' || *p == '\n') {
                 *p = '\0';
@@ -611,124 +679,176 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
         PyMem_RawFree(wline);
     }
 
-    module_search_path = buf;
-
     fclose(sp_file);
-    return 0;
+    return buf;
 
 error:
     PyMem_RawFree(buf);
     fclose(sp_file);
-    return -1;
+    return NULL;
 }
 
 
-static void
-calculate_path(void)
+static _PyInitError
+calculate_init(PyCalculatePath *calculate,
+               const _PyMainInterpreterConfig *main_config)
 {
-    wchar_t argv0_path[MAXPATHLEN+1];
-    wchar_t *buf;
-    size_t bufsz;
-    wchar_t *pythonhome = Py_GetPythonHome();
-    wchar_t *envpath = NULL;
+    _PyInitError err;
 
-    int skiphome, skipdefault;
-    wchar_t *machinepath = NULL;
-    wchar_t *userpath = NULL;
-    wchar_t zip_path[MAXPATHLEN+1];
-
-    if (!Py_IgnoreEnvironmentFlag) {
-        envpath = _wgetenv(L"PYTHONPATH");
+    err = _Py_GetPythonHomeWithConfig(main_config, &calculate->home);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
 
-    get_progpath();
-    /* progpath guaranteed \0 terminated in MAXPATH+1 bytes. */
-    wcscpy_s(argv0_path, MAXPATHLEN+1, progpath);
-    reduce(argv0_path);
-
-    /* Search for a sys.path file */
-    {
-        wchar_t spbuffer[MAXPATHLEN+1];
-
-        if ((dllpath[0] && !change_ext(spbuffer, dllpath, L"._pth") && exists(spbuffer)) ||
-            (progpath[0] && !change_ext(spbuffer, progpath, L"._pth") && exists(spbuffer))) {
-
-            if (!read_pth_file(spbuffer, prefix, &Py_IsolatedFlag, &Py_NoSiteFlag)) {
-                return;
-            }
+    if (main_config) {
+        calculate->module_search_path_env = main_config->module_search_path_env;
+    }
+    else if (!Py_IgnoreEnvironmentFlag) {
+        wchar_t *path = _wgetenv(L"PYTHONPATH");
+        if (path && *path != '\0') {
+            calculate->module_search_path_env = path;
         }
     }
 
-    /* Search for an environment configuration file, first in the
-       executable's directory and then in the parent directory.
-       If found, open it for use when searching for prefixes.
-    */
+    calculate->path_env = _wgetenv(L"PATH");
 
-    {
-        wchar_t envbuffer[MAXPATHLEN+1];
-        wchar_t tmpbuffer[MAXPATHLEN+1];
-        const wchar_t *env_cfg = L"pyvenv.cfg";
-        FILE * env_file = NULL;
+    wchar_t *prog = Py_GetProgramName();
+    if (prog == NULL || *prog == '\0') {
+        prog = L"python";
+    }
+    calculate->prog = prog;
 
-        wcscpy_s(envbuffer, MAXPATHLEN+1, argv0_path);
+    return _Py_INIT_OK();
+}
+
+
+static int
+get_pth_filename(wchar_t *spbuffer, PyPathConfig *config)
+{
+    if (config->dllpath[0]) {
+        if (!change_ext(spbuffer, config->dllpath, L"._pth") && exists(spbuffer)) {
+            return 1;
+        }
+    }
+    if (config->progpath[0]) {
+        if (!change_ext(spbuffer, config->progpath, L"._pth") && exists(spbuffer)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+static int
+calculate_pth_file(PyPathConfig *config)
+{
+    wchar_t spbuffer[MAXPATHLEN+1];
+
+    if (!get_pth_filename(spbuffer, config)) {
+        return 0;
+    }
+
+    config->module_search_path = read_pth_file(spbuffer, config->prefix,
+                                               &Py_IsolatedFlag,
+                                               &Py_NoSiteFlag);
+    if (!config->module_search_path) {
+        return 0;
+    }
+    return 1;
+}
+
+
+/* Search for an environment configuration file, first in the
+   executable's directory and then in the parent directory.
+   If found, open it for use when searching for prefixes.
+*/
+static void
+calculate_pyvenv_file(PyCalculatePath *calculate)
+{
+    wchar_t envbuffer[MAXPATHLEN+1];
+    const wchar_t *env_cfg = L"pyvenv.cfg";
+
+    wcscpy_s(envbuffer, MAXPATHLEN+1, calculate->argv0_path);
+    join(envbuffer, env_cfg);
+
+    FILE *env_file = _Py_wfopen(envbuffer, L"r");
+    if (env_file == NULL) {
+        errno = 0;
+        reduce(envbuffer);
+        reduce(envbuffer);
         join(envbuffer, env_cfg);
         env_file = _Py_wfopen(envbuffer, L"r");
         if (env_file == NULL) {
             errno = 0;
-            reduce(envbuffer);
-            reduce(envbuffer);
-            join(envbuffer, env_cfg);
-            env_file = _Py_wfopen(envbuffer, L"r");
-            if (env_file == NULL) {
-                errno = 0;
-            }
-        }
-        if (env_file != NULL) {
-            /* Look for a 'home' variable and set argv0_path to it, if found */
-            if (find_env_config_value(env_file, L"home", tmpbuffer)) {
-                wcscpy_s(argv0_path, MAXPATHLEN+1, tmpbuffer);
-            }
-            fclose(env_file);
-            env_file = NULL;
         }
     }
+
+    if (env_file == NULL) {
+        return;
+    }
+
+    /* Look for a 'home' variable and set argv0_path to it, if found */
+    wchar_t tmpbuffer[MAXPATHLEN+1];
+    if (find_env_config_value(env_file, L"home", tmpbuffer)) {
+        wcscpy_s(calculate->argv0_path, MAXPATHLEN+1, tmpbuffer);
+    }
+    fclose(env_file);
+}
+
+
+static void
+calculate_path_impl(PyCalculatePath *calculate, PyPathConfig *config,
+                    const _PyMainInterpreterConfig *main_config)
+{
+    get_progpath(calculate, config->progpath, config->dllpath);
+    /* progpath guaranteed \0 terminated in MAXPATH+1 bytes. */
+    wcscpy_s(calculate->argv0_path, MAXPATHLEN+1, config->progpath);
+    reduce(calculate->argv0_path);
+
+    /* Search for a sys.path file */
+    if (calculate_pth_file(config)) {
+        return;
+    }
+
+    calculate_pyvenv_file(calculate);
 
     /* Calculate zip archive path from DLL or exe path */
-    change_ext(zip_path, dllpath[0] ? dllpath : progpath, L".zip");
+    change_ext(calculate->zip_path,
+               config->dllpath[0] ? config->dllpath : config->progpath,
+               L".zip");
 
-    if (pythonhome == NULL || *pythonhome == '\0') {
-        if (zip_path[0] && exists(zip_path)) {
-            wcscpy_s(prefix, MAXPATHLEN+1, zip_path);
-            reduce(prefix);
-            pythonhome = prefix;
-        } else if (search_for_prefix(argv0_path, LANDMARK))
-            pythonhome = prefix;
-        else
-            pythonhome = NULL;
+    if (calculate->home == NULL || *calculate->home == '\0') {
+        if (calculate->zip_path[0] && exists(calculate->zip_path)) {
+            wcscpy_s(config->prefix, MAXPATHLEN+1, calculate->zip_path);
+            reduce(config->prefix);
+            calculate->home = config->prefix;
+        } else if (search_for_prefix(config->prefix, calculate->argv0_path, LANDMARK)) {
+            calculate->home = config->prefix;
+        }
+        else {
+            calculate->home = NULL;
+        }
     }
-    else
-        wcscpy_s(prefix, MAXPATHLEN+1, pythonhome);
+    else {
+        wcscpy_s(config->prefix, MAXPATHLEN+1, calculate->home);
+    }
 
-    if (envpath && *envpath == '\0')
-        envpath = NULL;
-
-
-    skiphome = pythonhome==NULL ? 0 : 1;
+    int skiphome = calculate->home==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
-    machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
-    userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
+    calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */
-    skipdefault = envpath!=NULL || pythonhome!=NULL || \
-                  machinepath!=NULL || userpath!=NULL;
+    int skipdefault = (calculate->module_search_path_env!=NULL || calculate->home!=NULL || \
+                       calculate->machine_path!=NULL || calculate->user_path!=NULL);
 
     /* We need to construct a path from the following parts.
        (1) the PYTHONPATH environment variable, if set;
        (2) for Win32, the zip archive file path;
-       (3) for Win32, the machinepath and userpath, if set;
+       (3) for Win32, the machine_path and user_path, if set;
        (4) the PYTHONPATH config macro, with the leading "."
-           of each component replaced with pythonhome, if set;
+           of each component replaced with home, if set;
        (5) the directory containing the executable (argv0_path).
        The length calculation calculates #4 first.
        Extra rules:
@@ -737,74 +857,80 @@ calculate_path(void)
     */
 
     /* Calculate size of return buffer */
-    if (pythonhome != NULL) {
+    size_t bufsz = 0;
+    if (calculate->home != NULL) {
         wchar_t *p;
         bufsz = 1;
         for (p = PYTHONPATH; *p; p++) {
-            if (*p == DELIM)
+            if (*p == DELIM) {
                 bufsz++; /* number of DELIM plus one */
+            }
         }
-        bufsz *= wcslen(pythonhome);
+        bufsz *= wcslen(calculate->home);
     }
-    else
-        bufsz = 0;
     bufsz += wcslen(PYTHONPATH) + 1;
-    bufsz += wcslen(argv0_path) + 1;
-    if (userpath)
-        bufsz += wcslen(userpath) + 1;
-    if (machinepath)
-        bufsz += wcslen(machinepath) + 1;
-    bufsz += wcslen(zip_path) + 1;
-    if (envpath != NULL)
-        bufsz += wcslen(envpath) + 1;
+    bufsz += wcslen(calculate->argv0_path) + 1;
+    if (calculate->user_path) {
+        bufsz += wcslen(calculate->user_path) + 1;
+    }
+    if (calculate->machine_path) {
+        bufsz += wcslen(calculate->machine_path) + 1;
+    }
+    bufsz += wcslen(calculate->zip_path) + 1;
+    if (calculate->module_search_path_env != NULL) {
+        bufsz += wcslen(calculate->module_search_path_env) + 1;
+    }
 
-    module_search_path = buf = PyMem_RawMalloc(bufsz*sizeof(wchar_t));
+    wchar_t *buf, *start_buf;
+    buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
     if (buf == NULL) {
         /* We can't exit, so print a warning and limp along */
         fprintf(stderr, "Can't malloc dynamic PYTHONPATH.\n");
-        if (envpath) {
+        if (calculate->module_search_path_env) {
             fprintf(stderr, "Using environment $PYTHONPATH.\n");
-            module_search_path = envpath;
+            config->module_search_path = calculate->module_search_path_env;
         }
         else {
             fprintf(stderr, "Using default static path.\n");
-            module_search_path = PYTHONPATH;
+            config->module_search_path = PYTHONPATH;
         }
-        PyMem_RawFree(machinepath);
-        PyMem_RawFree(userpath);
         return;
     }
+    start_buf = buf;
 
-    if (envpath) {
-        if (wcscpy_s(buf, bufsz - (buf - module_search_path), envpath))
+    if (calculate->module_search_path_env) {
+        if (wcscpy_s(buf, bufsz - (buf - start_buf), calculate->module_search_path_env)) {
             Py_FatalError("buffer overflow in getpathp.c's calculate_path()");
+        }
         buf = wcschr(buf, L'\0');
         *buf++ = DELIM;
     }
-    if (zip_path[0]) {
-        if (wcscpy_s(buf, bufsz - (buf - module_search_path), zip_path))
+    if (calculate->zip_path[0]) {
+        if (wcscpy_s(buf, bufsz - (buf - start_buf), calculate->zip_path)) {
             Py_FatalError("buffer overflow in getpathp.c's calculate_path()");
+        }
         buf = wcschr(buf, L'\0');
         *buf++ = DELIM;
     }
-    if (userpath) {
-        if (wcscpy_s(buf, bufsz - (buf - module_search_path), userpath))
+    if (calculate->user_path) {
+        if (wcscpy_s(buf, bufsz - (buf - start_buf), calculate->user_path)) {
             Py_FatalError("buffer overflow in getpathp.c's calculate_path()");
+        }
         buf = wcschr(buf, L'\0');
         *buf++ = DELIM;
-        PyMem_RawFree(userpath);
     }
-    if (machinepath) {
-        if (wcscpy_s(buf, bufsz - (buf - module_search_path), machinepath))
+    if (calculate->machine_path) {
+        if (wcscpy_s(buf, bufsz - (buf - start_buf), calculate->machine_path)) {
             Py_FatalError("buffer overflow in getpathp.c's calculate_path()");
+        }
         buf = wcschr(buf, L'\0');
         *buf++ = DELIM;
-        PyMem_RawFree(machinepath);
     }
-    if (pythonhome == NULL) {
+    if (calculate->home == NULL) {
         if (!skipdefault) {
-            if (wcscpy_s(buf, bufsz - (buf - module_search_path), PYTHONPATH))
+            if (wcscpy_s(buf, bufsz - (buf - start_buf), PYTHONPATH)) {
                 Py_FatalError("buffer overflow in getpathp.c's calculate_path()");
+            }
             buf = wcschr(buf, L'\0');
             *buf++ = DELIM;
         }
@@ -814,13 +940,16 @@ calculate_path(void)
         size_t n;
         for (;;) {
             q = wcschr(p, DELIM);
-            if (q == NULL)
+            if (q == NULL) {
                 n = wcslen(p);
-            else
+            }
+            else {
                 n = q-p;
+            }
             if (p[0] == '.' && is_sep(p[1])) {
-                if (wcscpy_s(buf, bufsz - (buf - module_search_path), pythonhome))
+                if (wcscpy_s(buf, bufsz - (buf - start_buf), calculate->home)) {
                     Py_FatalError("buffer overflow in getpathp.c's calculate_path()");
+                }
                 buf = wcschr(buf, L'\0');
                 p++;
                 n--;
@@ -828,17 +957,19 @@ calculate_path(void)
             wcsncpy(buf, p, n);
             buf += n;
             *buf++ = DELIM;
-            if (q == NULL)
+            if (q == NULL) {
                 break;
+            }
             p = q+1;
         }
     }
-    if (argv0_path) {
-        wcscpy(buf, argv0_path);
+    if (calculate->argv0_path) {
+        wcscpy(buf, calculate->argv0_path);
         buf = wcschr(buf, L'\0');
         *buf++ = DELIM;
     }
     *(buf - 1) = L'\0';
+
     /* Now to pull one last hack/trick.  If sys.prefix is
        empty, then try and find it somewhere on the paths
        we calculated.  We scan backwards, as our general policy
@@ -847,7 +978,7 @@ calculate_path(void)
        on the path, and that our 'prefix' directory is
        the parent of that.
     */
-    if (*prefix==L'\0') {
+    if (config->prefix[0] == L'\0') {
         wchar_t lookBuf[MAXPATHLEN+1];
         wchar_t *look = buf - 1; /* 'buf' is at the end of the buffer */
         while (1) {
@@ -857,23 +988,56 @@ calculate_path(void)
                start of the path in question - even if this
                is one character before the start of the buffer
             */
-            while (look >= module_search_path && *look != DELIM)
+            while (look >= start_buf && *look != DELIM)
                 look--;
             nchars = lookEnd-look;
             wcsncpy(lookBuf, look+1, nchars);
             lookBuf[nchars] = L'\0';
             /* Up one level to the parent */
             reduce(lookBuf);
-            if (search_for_prefix(lookBuf, LANDMARK)) {
+            if (search_for_prefix(config->prefix, lookBuf, LANDMARK)) {
                 break;
             }
             /* If we are out of paths to search - give up */
-            if (look < module_search_path)
+            if (look < start_buf) {
                 break;
+            }
             look--;
         }
     }
+
+    config->module_search_path = start_buf;
 }
+
+
+static void
+calculate_free(PyCalculatePath *calculate)
+{
+    PyMem_RawFree(calculate->machine_path);
+    PyMem_RawFree(calculate->user_path);
+}
+
+static void
+calculate_path(const _PyMainInterpreterConfig *main_config)
+{
+    PyCalculatePath calculate;
+    memset(&calculate, 0, sizeof(calculate));
+
+    _PyInitError err = calculate_init(&calculate, main_config);
+    if (_Py_INIT_FAILED(err)) {
+        calculate_free(&calculate);
+        _Py_FatalInitError(err);
+    }
+
+    PyPathConfig new_path_config;
+    memset(&new_path_config, 0, sizeof(new_path_config));
+
+    calculate_path_impl(&calculate, &new_path_config, main_config);
+    path_config = new_path_config;
+
+    calculate_free(&calculate);
+}
+
 
 
 /* External interface */
@@ -881,36 +1045,54 @@ calculate_path(void)
 void
 Py_SetPath(const wchar_t *path)
 {
-    if (module_search_path != NULL) {
-        PyMem_RawFree(module_search_path);
-        module_search_path = NULL;
+    if (path_config.module_search_path != NULL) {
+        PyMem_RawFree(path_config.module_search_path);
+        path_config.module_search_path = NULL;
     }
-    if (path != NULL) {
-        extern wchar_t *Py_GetProgramName(void);
-        wchar_t *prog = Py_GetProgramName();
-        wcsncpy(progpath, prog, MAXPATHLEN);
-        prefix[0] = L'\0';
-        module_search_path = PyMem_RawMalloc((wcslen(path) + 1) * sizeof(wchar_t));
-        if (module_search_path != NULL)
-            wcscpy(module_search_path, path);
+
+    if (path == NULL) {
+        return;
+    }
+
+    wchar_t *prog = Py_GetProgramName();
+    wcsncpy(path_config.progpath, prog, MAXPATHLEN);
+    path_config.prefix[0] = L'\0';
+    path_config.module_search_path = PyMem_RawMalloc((wcslen(path) + 1) * sizeof(wchar_t));
+    if (path_config.module_search_path != NULL) {
+        wcscpy(path_config.module_search_path, path);
     }
 }
+
+
+wchar_t *
+_Py_GetPathWithConfig(const _PyMainInterpreterConfig *main_config)
+{
+    if (!path_config.module_search_path) {
+        calculate_path(main_config);
+    }
+    return path_config.module_search_path;
+}
+
 
 wchar_t *
 Py_GetPath(void)
 {
-    if (!module_search_path)
-        calculate_path();
-    return module_search_path;
+    if (!path_config.module_search_path) {
+        calculate_path(NULL);
+    }
+    return path_config.module_search_path;
 }
+
 
 wchar_t *
 Py_GetPrefix(void)
 {
-    if (!module_search_path)
-        calculate_path();
-    return prefix;
+    if (!path_config.module_search_path) {
+        calculate_path(NULL);
+    }
+    return path_config.prefix;
 }
+
 
 wchar_t *
 Py_GetExecPrefix(void)
@@ -918,13 +1100,16 @@ Py_GetExecPrefix(void)
     return Py_GetPrefix();
 }
 
+
 wchar_t *
 Py_GetProgramFullPath(void)
 {
-    if (!module_search_path)
-        calculate_path();
-    return progpath;
+    if (!path_config.module_search_path) {
+        calculate_path(NULL);
+    }
+    return path_config.progpath;
 }
+
 
 /* Load python3.dll before loading any extension module that might refer
    to it. That way, we can be sure that always the python3.dll corresponding
@@ -939,20 +1124,23 @@ _Py_CheckPython3()
 {
     wchar_t py3path[MAXPATHLEN+1];
     wchar_t *s;
-    if (python3_checked)
+    if (python3_checked) {
         return hPython3 != NULL;
+    }
     python3_checked = 1;
 
     /* If there is a python3.dll next to the python3y.dll,
        assume this is a build tree; use that DLL */
-    wcscpy(py3path, dllpath);
+    wcscpy(py3path, path_config.dllpath);
     s = wcsrchr(py3path, L'\\');
-    if (!s)
+    if (!s) {
         s = py3path;
+    }
     wcscpy(s, L"\\python3.dll");
     hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-    if (hPython3 != NULL)
+    if (hPython3 != NULL) {
         return 1;
+    }
 
     /* Check sys.prefix\DLLs\python3.dll */
     wcscpy(py3path, Py_GetPrefix());

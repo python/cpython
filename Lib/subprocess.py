@@ -260,8 +260,25 @@ def _args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
+
+    # -W options
     for opt in sys.warnoptions:
         args.append('-W' + opt)
+
+    # -X options
+    xoptions = getattr(sys, '_xoptions', {})
+    if 'dev' in xoptions:
+        args.extend(('-X', 'dev'))
+    for opt in ('faulthandler', 'tracemalloc', 'importtime',
+                'showalloccount', 'showrefcount'):
+        if opt in xoptions:
+            value = xoptions[opt]
+            if value is True:
+                arg = opt
+            else:
+                arg = '%s=%s' % (opt, value)
+            args.extend(('-X', arg))
+
     return args
 
 
