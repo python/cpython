@@ -9,6 +9,7 @@ import sys
 import threading
 import unittest
 from unittest import mock
+from test import support
 try:
     import ssl
 except ImportError:
@@ -58,6 +59,7 @@ class StreamReaderTests(test_utils.TestCase):
             self._basetest_open_connection(conn_fut)
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_open_unix_connection(self):
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = asyncio.open_unix_connection(httpd.address,
@@ -88,6 +90,7 @@ class StreamReaderTests(test_utils.TestCase):
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_open_unix_connection_no_loop_ssl(self):
         with test_utils.run_test_unix_server(use_ssl=True) as httpd:
             conn_fut = asyncio.open_unix_connection(
@@ -114,6 +117,7 @@ class StreamReaderTests(test_utils.TestCase):
             self._basetest_open_connection_error(conn_fut)
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_open_unix_connection_error(self):
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = asyncio.open_unix_connection(httpd.address,
@@ -635,6 +639,7 @@ class StreamReaderTests(test_utils.TestCase):
         self.assertEqual(msg, b"hello world!\n")
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_start_unix_server(self):
 
         class MyServer:
@@ -652,13 +657,10 @@ class StreamReaderTests(test_utils.TestCase):
                 client_writer.close()
 
             def start(self):
-                try:
-                    self.server = self.loop.run_until_complete(
-                        asyncio.start_unix_server(self.handle_client,
+                self.server = self.loop.run_until_complete(
+                    asyncio.start_unix_server(self.handle_client,
                                               path=self.path,
                                               loop=self.loop))
-                except PermissionError as e:
-                    raise unittest.SkipTest('run_until_complete(): %s' % e)
 
             def handle_client_callback(self, client_reader, client_writer):
                 self.loop.create_task(self.handle_client(client_reader,

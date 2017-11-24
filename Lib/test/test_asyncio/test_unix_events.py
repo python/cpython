@@ -13,16 +13,10 @@ import tempfile
 import threading
 import unittest
 from unittest import mock
+from test import support
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
-
-try:
-    from test.support import unlink
-except ImportError:
-    def unlink(fn):
-        if os.path.exists(fn):
-            os.unlink(fn)
 
 
 import asyncio
@@ -246,14 +240,13 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_existing_path_sock(self):
         with test_utils.unix_socket_path() as path:
-            with socket.socket(socket.AF_UNIX) as sock:
-                try:
-                    sock.bind(path)
-                except PermissionError as e:
-                    self.skipTest('bind(): %s' % e)
-                sock.listen(1)
+            sock = socket.socket(socket.AF_UNIX)
+            sock.bind(path)
+            sock.listen(1)
+            sock.close()
 
             coro = self.loop.create_unix_server(lambda: None, path)
             srv = self.loop.run_until_complete(coro)
@@ -261,14 +254,12 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             self.loop.run_until_complete(srv.wait_closed())
 
     @unittest.skipUnless(hasattr(os, 'fspath'), 'no os.fspath')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_pathlib(self):
         with test_utils.unix_socket_path() as path:
             path = pathlib.Path(path)
             srv_coro = self.loop.create_unix_server(lambda: None, path)
-            try:
-                srv = self.loop.run_until_complete(srv_coro)
-            except PermissionError as e:
-                self.skipTest('run_until_complete(): %s' % e)
+            srv = self.loop.run_until_complete(srv_coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
@@ -312,6 +303,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'no socket.SOCK_NONBLOCK (linux only)')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
         sock = socket.socket(
             socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
@@ -319,17 +311,14 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             fn = file.name
         try:
             with sock:
-                try:
-                    sock.bind(fn)
-                except PermissionError as e:
-                    self.skipTest('bind(): %s' % e)
+                sock.bind(fn)
                 coro = self.loop.create_unix_server(lambda: None, path=None,
                                                     sock=sock)
                 srv = self.loop.run_until_complete(coro)
                 srv.close()
                 self.loop.run_until_complete(srv.wait_closed())
         finally:
-            unlink(fn)
+            os.unlink(fn)
 
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()

@@ -220,12 +220,9 @@ if hasattr(socket, 'AF_UNIX'):
     @contextlib.contextmanager
     def run_test_unix_server(*, use_ssl=False):
         with unix_socket_path() as path:
-            try:
-                yield from _run_test_server(address=path, use_ssl=use_ssl,
-                                            server_cls=SilentUnixWSGIServer,
-                                            server_ssl_cls=UnixSSLWSGIServer)
-            except PermissionError as e:
-                raise unittest.SkipTest('_run_test_server(): %s' % e)
+            yield from _run_test_server(address=path, use_ssl=use_ssl,
+                                        server_cls=SilentUnixWSGIServer,
+                                        server_ssl_cls=UnixSSLWSGIServer)
 
 
 @contextlib.contextmanager
