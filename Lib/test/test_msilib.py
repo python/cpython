@@ -48,8 +48,9 @@ class MsiDatabaseTestCase(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'open failed')
 
     def test_database_create_failed(self):
+        db_path = os.path.join(TESTFN, 'test.msi')
         with self.assertRaises(msilib.MSIError) as cm:
-            msilib.OpenDatabase(os.path.join(TESTFN, 'test.msi'), msilib.MSIDBOPEN_CREATE)
+            msilib.OpenDatabase(db_path, msilib.MSIDBOPEN_CREATE)
         self.assertEqual(str(cm.exception), 'create failed')
 
 
