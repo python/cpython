@@ -943,8 +943,9 @@ _Pickler_OpcodeBoundary(PicklerObject *self)
 {
     Py_ssize_t frame_len;
 
-    if (!self->framing || self->frame_start == -1)
+    if (!self->framing || self->frame_start == -1) {
         return 0;
+    }
     frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
     if (frame_len >= FRAME_SIZE_TARGET) {
         if(_Pickler_CommitFrame(self)) {
