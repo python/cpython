@@ -586,6 +586,16 @@ class TestSnapshot(unittest.TestCase):
             self.assertEqual(tb.format(limit=-1),
                              [])
 
+            self.assertEqual(tb.format(reverse=True),
+                             ['  File "b.py", line 4',
+                              '    <b.py, 4>',
+                              '  File "a.py", line 2',
+                              '    <a.py, 2>'])
+
+            self.assertEqual(tb.format(limit=1, reverse=True),
+                             ['  File "a.py", line 2',
+                              '    <a.py, 2>'])
+
 
 class TestFilters(unittest.TestCase):
     maxDiff = 2048

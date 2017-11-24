@@ -209,11 +209,14 @@ class Traceback(Sequence):
     def __repr__(self):
         return "<Traceback %r>" % (tuple(self),)
 
-    def format(self, limit=None):
+    def format(self, limit=None, reverse=False):
         lines = []
         if limit is not None and limit < 0:
             return lines
-        for frame in self[:limit]:
+        frame_slice = self[:limit]
+        if reverse:
+            frame_slice = reversed(frame_slice)
+        for frame in frame_slice:
             lines.append('  File "%s", line %s'
                          % (frame.filename, frame.lineno))
             line = linecache.getline(frame.filename, frame.lineno).strip()

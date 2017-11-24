@@ -663,11 +663,13 @@ Traceback
    The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
    instance.
 
-   .. method:: format(limit=None)
+   .. method:: format(limit=None, reverse=False)
 
       Format the traceback as a list of lines with newlines.  Use the
       :mod:`linecache` module to retrieve lines from the source code.  If
       *limit* is set, only format the *limit* most recent frames.
+      If *reverse* is True, reverse the order of the lines to be sorted
+      from oldest to newest frame.
 
       Similar to the :func:`traceback.format_tb` function, except that
       :meth:`.format` does not include newlines.

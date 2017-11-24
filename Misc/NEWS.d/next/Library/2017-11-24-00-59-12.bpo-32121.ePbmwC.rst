@@ -1,0 +1,3 @@
+Added *reverse* argument to tracemalloc.Traceback.format() to reverse the
+order of the formatted frames. This makes it more intuitive when compared to
+normal python tracebacks, which are also in "most recent call last" order.
