@@ -38,14 +38,14 @@ extern "C" {
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     (((LEN) == -2) \
-     ? _Py_INIT_USER_ERR("failed to decode " #NAME) \
+     ? _Py_INIT_USER_ERR("cannot decode " #NAME) \
      : _Py_INIT_NO_MEMORY())
 
 
 #define SET_DECODE_ERROR(NAME, LEN) \
     do { \
         if ((LEN) == (size_t)-2) { \
-            pymain->err = _Py_INIT_USER_ERR("failed to decode " #NAME); \
+            pymain->err = _Py_INIT_USER_ERR("cannot decode " #NAME); \
         } \
         else { \
             pymain->err = _Py_INIT_NO_MEMORY(); \
