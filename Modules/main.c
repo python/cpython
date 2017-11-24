@@ -36,10 +36,16 @@
 extern "C" {
 #endif
 
+#define DECODE_LOCALE_ERR(NAME, LEN) \
+    (((LEN) == -2) \
+     ? _Py_INIT_USER_ERR("failed to decode " #NAME) \
+     : _Py_INIT_NO_MEMORY())
+
+
 #define SET_DECODE_ERROR(NAME, LEN) \
     do { \
         if ((LEN) == (size_t)-2) { \
-            pymain->err = _Py_INIT_ERR("failed to decode " #NAME); \
+            pymain->err = _Py_INIT_USER_ERR("failed to decode " #NAME); \
         } \
         else { \
             pymain->err = _Py_INIT_NO_MEMORY(); \
@@ -450,7 +456,7 @@ pymain_free_impl(_PyMain *pymain)
     Py_CLEAR(pymain->main_importer_path);
     PyMem_RawFree(pymain->program_name);
 
-    PyMem_RawFree(pymain->config.module_search_path_env);
+    _PyMainInterpreterConfig_Clear(&pymain->config);
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
@@ -515,20 +521,11 @@ error:
 static wchar_t*
 pymain_wstrdup(_PyMain *pymain, wchar_t *str)
 {
-    size_t len = wcslen(str) + 1;  /* +1 for NUL character */
-    if (len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return NULL;
-    }
-
-    size_t size = len * sizeof(wchar_t);
-    wchar_t *str2 = PyMem_RawMalloc(size);
+    wchar_t *str2 = _PyMem_RawWcsdup(str);
     if (str2 == NULL) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return NULL;
     }
-
-    memcpy(str2, str, size);
     return str2;
 }
 
@@ -955,7 +952,7 @@ pymain_init_main_interpreter(_PyMain *pymain)
     _PyInitError err;
 
     /* TODO: Print any exceptions raised by these operations */
-    err = _Py_ReadMainInterpreterConfig(&pymain->config);
+    err = _PyMainInterpreterConfig_Read(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
@@ -1361,8 +1358,7 @@ pymain_set_flags_from_env(_PyMain *pymain)
 
 
 static int
-pymain_get_env_var_dup(_PyMain *pymain, wchar_t **dest,
-                       wchar_t *wname, char *name)
+config_get_env_var_dup(wchar_t **dest, wchar_t *wname, char *name)
 {
     if (Py_IgnoreEnvironmentFlag) {
         *dest = NULL;
@@ -1376,7 +1372,7 @@ pymain_get_env_var_dup(_PyMain *pymain, wchar_t **dest,
         return 0;
     }
 
-    wchar_t *copy = pymain_wstrdup(pymain, var);
+    wchar_t *copy = _PyMem_RawWcsdup(var);
     if (copy == NULL) {
         return -1;
     }
@@ -1393,11 +1389,9 @@ pymain_get_env_var_dup(_PyMain *pymain, wchar_t **dest,
     wchar_t *wvar = Py_DecodeLocale(var, &len);
     if (!wvar) {
         if (len == (size_t)-2) {
-            /* don't set pymain->err */
             return -2;
         }
         else {
-            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
     }
@@ -1407,25 +1401,21 @@ pymain_get_env_var_dup(_PyMain *pymain, wchar_t **dest,
 }
 
 
-static int
-pymain_init_pythonpath(_PyMain *pymain)
+static _PyInitError
+config_init_pythonpath(_PyMainInterpreterConfig *config)
 {
     wchar_t *path;
-    int res = pymain_get_env_var_dup(pymain, &path,
-                                     L"PYTHONPATH", "PYTHONPATH");
+    int res = config_get_env_var_dup(&path, L"PYTHONPATH", "PYTHONPATH");
     if (res < 0) {
-        if (res == -2) {
-            SET_DECODE_ERROR("PYTHONPATH", (size_t)-2);
-        }
-        return -1;
+        return DECODE_LOCALE_ERR("PYTHONHOME", res);
     }
-    pymain->config.module_search_path_env = path;
-    return 0;
+    config->module_search_path_env = path;
+    return _Py_INIT_OK();
 }
 
 
-static int
-pymain_init_pythonhome(_PyMain *pymain)
+static _PyInitError
+config_init_pythonhome(_PyMainInterpreterConfig *config)
 {
     wchar_t *home;
 
@@ -1433,24 +1423,39 @@ pymain_init_pythonhome(_PyMain *pymain)
     if (home) {
         /* Py_SetPythonHome() has been called before Py_Main(),
            use its value */
-        pymain->config.pythonhome = pymain_wstrdup(pymain, home);
-        if (pymain->config.pythonhome == NULL) {
-            return -1;
+        config->home = _PyMem_RawWcsdup(home);
+        if (config->home == NULL) {
+            return _Py_INIT_NO_MEMORY();
         }
-        return 0;
+        return _Py_INIT_OK();
     }
 
-    int res = pymain_get_env_var_dup(pymain, &home,
-                                     L"PYTHONHOME", "PYTHONHOME");
+    int res = config_get_env_var_dup(&home, L"PYTHONHOME", "PYTHONHOME");
     if (res < 0) {
-        if (res == -2) {
-            SET_DECODE_ERROR("PYTHONHOME", (size_t)-2);
-        }
-        return -1;
+        return DECODE_LOCALE_ERR("PYTHONHOME", res);
     }
-    pymain->config.pythonhome = home;
-    return 0;
+    config->home = home;
+    return _Py_INIT_OK();
 }
+
+
+_PyInitError
+_PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
+{
+    _PyInitError err = config_init_pythonhome(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = config_init_pythonpath(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    return _Py_INIT_OK();
+}
+
+
 
 
 static int
@@ -1474,10 +1479,10 @@ pymain_parse_envvars(_PyMain *pymain)
         return -1;
     }
     core_config->allocator = Py_GETENV("PYTHONMALLOC");
-    if (pymain_init_pythonpath(pymain) < 0) {
-        return -1;
-    }
-    if (pymain_init_pythonhome(pymain) < 0) {
+
+    _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&pymain->config);
+    if (_Py_INIT_FAILED(pymain->err)) {
+        pymain->err = err;
         return -1;
     }
 
