@@ -1004,6 +1004,7 @@ calculate_free(PyCalculatePath *calculate)
 static void
 calculate_path(const _PyMainInterpreterConfig *main_config)
 {
+    _PyInitError err;
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
@@ -1011,7 +1012,7 @@ calculate_path(const _PyMainInterpreterConfig *main_config)
     int use_tmp = (main_config == NULL);
     if (use_tmp) {
         tmp_config = _PyMainInterpreterConfig_INIT;
-        _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&tmp_config);
+        err = _PyMainInterpreterConfig_ReadEnv(&tmp_config);
         if (_Py_INIT_FAILED(err)) {
             goto fatal_error;
         }
