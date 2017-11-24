@@ -393,7 +393,6 @@ Py_NoUserSiteDirectory
 Py_OptimizeFlag
 Py_QuietFlag
 Py_UnbufferedStdioFlag
-Py_UseClassExceptionsFlag
 Py_VerboseFlag
 
 
