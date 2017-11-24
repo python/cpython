@@ -18,24 +18,34 @@ a few functions and flags listed below.
 
 The following functions can be safetely called before Python is initialized:
 
-* Configuration functions:
+* Functions:
 
-  * :c:func:`Py_SetStandardStreamEncoding`
-  * :c:func:`Py_GetProgramName`, :c:func:`Py_SetProgramName`
-  * :c:func:`Py_SetPythonHome`
-  * :c:func:`Py_SetPath`
-
-* Memory allocators functions:
-
-  * :c:func:`PyMem_GetAllocator`, :c:func:`PyMem_SetAllocator`
+  * :c:func:`PyMem_GetAllocator`
+  * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
-  * :c:func:`PyObject_GetArenaAllocator`, :c:func:`PyObject_SetArenaAllocator`
-  * :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc`,
-    :c:func:`PyMem_RawCalloc`, :c:func:`PyMem_RawFree`
-  * :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc`, :c:func:`PyMem_Calloc`,
-    :c:func:`PyMem_Free`
-  * :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc`,
-    :c:func:`PyObject_Calloc`, :c:func:`PyObject_Free`
+  * :c:func:`PyObject_GetArenaAllocator`
+  * :c:func:`PyObject_SetArenaAllocator`
+  * :c:func:`Py_DecodeLocale`
+  * :c:func:`Py_GetProgramName`
+  * :c:func:`Py_SetPath`
+  * :c:func:`Py_SetProgramName`
+  * :c:func:`Py_SetPythonHome`
+  * :c:func:`Py_SetStandardStreamEncoding`
+
+* Memory allocators:
+
+  * :c:func:`PyMem_RawMalloc`
+  * :c:func:`PyMem_RawRealloc`
+    :c:func:`PyMem_RawCalloc`
+  * :c:func:`PyMem_RawFree`
+  * :c:func:`PyMem_Malloc`
+  * :c:func:`PyMem_Realloc`
+  * :c:func:`PyMem_Calloc`
+  * :c:func:`PyMem_Free`
+  * :c:func:`PyObject_Malloc`
+  * :c:func:`PyObject_Realloc`
+  * :c:func:`PyObject_Calloc`
+  * :c:func:`PyObject_Free`
 
 The following flags can also be set:
 
