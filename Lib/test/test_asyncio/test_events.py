@@ -22,7 +22,6 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-from test import support
 
 if sys.platform != 'win32':
     import tty
