@@ -2156,6 +2156,8 @@ else:
             super().tearDown()
 
         def test_get_event_loop_new_process(self):
+            # Skip the test if the sem_open() implementation is broken.
+            support.import_module('multiprocessing.synchronize')
             async def main():
                 pool = concurrent.futures.ProcessPoolExecutor()
                 result = await self.loop.run_in_executor(
