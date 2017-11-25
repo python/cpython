@@ -1032,6 +1032,11 @@ pathconfig_clear(PyPathConfig *config)
 _PyInitError
 _PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
 {
+    if (path_config.module_search_path) {
+        /* Already initialized */
+        return _Py_INIT_OK();
+    }
+
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
