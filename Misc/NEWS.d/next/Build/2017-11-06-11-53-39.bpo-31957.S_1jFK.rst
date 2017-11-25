@@ -1,0 +1,1 @@
+Fixes Windows SDK version detection when building for Windows.

@@ -7,8 +7,12 @@ test.support.import_module('multiprocessing.synchronize')
 
 from test.support.script_helper import assert_python_ok
 
+import contextlib
 import itertools
+import logging
+from logging.handlers import QueueHandler
 import os
+import queue
 import sys
 import threading
 import time
@@ -17,7 +21,8 @@ import weakref
 
 from concurrent import futures
 from concurrent.futures._base import (
-    PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
+    PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future,
+    BrokenExecutor)
 from concurrent.futures.process import BrokenProcessPool
 from multiprocessing import get_context
 
@@ -37,10 +42,11 @@ CANCELLED_AND_NOTIFIED_FUTURE = create_future(state=CANCELLED_AND_NOTIFIED)
 EXCEPTION_FUTURE = create_future(state=FINISHED, exception=OSError())
 SUCCESSFUL_FUTURE = create_future(state=FINISHED, result=42)
 
+INITIALIZER_STATUS = 'uninitialized'
+
 
 def mul(x, y):
     return x * y
-
 
 def sleep_and_raise(t):
     time.sleep(t)
@@ -50,6 +56,22 @@ def sleep_and_print(t, msg):
     time.sleep(t)
     print(msg)
     sys.stdout.flush()
+
+def init(x):
+    global INITIALIZER_STATUS
+    INITIALIZER_STATUS = x
+
+def get_init_status():
+    return INITIALIZER_STATUS
+
+def init_fail(log_queue=None):
+    if log_queue is not None:
+        logger = logging.getLogger('concurrent.futures')
+        logger.addHandler(QueueHandler(log_queue))
+        logger.setLevel('CRITICAL')
+        logger.propagate = False
+    time.sleep(0.1)  # let some futures be scheduled
+    raise ValueError('error in initializer')
 
 
 class MyObject(object):
@@ -81,21 +103,21 @@ class BaseTestCase(unittest.TestCase):
 
 class ExecutorMixin:
     worker_count = 5
+    executor_kwargs = {}
 
     def setUp(self):
         super().setUp()
 
         self.t1 = time.time()
-        try:
-            if hasattr(self, "ctx"):
-                self.executor = self.executor_type(
-                    max_workers=self.worker_count,
-                    mp_context=get_context(self.ctx))
-            else:
-                self.executor = self.executor_type(
-                    max_workers=self.worker_count)
-        except NotImplementedError as e:
-            self.skipTest(str(e))
+        if hasattr(self, "ctx"):
+            self.executor = self.executor_type(
+                max_workers=self.worker_count,
+                mp_context=self.get_context(),
+                **self.executor_kwargs)
+        else:
+            self.executor = self.executor_type(
+                max_workers=self.worker_count,
+                **self.executor_kwargs)
         self._prime_executor()
 
     def tearDown(self):
@@ -109,12 +131,14 @@ class ExecutorMixin:
 
         super().tearDown()
 
+    def get_context(self):
+        return get_context(self.ctx)
+
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the
         # tests. This should reduce the probability of timeouts in the tests.
         futures = [self.executor.submit(time.sleep, 0.1)
                    for _ in range(self.worker_count)]
-
         for f in futures:
             f.result()
 
@@ -127,10 +151,10 @@ class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "fork"
 
-    def setUp(self):
+    def get_context(self):
         if sys.platform == "win32":
             self.skipTest("require unix system")
-        super().setUp()
+        return super().get_context()
 
 
 class ProcessPoolSpawnMixin(ExecutorMixin):
@@ -142,10 +166,111 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "forkserver"
 
-    def setUp(self):
+    def get_context(self):
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        return super().get_context()
+
+
+def create_executor_tests(mixin, bases=(BaseTestCase,),
+                          executor_mixins=(ThreadPoolMixin,
+                                           ProcessPoolForkMixin,
+                                           ProcessPoolForkserverMixin,
+                                           ProcessPoolSpawnMixin)):
+    def strip_mixin(name):
+        if name.endswith(('Mixin', 'Tests')):
+            return name[:-5]
+        elif name.endswith('Test'):
+            return name[:-4]
+        else:
+            return name
+
+    for exe in executor_mixins:
+        name = ("%s%sTest"
+                % (strip_mixin(exe.__name__), strip_mixin(mixin.__name__)))
+        cls = type(name, (mixin,) + (exe,) + bases, {})
+        globals()[name] = cls
+
+
+class InitializerMixin(ExecutorMixin):
+    worker_count = 2
+
+    def setUp(self):
+        global INITIALIZER_STATUS
+        INITIALIZER_STATUS = 'uninitialized'
+        self.executor_kwargs = dict(initializer=init,
+                                    initargs=('initialized',))
         super().setUp()
+
+    def test_initializer(self):
+        futures = [self.executor.submit(get_init_status)
+                   for _ in range(self.worker_count)]
+
+        for f in futures:
+            self.assertEqual(f.result(), 'initialized')
+
+
+class FailingInitializerMixin(ExecutorMixin):
+    worker_count = 2
+
+    def setUp(self):
+        if hasattr(self, "ctx"):
+            # Pass a queue to redirect the child's logging output
+            self.mp_context = self.get_context()
+            self.log_queue = self.mp_context.Queue()
+            self.executor_kwargs = dict(initializer=init_fail,
+                                        initargs=(self.log_queue,))
+        else:
+            # In a thread pool, the child shares our logging setup
+            # (see _assert_logged())
+            self.mp_context = None
+            self.log_queue = None
+            self.executor_kwargs = dict(initializer=init_fail)
+        super().setUp()
+
+    def test_initializer(self):
+        with self._assert_logged('ValueError: error in initializer'):
+            try:
+                future = self.executor.submit(get_init_status)
+            except BrokenExecutor:
+                # Perhaps the executor is already broken
+                pass
+            else:
+                with self.assertRaises(BrokenExecutor):
+                    future.result()
+            # At some point, the executor should break
+            t1 = time.time()
+            while not self.executor._broken:
+                if time.time() - t1 > 5:
+                    self.fail("executor not broken after 5 s.")
+                time.sleep(0.01)
+            # ... and from this point submit() is guaranteed to fail
+            with self.assertRaises(BrokenExecutor):
+                self.executor.submit(get_init_status)
+
+    def _prime_executor(self):
+        pass
+
+    @contextlib.contextmanager
+    def _assert_logged(self, msg):
+        if self.log_queue is not None:
+            yield
+            output = []
+            try:
+                while True:
+                    output.append(self.log_queue.get_nowait().getMessage())
+            except queue.Empty:
+                pass
+        else:
+            with self.assertLogs('concurrent.futures', 'CRITICAL') as cm:
+                yield
+            output = cm.output
+        self.assertTrue(any(msg in line for line in output),
+                        output)
+
+
+create_executor_tests(InitializerMixin)
+create_executor_tests(FailingInitializerMixin)
 
 
 class ExecutorShutdownTest:
@@ -278,20 +403,11 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         call_queue.join_thread()
 
 
-class ProcessPoolForkShutdownTest(ProcessPoolForkMixin, BaseTestCase,
-                                  ProcessPoolShutdownTest):
-    pass
 
-
-class ProcessPoolForkserverShutdownTest(ProcessPoolForkserverMixin,
-                                        BaseTestCase,
-                                        ProcessPoolShutdownTest):
-    pass
-
-
-class ProcessPoolSpawnShutdownTest(ProcessPoolSpawnMixin, BaseTestCase,
-                                   ProcessPoolShutdownTest):
-    pass
+create_executor_tests(ProcessPoolShutdownTest,
+                      executor_mixins=(ProcessPoolForkMixin,
+                                       ProcessPoolForkserverMixin,
+                                       ProcessPoolSpawnMixin))
 
 
 class WaitTests:
@@ -413,18 +529,10 @@ class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
             sys.setswitchinterval(oldswitchinterval)
 
 
-class ProcessPoolForkWaitTests(ProcessPoolForkMixin, WaitTests, BaseTestCase):
-    pass
-
-
-class ProcessPoolForkserverWaitTests(ProcessPoolForkserverMixin, WaitTests,
-                                     BaseTestCase):
-    pass
-
-
-class ProcessPoolSpawnWaitTests(ProcessPoolSpawnMixin, BaseTestCase,
-                                WaitTests):
-    pass
+create_executor_tests(WaitTests,
+                      executor_mixins=(ProcessPoolForkMixin,
+                                       ProcessPoolForkserverMixin,
+                                       ProcessPoolSpawnMixin))
 
 
 class AsCompletedTests:
@@ -507,24 +615,7 @@ class AsCompletedTests:
         self.assertEqual(str(cm.exception), '2 (of 4) futures unfinished')
 
 
-class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase):
-    pass
-
-
-class ProcessPoolForkAsCompletedTests(ProcessPoolForkMixin, AsCompletedTests,
-                                      BaseTestCase):
-    pass
-
-
-class ProcessPoolForkserverAsCompletedTests(ProcessPoolForkserverMixin,
-                                            AsCompletedTests,
-                                            BaseTestCase):
-    pass
-
-
-class ProcessPoolSpawnAsCompletedTests(ProcessPoolSpawnMixin, AsCompletedTests,
-                                       BaseTestCase):
-    pass
+create_executor_tests(AsCompletedTests)
 
 
 class ExecutorTest:
@@ -688,23 +779,10 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertTrue(obj.event.wait(timeout=1))
 
 
-class ProcessPoolForkExecutorTest(ProcessPoolForkMixin,
-                                  ProcessPoolExecutorTest,
-                                  BaseTestCase):
-    pass
-
-
-class ProcessPoolForkserverExecutorTest(ProcessPoolForkserverMixin,
-                                        ProcessPoolExecutorTest,
-                                        BaseTestCase):
-    pass
-
-
-class ProcessPoolSpawnExecutorTest(ProcessPoolSpawnMixin,
-                                   ProcessPoolExecutorTest,
-                                   BaseTestCase):
-    pass
-
+create_executor_tests(ProcessPoolExecutorTest,
+                      executor_mixins=(ProcessPoolForkMixin,
+                                       ProcessPoolForkserverMixin,
+                                       ProcessPoolSpawnMixin))
 
 
 class FutureTests(BaseTestCase):
@@ -931,6 +1009,7 @@ class FutureTests(BaseTestCase):
 
         self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
         t.join()
+
 
 @test.support.reap_threads
 def test_main():

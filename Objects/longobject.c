@@ -2509,21 +2509,18 @@ PyLong_FromUnicodeObject(PyObject *u, int base)
     asciidig = _PyUnicode_TransformDecimalAndSpaceToASCII(u);
     if (asciidig == NULL)
         return NULL;
+    assert(PyUnicode_IS_ASCII(asciidig));
+    /* Simply get a pointer to existing ASCII characters. */
     buffer = PyUnicode_AsUTF8AndSize(asciidig, &buflen);
-    if (buffer == NULL) {
+    assert(buffer != NULL);
+
+    result = PyLong_FromString(buffer, &end, base);
+    if (end == NULL || (result != NULL && end == buffer + buflen)) {
         Py_DECREF(asciidig);
-        if (!PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
-            return NULL;
+        return result;
     }
-    else {
-        result = PyLong_FromString(buffer, &end, base);
-        if (end == NULL || (result != NULL && end == buffer + buflen)) {
-            Py_DECREF(asciidig);
-            return result;
-        }
-        Py_DECREF(asciidig);
-        Py_XDECREF(result);
-    }
+    Py_DECREF(asciidig);
+    Py_XDECREF(result);
     PyErr_Format(PyExc_ValueError,
                  "invalid literal for int() with base %d: %.200R",
                  base, u);
@@ -4811,7 +4808,7 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
         return NULL;
     if ((base != 0 && base < 2) || base > 36) {
         PyErr_SetString(PyExc_ValueError,
-                        "int() base must be >= 2 and <= 36");
+                        "int() base must be >= 2 and <= 36, or 0");
         return NULL;
     }
 

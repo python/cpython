@@ -35,37 +35,45 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-void
+_PyInitError
 _PyRuntimeState_Init(_PyRuntimeState *runtime)
 {
     memset(runtime, 0, sizeof(*runtime));
 
-    _PyObject_Initialize(&runtime->obj);
-    _PyMem_Initialize(&runtime->mem);
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
 
     runtime->gilstate.check_enabled = 1;
+
     /* A TSS key must be initialized with Py_tss_NEEDS_INIT
        in accordance with the specification. */
-    {
-        Py_tss_t initial = Py_tss_NEEDS_INIT;
-        runtime->gilstate.autoTSSkey = initial;
-    }
+    Py_tss_t initial = Py_tss_NEEDS_INIT;
+    runtime->gilstate.autoTSSkey = initial;
 
     runtime->interpreters.mutex = PyThread_allocate_lock();
-    if (runtime->interpreters.mutex == NULL)
-        Py_FatalError("Can't initialize threads for interpreter");
+    if (runtime->interpreters.mutex == NULL) {
+        return _Py_INIT_ERR("Can't initialize threads for interpreter");
+    }
+
     runtime->interpreters.next_id = -1;
+    return _Py_INIT_OK();
 }
 
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+    /* Use the same memory allocator than _PyRuntimeState_Init() */
+    PyMemAllocatorEx old_alloc, raw_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyMem_GetDefaultRawAllocator(&raw_alloc);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+
     if (runtime->interpreters.mutex != NULL) {
         PyThread_free_lock(runtime->interpreters.mutex);
         runtime->interpreters.mutex = NULL;
     }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
@@ -74,7 +82,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
-void
+_PyInitError
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     runtime->interpreters.next_id = 0;
@@ -83,9 +91,11 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
        initialized here. */
     if (runtime->interpreters.mutex == NULL) {
         runtime->interpreters.mutex = PyThread_allocate_lock();
-        if (runtime->interpreters.mutex == NULL)
-            Py_FatalError("Can't initialize threads for interpreter");
+        if (runtime->interpreters.mutex == NULL) {
+            return _Py_INIT_ERR("Can't initialize threads for interpreter");
+        }
     }
+    return _Py_INIT_OK();
 }
 
 PyInterpreterState *
@@ -94,55 +104,60 @@ PyInterpreterState_New(void)
     PyInterpreterState *interp = (PyInterpreterState *)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
-    if (interp != NULL) {
-        interp->modules = NULL;
-        interp->modules_by_index = NULL;
-        interp->sysdict = NULL;
-        interp->builtins = NULL;
-        interp->builtins_copy = NULL;
-        interp->tstate_head = NULL;
-        interp->check_interval = 100;
-        interp->num_threads = 0;
-        interp->pythread_stacksize = 0;
-        interp->codec_search_path = NULL;
-        interp->codec_search_cache = NULL;
-        interp->codec_error_registry = NULL;
-        interp->codecs_initialized = 0;
-        interp->fscodec_initialized = 0;
-        interp->importlib = NULL;
-        interp->import_func = NULL;
-        interp->eval_frame = _PyEval_EvalFrameDefault;
-        interp->co_extra_user_count = 0;
+    if (interp == NULL) {
+        return NULL;
+    }
+
+
+    interp->modules = NULL;
+    interp->modules_by_index = NULL;
+    interp->sysdict = NULL;
+    interp->builtins = NULL;
+    interp->builtins_copy = NULL;
+    interp->tstate_head = NULL;
+    interp->check_interval = 100;
+    interp->num_threads = 0;
+    interp->pythread_stacksize = 0;
+    interp->codec_search_path = NULL;
+    interp->codec_search_cache = NULL;
+    interp->codec_error_registry = NULL;
+    interp->codecs_initialized = 0;
+    interp->fscodec_initialized = 0;
+    interp->core_config = _PyCoreConfig_INIT;
+    interp->config = _PyMainInterpreterConfig_INIT;
+    interp->importlib = NULL;
+    interp->import_func = NULL;
+    interp->eval_frame = _PyEval_EvalFrameDefault;
+    interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
-        interp->dlopenflags = RTLD_NOW;
+    interp->dlopenflags = RTLD_NOW;
 #else
-        interp->dlopenflags = RTLD_LAZY;
+    interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
 #ifdef HAVE_FORK
-        interp->before_forkers = NULL;
-        interp->after_forkers_parent = NULL;
-        interp->after_forkers_child = NULL;
+    interp->before_forkers = NULL;
+    interp->after_forkers_parent = NULL;
+    interp->after_forkers_child = NULL;
 #endif
 
-        HEAD_LOCK();
-        interp->next = _PyRuntime.interpreters.head;
-        if (_PyRuntime.interpreters.main == NULL) {
-            _PyRuntime.interpreters.main = interp;
-        }
-        _PyRuntime.interpreters.head = interp;
-        if (_PyRuntime.interpreters.next_id < 0) {
-            /* overflow or Py_Initialize() not called! */
-            PyErr_SetString(PyExc_RuntimeError,
-                            "failed to get an interpreter ID");
-            interp = NULL;
-        } else {
-            interp->id = _PyRuntime.interpreters.next_id;
-            _PyRuntime.interpreters.next_id += 1;
-        }
-        HEAD_UNLOCK();
+    HEAD_LOCK();
+    interp->next = _PyRuntime.interpreters.head;
+    if (_PyRuntime.interpreters.main == NULL) {
+        _PyRuntime.interpreters.main = interp;
     }
+    _PyRuntime.interpreters.head = interp;
+    if (_PyRuntime.interpreters.next_id < 0) {
+        /* overflow or Py_Initialize() not called! */
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to get an interpreter ID");
+        interp = NULL;
+    } else {
+        interp->id = _PyRuntime.interpreters.next_id;
+        _PyRuntime.interpreters.next_id += 1;
+    }
+    HEAD_UNLOCK();
 
     return interp;
 }

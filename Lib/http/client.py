@@ -825,9 +825,10 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None):
+                 source_address=None, blocksize=8192):
         self.timeout = timeout
         self.source_address = source_address
+        self.blocksize = blocksize
         self.sock = None
         self._buffer = []
         self.__response = None
@@ -958,7 +959,6 @@ class HTTPConnection:
 
         if self.debuglevel > 0:
             print("send:", repr(data))
-        blocksize = 8192
         if hasattr(data, "read") :
             if self.debuglevel > 0:
                 print("sendIng a read()able")
@@ -966,7 +966,7 @@ class HTTPConnection:
             if encode and self.debuglevel > 0:
                 print("encoding file using iso-8859-1")
             while 1:
-                datablock = data.read(blocksize)
+                datablock = data.read(self.blocksize)
                 if not datablock:
                     break
                 if encode:
@@ -991,14 +991,13 @@ class HTTPConnection:
         self._buffer.append(s)
 
     def _read_readable(self, readable):
-        blocksize = 8192
         if self.debuglevel > 0:
             print("sendIng a read()able")
         encode = self._is_textIO(readable)
         if encode and self.debuglevel > 0:
             print("encoding file using iso-8859-1")
         while True:
-            datablock = readable.read(blocksize)
+            datablock = readable.read(self.blocksize)
             if not datablock:
                 break
             if encode:
@@ -1353,9 +1352,10 @@ else:
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, *, context=None,
-                     check_hostname=None):
+                     check_hostname=None, blocksize=8192):
             super(HTTPSConnection, self).__init__(host, port, timeout,
-                                                  source_address)
+                                                  source_address,
+                                                  blocksize=blocksize)
             if (key_file is not None or cert_file is not None or
                         check_hostname is not None):
                 import warnings

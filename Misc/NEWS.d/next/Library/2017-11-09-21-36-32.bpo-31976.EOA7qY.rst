@@ -1,0 +1,2 @@
+Fix race condition when flushing a file is slow, which can cause a
+segfault if closing the file from another thread.

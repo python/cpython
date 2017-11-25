@@ -26,8 +26,13 @@ except ImportError:
     has_c_implementation = False
 
 
-class PickleTests(AbstractPickleModuleTests):
-    pass
+class PyPickleTests(AbstractPickleModuleTests):
+    dump = staticmethod(pickle._dump)
+    dumps = staticmethod(pickle._dumps)
+    load = staticmethod(pickle._load)
+    loads = staticmethod(pickle._loads)
+    Pickler = pickle._Pickler
+    Unpickler = pickle._Unpickler
 
 
 class PyUnpicklerTests(AbstractUnpickleTests):
@@ -136,6 +141,9 @@ class PyChainDispatchTableTests(AbstractDispatchTableTests):
 
 
 if has_c_implementation:
+    class CPickleTests(AbstractPickleModuleTests):
+        from _pickle import dump, dumps, load, loads, Pickler, Unpickler
+
     class CUnpicklerTests(PyUnpicklerTests):
         unpickler = _pickle.Unpickler
         bad_stack_errors = (pickle.UnpicklingError,)
@@ -426,12 +434,12 @@ class CompatPickleTests(unittest.TestCase):
 
 
 def test_main():
-    tests = [PickleTests, PyUnpicklerTests, PyPicklerTests,
+    tests = [PyPickleTests, PyUnpicklerTests, PyPicklerTests,
              PyPersPicklerTests, PyIdPersPicklerTests,
              PyDispatchTableTests, PyChainDispatchTableTests,
              CompatPickleTests]
     if has_c_implementation:
-        tests.extend([CUnpicklerTests, CPicklerTests,
+        tests.extend([CPickleTests, CUnpicklerTests, CPicklerTests,
                       CPersPicklerTests, CIdPersPicklerTests,
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,

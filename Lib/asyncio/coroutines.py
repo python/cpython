@@ -10,6 +10,7 @@ import traceback
 import types
 
 from . import compat
+from . import constants
 from . import events
 from . import base_futures
 from .log import logger
@@ -18,17 +19,25 @@ from .log import logger
 # Opcode of "yield from" instruction
 _YIELD_FROM = opcode.opmap['YIELD_FROM']
 
-# If you set _DEBUG to true, @coroutine will wrap the resulting
-# generator objects in a CoroWrapper instance (defined below).  That
-# instance will log a message when the generator is never iterated
-# over, which may happen when you forget to use "yield from" with a
-# coroutine call.  Note that the value of the _DEBUG flag is taken
-# when the decorator is used, so to be of any use it must be set
-# before you define your coroutines.  A downside of using this feature
-# is that tracebacks show entries for the CoroWrapper.__next__ method
-# when _DEBUG is true.
-_DEBUG = (not sys.flags.ignore_environment and
-          bool(os.environ.get('PYTHONASYNCIODEBUG')))
+
+def _is_debug_mode():
+    # If you set _DEBUG to true, @coroutine will wrap the resulting
+    # generator objects in a CoroWrapper instance (defined below).  That
+    # instance will log a message when the generator is never iterated
+    # over, which may happen when you forget to use "yield from" with a
+    # coroutine call.  Note that the value of the _DEBUG flag is taken
+    # when the decorator is used, so to be of any use it must be set
+    # before you define your coroutines.  A downside of using this feature
+    # is that tracebacks show entries for the CoroWrapper.__next__ method
+    # when _DEBUG is true.
+    debug = (not sys.flags.ignore_environment and
+             bool(os.environ.get('PYTHONASYNCIODEBUG')))
+    if hasattr(sys, '_xoptions') and 'dev' in sys._xoptions:
+        debug = True
+    return debug
+
+
+_DEBUG = _is_debug_mode()
 
 
 try:
@@ -91,7 +100,7 @@ class CoroWrapper:
         assert inspect.isgenerator(gen) or inspect.iscoroutine(gen), gen
         self.gen = gen
         self.func = func  # Used to unwrap @coroutine decorator
-        self._source_traceback = traceback.extract_stack(sys._getframe(1))
+        self._source_traceback = events.extract_stack(sys._getframe(1))
         self.__name__ = getattr(gen, '__name__', None)
         self.__qualname__ = getattr(gen, '__qualname__', None)
 
@@ -183,8 +192,9 @@ class CoroWrapper:
             tb = getattr(self, '_source_traceback', ())
             if tb:
                 tb = ''.join(traceback.format_list(tb))
-                msg += ('\nCoroutine object created at '
-                        '(most recent call last):\n')
+                msg += (f'\nCoroutine object created at '
+                        f'(most recent call last, truncated to '
+                        f'{constants.DEBUG_STACK_DEPTH} last lines):\n')
                 msg += tb.rstrip()
             logger.error(msg)
 

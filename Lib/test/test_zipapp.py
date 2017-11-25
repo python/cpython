@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import zipapp
 import zipfile
+from test.support import requires_zlib
 
 from unittest.mock import patch
 
@@ -100,6 +101,7 @@ class ZipAppTest(unittest.TestCase):
         expected_target = self.tmpdir / 'source.pyz'
         self.assertTrue(expected_target.is_file())
 
+    @requires_zlib
     def test_create_archive_with_compression(self):
         # Test packing a directory into a compressed archive.
         source = self.tmpdir / 'source'

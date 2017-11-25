@@ -185,6 +185,19 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+New Developer Mode: -X dev
+--------------------------
+
+Add a new "developer mode": ``-X dev`` command line option to enable debug
+checks at runtime.
+
+In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
+default -X faulthandler ...``, except that the PYTHONMALLOC environment
+variable is not set in practice.
+
+See :option:`-X` ``dev`` for the details.
+
+
 Other Language Changes
 ======================
 
@@ -255,11 +268,20 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+cProfile
+--------
+
+cProfile command line now accepts `-m module_name` as an alternative to
+script path. (Contributed by Sanyam Khurana in :issue:`21862`.)
+
 crypt
 -----
 
 Added support for the Blowfish method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
+
+The :func:`~crypt.mksalt` function now allows to specify the number of rounds
+for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
 dis
 ---
@@ -275,6 +297,19 @@ distutils
 README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
+
+:class:`distutils.core.setup` now raises a :exc:`TypeError` if
+``classifiers``, ``keywords`` and ``platforms`` fields are not specified
+as a list.  However, to minimize backwards incompatibility concerns,
+``keywords`` and ``platforms`` fields still accept a comma separated string.
+(Contributed by Berker Peksag in :issue:`19610`.)
+
+http.client
+-----------
+
+Add Configurable *blocksize* to ``HTTPConnection`` and
+``HTTPSConnection`` for improved upload throughput.
+(Contributed by Nir Soffer in :issue:`31945`.)
 
 http.server
 -----------
@@ -318,9 +353,9 @@ to be executed on a process fork.  (Contributed by Antoine Pitrou in
 pdb
 ---
 
-:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+:func:`~pdb.set_trace` now takes an optional *header* keyword-only
 argument.  If given, this is printed to the console just before debugging
-begins.
+begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
 re
 --
@@ -358,6 +393,10 @@ Add new clock identifiers:
 * :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
   the time the system has been running and not suspended, providing accurate
   uptime measurement, both absolute and interval.
+
+Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
+to get per-thread CPU time measurements.
+(Contributed by Antoine Pitrou in :issue:`32025`.)
 
 unittest.mock
 -------------
@@ -428,8 +467,8 @@ Optimizations
   INADA Naoki in :issue:`26110`.)
 
 * Searching some unlucky Unicode characters (like Ukrainian capital "Є")
-  in a string was to 25 times slower than searching other characters.
-  Now it is slower only by 3 times in worst case.
+  in a string was up to 25 times slower than searching other characters.
+  Now it is slower only by 3 times in the worst case.
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
@@ -440,13 +479,17 @@ Optimizations
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+* The :func:`shutil.rmtree` function has been sped up to 20--40%.
+  This was done using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`28564`.)
+
 * Optimized case-insensitive matching and searching of :mod:`regular
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
 * :func:`re.compile` now converts ``flags`` parameter to int object if
   it is ``RegexFlag``.  It is now as fast as Python 3.5, and faster than
-  Python 3.6 about 10% depending on the pattern.
+  Python 3.6 by about 10% depending on the pattern.
   (Contributed by INADA Naoki in :issue:`31671`.)
 
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
@@ -615,6 +658,24 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in Python behavior
+--------------------------
+
+* Due to an oversight, earlier Python versions erroneously accepted the
+  following syntax::
+
+      f(1 for x in [1],)
+
+      class C(1 for x in [1]):
+          pass
+
+  Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
+  expression always needs to be directly inside a set of parentheses
+  and cannot have a comma on either side, and the duplication of the
+  parentheses can be omitted only on calls.
+  (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
+
+
 Changes in the Python API
 -------------------------
 
@@ -658,6 +719,22 @@ Changes in the Python API
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
+* Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
+  function, the user specified handler *onerror* is now called with the first
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  is failed.
+
+* Support of nested sets and set operations in regular expressions as in
+  `Unicode Technical Standard #18`_ might be added in the future.  This would
+  change the syntax, so to facilitate this change a :exc:`FutureWarning` will
+  be raised in ambiguous cases for the time being.
+  That include sets starting with a literal ``'['`` or containing literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+  avoid a warning escape them with a backslash.
+  (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+.. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
 
 Changes in the C API
 --------------------
@@ -679,6 +756,20 @@ CPython bytecode changes
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
 
+Other CPython implementation changes
+------------------------------------
+
+* In preparation for potential future changes to the public CPython runtime
+  initialization API (see :pep:`432` for details), CPython's internal startup
+  and configuration management logic has been significantly refactored. While
+  these updates are intended to be entirely transparent to both embedding
+  applications and users of the regular CPython CLI, they're being mentioned
+  here as the refactoring changes the internal order of various operations
+  during interpreter startup, and hence may uncover previously latent defects,
+  either in embedding applications, or in CPython itself.
+  (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
+
+
 Documentation
 =============
 
@@ -690,11 +781,11 @@ PEP 545: Python Documentation Translations
 :pep:`545` describes the process to translate Python documentation,
 and two translations have been added:
 
-- Japanese: https://docs.python.org/ja/ and associated github
+- Japanese: https://docs.python.org/ja/ and associated GitHub
   repository: https://github.com/python/python-docs-ja
 
-- French: https://docs.python.org/fr/ and associated github
+- French: https://docs.python.org/fr/ and associated GitHub
   repository: https://github.com/python/python-docs-fr
 
 (Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
-:issue:`issue26546`.)
+:issue:`26546`.)

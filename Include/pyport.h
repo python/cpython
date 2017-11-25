@@ -784,8 +784,7 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-/* langinfo.h does not exist in the versions of the NDK that do not support Unified Headers
- * and it is broken in the NDK versions that support Unified Headers. */
+/* The Android langinfo.h header is not used. */
 #undef HAVE_LANGINFO_H
 #undef CODESET
 #endif

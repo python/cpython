@@ -817,7 +817,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         }
 
         /* Check that timebase.numer and timebase.denom can be casted to
-           _PyTime_t. In pratice, timebase uses uint32_t, so casting cannot
+           _PyTime_t. In practice, timebase uses uint32_t, so casting cannot
            overflow. At the end, only make sure that the type is uint32_t
            (_PyTime_t is 64-bit long). */
         assert(sizeof(timebase.numer) < sizeof(_PyTime_t));

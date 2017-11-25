@@ -21,7 +21,9 @@ enable *debug mode*.
 To enable all debug checks for an application:
 
 * Enable the asyncio debug mode globally by setting the environment variable
-  :envvar:`PYTHONASYNCIODEBUG` to ``1``, or by calling :meth:`AbstractEventLoop.set_debug`.
+  :envvar:`PYTHONASYNCIODEBUG` to ``1``, using ``-X dev`` command line option
+  (see the :option:`-X` option), or by calling
+  :meth:`AbstractEventLoop.set_debug`.
 * Set the log level of the :ref:`asyncio logger <asyncio-logger>` to
   :py:data:`logging.DEBUG`. For example, call
   ``logging.basicConfig(level=logging.DEBUG)`` at startup.
@@ -41,6 +43,11 @@ Examples debug checks:
   duration in seconds of "slow" callbacks.
 * :exc:`ResourceWarning` warnings are emitted when transports and event loops
   are :ref:`not closed explicitly <asyncio-close-transports>`.
+
+.. versionchanged:: 3.7
+
+   The new ``-X dev`` command line option can now also be used to enable
+   the debug mode.
 
 .. seealso::
 
@@ -209,9 +216,9 @@ The fix is to call the :func:`ensure_future` function or the
 Detect exceptions never consumed
 --------------------------------
 
-Python usually calls :func:`sys.displayhook` on unhandled exceptions. If
+Python usually calls :func:`sys.excepthook` on unhandled exceptions. If
 :meth:`Future.set_exception` is called, but the exception is never consumed,
-:func:`sys.displayhook` is not called. Instead, :ref:`a log is emitted
+:func:`sys.excepthook` is not called. Instead, :ref:`a log is emitted
 <asyncio-logger>` when the future is deleted by the garbage collector, with the
 traceback where the exception was raised.
 

@@ -1,0 +1,2 @@
+2to3 now generates a code that uses abstract collection classes from
+collections.abc rather than collections.

@@ -55,7 +55,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         "check_same_thread", "factory", "cached_statements", "uri",
         NULL
     };
-    char* database;
+    PyObject* database;
     int detect_types = 0;
     PyObject* isolation_level;
     PyObject* factory = NULL;
@@ -66,7 +66,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
 
     PyObject* result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOip", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
                                      &database, &timeout, &detect_types,
                                      &isolation_level, &check_same_thread,
                                      &factory, &cached_statements, &uri))
