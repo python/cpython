@@ -1834,7 +1834,9 @@ Yield by itself yields None:
 An obscene abuse of a yield expression within a generator expression:
 
 >>> list((yield 21) for i in range(4))
-[21, None, 21, None, 21, None, 21, None]
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield' inside generator expression
 
 And a more sane, but still weird usage:
 
@@ -2103,10 +2105,6 @@ enclosing function a generator:
 <class 'generator'>
 
 >>> def f(): lambda x=(yield): 1
->>> type(f())
-<class 'generator'>
-
->>> def f(): x=(i for i in (yield) if (yield))
 >>> type(f())
 <class 'generator'>
 

@@ -841,6 +841,21 @@ class GrammarTests(unittest.TestCase):
         # Check annotation refleak on SyntaxError
         check_syntax_error(self, "def g(a:(yield)): pass")
 
+    def test_yield_in_comprehensions(self):
+        # Check yield in comprehensions
+        def g(): [x for x in [(yield 1)]]
+        def g(): [x for x in [(yield from ())]]
+        check_syntax_error(self, "def g(): [(yield x) for x in ()]")
+        check_syntax_error(self, "def g(): [x for x in () if not (yield x)]")
+        check_syntax_error(self, "def g(): [y for x in () for y in [(yield x)]]")
+        check_syntax_error(self, "def g(): {(yield x) for x in ()}")
+        check_syntax_error(self, "def g(): {(yield x): x for x in ()}")
+        check_syntax_error(self, "def g(): {x: (yield x) for x in ()}")
+        check_syntax_error(self, "def g(): ((yield x) for x in ())")
+        check_syntax_error(self, "def g(): [(yield from x) for x in ()]")
+        check_syntax_error(self, "class C: [(yield x) for x in ()]")
+        check_syntax_error(self, "[(yield x) for x in ()]")
+
     def test_raise(self):
         # 'raise' test [',' test]
         try: raise RuntimeError('just testing')

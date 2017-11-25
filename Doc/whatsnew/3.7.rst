@@ -673,6 +673,12 @@ Changes in Python behavior
   parentheses can be omitted only on calls.
   (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
 
+* Yield expressions now are not allowed in comprehensions and generator
+  expressions except the expression for the outermost iterable since
+  comprehensions and generator expressions are implemented using
+  an internal function.
+  (Contributed by Serhiy Storchaka in :issue:`10544`.)
+
 
 Changes in the Python API
 -------------------------

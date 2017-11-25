@@ -186,6 +186,9 @@ each time the innermost block is reached.
 Note that the comprehension is executed in a separate scope, so names assigned
 to in the target list don't "leak" into the enclosing scope.
 
+Yield expressions are not allowed in comprehensions
+except the expression for the outermost iterable.
+
 Since Python 3.6, in an :keyword:`async def` function, an :keyword:`async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
 A comprehension in an :keyword:`async def` function may consist of either a
@@ -326,6 +329,9 @@ range(10) for y in bar(x))``.
 The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for details.
 
+Yield expressions are not allowed in generator expressions
+except the expression for the outermost iterable.
+
 If a generator expression contains either :keyword:`async for`
 clauses or :keyword:`await` expressions it is called an
 :dfn:`asynchronous generator expression`.  An asynchronous generator
@@ -363,6 +369,9 @@ coroutine function to be an asynchronous generator. For example::
 
     async def agen(): # defines an asynchronous generator function (PEP 525)
         yield 123
+
+Yield expressions are not allowed in comprehensions and generator expressions
+except the expression for the outermost iterable.
 
 Generator functions are described below, while asynchronous generator
 functions are described separately in section
