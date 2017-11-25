@@ -219,6 +219,22 @@ Command-line options
 
    Stop the test run on the first error or failure.
 
+.. cmdoption:: -k
+
+   Only run test methods and classes that match the pattern or substring.
+   This option may be used multiple times, in which case all test cases that
+   match of the given patterns are included.
+
+   Patterns that contain a wildcard character (``*``) are matched against the
+   test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
+   substring matching is used.
+
+   Patterns are matched against the fully qualified test method name as
+   imported by the test loader.
+
+   For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
+   ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
+
 .. cmdoption:: --locals
 
    Show local variables in tracebacks.
@@ -228,6 +244,9 @@ Command-line options
 
 .. versionadded:: 3.5
    The command-line option ``--locals``.
+
+.. versionadded:: 3.7
+   The command-line option ``-k``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -1744,6 +1763,21 @@ Loading and running tests
       :class:`TestSuite` class.
 
       This affects all the :meth:`loadTestsFrom\*` methods.
+
+   .. attribute:: testNamePatterns
+
+      List of Unix shell-style wildcard test name patterns that test methods
+      have to match to be included in test suites (see ``-v`` option).
+
+      If this attribute is not ``None`` (the default), all test methods to be
+      included in test suites must match one of the patterns in this list.
+      Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
+      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      will have to be converted using ``*`` wildcards.
+
+      This affects all the :meth:`loadTestsFrom\*` methods.
+
+      .. versionadded:: 3.7
 
 
 .. class:: TestResult
