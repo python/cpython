@@ -29,7 +29,7 @@ if exist "%EXTERNALS_DIR%" (
 if "%DO_FETCH%"=="false" goto end
 :fetch
 
-if "%ORG%"=="" (set ORG=zware)
+if "%ORG%"=="" (set ORG=python)
 call "%PCBUILD%find_python.bat" "%PYTHON%"
 
 git 2>&1 > nul
