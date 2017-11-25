@@ -866,11 +866,6 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     /* Now finish configuring the main interpreter */
     interp->config = *config;
 
-    /* GetPath may initialize state that _PySys_EndInit locks
-       in, and so has to be called first. */
-    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
-    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->config);
-
     if (interp->core_config._disable_importlib) {
         /* Special mode for freeze_importlib: run with no import system
          *
@@ -880,10 +875,19 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         _PyRuntime.initialized = 1;
         return _Py_INIT_OK();
     }
+
     /* TODO: Report exceptions rather than fatal errors below here */
 
     if (_PyTime_Init() < 0)
         return _Py_INIT_ERR("can't initialize time");
+
+    /* GetPath may initialize state that _PySys_EndInit locks
+       in, and so has to be called first. */
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
 
     /* Finish setting up the sys module and import system */
     PySys_SetPath(sys_path);
@@ -1261,6 +1265,9 @@ Py_FinalizeEx(void)
 #endif
 
     call_ll_exitfuncs();
+
+    _PyPathConfig_Fini();
+
     _PyRuntime_Finalize();
     return status;
 }
@@ -1290,6 +1297,7 @@ new_interpreter(PyThreadState **tstate_p)
     PyInterpreterState *interp;
     PyThreadState *tstate, *save_tstate;
     PyObject *bimod, *sysmod;
+    _PyInitError err;
 
     if (!_PyRuntime.initialized) {
         return _Py_INIT_ERR("Py_Initialize must be called first");
@@ -1325,10 +1333,13 @@ new_interpreter(PyThreadState **tstate_p)
         interp->config = main_interp->config;
     }
 
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
+
     /* XXX The following is lax in error checking */
-
-    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->config);
-
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
         return _Py_INIT_ERR("can't make modules dictionary");
@@ -1359,7 +1370,6 @@ new_interpreter(PyThreadState **tstate_p)
 
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
-        _PyInitError err;
 
         /* Set up a preliminary stderr printer until we have enough
            infrastructure for the io module in place. */
