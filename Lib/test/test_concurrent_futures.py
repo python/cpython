@@ -95,6 +95,7 @@ class BaseTestCase(unittest.TestCase):
 
 
 class ExecutorMixin:
+    timeout = 30
     worker_count = 5
     executor_kwargs = {}
 
@@ -115,8 +116,13 @@ class ExecutorMixin:
         except NotImplementedError as e:
             self.skipTest(str(e))
         self._prime_executor()
+        self.timer = threading.Timer(self.timeout, self._fail_on_deadlock)
+        self.timer.start()
 
     def tearDown(self):
+        self.timer.cancel()
+        self.timer.join()
+        del self.timer
         self.executor.shutdown(wait=True)
         self.executor = None
 
@@ -134,6 +140,23 @@ class ExecutorMixin:
                    for _ in range(self.worker_count)]
         for f in futures:
             f.result()
+
+    def _fail_on_deadlock(self, executor=None):
+        # If we did not recover before TIMEOUT seconds,
+        # consider that the executor is in a deadlock state
+        if executor is None:
+            executor = self.executor
+        import faulthandler
+        from tempfile import TemporaryFile
+        with TemporaryFile(mode="w+") as f:
+            faulthandler.dump_traceback(file=f)
+            f.seek(0)
+            tb = f.read()
+        for p in executor._processes.values():
+            p.terminate()
+        executor.shutdown(wait=True)
+        print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
+        self.fail(f"Executor deadlock:\n\n{tb}")
 
 
 class ThreadPoolMixin(ExecutorMixin):
@@ -830,22 +853,6 @@ class ErrorAtUnpickle(object):
         return _raise_error, (UnpicklingError, )
 
 
-class TimingWrapper(object):
-    """Creates a wrapper for a function which records the time it takes to
-    finish
-    """
-    def __init__(self, func):
-        self.func = func
-        self.elapsed = None
-
-    def __call__(self, *args, **kwds):
-        t = time.time()
-        try:
-            return self.func(*args, **kwds)
-        finally:
-            self.elapsed = time.time() - t
-
-
 class ExecutorDeadlockTest:
     # If ExecutorDeadlockTest takes more than 100secs to complete, it is very
     # likely caught in a deadlock. As there is no easy way to detect it,
@@ -856,21 +863,6 @@ class ExecutorDeadlockTest:
     def _sleep_id(cls, x, delay):
         time.sleep(delay)
         return x
-
-    def _fail_on_deadlock(self, executor):
-        # If we did not recover before TIMEOUT seconds,
-        # consider that the executor is in a deadlock state
-        import faulthandler
-        from tempfile import TemporaryFile
-        with TemporaryFile(mode="w+") as f:
-            faulthandler.dump_traceback(file=f)
-            f.seek(0)
-            tb = f.read()
-        for p in executor._processes.values():
-            p.terminate()
-        executor.shutdown(wait=True)
-        print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
-        self.fail(f"Executor deadlock:\n\n{tb}")
 
     def test_crash(self):
         # extensive testing for deadlock caused by crash in a pool
@@ -926,6 +918,7 @@ class ExecutorDeadlockTest:
 
     @classmethod
     def _test_getpid(cls, a):
+        time.sleep(.01)
         return os.getpid()
 
     @classmethod
@@ -954,14 +947,9 @@ class ExecutorDeadlockTest:
                 # Test for external crash signal comming from neighbor
                 # with various race setup
                 executor = self.executor_type(
-                    max_workers=2, mp_context=get_context(self.ctx))
-                try:
-                    raise AttributeError()
-                    pids = [p.pid for p in executor._processes]
-                    assert len(pids) == n_proc
-                except AttributeError:
-                    pids = [pid for pid in executor.map(
-                            self._test_getpid, [None] * n_proc)]
+                    max_workers=n_proc, mp_context=get_context(self.ctx))
+                pids = [pid for pid in executor.map(
+                        self._test_getpid, [None] * n_proc)]
                 assert None not in pids
                 res = self.executor.map(
                     self._sleep_id, repeat(True, 2 * n_proc),
@@ -982,9 +970,10 @@ class ExecutorDeadlockTest:
     def test_shutdown_deadlock(self):
         # Test that the pool calling shutdown do not cause deadlock
         # if a worker failed
-
+        self.executor.shutdown(wait=True)
         with self.executor_type(max_workers=2,
                                 mp_context=get_context(self.ctx)) as executor:
+            self.executor = executor  # Allow clean up in fail_on_deadlock
             executor.submit(self._test_kill_worker, ())
             time.sleep(.01)
             executor.shutdown(wait=True)
