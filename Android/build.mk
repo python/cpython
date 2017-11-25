@@ -198,7 +198,7 @@ $(PY_STDLIB_ZIP): python_dist
 	rm -f $(PY_STDLIB_ZIP)
 	cd $(PY_DESTDIR)/$(SYS_PREFIX); \
 	    zip -Drg $(PY_STDLIB_ZIP) $(STDLIB_DIR)* \
-	        -x \*.so \*.pyo \*opt-\*.pyc \*README
+	        -x \*.so \*.pyo \*opt-\*.pyc
 
 # Make things clean, before making a distribution.
 distclean: hostclean
