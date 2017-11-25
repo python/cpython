@@ -374,7 +374,9 @@ def _find_mac(command, args, hw_identifiers, get_index):
                             word = words[get_index(i)]
                             mac = int(word.replace(b':', b''), 16)
                             if _is_universal(mac):
+                                print('%012x' % mac, 'universal', command)
                                 return mac
+                            print('%012x' % mac, 'local', command)
                             first_local_mac = first_local_mac or mac
                         except (ValueError, IndexError):
                             # Virtual interfaces, such as those provided by
