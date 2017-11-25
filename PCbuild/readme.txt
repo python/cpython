@@ -231,7 +231,7 @@ _sqlite3
     Homepage:
         http://www.sqlite.org/
 _tkinter
-    Wraps version 8.5.15 of the Tk windowing system.
+    Wraps version 8.5.19 of the Tk windowing system.
     Homepage:
         http://www.tcl.tk/
 

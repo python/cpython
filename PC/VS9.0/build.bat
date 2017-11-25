@@ -70,8 +70,8 @@ if '%build_tkinter%'=='true' (
         set tcl_dbg_ext=
         set debug_flag=0
     )
-    set tcldir=%externals_dir%\tcl-8.5.15.0
-    set tkdir=%externals_dir%\tk-8.5.15.0
+    set tcldir=%externals_dir%\tcl-8.5.19.0
+    set tkdir=%externals_dir%\tk-8.5.19.0
     set tixdir=%externals_dir%\tix-8.4.3.5
 )
 if '%build_tkinter%'=='true' (
