@@ -2048,7 +2048,7 @@ fatal_output_debug(const char *msg)
 }
 #endif
 
-static void
+static void _Py_NO_RETURN
 fatal_error(const char *prefix, const char *msg, int status)
 {
     const int fd = fileno(stderr);
