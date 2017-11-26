@@ -236,7 +236,7 @@ def _dnsname_match(dn, hostname):
     if wildcards == 1 and len(leftmost) > 1:
         # Only match wildcard in leftmost segment.
         raise CertificateError(
-            "wildcard can only be present in left most segment: " + repr(dn))
+            "wildcard can only be present in the leftmost segment: " + repr(dn))
 
     if wildcards > 1:
         # Issue #17980: avoid denials of service by refusing more
