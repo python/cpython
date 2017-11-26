@@ -132,7 +132,8 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
-    wchar_t *program = Py_DecodeLocale("spam", NULL);
+    /* Leading "./" ensures getpath.c can still find the standard library */
+    wchar_t *program = Py_DecodeLocale("./spam", NULL);
     if (program == NULL) {
         fprintf(stderr, "Fatal error: cannot decode program name\n");
         return 1;
