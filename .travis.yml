@@ -36,7 +36,7 @@ matrix:
         # (Updating the version is fine as long as no warnings are raised by doing so.)
         - python -m pip install sphinx~=1.6.1 blurb
       script:
-        - make check suspicious html SPHINXOPTS="-q -W -j4"
+        - make check suspicious html SPHINXBUILD="sphinx-build" SPHINXOPTS="-q -W -j4"
     - os: linux
       language: c
       compiler: gcc
