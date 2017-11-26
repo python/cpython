@@ -1,0 +1,2 @@
+Skip test_get_event_loop_new_process in test.test_asyncio.test_events when
+sem_open() is not functional.
