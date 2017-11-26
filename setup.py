@@ -1680,12 +1680,11 @@ class PyBuildExt(build_ext):
 
         # Build the _uuid module if possible
         uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
-        if uuid_incs:
+        if uuid_incs is not None:
             if self.compiler.find_library_file(lib_dirs, 'uuid'):
                 uuid_libs = ['uuid']
             else:
                 uuid_libs = []
-        if uuid_incs:
             self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
                                    libraries=uuid_libs,
                                    include_dirs=uuid_incs))
