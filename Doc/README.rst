@@ -21,21 +21,16 @@ tree but are maintained separately and are available from
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
 
-The easiest way to install these tools is to create a virtual environment and
-install the tools into there.
+You could manually create a virtual environment and install them, but there is
+a ``Makefile`` already set up to do this for you, as long as you have a working
+Python 3 interpreter available.
 
 
 Using make
 ----------
 
-To get started on UNIX, you can create a virtual environment with the command ::
-
-  make venv
-
-That will install all the tools necessary to build the documentation. Assuming
-the virtual environment was created in the ``env`` directory (the default;
-configurable with the VENVDIR variable), you can run the following command to
-build the HTML output files::
+A Makefile has been prepared so that (on Unix), after you change into the
+``Doc/`` directory you can simply run ::
 
   make html
 
@@ -44,8 +39,17 @@ look for instances of sphinxbuild and blurb installed on your process PATH
 (configurable with the SPHINXBUILD and BLURB variables).
 
 On Windows, we try to emulate the Makefile as closely as possible with a
-``make.bat`` file. If you need to specify the Python interpreter to use,
-set the PYTHON environment variable instead.
+``make.bat`` file.
+
+To use a Python interpreter that's not called ``python3``, use the standard
+way to set Makefile variables, using e.g. ::
+
+   make html PYTHON=python
+
+On Windows, set the PYTHON environment variable instead.
+
+To use a specific sphinx-build (something other than ``sphinx-build``), set
+the SPHINXBUILD variable.
 
 Available make targets are:
 
@@ -104,11 +108,14 @@ Available make targets are:
 Without make
 ------------
 
-First, install the tool dependencies from PyPI.
+Install the Sphinx package and its dependencies from PyPI. In this situation,
+you'll have to create a virtual environment manually, and install Sphinx into
+it. Change into the ``Doc`` directory and run ::
 
-Then, from the ``Doc`` directory, run ::
-
-   sphinx-build -b<builder> . build/<builder>
+   $ python3 -m venv venv
+   $ source venv/bin/activate
+   (venv) $ pip install Sphinx
+   (venv) $ sphinx-build -b<builder> . build/<builder>
 
 where ``<builder>`` is one of html, text, latex, or htmlhelp (for explanations
 see the make targets above).
