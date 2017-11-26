@@ -512,10 +512,11 @@ class BasicSocketTests(unittest.TestCase):
         fail(cert, 'Xa.com')
         fail(cert, '.a.com')
 
-        # only match one left-most wildcard
+        # only match wildcards when they are the only thing
+        # in left-most segment
         cert = {'subject': ((('commonName', 'f*.com'),),)}
-        ok(cert, 'foo.com')
-        ok(cert, 'f.com')
+        fail(cert, 'foo.com')
+        fail(cert, 'f.com')
         fail(cert, 'bar.com')
         fail(cert, 'foo.a.com')
         fail(cert, 'bar.foo.com')
@@ -552,8 +553,8 @@ class BasicSocketTests(unittest.TestCase):
         # are supported.
         idna = 'www*.pythön.org'.encode("idna").decode("ascii")
         cert = {'subject': ((('commonName', idna),),)}
-        ok(cert, 'www.pythön.org'.encode("idna").decode("ascii"))
-        ok(cert, 'www1.pythön.org'.encode("idna").decode("ascii"))
+        fail(cert, 'www.pythön.org'.encode("idna").decode("ascii"))
+        fail(cert, 'www1.pythön.org'.encode("idna").decode("ascii"))
         fail(cert, 'ftp.pythön.org'.encode("idna").decode("ascii"))
         fail(cert, 'pythön.org'.encode("idna").decode("ascii"))
 
@@ -637,7 +638,7 @@ class BasicSocketTests(unittest.TestCase):
         # Issue #17980: avoid denials of service by refusing more than one
         # wildcard per fragment.
         cert = {'subject': ((('commonName', 'a*b.com'),),)}
-        ok(cert, 'axxb.com')
+        fail(cert, 'axxb.com')
         cert = {'subject': ((('commonName', 'a*b.co*'),),)}
         fail(cert, 'axxb.com')
         cert = {'subject': ((('commonName', 'a*b*.com'),),)}

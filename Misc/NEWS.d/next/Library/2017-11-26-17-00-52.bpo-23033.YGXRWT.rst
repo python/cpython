@@ -1,0 +1,3 @@
+Wildcard is now supported in hostname when it is one and only character in
+the left most segment of hostname in second argument of
+:meth:`ssl.match_hostname`.  Patch by Mandeep Singh.
