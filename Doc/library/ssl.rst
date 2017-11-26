@@ -430,7 +430,7 @@ Certificate handling
       of the certificate, is now supported.
 
    .. versionchanged:: 3.7
-      Allow wildcard when it is left most and only character
+      Allow wildcard when it is the leftmost and the only character
       in that segment.
 
 .. function:: cert_time_to_seconds(cert_time)
