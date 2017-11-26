@@ -2156,7 +2156,9 @@ else:
             super().tearDown()
 
         def test_get_event_loop_new_process(self):
-            # Skip the test if the sem_open() implementation is broken.
+            # Issue bpo-32126: The multiprocessing module used by
+            # ProcessPoolExecutor is not functional when the
+            # multiprocessing.synchronize module cannot be imported.
             support.import_module('multiprocessing.synchronize')
             async def main():
                 pool = concurrent.futures.ProcessPoolExecutor()
