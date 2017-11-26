@@ -344,10 +344,10 @@ class CDLL(object):
                archive(member) syntax for dlopen(), and the mode is adjusted.
                Otherwise, name is presented to dlopen() as a file argument.
             """
-            # from _ctypes import RTLD_NOW - not until Python3.7
+            from _ctypes import RTLD_MEMBER,RTLD_NOW
             if name and name.endswith(")") and ".a(" in name:
-                RTLD_MEMBER = 0x00040000
-                mode |= RTLD_MEMBER
+                # RTLD_MEMBER = 0x00040000
+                mode |= ( RTLD_MEMBER | RTLD_NOW )
 
         class _FuncPtr(_CFuncPtr):
             _flags_ = flags
