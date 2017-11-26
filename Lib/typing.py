@@ -688,7 +688,7 @@ class _GenericAlias(_Final, _root=True):
                 res.append(Generic)
             return tuple(res)
         if self.__origin__ is Generic:
-            i = bases.index(self)
+            i = bases.index(self)  # FIXME: class C(Generic[T], Generic[T]): pass
             for b in bases[i+1:]:
                 if isinstance(b, _GenericAlias):
                     return ()
