@@ -63,8 +63,7 @@ class Future:
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
 
-    _log_traceback = False   # Used for Python 3.4 and later
-    _tb_logger = None        # Used for Python 3.3 only
+    _log_traceback = False
 
     def __init__(self, *, loop=None):
         """Initialize the future.
@@ -156,9 +155,6 @@ class Future:
         if self._state != _FINISHED:
             raise InvalidStateError('Result is not ready.')
         self._log_traceback = False
-        if self._tb_logger is not None:
-            self._tb_logger.clear()
-            self._tb_logger = None
         if self._exception is not None:
             raise self._exception
         return self._result
@@ -176,9 +172,6 @@ class Future:
         if self._state != _FINISHED:
             raise InvalidStateError('Exception is not set.')
         self._log_traceback = False
-        if self._tb_logger is not None:
-            self._tb_logger.clear()
-            self._tb_logger = None
         return self._exception
 
     def add_done_callback(self, fn):
