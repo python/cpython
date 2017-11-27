@@ -187,6 +187,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock = mock.Mock()
         sock.fileno.return_value = 10
         sock.recv.side_effect = BlockingIOError
+        sock.gettimeout.return_value = 0.0
 
         self.loop.add_reader = mock.Mock()
         self.loop.remove_reader = mock.Mock()
@@ -267,6 +268,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock = mock.Mock()
         sock.fileno.return_value = 10
         sock.send.side_effect = BlockingIOError
+        sock.gettimeout.return_value = 0.0
 
         self.loop.add_writer = mock.Mock()
         self.loop.remove_writer = mock.Mock()
