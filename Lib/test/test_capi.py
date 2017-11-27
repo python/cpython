@@ -1,10 +1,9 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict
 import os
 import pickle
-import platform
 import random
 import re
 import subprocess
