@@ -28,6 +28,7 @@ emulator_header ()
 	export SDCARD := /sdcard
 	export PACKAGE_NAME := org.python
 	export SYS_PREFIX := \$(SDCARD)/\$(PACKAGE_NAME)
+	export EMULATOR_CMD_LINE_OPTIONS := $EMULATOR_CMD_LINE_OPTIONS
 
 	EOF
 }

@@ -5,10 +5,6 @@ avd_name := $(BUILD_TYPE)
 native_python_exe := $(native_build_dir)/python -B
 export ADB := $(ANDROID_SDK_ROOT)/platform-tools/adb
 
-ifeq (x86, $(findstring x86, $(ANDROID_ARCH)))
-    emulator_options := -qemu -enable-kvm
-endif
-
 
 # Rules.
 emulator: emulator_checks _emulator adb_shell
@@ -80,7 +76,7 @@ emulator_checks:
 _emulator: $(avd_dir)/sdcard.img $(avd_dir)/$(avd_name)
 	@echo "---> Start the emulator."
 	$(ANDROID_SDK_ROOT)/emulator/emulator -sdcard $(avd_dir)/sdcard.img -avd $(avd_name) \
-	    $(emulator_options) &
+	    $(EMULATOR_CMD_LINE_OPTIONS) &
 	@ echo "---> Waiting for device to be ready."
 	@$(ADB) wait-for-device shell getprop init.svc.bootanim; \
 	    echo "---> Device ready."
