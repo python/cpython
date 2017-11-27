@@ -512,7 +512,9 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         self.assertEqual(mac, 0x1234567890ab)
 
-    def check_node(self, node, requires=None, *, random=False):
+    def check_node(self, node, requires=None, *,
+                   # Additional bitmask checks to perform.
+                   local=False, multicast=False):
         if requires and node is None:
             self.skipTest('requires ' + requires)
         hex = '%012x' % node
@@ -527,21 +529,22 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         # `test_random_getnode()` method specifically.  Another case is the
         # Travis-CI case, which apparently only has locally administered MAC
         # addresses.
-        if not random and not os.getenv('TRAVIS'):
+        if not local and not os.getenv('TRAVIS'):
             self.assertFalse(node & (1 << 41), '%012x' % node)
+        is_multicast = (node & (1 << 40))
+        if multicast:
+            self.assertTrue(is_multicast, '%012x' % node)
+        else:
+            self.assertFalse(is_multicast, '%012x' % node)
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(os.getenv('TRAVIS'),
-                     'Travis-CI has no universally administered MAC addresses')
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(os.getenv('TRAVIS'),
-                     'Travis-CI has no universally administered MAC addresses')
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
@@ -578,7 +581,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         # must be set for randomly generated MAC addresses.  See RFC 4122,
         # $4.1.6.
         self.assertTrue(node & (1 << 40), '%012x' % node)
-        self.check_node(node, random=True)
+        self.check_node(node, local=True, multicast=True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_unix_getnode(self):
