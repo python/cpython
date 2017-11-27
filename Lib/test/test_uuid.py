@@ -438,23 +438,12 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         self.assertEqual(mac, 0x1234567890ab)
 
-    def check_node(self, node, requires=None, check_bit=True):
+    def check_node(self, node, requires=None):
         if requires and node is None:
             self.skipTest('requires ' + requires)
         hex = '%012x' % node
         if support.verbose >= 2:
             print(hex, end=' ')
-        # The MAC address will be universally administered (i.e. the second
-        # least significant bit of the first octet must be unset) for any
-        # physical interface, such as an ethernet port or wireless adapter.
-        # There are some cases where this won't be the case.  Randomly
-        # generated MACs may not be universally administered, but they must
-        # have their multicast bit set, though this is tested in the
-        # `test_random_getnode()` method specifically.  Another case is the
-        # Travis-CI case, which apparently only has locally administered MAC
-        # addresses.
-        if check_bit and not os.getenv('TRAVIS'):
-            self.assertFalse(node & (1 << 41), '%012x' % node)
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
@@ -500,7 +489,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         # must be set for randomly generated MAC addresses.  See RFC 4122,
         # $4.1.6.
         self.assertTrue(node & (1 << 40), '%012x' % node)
-        self.check_node(node, check_bit=False)
+        self.check_node(node)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
@@ -509,13 +498,13 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
             node = uuid._unixdll_getnode()
         except TypeError:
             self.skipTest('requires uuid_generate_time')
-        self.check_node(node, check_bit=False)
+        self.check_node(node)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
         node = uuid._windll_getnode()
-        self.check_node(node, check_bit=False)
+        self.check_node(node)
 
 
 if __name__ == '__main__':
