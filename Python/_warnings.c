@@ -361,16 +361,21 @@ warn_explicit(PyObject *category, PyObject *message,
         goto cleanup;
     }
 
+    if (strcmp(action, "ignore") == 0) {
+        goto return_none;
+    }
+
     /* Store in the registry that we've been here, *except* when the action
        is "always". */
     rc = 0;
     if (strcmp(action, "always") != 0) {
         if (registry != NULL && registry != Py_None &&
-                PyDict_SetItem(registry, key, Py_True) < 0)
+            PyDict_SetItem(registry, key, Py_True) < 0)
+        {
             goto cleanup;
-        else if (strcmp(action, "ignore") == 0)
-            goto return_none;
-        else if (strcmp(action, "once") == 0) {
+        }
+
+        if (strcmp(action, "once") == 0) {
             if (registry == NULL || registry == Py_None) {
                 registry = get_once_registry();
                 if (registry == NULL)
