@@ -196,7 +196,7 @@ may depend on the previous :keyword:`for` loop. For example:
 To ensure the comprehension always results in a container of the appropriate
 type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
 nested scope (in Python 3.7, such expressions emit :exc:`DeprecationWarning`
-when compiled, in Python 3.8+ they will emit `:exc:`SyntaxError`).
+when compiled, in Python 3.8+ they will emit :exc:`SyntaxError`).
 
 Since Python 3.6, in an :keyword:`async def` function, an :keyword:`async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
@@ -348,7 +348,7 @@ To avoid interfering with the expected operation of the generator expression
 itself, ``yield`` and ``yield from`` expressions are prohibited in the
 implicitly defined generator (in Python 3.7, such expressions emit
 :exc:`DeprecationWarning` when compiled, in Python 3.8+ they will emit
-`:exc:`SyntaxError`).
+:exc:`SyntaxError`).
 
 If a generator expression contains either :keyword:`async for`
 clauses or :keyword:`await` expressions it is called an
@@ -398,7 +398,7 @@ Due to their side effects on the containing scope, ``yield`` expressions
 are not permitted as part of the implicitly defined scopes used to
 implement comprehensions and generator expressions (in Python 3.7, such
 expressions emit :exc:`DeprecationWarning` when compiled, in Python 3.8+
-they will emit `:exc:`SyntaxError`)..
+they will emit :exc:`SyntaxError`)..
 
 .. versionchanged:: 3.7
    Yield expressions deprecated in the implicitly nested scopes used to
