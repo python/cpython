@@ -214,7 +214,8 @@ See also :pep:`530`.
    Asynchronous comprehensions were introduced.
 
 .. deprecated:: 3.7
-   ``yield`` and ``yield from`` deprecated in the implicitly nested scope
+   ``yield`` and ``yield from`` deprecated in the implicitly nested scope.
+
 
 .. _lists:
 
@@ -365,7 +366,8 @@ which is an asynchronous iterator (see :ref:`async-iterators`).
    with 3.7, any function can use asynchronous generator expressions.
 
 .. deprecated:: 3.7
-   ``yield`` and ``yield from`` deprecated in the implicitly nested scope
+   ``yield`` and ``yield from`` deprecated in the implicitly nested scope.
+
 
 .. _yieldexpr:
 
@@ -402,7 +404,7 @@ they will emit :exc:`SyntaxError`)..
 
 .. deprecated:: 3.7
    Yield expressions deprecated in the implicitly nested scopes used to
-   implement comprehensions and generator expressions
+   implement comprehensions and generator expressions.
 
 Generator functions are described below, while asynchronous generator
 functions are described separately in section
