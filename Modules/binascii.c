@@ -1174,7 +1174,7 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
     for (i=j=0; i < arglen; i += 2) {
         unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
         unsigned int bot = _PyLong_DigitValue[Py_CHARMASK(argbuf[i+1])];
-        if (top > 16 || bot > 16) {
+        if (top >= 16 || bot >= 16) {
             PyErr_SetString(Error,
                             "Non-hexadecimal digit found");
             goto finally;
