@@ -860,7 +860,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 addr_pairs_info = (((family, proto), (None, None)),)
             elif hasattr(socket, 'AF_UNIX') and family == socket.AF_UNIX:
                 for addr in (local_addr, remote_addr):
-                    if addr is not None and not isistance(addr, str):
+                    if addr is not None and not isinstance(addr, str):
                         raise TypeError('string is expected')
                 addr_pairs_info = (((family, proto),
                                     (local_addr, remote_addr)), )
