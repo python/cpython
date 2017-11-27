@@ -1,0 +1,2 @@
+Yield expressions now are deprecated in comprehensions and generator
+expressions except the expression for the outermost iterable.

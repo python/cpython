@@ -1754,16 +1754,33 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         VISIT(st, expr, value);
     VISIT(st, expr, elt);
     if (st->st_cur->ste_generator) {
-        PyErr_SetString(PyExc_SyntaxError,
+        PyObject *msg = PyUnicode_FromString(
             (e->kind == ListComp_kind) ? "'yield' inside list comprehension" :
             (e->kind == SetComp_kind) ? "'yield' inside set comprehension" :
             (e->kind == DictComp_kind) ? "'yield' inside dict comprehension" :
             "'yield' inside generator expression");
-        PyErr_SyntaxLocationObject(st->st_filename,
-                                   st->st_cur->ste_lineno,
-                                   st->st_cur->ste_col_offset);
+        if (msg == NULL) {
+            symtable_exit_block(st, (void *)e);
+            return 0;
+        }
+        if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning,
+                msg, st->st_filename, st->st_cur->ste_lineno,
+                NULL, NULL) == -1)
+        {
+            if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+                /* Turn a DeprecationWarning into a SyntaxError. */
+                PyErr_SetObject(PyExc_SyntaxError, msg);
+                PyErr_SyntaxLocationObject(st->st_filename,
+                                           st->st_cur->ste_lineno,
+                                           st->st_cur->ste_col_offset);
+            }
+            Py_DECREF(msg);
+            symtable_exit_block(st, (void *)e);
+            return 0;
+        }
+        Py_DECREF(msg);
     }
-    st->st_cur->ste_generator = is_generator;
+    st->st_cur->ste_generator |= is_generator;
     return symtable_exit_block(st, (void *)e);
 }
 

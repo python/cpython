@@ -1,2 +1,0 @@
-Yield expressions now are disallowed in comprehensions and generator
-expressions except the expression for the outermost iterable.
