@@ -1203,19 +1203,6 @@ binascii_unhexlify_impl(PyObject *module, Py_buffer *hexstr)
     return binascii_a2b_hex_impl(module, hexstr);
 }
 
-static const int table_hex[128] = {
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-   0, 1, 2, 3,  4, 5, 6, 7,  8, 9,-1,-1, -1,-1,-1,-1,
-  -1,10,11,12, 13,14,15,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,10,11,12, 13,14,15,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1
-};
-
-#define hexval(c) table_hex[(unsigned int)(c)]
-
 #define MAXLINESIZE 76
 
 
@@ -1233,7 +1220,7 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
 /*[clinic end generated code: output=e99f7846cfb9bc53 input=bf6766fea76cce8f]*/
 {
     Py_ssize_t in, out;
-    char ch;
+    unsigned int top, bot;
     const unsigned char *ascii_data;
     unsigned char *odata;
     Py_ssize_t datalen = 0;
@@ -1271,18 +1258,11 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
                 in++;
             }
             else if ((in + 1 < datalen) &&
-                     ((ascii_data[in] >= 'A' && ascii_data[in] <= 'F') ||
-                      (ascii_data[in] >= 'a' && ascii_data[in] <= 'f') ||
-                      (ascii_data[in] >= '0' && ascii_data[in] <= '9')) &&
-                     ((ascii_data[in+1] >= 'A' && ascii_data[in+1] <= 'F') ||
-                      (ascii_data[in+1] >= 'a' && ascii_data[in+1] <= 'f') ||
-                      (ascii_data[in+1] >= '0' && ascii_data[in+1] <= '9'))) {
-                /* hexval */
-                ch = hexval(ascii_data[in]) << 4;
-                in++;
-                ch |= hexval(ascii_data[in]);
-                in++;
-                odata[out++] = ch;
+                     ((top = _PyLong_DigitValue[ascii_data[in]]) < 16) &&
+                     ((bot = _PyLong_DigitValue[ascii_data[in + 1]]) < 16))
+            {
+                odata[out++] = (top << 4) + bot;
+                in += 2;
             }
             else {
               odata[out++] = '=';
