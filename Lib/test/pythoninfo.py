@@ -115,6 +115,14 @@ def collect_sys(info_add):
             encoding = '%s/%s' % (encoding, errors)
         info_add('sys.%s.encoding' % name, encoding)
 
+    # Were we compiled --with-pydebug or with #define Py_DEBUG?
+    Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+    if Py_DEBUG:
+        text = 'Yes (sys.gettotalrefcount() present)'
+    else:
+        text = 'No (sys.gettotalrefcount() missing)'
+    info_add('Py_DEBUG', text)
+
 
 def collect_platform(info_add):
     import platform
