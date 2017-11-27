@@ -17,7 +17,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PA
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
-	autobuild-dev autobuild-stable venv
+	autobuild-dev autobuild-stable
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -39,7 +39,7 @@ help:
 	@echo "  check      to run a check for frequent markup errors"
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
-build:
+build: venv
 	-mkdir -p build
 # Look first for a Misc/NEWS file (building from a source release tarball
 # or old repo) and use that, otherwise look for a Misc/NEWS.d directory
@@ -122,9 +122,11 @@ clean:
 	-rm -rf build/* $(VENVDIR)/*
 
 venv:
-	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
-	@echo "The venv has been created in the $(VENVDIR) directory"
+	@if [ "$(SPHINXBUILD)" == "PATH=$(VENVDIR)/bin:$$PATH sphinx-build" ]; then \
+		$(PYTHON) -m venv $(VENVDIR); \
+		echo "A virtual environment for Docs has been made in the $(VENVDIR) directory"; \
+		$(VENVDIR)/bin/python3 -m pip install Sphinx blurb; \
+	fi
 
 dist:
 	rm -rf dist
