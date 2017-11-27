@@ -5,7 +5,7 @@ ndk_version=14
 # Set default values if not defined.
 : ${ANDROID_NDK_ROOT:=/opt/android-ndk}
 : ${ANDROID_SDK_ROOT:=/opt/android-sdk}
-: ${ANDROID_API:=21}
+: ${ANDROID_API:=24}
 : ${ANDROID_ARCH:=x86_64}
 
 build_config_error ()

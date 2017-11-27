@@ -47,7 +47,7 @@ Both scripts use the following environment variables:
 - ``ANDROID_NDK_ROOT``, the location where the Android NDK has been installed.
   The default location is /opt/android-ndk when this variable is not set.
 - ``ANDROID_API``, the target API level for the cross-compilation. This is also
-  the API level of the emulator AVD [2]_. The default value is 21.
+  the API level of the emulator AVD [2]_. The default value is 24.
 - ``ANDROID_ARCH``, the target architecture for the cross-compilation.  This is
   also the architecture of the AVD. It may be arm, armv7, arm64, x86 or x86_64.
   The default value is x86_64.
@@ -155,16 +155,13 @@ Build and run on termux
 1. Build the Makefile::
 
      $ ANDROID_API=22 ANDROID_ARCH=armv7 DEVICE_PREFIXES=/data/data/com.termux/files/usr/local makesetup
-     Makefile and Makefile-android-21-armv7 built successfully.
-     The distribution directory (DESTDIR) is build/python3.7-install-android-21-armv7
-
-   The NDK for API 22 was never released and the build is done for API 21
-   as indicated by the name of DESTDIR.
+     Makefile and Makefile-android-24-armv7 built successfully.
+     The distribution directory (DESTDIR) is build/python3.7-install-android-24-armv7
 
 2. Build the distribution with the ``make dist`` command.
 3. Copy the distribution to the device::
 
-     $ rsync -av --no-perms --omit-dir-times --keep-dirlinks build/python3.7-install-android-21-armv7/ <device_ip_address>:/
+     $ rsync -av --no-perms --omit-dir-times --keep-dirlinks build/python3.7-install-android-24-armv7/ <device_ip_address>:/
 
    The copy is done from DESTDIR to the device (note the trailing slash after
    DESTDIR, meaning: "copy  the  contents of this directory" as opposed to "copy
@@ -231,9 +228,8 @@ must be added to the SDK for each one. One may install and manage the SDK with
 
 The remaining part of this section describes the installation of the SDK and its
 management with the ``sdkmanager`` command line tool (i.e. without Android
-Studio), through an example that installs the SDK and three system images for
-API 21: (21, x86), (21, x86_64), (21, armv7) and two system images for API 24:
-(24, x86_64), (24, arm64):
+Studio), through an example that installs the SDK and four system images for
+arm64, arm, x86 and x86_64 at API 24:
 
 - Download the basic Android command line tools by looking for a section named
   *Get just the command line tools* at the end of the `Android Studio`_ page.
@@ -262,12 +258,10 @@ API 21: (21, x86), (21, x86_64), (21, armv7) and two system images for API 24:
     build-tools;25.0.3
     platform-tools
     emulator
-    platforms;android-21
     platforms;android-24
-    system-images;android-21;default;armeabi-v7a
-    system-images;android-21;default;x86
-    system-images;android-21;default;x86_64
     system-images;android-24;default;arm64-v8a
+    system-images;android-24;default;armeabi-v7a
+    system-images;android-24;default;x86
     system-images;android-24;default;x86_64
 
   A minimun installation consists of the first three packages in this list, plus
@@ -278,31 +272,29 @@ API 21: (21, x86), (21, x86_64), (21, armv7) and two system images for API 24:
     $ $ANDROID_SDK_ROOT/tools/bin/sdkmanager --verbose --package_file=package_file
 
 - For reference, here is the output of ``sdkmanager --list`` after those
-  packages have been installed from scratch in may 2017::
+  packages have been installed from scratch in december 2017::
 
     Installed packages:
       Path                              | Version | Description                    | Location
       -------                           | ------- | -------                        | -------
       build-tools;25.0.3                | 25.0.3  | Android SDK Build-Tools 25.0.3 | build-tools/25.0.3/
-      emulator                          | 26.0.0  | Android Emulator               | emulator/
+      emulator                          | 26.1.4  | Android Emulator               | emulator/
       patcher;v4                        | 1       | SDK Patch Applier v4           | patcher/v4/
-      platform-tools                    | 25.0.5  | Android SDK Platform-Tools     | platform-tools/
-      platforms;android-21              | 2       | Android SDK Platform 21        | platforms/android-21/
+      platform-tools                    | 26.0.2  | Android SDK Platform-Tools     | platform-tools/
       platforms;android-24              | 2       | Android SDK Platform 24        | platforms/android-24/
-      system-images;a...ult;armeabi-v7a | 4       | ARM EABI v7a System Image      | system-images/a...lt/armeabi-v7a/
-      system-images;a...-21;default;x86 | 4       | Intel x86 Atom System Image    | system-images/a...21/default/x86/
-      system-images;a...;default;x86_64 | 4       | Intel x86 Atom_64 System Image | system-images/a...default/x86_64/
-      system-images;a...fault;arm64-v8a | 7       | ARM 64 v8a System Image        | system-images/a...ault/arm64-v8a/
-      system-images;a...;default;x86_64 | 7       | Intel x86 Atom_64 System Image | system-images/a...default/x86_64/
-      tools                             | 26.0.1  | Android SDK Tools 26.0.1       | tools/
+      system-images;a...ult;arm64-v8a   | 7       | ARM 64 v8a System Image        | system-images/android-24/default/arm64-v8a/
+      system-images;a...ult;armeabi-v7a | 7       | ARM EABI v7a System Image      | system-images/android-24/default/armeabi-v7a/
+      system-images;a...ult;x86         | 8       | Intel x86 Atom System Image    | system-images/android-24/default/x86/
+      system-images;a...ult;x86_64      | 8       | Intel x86 Atom_64 System Image | system-images/android-24/default/x86_64/
+      tools                             | 26.1.1  | Android SDK Tools              | tools/
 
 Requirements
 ^^^^^^^^^^^^
 
 - Android NDK [3]_.
 - Android SDK (see `Installation of the SDK`_). The SDK with the system images
-  of the x86_64 and armv7 architectures for API 21 requires 3.7 Gb of disk
-  space.
+  of the arm64, arm, x86 and x86_64 architectures for API 24 requires about
+  11 Gb of disk space.
 - A Java 8 JRE to run the sdk tools.
 - GNU make, find, xargs, zip and unzip.
 - The native compiler of the build platform to build the native Python.
