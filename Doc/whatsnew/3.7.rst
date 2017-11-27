@@ -563,7 +563,10 @@ Deprecated
   potentially returning a :term:`generator-iterator` object), while generator
   expressions won't attempt to interleave their implicit output with the output
   from any explicit yield expressions.
-  (Contributed by Serhiy Storchaka in :issue:`10544`.)
+  
+  In Python 3.7, such expressions emit :exc:`DeprecationWarning` when compiled,
+  in Python 3.8+ they will emit :exc:`SyntaxError`. (Contributed by Serhiy
+  Storchaka in :issue:`10544`.)
 
 - Function :c:func:`PySlice_GetIndicesEx` is deprecated and replaced with
   a macro if ``Py_LIMITED_API`` is not set or set to the value between
