@@ -532,26 +532,26 @@ class CmdLineTest(unittest.TestCase):
         out = self.run_xdev("-c", code)
         self.assertEqual(out,
                          "ignore::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         out = self.run_xdev("-b", "-c", code)
         self.assertEqual(out,
                          "default::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         out = self.run_xdev("-bb", "-c", code)
         self.assertEqual(out,
                          "error::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         out = self.run_xdev("-Werror", "-c", code)
         self.assertEqual(out,
                          "error::Warning "
                          "ignore::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         try:
@@ -572,19 +572,6 @@ class CmdLineTest(unittest.TestCase):
             code = "import faulthandler; print(faulthandler.is_enabled())"
             out = self.run_xdev("-c", code)
             self.assertEqual(out, "True")
-
-        # Make sure that ResourceWarning emitted twice at the same line number
-        # is logged twice
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
-        with open(filename, "w", encoding="utf8") as fp:
-            print("def func(): open(__file__)", file=fp)
-            print("func()", file=fp)
-            print("func()", file=fp)
-            fp.flush()
-
-        out = self.run_xdev(filename)
-        self.assertEqual(out.count(':1: ResourceWarning: '), 2, out)
 
 
 class IgnoreEnvironmentTest(unittest.TestCase):
