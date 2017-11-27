@@ -191,7 +191,7 @@ The leftmost :keyword:`for` clause is evaluated directly in the enclosing scope
 and then passed as an argument to the implictly nested scope. Subsequent
 :keyword:`for` clauses cannot be evaluated in the enclosing scope since they
 may depend on the previous :keyword:`for` loop. For example:
-``[x*y for x in range(10) for y in bar(x)]``.
+``[x*y for x in range(10) for y in range(x, x+10)]``.
 
 To ensure the comprehension always results in a container of the appropriate
 type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
@@ -211,9 +211,9 @@ suspend the execution of the coroutine function in which it appears.
 See also :pep:`530`.
 
 .. versionadded:: 3.6
-   Asynchronous comprehensions were introduced
+   Asynchronous comprehensions were introduced.
 
-.. versionchanged:: 3.7
+.. deprecated:: 3.7
    ``yield`` and ``yield from`` deprecated in the implicitly nested scope
 
 .. _lists:
@@ -339,7 +339,7 @@ immediately evaluated, so that an error produced by it can be seen before any
 other possible error in the code that handles the generator expression.
 Subsequent :keyword:`for` clauses cannot be evaluated immediately since they
 may depend on the previous :keyword:`for` loop. For example: ``(x*y for x in
-range(10) for y in bar(x))``.
+range(10) for y in range(x, x+10))``.
 
 The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for details.
@@ -357,14 +357,14 @@ expression returns a new asynchronous generator object,
 which is an asynchronous iterator (see :ref:`async-iterators`).
 
 .. versionadded:: 3.6
-   Asynchronous generator expressions were introduced
+   Asynchronous generator expressions were introduced.
 
 .. versionchanged:: 3.7
    Prior to Python 3.7, asynchronous generator expressions could
    only appear in :keyword:`async def` coroutines.  Starting
    with 3.7, any function can use asynchronous generator expressions.
 
-.. versionchanged:: 3.7
+.. deprecated:: 3.7
    ``yield`` and ``yield from`` deprecated in the implicitly nested scope
 
 .. _yieldexpr:
@@ -400,7 +400,7 @@ implement comprehensions and generator expressions (in Python 3.7, such
 expressions emit :exc:`DeprecationWarning` when compiled, in Python 3.8+
 they will emit :exc:`SyntaxError`)..
 
-.. versionchanged:: 3.7
+.. deprecated:: 3.7
    Yield expressions deprecated in the implicitly nested scopes used to
    implement comprehensions and generator expressions
 
