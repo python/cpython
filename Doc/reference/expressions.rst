@@ -183,14 +183,15 @@ by considering each of the :keyword:`for` or :keyword:`if` clauses a block,
 nesting from left to right, and evaluating the expression to produce an element
 each time the innermost block is reached.
 
-However, aside from the leftmost :keyword:`for` clause, the comprehension is
-executed in a separate implicitly nested scope. This ensures that names
-assigned to in the target list don't "leak" into the enclosing scope.
+However, aside from the iterable expression in the leftmost :keyword:`for` clause,
+the comprehension is executed in a separate implicitly nested scope. This ensures
+that names assigned to in the target list don't "leak" into the enclosing scope.
 
-The leftmost :keyword:`for` clause is evaluated directly in the enclosing scope
-and then passed as an argument to the implictly nested scope. Subsequent
-:keyword:`for` clauses cannot be evaluated in the enclosing scope since they
-may depend on the previous :keyword:`for` loop. For example:
+The iterable expression in the leftmost :keyword:`for` clause is evaluated
+directly in the enclosing scope and then passed as an argument to the implictly
+nested scope. Subsequent :keyword:`for` clauses and any filter condition in the
+leftmost :keyword:`for` clause cannot be evaluated in the enclosing scope as
+they may depend on the values obtained from the leftmost iterable. For example:
 ``[x*y for x in range(10) for y in range(x, x+10)]``.
 
 To ensure the comprehension always results in a container of the appropriate
@@ -335,12 +336,14 @@ brackets or curly braces.
 
 Variables used in the generator expression are evaluated lazily when the
 :meth:`~generator.__next__` method is called for the generator object (in the same
-fashion as normal generators).  However, the leftmost :keyword:`for` clause is
-immediately evaluated, so that an error produced by it can be seen before any
-other possible error in the code that handles the generator expression.
-Subsequent :keyword:`for` clauses cannot be evaluated immediately since they
-may depend on the previous :keyword:`for` loop. For example: ``(x*y for x in
-range(10) for y in range(x, x+10))``.
+fashion as normal generators).  However, the iterable expression in the
+leftmost :keyword:`for` clause is immediately evaluated, so that an error
+produced by it will be emitted at the point where the generator expression
+is defined, rather than at the point where the first value is retrieved.
+Subsequent :keyword:`for` clauses and any filter condition in the leftmost
+:keyword:`for` clause cannot be evaluated in the enclosing scope as they may
+depend on the values obtained from the leftmost iterable. For example:
+``(x*y for x in range(10) for y in range(x, x+10))``.
 
 The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for details.
