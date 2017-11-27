@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 
+
 class EmbeddingTests(unittest.TestCase):
     def setUp(self):
         here = os.path.abspath(__file__)
