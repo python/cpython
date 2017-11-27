@@ -183,11 +183,20 @@ by considering each of the :keyword:`for` or :keyword:`if` clauses a block,
 nesting from left to right, and evaluating the expression to produce an element
 each time the innermost block is reached.
 
-Note that the comprehension is executed in a separate scope, so names assigned
-to in the target list don't "leak" into the enclosing scope.
+However, aside from the leftmost :keyword:`for` clause, the comprehension is
+executed in a separate implicitly nested scope. This ensures that names
+assigned to in the target list don't "leak" into the enclosing scope.
 
-Yield expressions are not allowed in comprehensions
-except the expression for the outermost iterable.
+The leftmost :keyword:`for` clause is evaluated directly in the enclosing scope
+and then passed as an argument to the implictly nested scope. Subsequent
+:keyword:`for` clauses cannot be evaluated in the enclosing scope since they
+may depend on the previous :keyword:`for` loop. For example:
+``[x*y for x in range(10) for y in bar(x)]``.
+
+To ensure the comprehension always results in a container of the appropriate
+type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
+nested scope (in Python 3.7, such expressions emit :exc:`DeprecationWarning`
+when compiled, in Python 3.8+ they will emit `:exc:`SyntaxError`).
 
 Since Python 3.6, in an :keyword:`async def` function, an :keyword:`async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
@@ -200,6 +209,12 @@ or :keyword:`await` expressions it is called an
 :dfn:`asynchronous comprehension`.  An asynchronous comprehension may
 suspend the execution of the coroutine function in which it appears.
 See also :pep:`530`.
+
+.. versionadded:: 3.6
+   Asynchronous comprehensions were introduced
+
+.. versionchanged:: 3.7
+   ``yield`` and ``yield from`` deprecated in the implicitly nested scope
 
 .. _lists:
 
@@ -329,8 +344,11 @@ range(10) for y in bar(x))``.
 The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for details.
 
-Yield expressions are not allowed in generator expressions
-except the expression for the outermost iterable.
+To avoid interfering with the expected operation of the generator expression
+itself, ``yield`` and ``yield from`` expressions are prohibited in the
+implicitly defined generator (in Python 3.7, such expressions emit
+:exc:`DeprecationWarning` when compiled, in Python 3.8+ they will emit
+`:exc:`SyntaxError`).
 
 If a generator expression contains either :keyword:`async for`
 clauses or :keyword:`await` expressions it is called an
@@ -338,10 +356,16 @@ clauses or :keyword:`await` expressions it is called an
 expression returns a new asynchronous generator object,
 which is an asynchronous iterator (see :ref:`async-iterators`).
 
+.. versionadded:: 3.6
+   Asynchronous generator expressions were introduced
+
 .. versionchanged:: 3.7
    Prior to Python 3.7, asynchronous generator expressions could
    only appear in :keyword:`async def` coroutines.  Starting
    with 3.7, any function can use asynchronous generator expressions.
+
+.. versionchanged:: 3.7
+   ``yield`` and ``yield from`` deprecated in the implicitly nested scope
 
 .. _yieldexpr:
 
@@ -370,8 +394,15 @@ coroutine function to be an asynchronous generator. For example::
     async def agen(): # defines an asynchronous generator function (PEP 525)
         yield 123
 
-Yield expressions are not allowed in comprehensions and generator expressions
-except the expression for the outermost iterable.
+Due to their side effects on the containing scope, ``yield`` expressions
+are not permitted as part of the implicitly defined scopes used to
+implement comprehensions and generator expressions (in Python 3.7, such
+expressions emit :exc:`DeprecationWarning` when compiled, in Python 3.8+
+they will emit `:exc:`SyntaxError`)..
+
+.. versionchanged:: 3.7
+   Yield expressions deprecated in the implicitly nested scopes used to
+   implement comprehensions and generator expressions
 
 Generator functions are described below, while asynchronous generator
 functions are described separately in section
