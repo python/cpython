@@ -203,7 +203,15 @@ class _Framer:
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
                 with f.getbuffer() as data:
                     write = self.file_write
+                    # Issue a single call to the write nethod of the underlying
+                    # file object for the frame opcode with the size of the
+                    # frame. The concatenation is expected to be less expensive
+                    # than issuing an additional call to write.
                     write(FRAME + pack("<Q", len(data)))
+
+                    # Issue a separate call to write to append the frame
+                    # contents without concatenation to the above to avoid a
+                    # memory copy.
                     write(data)
                 f.seek(0)
                 f.truncate()
