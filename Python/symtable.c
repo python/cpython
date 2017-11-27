@@ -1768,7 +1768,9 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                 NULL, NULL) == -1)
         {
             if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
-                /* Turn a DeprecationWarning into a SyntaxError. */
+                /* Replace the DeprecationWarning exception with a SyntaxError
+                   to get a more accurate error report */
+                PyErr_Clear();
                 PyErr_SetObject(PyExc_SyntaxError, msg);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                            st->st_cur->ste_lineno,
