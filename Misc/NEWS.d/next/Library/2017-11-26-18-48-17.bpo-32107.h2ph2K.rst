@@ -1,0 +1,4 @@
+Improve the private ``*_getnode()`` methods for UUID1 such that universally
+administered MAC addresses are preferred over locally administered MAC
+addresses.  If only the latter is available, the first such one is returned.
+Improve the related tests and fix some bugs there as well.
