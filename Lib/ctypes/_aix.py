@@ -186,13 +186,14 @@ def getExecLibPath_aix():
     """Internal support function:
     On AIX, the buildtime searchpath is stored in the executable.
     The command dump -H can extract this info.
-    Prefix searched libraries with LIBPATH, or LD_LIBRARY_PATH if defined
-    Additional paths are appended based on paths to libraries the python
-    executable is linked with.  This mimics AIX dlopen() behavior.
+    Prefix searched libraries with LD_LIBRARY_PATH (preferred),
+    or LIBPATH if defined. These paths are appended to the paths
+    to libraries the python executable is linked with.
+    This mimics AIX dlopen() behavior.
     """
-    libpaths = environ.get("LIBPATH")
+    libpaths = environ.get("LD_LIBRARY_PATH")
     if libpaths is None:
-        libpaths = environ.get("LD_LIBRARY_PATH")
+        libpaths = environ.get("LIBPATH")
     if libpaths is None:
         libpaths = []
     else:
