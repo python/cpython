@@ -35,14 +35,6 @@ def _is_debug_mode():
 _DEBUG = _is_debug_mode()
 
 
-_types_coroutine = types.coroutine
-_types_CoroutineType = types.CoroutineType
-_inspect_iscoroutinefunction = inspect.iscoroutinefunction
-
-from collections.abc import (Coroutine as _CoroutineABC,
-                             Awaitable as _AwaitableABC)
-
-
 def debug_wrapper(gen):
     # This function is called from 'sys.set_coroutine_wrapper'.
     # We only wrap here coroutines defined via 'async def' syntax.
@@ -148,7 +140,7 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
-    if _inspect_iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defined with "async def".
         # Wrapping in CoroWrapper will happen via
@@ -164,7 +156,7 @@ def coroutine(func):
             if (base_futures.isfuture(res) or inspect.isgenerator(res) or
                 isinstance(res, CoroWrapper)):
                 res = yield from res
-            elif _AwaitableABC is not None:
+            elif Awaitable is not None:
                 # If 'func' returns an Awaitable (new in 3.5) we
                 # want to run it.
                 try:
@@ -172,12 +164,12 @@ def coroutine(func):
                 except AttributeError:
                     pass
                 else:
-                    if isinstance(res, _AwaitableABC):
+                    if isinstance(res, Awaitable):
                         res = yield from await_meth()
             return res
 
     if not _DEBUG:
-        wrapper = _types_coroutine(coro)
+        wrapper = types.coroutine(coro)
     else:
         @functools.wraps(func)
         def wrapper(*args, **kwds):
@@ -202,11 +194,12 @@ _is_coroutine = object()
 
 def iscoroutinefunction(func):
     """Return True if func is a decorated coroutine function."""
-    return (_inspect_iscoroutinefunction(func) or
+    return (inspect.iscoroutinefunction(func) or
             getattr(func, '_is_coroutine', None) is _is_coroutine)
 
 
-_COROUTINE_TYPES = (_types_CoroutineType, _CoroutineABC,
+ # Prioritize native coroutine check to speed-up
+_COROUTINE_TYPES = (types.CoroutineType, Coroutine,
                     types.GeneratorType, CoroWrapper)
 
 
