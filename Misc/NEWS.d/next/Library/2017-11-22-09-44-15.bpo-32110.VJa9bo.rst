@@ -1,0 +1,3 @@
+``codecs.StreamReader.read(n)`` now returns not more than *n*
+characters/bytes for non-negative *n*. This makes it compatible with
+``read()`` methods of other file-like objects.
