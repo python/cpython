@@ -13,7 +13,6 @@ import warnings
 import weakref
 
 from . import base_tasks
-from . import compat
 from . import coroutines
 from . import events
 from . import futures
@@ -525,7 +524,7 @@ def ensure_future(coro_or_future, *, loop=None):
         if task._source_traceback:
             del task._source_traceback[-1]
         return task
-    elif compat.PY35 and inspect.isawaitable(coro_or_future):
+    elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:
         raise TypeError('An asyncio.Future, a coroutine or an awaitable is '

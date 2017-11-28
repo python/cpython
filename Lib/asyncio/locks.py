@@ -4,7 +4,6 @@ __all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
 
 import collections
 
-from . import compat
 from . import events
 from . import futures
 from .coroutines import coroutine
@@ -67,23 +66,21 @@ class _ContextManagerMixin:
         yield from self.acquire()
         return _ContextManager(self)
 
-    if compat.PY35:
+    def __await__(self):
+        # To make "with await lock" work.
+        yield from self.acquire()
+        return _ContextManager(self)
 
-        def __await__(self):
-            # To make "with await lock" work.
-            yield from self.acquire()
-            return _ContextManager(self)
+    @coroutine
+    def __aenter__(self):
+        yield from self.acquire()
+        # We have no use for the "as ..."  clause in the with
+        # statement for locks.
+        return None
 
-        @coroutine
-        def __aenter__(self):
-            yield from self.acquire()
-            # We have no use for the "as ..."  clause in the with
-            # statement for locks.
-            return None
-
-        @coroutine
-        def __aexit__(self, exc_type, exc, tb):
-            self.release()
+    @coroutine
+    def __aexit__(self, exc_type, exc, tb):
+        self.release()
 
 
 class Lock(_ContextManagerMixin):

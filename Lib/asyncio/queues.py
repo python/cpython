@@ -5,7 +5,6 @@ __all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty']
 import collections
 import heapq
 
-from . import compat
 from . import events
 from . import locks
 from .coroutines import coroutine
@@ -251,9 +250,3 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self._queue.pop()
-
-
-if not compat.PY35:
-    JoinableQueue = Queue
-    """Deprecated alias for Queue."""
-    __all__.append('JoinableQueue')
