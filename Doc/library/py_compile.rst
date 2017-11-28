@@ -83,20 +83,24 @@ byte-code cache files in the directory containing the source code.
 
    .. attribute:: TIMESTAMP
 
-      The pyc should include the timestamp and size of the source file, which
-      Python will compare against the metadata of the source file at runtime to
+      The pyc includes the timestamp and size of the source file, which Python
+      will compare against the metadata of the source file at runtime to
       determine if the pyc needs to be regenerated.
 
    .. attribute:: CHECKED_HASH
 
-      The pyc should include a hash of the source file which Python will compare
-      against the source at runtime to determine if the pyc needs to be
+      The pyc includes a hash of the source file content, which Python will
+      compare against the source at runtime to determine if the pyc needs to be
       regenerated.
 
    .. attribute:: UNCHECKED_HASH
 
-      The pyc should include a hash of the source file but Python should not
-      validate it against the source file at runtime.
+      Like :attr:`CHECKED_HASH`, the pyc includes a hash of the source file
+      content. However, Python will at runtime assume the pyc is up to date and
+      not validate the pyc against the source file at all.
+
+      This option is useful when the pycs are kept up to date by some system
+      external to Python like a build system.
 
 
 .. function:: main(args=None)
