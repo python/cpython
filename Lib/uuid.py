@@ -351,8 +351,9 @@ def _popen(command, *args):
 # the Touch Bar on MacBook Pros.
 #
 # This bit works out to be the 42nd bit counting from 1 being the least
-# significant, or 1<<41.  We'll skip over any locally administered MAC
-# addresses, as it makes no sense to use those in UUID calculation.
+# significant, or 1<<41.  We'll prefer universally administered MAC addresses
+# over locally administered ones since the former are globally unique, but
+# we'll return the first of the latter found if that's all the machine has.
 #
 # See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local
 
