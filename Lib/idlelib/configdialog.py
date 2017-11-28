@@ -11,8 +11,8 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
-                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, DISABLED,
-                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
+                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
+                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW, CENTER,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
@@ -25,6 +25,7 @@ from idlelib.config_key import GetKeysDialog
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
+from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
 from idlelib.autocomplete import AutoComplete
 from idlelib.codecontext import CodeContext
