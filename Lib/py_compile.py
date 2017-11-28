@@ -154,7 +154,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         bytecode = importlib._bootstrap_external._code_to_hash_pyc(
             code,
             source_hash,
-            invalidation_mode == PycInvalidationMode.CHECKED_HASH,
+            (invalidation_mode == PycInvalidationMode.CHECKED_HASH),
         )
     mode = importlib._bootstrap_external._calc_mode(file)
     importlib._bootstrap_external._write_atomic(cfile, bytecode, mode)
