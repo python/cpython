@@ -6,7 +6,6 @@ __all__ = ['CancelledError', 'TimeoutError', 'InvalidStateError',
 import concurrent.futures
 import logging
 import sys
-import traceback
 
 from . import base_futures
 from . import events
