@@ -573,16 +573,12 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
             node = self.uuid._unix_getnode()
         except TypeError:
             self.skipTest('requires uuid_generate_time')
-        # Since we don't know the provenance of the MAC address, don't check
-        # whether it is locally or universally administered.
         self.check_node(node, 'unix')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
         node = self.uuid._windll_getnode()
-        # Since we don't know the provenance of the MAC address, don't check
-        # whether it is locally or universally administered.
         self.check_node(node)
 
 
