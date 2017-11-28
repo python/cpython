@@ -200,7 +200,8 @@ def iscoroutinefunction(func):
             getattr(func, '_is_coroutine', None) is _is_coroutine)
 
 
- # Prioritize native coroutine check to speed-up
+# Prioritize native coroutine check to speed-up
+# asyncio.iscoroutine.
 _COROUTINE_TYPES = (types.CoroutineType, Coroutine,
                     types.GeneratorType, CoroWrapper)
 
