@@ -35,12 +35,6 @@ from .log import logger
 from test import support
 
 
-if sys.platform == 'win32':  # pragma: no cover
-    from .windows_utils import socketpair
-else:
-    from socket import socketpair  # pragma: no cover
-
-
 def dummy_ssl_context():
     if ssl is None:
         return None

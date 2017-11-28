@@ -1,0 +1,5 @@
+The ``asyncio.windows_utils.socketpair()`` function has been removed: use
+directly :func:`socket.socketpair` which is available on all platforms since
+Python 3.5 (before, it wasn't available on Windows).
+``asyncio.windows_utils.socketpair()`` was just an alias to
+``socket.socketpair`` on Python 3.5 and newer.

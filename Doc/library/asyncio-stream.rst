@@ -426,10 +426,7 @@ Coroutine waiting until a socket receives data using the
 :func:`open_connection` function::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    from socket import socketpair
 
     @asyncio.coroutine
     def wait_for_data(loop):
