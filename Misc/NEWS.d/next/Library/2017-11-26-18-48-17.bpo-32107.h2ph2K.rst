@@ -1,4 +1,5 @@
-Improve the private ``*_getnode()`` methods for UUID1 such that universally
-administered MAC addresses are preferred over locally administered MAC
-addresses.  If only the latter is available, the first such one is returned.
-Improve the related tests and fix some bugs there as well.
+``uuid.getnode()`` now preferentially returns universally administered MAC
+addresses if available, over locally administered MAC addresses.  This makes a
+better guarantee for global uniqueness of UUIDs returned from
+``uuid.uuid1()``.  If only locally administered MAC addresses are available,
+the first such one found is returned.
