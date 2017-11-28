@@ -1,0 +1,2 @@
+Fix configparser when a section is assigned to itself. Patched by Dong-
+hee Na.

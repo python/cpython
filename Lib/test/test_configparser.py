@@ -510,6 +510,14 @@ boolean {0[0]} NO
                              defaults={"key":"value"})
         self.assertTrue("Key" in cf["section"])
 
+    def test_assign_itself(self):
+        cf = self.newconfig()
+        cf['test'] = {'key': 'value'}
+        section = cf['test']
+        section['key'] = 'diffrent'
+        cf['test'] = section
+        self.assertEqual(dict(section), {'key': 'diffrent'})
+
     def test_default_case_sensitivity(self):
         cf = self.newconfig({"foo": "Bar"})
         self.assertEqual(

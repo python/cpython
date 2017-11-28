@@ -140,6 +140,7 @@ ConfigParser -- responsible for parsing a list of
 
 from collections.abc import MutableMapping
 from collections import OrderedDict as _default_dict, ChainMap as _ChainMap
+from copy import deepcopy
 import functools
 import io
 import itertools
@@ -964,6 +965,7 @@ class RawConfigParser(MutableMapping):
 
         # XXX this is not atomic if read_dict fails at any point. Then again,
         # no update method in configparser is atomic in this implementation.
+        value = deepcopy(value)
         if key == self.default_section:
             self._defaults.clear()
         elif key in self._sections:
