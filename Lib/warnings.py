@@ -353,7 +353,6 @@ def warn_explicit(message, category, filename, lineno,
         action = defaultaction
     # Early exit actions
     if action == "ignore":
-        registry[key] = 1
         return
 
     # Prime the linecache for formatting, in case the
