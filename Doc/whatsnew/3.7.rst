@@ -686,6 +686,12 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* The ``asyncio.windows_utils.socketpair()`` function has been
+  removed: use directly :func:`socket.socketpair` which is available on all
+  platforms since Python 3.5 (before, it wasn't available on Windows).
+  ``asyncio.windows_utils.socketpair()`` was just an alias to
+  ``socket.socketpair`` on Python 3.5 and newer.
+
 * :mod:`asyncio`: The module doesn't export :mod:`selectors` and
   :mod:`_overlapped` modules as ``asyncio.selectors`` and
   ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
