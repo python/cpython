@@ -397,6 +397,26 @@ merged into the execution namespace before the code is executed.\n\
 See PyRun_SimpleStrings.");
 
 
+static PyObject *
+object_is_shareable(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    if (!PyArg_UnpackTuple(args, "is_shareable", 1, 1, &obj))
+        return NULL;
+
+    if (PyBytes_CheckExact(obj))
+        Py_RETURN_TRUE;
+
+    Py_RETURN_FALSE;
+}
+
+PyDoc_STRVAR(is_shareable_doc,
+"is_shareable(obj) -> bool\n\
+\n\
+Return True if the object's data may be shared between interpreters and\n\
+False otherwise.");
+
+
 static PyMethodDef module_functions[] = {
     {"create",                  (PyCFunction)interp_create,
      METH_VARARGS, create_doc},
@@ -410,6 +430,9 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS, run_string_doc},
     {"run_string_unrestricted", (PyCFunction)interp_run_string_unrestricted,
      METH_VARARGS, run_string_unrestricted_doc},
+
+    {"is_shareable",            (PyCFunction)object_is_shareable,
+     METH_VARARGS, is_shareable_doc},
 
     {NULL,                      NULL}           /* sentinel */
 };
