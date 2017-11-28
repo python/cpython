@@ -797,7 +797,7 @@ class SourceLoader(_LoaderBasics):
                     }
                     try:
                         flags = _classify_pyc(data, fullname, exc_details)
-                        bytes_data = data[16:]
+                        bytes_data = memoryview(data)[16:]
                         hash_based = flags & 0b1 != 0
                         if hash_based:
                             check_source = flags & 0b10 != 0
@@ -943,7 +943,11 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
             'path': path,
         }
         _classify_pyc(data, fullname, exc_details)
-        return _compile_bytecode(data[16:], name=fullname, bytecode_path=path)
+        return _compile_bytecode(
+            memoryview(data)[16:],
+            name=fullname,
+            bytecode_path=path,
+        )
 
     def get_source(self, fullname):
         """Return None as there is no source code."""
