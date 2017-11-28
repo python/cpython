@@ -3,6 +3,7 @@ import os
 import sys
 
 from idlelib.browser import ModuleBrowser, ModuleBrowserTreeItem
+from idlelib.pyshell import PyShellFileList
 from idlelib.tree import TreeItem
 
 
