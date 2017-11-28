@@ -44,8 +44,9 @@ The :mod:`sunau` module defines the following functions:
 
 .. function:: open(file, mode)
 
-   If *file* is a string, open the file by that name, otherwise treat it as a
-   seekable file-like object. *mode* can be any of
+   If *file* is a string or :term:`path-like object`, open the file
+   by that name, otherwise treat it as a seekable :term:`file object`.
+   *mode* can be any of:
 
    ``'r'``
       Read only mode.
@@ -58,6 +59,8 @@ The :mod:`sunau` module defines the following functions:
    A *mode* of ``'r'`` returns an :class:`AU_read` object, while a *mode* of ``'w'``
    or ``'wb'`` returns an :class:`AU_write` object.
 
+   .. versionchanged:: 3.7
+      Added support for :term:`path-like objects <path-like object>`.
 
 .. function:: openfp(file, mode)
 

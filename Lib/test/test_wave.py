@@ -2,9 +2,6 @@ import unittest
 from test import audiotests
 from test import support
 from audioop import byteswap
-import io
-import pathlib
-import os
 import sys
 import wave
 
@@ -108,38 +105,11 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
 
 class MiscTestCase(audiotests.AudioMiscTests, unittest.TestCase):
     module = wave
+    sndfilename = 'pluck-pcm8.wav'
 
     def test__all__(self):
         blacklist = {'WAVE_FORMAT_PCM'}
         support.check__all__(self, wave, blacklist=blacklist)
-
-    def test_open_pathlib(self):
-        # test that a.wave file could in theory be opened.
-        # For file size reasons, we do not have an actual .wav file,
-        # so we will pass in this file, but check that a
-        # a wave.Error (invalid data) will be raised,
-        # and not a TypeError or AttributeError
-        # showing that the opening was actually completed.
-
-
-        fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
-        fn_as_path = pathlib.Path(fn)
-        fn_handle = wave.open(fn_as_path)
-        fn_handle.close()
-
-        # test opening non-wave files with appropriate errors
-        this_file = os.path.abspath(__file__)
-
-        with self.assertRaises(wave.Error):
-            wave.open(this_file)
-
-        this_file_as_path = pathlib.Path(this_file)
-        with self.assertRaises(wave.Error):
-            wave.open(this_file_as_path)
-
-        this_string_io = io.StringIO()
-        with self.assertRaises(EOFError):
-            wave.open(this_string_io)
 
 
 if __name__ == '__main__':

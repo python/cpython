@@ -1,6 +1,8 @@
 from test.support import findfile, TESTFN, unlink
 import array
 import io
+import pathlib
+import os
 from unittest import mock
 import pickle
 
@@ -60,6 +62,34 @@ class AudioMiscTests(AudioTests):
             self.module.openfp(arg, mode=mode)
             mock_open.assert_called_with(arg, mode=mode)
 
+    def test_open_pathlib(self):
+        # test opening a pathlib to an appropriate file
+        fn = findfile(self.sndfilename, subdir='audiodata')
+        fn_as_path = pathlib.Path(fn)
+
+        with self.module.open(fn_as_path):
+            pass
+
+    def test_open_nonaudio_file(self):
+        # test opening non-audio files with appropriate errors
+        this_file = os.path.abspath(__file__)
+
+        with self.assertRaises(self.module.Error):
+            self.module.open(this_file)
+
+        this_file_as_path = pathlib.Path(this_file)
+        with self.assertRaises(self.module.Error):
+            self.module.open(this_file_as_path)
+
+    def test_open_empty_stringio(self):
+        this_string_io = io.StringIO()
+        with self.assertRaises(EOFError):
+            self.module.open(this_string_io)
+
+    def test_open_typeerror(self):
+        # open an arbitrary object without 'read' or 'write'.
+        with self.assertRaises(TypeError):
+            self.module.open(object)
 
 class AudioWriteTests(AudioTests):
 

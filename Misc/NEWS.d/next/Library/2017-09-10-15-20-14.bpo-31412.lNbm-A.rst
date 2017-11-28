@@ -1,2 +1,3 @@
-:func:`wave.open()` now accepts :term:`path-like objects <path-like object>` objects. 
+:func:`aifc.open()`, :func:`sunau.open()` and :func:`wave.open()` 
+now accept :term:`path-like objects <path-like object>` objects. 
 Patch by Michael Scott Cuthbert.

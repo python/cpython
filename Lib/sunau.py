@@ -104,6 +104,7 @@ is destroyed.
 """
 
 from collections import namedtuple
+import os
 import warnings
 
 _sunau_params = namedtuple('_sunau_params',
@@ -516,6 +517,14 @@ def open(f, mode=None):
             mode = f.mode
         else:
             mode = 'rb'
+    try:
+        f = os.fspath(f)
+    except TypeError:
+        if not hasattr(f, 'read') and not hasattr(f, 'write'):
+            raise TypeError('open() takes str, a path-like object, '
+                            + 'or an open file-like object, '
+                            + f'not {type(f).__name__!r}') from None
+
     if mode in ('r', 'rb'):
         return Au_read(f)
     elif mode in ('w', 'wb'):

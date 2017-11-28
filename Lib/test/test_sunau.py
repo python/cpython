@@ -119,6 +119,7 @@ class SunauULAWTest(SunauTest, unittest.TestCase):
 
 class SunauMiscTests(audiotests.AudioMiscTests, unittest.TestCase):
     module = sunau
+    sndfilename = 'pluck-ulaw.au'
 
 
 if __name__ == "__main__":

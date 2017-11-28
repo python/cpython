@@ -147,6 +147,7 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
 
 class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
     module = aifc
+    sndfilename = 'pluck-ulaw.aifc'
 
     def test_skipunknown(self):
         #Issue 2245
