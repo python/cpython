@@ -77,7 +77,7 @@ class PyPIRCCommand(Command):
                     # optional params
                     for key, default in (('repository',
                                           self.DEFAULT_REPOSITORY),
-                                         ('realm', self.DEFAULT_REALM),
+                                         ('realm', realm),
                                          ('password', None)):
                         if config.has_option(server, key):
                             current[key] = config.get(server, key)
@@ -106,7 +106,7 @@ class PyPIRCCommand(Command):
                         'password': config.get(server, 'password'),
                         'repository': repository,
                         'server': server,
-                        'realm': self.DEFAULT_REALM}
+                        'realm': realm}
 
         return {}
 
