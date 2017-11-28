@@ -9,7 +9,6 @@ import sys
 import traceback
 
 from . import base_futures
-from . import compat
 from . import events
 
 
@@ -238,8 +237,7 @@ class Future:
         assert self.done(), "yield from wasn't used with future"
         return self.result()  # May raise too.
 
-    if compat.PY35:
-        __await__ = __iter__ # make compatible with 'await' expression
+    __await__ = __iter__ # make compatible with 'await' expression
 
 
 # Needed for testing purposes.
