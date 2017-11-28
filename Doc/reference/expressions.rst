@@ -1351,6 +1351,20 @@ built-in types.
     shorter collection is ordered first (for example, ``[1,2] < [1,2,3]`` is
     true).
 
+  - Enforcement of reflexivity also means that otherwise non-orderable
+    singletons are effectively ignored in ordered comparison::
+
+      >>> None is None
+      True
+      >>> None == None
+      True                  <-- None is reflexive, but not orderable:
+      >>> None < None
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: unorderable types: NoneType() < NoneType()
+      >>> [None, 1] < [None, 2]
+      True                  <-- lists are ordered despite unorderable elements
+
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
   equal `(key, value)` pairs. Equality comparison of the keys and values
   enforces reflexivity.
@@ -1727,7 +1741,7 @@ precedence and have a left-to-right chaining feature as described in the
 .. [#] The Unicode standard distinguishes between :dfn:`code points`
    (e.g. U+0041) and :dfn:`abstract characters` (e.g. "LATIN CAPITAL LETTER A").
    While most abstract characters in Unicode are only represented using one
-   code point, there is a number of abstract characters that can in addition be
+   code point, there are a number of abstract characters that can in addition be
    represented using a sequence of more than one code point.  For example, the
    abstract character "LATIN CAPITAL LETTER C WITH CEDILLA" can be represented
    as a single :dfn:`precomposed character` at code position U+00C7, or as a
