@@ -1771,7 +1771,7 @@ class EventLoopTestsMixin:
     def test_remove_fds_after_closing(self):
         loop = self.create_event_loop()
         callback = lambda: None
-        r, w = soket.socketpair()
+        r, w = socket.socketpair()
         self.addCleanup(r.close)
         self.addCleanup(w.close)
         loop.add_reader(r, callback)
@@ -1783,7 +1783,7 @@ class EventLoopTestsMixin:
     def test_add_fds_after_closing(self):
         loop = self.create_event_loop()
         callback = lambda: None
-        r, w = soket.socketpair()
+        r, w = socket.socketpair()
         self.addCleanup(r.close)
         self.addCleanup(w.close)
         loop.close()
