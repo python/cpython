@@ -1166,7 +1166,7 @@ class IMAP4:
         self.mo = cre.match(s)
         if __debug__:
             if self.mo is not None and self.debug >= 5:
-                self._mesg("\tmatched r'%r' => %r" % (cre.pattern, self.mo.groups()))
+                self._mesg("\tmatched %r => %r" % (cre.pattern, self.mo.groups()))
         return self.mo is not None
 
 
