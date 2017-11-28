@@ -1,4 +1,5 @@
 import os
+import socket
 import sys
 import unittest
 from unittest import mock
@@ -36,7 +37,7 @@ class ProactorTests(test_utils.TestCase):
         self.set_event_loop(self.loop)
 
     def test_close(self):
-        a, b = self.loop._socketpair()
+        a, b = socket.socketpair()
         trans = self.loop._make_socket_transport(a, asyncio.Protocol())
         f = asyncio.ensure_future(self.loop.sock_recv(b, 100))
         trans.close()
