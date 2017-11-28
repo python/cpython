@@ -10,17 +10,8 @@ import sys
 import os
 import tokenize
 
-__all__ = ["getline", "clearcache", "checkcache"]
+__all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
-def getline(filename, lineno, module_globals=None):
-    lines = getlines(filename, module_globals)
-    if 1 <= lineno <= len(lines):
-        return lines[lineno-1]
-    else:
-        return ''
-
-
-# The cache
 
 # The cache. Maps filenames to either a thunk which will provide source code,
 # or a tuple (size, mtime, lines, fullname) once loaded.
@@ -29,9 +20,17 @@ cache = {}
 
 def clearcache():
     """Clear the cache entirely."""
+    cache.clear()
 
-    global cache
-    cache = {}
+
+def getline(filename, lineno, module_globals=None):
+    """Get a line for a Python source file from the cache.
+    Update the cache if it doesn't contain an entry for this file already."""
+
+    lines = getlines(filename, module_globals)
+    if 1 <= lineno <= len(lines):
+        return lines[lineno - 1]
+    return ''
 
 
 def getlines(filename, module_globals=None):
@@ -56,11 +55,10 @@ def checkcache(filename=None):
 
     if filename is None:
         filenames = list(cache.keys())
+    elif filename in cache:
+        filenames = [filename]
     else:
-        if filename in cache:
-            filenames = [filename]
-        else:
-            return
+        return
 
     for filename in filenames:
         entry = cache[filename]
@@ -109,8 +107,10 @@ def updatecache(filename, module_globals=None):
                     # for this module.
                     return []
                 cache[filename] = (
-                    len(data), None,
-                    [line+'\n' for line in data.splitlines()], fullname
+                    len(data),
+                    None,
+                    [line + '\n' for line in data.splitlines()],
+                    fullname
                 )
                 return cache[filename][2]
 
