@@ -434,6 +434,14 @@ def _classify_pyc(data, name, exc_details):
     """Perform basic validity checking of a pyc header and return the flags field,
     which determines how the pyc should be further validated against the source.
 
+    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    required, though.)
+
+    *name* is the name of the module being imported. It is used for logging.
+
+    *exc_details* is a dictionary passed to ImportError if it raised for
+    improved debugging.
+
     ImportError is raised when the magic number is incorrect or when the flags
     field is invalid. EOFError is raised when the data is found to be truncated.
 
@@ -455,34 +463,50 @@ def _classify_pyc(data, name, exc_details):
     return flags
 
 
-def _validate_timestamp_pyc(data, source_stats, name, exc_details):
-    """Validate a pyc against the source mtime and size.
+def _validate_timestamp_pyc(data, source_mtime, source_size, name,
+                            exc_details):
+    """Validate a pyc against the source last-modified time.
+
+    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    required.)
+
+    *source_mtime* is the last modified timestamp of the source file.
+
+    *source_size* is None or the size of the source file in bytes.
+
+    *name* is the name of the module being imported. It is used for logging.
+
+    *exc_details* is a dictionary passed to ImportError if it raised for
+    improved debugging.
 
     An ImportError is raised if the bytecode is stale.
 
     """
-    try:
-        source_mtime = int(source_stats['mtime'])
-    except KeyError:
-        pass
-    else:
-        if _r_long(data[8:12]) != source_mtime:
-            message = 'bytecode is stale for {!r}'.format(name)
-            _bootstrap._verbose_message('{}', message)
-            raise ImportError(message, **exc_details)
-    try:
-        source_size = source_stats['size'] & 0xFFFFFFFF
-    except KeyError:
-        pass
-    else:
-        if _r_long(data[12:16]) != source_size:
-            raise ImportError('bytecode is stale for {!r}'.format(name),
-                              **exc_details)
+    if _r_long(data[8:12]) != (source_mtime & 0xFFFFFFFF):
+        message = 'bytecode is stale for {!r}'.format(name)
+        _bootstrap._verbose_message('{}', message)
+        raise ImportError(message, **exc_details)
+    if (source_size is not None and
+        _r_long(data[12:16]) != (source_size & 0xFFFFFFFF)):
+        raise ImportError('bytecode is stale for {!r}'.format(name),
+                          **exc_details)
 
 
 def _validate_hash_pyc(data, source_hash, name, exc_details):
     """Validate a hash-based pyc by checking the real source hash against the one in
     the pyc header.
+
+    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    required.)
+
+    *source_hash* is the importlib.util.source_hash() of the source file.
+
+    *name* is the name of the module being imported. It is used for logging.
+
+    *exc_details* is a dictionary passed to ImportError if it raised for
+    improved debugging.
+
+    An ImportError is raised if the bytecode is stale.
 
     """
     if data[8:16] != source_hash:
@@ -812,8 +836,13 @@ class SourceLoader(_LoaderBasics):
                                 _validate_hash_pyc(data, source_hash, fullname,
                                                    exc_details)
                         else:
-                            _validate_timestamp_pyc(data, st, fullname,
-                                                    exc_details)
+                            _validate_timestamp_pyc(
+                                data,
+                                source_mtime,
+                                st['size'],
+                                fullname,
+                                exc_details,
+                            )
                     except (ImportError, EOFError):
                         pass
                     else:
