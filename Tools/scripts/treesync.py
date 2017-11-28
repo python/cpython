@@ -33,7 +33,7 @@ write_slave = "ask"
 write_master = "ask"
 
 def main():
-    global always_no, always_yes
+    global default_answer, always_no, always_yes, create_files
     global create_directories, write_master, write_slave
     opts, args = getopt.getopt(sys.argv[1:], "nym:s:d:f:a:")
     for o, a in opts:

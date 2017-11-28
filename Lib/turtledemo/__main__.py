@@ -136,7 +136,7 @@ class DemoWindow(object):
             import subprocess
             # Make sure we are the currently activated OS X application
             # so that our menu bar appears.
-            p = subprocess.Popen(
+            subprocess.run(
                     [
                         'osascript',
                         '-e', 'tell application "System Events"',
