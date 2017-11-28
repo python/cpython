@@ -6,6 +6,7 @@ import io
 import logging
 import os
 import re
+import selectors
 import socket
 import socketserver
 import sys
@@ -28,7 +29,6 @@ except ImportError:  # pragma: no cover
 from . import base_events
 from . import events
 from . import futures
-from . import selectors
 from . import tasks
 from .coroutines import coroutine
 from .log import logger
@@ -508,8 +508,3 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
-
-
-def force_legacy_ssl_support():
-    return mock.patch('asyncio.sslproto._is_sslproto_available',
-                      return_value=False)

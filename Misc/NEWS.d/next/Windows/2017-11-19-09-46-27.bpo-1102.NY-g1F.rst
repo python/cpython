@@ -1,0 +1,4 @@
+Return ``None`` when ``View.Fetch()`` returns ``ERROR_NO_MORE_ITEMS``
+instead of raising ``MSIError``.
+
+Initial patch by Anthony Tuininga.

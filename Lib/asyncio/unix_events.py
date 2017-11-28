@@ -2,6 +2,7 @@
 
 import errno
 import os
+import selectors
 import signal
 import socket
 import stat
@@ -18,7 +19,6 @@ from . import coroutines
 from . import events
 from . import futures
 from . import selector_events
-from . import selectors
 from . import transports
 from .coroutines import coroutine
 from .log import logger
@@ -54,9 +54,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def __init__(self, selector=None):
         super().__init__(selector)
         self._signal_handlers = {}
-
-    def _socketpair(self):
-        return socket.socketpair()
 
     def close(self):
         super().close()
@@ -212,7 +209,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
     @coroutine
-    def create_unix_connection(self, protocol_factory, path, *,
+    def create_unix_connection(self, protocol_factory, path=None, *,
                                ssl=None, sock=None,
                                server_hostname=None):
         assert server_hostname is None or isinstance(server_hostname, str)
@@ -229,6 +226,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
+            path = _fspath(path)
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
             try:
                 sock.setblocking(False)
@@ -676,7 +674,7 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # socket (which we use in order to detect closing of the
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
-            stdin, stdin_w = self._loop._socketpair()
+            stdin, stdin_w = socket.socketpair()
 
             # Mark the write end of the stdin pipe as non-inheritable,
             # needed by close_fds=False on Python 3.3 and older

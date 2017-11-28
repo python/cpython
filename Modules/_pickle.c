@@ -1858,18 +1858,13 @@ save_long(PicklerObject *self, PyObject *obj)
     PyObject *repr = NULL;
     Py_ssize_t size;
     long val;
+    int overflow;
     int status = 0;
 
-    const char long_op = LONG;
-
-    val= PyLong_AsLong(obj);
-    if (val == -1 && PyErr_Occurred()) {
-        /* out of range for int pickling */
-        PyErr_Clear();
-    }
-    else if (self->bin &&
-             (sizeof(long) <= 4 ||
-              (val <= 0x7fffffffL && val >= (-0x7fffffffL - 1)))) {
+    val= PyLong_AsLongAndOverflow(obj, &overflow);
+    if (!overflow && (sizeof(long) <= 4 ||
+            (val <= 0x7fffffffL && val >= (-0x7fffffffL - 1))))
+    {
         /* result fits in a signed 4-byte integer.
 
            Note: we can't use -0x80000000L in the above condition because some
@@ -1882,31 +1877,35 @@ save_long(PicklerObject *self, PyObject *obj)
         char pdata[32];
         Py_ssize_t len = 0;
 
-        pdata[1] = (unsigned char)(val & 0xff);
-        pdata[2] = (unsigned char)((val >> 8) & 0xff);
-        pdata[3] = (unsigned char)((val >> 16) & 0xff);
-        pdata[4] = (unsigned char)((val >> 24) & 0xff);
+        if (self->bin) {
+            pdata[1] = (unsigned char)(val & 0xff);
+            pdata[2] = (unsigned char)((val >> 8) & 0xff);
+            pdata[3] = (unsigned char)((val >> 16) & 0xff);
+            pdata[4] = (unsigned char)((val >> 24) & 0xff);
 
-        if ((pdata[4] == 0) && (pdata[3] == 0)) {
-            if (pdata[2] == 0) {
-                pdata[0] = BININT1;
-                len = 2;
+            if ((pdata[4] != 0) || (pdata[3] != 0)) {
+                pdata[0] = BININT;
+                len = 5;
             }
-            else {
+            else if (pdata[2] != 0) {
                 pdata[0] = BININT2;
                 len = 3;
             }
+            else {
+                pdata[0] = BININT1;
+                len = 2;
+            }
         }
         else {
-            pdata[0] = BININT;
-            len = 5;
+            sprintf(pdata, "%c%ld\n", INT,  val);
+            len = strlen(pdata);
         }
-
         if (_Pickler_Write(self, pdata, len) < 0)
             return -1;
 
         return 0;
     }
+    assert(!PyErr_Occurred());
 
     if (self->proto >= 2) {
         /* Linear-time pickling. */
@@ -1986,6 +1985,7 @@ save_long(PicklerObject *self, PyObject *obj)
             goto error;
     }
     else {
+        const char long_op = LONG;
         const char *string;
 
         /* proto < 2: write the repr and newline.  This is quadratic-time (in

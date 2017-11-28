@@ -561,15 +561,16 @@ int Py_ReadHashSeed(char *seed_text,
     return 0;
 }
 
-static void
+static _PyInitError
 init_hash_secret(int use_hash_seed,
                  unsigned long hash_seed)
 {
     void *secret = &_Py_HashSecret;
     Py_ssize_t secret_size = sizeof(_Py_HashSecret_t);
 
-    if (_Py_HashSecret_Initialized)
-        return;
+    if (_Py_HashSecret_Initialized) {
+        return _Py_INIT_OK();
+    }
     _Py_HashSecret_Initialized = 1;
 
     if (use_hash_seed) {
@@ -593,12 +594,14 @@ init_hash_secret(int use_hash_seed,
            pyurandom() is non-blocking mode (blocking=0): see the PEP 524. */
         res = pyurandom(secret, secret_size, 0, 0);
         if (res < 0) {
-            Py_FatalError("failed to get random numbers to initialize Python");
+            return _Py_INIT_USER_ERR("failed to get random numbers "
+                                     "to initialize Python");
         }
     }
+    return _Py_INIT_OK();
 }
 
-void
+_PyInitError
 _Py_HashRandomization_Init(_PyCoreConfig *core_config)
 {
     char *seed_text;
@@ -608,13 +611,13 @@ _Py_HashRandomization_Init(_PyCoreConfig *core_config)
     if (use_hash_seed < 0) {
         seed_text = Py_GETENV("PYTHONHASHSEED");
         if (Py_ReadHashSeed(seed_text, &use_hash_seed, &hash_seed) < 0) {
-            Py_FatalError("PYTHONHASHSEED must be \"random\" or an integer "
-                          "in range [0; 4294967295]");
+            return _Py_INIT_USER_ERR("PYTHONHASHSEED must be \"random\" "
+                                     "or an integer in range [0; 4294967295]");
         }
         core_config->use_hash_seed = use_hash_seed;
         core_config->hash_seed = hash_seed;
     }
-    init_hash_secret(use_hash_seed, hash_seed);
+    return init_hash_secret(use_hash_seed, hash_seed);
 }
 
 void

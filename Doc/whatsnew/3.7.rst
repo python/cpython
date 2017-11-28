@@ -185,6 +185,19 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+New Developer Mode: -X dev
+--------------------------
+
+Add a new "developer mode": ``-X dev`` command line option to enable debug
+checks at runtime.
+
+In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
+default -X faulthandler ...``, except that the PYTHONMALLOC environment
+variable is not set in practice.
+
+See :option:`-X` ``dev`` for the details.
+
+
 Other Language Changes
 ======================
 
@@ -267,6 +280,9 @@ crypt
 Added support for the Blowfish method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
+The :func:`~crypt.mksalt` function now allows to specify the number of rounds
+for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
+
 dis
 ---
 
@@ -281,6 +297,12 @@ distutils
 README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
+
+:class:`distutils.core.setup` now raises a :exc:`TypeError` if
+``classifiers``, ``keywords`` and ``platforms`` fields are not specified
+as a list.  However, to minimize backwards incompatibility concerns,
+``keywords`` and ``platforms`` fields still accept a comma separated string.
+(Contributed by Berker Peksag in :issue:`19610`.)
 
 http.client
 -----------
@@ -371,6 +393,10 @@ Add new clock identifiers:
 * :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
   the time the system has been running and not suspended, providing accurate
   uptime measurement, both absolute and interval.
+
+Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
+to get per-thread CPU time measurements.
+(Contributed by Antoine Pitrou in :issue:`32025`.)
 
 unittest.mock
 -------------
@@ -630,8 +656,31 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in Python behavior
+--------------------------
+
+* Due to an oversight, earlier Python versions erroneously accepted the
+  following syntax::
+
+      f(1 for x in [1],)
+
+      class C(1 for x in [1]):
+          pass
+
+  Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
+  expression always needs to be directly inside a set of parentheses
+  and cannot have a comma on either side, and the duplication of the
+  parentheses can be omitted only on calls.
+  (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
+
+
 Changes in the Python API
 -------------------------
+
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
 
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in
@@ -677,6 +726,17 @@ Changes in the Python API
   function, the user specified handler *onerror* is now called with the first
   argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
   is failed.
+
+* Support of nested sets and set operations in regular expressions as in
+  `Unicode Technical Standard #18`_ might be added in the future.  This would
+  change the syntax, so to facilitate this change a :exc:`FutureWarning` will
+  be raised in ambiguous cases for the time being.
+  That include sets starting with a literal ``'['`` or containing literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+  avoid a warning escape them with a backslash.
+  (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+.. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
 
 Changes in the C API

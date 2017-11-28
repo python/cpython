@@ -2171,19 +2171,6 @@ kind_maxchar_limit(unsigned int kind)
     }
 }
 
-static inline Py_UCS4
-align_maxchar(Py_UCS4 maxchar)
-{
-    if (maxchar <= 127)
-        return 127;
-    else if (maxchar <= 255)
-        return 255;
-    else if (maxchar <= 65535)
-        return 65535;
-    else
-        return MAX_UNICODE;
-}
-
 static PyObject*
 _PyUnicode_FromUCS1(const Py_UCS1* u, Py_ssize_t size)
 {

@@ -392,11 +392,6 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
                             *, server_side=False, server_hostname=None,
                             extra=None, server=None):
-        if not sslproto._is_sslproto_available():
-            raise NotImplementedError("Proactor event loop requires Python 3.5"
-                                      " or newer (ssl.MemoryBIO) to support "
-                                      "SSL")
-
         ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
                                             server_side, server_hostname)
         _ProactorSocketTransport(self, rawsock, ssl_protocol,
@@ -451,9 +446,6 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def sock_accept(self, sock):
         return self._proactor.accept(sock)
 
-    def _socketpair(self):
-        raise NotImplementedError
-
     def _close_self_pipe(self):
         if self._self_reading_future is not None:
             self._self_reading_future.cancel()
@@ -466,7 +458,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def _make_self_pipe(self):
         # A self-socket, really. :-)
-        self._ssock, self._csock = self._socketpair()
+        self._ssock, self._csock = socket.socketpair()
         self._ssock.setblocking(False)
         self._csock.setblocking(False)
         self._internal_fds += 1

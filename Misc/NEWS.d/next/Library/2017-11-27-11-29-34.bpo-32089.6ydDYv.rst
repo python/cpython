@@ -1,0 +1,3 @@
+warnings: In development (-X dev) and debug mode (pydebug build), use the
+"default" action for ResourceWarning, rather than the "always" action, in
+the default warnings filters.

@@ -4427,12 +4427,12 @@ class Test_operator(FixerTestCase):
 
     def test_operator_isSequenceType(self):
         b = "operator.isSequenceType(x)"
-        a = "import collections\nisinstance(x, collections.Sequence)"
+        a = "import collections.abc\nisinstance(x, collections.abc.Sequence)"
         self.check(b, a)
 
     def test_operator_isMappingType(self):
         b = "operator.isMappingType(x)"
-        a = "import collections\nisinstance(x, collections.Mapping)"
+        a = "import collections.abc\nisinstance(x, collections.abc.Mapping)"
         self.check(b, a)
 
     def test_operator_isNumberType(self):
@@ -4478,12 +4478,12 @@ class Test_operator(FixerTestCase):
 
     def test_bare_operator_isSequenceType(self):
         s = "isSequenceType(z)"
-        t = "You should use 'isinstance(z, collections.Sequence)' here."
+        t = "You should use 'isinstance(z, collections.abc.Sequence)' here."
         self.warns_unchanged(s, t)
 
     def test_bare_operator_isMappingType(self):
         s = "isMappingType(x)"
-        t = "You should use 'isinstance(x, collections.Mapping)' here."
+        t = "You should use 'isinstance(x, collections.abc.Mapping)' here."
         self.warns_unchanged(s, t)
 
     def test_bare_operator_isNumberType(self):

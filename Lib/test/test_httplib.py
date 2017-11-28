@@ -497,7 +497,7 @@ class BasicTest(TestCase):
 
     def test_bad_status_repr(self):
         exc = client.BadStatusLine('')
-        self.assertEqual(repr(exc), '''BadStatusLine("\'\'",)''')
+        self.assertEqual(repr(exc), '''BadStatusLine("''")''')
 
     def test_partial_reads(self):
         # if we have Content-Length, HTTPResponse knows when to close itself,
