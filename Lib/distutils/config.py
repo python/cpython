@@ -51,7 +51,6 @@ class PyPIRCCommand(Command):
         if os.path.exists(rc):
             self.announce('Using PyPI login from %s' % rc)
             repository = self.repository or self.DEFAULT_REPOSITORY
-            realm = self.realm or self.DEFAULT_REALM
 
             config = RawConfigParser()
             config.read(rc)
@@ -77,7 +76,7 @@ class PyPIRCCommand(Command):
                     # optional params
                     for key, default in (('repository',
                                           self.DEFAULT_REPOSITORY),
-                                         ('realm', realm),
+                                         ('realm', self.DEFAULT_REALM),
                                          ('password', None)):
                         if config.has_option(server, key):
                             current[key] = config.get(server, key)
@@ -106,7 +105,7 @@ class PyPIRCCommand(Command):
                         'password': config.get(server, 'password'),
                         'repository': repository,
                         'server': server,
-                        'realm': realm}
+                        'realm': self.DEFAULT_REALM}
 
         return {}
 
