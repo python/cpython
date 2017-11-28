@@ -73,7 +73,7 @@ import traceback
 # workers to exit when their work queues are empty and then waits until the
 # threads/processes finish.
 
-_threads_wakeup = weakref.WeakKeyDictionary()
+_threads_wakeups = weakref.WeakKeyDictionary()
 _global_shutdown = False
 
 
@@ -83,7 +83,7 @@ class _ThreadWakeup:
     def __init__(self):
         self._reader, self._writer = mp.Pipe(duplex=False)
 
-    def set(self):
+    def wakeup(self):
         self._writer.send_bytes(b"")
 
     def clear(self):
@@ -94,9 +94,9 @@ class _ThreadWakeup:
 def _python_exit():
     global _global_shutdown
     _global_shutdown = True
-    items = list(_threads_wakeup.items())
+    items = list(_threads_wakeups.items())
     for t, thread_wakeup in items:
-        thread_wakeup.set()
+        thread_wakeup.wakeup()
     for t, q in items:
         t.join()
 
@@ -163,7 +163,6 @@ class _SafeQueue(Queue):
             # work_item can be None if another process terminated (see above)
             if work_item is not None:
                 work_item.future.set_exception(e)
-                del work_item
         else:
             super()._on_queue_feeder_error(e, obj)
 
@@ -348,13 +347,15 @@ def _queue_management_worker(executor_reference,
         worker_sentinels = [p.sentinel for p in processes.values()]
         ready = wait(readers + worker_sentinels)
 
+        cause = None
         is_broken = True
         if result_reader in ready:
             try:
                 result_item = result_reader.recv()
                 is_broken = False
             except BaseException as e:
-                traceback.print_exc()
+                cause = traceback.format_exception(type(e), e, e.__traceback__)
+
         elif wakeup_reader in ready:
             thread_wakeup.clear()
             is_broken = False
@@ -368,14 +369,15 @@ def _queue_management_worker(executor_reference,
                                     'usable anymore')
                 executor._shutdown_thread = True
                 executor = None
+            bpe = BrokenProcessPool("A process in the process pool was "
+                                    "terminated abruptly while the future was "
+                                    "running or pending.")
+            if cause is not None:
+                bpe.__cause__ = _RemoteTraceback(
+                    f"\n'''\n{''.join(cause)}'''")
             # All futures in flight must be marked failed
             for work_id, work_item in pending_work_items.items():
-                work_item.future.set_exception(
-                    BrokenProcessPool(
-                        "A process in the process pool was "
-                        "terminated abruptly while the future was "
-                        "running or pending."
-                    ))
+                work_item.future.set_exception(bpe)
                 # Delete references to object. See issue16284
                 del work_item
             pending_work_items.clear()
@@ -535,21 +537,24 @@ class ProcessPoolExecutor(_base.Executor):
         self._result_queue = mp_context.SimpleQueue()
         self._work_ids = queue.Queue()
 
-        # Permits to wake_up the queue_manager_thread independently of
-        # result_queue state. This avoid deadlocks caused by the non
-        # transmission of wakeup signal when a worker died with the
-        # _result_queue write lock.
+        # _ThreadWakeup is a communication channel used to interrupt the wait
+        # of the main loop of queue_manager_thread from another thread (e.g.
+        # when calling executor.submit or executor.shutdown). We do not use the
+        # _result_queue to send the wakeup signal to the queue_manager_thread
+        # as it could result in a deadlock if a worker process dies with the
+        # _result_queue write lock still acquired.
         self._queue_management_thread_wakeup = _ThreadWakeup()
 
     def _start_queue_management_thread(self):
         if self._queue_management_thread is None:
-            # When the executor gets lost, the weakref callback will wake up
-            # the queue management thread.
+            # When the executor gets garbarge collected, the weakref callback
+            # will wake up the queue management thread so that it can terminate
+            # if there is no pending work item.
             def weakref_cb(_,
                            thread_wakeup=self._queue_management_thread_wakeup):
                 mp.util.debug('Executor collected: triggering callback for'
                               ' QueueManager wakeup')
-                thread_wakeup.set()
+                thread_wakeup.wakeup()
             # Start the processes so that their sentinels are known.
             self._adjust_process_count()
             self._queue_management_thread = threading.Thread(
@@ -564,7 +569,7 @@ class ProcessPoolExecutor(_base.Executor):
                 name="QueueManagerThread")
             self._queue_management_thread.daemon = True
             self._queue_management_thread.start()
-            _threads_wakeup[self._queue_management_thread] = \
+            _threads_wakeups[self._queue_management_thread] = \
                 self._queue_management_thread_wakeup
 
     def _adjust_process_count(self):
@@ -592,7 +597,7 @@ class ProcessPoolExecutor(_base.Executor):
             self._work_ids.put(self._queue_count)
             self._queue_count += 1
             # Wake up queue management thread
-            self._queue_management_thread_wakeup.set()
+            self._queue_management_thread_wakeup.wakeup()
 
             self._start_queue_management_thread()
             return f
@@ -632,7 +637,7 @@ class ProcessPoolExecutor(_base.Executor):
             self._shutdown_thread = True
         if self._queue_management_thread:
             # Wake up queue management thread
-            self._queue_management_thread_wakeup.set()
+            self._queue_management_thread_wakeup.wakeup()
             if wait:
                 self._queue_management_thread.join()
         # To reduce the risk of opening too many files, remove references to

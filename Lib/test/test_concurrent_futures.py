@@ -865,6 +865,7 @@ class ExecutorDeadlockTest:
         return x
 
     def test_crash(self):
+        self.executor.shutdown(wait=True)
         # extensive testing for deadlock caused by crash in a pool
         crash_cases = [
             # Check problem occuring while pickling a task in
@@ -940,8 +941,8 @@ class ExecutorDeadlockTest:
         time.sleep(.5)
 
     def test_crash_races(self):
+        self.executor.shutdown(wait=True)
 
-        from itertools import repeat
         for n_proc in [1, 2, 5, 17]:
             with self.subTest(n_proc=n_proc):
                 # Test for external crash signal comming from neighbor
@@ -951,8 +952,8 @@ class ExecutorDeadlockTest:
                 pids = [pid for pid in executor.map(
                         self._test_getpid, [None] * n_proc)]
                 assert None not in pids
-                res = self.executor.map(
-                    self._sleep_id, repeat(True, 2 * n_proc),
+                res = executor.map(
+                    self._sleep_id, [True] * 2 * n_proc,
                     [.001 * (j // 2) for j in range(2 * n_proc)],
                     chunksize=1)
                 assert all(res)
