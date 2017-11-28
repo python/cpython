@@ -17,7 +17,7 @@ import tempfile
 import warnings
 
 
-__all__ = ['socketpair', 'pipe', 'Popen', 'PIPE', 'PipeHandle']
+__all__ = ['pipe', 'Popen', 'PIPE', 'PipeHandle']
 
 
 # Constants/globals
