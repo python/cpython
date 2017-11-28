@@ -1,9 +1,9 @@
 # Import the email modules we'll need
-# from email.parser import BytesParser
 from email.parser import Parser
 from email.policy import default
 
-# If the e-mail headers are in a file, uncomment these two lines:
+# If the e-mail headers are in a file, uncomment these three lines:
+# from email.parser import BytesParser
 # with open(messagefile, 'rb') as fp:
 #     headers = BytesParser(policy=default).parse(fp)
 
