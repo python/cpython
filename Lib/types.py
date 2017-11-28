@@ -172,9 +172,6 @@ class DynamicClassAttribute:
         return result
 
 
-import functools as _functools
-import collections.abc as _collections_abc
-
 class _GeneratorWrapper:
     # TODO: Implement this in C.
     def __init__(self, gen):
@@ -247,7 +244,10 @@ def coroutine(func):
     # return generator-like objects (for instance generators
     # compiled with Cython).
 
-    @_functools.wraps(func)
+    # Delay functools and _collections_abc import for speeding up types import.
+    import functools
+    import _collections_abc
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
         if (coro.__class__ is CoroutineType or

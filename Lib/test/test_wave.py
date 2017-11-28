@@ -105,7 +105,9 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
         frames = byteswap(frames, 4)
 
 
-class MiscTestCase(unittest.TestCase):
+class MiscTestCase(audiotests.AudioMiscTests, unittest.TestCase):
+    module = wave
+
     def test__all__(self):
         blacklist = {'WAVE_FORMAT_PCM'}
         support.check__all__(self, wave, blacklist=blacklist)

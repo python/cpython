@@ -176,11 +176,10 @@ PyFloat_FromString(PyObject *v)
         s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
         if (s_buffer == NULL)
             return NULL;
+        assert(PyUnicode_IS_ASCII(s_buffer));
+        /* Simply get a pointer to existing ASCII characters. */
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        if (s == NULL) {
-            Py_DECREF(s_buffer);
-            return NULL;
-        }
+        assert(s != NULL);
     }
     else if (PyBytes_Check(v)) {
         s = PyBytes_AS_STRING(v);
@@ -2233,13 +2232,13 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
 
     }
     else {
+        float y = (float)x;
         int i, incr = 1;
 
-        if (fabs(x) > FLT_MAX && !Py_IS_INFINITY(x))
+        if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
             goto Overflow;
 
         unsigned char s[sizeof(float)];
-        float y = (float)x;
         memcpy(s, &y, sizeof(float));
 
         if ((float_format == ieee_little_endian_format && !le)

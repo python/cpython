@@ -88,9 +88,10 @@ __all__ = [
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "requires_android_level", "requires_multiprocessing_queue",
+    "skip_unless_bind_unix_socket",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
-    "setswitchinterval", "android_not_root",
+    "setswitchinterval",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     "bind_unix_socket",
@@ -278,7 +279,6 @@ max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
 failfast = False
-match_tests = None
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
 # This may be "the real" stdout, or IDLE's emulation of stdout, or whatever.
@@ -780,7 +780,6 @@ try:
 except AttributeError:
     # sys.getandroidapilevel() is only available on Android
     is_android = False
-android_not_root = (is_android and os.geteuid() != 0)
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -1901,21 +1900,67 @@ def _run_suite(suite):
         raise TestFailed(err)
 
 
-def _match_test(test):
-    global match_tests
+# By default, don't filter tests
+_match_test_func = None
+_match_test_patterns = None
 
-    if match_tests is None:
+
+def match_test(test):
+    # Function used by support.run_unittest() and regrtest --list-cases
+    if _match_test_func is None:
         return True
-    test_id = test.id()
+    else:
+        return _match_test_func(test.id())
 
-    for match_test in match_tests:
-        if fnmatch.fnmatchcase(test_id, match_test):
-            return True
 
-        for name in test_id.split("."):
-            if fnmatch.fnmatchcase(name, match_test):
+def _is_full_match_test(pattern):
+    # If a pattern contains at least one dot, it's considered
+    # as a full test identifier.
+    # Example: 'test.test_os.FileTests.test_access'.
+    #
+    # Reject patterns which contain fnmatch patterns: '*', '?', '[...]'
+    # or '[!...]'. For example, reject 'test_access*'.
+    return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
+
+
+def set_match_tests(patterns):
+    global _match_test_func, _match_test_patterns
+
+    if patterns == _match_test_patterns:
+        # No change: no need to recompile patterns.
+        return
+
+    if not patterns:
+        func = None
+        # set_match_tests(None) behaves as set_match_tests(())
+        patterns = ()
+    elif all(map(_is_full_match_test, patterns)):
+        # Simple case: all patterns are full test identifier.
+        # The test.bisect utility only uses such full test identifiers.
+        func = set(patterns).__contains__
+    else:
+        regex = '|'.join(map(fnmatch.translate, patterns))
+        # The search *is* case sensitive on purpose:
+        # don't use flags=re.IGNORECASE
+        regex_match = re.compile(regex).match
+
+        def match_test_regex(test_id):
+            if regex_match(test_id):
+                # The regex matchs the whole identifier like
+                # 'test.test_os.FileTests.test_access'
                 return True
-    return False
+            else:
+                # Try to match parts of the test identifier.
+                # For example, split 'test.test_os.FileTests.test_access'
+                # into: 'test', 'test_os', 'FileTests' and 'test_access'.
+                return any(map(regex_match, test_id.split(".")))
+
+        func = match_test_regex
+
+    # Create a copy since patterns can be mutable and so modified later
+    _match_test_patterns = tuple(patterns)
+    _match_test_func = func
+
 
 
 def run_unittest(*classes):
@@ -1932,7 +1977,7 @@ def run_unittest(*classes):
             suite.addTest(cls)
         else:
             suite.addTest(unittest.makeSuite(cls))
-    _filter_suite(suite, _match_test)
+    _filter_suite(suite, match_test)
     _run_suite(suite)
 
 #=======================================================================
@@ -2030,27 +2075,36 @@ def threading_cleanup(*original_values):
     global environment_altered
 
     _MAX_COUNT = 100
-    t0 = time.monotonic()
+
     for count in range(_MAX_COUNT):
         values = _thread._count(), threading._dangling
         if values == original_values:
             break
+
+        if not count:
+            # Display a warning at the first iteration
+            environment_altered = True
+            dangling_threads = values[1]
+            print("Warning -- threading_cleanup() failed to cleanup "
+                  "%s threads (count: %s, dangling: %s)"
+                  % (values[0] - original_values[0],
+                     values[0], len(dangling_threads)),
+                  file=sys.stderr)
+            for thread in dangling_threads:
+                print(f"Dangling thread: {thread!r}", file=sys.stderr)
+            sys.stderr.flush()
+
+            # Don't hold references to threads
+            dangling_threads = None
+        values = None
+
         time.sleep(0.01)
         gc_collect()
-    else:
-        environment_altered = True
 
-        dt = time.monotonic() - t0
-        print("Warning -- threading_cleanup() failed to cleanup %s threads "
-              "after %.0f sec (count: %s, dangling: %s)"
-              % (values[0] - original_values[0], dt,
-                 values[0], len(values[1])),
-              file=sys.stderr)
 
 def reap_threads(func):
     """Use this function when threads are being used.  This will
     ensure that the threads are cleaned up even when the test fails.
-    If threading is unavailable this function does nothing.
     """
     @functools.wraps(func)
     def decorator(*args):
@@ -2060,6 +2114,51 @@ def reap_threads(func):
         finally:
             threading_cleanup(*key)
     return decorator
+
+
+@contextlib.contextmanager
+def wait_threads_exit(timeout=60.0):
+    """
+    bpo-31234: Context manager to wait until all threads created in the with
+    statement exit.
+
+    Use _thread.count() to check if threads exited. Indirectly, wait until
+    threads exit the internal t_bootstrap() C function of the _thread module.
+
+    threading_setup() and threading_cleanup() are designed to emit a warning
+    if a test leaves running threads in the background. This context manager
+    is designed to cleanup threads started by the _thread.start_new_thread()
+    which doesn't allow to wait for thread exit, whereas thread.Thread has a
+    join() method.
+    """
+    old_count = _thread._count()
+    try:
+        yield
+    finally:
+        start_time = time.monotonic()
+        deadline = start_time + timeout
+        while True:
+            count = _thread._count()
+            if count <= old_count:
+                break
+            if time.monotonic() > deadline:
+                dt = time.monotonic() - start_time
+                msg = (f"wait_threads() failed to cleanup {count - old_count} "
+                       f"threads after {dt:.1f} seconds "
+                       f"(count: {count}, old count: {old_count})")
+                raise AssertionError(msg)
+            time.sleep(0.010)
+            gc_collect()
+
+
+def join_thread(thread, timeout=30.0):
+    """Join a thread. Raise an AssertionError if the thread is still alive
+    after timeout seconds.
+    """
+    thread.join(timeout)
+    if thread.is_alive():
+        msg = f"failed to join the thread in {timeout:.1f} seconds"
+        raise AssertionError(msg)
 
 
 def reap_children():
@@ -2333,6 +2432,28 @@ def skip_unless_xattr(test):
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
     return test if ok else unittest.skip(msg)(test)
+
+_bind_nix_socket_error = None
+def skip_unless_bind_unix_socket(test):
+    """Decorator for tests requiring a functional bind() for unix sockets."""
+    if not hasattr(socket, 'AF_UNIX'):
+        return unittest.skip('No UNIX Sockets')(test)
+    global _bind_nix_socket_error
+    if _bind_nix_socket_error is None:
+        path = TESTFN + "can_bind_unix_socket"
+        with socket.socket(socket.AF_UNIX) as sock:
+            try:
+                sock.bind(path)
+                _bind_nix_socket_error = False
+            except OSError as e:
+                _bind_nix_socket_error = e
+            finally:
+                unlink(path)
+    if _bind_nix_socket_error:
+        msg = 'Requires a functional unix bind(): %s' % _bind_nix_socket_error
+        return unittest.skip(msg)(test)
+    else:
+        return test
 
 
 def fs_is_case_insensitive(directory):
@@ -2701,3 +2822,42 @@ def fd_count():
                 msvcrt.CrtSetReportMode(report_type, old_modes[report_type])
 
     return count
+
+
+class SaveSignals:
+    """
+    Save an restore signal handlers.
+
+    This class is only able to save/restore signal handlers registered
+    by the Python signal module: see bpo-13285 for "external" signal
+    handlers.
+    """
+
+    def __init__(self):
+        import signal
+        self.signal = signal
+        self.signals = list(range(1, signal.NSIG))
+        # SIGKILL and SIGSTOP signals cannot be ignored nor caught
+        for signame in ('SIGKILL', 'SIGSTOP'):
+            try:
+                signum = getattr(signal, signame)
+            except AttributeError:
+                continue
+            self.signals.remove(signum)
+        self.handlers = {}
+
+    def save(self):
+        for signum in self.signals:
+            handler = self.signal.getsignal(signum)
+            if handler is None:
+                # getsignal() returns None if a signal handler was not
+                # registered by the Python signal module,
+                # and the handler is not SIG_DFL nor SIG_IGN.
+                #
+                # Ignore the signal: we cannot restore the handler.
+                continue
+            self.handlers[signum] = handler
+
+    def restore(self):
+        for signum, handler in self.handlers.items():
+            self.signal.signal(signum, handler)

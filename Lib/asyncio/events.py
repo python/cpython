@@ -19,6 +19,8 @@ import sys
 import threading
 import traceback
 
+from . import constants
+
 
 def _get_function_source(func):
     func = inspect.unwrap(func)
@@ -72,6 +74,23 @@ def _format_callback_source(func, args):
     return func_repr
 
 
+def extract_stack(f=None, limit=None):
+    """Replacement for traceback.extract_stack() that only does the
+    necessary work for asyncio debug mode.
+    """
+    if f is None:
+        f = sys._getframe().f_back
+    if limit is None:
+        # Limit the amount of work to a reasonable amount, as extract_stack()
+        # can be called for each coroutine and future in debug mode.
+        limit = constants.DEBUG_STACK_DEPTH
+    stack = traceback.StackSummary.extract(traceback.walk_stack(f),
+                                           limit=limit,
+                                           lookup_lines=False)
+    stack.reverse()
+    return stack
+
+
 class Handle:
     """Object returned by callback registration methods."""
 
@@ -85,7 +104,7 @@ class Handle:
         self._cancelled = False
         self._repr = None
         if self._loop.get_debug():
-            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+            self._source_traceback = extract_stack(sys._getframe(1))
         else:
             self._source_traceback = None
 
@@ -116,6 +135,9 @@ class Handle:
                 self._repr = repr(self)
             self._callback = None
             self._args = None
+
+    def cancelled(self):
+        return self._cancelled
 
     def _run(self):
         try:
@@ -340,12 +362,12 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
-    def create_unix_connection(self, protocol_factory, path, *,
+    def create_unix_connection(self, protocol_factory, path=None, *,
                                ssl=None, sock=None,
                                server_hostname=None):
         raise NotImplementedError
 
-    def create_unix_server(self, protocol_factory, path, *,
+    def create_unix_server(self, protocol_factory, path=None, *,
                            sock=None, backlog=100, ssl=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
@@ -378,8 +400,8 @@ class AbstractEventLoop:
 
         protocol_factory must be a callable returning a protocol instance.
 
-        socket family AF_INET or socket.AF_INET6 depending on host (or
-        family if specified), socket type SOCK_DGRAM.
+        socket family AF_INET, socket.AF_INET6 or socket.AF_UNIX depending on
+        host (or family if specified), socket type SOCK_DGRAM.
 
         reuse_address tells the kernel to reuse a local socket in
         TIME_WAIT state, without waiting for its natural timeout to
@@ -459,6 +481,9 @@ class AbstractEventLoop:
     # Completion based I/O methods returning Futures.
 
     def sock_recv(self, sock, nbytes):
+        raise NotImplementedError
+
+    def sock_recv_into(self, sock, buf):
         raise NotImplementedError
 
     def sock_sendall(self, sock, data):

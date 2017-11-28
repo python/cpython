@@ -1,0 +1,2 @@
+Add a new "developer mode": new "-X dev" command line option to enable debug
+checks at runtime.

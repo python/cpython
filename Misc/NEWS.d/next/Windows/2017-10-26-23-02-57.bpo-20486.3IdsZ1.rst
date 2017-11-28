@@ -1,0 +1,2 @@
+Implement the ``Database.Close()`` method to help closing MSI database
+objects.

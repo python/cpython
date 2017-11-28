@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import zipapp
 import zipfile
+from test.support import requires_zlib
 
 from unittest.mock import patch
 
@@ -99,6 +100,21 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source))
         expected_target = self.tmpdir / 'source.pyz'
         self.assertTrue(expected_target.is_file())
+
+    @requires_zlib
+    def test_create_archive_with_compression(self):
+        # Test packing a directory into a compressed archive.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        target = self.tmpdir / 'source.pyz'
+
+        zipapp.create_archive(source, target, compressed=True)
+        with zipfile.ZipFile(target, 'r') as z:
+            for name in ('__main__.py', 'test.py'):
+                self.assertEqual(z.getinfo(name).compress_type,
+                                 zipfile.ZIP_DEFLATED)
 
     def test_no_main(self):
         # Test that packing a directory with no __main__.py fails.

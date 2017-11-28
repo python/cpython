@@ -470,6 +470,8 @@ class TestFTPClass(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
         asyncore.close_all(ignore_all=True)
 
     def check_data(self, received, expected):
@@ -800,6 +802,8 @@ class TestIPv6Environment(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
         asyncore.close_all(ignore_all=True)
 
     def test_af(self):
@@ -859,6 +863,8 @@ class TestTLS_FTPClass(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
         asyncore.close_all(ignore_all=True)
 
     def test_control_connection(self):
@@ -896,17 +902,11 @@ class TestTLS_FTPClass(TestCase):
         self.client.auth()
         self.assertRaises(ValueError, self.client.auth)
 
-    def test_auth_ssl(self):
-        try:
-            self.client.ssl_version = ssl.PROTOCOL_SSLv23
-            self.client.auth()
-            self.assertRaises(ValueError, self.client.auth)
-        finally:
-            self.client.ssl_version = ssl.PROTOCOL_TLSv1
-
     def test_context(self):
         self.client.quit()
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
         self.assertRaises(ValueError, ftplib.FTP_TLS, keyfile=CERTFILE,
                           context=ctx)
         self.assertRaises(ValueError, ftplib.FTP_TLS, certfile=CERTFILE,
@@ -935,9 +935,9 @@ class TestTLS_FTPClass(TestCase):
 
     def test_check_hostname(self):
         self.client.quit()
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        ctx.verify_mode = ssl.CERT_REQUIRED
-        ctx.check_hostname = True
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ctx.check_hostname, True)
         ctx.load_verify_locations(CAFILE)
         self.client = ftplib.FTP_TLS(context=ctx, timeout=TIMEOUT)
 
@@ -982,6 +982,8 @@ class TestTimeouts(TestCase):
     def tearDown(self):
         ftplib.FTP.port = self.old_port
         self.server_thread.join()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server_thread = None
 
     def server(self):
         # This method sets the evt 3 times:

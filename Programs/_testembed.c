@@ -125,9 +125,32 @@ static int test_forced_io_encoding(void)
     return 0;
 }
 
+
+/*********************************************************
+ * Test parts of the C-API that work before initialization
+ *********************************************************/
+
+static int test_pre_initialization_api(void)
+{
+    /* Leading "./" ensures getpath.c can still find the standard library */
+    wchar_t *program = Py_DecodeLocale("./spam", NULL);
+    if (program == NULL) {
+        fprintf(stderr, "Fatal error: cannot decode program name\n");
+        return 1;
+    }
+    Py_SetProgramName(program);
+
+    Py_Initialize();
+    Py_Finalize();
+
+    PyMem_RawFree(program);
+    return 0;
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
- * 
+ *
  * Names are compared case-sensitively with the first
  * argument. If no match is found, or no first argument was
  * provided, the names of all test cases are printed and
@@ -135,7 +158,7 @@ static int test_forced_io_encoding(void)
  *
  * The int returned from test functions is used as the exit
  * code, and test_capi treats all non-zero exit codes as a
- * failed test. 
+ * failed test.
  *********************************************************/
 struct TestCase
 {
@@ -146,6 +169,7 @@ struct TestCase
 static struct TestCase TestCases[] = {
     { "forced_io_encoding", test_forced_io_encoding },
     { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
+    { "pre_initialization_api", test_pre_initialization_api },
     { NULL, NULL }
 };
 

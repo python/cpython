@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyImportZip_Init(void);
+PyAPI_FUNC(_PyInitError) _PyImportZip_Init(void);
 
 PyMODINIT_FUNC PyInit_imp(void);
 #endif /* !Py_LIMITED_API */
@@ -38,14 +38,12 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
     );
 #endif
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
-#endif
 PyAPI_FUNC(PyObject *) PyImport_GetModule(PyObject *name);
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyImport_GetModule(PyObject *name);
-PyAPI_FUNC(PyObject *) _PyImport_GetModuleWithError(PyObject *name);
+PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
 PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(struct _Py_Identifier *name);
+PyAPI_FUNC(PyObject *) _PyImport_AddModuleObject(PyObject *name,
+                                                 PyObject *modules);
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 #endif

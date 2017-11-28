@@ -749,6 +749,22 @@ class FaultHandlerTests(unittest.TestCase):
                 name)
 
     @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_ignore_exception(self):
+        for exc_code in (
+            0xE06D7363,   # MSC exception ("Emsc")
+            0xE0434352,   # COM Callable Runtime exception ("ECCR")
+        ):
+            code = f"""
+                    import faulthandler
+                    faulthandler.enable()
+                    faulthandler._raise_exception({exc_code})
+                    """
+            code = dedent(code)
+            output, exitcode = self.get_output(code)
+            self.assertEqual(output, [])
+            self.assertEqual(exitcode, exc_code)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
     def test_raise_nonfatal_exception(self):
         # These exceptions are not strictly errors. Letting
         # faulthandler display the traceback when they are

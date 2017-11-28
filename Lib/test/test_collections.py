@@ -660,7 +660,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_AsyncIterable(self):
         class AI:
-            async def __aiter__(self):
+            def __aiter__(self):
                 return self
         self.assertTrue(isinstance(AI(), AsyncIterable))
         self.assertTrue(issubclass(AI, AsyncIterable))
@@ -674,7 +674,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_AsyncIterator(self):
         class AI:
-            async def __aiter__(self):
+            def __aiter__(self):
                 return self
             async def __anext__(self):
                 raise StopAsyncIteration

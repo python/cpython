@@ -1,1 +1,0 @@
-Functional API of enum allows to create empty enums. Patched by Dong-hee Na

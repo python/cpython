@@ -444,15 +444,13 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
         self.ssock, self.csock = mock.Mock(), mock.Mock()
 
-        class EventLoop(BaseProactorEventLoop):
-            def _socketpair(s):
-                return (self.ssock, self.csock)
-
-        self.loop = EventLoop(self.proactor)
+        with mock.patch('asyncio.proactor_events.socket.socketpair',
+                        return_value=(self.ssock, self.csock)):
+            self.loop = BaseProactorEventLoop(self.proactor)
         self.set_event_loop(self.loop)
 
     @mock.patch.object(BaseProactorEventLoop, 'call_soon')
-    @mock.patch.object(BaseProactorEventLoop, '_socketpair')
+    @mock.patch('asyncio.proactor_events.socket.socketpair')
     def test_ctor(self, socketpair, call_soon):
         ssock, csock = socketpair.return_value = (
             mock.Mock(), mock.Mock())
@@ -489,6 +487,11 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop.sock_recv(self.sock, 1024)
         self.proactor.recv.assert_called_with(self.sock, 1024)
 
+    def test_sock_recv_into(self):
+        buf = bytearray(10)
+        self.loop.sock_recv_into(self.sock, buf)
+        self.proactor.recv_into.assert_called_with(self.sock, buf)
+
     def test_sock_sendall(self):
         self.loop.sock_sendall(self.sock, b'data')
         self.proactor.send.assert_called_with(self.sock, b'data')
@@ -500,14 +503,6 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
     def test_sock_accept(self):
         self.loop.sock_accept(self.sock)
         self.proactor.accept.assert_called_with(self.sock)
-
-    def test_socketpair(self):
-        class EventLoop(BaseProactorEventLoop):
-            # override the destructor to not log a ResourceWarning
-            def __del__(self):
-                pass
-        self.assertRaises(
-            NotImplementedError, EventLoop, self.proactor)
 
     def test_make_socket_transport(self):
         tr = self.loop._make_socket_transport(self.sock, asyncio.Protocol())

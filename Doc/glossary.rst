@@ -535,7 +535,10 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`__iter__` or :meth:`__getitem__` method.  Iterables can be
+      with an :meth:`__iter__` method or with a :meth:`__getitem__` method
+      that implements :term:`Sequence` semantics.
+
+      Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
       needed (:func:`zip`, :func:`map`, ...).  When an iterable object is passed
       as an argument to the built-in function :func:`iter`, it returns an

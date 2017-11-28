@@ -26,7 +26,7 @@ struct _gilstate_runtime_state {
     */
     /* TODO: Given interp_main, it may be possible to kill this ref */
     PyInterpreterState *autoInterpreterState;
-    int autoTLSkey;
+    Py_tss_t autoTSSkey;
 };
 
 /* hook for PyEval_GetFrame(), requested for Psyco */
@@ -64,9 +64,7 @@ typedef struct pyruntimestate {
     int nexitfuncs;
     void (*pyexitfunc)(void);
 
-    struct _pyobj_runtime_state obj;
     struct _gc_runtime_state gc;
-    struct _pymem_runtime_state mem;
     struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
@@ -74,9 +72,15 @@ typedef struct pyruntimestate {
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
+#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(void) _PyRuntimeState_Init(_PyRuntimeState *);
+PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+
+/* Initialize _PyRuntimeState.
+   Return NULL on success, or return an error message on failure. */
+PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)
@@ -84,7 +88,7 @@ PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
 
 /* Other */
 
-PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
+PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
 
 #ifdef __cplusplus
 }

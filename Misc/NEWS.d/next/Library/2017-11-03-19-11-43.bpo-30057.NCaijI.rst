@@ -1,0 +1,1 @@
+Fix potential missed signal in signal.signal().

@@ -557,7 +557,8 @@ class _BinaryPlistParser:
             self._object_offsets = self._read_ints(num_objects, offset_size)
             return self._read_object(self._object_offsets[top_object])
 
-        except (OSError, IndexError, struct.error):
+        except (OSError, IndexError, struct.error, OverflowError,
+                UnicodeDecodeError):
             raise InvalidFileException()
 
     def _get_size(self, tokenL):
@@ -575,6 +576,8 @@ class _BinaryPlistParser:
         if size in _BINARY_FORMAT:
             return struct.unpack('>' + _BINARY_FORMAT[size] * n, data)
         else:
+            if not size or len(data) != size * n:
+                raise InvalidFileException()
             return tuple(int.from_bytes(data[i: i + size], 'big')
                          for i in range(0, size * n, size))
 

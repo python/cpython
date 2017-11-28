@@ -2068,11 +2068,14 @@ class UnicodeTest(string_tests.CommonTest,
         # Error handling (wrong arguments)
         self.assertRaises(TypeError, "hello".encode, 42, 42, 42)
 
-        # Error handling (lone surrogate in PyUnicode_TransformDecimalToASCII())
-        self.assertRaises(UnicodeError, float, "\ud800")
-        self.assertRaises(UnicodeError, float, "\udf00")
-        self.assertRaises(UnicodeError, complex, "\ud800")
-        self.assertRaises(UnicodeError, complex, "\udf00")
+        # Error handling (lone surrogate in
+        # _PyUnicode_TransformDecimalAndSpaceToASCII())
+        self.assertRaises(ValueError, int, "\ud800")
+        self.assertRaises(ValueError, int, "\udf00")
+        self.assertRaises(ValueError, float, "\ud800")
+        self.assertRaises(ValueError, float, "\udf00")
+        self.assertRaises(ValueError, complex, "\ud800")
+        self.assertRaises(ValueError, complex, "\udf00")
 
     def test_codecs(self):
         # Encoding

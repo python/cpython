@@ -3,11 +3,13 @@
 import gc
 import os
 import queue
+import pickle
 import socket
 import sys
 import threading
 import unittest
 from unittest import mock
+from test import support
 try:
     import ssl
 except ImportError:
@@ -56,7 +58,7 @@ class StreamReaderTests(test_utils.TestCase):
                                                loop=self.loop)
             self._basetest_open_connection(conn_fut)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_open_unix_connection(self):
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = asyncio.open_unix_connection(httpd.address,
@@ -85,8 +87,8 @@ class StreamReaderTests(test_utils.TestCase):
 
             self._basetest_open_connection_no_loop_ssl(conn_fut)
 
+    @support.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_open_unix_connection_no_loop_ssl(self):
         with test_utils.run_test_unix_server(use_ssl=True) as httpd:
             conn_fut = asyncio.open_unix_connection(
@@ -112,7 +114,7 @@ class StreamReaderTests(test_utils.TestCase):
                                                loop=self.loop)
             self._basetest_open_connection_error(conn_fut)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_open_unix_connection_error(self):
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = asyncio.open_unix_connection(httpd.address,
@@ -633,7 +635,7 @@ class StreamReaderTests(test_utils.TestCase):
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_start_unix_server(self):
 
         class MyServer:
@@ -844,6 +846,23 @@ os.close(fd)
         stream._transport.__repr__ = mock.Mock()
         stream._transport.__repr__.return_value = "<Transport>"
         self.assertEqual("<StreamReader t=<Transport>>", repr(stream))
+
+    def test_IncompleteReadError_pickleable(self):
+        e = asyncio.IncompleteReadError(b'abc', 10)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_protocol=proto):
+                e2 = pickle.loads(pickle.dumps(e, protocol=proto))
+                self.assertEqual(str(e), str(e2))
+                self.assertEqual(e.partial, e2.partial)
+                self.assertEqual(e.expected, e2.expected)
+
+    def test_LimitOverrunError_pickleable(self):
+        e = asyncio.LimitOverrunError('message', 10)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_protocol=proto):
+                e2 = pickle.loads(pickle.dumps(e, protocol=proto))
+                self.assertEqual(str(e), str(e2))
+                self.assertEqual(e.consumed, e2.consumed)
 
 
 if __name__ == '__main__':

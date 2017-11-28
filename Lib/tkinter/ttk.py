@@ -1404,13 +1404,13 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
             import warnings
             warnings.warn(
                 "The selop=None argument of selection() is deprecated "
-                "and will be removed in Python 3.7",
+                "and will be removed in Python 3.8",
                 DeprecationWarning, 3)
         elif selop in ('set', 'add', 'remove', 'toggle'):
             import warnings
             warnings.warn(
                 "The selop argument of selection() is deprecated "
-                "and will be removed in Python 3.7, "
+                "and will be removed in Python 3.8, "
                 "use selection_%s() instead" % (selop,),
                 DeprecationWarning, 3)
         else:

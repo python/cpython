@@ -61,7 +61,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
-   *encoding* or *errors* is specified or *universal_newlines* is true.  When
+   *encoding* or *errors* is specified or *text* is true.  When
    used, the internal :class:`Popen` object is automatically created with
    ``stdin=PIPE``, and the *stdin* argument may not be used as well.
 
@@ -70,10 +70,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    exception hold the arguments, the exit code, and stdout and stderr if they
    were captured.
 
-   If *encoding* or *errors* are specified, or *universal_newlines* is true,
+   If *encoding* or *errors* are specified, or *text* is true,
    file objects for stdin, stdout and stderr are opened in text mode using the
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
-   Otherwise, file objects are opened in binary mode.
+   The *universal_newlines* argument is equivalent  to *text* and is provided
+   for backwards compatibility. By default, file objects are opened in binary mode.
 
    Examples::
 
@@ -95,6 +96,10 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
       Added *encoding* and *errors* parameters
 
+   .. versionchanged:: 3.7
+
+      Added the *text* parameter, as a more understandable alias of *universal_newlines*
+
 .. class:: CompletedProcess
 
    The return value from :func:`run`, representing a process that has finished.
@@ -114,8 +119,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    .. attribute:: stdout
 
       Captured stdout from the child process. A bytes sequence, or a string if
-      :func:`run` was called with an encoding or errors. ``None`` if stdout was not
-      captured.
+      :func:`run` was called with an encoding, errors, or text=True.
+      ``None`` if stdout was not captured.
 
       If you ran the process with ``stderr=subprocess.STDOUT``, stdout and
       stderr will be combined in this attribute, and :attr:`stderr` will be
@@ -124,8 +129,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    .. attribute:: stderr
 
       Captured stderr from the child process. A bytes sequence, or a string if
-      :func:`run` was called with an encoding or errors. ``None`` if stderr was not
-      captured.
+      :func:`run` was called with an encoding, errors, or text=True.
+      ``None`` if stderr was not captured.
 
    .. method:: check_returncode()
 
@@ -511,8 +516,20 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be :data:`CREATE_NEW_CONSOLE` or
-   :data:`CREATE_NEW_PROCESS_GROUP`. (Windows only)
+   *creationflags*, if given, can be one or more of the following flags:
+
+      * :data:`CREATE_NEW_CONSOLE`
+      * :data:`CREATE_NEW_PROCESS_GROUP`
+      * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
+      * :data:`BELOW_NORMAL_PRIORITY_CLASS`
+      * :data:`HIGH_PRIORITY_CLASS`
+      * :data:`IDLE_PRIORITY_CLASS`
+      * :data:`NORMAL_PRIORITY_CLASS`
+      * :data:`REALTIME_PRIORITY_CLASS`
+      * :data:`CREATE_NO_WINDOW`
+      * :data:`DETACHED_PROCESS`
+      * :data:`CREATE_DEFAULT_ERROR_MODE`
+      * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -798,8 +815,8 @@ on Windows.
       :class:`Popen` is called with ``shell=True``.
 
 
-Constants
-^^^^^^^^^
+Windows Constants
+^^^^^^^^^^^^^^^^^
 
 The :mod:`subprocess` module exposes the following constants.
 
@@ -845,6 +862,84 @@ The :mod:`subprocess` module exposes the following constants.
    on the subprocess.
 
    This flag is ignored if :data:`CREATE_NEW_CONSOLE` is specified.
+
+.. data:: ABOVE_NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an above average priority.
+
+   .. versionadded:: 3.7
+
+.. data:: BELOW_NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have a below average priority.
+
+   .. versionadded:: 3.7
+
+.. data:: HIGH_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have a high priority.
+
+   .. versionadded:: 3.7
+
+.. data:: IDLE_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an idle (lowest) priority.
+
+   .. versionadded:: 3.7
+
+.. data:: NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an normal priority. (default)
+
+   .. versionadded:: 3.7
+
+.. data:: REALTIME_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have realtime priority.
+   You should almost never use REALTIME_PRIORITY_CLASS, because this interrupts
+   system threads that manage mouse input, keyboard input, and background disk
+   flushing. This class can be appropriate for applications that "talk" directly
+   to hardware or that perform brief tasks that should have limited interruptions.
+
+   .. versionadded:: 3.7
+
+.. data:: CREATE_NO_WINDOW
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will not create a window
+
+   .. versionadded:: 3.7
+
+.. data:: DETACHED_PROCESS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will not inherit its parent's console.
+   This value cannot be used with CREATE_NEW_CONSOLE.
+
+   .. versionadded:: 3.7
+
+.. data:: CREATE_DEFAULT_ERROR_MODE
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   does not inherit the error mode of the calling process. Instead, the new
+   process gets the default error mode.
+   This feature is particularly useful for multithreaded shell applications
+   that run with hard errors disabled.
+
+   .. versionadded:: 3.7
+
+.. data:: CREATE_BREAKAWAY_FROM_JOB
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   is not associated with the job.
+
+   .. versionadded:: 3.7
 
 .. _call-function-trio:
 

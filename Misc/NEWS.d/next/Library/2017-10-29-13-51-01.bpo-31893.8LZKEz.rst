@@ -1,0 +1,2 @@
+Fixed the layout of the kqueue_event structure on OpenBSD and NetBSD. Fixed
+the comparison of the kqueue_event objects.

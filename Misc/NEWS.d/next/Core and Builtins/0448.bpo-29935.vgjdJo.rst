@@ -1,2 +1,0 @@
-Fixed error messages in the index() method of tuple, list and deque when
-pass indices of wrong type.

@@ -12,6 +12,7 @@
 #include "frameobject.h"
 #include "osdefs.h"
 #include "importdl.h"
+#include "pydtrace.h"
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -41,19 +42,23 @@ module _imp
 
 /* Initialize things */
 
-void
+_PyInitError
 _PyImport_Init(void)
 {
     PyInterpreterState *interp = PyThreadState_Get()->interp;
     initstr = PyUnicode_InternFromString("__init__");
-    if (initstr == NULL)
-        Py_FatalError("Can't initialize import variables");
+    if (initstr == NULL) {
+        return _Py_INIT_ERR("Can't initialize import variables");
+    }
+
     interp->builtins_copy = PyDict_Copy(interp->builtins);
-    if (interp->builtins_copy == NULL)
-        Py_FatalError("Can't backup builtins dict");
+    if (interp->builtins_copy == NULL) {
+        return _Py_INIT_ERR("Can't backup builtins dict");
+    }
+    return _Py_INIT_OK();
 }
 
-void
+_PyInitError
 _PyImportHooks_Init(void)
 {
     PyObject *v, *path_hooks = NULL;
@@ -79,15 +84,18 @@ _PyImportHooks_Init(void)
         goto error;
     err = PySys_SetObject("path_hooks", path_hooks);
     if (err) {
-  error:
-    PyErr_Print();
-    Py_FatalError("initializing sys.meta_path, sys.path_hooks, "
-                  "or path_importer_cache failed");
+        goto error;
     }
     Py_DECREF(path_hooks);
+    return _Py_INIT_OK();
+
+  error:
+    PyErr_Print();
+    return _Py_INIT_ERR("initializing sys.meta_path, sys.path_hooks, "
+                        "or path_importer_cache failed");
 }
 
-void
+_PyInitError
 _PyImportZip_Init(void)
 {
     PyObject *path_hooks, *zimpimport;
@@ -132,11 +140,11 @@ _PyImportZip_Init(void)
         }
     }
 
-    return;
+    return _Py_INIT_OK();
 
   error:
     PyErr_Print();
-    Py_FatalError("initializing zipimport failed");
+    return _Py_INIT_ERR("initializing zipimport failed");
 }
 
 /* Locking primitives to prevent parallel imports of the same module
@@ -290,17 +298,11 @@ _PyImport_Fini(void)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    PyObject *sysdict = PyThreadState_GET()->interp->sysdict;
-    if (sysdict == NULL) {
-        Py_FatalError("PyImport_GetModuleDict: no sys module!");
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (interp->modules == NULL) {
+        Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
     }
-
-    _Py_IDENTIFIER(modules);
-    PyObject *modules = _PyDict_GetItemId(sysdict, &PyId_modules);
-    if (modules == NULL) {
-        Py_FatalError("lost sys.modules");
-    }
-    return modules;
+    return interp->modules;
 }
 
 /* In some corner cases it is important to be sure that the import
@@ -310,47 +312,9 @@ PyImport_GetModuleDict(void)
 int
 _PyImport_IsInitialized(PyInterpreterState *interp)
 {
-    if (interp->sysdict == NULL)
-        return 0;
-    _Py_IDENTIFIER(modules);
-    PyObject *modules = _PyDict_GetItemId(interp->sysdict, &PyId_modules);
-    if (modules == NULL)
+    if (interp->modules == NULL)
         return 0;
     return 1;
-}
-
-PyObject *
-_PyImport_GetModule(PyObject *name)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_CheckExact(modules)) {
-        return PyDict_GetItem(modules, name);
-    }
-
-    PyObject *mod = PyObject_GetItem(modules, name);
-    // For backward-comaptibility we copy the behavior of PyDict_GetItem().
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-    Py_XDECREF(mod);
-    return mod;
-}
-
-PyObject *
-_PyImport_GetModuleWithError(PyObject *name)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_CheckExact(modules)) {
-        return PyDict_GetItemWithError(modules, name);
-    }
-
-    PyObject *mod = PyObject_GetItem(modules, name);
-    // For backward-comaptibility we copy the behavior
-    // of PyDict_GetItemWithError().
-    if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-        PyErr_Clear();
-    }
-    return mod;
 }
 
 PyObject *
@@ -360,7 +324,7 @@ _PyImport_GetModuleId(struct _Py_Identifier *nameid)
     if (name == NULL) {
         return NULL;
     }
-    return _PyImport_GetModule(name);
+    return PyImport_GetModule(name);
 }
 
 int
@@ -481,21 +445,51 @@ PyImport_Cleanup(void)
         if (PyErr_Occurred()) \
             PyErr_Clear(); \
     }
+#define CLEAR_MODULE(name, mod) \
+    if (PyModule_Check(mod)) { \
+        if (Py_VerboseFlag && PyUnicode_Check(name)) \
+            PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
+        STORE_MODULE_WEAKREF(name, mod); \
+        PyObject_SetItem(modules, name, Py_None); \
+    }
 
     /* Remove all modules from sys.modules, hoping that garbage collection
        can reclaim most of them. */
-    pos = 0;
-    while (PyDict_Next(modules, &pos, &key, &value)) {
-        if (PyModule_Check(value)) {
-            if (Py_VerboseFlag && PyUnicode_Check(key))
-                PySys_FormatStderr("# cleanup[2] removing %U\n", key);
-            STORE_MODULE_WEAKREF(key, value);
-            PyObject_SetItem(modules, key, Py_None);
+    if (PyDict_CheckExact(modules)) {
+        pos = 0;
+        while (PyDict_Next(modules, &pos, &key, &value)) {
+            CLEAR_MODULE(key, value);
+        }
+    }
+    else {
+        PyObject *iterator = PyObject_GetIter(modules);
+        if (iterator == NULL) {
+            PyErr_Clear();
+        }
+        else {
+            while ((key = PyIter_Next(iterator))) {
+                value = PyObject_GetItem(modules, key);
+                if (value == NULL) {
+                    PyErr_Clear();
+                    continue;
+                }
+                CLEAR_MODULE(key, value);
+                Py_DECREF(value);
+                Py_DECREF(key);
+            }
+            Py_DECREF(iterator);
         }
     }
 
     /* Clear the modules dict. */
-    PyDict_Clear(modules);
+    if (PyDict_CheckExact(modules)) {
+        PyDict_Clear(modules);
+    }
+    else {
+        _Py_IDENTIFIER(clear);
+        if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL)
+            PyErr_Clear();
+    }
     /* Restore the original builtins dict, to ensure that any
        user data gets cleared. */
     dict = PyDict_Copy(interp->builtins);
@@ -557,6 +551,7 @@ PyImport_Cleanup(void)
     /* Clear and delete the modules directory.  Actual modules will
        still be there only if imported during the execution of some
        destructor. */
+    interp->modules = NULL;
     Py_DECREF(modules);
 
     /* Once more */
@@ -936,15 +931,13 @@ exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object
     }
     Py_DECREF(v);
 
-    m = _PyImport_GetModule(name);
+    m = PyImport_GetModule(name);
     if (m == NULL) {
         PyErr_Format(PyExc_ImportError,
                      "Loaded module %R not found in sys.modules",
                      name);
         return NULL;
     }
-
-    Py_INCREF(m);
 
     return m;
 }
@@ -1644,7 +1637,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         Py_INCREF(abs_name);
     }
 
-    mod = _PyImport_GetModule(abs_name);
+    mod = PyImport_GetModule(abs_name);
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_initializing);
@@ -1653,7 +1646,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         PyObject *spec;
         int initializing = 0;
 
-        Py_INCREF(mod);
         /* Optimization: only call _bootstrap._lock_unlock_module() if
            __spec__._initializing is true.
            NOTE: because of this, initializing must be set *before*
@@ -1682,9 +1674,55 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
+        int import_time = interp->core_config.import_time;
+        static int import_level;
+        static _PyTime_t accumulated;
+
+        _PyTime_t t1 = 0, accumulated_copy = accumulated;
+
+        /* XOptions is initialized after first some imports.
+         * So we can't have negative cache before completed initialization.
+         * Anyway, importlib._find_and_load is much slower than
+         * _PyDict_GetItemIdWithError().
+         */
+        if (import_time) {
+            static int header = 1;
+            if (header) {
+                fputs("import time: self [us] | cumulative | imported package\n",
+                      stderr);
+                header = 0;
+            }
+
+            import_level++;
+            t1 = _PyTime_GetPerfCounter();
+            accumulated = 0;
+        }
+
+        Py_XDECREF(mod);
+
+        if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
+            PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
+
         mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             interp->import_func, NULL);
+
+        if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
+            PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
+                                           mod != NULL);
+
+        if (import_time) {
+            _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
+
+            import_level--;
+            fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
+                    (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
+                    (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
+                    import_level*2, "", PyUnicode_AsUTF8(abs_name));
+
+            accumulated = accumulated_copy + cum;
+        }
+
         if (mod == NULL) {
             goto error;
         }
@@ -1731,7 +1769,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                     goto error;
                 }
 
-                final_mod = _PyImport_GetModule(to_return);
+                final_mod = PyImport_GetModule(to_return);
                 Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     PyErr_Format(PyExc_KeyError,
@@ -1739,7 +1777,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  to_return);
                     goto error;
                 }
-                Py_INCREF(final_mod);
             }
         }
         else {
@@ -1793,9 +1830,6 @@ PyImport_ReloadModule(PyObject *m)
         if (imp == NULL) {
             return NULL;
         }
-    }
-    else {
-        Py_INCREF(imp);
     }
 
     reloaded_module = _PyObject_CallMethodIdObjArgs(imp, &PyId_reload, m, NULL);
@@ -1876,11 +1910,8 @@ PyImport_Import(PyObject *module_name)
         goto err;
     Py_DECREF(r);
 
-    r = _PyImport_GetModule(module_name);
-    if (r != NULL) {
-        Py_INCREF(r);
-    }
-    else if (!PyErr_Occurred()) {
+    r = PyImport_GetModule(module_name);
+    if (r == NULL && !PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, module_name);
     }
 

@@ -28,11 +28,10 @@ such as the importing of parent packages, and the updating of various caches
 (including :data:`sys.modules`), only the :keyword:`import` statement performs
 a name binding operation.
 
-When calling :func:`__import__` as part of an import statement, the
-standard builtin :func:`__import__` is called. Other mechanisms for
-invoking the import system (such as :func:`importlib.import_module`) may
-choose to subvert :func:`__import__` and use its own solution to
-implement import semantics.
+When an :keyword:`import` statement is executed, the standard builtin
+:func:`__import__` function is called. Other mechanisms for invoking the
+import system (such as :func:`importlib.import_module`) may choose to bypass
+:func:`__import__` and use their own solutions to implement import semantics.
 
 When a module is first imported, Python searches for the module and if found,
 it creates a module object [#fnmo]_, initializing it.  If the named module
@@ -519,8 +518,9 @@ and the loader that executes it.  Most importantly, it allows the
 import machinery to perform the boilerplate operations of loading,
 whereas without a module spec the loader had that responsibility.
 
-See :class:`~importlib.machinery.ModuleSpec` for more specifics on what
-information a module's spec may hold.
+The module's spec is exposed as the ``__spec__`` attribute on a module object.
+See :class:`~importlib.machinery.ModuleSpec` for details on the contents of
+the module spec.
 
 .. versionadded:: 3.4
 

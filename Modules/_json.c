@@ -1,7 +1,7 @@
 
 /* Core extension modules are built-in on some platforms (e.g. Windows). */
 #ifdef Py_BUILD_CORE
-#define Py_BUILD_CORE_MODULE
+#define Py_BUILD_CORE_BUILTIN
 #undef Py_BUILD_CORE
 #endif
 
@@ -1429,10 +1429,20 @@ static PyObject *
 encoder_encode_string(PyEncoderObject *s, PyObject *obj)
 {
     /* Return the JSON representation of a string */
-    if (s->fast_encode)
+    PyObject *encoded;
+
+    if (s->fast_encode) {
         return s->fast_encode(NULL, obj);
-    else
-        return PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
+    }
+    encoded = PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
+    if (encoded != NULL && !PyUnicode_Check(encoded)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder() must return a string, not %.80s",
+                     Py_TYPE(encoded)->tp_name);
+        Py_DECREF(encoded);
+        return NULL;
+    }
+    return encoded;
 }
 
 static int
@@ -1640,8 +1650,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
             continue;
         }
         else {
-            /* TODO: include repr of key */
-            PyErr_SetString(PyExc_TypeError, "keys must be a string");
+            PyErr_Format(PyExc_TypeError,
+                         "keys must be str, int, float, bool or None, "
+                         "not %.100s", key->ob_type->tp_name);
             goto bail;
         }
 

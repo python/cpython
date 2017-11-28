@@ -105,8 +105,14 @@ PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
 #ifndef Py_LIMITED_API
+/* strdup() using PyMem_RawMalloc() */
 PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
+
+/* strdup() using PyMem_Malloc() */
 PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
+
+/* wcsdup() using PyMem_RawMalloc() */
+PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const wchar_t *str);
 #endif
 
 /* Macros. */
@@ -132,11 +138,11 @@ PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
  */
 
 #define PyMem_New(type, n) \
-  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
-	( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
+  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :      \
+        ( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
 #define PyMem_NEW(type, n) \
-  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
-	( (type *) PyMem_MALLOC((n) * sizeof(type)) ) )
+  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :      \
+        ( (type *) PyMem_MALLOC((n) * sizeof(type)) ) )
 
 /*
  * The value of (p) is always clobbered by this macro regardless of success.
@@ -145,17 +151,17 @@ PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
  * caller's memory error handler to not lose track of it.
  */
 #define PyMem_Resize(p, type, n) \
-  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
-	(type *) PyMem_Realloc((p), (n) * sizeof(type)) )
+  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :        \
+        (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
 #define PyMem_RESIZE(p, type, n) \
-  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
-	(type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
+  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :        \
+        (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
 
 /* PyMem{Del,DEL} are left over from ancient days, and shouldn't be used
  * anymore.  They're just confusing aliases for PyMem_{Free,FREE} now.
  */
-#define PyMem_Del		PyMem_Free
-#define PyMem_DEL		PyMem_FREE
+#define PyMem_Del               PyMem_Free
+#define PyMem_DEL               PyMem_FREE
 
 #ifndef Py_LIMITED_API
 typedef enum {
@@ -212,7 +218,7 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
    - PyObject_Malloc(), PyObject_Realloc() and PyObject_Free()
 
    Newly allocated memory is filled with the byte 0xCB, freed memory is filled
-   with the byte 0xDB. Additionnal checks:
+   with the byte 0xDB. Additional checks:
 
    - detect API violations, ex: PyObject_Free() called on a buffer allocated
      by PyMem_Malloc()
@@ -221,6 +227,10 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
 
    The function does nothing if Python is not compiled is debug mode. */
 PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
+#endif
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(void) _PyMem_GetDefaultRawAllocator(PyMemAllocatorEx *alloc);
 #endif
 
 #ifdef __cplusplus

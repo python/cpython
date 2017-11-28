@@ -186,7 +186,7 @@ options, run :program:`python -m test -h`.
 Some other ways to execute the regression tests depend on what platform the
 tests are being executed on. On Unix, you can run :program:`make test` at the
 top-level directory where Python was built. On Windows,
-executing :program:`rt.bat` from your :file:`PCBuild` directory will run all
+executing :program:`rt.bat` from your :file:`PCbuild` directory will run all
 regression tests.
 
 
@@ -440,7 +440,7 @@ The :mod:`test.support` module defines the following functions:
    otherwise.
 
 
-.. decorator:: skip_unless_symlink()
+.. decorator:: skip_unless_symlink
 
    A decorator for running tests that require support for symbolic links.
 

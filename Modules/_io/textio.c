@@ -941,6 +941,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     else {
         PyErr_SetString(PyExc_OSError,
                         "could not determine default encoding");
+        goto error;
     }
 
     /* Check we have been asked for a real text encoding */

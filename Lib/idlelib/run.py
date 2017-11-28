@@ -184,6 +184,7 @@ def show_socket_error(err, address):
     import tkinter
     from tkinter.messagebox import showerror
     root = tkinter.Tk()
+    fix_scaling(root)
     root.withdraw()
     msg = f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"\
           f"Fatal OSError #{err.errno}: {err.strerror}.\n"\
@@ -202,16 +203,16 @@ def print_exception():
     seen = set()
 
     def print_exc(typ, exc, tb):
-        seen.add(exc)
+        seen.add(id(exc))
         context = exc.__context__
         cause = exc.__cause__
-        if cause is not None and cause not in seen:
+        if cause is not None and id(cause) not in seen:
             print_exc(type(cause), cause, cause.__traceback__)
             print("\nThe above exception was the direct cause "
                   "of the following exception:\n", file=efile)
         elif (context is not None and
               not exc.__suppress_context__ and
-              context not in seen):
+              id(context) not in seen):
             print_exc(type(context), context, context.__traceback__)
             print("\nDuring handling of the above exception, "
                   "another exception occurred:\n", file=efile)
@@ -275,6 +276,18 @@ def exit():
         atexit._clear()
     capture_warnings(False)
     sys.exit(0)
+
+
+def fix_scaling(root):
+    """Scale fonts on HiDPI displays."""
+    import tkinter.font
+    scaling = float(root.tk.call('tk', 'scaling'))
+    if scaling > 1.4:
+        for name in tkinter.font.names(root):
+            font = tkinter.font.Font(root=root, name=name, exists=True)
+            size = int(font['size'])
+            if size < 0:
+                font['size'] = round(-0.75*size)
 
 
 class MyRPCServer(rpc.RPCServer):

@@ -31,18 +31,10 @@ _Py_GetRefTotal(void)
 
 void
 _PyDebug_PrintTotalRefs(void) {
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showrefcount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
-        return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showrefcount);
-    if (value == Py_True)
-        fprintf(stderr,
-                "[%" PY_FORMAT_SIZE_T "d refs, "
-                "%" PY_FORMAT_SIZE_T "d blocks]\n",
-                _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+    fprintf(stderr,
+            "[%" PY_FORMAT_SIZE_T "d refs, "
+            "%" PY_FORMAT_SIZE_T "d blocks]\n",
+            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
 
@@ -103,16 +95,10 @@ extern Py_ssize_t null_strings, one_strings;
 void
 dump_counts(FILE* f)
 {
-    PyTypeObject *tp;
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showalloccount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (!inter->core_config.show_alloc_count) {
         return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
-    if (value != Py_True)
-        return;
+    }
 
     for (tp = type_list; tp; tp = tp->tp_next)
         fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "

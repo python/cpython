@@ -107,6 +107,96 @@ locale remains active when the core interpreter is initialized.
     :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
        PEP written and implemented by Nick Coghlan.
 
+.. _whatsnew37-pep553:
+
+PEP 553: Built-in breakpoint()
+------------------------------
+
+:pep:`553` describes a new built-in called ``breakpoint()`` which makes it
+easy and consistent to enter the Python debugger.  Built-in ``breakpoint()``
+calls ``sys.breakpointhook()``.  By default, this latter imports ``pdb`` and
+then calls ``pdb.set_trace()``, but by binding ``sys.breakpointhook()`` to the
+function of your choosing, ``breakpoint()`` can enter any debugger.  Or, the
+environment variable :envvar:`PYTHONBREAKPOINT` can be set to the callable of
+your debugger of choice.  Set ``PYTHONBREAKPOINT=0`` to completely disable
+built-in ``breakpoint()``.
+
+.. seealso::
+
+    :pep:`553` -- Built-in breakpoint()
+      PEP written and implemented by Barry Warsaw
+
+
+.. _whatsnew37-pep539:
+
+PEP 539: A New C-API for Thread-Local Storage in CPython
+--------------------------------------------------------
+
+While Python provides a C API for thread-local storage support; the existing
+:ref:`Thread Local Storage (TLS) API <thread-local-storage-api>` has used
+:c:type:`int` to represent TLS keys across all platforms.  This has not
+generally been a problem for officially-support platforms, but that is neither
+POSIX-compliant, nor portable in any practical sense.
+
+:pep:`539` changes this by providing a new :ref:`Thread Specific Storage (TSS)
+API <thread-specific-storage-api>` to CPython which supersedes use of the
+existing TLS API within the CPython interpreter, while deprecating the existing
+API.  The TSS API uses a new type :c:type:`Py_tss_t` instead of :c:type:`int`
+to represent TSS keys--an opaque type the definition of which may depend on
+the underlying TLS implementation.  Therefore, this will allow to build CPython
+on platforms where the native TLS key is defined in a way that cannot be safely
+cast to :c:type:`int`.
+
+Note that on platforms where the native TLS key is defined in a way that cannot
+be safely cast to :c:type:`int`, all functions of the existing TLS API will be
+no-op and immediately return failure. This indicates clearly that the old API
+is not supported on platforms where it cannot be used reliably, and that no
+effort will be made to add such support.
+
+.. seealso::
+
+    :pep:`539` -- A New C-API for Thread-Local Storage in CPython
+       PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
+
+
+PEP 564: Add new time functions with nanosecond resolution
+----------------------------------------------------------
+
+Add six new "nanosecond" variants of existing functions to the :mod:`time`
+module:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+While similar to the existing functions without the ``_ns`` suffix, they
+provide nanosecond resolution: they return a number of nanoseconds as a Python
+``int``.
+
+The ``time.time_ns()`` resolution is 3 times better than the ``time.time()``
+resolution on Linux and Windows.
+
+.. seealso::
+
+    :pep:`564` -- Add new time functions with nanosecond resolution
+       PEP written and implemented by Victor Stinner
+
+
+New Developer Mode: -X dev
+--------------------------
+
+Add a new "developer mode": ``-X dev`` command line option to enable debug
+checks at runtime.
+
+In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
+default -X faulthandler ...``, except that the PYTHONMALLOC environment
+variable is not set in practice.
+
+See :option:`-X` ``dev`` for the details.
+
 
 Other Language Changes
 ======================
@@ -178,6 +268,21 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+cProfile
+--------
+
+cProfile command line now accepts `-m module_name` as an alternative to
+script path. (Contributed by Sanyam Khurana in :issue:`21862`.)
+
+crypt
+-----
+
+Added support for the Blowfish method.
+(Contributed by Serhiy Storchaka in :issue:`31664`.)
+
+The :func:`~crypt.mksalt` function now allows to specify the number of rounds
+for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
+
 dis
 ---
 
@@ -192,6 +297,19 @@ distutils
 README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
+
+:class:`distutils.core.setup` now raises a :exc:`TypeError` if
+``classifiers``, ``keywords`` and ``platforms`` fields are not specified
+as a list.  However, to minimize backwards incompatibility concerns,
+``keywords`` and ``platforms`` fields still accept a comma separated string.
+(Contributed by Berker Peksag in :issue:`19610`.)
+
+http.client
+-----------
+
+Add Configurable *blocksize* to ``HTTPConnection`` and
+``HTTPSConnection`` for improved upload throughput.
+(Contributed by Nir Soffer in :issue:`31945`.)
 
 http.server
 -----------
@@ -232,6 +350,20 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+pdb
+---
+
+:func:`~pdb.set_trace` now takes an optional *header* keyword-only
+argument.  If given, this is printed to the console just before debugging
+begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
+
+re
+--
+
+The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
+can be set within the scope of a group.
+(Contributed by Serhiy Storchaka in :issue:`31690`.)
+
 string
 ------
 
@@ -239,12 +371,53 @@ string
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
+time
+----
+
+The :pep:`564` added six new functions with nanosecond resolution:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+Add new clock identifiers:
+
+* :data:`time.CLOCK_BOOTTIME` (Linux): Identical to
+  :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
+  system is suspended.
+* :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
+  per-process timer from the CPU.
+* :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
+  the time the system has been running and not suspended, providing accurate
+  uptime measurement, both absolute and interval.
+
+Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
+to get per-thread CPU time measurements.
+(Contributed by Antoine Pitrou in :issue:`32025`.)
+
+
+unittest
+--------
+Added new command-line option ``-k`` to filter tests to run with a substring or
+Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
+tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
+but not ``bar_tests.FooTest.test_something``.
+
+
 unittest.mock
 -------------
 
 The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
 Serhiy Storchaka in :issue:`20804`.)
+
+New function :const:`~unittest.mock.seal` will disable the creation of mock
+children by preventing to get or set any new attribute on the sealed mock.
+The sealing process is performed recursively. (Contributed by Mario Corchero
+in :issue:`30541`.)
 
 xmlrpc.server
 -------------
@@ -274,12 +447,24 @@ Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
+xml.etree
+---------
+
+:ref:`ElementPath <elementtree-xpath>` predicates in the :meth:`find`
+methods can now compare text of the current node with ``[. = "text"]``,
+not only text in children.  Predicates also allow adding spaces for
+better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
+
 zipapp
 ------
 
 Function :func:`zipapp.create_archive` now accepts an optional *filter*
-argument, to allow the user to select which files should be included in the
+argument to allow the user to select which files should be included in the
+archive, and an optional *compressed* argument to generate a compressed
 archive.
+
+A command line option ``--compress`` has also been added to support
+compression.
 
 
 Optimizations
@@ -291,22 +476,30 @@ Optimizations
   INADA Naoki in :issue:`26110`.)
 
 * Searching some unlucky Unicode characters (like Ukrainian capital "Є")
-  in a string was to 25 times slower than searching other characters.
-  Now it is slower only by 3 times in worst case.
+  in a string was up to 25 times slower than searching other characters.
+  Now it is slower only by 3 times in the worst case.
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
-  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
-  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
-  Storchaka in :issue:`26121`.)
+  :func:`~math.erf` and :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+* The :func:`shutil.rmtree` function has been sped up to 20--40%.
+  This was done using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`28564`.)
+
 * Optimized case-insensitive matching and searching of :mod:`regular
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
+
+* :func:`re.compile` now converts ``flags`` parameter to int object if
+  it is ``RegexFlag``.  It is now as fast as Python 3.5, and faster than
+  Python 3.6 by about 10% depending on the pattern.
+  (Contributed by INADA Naoki in :issue:`31671`.)
 
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
   and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
@@ -330,6 +523,10 @@ Build and C API Changes
   is now of type ``const char *`` rather of ``char *``. (Contributed by Serhiy
   Storchaka in :issue:`28769`.)
 
+* The result of :c:func:`PyMapping_Keys`, :c:func:`PyMapping_Values` and
+  :c:func:`PyMapping_Items` is now always a list, rather than a list or a
+  tuple. (Contributed by Oren Milman in :issue:`28280`.)
+
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
 
@@ -343,6 +540,11 @@ Build and C API Changes
   If Python 3.6 is not found on the system (via ``py -3.6``), NuGet is used to
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
+
+* The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+  has been removed as its members being never cleared may cause a segfault
+  during finalization of the interpreter. Contributed by Xavier de Gaye in
+  :issue:`22898` and :issue:`30697`.
 
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
@@ -424,6 +626,10 @@ Removed
 API and Feature Removals
 ------------------------
 
+* The ``os.stat_float_times()`` function has been removed. It was introduced in
+  Python 2.3 for backward compatibility with Python 2.2, and was deprecated
+  since Python 3.1.
+
 * Unknown escapes consisting of ``'\'`` and an ASCII letter in replacement
   templates for :func:`re.sub` were deprecated in Python 3.5, and will now
   cause an error.
@@ -459,8 +665,37 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in Python behavior
+--------------------------
+
+* Due to an oversight, earlier Python versions erroneously accepted the
+  following syntax::
+
+      f(1 for x in [1],)
+
+      class C(1 for x in [1]):
+          pass
+
+  Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
+  expression always needs to be directly inside a set of parentheses
+  and cannot have a comma on either side, and the duplication of the
+  parentheses can be omitted only on calls.
+  (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
+
+
 Changes in the Python API
 -------------------------
+
+* The ``asyncio.windows_utils.socketpair()`` function has been
+  removed: use directly :func:`socket.socketpair` which is available on all
+  platforms since Python 3.5 (before, it wasn't available on Windows).
+  ``asyncio.windows_utils.socketpair()`` was just an alias to
+  ``socket.socketpair`` on Python 3.5 and newer.
+
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
 
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in
@@ -486,9 +721,6 @@ Changes in the Python API
   and module are affected by this change. (Contributed by INADA Naoki and
   Eugene Toder in :issue:`29463`.)
 
-* ``PyInterpreterState`` no longer has a ``modules`` field.  Instead use
-  ``sys.modules``.
-
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.
   To set their file permission bits you can set the umask before invoking
@@ -505,9 +737,73 @@ Changes in the Python API
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
+* Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
+  function, the user specified handler *onerror* is now called with the first
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  is failed.
+
+* Support of nested sets and set operations in regular expressions as in
+  `Unicode Technical Standard #18`_ might be added in the future.  This would
+  change the syntax, so to facilitate this change a :exc:`FutureWarning` will
+  be raised in ambiguous cases for the time being.
+  That include sets starting with a literal ``'['`` or containing literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+  avoid a warning escape them with a backslash.
+  (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+.. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+
+Changes in the C API
+--------------------
+
+* The function :c:func:`PySlice_GetIndicesEx` is considered not safe for
+  resizable sequences.  If the slice indices are not instances of :class:`int`,
+  but objects that implement the :meth:`!__index__` method, the sequence can be
+  resized after passing its length to :c:func:`!PySlice_GetIndicesEx`.  This
+  can lead to returning indices out of the length of the sequence.  For
+  avoiding possible problems use new functions :c:func:`PySlice_Unpack` and
+  :c:func:`PySlice_AdjustIndices`.
+  (Contributed by Serhiy Storchaka in :issue:`27867`.)
+
 
 CPython bytecode changes
 ------------------------
 
 * Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+
+
+Other CPython implementation changes
+------------------------------------
+
+* In preparation for potential future changes to the public CPython runtime
+  initialization API (see :pep:`432` for details), CPython's internal startup
+  and configuration management logic has been significantly refactored. While
+  these updates are intended to be entirely transparent to both embedding
+  applications and users of the regular CPython CLI, they're being mentioned
+  here as the refactoring changes the internal order of various operations
+  during interpreter startup, and hence may uncover previously latent defects,
+  either in embedding applications, or in CPython itself.
+  (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
+
+
+Documentation
+=============
+
+.. _whatsnew37-pep545:
+
+PEP 545: Python Documentation Translations
+------------------------------------------
+
+:pep:`545` describes the process to translate Python documentation,
+and two translations have been added:
+
+- Japanese: https://docs.python.org/ja/ and associated GitHub
+  repository: https://github.com/python/python-docs-ja
+
+- French: https://docs.python.org/fr/ and associated GitHub
+  repository: https://github.com/python/python-docs-fr
+
+(Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
+:issue:`26546`.)

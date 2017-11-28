@@ -719,7 +719,7 @@ else:
         '221 Goodbye.'
         >>>
         '''
-        ssl_version = ssl.PROTOCOL_SSLv23
+        ssl_version = ssl.PROTOCOL_TLS_CLIENT
 
         def __init__(self, host='', user='', passwd='', acct='', keyfile=None,
                      certfile=None, context=None,
@@ -753,7 +753,7 @@ else:
             '''Set up secure control connection by using TLS/SSL.'''
             if isinstance(self.sock, ssl.SSLSocket):
                 raise ValueError("Already using TLS")
-            if self.ssl_version >= ssl.PROTOCOL_SSLv23:
+            if self.ssl_version >= ssl.PROTOCOL_TLS:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')

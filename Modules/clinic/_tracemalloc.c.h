@@ -87,15 +87,15 @@ PyDoc_STRVAR(_tracemalloc_start__doc__,
     {"start", (PyCFunction)_tracemalloc_start, METH_FASTCALL, _tracemalloc_start__doc__},
 
 static PyObject *
-_tracemalloc_start_impl(PyObject *module, Py_ssize_t nframe);
+_tracemalloc_start_impl(PyObject *module, int nframe);
 
 static PyObject *
 _tracemalloc_start(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nframe = 1;
+    int nframe = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:start",
+    if (!_PyArg_ParseStack(args, nargs, "|i:start",
         &nframe)) {
         goto exit;
     }
@@ -185,4 +185,4 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=c9a0111391b3ec45 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=db4f909464c186e2 input=a9049054013a1b77]*/
