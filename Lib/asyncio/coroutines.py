@@ -34,6 +34,8 @@ def _is_debug_mode():
 
 _DEBUG = _is_debug_mode()
 
+from collections.abc import Awaitable, Coroutine
+
 
 def debug_wrapper(gen):
     # This function is called from 'sys.set_coroutine_wrapper'.
