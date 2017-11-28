@@ -1,0 +1,1 @@
+linecache.py add lazycache to __all__ and use dict.clear to clear the cache
