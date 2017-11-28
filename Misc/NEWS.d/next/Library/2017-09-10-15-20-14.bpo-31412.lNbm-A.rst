@@ -1,2 +1,2 @@
-`wave.open()` now accepts PathLike objects. Contributed by Michael Scott
-Cuthbert.
+:func:`wave.open()` now accepts :term:`path-like objects <path-like object>` objects. 
+Patch by Michael Scott Cuthbert.

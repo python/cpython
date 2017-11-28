@@ -1,14 +1,13 @@
-"""Module for parsing WAVE audio files.
+"""Stuff to parse WAVE files.
 
 Usage.
 
 Reading WAVE files:
       f = wave.open(file, 'r')
-where file is either a str, bytes, or Pathlike object
-representing a file or an open file pointer.
-The open file pointer must have methods read(), and close().
-If the setpos() and rewind() methods are used, then a seek()
-method is also necessary.
+where file is either the name of a file or an open file pointer.
+The open file pointer must have methods read(), seek(), and close().
+When the setpos() and rewind() methods are not used, the seek()
+method is not  necessary.
 
 This returns an instance of a class with the following public methods:
       getnchannels()  -- returns number of audio channels (1 for
@@ -38,11 +37,9 @@ is destroyed.
 
 Writing WAVE files:
       f = wave.open(file, 'w')
-where file is either a str, bytes, or Pathlike object
-representing a file or an open file pointer.
-The open file pointer must have methods write(), tell(),  and
-close(). If the pointer does not have a seek() method, then
-setnframes() must be given an accurate value
+where file is either the name of a file or an open file pointer.
+The open file pointer must have methods write(), tell(), seek(), and
+close().
 
 This returns an instance of a class with the following public methods:
       setnchannels(n) -- set the number of channels
@@ -503,9 +500,10 @@ def open(f, mode=None):
     try:
         f = os.fspath(f)
     except TypeError:
-        if not hasattr(f, 'read') or not hasattr(f, 'close'):
-            raise TypeError('open() takes str, bytes, a PathLike object, '
-                            + f'or an open filehandle, not {type(f)}')
+        if not hasattr(f, 'read') and not hasattr(f, 'write'):
+            raise TypeError('open() takes str, a path-like object, '
+                            + 'or an open file-like object, '
+                            + f'not {type(f).__name__!r}') from None
 
     if mode in ('r', 'rb'):
         return Wave_read(f)
