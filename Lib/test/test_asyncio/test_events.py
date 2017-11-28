@@ -363,7 +363,7 @@ class EventLoopTestsMixin:
         self.assertNotEqual(thread_id, threading.get_ident())
 
     def test_reader_callback(self):
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         r.setblocking(False)
         bytes_read = bytearray()
 
@@ -391,7 +391,7 @@ class EventLoopTestsMixin:
         self.assertEqual(bytes_read, b'abcdef')
 
     def test_writer_callback(self):
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         w.setblocking(False)
 
         def writer(data):
@@ -1568,7 +1568,7 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     def test_write_pipe_disconnect_on_close(self):
-        rsock, wsock = test_utils.socketpair()
+        rsock, wsock = socket.socketpair()
         rsock.setblocking(False)
         pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
@@ -1706,7 +1706,7 @@ class EventLoopTestsMixin:
         self.assertEqual('CLOSED', write_proto.state)
 
     def test_prompt_cancellation(self):
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         r.setblocking(False)
         f = self.loop.sock_recv(r, 1)
         ov = getattr(f, 'ov', None)
@@ -1771,7 +1771,7 @@ class EventLoopTestsMixin:
     def test_remove_fds_after_closing(self):
         loop = self.create_event_loop()
         callback = lambda: None
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         self.addCleanup(r.close)
         self.addCleanup(w.close)
         loop.add_reader(r, callback)
@@ -1783,7 +1783,7 @@ class EventLoopTestsMixin:
     def test_add_fds_after_closing(self):
         loop = self.create_event_loop()
         callback = lambda: None
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         self.addCleanup(r.close)
         self.addCleanup(w.close)
         loop.close()
