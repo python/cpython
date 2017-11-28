@@ -351,7 +351,7 @@ and off individually.  They are described here in more detail.
    ==================================  =============================================
    From                                To
    ==================================  =============================================
-   ``operator.isCallable(obj)``        ``hasattr(obj, '__call__')``
+   ``operator.isCallable(obj)``        ``callable(obj)``
    ``operator.sequenceIncludes(obj)``  ``operator.contains(obj)``
    ``operator.isSequenceType(obj)``    ``isinstance(obj, collections.abc.Sequence)``
    ``operator.isMappingType(obj)``     ``isinstance(obj, collections.abc.Mapping)``
