@@ -48,8 +48,6 @@ _Py_IDENTIFIER(threading);
 extern "C" {
 #endif
 
-extern wchar_t *Py_GetPath(void);
-
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
@@ -118,7 +116,6 @@ int Py_InspectFlag; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
-int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
@@ -769,7 +766,9 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     }
 
     /* Initialize _warnings. */
-    _PyWarnings_Init();
+    if (_PyWarnings_InitWithConfig(&interp->core_config) == NULL) {
+        return _Py_INIT_ERR("can't initialize warnings");
+    }
 
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
@@ -797,14 +796,39 @@ _Py_InitializeCore(const _PyCoreConfig *config)
  */
 
 _PyInitError
-_Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *config)
+_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
 {
     /* Signal handlers are installed by default */
     if (config->install_signal_handlers < 0) {
         config->install_signal_handlers = 1;
     }
+
+    if (config->program_name == NULL) {
+        config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+        if (config->program_name == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
     return _Py_INIT_OK();
 }
+
+
+void
+_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+{
+#define CLEAR(ATTR) \
+    do { \
+        PyMem_RawFree(ATTR); \
+        ATTR = NULL; \
+    } while (0)
+
+    CLEAR(config->module_search_path_env);
+    CLEAR(config->home);
+    CLEAR(config->program_name);
+#undef CLEAR
+}
+
 
 /* Update interpreter state based on supplied configuration settings
  *
@@ -851,16 +875,22 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         _PyRuntime.initialized = 1;
         return _Py_INIT_OK();
     }
+
     /* TODO: Report exceptions rather than fatal errors below here */
 
     if (_PyTime_Init() < 0)
         return _Py_INIT_ERR("can't initialize time");
 
-    /* Finish setting up the sys module and import system */
     /* GetPath may initialize state that _PySys_EndInit locks
        in, and so has to be called first. */
-    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
-    PySys_SetPath(Py_GetPath());
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
+
+    /* Finish setting up the sys module and import system */
+    PySys_SetPath(sys_path);
     if (_PySys_EndInit(interp->sysdict) < 0)
         return _Py_INIT_ERR("can't finish initializing sys");
 
@@ -880,7 +910,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return err;
     }
 
-    if (config->install_signal_handlers) {
+    if (interp->config.install_signal_handlers) {
         err = initsigs(); /* Signal handling stuff, including initintr() */
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -942,7 +972,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     }
 
     /* TODO: Print any exceptions raised by these operations */
-    err = _Py_ReadMainInterpreterConfig(&config);
+    err = _PyMainInterpreterConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1101,10 +1131,6 @@ Py_FinalizeEx(void)
         /* nothing */;
 #endif
 
-#ifdef Py_REF_DEBUG
-    PyObject *showrefcount = _PyDebug_XOptionShowRefCount();
-#endif
-
     /* Destroy all modules */
     PyImport_Cleanup();
 
@@ -1153,8 +1179,9 @@ Py_FinalizeEx(void)
     _PyHash_Fini();
 
 #ifdef Py_REF_DEBUG
-        if (showrefcount == Py_True)
-            _PyDebug_PrintTotalRefs();
+    if (interp->core_config.show_ref_count) {
+        _PyDebug_PrintTotalRefs();
+    }
 #endif
 
 #ifdef Py_TRACE_REFS
@@ -1238,6 +1265,9 @@ Py_FinalizeEx(void)
 #endif
 
     call_ll_exitfuncs();
+
+    _PyPathConfig_Fini();
+
     _PyRuntime_Finalize();
     return status;
 }
@@ -1267,6 +1297,7 @@ new_interpreter(PyThreadState **tstate_p)
     PyInterpreterState *interp;
     PyThreadState *tstate, *save_tstate;
     PyObject *bimod, *sysmod;
+    _PyInitError err;
 
     if (!_PyRuntime.initialized) {
         return _Py_INIT_ERR("Py_Initialize must be called first");
@@ -1302,8 +1333,13 @@ new_interpreter(PyThreadState **tstate_p)
         interp->config = main_interp->config;
     }
 
-    /* XXX The following is lax in error checking */
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
 
+    /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
         return _Py_INIT_ERR("can't make modules dictionary");
@@ -1317,7 +1353,7 @@ new_interpreter(PyThreadState **tstate_p)
             goto handle_error;
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        PySys_SetPath(Py_GetPath());
+        PySys_SetPath(sys_path);
         _PySys_EndInit(interp->sysdict);
     }
 
@@ -1334,7 +1370,6 @@ new_interpreter(PyThreadState **tstate_p)
 
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
-        _PyInitError err;
 
         /* Set up a preliminary stderr printer until we have enough
            infrastructure for the io module in place. */
@@ -1469,7 +1504,6 @@ Py_GetProgramName(void)
 }
 
 static wchar_t *default_home = NULL;
-static wchar_t env_home[MAXPATHLEN+1];
 
 void
 Py_SetPythonHome(wchar_t *home)
@@ -1477,21 +1511,32 @@ Py_SetPythonHome(wchar_t *home)
     default_home = home;
 }
 
-wchar_t *
+
+wchar_t*
 Py_GetPythonHome(void)
 {
-    wchar_t *home = default_home;
-    if (home == NULL && !Py_IgnoreEnvironmentFlag) {
-        char* chome = Py_GETENV("PYTHONHOME");
-        if (chome) {
-            size_t size = Py_ARRAY_LENGTH(env_home);
-            size_t r = mbstowcs(env_home, chome, size);
-            if (r != (size_t)-1 && r < size)
-                home = env_home;
-        }
+    /* Use a static buffer to avoid heap memory allocation failure.
+       Py_GetPythonHome() doesn't allow to report error, and the caller
+       doesn't release memory. */
+    static wchar_t buffer[MAXPATHLEN+1];
 
+    if (default_home) {
+        return default_home;
     }
-    return home;
+
+    char *home = Py_GETENV("PYTHONHOME");
+    if (!home) {
+        return NULL;
+    }
+
+    size_t size = Py_ARRAY_LENGTH(buffer);
+    size_t r = mbstowcs(buffer, home, size);
+    if (r == (size_t)-1 || r >= size) {
+        /* conversion failed or the static buffer is too small */
+        return NULL;
+    }
+
+    return buffer;
 }
 
 /* Add the __main__ module */
@@ -2003,7 +2048,7 @@ fatal_output_debug(const char *msg)
 }
 #endif
 
-static void
+static void _Py_NO_RETURN
 fatal_error(const char *prefix, const char *msg, int status)
 {
     const int fd = fileno(stderr);

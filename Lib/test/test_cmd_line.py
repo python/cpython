@@ -507,14 +507,14 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
-    def run_xdev(self, code, check_exitcode=True):
+    def run_xdev(self, *args, check_exitcode=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
         # Force malloc() to disable the debug hooks which are enabled
         # by default for Python compiled in debug mode
         env['PYTHONMALLOC'] = 'malloc'
 
-        args = (sys.executable, '-X', 'dev', '-c', code)
+        args = (sys.executable, '-X', 'dev', *args)
         proc = subprocess.run(args,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
@@ -525,8 +525,34 @@ class CmdLineTest(unittest.TestCase):
         return proc.stdout.rstrip()
 
     def test_xdev(self):
-        out = self.run_xdev("import sys; print(sys.warnoptions)")
-        self.assertEqual(out, "['default']")
+        code = ("import sys, warnings; "
+                "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
+                                "for f in warnings.filters))")
+
+        out = self.run_xdev("-c", code)
+        self.assertEqual(out,
+                         "ignore::BytesWarning "
+                         "default::ResourceWarning "
+                         "default::Warning")
+
+        out = self.run_xdev("-b", "-c", code)
+        self.assertEqual(out,
+                         "default::BytesWarning "
+                         "default::ResourceWarning "
+                         "default::Warning")
+
+        out = self.run_xdev("-bb", "-c", code)
+        self.assertEqual(out,
+                         "error::BytesWarning "
+                         "default::ResourceWarning "
+                         "default::Warning")
+
+        out = self.run_xdev("-Werror", "-c", code)
+        self.assertEqual(out,
+                         "error::Warning "
+                         "ignore::BytesWarning "
+                         "default::ResourceWarning "
+                         "default::Warning")
 
         try:
             import _testcapi
@@ -535,7 +561,7 @@ class CmdLineTest(unittest.TestCase):
         else:
             code = "import _testcapi; _testcapi.pymem_api_misuse()"
             with support.SuppressCrashReport():
-                out = self.run_xdev(code, check_exitcode=False)
+                out = self.run_xdev("-c", code, check_exitcode=False)
             self.assertIn("Debug memory block at address p=", out)
 
         try:
@@ -544,8 +570,9 @@ class CmdLineTest(unittest.TestCase):
             pass
         else:
             code = "import faulthandler; print(faulthandler.is_enabled())"
-            out = self.run_xdev(code)
+            out = self.run_xdev("-c", code)
             self.assertEqual(out, "True")
+
 
 class IgnoreEnvironmentTest(unittest.TestCase):
 

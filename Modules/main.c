@@ -36,6 +36,22 @@
 extern "C" {
 #endif
 
+#define DECODE_LOCALE_ERR(NAME, LEN) \
+    (((LEN) == -2) \
+     ? _Py_INIT_USER_ERR("cannot decode " #NAME) \
+     : _Py_INIT_NO_MEMORY())
+
+
+#define SET_DECODE_ERROR(NAME, LEN) \
+    do { \
+        if ((LEN) == (size_t)-2) { \
+            pymain->err = _Py_INIT_USER_ERR("cannot decode " #NAME); \
+        } \
+        else { \
+            pymain->err = _Py_INIT_NO_MEMORY(); \
+        } \
+    } while (0)
+
 /* For Py_GetArgcArgv(); set by main() */
 static wchar_t **orig_argv;
 static int orig_argc;
@@ -389,6 +405,7 @@ typedef struct {
     /* non-zero is stdin is a TTY or if -i option is used */
     int stdin_is_interactive;
     _PyCoreConfig core_config;
+    _PyMainInterpreterConfig config;
     _Py_CommandLineDetails cmdline;
     PyObject *main_importer_path;
     /* non-zero if filename, command (-c) or module (-m) is set
@@ -408,14 +425,12 @@ typedef struct {
     {.status = 0, \
      .cf = {.cf_flags = 0}, \
      .core_config = _PyCoreConfig_INIT, \
+     .config = _PyMainInterpreterConfig_INIT, \
      .main_importer_path = NULL, \
      .run_code = -1, \
      .program_name = NULL, \
      .err = _Py_INIT_OK(), \
      .env_warning_options = {0, NULL}}
-
-
-#define INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
 
 
 static void
@@ -440,6 +455,8 @@ pymain_free_impl(_PyMain *pymain)
     pymain_optlist_clear(&pymain->env_warning_options);
     Py_CLEAR(pymain->main_importer_path);
     PyMem_RawFree(pymain->program_name);
+
+    _PyMainInterpreterConfig_Clear(&pymain->config);
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
@@ -502,15 +519,13 @@ error:
 
 
 static wchar_t*
-pymain_strdup(_PyMain *pymain, wchar_t *str)
+pymain_wstrdup(_PyMain *pymain, wchar_t *str)
 {
-    size_t len = wcslen(str) + 1;  /* +1 for NUL character */
-    wchar_t *str2 = PyMem_RawMalloc(sizeof(wchar_t) * len);
+    wchar_t *str2 = _PyMem_RawWcsdup(str);
     if (str2 == NULL) {
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return NULL;
     }
-    memcpy(str2, str, len * sizeof(wchar_t));
     return str2;
 }
 
@@ -518,7 +533,7 @@ pymain_strdup(_PyMain *pymain, wchar_t *str)
 static int
 pymain_optlist_append(_PyMain *pymain, _Py_OptList *list, wchar_t *str)
 {
-    wchar_t *str2 = pymain_strdup(pymain, str);
+    wchar_t *str2 = pymain_wstrdup(pymain, str);
     if (str2 == NULL) {
         return -1;
     }
@@ -527,7 +542,7 @@ pymain_optlist_append(_PyMain *pymain, _Py_OptList *list, wchar_t *str)
     wchar_t **options2 = (wchar_t **)PyMem_RawRealloc(list->options, size);
     if (options2 == NULL) {
         PyMem_RawFree(str2);
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     options2[list->len] = str2;
@@ -560,7 +575,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
             size_t len = wcslen(_PyOS_optarg) + 1 + 1;
             wchar_t *command = PyMem_RawMalloc(sizeof(wchar_t) * len);
             if (command == NULL) {
-                pymain->err = INIT_NO_MEMORY();
+                pymain->err = _Py_INIT_NO_MEMORY();
                 return -1;
             }
             memcpy(command, _PyOS_optarg, len * sizeof(wchar_t));
@@ -706,7 +721,7 @@ pymain_add_xoptions(_PyMain *pymain)
     for (size_t i=0; i < options->len; i++) {
         wchar_t *option = options->options[i];
         if (_PySys_AddXOptionWithError(option) < 0) {
-            pymain->err = INIT_NO_MEMORY();
+            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
     }
@@ -737,11 +752,11 @@ pymain_add_warnings_options(_PyMain *pymain)
     PySys_ResetWarnOptions();
 
     if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     if (pymain_add_warnings_optlist(&pymain->cmdline.warning_options) < 0) {
-        pymain->err = INIT_NO_MEMORY();
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     return 0;
@@ -762,14 +777,12 @@ pymain_warnings_envvar(_PyMain *pymain)
     wchar_t *wp;
 
     if ((wp = _wgetenv(L"PYTHONWARNINGS")) && *wp != L'\0') {
-        wchar_t *buf, *warning, *context = NULL;
+        wchar_t *warning, *context = NULL;
 
-        buf = (wchar_t *)PyMem_RawMalloc((wcslen(wp) + 1) * sizeof(wchar_t));
+        wchar_t *buf = pymain_wstrdup(pymain, wp);
         if (buf == NULL) {
-            pymain->err = INIT_NO_MEMORY();
             return -1;
         }
-        wcscpy(buf, wp);
         for (warning = wcstok_s(buf, L",", &context);
              warning != NULL;
              warning = wcstok_s(NULL, L",", &context)) {
@@ -792,7 +805,7 @@ pymain_warnings_envvar(_PyMain *pymain)
            C89 wcstok */
         buf = (char *)PyMem_RawMalloc(strlen(p) + 1);
         if (buf == NULL) {
-            pymain->err = INIT_NO_MEMORY();
+            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
         strcpy(buf, p);
@@ -802,15 +815,8 @@ pymain_warnings_envvar(_PyMain *pymain)
             size_t len;
             wchar_t *warning = Py_DecodeLocale(p, &len);
             if (warning == NULL) {
-                if (len == (size_t)-2) {
-                    pymain->err = _Py_INIT_ERR("failed to decode "
-                                               "PYTHONWARNINGS");
-                    return -1;
-                }
-                else {
-                    pymain->err = INIT_NO_MEMORY();
-                    return -1;
-                }
+                SET_DECODE_ERROR("PYTHONWARNINGS environment variable", len);
+                return -1;
             }
             if (pymain_optlist_append(pymain, &pymain->env_warning_options,
                                       warning) < 0) {
@@ -894,7 +900,7 @@ pymain_get_program_name(_PyMain *pymain)
 
         buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
         if (buffer == NULL) {
-            pymain->err = INIT_NO_MEMORY();
+            pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
         }
 
@@ -911,15 +917,8 @@ pymain_get_program_name(_PyMain *pymain)
             size_t len;
             wchar_t* wbuf = Py_DecodeLocale(pyvenv_launcher, &len);
             if (wbuf == NULL) {
-                if (len == (size_t)-2) {
-                    pymain->err = _Py_INIT_ERR("failed to decode "
-                                               "__PYVENV_LAUNCHER__");
-                    return -1;
-                }
-                else {
-                    pymain->err = INIT_NO_MEMORY();
-                    return -1;
-                }
+                SET_DECODE_ERROR("__PYVENV_LAUNCHER__", len);
+                return -1;
             }
             pymain->program_name = wbuf;
         }
@@ -929,7 +928,7 @@ pymain_get_program_name(_PyMain *pymain)
 
     if (pymain->program_name == NULL) {
         /* Use argv[0] by default */
-        pymain->program_name = pymain_strdup(pymain, pymain->argv[0]);
+        pymain->program_name = pymain_wstrdup(pymain, pymain->argv[0]);
         if (pymain->program_name == NULL) {
             return -1;
         }
@@ -950,20 +949,16 @@ pymain_get_program_name(_PyMain *pymain)
 static int
 pymain_init_main_interpreter(_PyMain *pymain)
 {
-    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
     _PyInitError err;
 
-    /* TODO: Moar config options! */
-    config.install_signal_handlers = 1;
-
     /* TODO: Print any exceptions raised by these operations */
-    err = _Py_ReadMainInterpreterConfig(&config);
+    err = _PyMainInterpreterConfig_Read(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
     }
 
-    err = _Py_InitializeMainInterpreter(&config);
+    err = _Py_InitializeMainInterpreter(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
@@ -1363,6 +1358,114 @@ pymain_set_flags_from_env(_PyMain *pymain)
 
 
 static int
+config_get_env_var_dup(wchar_t **dest, wchar_t *wname, char *name)
+{
+    if (Py_IgnoreEnvironmentFlag) {
+        *dest = NULL;
+        return 0;
+    }
+
+#ifdef MS_WINDOWS
+    wchar_t *var = _wgetenv(wname);
+    if (!var || var[0] == '\0') {
+        *dest = NULL;
+        return 0;
+    }
+
+    wchar_t *copy = _PyMem_RawWcsdup(var);
+    if (copy == NULL) {
+        return -1;
+    }
+
+    *dest = copy;
+#else
+    char *var = getenv(name);
+    if (!var || var[0] == '\0') {
+        *dest = NULL;
+        return 0;
+    }
+
+    size_t len;
+    wchar_t *wvar = Py_DecodeLocale(var, &len);
+    if (!wvar) {
+        if (len == (size_t)-2) {
+            return -2;
+        }
+        else {
+            return -1;
+        }
+    }
+    *dest = wvar;
+#endif
+    return 0;
+}
+
+
+static _PyInitError
+config_init_pythonpath(_PyMainInterpreterConfig *config)
+{
+    wchar_t *path;
+    int res = config_get_env_var_dup(&path, L"PYTHONPATH", "PYTHONPATH");
+    if (res < 0) {
+        return DECODE_LOCALE_ERR("PYTHONHOME", res);
+    }
+    config->module_search_path_env = path;
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_init_pythonhome(_PyMainInterpreterConfig *config)
+{
+    wchar_t *home;
+
+    home = Py_GetPythonHome();
+    if (home) {
+        /* Py_SetPythonHome() has been called before Py_Main(),
+           use its value */
+        config->home = _PyMem_RawWcsdup(home);
+        if (config->home == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+        return _Py_INIT_OK();
+    }
+
+    int res = config_get_env_var_dup(&home, L"PYTHONHOME", "PYTHONHOME");
+    if (res < 0) {
+        return DECODE_LOCALE_ERR("PYTHONHOME", res);
+    }
+    config->home = home;
+    return _Py_INIT_OK();
+}
+
+
+_PyInitError
+_PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
+{
+    _PyInitError err = config_init_pythonhome(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = config_init_pythonpath(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    /* FIXME: _PyMainInterpreterConfig_Read() has the same code. Remove it
+       here? See also pymain_get_program_name() and pymain_parse_envvars(). */
+    config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+    if (config->program_name == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    return _Py_INIT_OK();
+}
+
+
+
+
+static int
 pymain_parse_envvars(_PyMain *pymain)
 {
     _PyCoreConfig *core_config = &pymain->core_config;
@@ -1384,6 +1487,29 @@ pymain_parse_envvars(_PyMain *pymain)
     }
     core_config->allocator = Py_GETENV("PYTHONMALLOC");
 
+    /* FIXME: move pymain_get_program_name() code into
+       _PyMainInterpreterConfig_ReadEnv().
+       Problem: _PyMainInterpreterConfig_ReadEnv() doesn't have access
+       to argv[0]. */
+    Py_SetProgramName(pymain->program_name);
+    /* Don't free program_name here: the argument to Py_SetProgramName
+       must remain valid until Py_FinalizeEx is called. The string is freed
+       by pymain_free(). */
+
+    _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&pymain->config);
+    if (_Py_INIT_FAILED(pymain->err)) {
+        pymain->err = err;
+        return -1;
+    }
+
+    /* -X options */
+    if (pymain_get_xoption(pymain, L"showrefcount")) {
+        core_config->show_ref_count = 1;
+    }
+    if (pymain_get_xoption(pymain, L"showalloccount")) {
+        core_config->show_alloc_count = 1;
+    }
+
     /* More complex options: env var and/or -X option */
     if (pymain_get_env_var("PYTHONFAULTHANDLER")
        || pymain_get_xoption(pymain, L"faulthandler")) {
@@ -1391,20 +1517,15 @@ pymain_parse_envvars(_PyMain *pymain)
     }
     if (pymain_get_env_var("PYTHONPROFILEIMPORTTIME")
        || pymain_get_xoption(pymain, L"importtime")) {
-        core_config->importtime = 1;
+        core_config->import_time = 1;
     }
     if (pymain_init_tracemalloc(pymain) < 0) {
         return -1;
     }
     if (pymain_get_xoption(pymain, L"dev")) {
-        /* "python3 -X dev ..." behaves
-           as "PYTHONMALLOC=debug python3 -Wd -X faulthandler ..." */
-        core_config->allocator = "debug";
-        if (pymain_optlist_append(pymain, &pymain->cmdline.warning_options,
-                                  L"default") < 0) {
-            return -1;
-        }
+        core_config->dev_mode = 1;
         core_config->faulthandler = 1;
+        core_config->allocator = "debug";
     }
     return 0;
 }
@@ -1464,11 +1585,6 @@ pymain_init_python(_PyMain *pymain)
         return -1;
     }
 
-    Py_SetProgramName(pymain->program_name);
-    /* Don't free program_name here: the argument to Py_SetProgramName
-       must remain valid until Py_FinalizeEx is called. The string is freed
-       by pymain_free(). */
-
     if (pymain_add_xoptions(pymain)) {
         return -1;
     }
@@ -1519,6 +1635,8 @@ pymain_init(_PyMain *pymain)
     }
 
     pymain->core_config._disable_importlib = 0;
+    /* TODO: Moar config options! */
+    pymain->config.install_signal_handlers = 1;
 
     orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
     orig_argv = pymain->argv;

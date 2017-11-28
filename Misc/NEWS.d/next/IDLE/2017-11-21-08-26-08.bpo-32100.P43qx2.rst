@@ -1,0 +1,2 @@
+IDLE: Fix old and new bugs in pathbrowser; improve tests.
+Patch mostly by Cheryl Sabella.

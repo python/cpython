@@ -11,6 +11,9 @@ MODULE_NAME " provides basic warning filtering support.\n"
 
 _Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(ignore);
+_Py_IDENTIFIER(error);
+_Py_static_string(PyId_default, "default");
 
 static int
 check_matched(PyObject *obj, PyObject *arg)
@@ -35,15 +38,15 @@ check_matched(PyObject *obj, PyObject *arg)
    A NULL return value can mean false or an error.
 */
 static PyObject *
-get_warnings_attr(const char *attr, int try_import)
+get_warnings_attr(_Py_Identifier *attr_id, int try_import)
 {
-    static PyObject *warnings_str = NULL;
+    PyObject *warnings_str;
     PyObject *warnings_module, *obj;
+    _Py_IDENTIFIER(warnings);
 
+    warnings_str = _PyUnicode_FromId(&PyId_warnings);
     if (warnings_str == NULL) {
-        warnings_str = PyUnicode_InternFromString("warnings");
-        if (warnings_str == NULL)
-            return NULL;
+        return NULL;
     }
 
     /* don't try to import after the start of the Python finallization */
@@ -64,7 +67,7 @@ get_warnings_attr(const char *attr, int try_import)
             return NULL;
     }
 
-    obj = PyObject_GetAttrString(warnings_module, attr);
+    obj = _PyObject_GetAttrId(warnings_module, attr_id);
     Py_DECREF(warnings_module);
     if (obj == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
@@ -77,8 +80,9 @@ static PyObject *
 get_once_registry(void)
 {
     PyObject *registry;
+    _Py_IDENTIFIER(onceregistry);
 
-    registry = get_warnings_attr("onceregistry", 0);
+    registry = get_warnings_attr(&PyId_onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -102,8 +106,9 @@ static PyObject *
 get_default_action(void)
 {
     PyObject *default_action;
+    _Py_IDENTIFIER(defaultaction);
 
-    default_action = get_warnings_attr("defaultaction", 0);
+    default_action = get_warnings_attr(&PyId_defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -132,8 +137,9 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
     PyObject *action;
     Py_ssize_t i;
     PyObject *warnings_filters;
+    _Py_IDENTIFIER(filters);
 
-    warnings_filters = get_warnings_attr("filters", 0);
+    warnings_filters = get_warnings_attr(&PyId_filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -389,11 +395,13 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
                   PyObject *sourceline, PyObject *source)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
+    _Py_IDENTIFIER(_showwarnmsg);
+    _Py_IDENTIFIER(WarningMessage);
 
     /* If the source parameter is set, try to get the Python implementation.
        The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = get_warnings_attr("_showwarnmsg", source != NULL);
+    show_fn = get_warnings_attr(&PyId__showwarnmsg, source != NULL);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -407,7 +415,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
         goto error;
     }
 
-    warnmsg_cls = get_warnings_attr("WarningMessage", 0);
+    warnmsg_cls = get_warnings_attr(&PyId_WarningMessage, 0);
     if (warnmsg_cls == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_RuntimeError,
@@ -520,16 +528,21 @@ warn_explicit(PyObject *category, PyObject *message,
         goto cleanup;
     }
 
+    if (_PyUnicode_EqualToASCIIString(action, "ignore")) {
+        goto return_none;
+    }
+
     /* Store in the registry that we've been here, *except* when the action
        is "always". */
     rc = 0;
     if (!_PyUnicode_EqualToASCIIString(action, "always")) {
         if (registry != NULL && registry != Py_None &&
-                PyDict_SetItem(registry, key, Py_True) < 0)
+            PyDict_SetItem(registry, key, Py_True) < 0)
+        {
             goto cleanup;
-        else if (_PyUnicode_EqualToASCIIString(action, "ignore"))
-            goto return_none;
-        else if (_PyUnicode_EqualToASCIIString(action, "once")) {
+        }
+
+        if (_PyUnicode_EqualToASCIIString(action, "once")) {
             if (registry == NULL || registry == Py_None) {
                 registry = get_once_registry();
                 if (registry == NULL)
@@ -1144,89 +1157,74 @@ static PyMethodDef warnings_functions[] = {
 
 
 static PyObject *
-create_filter(PyObject *category, const char *action)
+create_filter(PyObject *category, _Py_Identifier *id)
 {
-    static PyObject *ignore_str = NULL;
-    static PyObject *error_str = NULL;
-    static PyObject *default_str = NULL;
-    static PyObject *always_str = NULL;
-    PyObject *action_obj = NULL;
-
-    if (!strcmp(action, "ignore")) {
-        if (ignore_str == NULL) {
-            ignore_str = PyUnicode_InternFromString("ignore");
-            if (ignore_str == NULL)
-                return NULL;
-        }
-        action_obj = ignore_str;
-    }
-    else if (!strcmp(action, "error")) {
-        if (error_str == NULL) {
-            error_str = PyUnicode_InternFromString("error");
-            if (error_str == NULL)
-                return NULL;
-        }
-        action_obj = error_str;
-    }
-    else if (!strcmp(action, "default")) {
-        if (default_str == NULL) {
-            default_str = PyUnicode_InternFromString("default");
-            if (default_str == NULL)
-                return NULL;
-        }
-        action_obj = default_str;
-    }
-    else if (!strcmp(action, "always")) {
-        if (always_str == NULL) {
-            always_str = PyUnicode_InternFromString("always");
-            if (always_str == NULL)
-                return NULL;
-        }
-        action_obj = always_str;
-    }
-    else {
-        Py_FatalError("unknown action");
+    PyObject *action_str = _PyUnicode_FromId(id);
+    if (action_str == NULL) {
+        return NULL;
     }
 
     /* This assumes the line number is zero for now. */
-    return PyTuple_Pack(5, action_obj, Py_None,
+    return PyTuple_Pack(5, action_str, Py_None,
                         category, Py_None, _PyLong_Zero);
 }
 
 static PyObject *
-init_filters(void)
+init_filters(const _PyCoreConfig *config)
 {
-    PyObject *filters = PyList_New(5);
-    unsigned int pos = 0;  /* Post-incremented in each use. */
-    unsigned int x;
-    const char *bytes_action, *resource_action;
+    int dev_mode = config->dev_mode;
 
+    Py_ssize_t count = 2;
+    if (dev_mode) {
+        count++;
+    }
+#ifndef Py_DEBUG
+    if (!dev_mode) {
+        count += 3;
+    }
+#endif
+    PyObject *filters = PyList_New(count);
     if (filters == NULL)
         return NULL;
 
-    PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_DeprecationWarning, "ignore"));
-    PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_PendingDeprecationWarning, "ignore"));
-    PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_ImportWarning, "ignore"));
+    size_t pos = 0;  /* Post-incremented in each use. */
+#ifndef Py_DEBUG
+    if (!dev_mode) {
+        PyList_SET_ITEM(filters, pos++,
+                        create_filter(PyExc_DeprecationWarning, &PyId_ignore));
+        PyList_SET_ITEM(filters, pos++,
+                        create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
+        PyList_SET_ITEM(filters, pos++,
+                        create_filter(PyExc_ImportWarning, &PyId_ignore));
+    }
+#endif
+
+    _Py_Identifier *bytes_action;
     if (Py_BytesWarningFlag > 1)
-        bytes_action = "error";
+        bytes_action = &PyId_error;
     else if (Py_BytesWarningFlag)
-        bytes_action = "default";
+        bytes_action = &PyId_default;
     else
-        bytes_action = "ignore";
+        bytes_action = &PyId_ignore;
     PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
                     bytes_action));
+
+    _Py_Identifier *resource_action;
     /* resource usage warnings are enabled by default in pydebug mode */
 #ifdef Py_DEBUG
-    resource_action = "always";
+    resource_action = &PyId_default;
 #else
-    resource_action = "ignore";
+    resource_action = (dev_mode ? &PyId_default: &PyId_ignore);
 #endif
     PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
                     resource_action));
-    for (x = 0; x < pos; x += 1) {
+
+    if (dev_mode) {
+        PyList_SET_ITEM(filters, pos++,
+                        create_filter(PyExc_Warning, &PyId_default));
+    }
+
+    for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {
             Py_DECREF(filters);
             return NULL;
@@ -1249,8 +1247,8 @@ static struct PyModuleDef warningsmodule = {
 };
 
 
-PyMODINIT_FUNC
-_PyWarnings_Init(void)
+PyObject*
+_PyWarnings_InitWithConfig(const _PyCoreConfig *config)
 {
     PyObject *m;
 
@@ -1259,7 +1257,7 @@ _PyWarnings_Init(void)
         return NULL;
 
     if (_PyRuntime.warnings.filters == NULL) {
-        _PyRuntime.warnings.filters = init_filters();
+        _PyRuntime.warnings.filters = init_filters(config);
         if (_PyRuntime.warnings.filters == NULL)
             return NULL;
     }
@@ -1289,4 +1287,13 @@ _PyWarnings_Init(void)
 
     _PyRuntime.warnings.filters_version = 0;
     return m;
+}
+
+
+PyMODINIT_FUNC
+_PyWarnings_Init(void)
+{
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    const _PyCoreConfig *config = &interp->core_config;
+    return _PyWarnings_InitWithConfig(config);
 }

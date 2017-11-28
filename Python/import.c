@@ -1674,8 +1674,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        /* 1 -- true, 0 -- false, -1 -- not initialized */
-        int importtime = interp->core_config.importtime;
+        int import_time = interp->core_config.import_time;
         static int import_level;
         static _PyTime_t accumulated;
 
@@ -1686,7 +1685,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
          * Anyway, importlib._find_and_load is much slower than
          * _PyDict_GetItemIdWithError().
          */
-        if (importtime) {
+        if (import_time) {
             static int header = 1;
             if (header) {
                 fputs("import time: self [us] | cumulative | imported package\n",
@@ -1712,7 +1711,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
             PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
                                            mod != NULL);
 
-        if (importtime) {
+        if (import_time) {
             _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
 
             import_level--;
