@@ -81,8 +81,8 @@ It's called a frame block to distinguish it from a basic block in the
 compiler IR.
 */
 
-enum fblocktype { LOOP, EXCEPT, FINALLY_TRY, FINALLY_END, ASYNC_WITH,
-                  HANDLER_CLEANUP, WITH, NO_TYPE };
+enum fblocktype { LOOP, EXCEPT, FINALLY_TRY, FINALLY_END, HANDLER_CLEANUP,
+                  WITH, ASYNC_WITH, NO_TYPE };
 
 struct fblockinfo;
 struct compiler;
