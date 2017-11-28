@@ -508,14 +508,18 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
-    def run_xdev(self, *args, check_exitcode=True):
+    def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
+        env.pop('PYTHONDEVMODE', None)
         # Force malloc() to disable the debug hooks which are enabled
         # by default for Python compiled in debug mode
         env['PYTHONMALLOC'] = 'malloc'
 
-        args = (sys.executable, '-X', 'dev', *args)
+        if xdev:
+            args = (sys.executable, '-X', 'dev', *args)
+        else:
+            args = (sys.executable, *args)
         proc = subprocess.run(args,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
@@ -526,6 +530,14 @@ class CmdLineTest(unittest.TestCase):
         return proc.stdout.rstrip()
 
     def test_xdev(self):
+        # sys.flags.dev_mode
+        code = "import sys; print(sys.flags.dev_mode)"
+        out = self.run_xdev("-c", code, xdev=False)
+        self.assertEqual(out, "False")
+        out = self.run_xdev("-c", code)
+        self.assertEqual(out, "True")
+
+        # Warnings
         code = ("import sys, warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
@@ -555,6 +567,7 @@ class CmdLineTest(unittest.TestCase):
                          "default::ResourceWarning "
                          "default::Warning")
 
+        # Memory allocator debug hooks
         try:
             import _testcapi
         except ImportError:
@@ -569,6 +582,7 @@ class CmdLineTest(unittest.TestCase):
                 alloc_name = "malloc_debug"
             self.assertEqual(out, alloc_name)
 
+        # Faulthandler
         try:
             import faulthandler
         except ImportError:

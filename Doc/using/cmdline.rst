@@ -411,7 +411,7 @@ Miscellaneous options
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
-   * ``-X dev``: enable CPython's "developer mode", introducing additional
+   * ``-X dev``: enable CPython's "development mode", introducing additional
      runtime checks which are too expensive to be enabled by default. It should
      not be more verbose than the default if the code is correct: new warnings
      are only emitted when an issue is detected. Effect of the developer mode:

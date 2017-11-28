@@ -31,7 +31,7 @@ def _is_debug_mode():
     # when _DEBUG is true.
     debug = (not sys.flags.ignore_environment and
              bool(os.environ.get('PYTHONASYNCIODEBUG')))
-    if hasattr(sys, '_xoptions') and 'dev' in sys._xoptions:
+    if sys.flags.dev_mode:
         debug = True
     return debug
 
