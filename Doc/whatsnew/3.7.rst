@@ -677,6 +677,11 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
+
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in
   :issue:`24744`.)

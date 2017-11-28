@@ -9,9 +9,9 @@ from unittest import mock
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
+import _overlapped
 import _winapi
 
-from asyncio import _overlapped
 from asyncio import windows_utils
 try:
     from test import support

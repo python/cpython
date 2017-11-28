@@ -2,6 +2,7 @@
 
 import errno
 import os
+import selectors
 import signal
 import socket
 import stat
@@ -18,7 +19,6 @@ from . import coroutines
 from . import events
 from . import futures
 from . import selector_events
-from . import selectors
 from . import transports
 from .coroutines import coroutine
 from .log import logger

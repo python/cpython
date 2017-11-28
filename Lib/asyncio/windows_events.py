@@ -1,5 +1,6 @@
 """Selector and proactor event loops for Windows."""
 
+import _overlapped
 import _winapi
 import errno
 import math
@@ -14,7 +15,6 @@ from . import proactor_events
 from . import selector_events
 from . import tasks
 from . import windows_utils
-from . import _overlapped
 from .coroutines import coroutine
 from .log import logger
 

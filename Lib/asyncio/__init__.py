@@ -2,21 +2,6 @@
 
 import sys
 
-# The selectors module is in the stdlib in Python 3.4 but not in 3.3.
-# Do this first, so the other submodules can use "from . import selectors".
-# Prefer asyncio/selectors.py over the stdlib one, as ours may be newer.
-try:
-    from . import selectors
-except ImportError:
-    import selectors  # Will also be exported.
-
-if sys.platform == 'win32':
-    # Similar thing for _overlapped.
-    try:
-        from . import _overlapped
-    except ImportError:
-        import _overlapped  # Will also be exported.
-
 # This relies on each of the submodules having an __all__ variable.
 from .base_events import *
 from .coroutines import *

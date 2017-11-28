@@ -1,6 +1,7 @@
 """Tests for selector_events.py"""
 
 import errno
+import selectors
 import socket
 import unittest
 from unittest import mock
@@ -10,7 +11,6 @@ except ImportError:
     ssl = None
 
 import asyncio
-from asyncio import selectors
 from asyncio import test_utils
 from asyncio.selector_events import BaseSelectorEventLoop
 from asyncio.selector_events import _SelectorTransport

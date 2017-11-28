@@ -9,6 +9,7 @@ __all__ = ['BaseSelectorEventLoop']
 import collections
 import errno
 import functools
+import selectors
 import socket
 import warnings
 import weakref
@@ -21,7 +22,6 @@ from . import base_events
 from . import constants
 from . import events
 from . import futures
-from . import selectors
 from . import transports
 from . import sslproto
 from .coroutines import coroutine
