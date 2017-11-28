@@ -2,7 +2,6 @@
 
 from Cocoa import NSMutableDictionary, NSMutableArray, NSString, NSDate, NSNumber
 from Cocoa import NSPropertyListSerialization
-# from Cocoa import NSPropertyListOpenStepFormat
 from Cocoa import NSPropertyListXMLFormat_v1_0, NSPropertyListBinaryFormat_v1_0
 
 import datetime
@@ -10,7 +9,6 @@ from collections import OrderedDict
 import binascii
 
 FORMATS=[
-#    ('openstep', NSPropertyListOpenStepFormat),
     ('plistlib.FMT_XML', NSPropertyListXMLFormat_v1_0),
     ('plistlib.FMT_BINARY', NSPropertyListBinaryFormat_v1_0),
 ]
