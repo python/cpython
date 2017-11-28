@@ -96,9 +96,6 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._selector.close()
             self._selector = None
 
-    def _socketpair(self):
-        raise NotImplementedError
-
     def _close_self_pipe(self):
         self._remove_reader(self._ssock.fileno())
         self._ssock.close()
@@ -109,7 +106,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _make_self_pipe(self):
         # A self-socket, really. :-)
-        self._ssock, self._csock = self._socketpair()
+        self._ssock, self._csock = socket.socketpair()
         self._ssock.setblocking(False)
         self._csock.setblocking(False)
         self._internal_fds += 1

@@ -296,9 +296,6 @@ class PipeServer(object):
 class _WindowsSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Windows version of selector event loop."""
 
-    def _socketpair(self):
-        return windows_utils.socketpair()
-
 
 class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     """Windows version of proactor event loop using IOCP."""
@@ -307,9 +304,6 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         if proactor is None:
             proactor = IocpProactor()
         super().__init__(proactor)
-
-    def _socketpair(self):
-        return windows_utils.socketpair()
 
     @coroutine
     def create_pipe_connection(self, protocol_factory, address):

@@ -154,9 +154,6 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.close()
         self.assertIsNone(self.loop._selector)
 
-    def test_socketpair(self):
-        self.assertRaises(NotImplementedError, self.loop._socketpair)
-
     def test_read_from_self_tryagain(self):
         self.loop._ssock.recv.side_effect = BlockingIOError
         self.assertIsNone(self.loop._read_from_self())
