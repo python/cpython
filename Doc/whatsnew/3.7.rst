@@ -398,6 +398,15 @@ Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
 to get per-thread CPU time measurements.
 (Contributed by Antoine Pitrou in :issue:`32025`.)
 
+
+unittest
+--------
+Added new command-line option ``-k`` to filter tests to run with a substring or
+Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
+tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
+but not ``bar_tests.FooTest.test_something``.
+
+
 unittest.mock
 -------------
 

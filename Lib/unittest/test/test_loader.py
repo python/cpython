@@ -1253,6 +1253,29 @@ class Test_TestLoader(unittest.TestCase):
         loader.testNamePatterns = ['*my*']
         self.assertEqual(loader.getTestCaseNames(MyTest), [])
 
+    # "Return a sorted sequence of method names found within testCaseClass"
+    #
+    # If TestLoader.testNamePatterns is set, only tests that match one of these
+    # patterns should be included.
+    #
+    # For backwards compatibility reasons (see bpo-32071), the check may only
+    # touch a TestCase's attribute if it starts with the test method prefix.
+    def test_getTestCaseNames__testNamePatterns__attribute_access_regression(self):
+        class Trap:
+            def __get__(*ignored):
+                self.fail('Non-test attribute accessed')
+
+        class MyTest(unittest.TestCase):
+            def test_1(self): pass
+            foobar = Trap()
+
+        loader = unittest.TestLoader()
+        self.assertEqual(loader.getTestCaseNames(MyTest), ['test_1'])
+
+        loader = unittest.TestLoader()
+        loader.testNamePatterns = []
+        self.assertEqual(loader.getTestCaseNames(MyTest), [])
+
     ################################################################
     ### /Tests for TestLoader.getTestCaseNames()
 
