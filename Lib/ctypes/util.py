@@ -328,13 +328,14 @@ def test():
             RTLD_MEMBER =  0x00040000
             # print("crypto\t:: %s" % cdll.LoadLibrary(find_library("crypto")))
             if (sys.maxsize < 2**32):
-                print (CDLL("libc.a(shr.o)", RTLD_MEMBER))
-                print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr.o)"))
+                print(cdll.LoadLibrary("libc.a(shr.o)"))
+                print(CDLL("libc.a(shr.o)", RTLD_MEMBER))
+                # librpm.so is only available as 32-bit shared library
+                print(find_library("rpm"))
+                print(cdll.LoadLibrary("librpm.so"))
             else:
-                print("c\t:: %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
-                # print CDLL("libc.a(shr_64.o)", RTLD_MEMBER)
-            print(find_library("rpm"))
-            print(cdll.LoadLibrary("librpm.so"))
+                print(cdll.LoadLibrary("libc.a(shr_64.o)"))
+                print(CDLL("libc.a(shr_64.o)", RTLD_MEMBER))
         else:
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
