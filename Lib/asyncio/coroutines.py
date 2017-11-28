@@ -9,7 +9,6 @@ import sys
 import traceback
 import types
 
-from . import compat
 from . import constants
 from . import events
 from . import base_futures
@@ -151,35 +150,33 @@ class CoroWrapper:
     def gi_code(self):
         return self.gen.gi_code
 
-    if compat.PY35:
+    def __await__(self):
+        cr_await = getattr(self.gen, 'cr_await', None)
+        if cr_await is not None:
+            raise RuntimeError(
+                "Cannot await on coroutine {!r} while it's "
+                "awaiting for {!r}".format(self.gen, cr_await))
+        return self
 
-        def __await__(self):
-            cr_await = getattr(self.gen, 'cr_await', None)
-            if cr_await is not None:
-                raise RuntimeError(
-                    "Cannot await on coroutine {!r} while it's "
-                    "awaiting for {!r}".format(self.gen, cr_await))
-            return self
+    @property
+    def gi_yieldfrom(self):
+        return self.gen.gi_yieldfrom
 
-        @property
-        def gi_yieldfrom(self):
-            return self.gen.gi_yieldfrom
+    @property
+    def cr_await(self):
+        return self.gen.cr_await
 
-        @property
-        def cr_await(self):
-            return self.gen.cr_await
+    @property
+    def cr_running(self):
+        return self.gen.cr_running
 
-        @property
-        def cr_running(self):
-            return self.gen.cr_running
+    @property
+    def cr_code(self):
+        return self.gen.cr_code
 
-        @property
-        def cr_code(self):
-            return self.gen.cr_code
-
-        @property
-        def cr_frame(self):
-            return self.gen.cr_frame
+    @property
+    def cr_frame(self):
+        return self.gen.cr_frame
 
     def __del__(self):
         # Be careful accessing self.gen.frame -- self.gen might not exist.
