@@ -18,7 +18,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyMethod_Type;
 
-#define PyMethod_Check(op) ((op)->ob_type == &PyMethod_Type)
+#define PyMethod_Check(op) (Py_TYPE(op) == &PyMethod_Type)
 
 PyAPI_FUNC(PyObject *) PyMethod_New(PyObject *, PyObject *);
 
@@ -30,18 +30,18 @@ PyAPI_FUNC(PyObject *) PyMethod_Self(PyObject *);
 #define PyMethod_GET_FUNCTION(meth) \
         (((PyMethodObject *)meth) -> im_func)
 #define PyMethod_GET_SELF(meth) \
-	(((PyMethodObject *)meth) -> im_self)
+        (((PyMethodObject *)meth) -> im_self)
 
 PyAPI_FUNC(int) PyMethod_ClearFreeList(void);
 
 typedef struct {
-	PyObject_HEAD
-	PyObject *func;
+        PyObject_HEAD
+        PyObject *func;
 } PyInstanceMethodObject;
 
 PyAPI_DATA(PyTypeObject) PyInstanceMethod_Type;
 
-#define PyInstanceMethod_Check(op) ((op)->ob_type == &PyInstanceMethod_Type)
+#define PyInstanceMethod_Check(op) (Py_TYPE(op) == &PyInstanceMethod_Type)
 
 PyAPI_FUNC(PyObject *) PyInstanceMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyInstanceMethod_Function(PyObject *);
