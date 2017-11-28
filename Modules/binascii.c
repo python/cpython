@@ -1220,7 +1220,7 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
 /*[clinic end generated code: output=e99f7846cfb9bc53 input=bf6766fea76cce8f]*/
 {
     Py_ssize_t in, out;
-    unsigned int top, bot;
+    char ch;
     const unsigned char *ascii_data;
     unsigned char *odata;
     Py_ssize_t datalen = 0;
@@ -1258,11 +1258,18 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
                 in++;
             }
             else if ((in + 1 < datalen) &&
-                     ((top = _PyLong_DigitValue[ascii_data[in]]) < 16) &&
-                     ((bot = _PyLong_DigitValue[ascii_data[in + 1]]) < 16))
-            {
-                odata[out++] = (top << 4) + bot;
-                in += 2;
+                     ((ascii_data[in] >= 'A' && ascii_data[in] <= 'F') ||
+                      (ascii_data[in] >= 'a' && ascii_data[in] <= 'f') ||
+                      (ascii_data[in] >= '0' && ascii_data[in] <= '9')) &&
+                     ((ascii_data[in+1] >= 'A' && ascii_data[in+1] <= 'F') ||
+                      (ascii_data[in+1] >= 'a' && ascii_data[in+1] <= 'f') ||
+                      (ascii_data[in+1] >= '0' && ascii_data[in+1] <= '9'))) {
+                /* hexval */
+                ch = _PyLong_DigitValue[ascii_data[in]] << 4;
+                in++;
+                ch |= _PyLong_DigitValue[ascii_data[in]];
+                in++;
+                odata[out++] = ch;
             }
             else {
               odata[out++] = '=';
