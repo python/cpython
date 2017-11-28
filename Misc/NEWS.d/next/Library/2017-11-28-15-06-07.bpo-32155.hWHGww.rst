@@ -1,1 +1,0 @@
-Fix distutils.config: use the PyPIRCCommand.realm attribute if it is set.
