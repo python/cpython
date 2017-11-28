@@ -253,8 +253,10 @@ def main():
                               'to the equivalent of -l sys.path'))
     parser.add_argument('-j', '--workers', default=1,
                         type=int, help='Run compileall concurrently')
+    invalidation_modes = [mode.name.lower().replace('_', '-')
+                          for mode in py_compile.PycInvalidationMode]
     parser.add_argument('--invalidation-mode', default='timestamp',
-                        choices=('timestamp', 'checked-hash', 'unchecked-hash'),
+                        choices=sorted(invalidation_modes),
                         help='How the pycs will be invalidated at runtime')
 
     args = parser.parse_args()
