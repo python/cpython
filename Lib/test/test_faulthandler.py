@@ -6,7 +6,7 @@ import signal
 import subprocess
 import sys
 from test import support
-from test.support import script_helper, is_android, requires_android_level
+from test.support import script_helper, is_android
 import tempfile
 import threading
 import unittest
@@ -36,10 +36,6 @@ def temporary_filename():
         yield filename
     finally:
         support.unlink(filename)
-
-def requires_raise(test):
-    return (test if not is_android else
-                   requires_android_level(24, 'raise() is buggy')(test))
 
 class FaultHandlerTests(unittest.TestCase):
     def get_output(self, code, filename=None, fd=None):
@@ -140,7 +136,7 @@ class FaultHandlerTests(unittest.TestCase):
                 3,
                 'access violation')
 
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_sigsegv(self):
         self.check_fatal_error("""
             import faulthandler
@@ -182,7 +178,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_sigbus(self):
         self.check_fatal_error("""
             import _testcapi
@@ -197,7 +193,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_sigill(self):
         self.check_fatal_error("""
             import _testcapi
@@ -241,7 +237,7 @@ class FaultHandlerTests(unittest.TestCase):
             '(?:Segmentation fault|Bus error)',
             other_regex='unable to raise a stack overflow')
 
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_gil_released(self):
         self.check_fatal_error("""
             import faulthandler
@@ -251,7 +247,7 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_enable_file(self):
         with temporary_filename() as filename:
             self.check_fatal_error("""
@@ -266,7 +262,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             fd = fp.fileno()
@@ -280,7 +276,7 @@ class FaultHandlerTests(unittest.TestCase):
                 'Segmentation fault',
                 fd=fd)
 
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_enable_single_thread(self):
         self.check_fatal_error("""
             import faulthandler
@@ -291,7 +287,7 @@ class FaultHandlerTests(unittest.TestCase):
             'Segmentation fault',
             all_threads=False)
 
-    @requires_raise
+    @unittest.skipIf(is_android, 'raising SIGSEGV on Android is unreliable')
     def test_disable(self):
         code = """
             import faulthandler
