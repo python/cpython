@@ -1,0 +1,5 @@
+``uuid.getnode()`` now preferentially returns universally administered MAC
+addresses if available, over locally administered MAC addresses.  This makes a
+better guarantee for global uniqueness of UUIDs returned from
+``uuid.uuid1()``.  If only locally administered MAC addresses are available,
+the first such one found is returned.
