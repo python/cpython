@@ -124,7 +124,8 @@ static const char usage_6[] =
 "   hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
-"   locale coercion and locale compatibility warnings on stderr.\n";
+"   locale coercion and locale compatibility warnings on stderr.\n"
+"PYTHONDEVMODE: enable the development mode.\n";
 
 static void
 pymain_usage(int error, const wchar_t* program)
@@ -1520,7 +1521,9 @@ pymain_parse_envvars(_PyMain *pymain)
     if (pymain_init_tracemalloc(pymain) < 0) {
         return -1;
     }
-    if (pymain_get_xoption(pymain, L"dev")) {
+    if (pymain_get_xoption(pymain, L"dev" ) ||
+        pymain_get_env_var("PYTHONDEVMODE"))
+    {
         core_config->dev_mode = 1;
         core_config->faulthandler = 1;
         core_config->allocator = "debug";

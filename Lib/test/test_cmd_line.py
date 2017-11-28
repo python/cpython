@@ -635,6 +635,24 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(env_var=env_var, name=name):
                 self.check_pythonmalloc(env_var, name)
 
+    def test_pythondevmode_env(self):
+        # Test the PYTHONDEVMODE environment variable
+        code = "import sys; print(sys.flags.dev_mode)"
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        args = (sys.executable, '-c', code)
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'False')
+        self.assertEqual(proc.returncode, 0, proc)
+
+        env['PYTHONDEVMODE'] = '1'
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'True')
+        self.assertEqual(proc.returncode, 0, proc)
+
 
 class IgnoreEnvironmentTest(unittest.TestCase):
 
