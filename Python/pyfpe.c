@@ -19,5 +19,5 @@ int PyFPE_counter = 0;
 double
 PyFPE_dummy(void *dummy)
 {
-	return 1.0;
+    return 1.0;
 }

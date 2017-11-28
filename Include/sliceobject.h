@@ -21,7 +21,7 @@ let these be any arbitrary python type.  Py_None stands for omitted values.
 #ifndef Py_LIMITED_API
 typedef struct {
     PyObject_HEAD
-    PyObject *start, *stop, *step;	/* not NULL */
+    PyObject *start, *stop, *step;      /* not NULL */
 } PySliceObject;
 #endif
 
