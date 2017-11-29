@@ -158,7 +158,7 @@ def coroutine(func):
             if (base_futures.isfuture(res) or inspect.isgenerator(res) or
                 isinstance(res, CoroWrapper)):
                 res = yield from res
-            elif Awaitable is not None:
+            else:
                 # If 'func' returns an Awaitable (new in 3.5) we
                 # want to run it.
                 try:
