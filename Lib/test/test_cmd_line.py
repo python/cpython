@@ -595,6 +595,7 @@ class CmdLineTest(unittest.TestCase):
     def check_pythonmalloc(self, env_var, name):
         code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
         env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
         if env_var is not None:
             env['PYTHONMALLOC'] = env_var
         else:
