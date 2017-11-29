@@ -663,6 +663,9 @@ Traceback
    The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
    instance.
 
+   .. versionchanged:: 3.7
+   Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.
+
    .. method:: format(limit=None, most_recent_first=False)
 
       Format the traceback as a list of lines with newlines. Use the
