@@ -778,6 +778,10 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
+        if (os.environ.get('PYTHONMALLOC', None)
+           and not sys.flags.ignore_environment):
+            self.skipTest("cannot test if PYTHONMALLOC env var is set")
+
         # Some sanity checks
         with_pymalloc = sysconfig.get_config_var('WITH_PYMALLOC')
         a = sys.getallocatedblocks()
