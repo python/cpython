@@ -941,10 +941,10 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None
             Object allocated at (most recent call first):
-              File "{fname}", lineno 3
-                f = open(__file__)
               File "{fname}", lineno 7
                 func()
+              File "{fname}", lineno 3
+                f = open(__file__)
         ''')
         expected = expected.format(fname=support.TESTFN).strip()
         self.assertEqual(stderr, expected)
