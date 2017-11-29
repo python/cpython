@@ -121,9 +121,9 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
     @support.cpython_only
     def test_pickler_reference_cycle(self):
         def check(Pickler):
-            for bin in 0, 1:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 f = io.BytesIO()
-                pickler = Pickler(f, bin)
+                pickler = Pickler(f, proto)
                 pickler.dump('abc')
                 self.assertEqual(self.loads(f.getvalue()), 'abc')
             pickler = Pickler(io.BytesIO())
@@ -152,8 +152,8 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
     @support.cpython_only
     def test_unpickler_reference_cycle(self):
         def check(Unpickler):
-            for bin in 0, 1:
-                unpickler = Unpickler(io.BytesIO(self.dumps('abc', bin)))
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                unpickler = Unpickler(io.BytesIO(self.dumps('abc', proto)))
                 self.assertEqual(unpickler.load(), 'abc')
             unpickler = Unpickler(io.BytesIO())
             self.assertEqual(unpickler.persistent_load('def'), 'def')
