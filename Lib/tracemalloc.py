@@ -179,7 +179,9 @@ class Traceback(Sequence):
     def __init__(self, frames):
         Sequence.__init__(self)
         # frames is a tuple of frame tuples: see Frame constructor for the
-        # format of a frame tuple
+        # format of a frame tuple; it is reversed, because _tracemalloc
+        # returns frames sorted from most recent to oldest, but the
+        # Python API expects oldest to most recent
         self._frames = tuple(reversed(frames))
 
     def __len__(self):
