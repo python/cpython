@@ -641,12 +641,6 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
             stdin, stdin_w = socket.socketpair()
-
-            # Mark the write end of the stdin pipe as non-inheritable,
-            # needed by close_fds=False on Python 3.3 and older
-            # (Python 3.4 implements the PEP 446, socketpair returns
-            # non-inheritable sockets)
-            os.set_inheritable(stdin_w.fileno(), False)
         self._proc = subprocess.Popen(
             args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
             universal_newlines=False, bufsize=bufsize, **kwargs)
