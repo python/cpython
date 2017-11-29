@@ -9,6 +9,8 @@ import sys
 import traceback
 import types
 
+from collections.abc import Awaitable, Coroutine
+
 from . import constants
 from . import events
 from . import base_futures
@@ -33,8 +35,6 @@ def _is_debug_mode():
 
 
 _DEBUG = _is_debug_mode()
-
-from collections.abc import Awaitable, Coroutine
 
 
 def debug_wrapper(gen):
