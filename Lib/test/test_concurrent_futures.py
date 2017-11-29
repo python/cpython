@@ -122,6 +122,8 @@ class ExecutorMixin:
     def tearDown(self):
         self.timer.cancel()
         self.timer.join()
+        # Remove the reference to self.timer to avoid the thread_cleanup
+        # warnings, as this class is re-used for multiple tests.
         del self.timer
         self.executor.shutdown(wait=True)
         self.executor = None
