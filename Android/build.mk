@@ -132,7 +132,8 @@ disabled_modules:
 	    echo "_uuid" >> $$setup_file; \
 	    echo "grp" >> $$setup_file; \
 	    echo "_crypt" >> $$setup_file
-ifeq ($(ANDROID_ARCH), x86_64)
+ifneq ($(filter x86_64 arm64,$(ANDROID_ARCH)), )
+	@# Disable _ctypes on x86_64 and arm64 platforms.
 	echo "_ctypes" >> $(py_host_dir)/Modules/Setup
 endif
 
