@@ -193,6 +193,7 @@ loop per thread that interacts with :mod:`asyncio`. An exception to this rule
 happens when :meth:`~AbstractEventLoopPolicy.get_event_loop` is called from a
 running future/coroutine, in which case it will return the current loop
 running that future/coroutine.
+
 If the current thread doesn't already have an event loop associated with it,
 the default policy's :meth:`~AbstractEventLoopPolicy.get_event_loop` method
 creates one when called from the main thread, but raises :exc:`RuntimeError`
