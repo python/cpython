@@ -1,0 +1,2 @@
+:func:`msilib.OpenDatabase` now raises a better exception message when it
+couldn't open or create an MSI file.  Initial patch by William Tisäter.

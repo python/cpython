@@ -60,16 +60,19 @@ typedef struct {
  */
 typedef struct {
     int install_signal_handlers;
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
-    wchar_t *pythonhome;    /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
+    /* PYTHONPATH environment variable */
+    wchar_t *module_search_path_env;
+    /* PYTHONHOME environment variable, see also Py_SetPythonHome(). */
+    wchar_t *home;
+    /* Program name, see also Py_GetProgramName() */
+    wchar_t *program_name;
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \
     (_PyMainInterpreterConfig){\
      .install_signal_handlers = -1, \
      .module_search_path_env = NULL, \
-     .pythonhome = NULL}
+     .home = NULL}
 
 typedef struct _is {
 

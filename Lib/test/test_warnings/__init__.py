@@ -125,6 +125,7 @@ class FilterTests(BaseTest):
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.warn("FilterTests.test_ignore", UserWarning)
             self.assertEqual(len(w), 0)
+            self.assertEqual(list(__warningregistry__), ['version'])
 
     def test_ignore_after_default(self):
         with original_warnings.catch_warnings(record=True,

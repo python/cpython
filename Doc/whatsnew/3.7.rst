@@ -398,6 +398,15 @@ Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
 to get per-thread CPU time measurements.
 (Contributed by Antoine Pitrou in :issue:`32025`.)
 
+
+unittest
+--------
+Added new command-line option ``-k`` to filter tests to run with a substring or
+Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
+tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
+but not ``bar_tests.FooTest.test_something``.
+
+
 unittest.mock
 -------------
 
@@ -676,6 +685,17 @@ Changes in Python behavior
 
 Changes in the Python API
 -------------------------
+
+* The ``asyncio.windows_utils.socketpair()`` function has been
+  removed: use directly :func:`socket.socketpair` which is available on all
+  platforms since Python 3.5 (before, it wasn't available on Windows).
+  ``asyncio.windows_utils.socketpair()`` was just an alias to
+  ``socket.socketpair`` on Python 3.5 and newer.
+
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
 
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in

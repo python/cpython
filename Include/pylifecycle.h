@@ -30,7 +30,7 @@ typedef struct {
    Don't abort() the process on such error. */
 #define _Py_INIT_USER_ERR(MSG) \
     (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1}
-#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
+#define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL)
 
@@ -42,11 +42,6 @@ PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 
 PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(_PyInitError) _Py_GetPythonHomeWithConfig(
-    const _PyMainInterpreterConfig *config,
-    wchar_t **home);
-#endif
 
 #ifndef Py_LIMITED_API
 /* Only used by applications that embed the interpreter and need to
@@ -58,7 +53,11 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
-PyAPI_FUNC(_PyInitError) _Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *);
+
+PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *);
+PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *);
+PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
+
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
 #endif
 
@@ -104,8 +103,9 @@ PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(wchar_t *) _Py_GetPathWithConfig(
-    const _PyMainInterpreterConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(
+    const _PyMainInterpreterConfig *main_config);
+PyAPI_FUNC(void) _PyPathConfig_Fini(void);
 #endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS

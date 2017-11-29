@@ -5,6 +5,7 @@
 import os
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import unittest
 from test import support
@@ -532,26 +533,26 @@ class CmdLineTest(unittest.TestCase):
         out = self.run_xdev("-c", code)
         self.assertEqual(out,
                          "ignore::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         out = self.run_xdev("-b", "-c", code)
         self.assertEqual(out,
                          "default::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         out = self.run_xdev("-bb", "-c", code)
         self.assertEqual(out,
                          "error::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         out = self.run_xdev("-Werror", "-c", code)
         self.assertEqual(out,
                          "error::Warning "
                          "ignore::BytesWarning "
-                         "always::ResourceWarning "
+                         "default::ResourceWarning "
                          "default::Warning")
 
         try:
@@ -559,10 +560,14 @@ class CmdLineTest(unittest.TestCase):
         except ImportError:
             pass
         else:
-            code = "import _testcapi; _testcapi.pymem_api_misuse()"
+            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            self.assertIn("Debug memory block at address p=", out)
+            if support.with_pymalloc():
+                alloc_name = "pymalloc_debug"
+            else:
+                alloc_name = "malloc_debug"
+            self.assertEqual(out, alloc_name)
 
         try:
             import faulthandler
@@ -573,18 +578,48 @@ class CmdLineTest(unittest.TestCase):
             out = self.run_xdev("-c", code)
             self.assertEqual(out, "True")
 
-        # Make sure that ResourceWarning emitted twice at the same line number
-        # is logged twice
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
-        with open(filename, "w", encoding="utf8") as fp:
-            print("def func(): open(__file__)", file=fp)
-            print("func()", file=fp)
-            print("func()", file=fp)
-            fp.flush()
+    def check_pythonmalloc(self, env_var, name):
+        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        env = dict(os.environ)
+        if env_var is not None:
+            env['PYTHONMALLOC'] = env_var
+        else:
+            env.pop('PYTHONMALLOC', None)
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.stdout.rstrip(), name)
+        self.assertEqual(proc.returncode, 0)
 
-        out = self.run_xdev(filename)
-        self.assertEqual(out.count(':1: ResourceWarning: '), 2, out)
+    def test_pythonmalloc(self):
+        # Test the PYTHONMALLOC environment variable
+        pydebug = hasattr(sys, "gettotalrefcount")
+        pymalloc = support.with_pymalloc()
+        if pymalloc:
+            default_name = 'pymalloc_debug' if pydebug else 'pymalloc'
+            default_name_debug = 'pymalloc_debug'
+        else:
+            default_name = 'malloc_debug' if pydebug else 'malloc'
+            default_name_debug = 'malloc_debug'
+
+        tests = [
+            (None, default_name),
+            ('debug', default_name_debug),
+            ('malloc', 'malloc'),
+            ('malloc_debug', 'malloc_debug'),
+        ]
+        if pymalloc:
+            tests.extend((
+                ('pymalloc', 'pymalloc'),
+                ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+
+        for env_var, name in tests:
+            with self.subTest(env_var=env_var, name=name):
+                self.check_pythonmalloc(env_var, name)
 
 
 class IgnoreEnvironmentTest(unittest.TestCase):

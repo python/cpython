@@ -753,8 +753,15 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
+        try:
+            import _testcapi
+        except ImportError:
+            with_pymalloc = support.with_pymalloc()
+        else:
+            alloc_name = _testcapi.pymem_getallocatorsname()
+            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+
         # Some sanity checks
-        with_pymalloc = sysconfig.get_config_var('WITH_PYMALLOC')
         a = sys.getallocatedblocks()
         self.assertIs(type(a), int)
         if with_pymalloc:

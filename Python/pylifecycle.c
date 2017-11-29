@@ -116,7 +116,6 @@ int Py_InspectFlag; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
-int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
@@ -631,7 +630,7 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     }
 
     if (_PyMem_SetupAllocators(core_config.allocator) < 0) {
-        return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
+        return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
     }
 
     if (_PyRuntime.initialized) {
@@ -797,14 +796,39 @@ _Py_InitializeCore(const _PyCoreConfig *config)
  */
 
 _PyInitError
-_Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *config)
+_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
 {
     /* Signal handlers are installed by default */
     if (config->install_signal_handlers < 0) {
         config->install_signal_handlers = 1;
     }
+
+    if (config->program_name == NULL) {
+        config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+        if (config->program_name == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
     return _Py_INIT_OK();
 }
+
+
+void
+_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+{
+#define CLEAR(ATTR) \
+    do { \
+        PyMem_RawFree(ATTR); \
+        ATTR = NULL; \
+    } while (0)
+
+    CLEAR(config->module_search_path_env);
+    CLEAR(config->home);
+    CLEAR(config->program_name);
+#undef CLEAR
+}
+
 
 /* Update interpreter state based on supplied configuration settings
  *
@@ -842,11 +866,6 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     /* Now finish configuring the main interpreter */
     interp->config = *config;
 
-    /* GetPath may initialize state that _PySys_EndInit locks
-       in, and so has to be called first. */
-    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
-    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->config);
-
     if (interp->core_config._disable_importlib) {
         /* Special mode for freeze_importlib: run with no import system
          *
@@ -856,10 +875,19 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         _PyRuntime.initialized = 1;
         return _Py_INIT_OK();
     }
+
     /* TODO: Report exceptions rather than fatal errors below here */
 
     if (_PyTime_Init() < 0)
         return _Py_INIT_ERR("can't initialize time");
+
+    /* GetPath may initialize state that _PySys_EndInit locks
+       in, and so has to be called first. */
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
 
     /* Finish setting up the sys module and import system */
     PySys_SetPath(sys_path);
@@ -944,7 +972,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     }
 
     /* TODO: Print any exceptions raised by these operations */
-    err = _Py_ReadMainInterpreterConfig(&config);
+    err = _PyMainInterpreterConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1237,6 +1265,9 @@ Py_FinalizeEx(void)
 #endif
 
     call_ll_exitfuncs();
+
+    _PyPathConfig_Fini();
+
     _PyRuntime_Finalize();
     return status;
 }
@@ -1266,6 +1297,7 @@ new_interpreter(PyThreadState **tstate_p)
     PyInterpreterState *interp;
     PyThreadState *tstate, *save_tstate;
     PyObject *bimod, *sysmod;
+    _PyInitError err;
 
     if (!_PyRuntime.initialized) {
         return _Py_INIT_ERR("Py_Initialize must be called first");
@@ -1301,10 +1333,13 @@ new_interpreter(PyThreadState **tstate_p)
         interp->config = main_interp->config;
     }
 
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
+
     /* XXX The following is lax in error checking */
-
-    wchar_t *sys_path = _Py_GetPathWithConfig(&interp->config);
-
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
         return _Py_INIT_ERR("can't make modules dictionary");
@@ -1335,7 +1370,6 @@ new_interpreter(PyThreadState **tstate_p)
 
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
-        _PyInitError err;
 
         /* Set up a preliminary stderr printer until we have enough
            infrastructure for the io module in place. */
@@ -1478,8 +1512,8 @@ Py_SetPythonHome(wchar_t *home)
 }
 
 
-_PyInitError
-_Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config, wchar_t **homep)
+wchar_t*
+Py_GetPythonHome(void)
 {
     /* Use a static buffer to avoid heap memory allocation failure.
        Py_GetPythonHome() doesn't allow to report error, and the caller
@@ -1487,40 +1521,22 @@ _Py_GetPythonHomeWithConfig(const _PyMainInterpreterConfig *config, wchar_t **ho
     static wchar_t buffer[MAXPATHLEN+1];
 
     if (default_home) {
-        *homep = default_home;
-        return _Py_INIT_OK();
-    }
-
-    if (config) {
-        *homep = config->pythonhome;
-        return _Py_INIT_OK();
+        return default_home;
     }
 
     char *home = Py_GETENV("PYTHONHOME");
     if (!home) {
-        *homep = NULL;
-        return _Py_INIT_OK();
+        return NULL;
     }
 
     size_t size = Py_ARRAY_LENGTH(buffer);
     size_t r = mbstowcs(buffer, home, size);
     if (r == (size_t)-1 || r >= size) {
         /* conversion failed or the static buffer is too small */
-        *homep = NULL;
-        return _Py_INIT_ERR("failed to decode PYTHONHOME environment variable");
+        return NULL;
     }
 
-    *homep = buffer;
-    return _Py_INIT_OK();
-}
-
-wchar_t *
-Py_GetPythonHome(void)
-{
-    wchar_t *home;
-    /* Ignore error */
-    (void)_Py_GetPythonHomeWithConfig(NULL, &home);
-    return home;
+    return buffer;
 }
 
 /* Add the __main__ module */
@@ -2032,7 +2048,7 @@ fatal_output_debug(const char *msg)
 }
 #endif
 
-static void
+static void _Py_NO_RETURN
 fatal_error(const char *prefix, const char *msg, int status)
 {
     const int fd = fileno(stderr);
