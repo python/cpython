@@ -33,12 +33,9 @@ main(int argc, char **argv)
         exit(1);
     }
 
-    /* Force malloc() allocator to bootstrap Python */
-#ifdef Py_DEBUG
-    (void)_PyMem_SetupAllocators("malloc_debug");
-#  else
-    (void)_PyMem_SetupAllocators("malloc");
-#  endif
+    /* Force default allocator, to be able to release memory above
+       with a known allocator. */
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, NULL);
 
     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
@@ -98,13 +95,9 @@ main(int argc, char **argv)
 
     status = Py_Main(argc, argv_copy);
 
-    /* Force again malloc() allocator to release memory blocks allocated
-       before Py_Main() */
-#ifdef Py_DEBUG
-    (void)_PyMem_SetupAllocators("malloc_debug");
-#  else
-    (void)_PyMem_SetupAllocators("malloc");
-#  endif
+    /* Py_Main() can change PyMem_RawMalloc() allocator, so restore the default
+       to release memory blocks allocated before Py_Main() */
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, NULL);
 
     for (i = 0; i < argc; i++) {
         PyMem_RawFree(argv_copy2[i]);

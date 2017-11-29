@@ -475,11 +475,9 @@ pymain_free_impl(_PyMain *pymain)
 static void
 pymain_free(_PyMain *pymain)
 {
-    /* Force malloc() memory allocator */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force the allocator used by pymain_parse_cmdline_envvars() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     pymain_free_impl(pymain);
 
@@ -1561,17 +1559,14 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
 static int
 pymain_parse_cmdline_envvars(_PyMain *pymain)
 {
-    /* Force malloc() memory allocator */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force default allocator, since pymain_free() must use the same allocator
+       than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     int res = pymain_parse_cmdline_envvars_impl(pymain);
 
-    /* Restore the old memory allocator */
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     return res;
 }
 

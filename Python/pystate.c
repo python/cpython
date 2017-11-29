@@ -35,8 +35,8 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-_PyInitError
-_PyRuntimeState_Init(_PyRuntimeState *runtime)
+static _PyInitError
+_PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 {
     memset(runtime, 0, sizeof(*runtime));
 
@@ -59,14 +59,26 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     return _Py_INIT_OK();
 }
 
+_PyInitError
+_PyRuntimeState_Init(_PyRuntimeState *runtime)
+{
+    /* Force default allocator, since _PyRuntimeState_Fini() must
+       use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    _PyInitError err = _PyRuntimeState_Init_impl(runtime);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return err;
+}
+
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
-    /* Use the same memory allocator than _PyRuntimeState_Init() */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force the allocator used by _PyRuntimeState_Init(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (runtime->interpreters.mutex != NULL) {
         PyThread_free_lock(runtime->interpreters.mutex);

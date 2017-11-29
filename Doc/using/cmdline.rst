@@ -687,6 +687,8 @@ conflict.
 
    Set the family of memory allocators used by Python:
 
+   * ``default``: use the :ref:`default memory allocators
+     <default-memory-allocators>`.
    * ``malloc``: use the :c:func:`malloc` function of the C library
      for all domains (:c:data:`PYMEM_DOMAIN_RAW`, :c:data:`PYMEM_DOMAIN_MEM`,
      :c:data:`PYMEM_DOMAIN_OBJ`).
@@ -696,20 +698,17 @@ conflict.
 
    Install debug hooks:
 
-   * ``debug``: install debug hooks on top of the default memory allocator
+   * ``debug``: install debug hooks on top of the :ref:`default memory
+     allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks
 
-   When Python is compiled in release mode, the default is ``pymalloc``. When
-   compiled in debug mode, the default is ``pymalloc_debug`` and the debug hooks
-   are used automatically.
+   See the :ref:`default memory allocators <default-memory-allocators>` and the
+   :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
+   memory allocators).
 
-   If Python is configured without ``pymalloc`` support, ``pymalloc`` and
-   ``pymalloc_debug`` are not available, the default is ``malloc`` in release
-   mode and ``malloc_debug`` in debug mode.
-
-   See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
-   memory allocators.
+   .. versionchanged:: 3.7
+      Added the ``"default"`` allocator.
 
    .. versionadded:: 3.6
 

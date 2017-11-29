@@ -2848,3 +2848,8 @@ class SaveSignals:
     def restore(self):
         for signum, handler in self.handlers.items():
             self.signal.signal(signum, handler)
+
+
+def with_pymalloc():
+    import _testcapi
+    return _testcapi.WITH_PYMALLOC

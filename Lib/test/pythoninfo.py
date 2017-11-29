@@ -56,6 +56,14 @@ def copy_attributes(info_add, obj, name_fmt, attributes, *, formatter=None):
         info_add(name, value)
 
 
+def copy_attr(info_add, name, mod, attr_name):
+    try:
+        value = getattr(mod, attr_name)
+    except AttributeError:
+        return
+    info_add(name, value)
+
+
 def call_func(info_add, name, mod, func_name, *, formatter=None):
     try:
         func = getattr(mod, func_name)
@@ -168,11 +176,10 @@ def collect_os(info_add):
     call_func(info_add, 'os.gid', os, 'getgid')
     call_func(info_add, 'os.uname', os, 'uname')
 
-    if hasattr(os, 'getgroups'):
-        groups = os.getgroups()
-        groups = map(str, groups)
-        groups = ', '.join(groups)
-        info_add("os.groups", groups)
+    def format_groups(groups):
+        return ', '.join(map(str, groups))
+
+    call_func(info_add, 'os.groups', os, 'getgroups', formatter=format_groups)
 
     if hasattr(os, 'getlogin'):
         try:
@@ -184,11 +191,7 @@ def collect_os(info_add):
         else:
             info_add("os.login", login)
 
-    if hasattr(os, 'cpu_count'):
-        cpu_count = os.cpu_count()
-        if cpu_count:
-            info_add('os.cpu_count', cpu_count)
-
+    call_func(info_add, 'os.cpu_count', os, 'cpu_count')
     call_func(info_add, 'os.loadavg', os, 'getloadavg')
 
     # Get environment variables: filter to list
@@ -219,7 +222,9 @@ def collect_os(info_add):
     )
     for name, value in os.environ.items():
         uname = name.upper()
-        if (uname in ENV_VARS or uname.startswith(("PYTHON", "LC_"))
+        if (uname in ENV_VARS
+           # Copy PYTHON* and LC_* variables
+           or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
             info_add('os.environ[%s]' % name, value)
@@ -313,12 +318,10 @@ def collect_time(info_add):
     )
     copy_attributes(info_add, time, 'time.%s', attributes)
 
-    if not hasattr(time, 'get_clock_info'):
-        return
-
-    for clock in ('time', 'perf_counter'):
-        tinfo = time.get_clock_info(clock)
-        info_add('time.%s' % clock, tinfo)
+    if hasattr(time, 'get_clock_info'):
+        for clock in ('time', 'perf_counter'):
+            tinfo = time.get_clock_info(clock)
+            info_add('time.%s' % clock, tinfo)
 
 
 def collect_sysconfig(info_add):
@@ -331,7 +334,6 @@ def collect_sysconfig(info_add):
         'CCSHARED',
         'CFLAGS',
         'CFLAGSFORSHARED',
-        'PY_LDFLAGS',
         'CONFIG_ARGS',
         'HOST_GNU_TYPE',
         'MACHDEP',
@@ -339,6 +341,7 @@ def collect_sysconfig(info_add):
         'OPT',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
+        'PY_LDFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'SHELL',
@@ -422,6 +425,16 @@ def collect_decimal(info_add):
     copy_attributes(info_add, _decimal, '_decimal.%s', attributes)
 
 
+def collect_testcapi(info_add):
+    try:
+        import _testcapi
+    except ImportError:
+        return
+
+    call_func(info_add, 'pymem.allocator', _testcapi, 'pymem_getallocatorsname')
+    copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -444,6 +457,7 @@ def collect_info(info):
         collect_zlib,
         collect_expat,
         collect_decimal,
+        collect_testcapi,
     ):
         try:
             collect_func(info_add)
