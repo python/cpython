@@ -152,7 +152,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -161,13 +161,13 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -176,13 +176,13 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
@@ -191,7 +191,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX64</TargetMachine>
@@ -200,7 +200,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
@@ -209,7 +209,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX64</TargetMachine>
@@ -220,6 +220,7 @@
     <ClInclude Include="..\Modules\expat\xmltok.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\expat\loadlibrary.c" />
     <ClCompile Include="..\Modules\pyexpat.c" />
     <ClCompile Include="..\Modules\expat\xmlparse.c" />
     <ClCompile Include="..\Modules\expat\xmlrole.c" />

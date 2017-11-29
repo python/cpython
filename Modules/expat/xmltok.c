@@ -31,8 +31,17 @@
 */
 
 #include <stddef.h>
-#include <stdbool.h>
 #include <string.h>  // memcpy
+
+#if defined(_MSC_VER) && (_MSC_VER <= 1700)
+  /* for vs2012/11.0/1700 and earlier Visual Studio compilers */
+# define bool   int
+# define false  0
+# define true   1
+#else
+# include <stdbool.h>
+#endif
+
 
 #ifdef _WIN32
 #include "winconfig.h"
@@ -405,16 +414,20 @@ utf8_toUtf8(const ENCODING *UNUSED_P(enc),
   }
 
   /* Avoid copying partial characters (from incomplete input). */
-  const char * const fromLimBefore = fromLim;
-  align_limit_to_full_utf8_characters(*fromP, &fromLim);
-  if (fromLim < fromLimBefore) {
-    input_incomplete = true;
+  {
+    const char * const fromLimBefore = fromLim;
+    align_limit_to_full_utf8_characters(*fromP, &fromLim);
+    if (fromLim < fromLimBefore) {
+      input_incomplete = true;
+    }
   }
 
-  const ptrdiff_t bytesToCopy = fromLim - *fromP;
-  memcpy((void *)*toP, (const void *)*fromP, (size_t)bytesToCopy);
-  *fromP += bytesToCopy;
-  *toP += bytesToCopy;
+  {
+    const ptrdiff_t bytesToCopy = fromLim - *fromP;
+    memcpy((void *)*toP, (const void *)*fromP, (size_t)bytesToCopy);
+    *fromP += bytesToCopy;
+    *toP += bytesToCopy;
+  }
 
   if (output_exhausted)  // needs to go first
     return XML_CONVERT_OUTPUT_EXHAUSTED;
