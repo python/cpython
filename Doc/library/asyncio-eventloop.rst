@@ -967,10 +967,7 @@ Wait until a file descriptor received some data using the
 :meth:`AbstractEventLoop.add_reader` method and then close the event loop::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    from socket import socketpair
 
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()

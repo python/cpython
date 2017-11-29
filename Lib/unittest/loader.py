@@ -224,9 +224,10 @@ class TestLoader(object):
         """Return a sorted sequence of method names found within testCaseClass
         """
         def shouldIncludeMethod(attrname):
+            if not attrname.startswith(self.testMethodPrefix):
+                return False
             testFunc = getattr(testCaseClass, attrname)
-            isTestMethod = attrname.startswith(self.testMethodPrefix) and callable(testFunc)
-            if not isTestMethod:
+            if not callable(testFunc):
                 return False
             fullName = '%s.%s' % (testCaseClass.__module__, testFunc.__qualname__)
             return self.testNamePatterns is None or \
