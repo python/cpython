@@ -302,7 +302,7 @@ def _queue_management_worker(executor_reference,
             process workers.
         thread_wakeup: A _ThreadWakeup to allow waking up the
             queue_manager_thread from the main Thread and avoid deadlocks
-            caused by broken queues.
+            caused by permanently locked queues.
     """
     executor = None
 
@@ -357,9 +357,9 @@ def _queue_management_worker(executor_reference,
                 cause = traceback.format_exception(type(e), e, e.__traceback__)
 
         elif wakeup_reader in ready:
-            thread_wakeup.clear()
             is_broken = False
             result_item = None
+        thread_wakeup.clear()
         if is_broken:
             # Mark the process pool broken so that submits fail right now.
             executor = executor_reference()
