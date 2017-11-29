@@ -589,7 +589,7 @@ class TestSnapshot(unittest.TestCase):
             self.assertEqual(tb.format(limit=-1),
                              ['  File "b.py", line 4',
                               '    <b.py, 4>'])
-                             
+
             self.assertEqual(tb.format(most_recent_first=True),
                              ['  File "a.py", line 2',
                               '    <a.py, 2>',

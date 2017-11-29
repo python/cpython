@@ -218,7 +218,7 @@ class Traceback(Sequence):
                 frame_slice = self[:limit]
         else:
             frame_slice = self
-                
+
         if most_recent_first:
             frame_slice = reversed(frame_slice)
         for frame in frame_slice:
