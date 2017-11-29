@@ -62,7 +62,7 @@ def _formatwarnmsg_impl(msg):
             tb = None
 
         if tb is not None:
-            s += 'Object allocated at (most recent call first):\n'
+            s += 'Object allocated at (most recent call last):\n'
             for frame in tb:
                 s += ('  File "%s", lineno %s\n'
                       % (frame.filename, frame.lineno))

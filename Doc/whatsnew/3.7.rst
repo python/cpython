@@ -751,6 +751,10 @@ Changes in the Python API
   avoid a warning escape them with a backslash.
   (Contributed by Serhiy Storchaka in :issue:`30349`.)
 
+* :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
+  recent to be more consistent with :mod:`traceback`.
+  (Contributed by Jesse Bakker in :issue:`32121`.)
+
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
 
