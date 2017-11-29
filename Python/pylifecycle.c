@@ -630,7 +630,7 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     }
 
     if (_PyMem_SetupAllocators(core_config.allocator) < 0) {
-        return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
+        return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
     }
 
     if (_PyRuntime.initialized) {
