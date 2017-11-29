@@ -6,6 +6,7 @@ import io
 import logging
 import os
 import re
+import selectors
 import socket
 import socketserver
 import sys
@@ -28,17 +29,10 @@ except ImportError:  # pragma: no cover
 from . import base_events
 from . import events
 from . import futures
-from . import selectors
 from . import tasks
 from .coroutines import coroutine
 from .log import logger
 from test import support
-
-
-if sys.platform == 'win32':  # pragma: no cover
-    from .windows_utils import socketpair
-else:
-    from socket import socketpair  # pragma: no cover
 
 
 def dummy_ssl_context():

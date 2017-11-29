@@ -13,7 +13,6 @@ _Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(ignore);
 _Py_IDENTIFIER(error);
-_Py_IDENTIFIER(always);
 _Py_static_string(PyId_default, "default");
 
 static int
@@ -529,16 +528,21 @@ warn_explicit(PyObject *category, PyObject *message,
         goto cleanup;
     }
 
+    if (_PyUnicode_EqualToASCIIString(action, "ignore")) {
+        goto return_none;
+    }
+
     /* Store in the registry that we've been here, *except* when the action
        is "always". */
     rc = 0;
     if (!_PyUnicode_EqualToASCIIString(action, "always")) {
         if (registry != NULL && registry != Py_None &&
-                PyDict_SetItem(registry, key, Py_True) < 0)
+            PyDict_SetItem(registry, key, Py_True) < 0)
+        {
             goto cleanup;
-        else if (_PyUnicode_EqualToASCIIString(action, "ignore"))
-            goto return_none;
-        else if (_PyUnicode_EqualToASCIIString(action, "once")) {
+        }
+
+        if (_PyUnicode_EqualToASCIIString(action, "once")) {
             if (registry == NULL || registry == Py_None) {
                 registry = get_once_registry();
                 if (registry == NULL)
@@ -1208,9 +1212,9 @@ init_filters(const _PyCoreConfig *config)
     _Py_Identifier *resource_action;
     /* resource usage warnings are enabled by default in pydebug mode */
 #ifdef Py_DEBUG
-    resource_action = &PyId_always;
+    resource_action = &PyId_default;
 #else
-    resource_action = (dev_mode ? &PyId_always : &PyId_ignore);
+    resource_action = (dev_mode ? &PyId_default: &PyId_ignore);
 #endif
     PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
                     resource_action));

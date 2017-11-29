@@ -2,6 +2,7 @@
 
 import errno
 import os
+import selectors
 import signal
 import socket
 import stat
@@ -18,7 +19,6 @@ from . import coroutines
 from . import events
 from . import futures
 from . import selector_events
-from . import selectors
 from . import transports
 from .coroutines import coroutine
 from .log import logger
@@ -54,9 +54,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def __init__(self, selector=None):
         super().__init__(selector)
         self._signal_handlers = {}
-
-    def _socketpair(self):
-        return socket.socketpair()
 
     def close(self):
         super().close()
@@ -677,7 +674,7 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # socket (which we use in order to detect closing of the
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
-            stdin, stdin_w = self._loop._socketpair()
+            stdin, stdin_w = socket.socketpair()
 
             # Mark the write end of the stdin pipe as non-inheritable,
             # needed by close_fds=False on Python 3.3 and older

@@ -17,7 +17,7 @@ Shoddy_increment(Shoddy *self, PyObject *unused)
 static PyMethodDef Shoddy_methods[] = {
     {"increment", (PyCFunction)Shoddy_increment, METH_NOARGS,
      PyDoc_STR("increment state counter")},
-    {NULL,	NULL},
+    {NULL},
 };
 
 static int
