@@ -202,8 +202,8 @@ def iscoroutinefunction(func):
 
 # Prioritize native coroutine check to speed-up
 # asyncio.iscoroutine.
-_COROUTINE_TYPES = (types.CoroutineType, Coroutine,
-                    types.GeneratorType, CoroWrapper)
+_COROUTINE_TYPES = (types.CoroutineType, types.GeneratorType,
+                    Coroutine, CoroWrapper)
 
 
 def iscoroutine(obj):
