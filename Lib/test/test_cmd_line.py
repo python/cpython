@@ -563,7 +563,7 @@ class CmdLineTest(unittest.TestCase):
             code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            if sysconfig.get_config_var('WITH_PYMALLOC') == 1:
+            if support.with_pymalloc():
                 alloc_name = "pymalloc_debug"
             else:
                 alloc_name = "malloc_debug"
@@ -597,8 +597,8 @@ class CmdLineTest(unittest.TestCase):
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
         pydebug = hasattr(sys, "gettotalrefcount")
-        have_pymalloc = (sysconfig.get_config_var('WITH_PYMALLOC') == 1)
-        if have_pymalloc:
+        pymalloc = support.with_pymalloc()
+        if pymalloc:
             default_name = 'pymalloc_debug' if pydebug else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
         else:
@@ -611,7 +611,7 @@ class CmdLineTest(unittest.TestCase):
             ('malloc', 'malloc'),
             ('malloc_debug', 'malloc_debug'),
         ]
-        if have_pymalloc:
+        if pymalloc:
             tests.extend((
                 ('pymalloc', 'pymalloc'),
                 ('pymalloc_debug', 'pymalloc_debug'),
