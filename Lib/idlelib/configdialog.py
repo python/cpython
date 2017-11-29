@@ -11,8 +11,8 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
-                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
-                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW, CENTER,
+                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
+                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
@@ -25,7 +25,6 @@ from idlelib.config_key import GetKeysDialog
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
-from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
 from idlelib.autocomplete import AutoComplete
 from idlelib.codecontext import CodeContext
@@ -1443,7 +1442,7 @@ class KeysPage(Frame):
         self.bindingslist['xscrollcommand'] = scroll_target_x.set
         self.button_new_keys = Button(
                 frame_custom, text='Get New Keys for Selection',
-                command=self.get_new_keys, state=DISABLED)
+                command=self.get_new_keys, state='disabled')
         # frame_key_sets.
         frames = [Frame(frame_key_sets, padding=2, borderwidth=0)
                   for i in range(2)]
