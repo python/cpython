@@ -5136,8 +5136,6 @@ class InheritanceTest(unittest.TestCase):
                              0)
 
 
-    @unittest.skipUnless(hasattr(socket, "socketpair"),
-                         "need socket.socketpair()")
     def test_socketpair(self):
         s1, s2 = socket.socketpair()
         self.addCleanup(s1.close)
