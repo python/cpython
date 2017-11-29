@@ -941,7 +941,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None
-            Object allocated at (most recent call first):
+            Object allocated at (most recent call last):
               File "{fname}", lineno 7
                 func()
               File "{fname}", lineno 3
