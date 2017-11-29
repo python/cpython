@@ -360,21 +360,20 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 
 /*************************************************************************/
 
+/* Retrieve and deconstruct a method for avoiding a reference cycle
+   (pickler -> bound method of pickler -> pickler) */
 static int
 init_method_ref(PyObject *self, _Py_Identifier *name,
-                PyObject **method, int *unbound)
+                PyObject **method_func, PyObject **method_self)
 {
     PyObject *func, *func2;
 
-    /* *method and *unbound should be consistent.  All refcount decrements
-       should be occurred after setting *unbound and *method. */
-    *unbound = 0;
-    Py_CLEAR(*method);
-
+    /* *method_func and *method_self should be consistent.  All refcount decrements
+       should be occurred after setting *method_self and *method_func. */
     func = _PyObject_GetAttrId(self, name);
     if (func == NULL) {
-        *unbound = 0;
-        Py_CLEAR(*method);
+        *method_self = NULL;
+        Py_CLEAR(*method_func);
         if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
         }
@@ -382,50 +381,39 @@ init_method_ref(PyObject *self, _Py_Identifier *name,
         return 0;
     }
 
-    /* Avoid creating a reference cycle (pickler -> bound method of pickler ->
-       -> pickler). */
     if (PyMethod_Check(func) && PyMethod_GET_SELF(func) == self) {
-        /* bound Python method */
+        /* Deconstruct a bound Python method */
         func2 = PyMethod_GET_FUNCTION(func);
         Py_INCREF(func2);
-    }
-    else if (PyCFunction_Check(func) && PyCFunction_GET_SELF(func) == self) {
-        /* bound built-in method */
-        func2 = PyDescr_NewMethod(Py_TYPE(self),
-                                 ((PyCFunctionObject *)func)->m_ml);
-        if (func2 == NULL) {
-            Py_DECREF(func);
-            return -1;
-        }
-    }
-    else {
-        *unbound = 0;
-        Py_XSETREF(*method, func);
+        *method_self = self; /* borrowed */
+        Py_XSETREF(*method_func, func2);
+        Py_DECREF(func);
         return 0;
     }
-    *unbound = 1;
-    Py_XSETREF(*method, func2);
-    Py_DECREF(func);
-    return 0;
-}
-
-static PyObject *
-bound_method(PyObject *self, PyObject *func, int unbound)
-{
-    if (unbound) {
-        descrgetfunc f = func->ob_type->tp_descr_get;
-        if (f != NULL) {
-            return f(func, self, (PyObject *)Py_TYPE(self));
-        }
+    else {
+        *method_self = NULL;
+        Py_XSETREF(*method_func, func);
+        return 0;
     }
-    Py_INCREF(func);
-    return func;
+}
+
+/* Bound a method if it was deconstructed */
+static PyObject *
+reconstruct_method(PyObject *func, PyObject *self)
+{
+    if (self) {
+        return PyMethod_New(func, self);
+    }
+    else {
+        Py_INCREF(func);
+        return func;
+    }
 }
 
 static PyObject *
-call_method(PyObject *self, PyObject *func, int unbound, PyObject *obj)
+call_method(PyObject *func, PyObject *self, PyObject *obj)
 {
-    if (unbound) {
+    if (self) {
         return PyObject_CallFunctionObjArgs(func, self, obj, NULL);
     }
     else {
@@ -627,8 +615,8 @@ typedef struct PicklerObject {
                                    objects to support self-referential objects
                                    pickling. */
     PyObject *pers_func;        /* persistent_id() method, can be NULL */
-    int unbound_pers_func;      /* 1 if pers_func is unbound method,
-                                   0 if pers_func is bound method */
+    PyObject *pers_func_self;   /* borrowed reference to self if pers_func
+                                   is an unbound method, NULL otherwise */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
 
     PyObject *write;            /* write() method of the output stream. */
@@ -667,8 +655,8 @@ typedef struct UnpicklerObject {
     Py_ssize_t memo_len;        /* Number of objects in the memo */
 
     PyObject *pers_func;        /* persistent_load() method, can be NULL. */
-    int unbound_pers_func;      /* 1 if pers_func is unbound method,
-                                   0 if pers_func is bound method */
+    PyObject *pers_func_self;   /* borrowed reference to self if pers_func
+                                   is an unbound method, NULL otherwise */
 
     Py_buffer buffer;
     char *input_buffer;
@@ -3531,8 +3519,7 @@ save_pers(PicklerObject *self, PyObject *obj)
     const char persid_op = PERSID;
     const char binpersid_op = BINPERSID;
 
-    pid = call_method((PyObject *)self,
-                      self->pers_func, self->unbound_pers_func, obj);
+    pid = call_method(self->pers_func, self->pers_func_self, obj);
     if (pid == NULL)
         return -1;
 
@@ -4326,7 +4313,7 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast_memo = NULL;
 
     if (init_method_ref((PyObject *)self, &PyId_persistent_id,
-                        &self->pers_func, &self->unbound_pers_func) < 0)
+                        &self->pers_func, &self->pers_func_self) < 0)
     {
         return -1;
     }
@@ -4599,8 +4586,7 @@ Pickler_get_persid(PicklerObject *self)
         PyErr_SetString(PyExc_AttributeError, "persistent_id");
         return NULL;
     }
-    return bound_method((PyObject *)self,
-                        self->pers_func, self->unbound_pers_func);
+    return reconstruct_method(self->pers_func, self->pers_func_self);
 }
 
 static int
@@ -4617,7 +4603,7 @@ Pickler_set_persid(PicklerObject *self, PyObject *value)
         return -1;
     }
 
-    self->unbound_pers_func = 0;
+    self->pers_func_self = NULL;
     Py_INCREF(value);
     Py_XSETREF(self->pers_func, value);
 
@@ -5587,8 +5573,7 @@ load_persid(UnpicklerObject *self)
             return -1;
         }
 
-        obj = call_method((PyObject *)self,
-                          self->pers_func, self->unbound_pers_func, pid);
+        obj = call_method(self->pers_func, self->pers_func_self, pid);
         Py_DECREF(pid);
         if (obj == NULL)
             return -1;
@@ -5615,8 +5600,7 @@ load_binpersid(UnpicklerObject *self)
         if (pid == NULL)
             return -1;
 
-        obj = call_method((PyObject *)self,
-                          self->pers_func, self->unbound_pers_func, pid);
+        obj = call_method(self->pers_func, self->pers_func_self, pid);
         Py_DECREF(pid);
         if (obj == NULL)
             return -1;
@@ -6769,7 +6753,7 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
     self->fix_imports = fix_imports;
 
     if (init_method_ref((PyObject *)self, &PyId_persistent_load,
-                        &self->pers_func, &self->unbound_pers_func) < 0)
+                        &self->pers_func, &self->pers_func_self) < 0)
     {
         return -1;
     }
@@ -7062,8 +7046,7 @@ Unpickler_get_persload(UnpicklerObject *self)
         PyErr_SetString(PyExc_AttributeError, "persistent_load");
         return NULL;
     }
-    return bound_method((PyObject *)self,
-                        self->pers_func, self->unbound_pers_func);
+    return reconstruct_method(self->pers_func, self->pers_func_self);
 }
 
 static int
@@ -7081,7 +7064,7 @@ Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
         return -1;
     }
 
-    self->unbound_pers_func = 0;
+    self->pers_func_self = NULL;
     Py_INCREF(value);
     Py_XSETREF(self->pers_func, value);
 

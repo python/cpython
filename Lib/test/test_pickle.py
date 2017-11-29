@@ -258,7 +258,7 @@ if has_c_implementation:
         check_sizeof = support.check_sizeof
 
         def test_pickler(self):
-            basesize = support.calcobjsize('2Pi3P2n3i2n3iP')
+            basesize = support.calcobjsize('6P2n3i2n3iP')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
@@ -275,7 +275,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2nPi 2P2n2i5P 2P3n6P2n2i')
+            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n6P2n2i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.
