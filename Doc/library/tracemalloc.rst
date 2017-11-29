@@ -664,7 +664,7 @@ Traceback
    instance.
 
    .. versionchanged:: 3.7
-   Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.
+      Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.
 
    .. method:: format(limit=None, most_recent_first=False)
 
