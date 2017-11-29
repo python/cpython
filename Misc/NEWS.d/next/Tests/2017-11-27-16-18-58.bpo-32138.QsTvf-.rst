@@ -1,0 +1,2 @@
+Skip on Android test_faulthandler tests that raise SIGSEGV and remove the
+test.support.requires_android_level decorator.
