@@ -21,6 +21,9 @@ PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
    allocators. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
 
+/* Try to get the allocators name set by _PyMem_SetupAllocators(). */
+PyAPI_FUNC(const char*) _PyMem_GetAllocatorsName(void);
+
 #ifdef WITH_PYMALLOC
 PyAPI_FUNC(int) _PyMem_PymallocEnabled(void);
 #endif
@@ -230,7 +233,12 @@ PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
 #endif
 
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(void) _PyMem_GetDefaultRawAllocator(PyMemAllocatorEx *alloc);
+/* Set the memory allocator of the specified domain to the default.
+   Save the old allocator into *old_alloc if it's non-NULL.
+   Return on success, or return -1 if the domain is unknown. */
+PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
+    PyMemAllocatorDomain domain,
+    PyMemAllocatorEx *old_alloc);
 #endif
 
 #ifdef __cplusplus
