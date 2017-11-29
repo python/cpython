@@ -1,0 +1,3 @@
+Bytearray methods partition() and rpartition() now accept only bytes-like
+objects as separator, as documented.  In particular they now raise TypeError
+rather of returning a bogus result when an integer is passed as a separator.

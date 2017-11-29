@@ -1,0 +1,2 @@
+Added the ``-k`` command-line option to ``python -m unittest`` to run only
+tests that match the given pattern(s).

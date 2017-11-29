@@ -463,6 +463,14 @@ class TestRetrievingSourceCode(GetSourceBase):
         with self.assertRaises(TypeError):
             inspect.getfile(C)
 
+    def test_getfile_broken_repr(self):
+        class ErrorRepr:
+            def __repr__(self):
+                raise Exception('xyz')
+        er = ErrorRepr()
+        with self.assertRaises(TypeError):
+            inspect.getfile(er)
+
     def test_getmodule_recursion(self):
         from types import ModuleType
         name = '__inspect_dummy'
@@ -2867,12 +2875,12 @@ class TestSignatureObject(unittest.TestCase):
         def foo(a:int=1, *, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
-                         '(a:int=1, *, b, c=None, **kwargs) -> 42')
+                         '(a: int = 1, *, b, c=None, **kwargs) -> 42')
 
         def foo(a:int=1, *args, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
-                         '(a:int=1, *args, b, c=None, **kwargs) -> 42')
+                         '(a: int = 1, *args, b, c=None, **kwargs) -> 42')
 
         def foo():
             pass

@@ -1981,7 +1981,7 @@ class BaseTaskTests:
 
         regex = (r'^<CoroWrapper %s\(?\)? .* at %s:%s, .*> '
                     r'was never yielded from\n'
-                 r'Coroutine object created at \(most recent call last\):\n'
+                 r'Coroutine object created at \(most recent call last, truncated to \d+ last lines\):\n'
                  r'.*\n'
                  r'  File "%s", line %s, in test_coroutine_never_yielded\n'
                  r'    coro_noop\(\)$'
@@ -2349,6 +2349,10 @@ class GatherTestsBase:
                                                PYTHONASYNCIODEBUG='1',
                                                PYTHONPATH=aio_path)
         self.assertEqual(stdout.rstrip(), b'False')
+
+        sts, stdout, stderr = assert_python_ok('-E', '-X', 'dev',
+                                               '-c', code)
+        self.assertEqual(stdout.rstrip(), b'True')
 
 
 class FutureGatherTests(GatherTestsBase, test_utils.TestCase):

@@ -14,8 +14,8 @@
 #  include <sys/resource.h>
 #endif
 
-/* Allocate at maximum 100 MB of the stack to raise the stack overflow */
-#define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
+/* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
+#define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
 
 #define FAULTHANDLER_LATER
 
@@ -607,30 +607,33 @@ cancel_dump_traceback_later(void)
     }
 }
 
+#define SEC_TO_US (1000 * 1000)
+
 static char*
-format_timeout(double timeout)
+format_timeout(_PyTime_t us)
 {
-    unsigned long us, sec, min, hour;
-    double intpart, fracpart;
+    unsigned long sec, min, hour;
     char buffer[100];
 
-    fracpart = modf(timeout, &intpart);
-    sec = (unsigned long)intpart;
-    us = (unsigned long)(fracpart * 1e6);
+    /* the downcast is safe: the caller check that 0 < us <= LONG_MAX */
+    sec = (unsigned long)(us / SEC_TO_US);
+    us %= SEC_TO_US;
+
     min = sec / 60;
     sec %= 60;
     hour = min / 60;
     min %= 60;
 
-    if (us != 0)
+    if (us != 0) {
         PyOS_snprintf(buffer, sizeof(buffer),
-                      "Timeout (%lu:%02lu:%02lu.%06lu)!\n",
-                      hour, min, sec, us);
-    else
+                      "Timeout (%lu:%02lu:%02lu.%06u)!\n",
+                      hour, min, sec, (unsigned int)us);
+    }
+    else {
         PyOS_snprintf(buffer, sizeof(buffer),
                       "Timeout (%lu:%02lu:%02lu)!\n",
                       hour, min, sec);
-
+    }
     return _PyMem_Strdup(buffer);
 }
 
@@ -639,8 +642,8 @@ faulthandler_dump_traceback_later(PyObject *self,
                                    PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
-    double timeout;
-    PY_TIMEOUT_T timeout_us;
+    PyObject *timeout_obj;
+    _PyTime_t timeout, timeout_us;
     int repeat = 0;
     PyObject *file = NULL;
     int fd;
@@ -650,16 +653,23 @@ faulthandler_dump_traceback_later(PyObject *self,
     size_t header_len;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "d|iOi:dump_traceback_later", kwlist,
-        &timeout, &repeat, &file, &exit))
+        "O|iOi:dump_traceback_later", kwlist,
+        &timeout_obj, &repeat, &file, &exit))
         return NULL;
-    if ((timeout * 1e6) >= (double) PY_TIMEOUT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,  "timeout value is too large");
+
+    if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
+                                  _PyTime_ROUND_TIMEOUT) < 0) {
         return NULL;
     }
-    timeout_us = (PY_TIMEOUT_T)(timeout * 1e6);
+    timeout_us = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_TIMEOUT);
     if (timeout_us <= 0) {
         PyErr_SetString(PyExc_ValueError, "timeout must be greater than 0");
+        return NULL;
+    }
+    /* Limit to LONG_MAX seconds for format_timeout() */
+    if (timeout_us >= PY_TIMEOUT_MAX || timeout_us / SEC_TO_US >= LONG_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "timeout value is too large");
         return NULL;
     }
 
@@ -672,7 +682,7 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
 
     /* format the timeout */
-    header = format_timeout(timeout);
+    header = format_timeout(timeout_us);
     if (header == NULL)
         return PyErr_NoMemory();
     header_len = strlen(header);
@@ -683,7 +693,8 @@ faulthandler_dump_traceback_later(PyObject *self,
     Py_XINCREF(file);
     Py_XSETREF(thread.file, file);
     thread.fd = fd;
-    thread.timeout_us = timeout_us;
+    /* the downcast is safe: we check that 0 < timeout_us < PY_TIMEOUT_MAX */
+    thread.timeout_us = (PY_TIMEOUT_T)timeout_us;
     thread.repeat = repeat;
     thread.interp = tstate->interp;
     thread.exit = exit;
@@ -1270,47 +1281,26 @@ PyInit_faulthandler(void)
     return m;
 }
 
-/* Call faulthandler.enable() if the PYTHONFAULTHANDLER environment variable
-   is defined, or if sys._xoptions has a 'faulthandler' key. */
-
 static int
-faulthandler_env_options(void)
+faulthandler_init_enable(void)
 {
-    PyObject *xoptions, *key, *module, *res;
-    char *p;
-
-    if (!((p = Py_GETENV("PYTHONFAULTHANDLER")) && *p != '\0')) {
-        /* PYTHONFAULTHANDLER environment variable is missing
-           or an empty string */
-        int has_key;
-
-        xoptions = PySys_GetXOptions();
-        if (xoptions == NULL)
-            return -1;
-
-        key = PyUnicode_FromString("faulthandler");
-        if (key == NULL)
-            return -1;
-
-        has_key = PyDict_Contains(xoptions, key);
-        Py_DECREF(key);
-        if (has_key <= 0)
-            return has_key;
-    }
-
-    module = PyImport_ImportModule("faulthandler");
+    PyObject *module = PyImport_ImportModule("faulthandler");
     if (module == NULL) {
         return -1;
     }
-    res = _PyObject_CallMethodId(module, &PyId_enable, NULL);
+
+    PyObject *res = _PyObject_CallMethodId(module, &PyId_enable, NULL);
     Py_DECREF(module);
-    if (res == NULL)
+    if (res == NULL) {
         return -1;
+    }
     Py_DECREF(res);
+
     return 0;
 }
 
-int _PyFaulthandler_Init(void)
+_PyInitError
+_PyFaulthandler_Init(int enable)
 {
 #ifdef HAVE_SIGALTSTACK
     int err;
@@ -1334,14 +1324,17 @@ int _PyFaulthandler_Init(void)
     thread.cancel_event = PyThread_allocate_lock();
     thread.running = PyThread_allocate_lock();
     if (!thread.cancel_event || !thread.running) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "could not allocate locks for faulthandler");
-        return -1;
+        return _Py_INIT_ERR("failed to allocate locks for faulthandler");
     }
     PyThread_acquire_lock(thread.cancel_event, 1);
 #endif
 
-    return faulthandler_env_options();
+    if (enable) {
+        if (faulthandler_init_enable() < 0) {
+            return _Py_INIT_ERR("failed to enable faulthandler");
+        }
+    }
+    return _Py_INIT_OK();
 }
 
 void _PyFaulthandler_Fini(void)

@@ -164,13 +164,23 @@ if _mswindows:
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
-                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW)
+                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
+                         ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
+                         HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
+                         NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
+                         CREATE_NO_WINDOW, DETACHED_PROCESS,
+                         CREATE_DEFAULT_ERROR_MODE, CREATE_BREAKAWAY_FROM_JOB)
 
     __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
                     "STD_ERROR_HANDLE", "SW_HIDE",
                     "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW",
-                    "STARTUPINFO"])
+                    "STARTUPINFO",
+                    "ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
+                    "HIGH_PRIORITY_CLASS", "IDLE_PRIORITY_CLASS",
+                    "NORMAL_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS",
+                    "CREATE_NO_WINDOW", "DETACHED_PROCESS",
+                    "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
 
     class Handle(int):
         closed = False
@@ -250,8 +260,25 @@ def _args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
+
+    # -W options
     for opt in sys.warnoptions:
         args.append('-W' + opt)
+
+    # -X options
+    xoptions = getattr(sys, '_xoptions', {})
+    if 'dev' in xoptions:
+        args.extend(('-X', 'dev'))
+    for opt in ('faulthandler', 'tracemalloc', 'importtime',
+                'showalloccount', 'showrefcount'):
+        if opt in xoptions:
+            value = xoptions[opt]
+            if value is True:
+                arg = opt
+            else:
+                arg = '%s=%s' % (opt, value)
+            args.extend(('-X', arg))
+
     return args
 
 
@@ -751,7 +778,7 @@ class Popen(object):
     @property
     def universal_newlines(self):
         # universal_newlines as retained as an alias of text_mode for API
-        # compatability. bpo-31756
+        # compatibility. bpo-31756
         return self.text_mode
 
     @universal_newlines.setter

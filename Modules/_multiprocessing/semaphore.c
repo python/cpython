@@ -315,12 +315,12 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         /* Couldn't acquire immediately, need to block */
         do {
             Py_BEGIN_ALLOW_THREADS
-            if (blocking && timeout_obj == Py_None)
+            if (timeout_obj == Py_None) {
                 res = sem_wait(self->handle);
-            else if (!blocking)
-                res = sem_trywait(self->handle);
-            else
+            }
+            else {
                 res = sem_timedwait(self->handle, &deadline);
+            }
             Py_END_ALLOW_THREADS
             err = errno;
             if (res == MP_EXCEPTION_HAS_BEEN_SET)

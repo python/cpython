@@ -597,7 +597,8 @@ Py_LOCAL_INLINE(char *)
 ensure_decimal_point(char* buffer, size_t buf_size, int precision)
 {
     int digit_count, insert_count = 0, convert_to_exp = 0;
-    char *chars_to_insert, *digits_start;
+    const char *chars_to_insert;
+    char *digits_start;
 
     /* search for the first non-digit character */
     char *p = buffer;

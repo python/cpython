@@ -47,6 +47,12 @@ ROUNDING_MODES = (
 )
 
 
+def busy_wait(duration):
+    deadline = time.monotonic() + duration
+    while time.monotonic() < deadline:
+        pass
+
+
 class TimeTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -64,6 +70,31 @@ class TimeTestCase(unittest.TestCase):
         self.assertFalse(info.monotonic)
         self.assertTrue(info.adjustable)
 
+    def test_time_ns_type(self):
+        def check_ns(sec, ns):
+            self.assertIsInstance(ns, int)
+
+            sec_ns = int(sec * 1e9)
+            # tolerate a difference of 50 ms
+            self.assertLess((sec_ns - ns), 50 ** 6, (sec, ns))
+
+        check_ns(time.time(),
+                 time.time_ns())
+        check_ns(time.monotonic(),
+                 time.monotonic_ns())
+        check_ns(time.perf_counter(),
+                 time.perf_counter_ns())
+        check_ns(time.process_time(),
+                 time.process_time_ns())
+
+        if hasattr(time, 'thread_time'):
+            check_ns(time.thread_time(),
+                     time.thread_time_ns())
+
+        if hasattr(time, 'clock_gettime'):
+            check_ns(time.clock_gettime(time.CLOCK_REALTIME),
+                     time.clock_gettime_ns(time.CLOCK_REALTIME))
+
     def test_clock(self):
         with self.assertWarns(DeprecationWarning):
             time.clock()
@@ -76,7 +107,8 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
-        time.clock_gettime(time.CLOCK_REALTIME)
+        t = time.clock_gettime(time.CLOCK_REALTIME)
+        self.assertIsInstance(t, float)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -464,7 +496,54 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # process_time() should include CPU time spent in any thread
+        start = time.process_time()
+        busy_wait(0.100)
+        stop = time.process_time()
+        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+
+        t = threading.Thread(target=busy_wait, args=(0.100,))
+        start = time.process_time()
+        t.start()
+        t.join()
+        stop = time.process_time()
+        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+
         info = time.get_clock_info('process_time')
+        self.assertTrue(info.monotonic)
+        self.assertFalse(info.adjustable)
+
+    def test_thread_time(self):
+        if not hasattr(time, 'thread_time'):
+            if sys.platform.startswith(('linux', 'win')):
+                self.fail("time.thread_time() should be available on %r"
+                          % (sys.platform,))
+            else:
+                self.skipTest("need time.thread_time")
+
+        # thread_time() should not include time spend during a sleep
+        start = time.thread_time()
+        time.sleep(0.100)
+        stop = time.thread_time()
+        # use 20 ms because thread_time() has usually a resolution of 15 ms
+        # on Windows
+        self.assertLess(stop - start, 0.020)
+
+        # thread_time() should include CPU time spent in current thread...
+        start = time.thread_time()
+        busy_wait(0.100)
+        stop = time.thread_time()
+        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+
+        # ...but not in other threads
+        t = threading.Thread(target=busy_wait, args=(0.100,))
+        start = time.thread_time()
+        t.start()
+        t.join()
+        stop = time.thread_time()
+        self.assertLess(stop - start, 0.020)
+
+        info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 

@@ -251,8 +251,9 @@ def template(pattern, flags=0):
 # SPECIAL_CHARS
 # closing ')', '}' and ']'
 # '-' (a range in character set)
+# '&', '~', (extended character set operations)
 # '#' (comment) and WHITESPACE (ignored) in verbose mode
-_special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-|^$\\.# \t\n\r\v\f'}
+_special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f'}
 
 def escape(pattern):
     """

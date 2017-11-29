@@ -52,8 +52,6 @@ typedef struct {
     Py_ssize_t mark[1];
 } MatchObject;
 
-typedef unsigned int (*SRE_TOLOWER_HOOK)(unsigned int ch);
-
 typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
     SRE_CODE* pattern; /* points to REPEAT operator arguments */
@@ -83,8 +81,6 @@ typedef struct {
     Py_buffer buffer;
     /* current repeat context */
     SRE_REPEAT *repeat;
-    /* hooks */
-    SRE_TOLOWER_HOOK lower, upper;
 } SRE_STATE;
 
 typedef struct {

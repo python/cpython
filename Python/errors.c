@@ -218,6 +218,10 @@ PyErr_ExceptionMatches(PyObject *exc)
 }
 
 
+#ifndef Py_NORMALIZE_RECURSION_LIMIT
+#define Py_NORMALIZE_RECURSION_LIMIT 32
+#endif
+
 /* Used in many places to normalize a raised exception, including in
    eval_code2(), do_raise(), and PyErr_Print()
 
@@ -227,17 +231,17 @@ PyErr_ExceptionMatches(PyObject *exc)
 void
 PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 {
-    PyObject *type = *exc;
-    PyObject *value = *val;
-    PyObject *inclass = NULL;
-    PyObject *initial_tb = NULL;
-    PyThreadState *tstate = NULL;
+    int recursion_depth = 0;
+    PyObject *type, *value, *initial_tb;
 
+  restart:
+    type = *exc;
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
         return;
     }
 
+    value = *val;
     /* If PyErr_SetNone() was used, the value will have been actually
        set to NULL.
     */
@@ -246,79 +250,83 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
         Py_INCREF(value);
     }
 
-    if (PyExceptionInstance_Check(value))
-        inclass = PyExceptionInstance_Class(value);
-
     /* Normalize the exception so that if the type is a class, the
        value will be an instance.
     */
     if (PyExceptionClass_Check(type)) {
-        int is_subclass;
-        if (inclass) {
-            is_subclass = PyObject_IsSubclass(inclass, type);
-            if (is_subclass < 0)
-                goto finally;
-        }
-        else
-            is_subclass = 0;
+        PyObject *inclass = NULL;
+        int is_subclass = 0;
 
-        /* if the value was not an instance, or is not an instance
+        if (PyExceptionInstance_Check(value)) {
+            inclass = PyExceptionInstance_Class(value);
+            is_subclass = PyObject_IsSubclass(inclass, type);
+            if (is_subclass < 0) {
+                goto error;
+            }
+        }
+
+        /* If the value was not an instance, or is not an instance
            whose class is (or is derived from) type, then use the
            value as an argument to instantiation of the type
            class.
         */
-        if (!inclass || !is_subclass) {
-            PyObject *fixed_value;
-
-            fixed_value = _PyErr_CreateException(type, value);
+        if (!is_subclass) {
+            PyObject *fixed_value = _PyErr_CreateException(type, value);
             if (fixed_value == NULL) {
-                goto finally;
+                goto error;
             }
-
             Py_DECREF(value);
             value = fixed_value;
         }
-        /* if the class of the instance doesn't exactly match the
-           class of the type, believe the instance
+        /* If the class of the instance doesn't exactly match the
+           class of the type, believe the instance.
         */
         else if (inclass != type) {
+            Py_INCREF(inclass);
             Py_DECREF(type);
             type = inclass;
-            Py_INCREF(type);
         }
     }
     *exc = type;
     *val = value;
     return;
-finally:
+
+  error:
     Py_DECREF(type);
     Py_DECREF(value);
+    recursion_depth++;
+    if (recursion_depth == Py_NORMALIZE_RECURSION_LIMIT) {
+        PyErr_SetString(PyExc_RecursionError, "maximum recursion depth "
+                        "exceeded while normalizing an exception");
+    }
     /* If the new exception doesn't set a traceback and the old
        exception had a traceback, use the old traceback for the
        new exception.  It's better than nothing.
     */
     initial_tb = *tb;
     PyErr_Fetch(exc, val, tb);
+    assert(*exc != NULL);
     if (initial_tb != NULL) {
         if (*tb == NULL)
             *tb = initial_tb;
         else
             Py_DECREF(initial_tb);
     }
-    /* normalize recursively */
-    tstate = PyThreadState_GET();
-    if (++tstate->recursion_depth > Py_GetRecursionLimit()) {
-        --tstate->recursion_depth;
-        /* throw away the old exception and use the recursion error instead */
-        Py_INCREF(PyExc_RecursionError);
-        Py_SETREF(*exc, PyExc_RecursionError);
-        Py_INCREF(PyExc_RecursionErrorInst);
-        Py_SETREF(*val, PyExc_RecursionErrorInst);
-        /* just keeping the old traceback */
-        return;
+    /* Abort when Py_NORMALIZE_RECURSION_LIMIT has been exceeded, and the
+       corresponding RecursionError could not be normalized, and the
+       MemoryError raised when normalize this RecursionError could not be
+       normalized. */
+    if (recursion_depth >= Py_NORMALIZE_RECURSION_LIMIT + 2) {
+        if (PyErr_GivenExceptionMatches(*exc, PyExc_MemoryError)) {
+            Py_FatalError("Cannot recover from MemoryErrors "
+                          "while normalizing exceptions.");
+        }
+        else {
+            Py_FatalError("Cannot recover from the recursive normalization "
+                          "of an exception.");
+        }
     }
-    PyErr_NormalizeException(exc, val, tb);
-    --tstate->recursion_depth;
+    goto restart;
 }
 
 

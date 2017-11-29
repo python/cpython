@@ -662,8 +662,9 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError('{!r} is not a module, class, method, '
-                    'function, traceback, frame, or code object'.format(object))
+    raise TypeError('module, class, method, function, traceback, frame, or '
+                    'code object was expected, got {}'.format(
+                    type(object).__name__))
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
@@ -1380,7 +1381,7 @@ def getclosurevars(func):
         func = func.__func__
 
     if not isfunction(func):
-        raise TypeError("'{!r}' is not a Python function".format(func))
+        raise TypeError("{!r} is not a Python function".format(func))
 
     code = func.__code__
     # Nonlocal references are named in co_freevars and resolved
@@ -1623,7 +1624,7 @@ def getgeneratorlocals(generator):
     bound values."""
 
     if not isgenerator(generator):
-        raise TypeError("'{!r}' is not a Python generator".format(generator))
+        raise TypeError("{!r} is not a Python generator".format(generator))
 
     frame = getattr(generator, "gi_frame", None)
     if frame is not None:
@@ -2520,11 +2521,14 @@ class Parameter:
 
         # Add annotation and default value
         if self._annotation is not _empty:
-            formatted = '{}:{}'.format(formatted,
+            formatted = '{}: {}'.format(formatted,
                                        formatannotation(self._annotation))
 
         if self._default is not _empty:
-            formatted = '{}={}'.format(formatted, repr(self._default))
+            if self._annotation is not _empty:
+                formatted = '{} = {}'.format(formatted, repr(self._default))
+            else:
+                formatted = '{}={}'.format(formatted, repr(self._default))
 
         if kind == _VAR_POSITIONAL:
             formatted = '*' + formatted

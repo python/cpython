@@ -81,7 +81,7 @@ extension.cfg.  All take effect as soon as one clicks Apply or Ok.
 '<<zoom-height>>'.  Any (global) customizations made before 3.6.3 will
 not affect their keyset-specific customization after 3.6.3. and vice
 versa.
-  Inital patch by Charles Wohlganger, revised by Terry Jan Reedy.
+  Initial patch by Charles Wohlganger, revised by Terry Jan Reedy.
 
 bpo-31051:  Rearrange condigdialog General tab.
 Sort non-Help options into Window (Shell+Editor) and Editor (only).

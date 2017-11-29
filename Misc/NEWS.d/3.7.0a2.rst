@@ -166,7 +166,8 @@ special method lookups.  Patch by Stefan Behnel.
 .. section: Core and Builtins
 
 Add ``-X importtime`` option to show how long each import takes. It can be
-used to optimize application's startup time.
+used to optimize application's startup time.  Support the
+:envvar:`PYTHONPROFILEIMPORTTIME` as an equivalent way to enable this.
 
 ..
 
@@ -423,7 +424,7 @@ Stop crashes when concurrently iterate over itertools.groupby() iterators.
 .. nonce: Csse77
 .. section: Library
 
-An iterator produced by itertools.groupby() iterator now becames exhausted
+An iterator produced by itertools.groupby() iterator now becomes exhausted
 after advancing the groupby iterator.
 
 ..
@@ -444,7 +445,7 @@ Cancel asyncio.wait_for future faster if timeout <= 0
 
 Allow passing a context object in
 :class:`concurrent.futures.ProcessPoolExecutor` constructor. Also, free job
-ressources in :class:`concurrent.futures.ProcessPoolExecutor` earlier to
+resources in :class:`concurrent.futures.ProcessPoolExecutor` earlier to
 improve memory usage when a worker waits for new jobs.
 
 ..
@@ -677,7 +678,7 @@ and Py_SetPath()
 .. nonce: vm8vGE
 .. section: C API
 
-Implement PEP 539 for Thread Specific Stroage (TSS) API: it is a new Thread
+Implement PEP 539 for Thread Specific Storage (TSS) API: it is a new Thread
 Local Storage (TLS) API to CPython which would supersede use of the existing
 TLS API within the CPython interpreter, while deprecating the existing API.
 PEP written by Erik M. Bray, patch by Masayuki Yamamoto.

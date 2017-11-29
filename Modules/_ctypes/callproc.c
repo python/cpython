@@ -1336,7 +1336,7 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     handle = ctypes_dlopen(name_str, mode);
     Py_XDECREF(name2);
     if (!handle) {
-        char *errmsg = ctypes_dlerror();
+        const char *errmsg = ctypes_dlerror();
         if (!errmsg)
             errmsg = "dlopen() error";
         PyErr_SetString(PyExc_OSError,

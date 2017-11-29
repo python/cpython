@@ -12,7 +12,6 @@ if hasattr(socket, 'AF_UNIX'):
     __all__.extend(['open_unix_connection', 'start_unix_server'])
 
 from . import coroutines
-from . import compat
 from . import events
 from . import protocols
 from .coroutines import coroutine
@@ -35,6 +34,9 @@ class IncompleteReadError(EOFError):
         self.partial = partial
         self.expected = expected
 
+    def __reduce__(self):
+        return type(self), (self.partial, self.expected)
+
 
 class LimitOverrunError(Exception):
     """Reached the buffer limit while looking for a separator.
@@ -45,6 +47,9 @@ class LimitOverrunError(Exception):
     def __init__(self, message, consumed):
         super().__init__(message)
         self.consumed = consumed
+
+    def __reduce__(self):
+        return type(self), (self.args[0], self.consumed)
 
 
 @coroutine

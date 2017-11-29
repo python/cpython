@@ -4533,6 +4533,10 @@ class NetworkConnectionNoServer(unittest.TestCase):
         expected_errnos = [ errno.ECONNREFUSED, ]
         if hasattr(errno, 'ENETUNREACH'):
             expected_errnos.append(errno.ENETUNREACH)
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # bpo-31910: socket.create_connection() fails randomly
+            # with EADDRNOTAVAIL on Travis CI
+            expected_errnos.append(errno.EADDRNOTAVAIL)
 
         self.assertIn(cm.exception.errno, expected_errnos)
 
@@ -4671,7 +4675,7 @@ class TCPTimeoutTest(SocketTCPTest):
                          'test needs signal.alarm()')
     def testInterruptedTimeout(self):
         # XXX I don't know how to do this test on MSWindows or any other
-        # plaform that doesn't support signal.alarm() or os.kill(), though
+        # platform that doesn't support signal.alarm() or os.kill(), though
         # the bug should have existed on all platforms.
         self.serv.settimeout(5.0)   # must be longer than alarm
         class Alarm(Exception):
@@ -5295,7 +5299,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     Test the send() implementation of socket.sendfile().
     """
 
-    FILESIZE = (10 * 1024 * 1024)  # 10MB
+    FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
     TIMEOUT = 2

@@ -1,0 +1,1 @@
+Added asyncio.BaseEventLoop.connect_accepted_socket versionaddded marker.
