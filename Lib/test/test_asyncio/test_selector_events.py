@@ -1,6 +1,7 @@
 """Tests for selector_events.py"""
 
 import errno
+import selectors
 import socket
 import unittest
 from unittest import mock
@@ -10,7 +11,6 @@ except ImportError:
     ssl = None
 
 import asyncio
-from asyncio import selectors
 from asyncio import test_utils
 from asyncio.selector_events import BaseSelectorEventLoop
 from asyncio.selector_events import _SelectorTransport
@@ -154,9 +154,6 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.close()
         self.assertIsNone(self.loop._selector)
 
-    def test_socketpair(self):
-        self.assertRaises(NotImplementedError, self.loop._socketpair)
-
     def test_read_from_self_tryagain(self):
         self.loop._ssock.recv.side_effect = BlockingIOError
         self.assertIsNone(self.loop._read_from_self())
@@ -187,6 +184,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock = mock.Mock()
         sock.fileno.return_value = 10
         sock.recv.side_effect = BlockingIOError
+        sock.gettimeout.return_value = 0.0
 
         self.loop.add_reader = mock.Mock()
         self.loop.remove_reader = mock.Mock()
@@ -267,6 +265,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock = mock.Mock()
         sock.fileno.return_value = 10
         sock.send.side_effect = BlockingIOError
+        sock.gettimeout.return_value = 0.0
 
         self.loop.add_writer = mock.Mock()
         self.loop.remove_writer = mock.Mock()

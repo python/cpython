@@ -364,7 +364,6 @@ def warn_explicit(message, category, filename, lineno,
         action = defaultaction
     # Early exit actions
     if action == "ignore":
-        registry[key] = 1
         return
 
     # Prime the linecache for formatting, in case the
@@ -540,7 +539,7 @@ if not _warnings_defaults:
 
     # resource usage warnings are enabled by default in pydebug mode
     if dev_mode or py_debug:
-        resource_action = "always"
+        resource_action = "default"
     else:
         resource_action = "ignore"
     simplefilter(resource_action, category=ResourceWarning, append=1)

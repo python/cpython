@@ -690,10 +690,7 @@ Wait until a socket receives data using the
 the event loop ::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    from socket import socketpair
 
     # Create a pair of connected sockets
     rsock, wsock = socketpair()
