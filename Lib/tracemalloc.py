@@ -171,8 +171,8 @@ class Frame:
 @total_ordering
 class Traceback(Sequence):
     """
-    Sequence of Frame instances sorted from the most recent frame
-    to the oldest frame.
+    Sequence of Frame instances sorted from the oldest frame
+    to the most recent frame.
     """
     __slots__ = ("_frames",)
 
@@ -180,7 +180,7 @@ class Traceback(Sequence):
         Sequence.__init__(self)
         # frames is a tuple of frame tuples: see Frame constructor for the
         # format of a frame tuple
-        self._frames = frames
+        self._frames = tuple(reversed(frames))
 
     def __len__(self):
         return len(self._frames)
@@ -209,12 +209,15 @@ class Traceback(Sequence):
     def __repr__(self):
         return "<Traceback %r>" % (tuple(self),)
 
-    def format(self, limit=None, reverse=False):
+    def format(self, limit=None, most_recent_first=False):
         lines = []
-        if limit is not None and limit < 0:
-            return lines
-        frame_slice = self[:limit]
-        if reverse:
+        if limit is not None:
+            if limit > 0:
+                frame_slice = self[-limit:]
+            else:
+                frame_slice = self[:limit]
+                
+        if most_recent_first:
             frame_slice = reversed(frame_slice)
         for frame in frame_slice:
             lines.append('  File "%s", line %s'

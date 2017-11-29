@@ -650,8 +650,8 @@ Traceback
 
 .. class:: Traceback
 
-   Sequence of :class:`Frame` instances sorted from the most recent frame to
-   the oldest frame.
+   Sequence of :class:`Frame` instances sorted from the oldest frame to the
+   most recent frame.
 
    A traceback contains at least ``1`` frame. If the ``tracemalloc`` module
    failed to get a frame, the filename ``"<unknown>"`` at line number ``0`` is
@@ -663,13 +663,14 @@ Traceback
    The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
    instance.
 
-   .. method:: format(limit=None, reverse=False)
+   .. method:: format(limit=None, most_recent_first=False)
 
-      Format the traceback as a list of lines with newlines.  Use the
-      :mod:`linecache` module to retrieve lines from the source code.  If
-      *limit* is set, only format the *limit* most recent frames.
-      If *reverse* is True, reverse the order of the lines to be sorted
-      from oldest to newest frame.
+      Format the traceback as a list of lines with newlines. Use the
+      :mod:`linecache` module to retrieve lines from the source code.
+      If *limit* is set, format the *limit* most recent frames if *limit*
+      is positive. Otherwise, format the ``abs(limit)`` oldest frames.
+      If *most_recent_first* is ``True``, the order of the formatted frames
+      is reversed, returning the most recent frame first instead of last.
 
       Similar to the :func:`traceback.format_tb` function, except that
       :meth:`.format` does not include newlines.
