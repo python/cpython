@@ -44,15 +44,10 @@ static Py_ssize_t count_tracked = 0;
 static void
 show_track(void)
 {
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showalloccount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (!inter->core_config.show_alloc_count) {
         return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
-    if (value != Py_True)
-        return;
+    }
 
     fprintf(stderr, "Tuples created: %" PY_FORMAT_SIZE_T "d\n",
         count_tracked + count_untracked);

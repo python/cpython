@@ -1,0 +1,3 @@
+Use :func:`os.path.expanduser` to find the ``~/.netrc`` file in
+:class:`netrc.netrc`.  If it does not exist, :exc:`FileNotFoundError`
+is raised.  Patch by Dimitri Merejkowsky.

@@ -25,25 +25,32 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 
 typedef struct {
-    int ignore_environment;
-    int use_hash_seed;
+    int ignore_environment; /* -E */
+    int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
-    char *allocator;
-    int faulthandler;
-    int tracemalloc;        /* Number of saved frames, 0=don't trace */
-    int importtime;         /* -X importtime */
+    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
+    int dev_mode;           /* -X dev */
+    int faulthandler;       /* -X faulthandler */
+    int tracemalloc;        /* -X tracemalloc=N */
+    int import_time;        /* -X importtime */
+    int show_ref_count;     /* -X showrefcount */
+    int show_alloc_count;   /* -X showalloccount */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
-    {.ignore_environment = 0, \
+    (_PyCoreConfig){\
+     .ignore_environment = 0, \
      .use_hash_seed = -1, \
      .hash_seed = 0, \
      ._disable_importlib = 0, \
      .allocator = NULL, \
+     .dev_mode = 0, \
      .faulthandler = 0, \
      .tracemalloc = 0, \
-     .importtime = 0}
+     .import_time = 0, \
+     .show_ref_count = 0, \
+     .show_alloc_count = 0}
 
 /* Placeholders while working on the new configuration API
  *
@@ -53,9 +60,19 @@ typedef struct {
  */
 typedef struct {
     int install_signal_handlers;
+    /* PYTHONPATH environment variable */
+    wchar_t *module_search_path_env;
+    /* PYTHONHOME environment variable, see also Py_SetPythonHome(). */
+    wchar_t *home;
+    /* Program name, see also Py_GetProgramName() */
+    wchar_t *program_name;
 } _PyMainInterpreterConfig;
 
-#define _PyMainInterpreterConfig_INIT {-1}
+#define _PyMainInterpreterConfig_INIT \
+    (_PyMainInterpreterConfig){\
+     .install_signal_handlers = -1, \
+     .module_search_path_env = NULL, \
+     .home = NULL}
 
 typedef struct _is {
 

@@ -185,10 +185,10 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
-New Developer Mode: -X dev
---------------------------
+New Development Mode: -X dev
+----------------------------
 
-Add a new "developer mode": ``-X dev`` command line option to enable debug
+Add a new "development mode": ``-X dev`` command line option to enable debug
 checks at runtime.
 
 In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
@@ -298,6 +298,12 @@ README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
 
+:class:`distutils.core.setup` now raises a :exc:`TypeError` if
+``classifiers``, ``keywords`` and ``platforms`` fields are not specified
+as a list.  However, to minimize backwards incompatibility concerns,
+``keywords`` and ``platforms`` fields still accept a comma separated string.
+(Contributed by Berker Peksag in :issue:`19610`.)
+
 http.client
 -----------
 
@@ -365,6 +371,11 @@ string
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
+sys
+---
+
+Added :attr:`sys.flags.dev_mode` flag for the new development mode.
+
 time
 ----
 
@@ -391,6 +402,15 @@ Add new clock identifiers:
 Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
 to get per-thread CPU time measurements.
 (Contributed by Antoine Pitrou in :issue:`32025`.)
+
+
+unittest
+--------
+Added new command-line option ``-k`` to filter tests to run with a substring or
+Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
+tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
+but not ``bar_tests.FooTest.test_something``.
+
 
 unittest.mock
 -------------
@@ -671,6 +691,17 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* The ``asyncio.windows_utils.socketpair()`` function has been
+  removed: use directly :func:`socket.socketpair` which is available on all
+  platforms since Python 3.5 (before, it wasn't available on Windows).
+  ``asyncio.windows_utils.socketpair()`` was just an alias to
+  ``socket.socketpair`` on Python 3.5 and newer.
+
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
+
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in
   :issue:`24744`.)
@@ -724,6 +755,10 @@ Changes in the Python API
   character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
   avoid a warning escape them with a backslash.
   (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+* :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
+  recent to be more consistent with :mod:`traceback`.
+  (Contributed by Jesse Bakker in :issue:`32121`.)
 
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 

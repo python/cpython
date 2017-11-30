@@ -146,6 +146,8 @@ See :pep:`484` for more details.
    ``Derived`` is expected. This is useful when you want to prevent logic
    errors with minimal runtime cost.
 
+.. versionadded:: 3.5.2
+
 Callable
 --------
 
@@ -494,6 +496,8 @@ The module defines the following classes, functions and decorators:
    ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
    to ``type``, which is the root of Python's metaclass hierarchy.
 
+   .. versionadded:: 3.5.2
+
 .. class:: Iterable(Generic[T_co])
 
     A generic version of :class:`collections.abc.Iterable`.
@@ -674,6 +678,8 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.defaultdict`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: Counter(collections.Counter, Dict[T, int])
 
    A generic version of :class:`collections.Counter`.
@@ -762,6 +768,8 @@ The module defines the following classes, functions and decorators:
        def add_unicode_checkmark(text: Text) -> Text:
            return text + u' \u2713'
 
+   .. versionadded:: 3.5.2
+
 .. class:: io
 
    Wrapper namespace for I/O stream types.
@@ -846,6 +854,8 @@ The module defines the following classes, functions and decorators:
 
       UserId = NewType('UserId', int)
       first_user = UserId(1)
+
+   .. versionadded:: 3.5.2
 
 .. function:: cast(typ, val)
 
@@ -1054,3 +1064,5 @@ The module defines the following classes, functions and decorators:
    "forward reference", to hide the ``expensive_mod`` reference from the
    interpreter runtime.  Type annotations for local variables are not
    evaluated, so the second annotation does not need to be enclosed in quotes.
+
+   .. versionadded:: 3.5.2

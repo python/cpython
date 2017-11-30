@@ -398,7 +398,7 @@ Directory Objects
 
    .. method:: remove_pyc()
 
-      Remove ``.pyc``/``.pyo`` files on uninstall.
+      Remove ``.pyc`` files on uninstall.
 
 
 .. seealso::
