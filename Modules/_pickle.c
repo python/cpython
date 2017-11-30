@@ -397,7 +397,7 @@ init_method_ref(PyObject *self, _Py_Identifier *name,
     }
 }
 
-/* Bound a method if it was deconstructed */
+/* Bind a method if it was deconstructed */
 static PyObject *
 reconstruct_method(PyObject *func, PyObject *self)
 {
