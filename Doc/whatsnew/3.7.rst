@@ -185,10 +185,10 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
-New Developer Mode: -X dev
---------------------------
+New Development Mode: -X dev
+----------------------------
 
-Add a new "developer mode": ``-X dev`` command line option to enable debug
+Add a new "development mode": ``-X dev`` command line option to enable debug
 checks at runtime.
 
 In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
@@ -370,6 +370,11 @@ string
 :class:`string.Template` now lets you to optionally modify the regular
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+sys
+---
+
+Added :attr:`sys.flags.dev_mode` flag for the new development mode.
 
 time
 ----
