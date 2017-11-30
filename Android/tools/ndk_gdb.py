@@ -123,7 +123,7 @@ def generate_gdb_script(args, sysroot, binary_path, app_64bit,
         cmds.append('set logging on')
 
     # Workaround SIGILL in __dl_notify_gdb_of_libraries when a library is
-    # loaded on arm or armv7.
+    # loaded on armv7.
     if os.environ.get('GDB_SIGILL') == 'yes':
         cmds.append('break __dl_rtld_db_dlactivity')
         cmds.append('commands')

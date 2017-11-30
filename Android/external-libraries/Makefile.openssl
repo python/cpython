@@ -18,8 +18,6 @@ py_install_dir := $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)
 BUILD_OPENSSL := $(py_install_dir)/lib/libcrypto.so
 ifeq ($(ANDROID_ARCH), x86)
     export MACHINE := i686
-else ifeq ($(ANDROID_ARCH), arm)
-    undefine BUILD_OPENSSL
 else
     export MACHINE := $(ANDROID_ARCH)
 endif

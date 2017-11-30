@@ -46,9 +46,6 @@ gdb:
 	@echo "---> Start gdb."
 	$(py_srcdir)/Android/tools/ndk_gdb.py $(ANDROID_API) $(py_srcdir) python
 
-ifeq ($(ANDROID_ARCH), arm)
-    $(avd_dir)/$(avd_name): APP_ABI := armeabi-v7a
-endif
 $(avd_dir)/$(avd_name):
 	@echo "---> Create the avd."
 	mkdir -p $(avd_dir)

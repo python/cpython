@@ -49,8 +49,8 @@ Both scripts use the following environment variables:
 - ``ANDROID_API``, the target API level for the cross-compilation. This is also
   the API level of the emulator AVD [2]_. The default value is 24.
 - ``ANDROID_ARCH``, the target architecture for the cross-compilation.  This is
-  also the architecture of the AVD. It may be arm, armv7, arm64, x86 or x86_64.
-  The default value is x86_64.
+  also the architecture of the AVD. It may be armv7, arm64, x86 or x86_64. See
+  `ABI Management`_ for the corresponding ABIs. The default value is x86_64.
 
 The ``WITH_LIBRARIES`` variable is a comma separated list of the external
 libraries that are linked with extension modules when the build is done with the
@@ -228,7 +228,7 @@ must be added to the SDK for each one. One may install and manage the SDK with
 The remaining part of this section describes the installation of the SDK and its
 management with the ``sdkmanager`` command line tool (i.e. without Android
 Studio), through an example that installs the SDK and four system images for
-arm64, arm, x86 and x86_64 at API 24:
+armv7, arm64, x86 and x86_64 at API 24:
 
 - Download the basic Android command line tools by looking for a section named
   *Get just the command line tools* at the end of the `Android Studio`_ page.
@@ -292,7 +292,7 @@ Requirements
 
 - Android NDK [3]_.
 - Android SDK (see `Installation of the SDK`_). The SDK with the system images
-  of the arm64, arm, x86 and x86_64 architectures for API 24 requires about
+  of the armv7, arm64, x86 and x86_64 architectures for API 24 requires about
   11 Gb of disk space.
 - A Java 8 JRE to run the sdk tools.
 - GNU make, find, xargs, zip and unzip.
@@ -408,7 +408,7 @@ Emulator Makefile targets
     - ``GDB_SIGILL=yes``
         Work around the problem that gdb fails with SIGILL in
         ``__dl_notify_gdb_of_libraries()`` whenever a library is loaded when
-        debugging on both arm and armv7 platforms.
+        debugging on the armv7 platforms.
 
 
 .. [1] A 64-bit linux distribution capable of running 32-bit applications with
@@ -441,5 +441,6 @@ Emulator Makefile targets
 .. _`Android Studio`: https://developer.android.com/studio/index.html
 .. _`sdkmanager manual`: https://developer.android.com/studio/command-line/sdkmanager.html
 .. _`Start the Emulator from the Command Line`: https://developer.android.com/studio/run/emulator-commandline.html
+.. _`ABI Management`: https://developer.android.com/ndk/guides/abis.html
 
 .. vim:filetype=rst:tw=80:ts=4:sw=4:et:
