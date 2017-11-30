@@ -178,7 +178,7 @@ Requirements
 ^^^^^^^^^^^^
 
 - Android NDK [3]_.
-- GNU make, find, xargs.
+- GNU make, find, xargs, md5sum, awk.
 - The native compiler of the build platform to build the native Python.
 - wget or curl for downloading the external libraries unless those files are
   downloaded by other means and copied by hand to build/external-libraries.

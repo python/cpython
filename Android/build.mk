@@ -125,17 +125,24 @@ configure: native_python external_libraries openssl
 	@rm -f $(config_status)
 	$(MAKE) $(config_status)
 
+disabled_modules: setup_tmp := $(py_host_dir)/Modules/_Setup.tmp
+disabled_modules: setup_file := $(py_host_dir)/Modules/Setup
 disabled_modules:
-	setup_file=$(py_host_dir)/Modules/Setup; \
-	cp $(py_srcdir)/Modules/Setup.dist $$setup_file; \
-	    echo "*disabled*" >> $$setup_file; \
-	    echo "_uuid" >> $$setup_file; \
-	    echo "grp" >> $$setup_file; \
-	    echo "_crypt" >> $$setup_file
+	cp $(py_srcdir)/Modules/Setup.dist $(setup_tmp)
+	echo "*disabled*" >> $(setup_tmp)
+	echo "_uuid" >> $(setup_tmp)
+	echo "grp" >> $(setup_tmp)
+	echo "_crypt" >> $(setup_tmp)
 ifneq ($(filter x86_64 arm64,$(ANDROID_ARCH)), )
 	@# Disable _ctypes on x86_64 and arm64 platforms.
-	echo "_ctypes" >> $(py_host_dir)/Modules/Setup
+	echo "_ctypes" >> $(setup_tmp)
 endif
+	@if test -f $(setup_file); then \
+	    if test $$(md5sum $(setup_tmp) | awk '{print $$1}') != \
+	            $$(md5sum $(setup_file) | awk '{print $$1}'); then \
+	        cp $(setup_tmp) $(setup_file); \
+	    fi \
+	fi
 
 host: disabled_modules
 	@echo "---> Build Python for $(BUILD_TYPE)."
