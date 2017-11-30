@@ -27,11 +27,9 @@ def _is_debug_mode():
     # before you define your coroutines.  A downside of using this feature
     # is that tracebacks show entries for the CoroWrapper.__next__ method
     # when _DEBUG is true.
-    debug = (not sys.flags.ignore_environment and
-             bool(os.environ.get('PYTHONASYNCIODEBUG')))
-    if hasattr(sys, '_xoptions') and 'dev' in sys._xoptions:
-        debug = True
-    return debug
+    return (sys.flags.dev_mode
+            or (not sys.flags.ignore_environment
+                and bool(os.environ.get('PYTHONASYNCIODEBUG'))))
 
 
 _DEBUG = _is_debug_mode()
