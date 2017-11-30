@@ -1,0 +1,3 @@
+Fix PyGILState_Ensure(). When PyGILState_Ensure() is called in a non-Python
+thread before PyEval_InitThreads(), only call PyEval_InitThreads() after
+calling PyThreadState_New() to fix a crash.
