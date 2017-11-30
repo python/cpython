@@ -401,23 +401,30 @@ class EmbeddingTests(unittest.TestCase):
     def tearDown(self):
         os.chdir(self.oldcwd)
 
-    def run_embedded_interpreter(self, *args):
+    def run_embedded_interpreter(self, *args, env=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
+        if env is not None and sys.platform == 'win32':
+            # Windows requires at least the SYSTEMROOT environment variable to
+            # start Python.
+            env = env.copy()
+            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-                             universal_newlines=True)
+                             universal_newlines=True,
+                             env=env)
         (out, err) = p.communicate()
         self.assertEqual(p.returncode, 0,
                          "bad returncode %d, stderr is %r" %
                          (p.returncode, err))
         return out, err
 
-    def test_subinterps(self):
+    def test_repeated_init_and_subinterpreters(self):
         # This is just a "don't crash" test
-        out, err = self.run_embedded_interpreter()
+        out, err = self.run_embedded_interpreter('repeated_init_and_subinterpreters')
         if support.verbose:
             print()
             print(out)
@@ -435,13 +442,14 @@ class EmbeddingTests(unittest.TestCase):
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
-        out, err = self.run_embedded_interpreter("forced_io_encoding")
+        env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
+        out, err = self.run_embedded_interpreter("forced_io_encoding", env=env)
         if support.verbose:
             print()
             print(out)
             print(err)
-        expected_errors = sys.__stdout__.errors
-        expected_stdin_encoding = sys.__stdin__.encoding
+        expected_stream_encoding = "utf-8"
+        expected_errors = "surrogateescape"
         expected_pipe_encoding = self._get_default_pipe_encoding()
         expected_output = '\n'.join([
         "--- Use defaults ---",
@@ -469,12 +477,32 @@ class EmbeddingTests(unittest.TestCase):
         "stdout: latin-1:replace",
         "stderr: latin-1:backslashreplace"])
         expected_output = expected_output.format(
-                                in_encoding=expected_stdin_encoding,
-                                out_encoding=expected_pipe_encoding,
+                                in_encoding=expected_stream_encoding,
+                                out_encoding=expected_stream_encoding,
                                 errors=expected_errors)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
+
+    def test_pre_initialization_api(self):
+        """
+        Checks the few parts of the C-API that work before the runtine
+        is initialized (via Py_Initialize()).
+        """
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
+        out, err = self.run_embedded_interpreter("pre_initialization_api", env=env)
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
+    def test_bpo20891(self):
+        """
+        bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
+        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
+        call PyEval_InitThreads() for us in this case.
+        """
+        out, err = self.run_embedded_interpreter("bpo20891")
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
 
 
 class SkipitemTest(unittest.TestCase):
