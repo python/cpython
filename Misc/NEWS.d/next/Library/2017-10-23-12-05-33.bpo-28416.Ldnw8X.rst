@@ -1,0 +1,3 @@
+Instances of pickle.Pickler subclass with the persistent_id() method and
+pickle.Unpickler subclass with the persistent_load() method no longer create
+reference cycles.
