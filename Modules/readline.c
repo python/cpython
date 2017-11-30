@@ -1352,13 +1352,27 @@ PyInit_readline(void)
     if (m == NULL)
         return NULL;
 
+    if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
+                                RL_READLINE_VERSION) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION",
+                                rl_readline_version) < 0) {
+        goto error;
+    }
+    if (PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION",
+                                   rl_library_version) < 0)
+    {
+        goto error;
+    }
+
     mod_state = (readlinestate *) PyModule_GetState(m);
     PyOS_ReadlineFunctionPointer = call_readline;
     setup_readline(mod_state);
 
-    PyModule_AddIntConstant(m, "_READLINE_VERSION", RL_READLINE_VERSION);
-    PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION", rl_readline_version);
-    PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION", rl_library_version);
-
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
