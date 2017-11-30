@@ -980,7 +980,7 @@ class LocalPart(TokenList):
             if (last_is_tl and tok.token_type == 'dot' and
                     last[-1].token_type == 'cfws'):
                 res[-1] = TokenList(last[:-1])
-            is_tl = isinstance(tok, TokenList)
+            is_tl = isinstance(tok, TokenList) and len(tok)
             if (is_tl and last.token_type == 'dot' and
                     tok[0].token_type == 'cfws'):
                 res.append(TokenList(tok[1:]))
