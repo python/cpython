@@ -2278,7 +2278,7 @@ def get_group(value):
     if not value:
         group.defects.append(errors.InvalidHeaderDefect(
             "end of header in group"))
-    if value[0] != ';':
+    if not value or value[0] != ';':
         raise errors.HeaderParseError(
             "expected ';' at end of group but found {}".format(value))
     group.append(ValueTerminal(';', 'group-terminator'))
