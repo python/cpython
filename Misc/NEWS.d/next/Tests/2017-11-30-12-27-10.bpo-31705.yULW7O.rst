@@ -1,0 +1,3 @@
+Skip test_socket.test_sha256() on Linux kernel older than 4.5. The test
+fails with ENOKEY on kernel 3.10 (on ppc64le). A fix was merged into the
+kernel 4.5.
