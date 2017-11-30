@@ -588,6 +588,8 @@ PyGILState_Ensure(void)
 {
     int current;
     PyThreadState *tcur;
+    int need_init_threads = 0;
+
     /* Note that we do not auto-init Python here - apart from
        potential races with 2 threads auto-initializing, pep-311
        spells out other issues.  Embedders are expected to have
@@ -596,6 +598,8 @@ PyGILState_Ensure(void)
     assert(autoInterpreterState); /* Py_Initialize() hasn't been called! */
     tcur = (PyThreadState *)PyThread_get_key_value(autoTLSkey);
     if (tcur == NULL) {
+        need_init_threads = 1;
+
         /* Create a new thread state for this thread */
         tcur = PyThreadState_New(autoInterpreterState);
         if (tcur == NULL)
@@ -605,16 +609,28 @@ PyGILState_Ensure(void)
         tcur->gilstate_counter = 0;
         current = 0; /* new thread state is never current */
     }
-    else
+    else {
         current = PyThreadState_IsCurrent(tcur);
-    if (current == 0)
+    }
+
+    if (current == 0) {
         PyEval_RestoreThread(tcur);
+    }
+
     /* Update our counter in the thread-state - no need for locks:
        - tcur will remain valid as we hold the GIL.
        - the counter is safe as we are the only thread "allowed"
          to modify this value
     */
     ++tcur->gilstate_counter;
+
+    if (need_init_threads) {
+        /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
+           called from a new thread for the first time, we need the create the
+           GIL. */
+        PyEval_InitThreads();
+    }
+
     return current ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 
