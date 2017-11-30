@@ -1814,6 +1814,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"quiet",                   "-q"},
     {"hash_randomization",      "-R"},
     {"isolated",                "-I"},
+    {"dev_mode",                "-X dev"},
     {0}
 };
 
@@ -1821,7 +1822,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    13
+    14
 };
 
 static PyObject*
@@ -1829,6 +1830,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
+    _PyCoreConfig *core_config = &_PyGILState_GetInterpreterStateUnsafe()->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -1853,6 +1855,7 @@ make_flags(void)
     SetFlag(Py_HashRandomizationFlag);
     SetFlag(Py_IsolatedFlag);
 #undef SetFlag
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(core_config->dev_mode));
 
     if (PyErr_Occurred()) {
         Py_DECREF(seq);

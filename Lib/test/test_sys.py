@@ -526,10 +526,12 @@ class SysModuleTest(unittest.TestCase):
         attrs = ("debug",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
                  "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated")
+                 "bytes_warning", "quiet", "hash_randomization", "isolated",
+                 "dev_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
+            attr_type = bool if attr == "dev_mode" else int
+            self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
 
