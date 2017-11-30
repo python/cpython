@@ -961,28 +961,35 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
     _PyInitError err;
 
-    /* TODO: Moar config options! */
     core_config.ignore_environment = Py_IgnoreEnvironmentFlag;
     core_config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
     err = _Py_InitializeCore(&core_config);
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        goto done;
     }
 
-    /* TODO: Print any exceptions raised by these operations */
+    err = _PyMainInterpreterConfig_ReadEnv(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
     err = _PyMainInterpreterConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        goto done;
     }
 
     err = _Py_InitializeMainInterpreter(&config);
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        goto done;
     }
 
-    return _Py_INIT_OK();
+    err = _Py_INIT_OK();
+
+done:
+    _PyMainInterpreterConfig_Clear(&config);
+    return err;
 }
 
 
