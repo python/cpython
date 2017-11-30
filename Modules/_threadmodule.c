@@ -1363,7 +1363,7 @@ PyInit__thread(void)
     if (m == NULL)
         return NULL;
 
-    timeout_max = (double)PY_TIMEOUT_MAX * 1e-6;
+    timeout_max = (_PyTime_t)PY_TIMEOUT_MAX * 1e-6;
     time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
     /* Round towards minus infinity */
