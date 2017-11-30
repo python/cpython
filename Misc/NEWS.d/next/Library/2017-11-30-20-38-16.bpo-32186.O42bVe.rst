@@ -1,0 +1,3 @@
+Fixed hang of all threads when using io.FileIO with inaccessible NFS server.
+Now only the thread accessing the problematic storage will hang.  Patch by
+Nir Soffer.
