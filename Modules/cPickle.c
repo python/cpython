@@ -3395,7 +3395,7 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc)
 }
 
 static PyObject *
-find_class_text(PyObject *module_name, PyObject *global_name, Unpicklerobject *self)
+find_class_text(Unpicklerobject *self, PyObject *module_name, PyObject *global_name)
 {
     PyObject *result;
     Py_ssize_t module_len = PyString_GET_SIZE(module_name);
@@ -3732,7 +3732,7 @@ load_string(Unpicklerobject *self)
     if (!( s=pystrndup(s,len)))  return -1;
 
 
-    /* Strip newline */
+    /* Strip the newline */
     if (s[len-2] == '\r') {
         self->strip_cr = 1;
     }
@@ -3832,7 +3832,7 @@ load_unicode(Unpicklerobject *self)
 
     if (self->strip_cr && len >= 2 && s[len - 2] == '\r') {
         if (PyErr_WarnEx(PyExc_RuntimeWarning,
-                            "Pickle was saved in text mode", 1) < 0)
+                         "Pickle was saved in text mode", 1) < 0)
         {
             return -1;
         }
@@ -4027,7 +4027,7 @@ load_inst(Unpicklerobject *self)
             return bad_readline();
         }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
-            class = find_class_text(module_name, class_name, self);
+            class = find_class_text(self, module_name, class_name);
             Py_DECREF(class_name);
         }
     }
@@ -4113,7 +4113,7 @@ load_global(Unpicklerobject *self)
             return bad_readline();
         }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
-            class = find_class_text(module_name, class_name, self);
+            class = find_class_text(self, module_name, class_name);
             Py_DECREF(class_name);
         }
     }
@@ -5780,7 +5780,8 @@ cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
     if (Py_TYPE(file) == &PyFile_Type && !((PyFileObject *)file)->f_binary) {
 #ifdef MS_WINDOWS
         if (proto) {  /* binary protocol */
-            PyErr_SetString(PyExc_ValueError, "File must be opened in binary mode");
+            PyErr_SetString(PyExc_ValueError,
+                            "File must be opened in binary mode");
             goto finally;
         }
 #endif
