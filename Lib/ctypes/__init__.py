@@ -340,13 +340,12 @@ class CDLL(object):
             flags |= _FUNCFLAG_USE_LASTERROR
         if _sys.platform.startswith("aix"):
             """When the name contains ".a(" and ends with ")",
-               asin "libFOO.a(libFOO.so)" this is taken to be an
+               e.g., "libFOO.a(libFOO.so)" - this is taken to be an
                archive(member) syntax for dlopen(), and the mode is adjusted.
                Otherwise, name is presented to dlopen() as a file argument.
             """
             from _ctypes import RTLD_MEMBER,RTLD_NOW
             if name and name.endswith(")") and ".a(" in name:
-                # RTLD_MEMBER = 0x00040000
                 mode |= ( RTLD_MEMBER | RTLD_NOW )
 
         class _FuncPtr(_CFuncPtr):
