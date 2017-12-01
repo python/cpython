@@ -237,6 +237,24 @@ def _wrap_strftime(object, format, timetuple):
     newformat = "".join(newformat)
     return _time.strftime(newformat, timetuple)
 
+# Helpers for parsing the result of isoformat()
+def _parse_isoformat_date(dtstr):
+    # It is assumed that this function will only be called with a
+    # string of length exactly 10, and (though this is not used), not
+    year = int(dtstr[0:4])
+    if dtstr[4] != '-':
+        raise ValueError('Invalid date separator: %s' % dtstr[4])
+
+    month = int(dtstr[5:7])
+
+    if dtstr[7] != '-':
+        raise ValueError('Invalid date separator')
+
+    day = int(dtstr[8:10])
+
+    return (year, month, day)
+
+
 # Just raise TypeError if the arg isn't None or a string.
 def _check_tzname(name):
     if name is not None and not isinstance(name, str):
@@ -731,6 +749,19 @@ class date:
         """
         y, m, d = _ord2ymd(n)
         return cls(y, m, d)
+
+    @classmethod
+    def fromisoformat(cls, dtstr):
+        """Construct a date from the output of date.isoformat()."""
+        if not isinstance(dtstr, str):
+            raise TypeError('fromisoformat: argument must be str')
+
+        try:
+            assert len(dtstr) == 10
+            return cls(*_parse_isoformat_date(dtstr))
+        except:
+            raise ValueError('Invalid isoformat string: {}'.format(dtstr))
+
 
     # Conversions to string
 
@@ -2277,7 +2308,7 @@ else:
          _date_class, _days_before_month, _days_before_year, _days_in_month,
          _format_time, _is_leap, _isoweek1monday, _math, _ord2ymd,
          _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
-         _divide_and_round)
+         _divide_and_round, _parse_isoformat_date)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and
