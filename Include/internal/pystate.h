@@ -37,6 +37,22 @@ struct _gilstate_runtime_state {
 #define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
 
 
+typedef struct {
+    /* Full path to the Python program */
+    wchar_t *program_full_path;
+    wchar_t *prefix;
+#ifdef MS_WINDOWS
+    wchar_t *dll_path;
+#else
+    wchar_t *exec_prefix;
+#endif
+    /* Set by Py_SetPath(), or computed by _PyPathConfig_Init() */
+    wchar_t *module_search_path;
+} _PyPathConfig;
+
+#define _PyPathConfig_INIT {.module_search_path = NULL}
+
+
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {

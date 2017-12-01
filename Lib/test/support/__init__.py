@@ -87,8 +87,7 @@ __all__ = [
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
-    "check__all__", "requires_android_level", "requires_multiprocessing_queue",
-    "skip_unless_bind_unix_socket",
+    "check__all__", "skip_unless_bind_unix_socket",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -773,13 +772,7 @@ requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
 
-try:
-    # constant used by requires_android_level()
-    _ANDROID_API_LEVEL = sys.getandroidapilevel()
-    is_android = True
-except AttributeError:
-    # sys.getandroidapilevel() is only available on Android
-    is_android = False
+is_android = hasattr(sys, 'getandroidapilevel')
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -1778,13 +1771,6 @@ def requires_resource(resource):
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))
 
-def requires_android_level(level, reason):
-    if is_android and _ANDROID_API_LEVEL < level:
-        return unittest.skip('%s at Android API level %d' %
-                             (reason, _ANDROID_API_LEVEL))
-    else:
-        return _id
-
 def cpython_only(test):
     """
     Decorator for tests only applicable on CPython.
@@ -1803,22 +1789,6 @@ def impl_detail(msg=None, **guards):
         guardnames = sorted(guardnames.keys())
         msg = msg.format(' or '.join(guardnames))
     return unittest.skip(msg)
-
-_have_mp_queue = None
-def requires_multiprocessing_queue(test):
-    """Skip decorator for tests that use multiprocessing.Queue."""
-    global _have_mp_queue
-    if _have_mp_queue is None:
-        import multiprocessing
-        # Without a functioning shared semaphore implementation attempts to
-        # instantiate a Queue will result in an ImportError (issue #3770).
-        try:
-            multiprocessing.Queue()
-            _have_mp_queue = True
-        except ImportError:
-            _have_mp_queue = False
-    msg = "requires a functioning shared semaphore implementation"
-    return test if _have_mp_queue else unittest.skip(msg)(test)
 
 def _parse_guards(guards):
     # Returns a tuple ({platform_name: run_me}, default_value)
@@ -2861,3 +2831,8 @@ class SaveSignals:
     def restore(self):
         for signum, handler in self.handlers.items():
             self.signal.signal(signum, handler)
+
+
+def with_pymalloc():
+    import _testcapi
+    return _testcapi.WITH_PYMALLOC

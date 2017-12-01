@@ -185,10 +185,10 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
-New Developer Mode: -X dev
---------------------------
+New Development Mode: -X dev
+----------------------------
 
-Add a new "developer mode": ``-X dev`` command line option to enable debug
+Add a new "development mode": ``-X dev`` command line option to enable debug
 checks at runtime.
 
 In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
@@ -374,6 +374,11 @@ string
 :class:`string.Template` now lets you to optionally modify the regular
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+sys
+---
+
+Added :attr:`sys.flags.dev_mode` flag for the new development mode.
 
 time
 ----
@@ -568,6 +573,18 @@ Other CPython Implementation Changes
 
 Deprecated
 ==========
+
+* Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
+  in comprehensions and generator expressions (aside from the iterable expression
+  in the leftmost :keyword:`for` clause). This ensures that comprehensions
+  always immediately return a container of the appropriate type (rather than
+  potentially returning a :term:`generator iterator` object), while generator
+  expressions won't attempt to interleave their implicit output with the output
+  from any explicit yield expressions.
+
+  In Python 3.7, such expressions emit :exc:`DeprecationWarning` when compiled,
+  in Python 3.8+ they will emit :exc:`SyntaxError`. (Contributed by Serhiy
+  Storchaka in :issue:`10544`.)
 
 - Function :c:func:`PySlice_GetIndicesEx` is deprecated and replaced with
   a macro if ``Py_LIMITED_API`` is not set or set to the value between
@@ -770,6 +787,10 @@ Changes in the Python API
   only blank lines the pattern should be rewritten as ``r'(?m)^[\S\n]*?$'``.
 
   (Contributed by Serhiy Storchaka in :issue:`25054`.)
+
+* :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
+  recent to be more consistent with :mod:`traceback`.
+  (Contributed by Jesse Bakker in :issue:`32121`.)
 
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 

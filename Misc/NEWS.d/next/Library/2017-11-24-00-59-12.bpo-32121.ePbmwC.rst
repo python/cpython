@@ -1,0 +1,6 @@
+Made ``tracemalloc.Traceback`` behave more like the traceback module, 
+sorting the frames from oldest to most recent. ``Traceback.format()`` 
+now accepts negative *limit*, truncating the result to the ``abs(limit)`` 
+oldest frames. To get the old behaviour, one can use the new 
+*most_recent_first* argument to ``Traceback.format()``.
+(Patch by Jesse Bakker.)

@@ -654,8 +654,7 @@ class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 
 
-@unittest.skipUnless(sysconfig.get_config_var('WITH_PYMALLOC') == 1,
-                     'need pymalloc')
+@unittest.skipUnless(support.with_pymalloc(), 'need pymalloc')
 class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
 

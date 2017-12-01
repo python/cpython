@@ -5,6 +5,7 @@
 import os
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import unittest
 from test import support
@@ -507,14 +508,18 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
-    def run_xdev(self, *args, check_exitcode=True):
+    def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
+        env.pop('PYTHONDEVMODE', None)
         # Force malloc() to disable the debug hooks which are enabled
         # by default for Python compiled in debug mode
         env['PYTHONMALLOC'] = 'malloc'
 
-        args = (sys.executable, '-X', 'dev', *args)
+        if xdev:
+            args = (sys.executable, '-X', 'dev', *args)
+        else:
+            args = (sys.executable, *args)
         proc = subprocess.run(args,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
@@ -525,6 +530,14 @@ class CmdLineTest(unittest.TestCase):
         return proc.stdout.rstrip()
 
     def test_xdev(self):
+        # sys.flags.dev_mode
+        code = "import sys; print(sys.flags.dev_mode)"
+        out = self.run_xdev("-c", code, xdev=False)
+        self.assertEqual(out, "False")
+        out = self.run_xdev("-c", code)
+        self.assertEqual(out, "True")
+
+        # Warnings
         code = ("import sys, warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
@@ -554,16 +567,22 @@ class CmdLineTest(unittest.TestCase):
                          "default::ResourceWarning "
                          "default::Warning")
 
+        # Memory allocator debug hooks
         try:
             import _testcapi
         except ImportError:
             pass
         else:
-            code = "import _testcapi; _testcapi.pymem_api_misuse()"
+            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            self.assertIn("Debug memory block at address p=", out)
+            if support.with_pymalloc():
+                alloc_name = "pymalloc_debug"
+            else:
+                alloc_name = "malloc_debug"
+            self.assertEqual(out, alloc_name)
 
+        # Faulthandler
         try:
             import faulthandler
         except ImportError:
@@ -572,6 +591,68 @@ class CmdLineTest(unittest.TestCase):
             code = "import faulthandler; print(faulthandler.is_enabled())"
             out = self.run_xdev("-c", code)
             self.assertEqual(out, "True")
+
+    def check_pythonmalloc(self, env_var, name):
+        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        if env_var is not None:
+            env['PYTHONMALLOC'] = env_var
+        else:
+            env.pop('PYTHONMALLOC', None)
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.stdout.rstrip(), name)
+        self.assertEqual(proc.returncode, 0)
+
+    def test_pythonmalloc(self):
+        # Test the PYTHONMALLOC environment variable
+        pydebug = hasattr(sys, "gettotalrefcount")
+        pymalloc = support.with_pymalloc()
+        if pymalloc:
+            default_name = 'pymalloc_debug' if pydebug else 'pymalloc'
+            default_name_debug = 'pymalloc_debug'
+        else:
+            default_name = 'malloc_debug' if pydebug else 'malloc'
+            default_name_debug = 'malloc_debug'
+
+        tests = [
+            (None, default_name),
+            ('debug', default_name_debug),
+            ('malloc', 'malloc'),
+            ('malloc_debug', 'malloc_debug'),
+        ]
+        if pymalloc:
+            tests.extend((
+                ('pymalloc', 'pymalloc'),
+                ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+
+        for env_var, name in tests:
+            with self.subTest(env_var=env_var, name=name):
+                self.check_pythonmalloc(env_var, name)
+
+    def test_pythondevmode_env(self):
+        # Test the PYTHONDEVMODE environment variable
+        code = "import sys; print(sys.flags.dev_mode)"
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        args = (sys.executable, '-c', code)
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'False')
+        self.assertEqual(proc.returncode, 0, proc)
+
+        env['PYTHONDEVMODE'] = '1'
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'True')
+        self.assertEqual(proc.returncode, 0, proc)
 
 
 class IgnoreEnvironmentTest(unittest.TestCase):
