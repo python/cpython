@@ -13,6 +13,11 @@ def setUpModule():
         libc_name = find_library("c")
     elif sys.platform == "cygwin":
         libc_name = "cygwin1.dll"
+    elif sys.platform.startswith("aix"):
+        if (sys.maxsize < 2**32):
+            libc_name = "libc.a(shr.o)"
+        else:
+            libc_name = "libc.a(shr_64.o)"
     else:
         libc_name = find_library("c")
 
@@ -40,9 +45,14 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(OSError, cdll.LoadLibrary, "libc.so.9")
         self.assertRaises(OSError, cdll.LoadLibrary, self.unknowndll)
 
+    # this should only have libraries that are known to exist on all platforms
+    # it is known than "m" aka libm does not have a shared library on AIX
+    # so, add self.assertTrue as these must succeed
+    # or change to a warn message? in an else statement
     def test_find(self):
-        for name in ("c", "m"):
+        for name in ("c", "ssl"):
             lib = find_library(name)
+            self.assertTrue(lib)
             if lib:
                 cdll.LoadLibrary(lib)
                 CDLL(lib)
