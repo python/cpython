@@ -1,0 +1,3 @@
+Yield expressions are now deprecated in comprehensions and generator
+expressions. They are still permitted in the definition of the outermost
+iterable, as that is evaluated directly in the enclosing scope.
