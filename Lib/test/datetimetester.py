@@ -1588,6 +1588,46 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             # blow up because other fields are insane.
             self.theclass(base[:2] + bytes([ord_byte]) + base[3:])
 
+    def test_fromisoformat(self):
+        # Test that isoformat() is reversible
+        base_dates = [
+            (1, 1, 1),
+            (1000, 2, 14),
+            (1900, 1, 1),
+            (2000, 2, 29),
+            (2004, 11, 12),
+            (2004, 4, 3),
+            (2017, 5, 30),
+        ]
+
+        for dt_tuple in base_dates:
+            dt = self.theclass(*dt_tuple)
+            dt_rt = dt.fromisoformat(dt.isoformat())
+
+            self.assertEqual(dt, dt_rt)
+
+    def test_fromisoformat_fails(self):
+        # Test that fromisoformat() fails on invalid values
+        bad_strs = [
+            '',                 # Empty string
+            '009-03-04',        # Not 10 characters
+            '123456789',        # Not a date
+            '200a-12-04',       # Invalid character in year
+            '2009-1a-04',       # Invalid character in month
+            '2009-12-0a',       # Invalid character in day
+            '2009-01-32',       # Invalid day
+            '2009-02-29',       # Invalid leap day
+        ]
+
+        for bad_str in bad_strs:
+            with self.assertRaises(ValueError):
+                self.theclass.fromisoformat(bad_str)
+
+        bad_types = [b'2009-03-01', None]
+        for bad_type in bad_types:
+            with self.assertRaises(TypeError):
+                self.theclass.fromisoformat(bad_type)
+
 #############################################################################
 # datetime tests
 
@@ -2333,6 +2373,15 @@ class TestDateTime(TestDate):
         self.assertEqual(dt1.toordinal(), dt2.toordinal())
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month +
                                           dt1.second - 7)
+
+    @unittest.skip('Not implemented yet')
+    def test_fromisoformat(self):
+        pass
+
+    @unittest.skip('Not implemented yet')
+    def test_fromisoformat_fails(self):
+        pass
+    
 
 class TestSubclassDateTime(TestDateTime):
     theclass = SubclassDatetime
