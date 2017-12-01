@@ -20,35 +20,35 @@ from ctypes import c_void_p, sizeof
 from ctypes._util import _last_version
 from subprocess import Popen, PIPE
 
-def aixABI():
-    """Internal support function:
-    return executable size - 32-bit, or 64-bit
-    This is vital to the search for suitable member in an archive
+def aix_abi():
+    """
+    Return executable bit size - 32 or 64
+    Used to filter the search in an archive by size, e.g., -X64
     """
     return sizeof(c_void_p) * 8
 
-def get_dumpH(file):
-    """Internal support function:
-    dump -H output provides info on archive/executable contents
-    and related paths. This function call dump -H as a subprocess
-    and returns a list of (object, objectinfo) tuples.
+def get_ld_headers(file):
     """
-    #dumpH parsing:
-    # 1. When line starts with /, ./, or ../ - set as object
-    # 2. If "INDEX" in line object is confirmed as object
+    Parse the header of the loader section of executable and archives
+    This function calls /usr/bin/dump -H as a subprocess
+    and returns a list of (ld_header, ld_header_info) tuples.
+    """
+    # get_ld_headers parsing:
+    # 1. Find a line that starts with /, ./, or ../ - set as ld_header
+    # 2. If "INDEX" in occurs in a following line - return ld_header
     # 3. get info (lines starting with [0-9])
 
-    def get_object(p):
-        object = None
+    def get_ld_header(p):
+        ld_header = None
         for line in p.stdout:
             if line.startswith(('/', './', '../')):
-                object = line
+                ld_header = line
             elif "INDEX" in line:
-                return object.rstrip('\n')
+                return ld_header.rstrip('\n')
         return None
 
-    def get_info(p):
-        # as an object was found, return known paths, archives and members
+    def get_ld_header_info(p):
+        # as an ld_header was found, return known paths, archives and members
         # these lines start with a digit
         info = []
         for line in p.stdout:
@@ -59,42 +59,38 @@ def get_dumpH(file):
                 break
         return info
 
-    p = Popen(["/usr/bin/dump", "-X%s" % aixABI(), "-H", file],
-        universal_newlines=True, stdout=PIPE)
+    ldr_headers = []
+    with Popen(["/usr/bin/dump", "-X%s" % aix_abi(), "-H", file],
+        universal_newlines=True, stdout=PIPE, stderr=DEVNULL) as p:
+            ld_header = get_ld_header(p)
+            if ld_header is None:
+                break
+            ldr_headers.append((ld_header, get_ld_header_info(p)))
 
-    objects = []
-    while True:
-        object = get_object(p)
-        if object is None:
-            break
-        objects.append((object, get_info(p)))
+    return ldr_headers
 
-    p.stdout.close()
-    p.wait()
-    return objects
-
-def get_shared(input):
-    """Internal support function: examine the get_dumpH() output and
-    return a list of all shareable objects indicated in the output the
+def get_shared(ld_headers):
+    """
+    extract a the shareable objects from ld_headers
     character "[" is used to strip off the path information.
     Note: the "[" and "]" characters that are part of dump -H output
     are not removed here.
     """
-    list = []
-    for (line, _) in input:
+    shared = []
+    for (line, _) in ld_headers:
         # potential member lines contain "["
         # otherwise, no processing needed
         if "[" in line:
             # Strip off trailing colon (:)
-            list.append(line[line.index("["):-1])
-    return list
+            shared.append(line[line.index("["):-1])
+    return shared
 
-def get_exactMatch(expr, lines):
-    """Internal support function: Must be only one match, otherwise
-    result is None. When there is a match, strip the leading "["
-    and trailing "]"
+def get_one_match(expr, lines):
     """
-    # member names in the dumpH output are between square brackets
+    Must be only one match, otherwise result is None.
+    When there is a match, strip leading "[" and trailing "]"
+    """
+    # member names in the ld_headers output are between square brackets
     expr = r'\[(%s)\]' % expr
     matches = list(filter(None, (search(expr, line) for line in lines)))
     if len(matches) == 1:
@@ -104,31 +100,33 @@ def get_exactMatch(expr, lines):
 
 # additional processing to deal with AIX legacy names for 64-bit members
 def get_legacy(members):
-    """Internal support function: This routine resolves historical aka
-    legacy naming schemes started in AIX4 shared library support for
-    library members names for, e.g., shr.o in /usr/lib/libc.a for
-    32-bit binary and shr_64.o in /usr/lib/libc.a for 64-bit binary.
     """
-    if aixABI() == 64:
+    This routine provides historical aka legacy naming schemes started
+    in AIX4 shared library support for library members names.
+    e.g., in /usr/lib/libc.a the member name shr.o for 32-bit binary and
+    shr_64.o for 64-bit binary.
+    """
+    if aix_abi() == 64:
         # AIX 64-bit member is one of shr64.o, shr_64.o, or shr4_64.o
         expr = r'shr4?_?64\.o'
-        member = get_exactMatch(expr, members)
+        member = get_one_match(expr, members)
         if member:
             return member
-    # 32-bit legacy names - both shr.o and shr4.o exist.
-    # shr.o is the preffered name so we look for shr.o first
-    #  i.e., shr4.o is returned only when shr.o does not exist
     else:
+        # 32-bit legacy names - both shr.o and shr4.o exist.
+        # shr.o is the preffered name so we look for shr.o first
+        #  i.e., shr4.o is returned only when shr.o does not exist
         for name in ['shr.o', 'shr4.o']:
-            member = get_exactMatch(escape(name), members)
+            member = get_one_match(escape(name), members)
             if member:
                 return member
     return None
 
 def get_version(name, members):
-    """Internal support function: examine member list and return highest
-    numbered version - if it exists. This function is called when an
-    unversioned libFOO.a(libFOO.so) has not been found.
+    """
+    Sort list of members and return highest numbered version - if it exists.
+    This function is called when an unversioned libFOO.a(libFOO.so) has
+    not been found.
 
     Versioning for the member name is expected to follow
     GNU LIBTOOL conventions: the highest version (x, then X.y, then X.Y.z)
@@ -163,18 +161,23 @@ def get_version(name, members):
     return None
 
 def get_member(name, members):
-    """Internal support function: Return an archive member matching name.
+    """
+    Return an archive member matching the request in name.
+    Name is the library name without any prefix like lib, suffix like .so,
+    or version number.
     Given a list of members find and return the most appropriate result
     Priority is given to generic libXXX.so, then a versioned libXXX.so.a.b.c
     and finally, legacy AIX naming scheme.
     """
+
     # look first for a generic match - prepend lib and append .so
     expr = r'lib%s\.so' % name
-    member = get_exactMatch(expr, members)
+    member = get_one_match(expr, members)
     if member:
         return member
-    # since an exact match with .so as extension of member name
-    # was not found, look for a versioned name
+
+    # since an exact match with .so as suffix was not found
+    # look for a versioned name
     # If a versioned name is not found, look for AIX legacy member name
     member = get_version(name, members)
     if member:
@@ -182,10 +185,11 @@ def get_member(name, members):
     else:
         return get_legacy(members)
 
-def getExecLibPath_aix():
-    """Internal support function:
+def get_libpaths():
+    """
     On AIX, the buildtime searchpath is stored in the executable.
-    The command dump -H can extract this info.
+    as "loader header information".
+    The command /usr/bin/dump -H extracts this info.
     Prefix searched libraries with LD_LIBRARY_PATH (preferred),
     or LIBPATH if defined. These paths are appended to the paths
     to libraries the python executable is linked with.
@@ -198,7 +202,7 @@ def getExecLibPath_aix():
         libpaths = []
     else:
         libpaths = libpaths.split(":")
-    objects = get_dumpH(executable)
+    objects = get_ld_headers(executable)
     for (_, lines) in objects:
         for line in lines:
             # the second (optional) argument is PATH if it includes a /
@@ -208,10 +212,20 @@ def getExecLibPath_aix():
     return libpaths
 
 def find_library(name):
-    """AIX specific routine - to find an archive member that will dlopen()
+    """AIX implemantation of ctypes.util.find_library()
+    Find an archive member that will dlopen(). If not available,
+    also search for a file (or link) with a .so suffix.
+
+    AIX supports two types of schemes that can be used with dlopen().
+    The so-called SystemV Release4 (svr4) format is commonly suffixed
+    with .so while the (default) AIX scheme has the library (archive)
+    ending with the suffix .a
+    As an archive has multiple members (e.g., 32-bit and 64-bit) in one file
+    the argument passed to dlopen must include both the library and
+    the member names in a single string.
 
     find_library() looks first for an archive (.a) with a suitable member.
-    If no archive is found, look for a .so file.
+    If no archive+member pair is found, look for a .so file.
     """
 
     def find_shared(paths, name):
@@ -231,7 +245,7 @@ def find_library(name):
             base = 'lib%s.a' % name
             archive = path.join(dir, base)
             if path.exists(archive):
-                members = get_shared(get_dumpH(archive))
+                members = get_shared(get_ld_headers(archive))
                 member = get_member(escape(name), members)
                 if member != None:
                     return (base, member)
@@ -239,7 +253,7 @@ def find_library(name):
                     return (None, None)
         return (None, None)
 
-    libpaths = getExecLibPath_aix()
+    libpaths = get_libpaths()
     (base, member) = find_shared(libpaths, name)
     if base != None:
         return "%s(%s)" % (base, member)
