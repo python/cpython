@@ -564,6 +564,8 @@ PyMem_Free(void *ptr)
 wchar_t*
 _PyMem_RawWcsdup(const wchar_t *str)
 {
+    assert(str != NULL);
+
     size_t len = wcslen(str);
     if (len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
         return NULL;
@@ -582,13 +584,12 @@ _PyMem_RawWcsdup(const wchar_t *str)
 char *
 _PyMem_RawStrdup(const char *str)
 {
-    size_t size;
-    char *copy;
-
-    size = strlen(str) + 1;
-    copy = PyMem_RawMalloc(size);
-    if (copy == NULL)
+    assert(str != NULL);
+    size_t size = strlen(str) + 1;
+    char *copy = PyMem_RawMalloc(size);
+    if (copy == NULL) {
         return NULL;
+    }
     memcpy(copy, str, size);
     return copy;
 }
@@ -596,13 +597,12 @@ _PyMem_RawStrdup(const char *str)
 char *
 _PyMem_Strdup(const char *str)
 {
-    size_t size;
-    char *copy;
-
-    size = strlen(str) + 1;
-    copy = PyMem_Malloc(size);
-    if (copy == NULL)
+    assert(str != NULL);
+    size_t size = strlen(str) + 1;
+    char *copy = PyMem_Malloc(size);
+    if (copy == NULL) {
         return NULL;
+    }
     memcpy(copy, str, size);
     return copy;
 }
