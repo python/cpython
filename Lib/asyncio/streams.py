@@ -154,7 +154,7 @@ class FlowControlMixin(protocols.Protocol):
     """Reusable flow control logic for StreamWriter.drain().
 
     This implements the protocol methods pause_writing(),
-    resume_reading() and connection_lost().  If the subclass overrides
+    resume_writing() and connection_lost().  If the subclass overrides
     these it must call the super methods.
 
     StreamWriter.drain() must wait for _drain_helper() coroutine.
