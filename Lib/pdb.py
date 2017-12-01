@@ -436,10 +436,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             cmdlist.append(cmd)
         # Determine if we must stop
-        try:
-            func = getattr(self, 'do_' + cmd)
-        except AttributeError:
-            func = self.default
+        func = getattr(self, 'do_' + cmd, self.default)
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
             self.commands_doprompt[self.commands_bnum] = False

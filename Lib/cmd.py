@@ -210,11 +210,10 @@ class Cmd:
         if cmd == '':
             return self.default(line)
         else:
-            try:
-                func = getattr(self, 'do_' + cmd)
-            except AttributeError:
-                return self.default(line)
-            return func(arg)
+            func = getattr(self, 'do_' + cmd, None)
+            if func is not None:
+                return func(arg)
+            return self.default(line)
 
     def emptyline(self):
         """Called when an empty line is entered in response to the prompt.
