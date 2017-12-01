@@ -9,13 +9,7 @@ from os.path import join
 from android_utils import (run_subprocess, adb_shell, adb_push_to_dir,
                            AndroidError)
 
-def adb_push_from_zip(zippath, dirname, destination, remove=True):
-    # Remove the previous installation.
-    if remove:
-        previous = join(destination, dirname)
-        print('Removing %s.' % previous)
-        adb_shell('rm -rf %s' % previous)
-
+def adb_push_from_zip(zippath, dirname, destination):
     with tempfile.TemporaryDirectory() as tmpdir:
         run_subprocess('unzip', '-q', zippath, '-d', tmpdir)
         src= join(tmpdir, dirname)
@@ -24,18 +18,9 @@ def adb_push_from_zip(zippath, dirname, destination, remove=True):
 def install():
     stdlib_path = os.environ['STDLIB_DIR']
 
-    # The 'sdclean' prerequisite of the 'install' and 'python' targets of
-    # emulator.mk ensures that the sdcard has been newly created and we set
-    # the 'remove' keyword parameter to False when the destination is
-    # SYS_PREFIX because it is not needed and because the 'rm -rf' command in
-    # adb_push_to_dir() would have failed to remove the previous installation
-    # when the sdcard is not yet mounted as read-write.
-    #
-    # Start with installing on SYS_PREFIX on the sdcard so that the first
-    # adb_push_to_dir() call waits for the sdcard to be mounted read-write.
     adb_push_from_zip(os.environ['PY_STDLIB_ZIP'],
                    stdlib_path.split('/')[0],
-                   os.environ['SYS_PREFIX'], remove=False)
+                   os.environ['SYS_PREFIX'])
 
     adb_push_from_zip(os.environ['PYTHON_ZIP'],
                    os.environ['ZIPBASE_DIR'],

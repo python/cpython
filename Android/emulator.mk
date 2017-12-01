@@ -9,7 +9,8 @@ export ADB := $(ANDROID_SDK_ROOT)/platform-tools/adb
 # Rules.
 emulator: emulator_checks _emulator adb_shell
 
-emulator_install: emulator_checks dist sdclean _emulator
+emulator_install: wipe_data := -wipe-data
+emulator_install: emulator_checks dist _emulator
 	@echo "---> Install Python on the avd and start the emulator."
 	$(native_python_exe) $(py_srcdir)/Android/tools/install.py
 
@@ -53,11 +54,6 @@ $(avd_dir)/$(avd_name):
 	    --package "system-images;android-$(ANDROID_API);default;$(APP_ABI)" \
 	    --abi default/$(APP_ABI) --path $(avd_dir)/$(avd_name)
 
-$(avd_dir)/sdcard.img:
-	@echo "---> Create the sdcard image."
-	mkdir -p $(avd_dir)
-	$(ANDROID_SDK_ROOT)/tools/mksdcard -l sl4a 512M $(avd_dir)/sdcard.img
-
 kill_emulator:
 	@echo "---> Kill the emulator."
 	$(native_python_exe) $(py_srcdir)/Android/tools/kill_emulator.py
@@ -70,19 +66,15 @@ emulator_checks:
                     sys.exit(android_utils.emulator_listens($(EMULATOR_CONSOLE_PORT)))"; \
 	fi
 
-_emulator: $(avd_dir)/sdcard.img $(avd_dir)/$(avd_name)
+_emulator: $(avd_dir)/$(avd_name)
 	@echo "---> Start the emulator."
-	$(ANDROID_SDK_ROOT)/emulator/emulator -sdcard $(avd_dir)/sdcard.img -avd $(avd_name) \
+	$(ANDROID_SDK_ROOT)/emulator/emulator -avd $(avd_name) $(wipe_data) \
 	    $(EMULATOR_CMD_LINE_OPTIONS) &
 	@ echo "---> Waiting for device to be ready."
 	@$(ADB) wait-for-device shell getprop init.svc.bootanim; \
 	    echo "---> Device ready."
 
-sdclean:
-	@echo "---> Remove the sdcard image."
-	rm -f $(avd_dir)/sdcard.img $(avd_dir)/sdcard.img.*
-
-avdclean: sdclean
+avdclean:
 	@echo "---> Remove the AVD."
 	if test -d "$(avd_dir)/$(avd_name)"; then \
 	    $(ANDROID_SDK_ROOT)/tools/bin/avdmanager delete avd --name $(avd_name); \
@@ -91,4 +83,4 @@ avdclean: sdclean
 	-rmdir $(avd_dir)
 
 .PHONY: emulator adb_shell install python buildbottest gdb \
-        sdclean avdclean _emulator kill_emulator emulator_checks emulator_install
+        avdclean _emulator kill_emulator emulator_checks emulator_install

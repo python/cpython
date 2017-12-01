@@ -101,7 +101,7 @@ def adb_shell(cmd, wait_for_sdcard=False):
 def adb_push_to_dir(src, dest):
     """Push src to a directory on Android."""
     # On the first call to adb_push_to_dir() where 'dest' is a directory on
-    # the sdcard, the mkdir command is attempted until the sdcard is mounted
+    # the sdcard, the mkdir command is attempted until /sdcard is mounted
     # read/write on emulator start up.
     sdcard = os.environ['SDCARD']
     wait_for_sdcard = (True if os.path.commonprefix([sdcard, dest]) == sdcard
