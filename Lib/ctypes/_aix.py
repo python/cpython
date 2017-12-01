@@ -18,7 +18,7 @@ from os import environ, path
 from sys import executable
 from ctypes import c_void_p, sizeof
 from ctypes._util import _last_version
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, DEVNULL
 
 def aix_abi():
     """
@@ -63,10 +63,8 @@ def get_ld_headers(file):
     with Popen(["/usr/bin/dump", "-X%s" % aix_abi(), "-H", file],
         universal_newlines=True, stdout=PIPE, stderr=DEVNULL) as p:
             ld_header = get_ld_header(p)
-            if ld_header is None:
-                break
-            ldr_headers.append((ld_header, get_ld_header_info(p)))
-
+            if ld_header:
+                ldr_headers.append((ld_header, get_ld_header_info(p)))
     return ldr_headers
 
 def get_shared(ld_headers):
