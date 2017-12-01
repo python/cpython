@@ -3211,9 +3211,11 @@ if hasattr(logging.handlers, 'QueueListener'):
             self.assertEqual(mock_handle.call_count, 5 * self.repeat,
                              'correct number of handled log messages')
 
-        @support.requires_multiprocessing_queue
         @patch.object(logging.handlers.QueueListener, 'handle')
         def test_handle_called_with_mp_queue(self, mock_handle):
+            # Issue 28668: The multiprocessing (mp) module is not functional
+            # when the mp.synchronize module cannot be imported.
+            support.import_module('multiprocessing.synchronize')
             for i in range(self.repeat):
                 log_queue = multiprocessing.Queue()
                 self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
@@ -3230,7 +3232,6 @@ if hasattr(logging.handlers, 'QueueListener'):
             except queue.Empty:
                 return []
 
-        @support.requires_multiprocessing_queue
         def test_no_messages_in_queue_after_stop(self):
             """
             Five messages are logged then the QueueListener is stopped. This
@@ -3238,6 +3239,9 @@ if hasattr(logging.handlers, 'QueueListener'):
             indicates that messages were not registered on the queue until
             _after_ the QueueListener stopped.
             """
+            # Issue 28668: The multiprocessing (mp) module is not functional
+            # when the mp.synchronize module cannot be imported.
+            support.import_module('multiprocessing.synchronize')
             for i in range(self.repeat):
                 queue = multiprocessing.Queue()
                 self.setup_and_log(queue, '%s_%s' %(self.id(), i))
