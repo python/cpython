@@ -217,7 +217,7 @@ class ImpImporter:
         if self.path is None:
             path = None
         else:
-            path = [os.path.realpath(self.path)]
+            path = [self.path]
         try:
             file, filename, etc = imp.find_module(subname, path)
         except ImportError:
