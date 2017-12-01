@@ -1,0 +1,2 @@
+Loading and saving plist files is now 10% faster.  Saving plist files with
+XML format can be up to 2 times faster.
