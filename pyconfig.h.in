@@ -210,6 +210,10 @@
    don't. */
 #undef HAVE_DECL_RTLD_LOCAL
 
+/* Define to 1 if you have the declaration of `RTLD_MEMBER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_MEMBER
+
 /* Define to 1 if you have the declaration of `RTLD_NODELETE', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_NODELETE
