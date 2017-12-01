@@ -721,12 +721,16 @@ static int
 get_pth_filename(wchar_t *spbuffer, _PyPathConfig *config)
 {
     if (config->dll_path[0]) {
-        if (!change_ext(spbuffer, config->dll_path, L"._pth") && exists(spbuffer)) {
+        if (!change_ext(spbuffer, config->dll_path, L"._pth") &&
+            exists(spbuffer))
+        {
             return 1;
         }
     }
     if (config->program_full_path[0]) {
-        if (!change_ext(spbuffer, config->program_full_path, L"._pth") && exists(spbuffer)) {
+        if (!change_ext(spbuffer, config->program_full_path, L"._pth") &&
+            exists(spbuffer))
+        {
             return 1;
         }
     }
@@ -823,8 +827,10 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */
-    int skipdefault = (main_config->module_search_path_env!=NULL || calculate->home!=NULL || \
-                       calculate->machine_path!=NULL || calculate->user_path!=NULL);
+    int skipdefault = (main_config->module_search_path_env != NULL ||
+                       calculate->home != NULL ||
+                       calculate->machine_path != NULL ||
+                       calculate->user_path != NULL);
 
     /* We need to construct a path from the following parts.
        (1) the PYTHONPATH environment variable, if set;
@@ -882,7 +888,8 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
     start_buf = buf;
 
     if (main_config->module_search_path_env) {
-        if (wcscpy_s(buf, bufsz - (buf - start_buf), main_config->module_search_path_env)) {
+        if (wcscpy_s(buf, bufsz - (buf - start_buf),
+                     main_config->module_search_path_env)) {
             return INIT_ERR_BUFFER_OVERFLOW();
         }
         buf = wcschr(buf, L'\0');
@@ -1214,7 +1221,7 @@ Py_GetProgramFullPath(void)
 static int python3_checked = 0;
 static HANDLE hPython3;
 int
-_Py_CheckPython3()
+_Py_CheckPython3(void)
 {
     wchar_t py3path[MAXPATHLEN+1];
     wchar_t *s;

@@ -1273,8 +1273,6 @@ Py_FinalizeEx(void)
 
     call_ll_exitfuncs();
 
-    _PyPathConfig_Fini();
-
     _PyRuntime_Finalize();
     return status;
 }
