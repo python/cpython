@@ -70,6 +70,9 @@ $(py_install_dir)/lib/libffi.a: $(BUILD_DIR)/$(LIBFFI).tar.gz
 	rm -rf $(BUILD_DIR)/$(LIBFFI)-$(BUILD_TYPE)
 	tar xzf $< -C $(BUILD_DIR)
 	cd $(BUILD_DIR)/$(LIBFFI); patch -p1 < $(CURDIR)/patches/libffi-mmap-exec.patch
+ifeq ($(ANDROID_ARCH), armv7)
+	cd $(BUILD_DIR)/$(LIBFFI); patch -p1 < $(CURDIR)/patches/libffi-stmeqia.patch
+endif
 	mv $(BUILD_DIR)/$(LIBFFI) $(BUILD_DIR)/$(LIBFFI)-$(BUILD_TYPE)
 	cd $(BUILD_DIR)/$(LIBFFI)-$(BUILD_TYPE); \
 	    ./configure --host=$(ANDROID_HOST) --build=$(ANDROID_BUILD) \

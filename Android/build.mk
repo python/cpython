@@ -71,9 +71,9 @@ external_libraries openssl: export RANLIB := $(RANLIB)
 external_libraries openssl: export READELF := $(READELF)
 external_libraries openssl: export CFLAGS := $(CFLAGS)
 external_libraries openssl: export LDFLAGS := $(LDFLAGS)
+external_libraries openssl: export ANDROID_ARCH := $(ANDROID_ARCH)
 openssl:                    export GCC := $(GCC)
 openssl:                    export SYSROOT := $(SYSROOT)
-openssl:                    export ANDROID_ARCH := $(ANDROID_ARCH)
 openssl:                    export ANDROID_API := android-$(ANDROID_API)
 
 external_libraries:
