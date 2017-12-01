@@ -337,8 +337,9 @@ PYTHON_OBJS=	\
 		Python/importdl.o \
 		Python/marshal.o \
 		Python/modsupport.o \
-		Python/mystrtoul.o \
 		Python/mysnprintf.o \
+		Python/mystrtoul.o \
+		Python/pathconfig.o \
 		Python/peephole.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
