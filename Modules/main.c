@@ -888,15 +888,12 @@ config_get_program_name(_PyMainInterpreterConfig *config)
        See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
        script. */
     if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0') {
-        wchar_t* buffer;
-        size_t len = strlen(p) + 1;
-
-        buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
-        if (buffer == NULL) {
-            return _Py_INIT_NO_MEMORY();
+        size_t len;
+        wchar_t* program_name = Py_DecodeLocale(p, &len);
+        if (program_name == NULL) {
+            return SET_DECODE_ERROR("PYTHONEXECUTABLE environment "
+                                    "variable", len);
         }
-
-        mbstowcs(buffer, p, len);
         pymain->config.program_name = buffer;
     }
 #ifdef WITH_NEXT_FRAMEWORK
@@ -907,11 +904,12 @@ config_get_program_name(_PyMainInterpreterConfig *config)
              * the argv0 of the stub executable
              */
             size_t len;
-            wchar_t* wbuf = Py_DecodeLocale(pyvenv_launcher, &len);
-            if (wbuf == NULL) {
-                return SET_DECODE_ERROR("__PYVENV_LAUNCHER__", len);
+            wchar_t* program_name = Py_DecodeLocale(pyvenv_launcher, &len);
+            if (program_name == NULL) {
+                return SET_DECODE_ERROR("__PYVENV_LAUNCHER__ environment "
+                                        "variable", len);
             }
-            pymain->config.program_name = wbuf;
+            pymain->config.program_name = program_name;
         }
     }
 #endif   /* WITH_NEXT_FRAMEWORK */
@@ -1666,6 +1664,14 @@ pymain_impl(_PyMain *pymain)
            other special meaning */
         pymain->status = 120;
     }
+
+    /* _PyPathConfig_Fini() cannot be called in Py_FinalizeEx().
+       Py_Initialize() and Py_Finalize() can be called multiple times, but it
+       must not "forget" parameters set by Py_SetProgramName(), Py_SetPath() or
+       Py_SetPythonHome(), whereas _PyPathConfig_Fini() clear all these
+       parameters. */
+    _PyPathConfig_Fini();
+
     return 0;
 }
 

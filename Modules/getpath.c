@@ -625,11 +625,13 @@ calculate_program_full_path(const _PyMainInterpreterConfig *main_config,
     else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) &&
             execpath[0] == SEP)
     {
-        size_t r = mbstowcs(program_full_path, execpath, MAXPATHLEN+1);
-        if (r == (size_t)-1 || r > MAXPATHLEN) {
-            /* Could not convert execpath, or it's too long. */
-            program_full_path[0] = '\0';
+        size_t len;
+        wchar_t *path = Py_DecodeLocale(execpath, &len);
+        if (path == NULL) {
+            return DECODE_LOCALE_ERR("executable path", len);
         }
+        wcsncpy(program_full_path, path, MAXPATHLEN);
+        PyMem_RawFree(path);
     }
 #endif /* __APPLE__ */
     else if (calculate->path_env) {
