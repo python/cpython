@@ -87,7 +87,7 @@ __all__ = [
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
-    "check__all__", "requires_android_level", "requires_multiprocessing_queue",
+    "check__all__", "requires_multiprocessing_queue",
     "skip_unless_bind_unix_socket",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
@@ -773,13 +773,7 @@ requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
 
-try:
-    # constant used by requires_android_level()
-    _ANDROID_API_LEVEL = sys.getandroidapilevel()
-    is_android = True
-except AttributeError:
-    # sys.getandroidapilevel() is only available on Android
-    is_android = False
+is_android = hasattr(sys, 'getandroidapilevel')
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -1068,8 +1062,8 @@ def make_bad_fd():
         file.close()
         unlink(TESTFN)
 
-def check_syntax_error(testcase, statement, *, lineno=None, offset=None):
-    with testcase.assertRaises(SyntaxError) as cm:
+def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None):
+    with testcase.assertRaisesRegex(SyntaxError, errtext) as cm:
         compile(statement, '<test string>', 'exec')
     err = cm.exception
     testcase.assertIsNotNone(err.lineno)
@@ -1777,13 +1771,6 @@ def requires_resource(resource):
         return _id
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))
-
-def requires_android_level(level, reason):
-    if is_android and _ANDROID_API_LEVEL < level:
-        return unittest.skip('%s at Android API level %d' %
-                             (reason, _ANDROID_API_LEVEL))
-    else:
-        return _id
 
 def cpython_only(test):
     """
@@ -2861,3 +2848,8 @@ class SaveSignals:
     def restore(self):
         for signum, handler in self.handlers.items():
             self.signal.signal(signum, handler)
+
+
+def with_pymalloc():
+    import _testcapi
+    return _testcapi.WITH_PYMALLOC

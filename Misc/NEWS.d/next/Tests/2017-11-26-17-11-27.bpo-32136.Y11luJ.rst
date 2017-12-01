@@ -1,0 +1,3 @@
+The runtime embedding tests have been split out from
+``Lib/test/test_capi.py`` into a new ``Lib/test/test_embed.py``
+file.

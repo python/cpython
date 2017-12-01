@@ -35,8 +35,8 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-_PyInitError
-_PyRuntimeState_Init(_PyRuntimeState *runtime)
+static _PyInitError
+_PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 {
     memset(runtime, 0, sizeof(*runtime));
 
@@ -59,14 +59,26 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     return _Py_INIT_OK();
 }
 
+_PyInitError
+_PyRuntimeState_Init(_PyRuntimeState *runtime)
+{
+    /* Force default allocator, since _PyRuntimeState_Fini() must
+       use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    _PyInitError err = _PyRuntimeState_Init_impl(runtime);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return err;
+}
+
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
-    /* Use the same memory allocator than _PyRuntimeState_Init() */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force the allocator used by _PyRuntimeState_Init(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (runtime->interpreters.mutex != NULL) {
         PyThread_free_lock(runtime->interpreters.mutex);
@@ -910,6 +922,8 @@ PyGILState_Ensure(void)
 {
     int current;
     PyThreadState *tcur;
+    int need_init_threads = 0;
+
     /* Note that we do not auto-init Python here - apart from
        potential races with 2 threads auto-initializing, pep-311
        spells out other issues.  Embedders are expected to have
@@ -917,12 +931,10 @@ PyGILState_Ensure(void)
     */
     /* Py_Initialize() hasn't been called! */
     assert(_PyRuntime.gilstate.autoInterpreterState);
+
     tcur = (PyThreadState *)PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey);
     if (tcur == NULL) {
-        /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
-           called from a new thread for the first time, we need the create the
-           GIL. */
-        PyEval_InitThreads();
+        need_init_threads = 1;
 
         /* Create a new thread state for this thread */
         tcur = PyThreadState_New(_PyRuntime.gilstate.autoInterpreterState);
@@ -933,16 +945,28 @@ PyGILState_Ensure(void)
         tcur->gilstate_counter = 0;
         current = 0; /* new thread state is never current */
     }
-    else
+    else {
         current = PyThreadState_IsCurrent(tcur);
-    if (current == 0)
+    }
+
+    if (current == 0) {
         PyEval_RestoreThread(tcur);
+    }
+
     /* Update our counter in the thread-state - no need for locks:
        - tcur will remain valid as we hold the GIL.
        - the counter is safe as we are the only thread "allowed"
          to modify this value
     */
     ++tcur->gilstate_counter;
+
+    if (need_init_threads) {
+        /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
+           called from a new thread for the first time, we need the create the
+           GIL. */
+        PyEval_InitThreads();
+    }
+
     return current ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 

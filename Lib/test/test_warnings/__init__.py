@@ -125,6 +125,7 @@ class FilterTests(BaseTest):
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.warn("FilterTests.test_ignore", UserWarning)
             self.assertEqual(len(w), 0)
+            self.assertEqual(list(__warningregistry__), ['version'])
 
     def test_ignore_after_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -940,11 +941,11 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None
-            Object allocated at (most recent call first):
-              File "{fname}", lineno 3
-                f = open(__file__)
+            Object allocated at (most recent call last):
               File "{fname}", lineno 7
                 func()
+              File "{fname}", lineno 3
+                f = open(__file__)
         ''')
         expected = expected.format(fname=support.TESTFN).strip()
         self.assertEqual(stderr, expected)

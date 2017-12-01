@@ -1,4 +1,5 @@
 #include <Python.h>
+#include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -132,7 +133,8 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
-    wchar_t *program = Py_DecodeLocale("spam", NULL);
+    /* Leading "./" ensures getpath.c can still find the standard library */
+    wchar_t *program = Py_DecodeLocale("./spam", NULL);
     if (program == NULL) {
         fprintf(stderr, "Fatal error: cannot decode program name\n");
         return 1;
@@ -143,6 +145,53 @@ static int test_pre_initialization_api(void)
     Py_Finalize();
 
     PyMem_RawFree(program);
+    return 0;
+}
+
+static void bpo20891_thread(void *lockp)
+{
+    PyThread_type_lock lock = *((PyThread_type_lock*)lockp);
+
+    PyGILState_STATE state = PyGILState_Ensure();
+    if (!PyGILState_Check()) {
+        fprintf(stderr, "PyGILState_Check failed!");
+        abort();
+    }
+
+    PyGILState_Release(state);
+
+    PyThread_release_lock(lock);
+
+    PyThread_exit_thread();
+}
+
+static int test_bpo20891(void)
+{
+    /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
+       calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
+       call PyEval_InitThreads() for us in this case. */
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (!lock) {
+        fprintf(stderr, "PyThread_allocate_lock failed!");
+        return 1;
+    }
+
+    _testembed_Py_Initialize();
+
+    unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &lock);
+    if (thrd == PYTHREAD_INVALID_THREAD_ID) {
+        fprintf(stderr, "PyThread_start_new_thread failed!");
+        return 1;
+    }
+    PyThread_acquire_lock(lock, WAIT_LOCK);
+
+    Py_BEGIN_ALLOW_THREADS
+    /* wait until the thread exit */
+    PyThread_acquire_lock(lock, WAIT_LOCK);
+    Py_END_ALLOW_THREADS
+
+    PyThread_free_lock(lock);
+
     return 0;
 }
 
@@ -169,6 +218,7 @@ static struct TestCase TestCases[] = {
     { "forced_io_encoding", test_forced_io_encoding },
     { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
     { "pre_initialization_api", test_pre_initialization_api },
+    { "bpo20891", test_bpo20891 },
     { NULL, NULL }
 };
 

@@ -1762,6 +1762,8 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         PyErr_SyntaxLocationObject(st->st_filename,
                                    st->st_cur->ste_lineno,
                                    st->st_cur->ste_col_offset);
+        symtable_exit_block(st, (void *)e);
+        return 0;
     }
     st->st_cur->ste_generator = is_generator;
     return symtable_exit_block(st, (void *)e);

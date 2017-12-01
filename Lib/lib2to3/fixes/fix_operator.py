@@ -1,6 +1,6 @@
 """Fixer for operator functions.
 
-operator.isCallable(obj)       -> hasattr(obj, '__call__')
+operator.isCallable(obj)       -> callable(obj)
 operator.sequenceIncludes(obj) -> operator.contains(obj)
 operator.isSequenceType(obj)   -> isinstance(obj, collections.abc.Sequence)
 operator.isMappingType(obj)    -> isinstance(obj, collections.abc.Mapping)
@@ -49,11 +49,10 @@ class FixOperator(fixer_base.BaseFix):
     def _sequenceIncludes(self, node, results):
         return self._handle_rename(node, results, "contains")
 
-    @invocation("hasattr(%s, '__call__')")
+    @invocation("callable(%s)")
     def _isCallable(self, node, results):
         obj = results["obj"]
-        args = [obj.clone(), String(", "), String("'__call__'")]
-        return Call(Name("hasattr"), args, prefix=node.prefix)
+        return Call(Name("callable"), [obj.clone()], prefix=node.prefix)
 
     @invocation("operator.mul(%s)")
     def _repeat(self, node, results):

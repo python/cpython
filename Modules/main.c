@@ -21,9 +21,9 @@
 #endif
 
 #if defined(MS_WINDOWS)
-#define PYTHONHOMEHELP "<prefix>\\lib"
+#define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
 #else
-#define PYTHONHOMEHELP "<prefix>/pythonX.X"
+#define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
 #endif
 
 #include "pygetopt.h"
@@ -124,7 +124,8 @@ static const char usage_6[] =
 "   hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
-"   locale coercion and locale compatibility warnings on stderr.\n";
+"   locale coercion and locale compatibility warnings on stderr.\n"
+"PYTHONDEVMODE: enable the development mode.\n";
 
 static void
 pymain_usage(int error, const wchar_t* program)
@@ -475,11 +476,9 @@ pymain_free_impl(_PyMain *pymain)
 static void
 pymain_free(_PyMain *pymain)
 {
-    /* Force malloc() memory allocator */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force the allocator used by pymain_parse_cmdline_envvars() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     pymain_free_impl(pymain);
 
@@ -1522,7 +1521,9 @@ pymain_parse_envvars(_PyMain *pymain)
     if (pymain_init_tracemalloc(pymain) < 0) {
         return -1;
     }
-    if (pymain_get_xoption(pymain, L"dev")) {
+    if (pymain_get_xoption(pymain, L"dev" ) ||
+        pymain_get_env_var("PYTHONDEVMODE"))
+    {
         core_config->dev_mode = 1;
         core_config->faulthandler = 1;
         core_config->allocator = "debug";
@@ -1561,17 +1562,14 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
 static int
 pymain_parse_cmdline_envvars(_PyMain *pymain)
 {
-    /* Force malloc() memory allocator */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force default allocator, since pymain_free() must use the same allocator
+       than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     int res = pymain_parse_cmdline_envvars_impl(pymain);
 
-    /* Restore the old memory allocator */
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     return res;
 }
 

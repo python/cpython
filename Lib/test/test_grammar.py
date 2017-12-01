@@ -251,6 +251,8 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
+    check_syntax_error = check_syntax_error
+
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
 
@@ -845,16 +847,28 @@ class GrammarTests(unittest.TestCase):
         # Check yield in comprehensions
         def g(): [x for x in [(yield 1)]]
         def g(): [x for x in [(yield from ())]]
-        check_syntax_error(self, "def g(): [(yield x) for x in ()]")
-        check_syntax_error(self, "def g(): [x for x in () if not (yield x)]")
-        check_syntax_error(self, "def g(): [y for x in () for y in [(yield x)]]")
-        check_syntax_error(self, "def g(): {(yield x) for x in ()}")
-        check_syntax_error(self, "def g(): {(yield x): x for x in ()}")
-        check_syntax_error(self, "def g(): {x: (yield x) for x in ()}")
-        check_syntax_error(self, "def g(): ((yield x) for x in ())")
-        check_syntax_error(self, "def g(): [(yield from x) for x in ()]")
-        check_syntax_error(self, "class C: [(yield x) for x in ()]")
-        check_syntax_error(self, "[(yield x) for x in ()]")
+
+        check = check_syntax_error
+        check("def g(): [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("def g(): [x for x in () if not (yield x)]",
+              "'yield' inside list comprehension")
+        check("def g(): [y for x in () for y in [(yield x)]]",
+              "'yield' inside list comprehension")
+        check("def g(): {(yield x) for x in ()}",
+              "'yield' inside set comprehension")
+        check("def g(): {(yield x): x for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): {x: (yield x) for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        check("def g(): [(yield from x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("class C: [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("[(yield x) for x in ()]",
+              "'yield' inside list comprehension")
 
     def test_raise(self):
         # 'raise' test [',' test]

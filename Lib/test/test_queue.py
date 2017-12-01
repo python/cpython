@@ -54,7 +54,7 @@ class BlockingTestMixin:
             self.result = block_func(*block_args)
             # If block_func returned before our thread made the call, we failed!
             if not thread.startedEvent.is_set():
-                self.fail("blocking function '%r' appeared not to block" %
+                self.fail("blocking function %r appeared not to block" %
                           block_func)
             return self.result
         finally:
