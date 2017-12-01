@@ -771,26 +771,28 @@ def hide_process_stderr():
     setattr(sys, "stderr", io.StringIO())
 
 
-def _crash():
-    """Induces a segfault"""
+def _crash(delay=None):
+    """Induces a segfault."""
+    if delay:
+        time.sleep(delay)
     import faulthandler
     faulthandler.disable()
     faulthandler._sigsegv()
 
 
 def _exit():
-    """Induces a sys exit with exitcode 1"""
+    """Induces a sys exit with exitcode 1."""
     sys.exit(1)
 
 
 def _raise_error(Err):
-    """Function that raises an Exception in process"""
+    """Function that raises an Exception in process."""
     hide_process_stderr()
     raise Err()
 
 
 def _return_instance(cls):
-    """Function that returns a instance of cls"""
+    """Function that returns a instance of cls."""
     hide_process_stderr()
     return cls()
 
@@ -845,8 +847,9 @@ class ExecutorDeadlockTest:
         return x
 
     def _fail_on_deadlock(self, executor):
-        # If we did not recover before TIMEOUT seconds,
-        # consider that the executor is in a deadlock state
+        # If we did not recover before TIMEOUT seconds, consider that the
+        # executor is in a deadlock state and forcefully clean all its
+        # composants.
         import faulthandler
         from tempfile import TemporaryFile
         with TemporaryFile(mode="w+") as f:
@@ -855,13 +858,16 @@ class ExecutorDeadlockTest:
             tb = f.read()
         for p in executor._processes.values():
             p.terminate()
+        # This should be safe to call executor.shutdown here as all possible
+        # deadlocks should have been broken.
         executor.shutdown(wait=True)
         print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
         self.fail(f"Executor deadlock:\n\n{tb}")
 
+
     def test_crash(self):
+        # extensive testing for deadlock caused by crashes in a pool.
         self.executor.shutdown(wait=True)
-        # extensive testing for deadlock caused by crash in a pool
         crash_cases = [
             # Check problem occuring while pickling a task in
             # the task_handler thread
@@ -916,34 +922,17 @@ class ExecutorDeadlockTest:
         time.sleep(.01)
         return os.getpid()
 
-    @classmethod
-    def _test_kill_worker(cls, pid=None, delay=0.01):
-        """Function that send SIGKILL at process pid after delay second"""
-        time.sleep(delay)
-        if pid is None:
-            pid = os.getpid()
-        try:
-            from signal import SIGKILL
-        except ImportError:
-            from signal import SIGTERM as SIGKILL
-        # Try to kill a process in the pool, if it is not finished yet
-        try:
-            os.kill(pid, SIGKILL)
-        except (ProcessLookupError, PermissionError):
-            pass
-        # Give some time for the Executor to detect the failure
-        time.sleep(.5)
-
     def test_shutdown_deadlock(self):
         # Test that the pool calling shutdown do not cause deadlock
-        # if a worker failed
+        # if a worker fails after the shutdown call.
         self.executor.shutdown(wait=True)
         with self.executor_type(max_workers=2,
                                 mp_context=get_context(self.ctx)) as executor:
             self.executor = executor  # Allow clean up in fail_on_deadlock
-            executor.submit(self._test_kill_worker, ())
-            time.sleep(.01)
+            f = executor.submit(_crash, delay=.1)
             executor.shutdown(wait=True)
+            with self.assertRaises(BrokenProcessPool):
+                f.result()
 
 
 create_executor_tests(ExecutorDeadlockTest,
