@@ -412,7 +412,6 @@ typedef struct {
     /* non-zero if filename, command (-c) or module (-m) is set
        on the command line */
     int run_code;
-    wchar_t *program_name;
     /* Error message if a function failed */
     _PyInitError err;
     /* PYTHONWARNINGS env var */
@@ -429,7 +428,6 @@ typedef struct {
      .config = _PyMainInterpreterConfig_INIT, \
      .main_importer_path = NULL, \
      .run_code = -1, \
-     .program_name = NULL, \
      .err = _Py_INIT_OK(), \
      .env_warning_options = {0, NULL}}
 
@@ -455,7 +453,6 @@ pymain_free_impl(_PyMain *pymain)
 
     pymain_optlist_clear(&pymain->env_warning_options);
     Py_CLEAR(pymain->main_importer_path);
-    PyMem_RawFree(pymain->program_name);
 
     _PyMainInterpreterConfig_Clear(&pymain->config);
 
@@ -874,14 +871,11 @@ pymain_init_stdio(_PyMain *pymain)
 
 
 /* Get the program name: use PYTHONEXECUTABLE and __PYVENV_LAUNCHER__
-   environment variables on macOS if available, use argv[0] by default.
-
-   Return 0 on success.
-   Set pymain->err and return -1 on error. */
-static int
-pymain_get_program_name(_PyMain *pymain)
+   environment variables on macOS if available. */
+static _PyInitError
+config_get_program_name(_PyMainInterpreterConfig *config)
 {
-    assert(pymain->program_name == NULL);
+    assert(config->program_name == NULL);
 #ifdef __APPLE__
     char *p;
     /* On MacOS X, when the Python interpreter is embedded in an
@@ -899,12 +893,11 @@ pymain_get_program_name(_PyMain *pymain)
 
         buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
         if (buffer == NULL) {
-            pymain->err = _Py_INIT_NO_MEMORY();
-            return -1;
+            return _Py_INIT_NO_MEMORY();
         }
 
         mbstowcs(buffer, p, len);
-        pymain->program_name = buffer;
+        pymain->config.program_name = buffer;
     }
 #ifdef WITH_NEXT_FRAMEWORK
     else {
@@ -916,19 +909,26 @@ pymain_get_program_name(_PyMain *pymain)
             size_t len;
             wchar_t* wbuf = Py_DecodeLocale(pyvenv_launcher, &len);
             if (wbuf == NULL) {
-                SET_DECODE_ERROR("__PYVENV_LAUNCHER__", len);
-                return -1;
+                return SET_DECODE_ERROR("__PYVENV_LAUNCHER__", len);
             }
-            pymain->program_name = wbuf;
+            pymain->config.program_name = wbuf;
         }
     }
 #endif   /* WITH_NEXT_FRAMEWORK */
 #endif   /* __APPLE__ */
+    return _Py_INIT_OK();
+}
 
-    if (pymain->program_name == NULL) {
+
+/* If config_get_program_name() found no program name: use argv[0] by default.
+   Return 0 on success. Set pymain->err and return -1 on error. */
+static int
+pymain_get_program_name(_PyMain *pymain)
+{
+    if (pymain->config.program_name == NULL) {
         /* Use argv[0] by default */
-        pymain->program_name = pymain_wstrdup(pymain, pymain->argv[0]);
-        if (pymain->program_name == NULL) {
+        pymain->config.program_name = pymain_wstrdup(pymain, pymain->argv[0]);
+        if (pymain->config.program_name == NULL) {
             return -1;
         }
     }
@@ -1451,11 +1451,9 @@ _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
         return err;
     }
 
-    /* FIXME: _PyMainInterpreterConfig_Read() has the same code. Remove it
-       here? See also pymain_get_program_name() and pymain_parse_envvars(). */
-    config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
-    if (config->program_name == NULL) {
-        return _Py_INIT_NO_MEMORY();
+    err = config_get_program_name(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
 
     return _Py_INIT_OK();
@@ -1481,25 +1479,17 @@ pymain_parse_envvars(_PyMain *pymain)
     if (pymain_warnings_envvar(pymain) < 0) {
         return -1;
     }
-    if (pymain_get_program_name(pymain) < 0) {
-        return -1;
-    }
-    core_config->allocator = Py_GETENV("PYTHONMALLOC");
-
-    /* FIXME: move pymain_get_program_name() code into
-       _PyMainInterpreterConfig_ReadEnv().
-       Problem: _PyMainInterpreterConfig_ReadEnv() doesn't have access
-       to argv[0]. */
-    Py_SetProgramName(pymain->program_name);
-    /* Don't free program_name here: the argument to Py_SetProgramName
-       must remain valid until Py_FinalizeEx is called. The string is freed
-       by pymain_free(). */
 
     _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&pymain->config);
     if (_Py_INIT_FAILED(pymain->err)) {
         pymain->err = err;
         return -1;
     }
+    if (pymain_get_program_name(pymain) < 0) {
+        return -1;
+    }
+
+    core_config->allocator = Py_GETENV("PYTHONMALLOC");
 
     /* -X options */
     if (pymain_get_xoption(pymain, L"showrefcount")) {
@@ -1577,6 +1567,11 @@ static int
 pymain_init_python(_PyMain *pymain)
 {
     pymain_init_stdio(pymain);
+
+    Py_SetProgramName(pymain->config.program_name);
+    /* Don't free program_name here: the argument to Py_SetProgramName
+       must remain valid until Py_FinalizeEx is called. The string is freed
+       by pymain_free(). */
 
     pymain->err = _Py_InitializeCore(&pymain->core_config);
     if (_Py_INIT_FAILED(pymain->err)) {
