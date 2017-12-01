@@ -1665,12 +1665,12 @@ pymain_impl(_PyMain *pymain)
         pymain->status = 120;
     }
 
-    /* _PyPathConfig_Fini() cannot be called in Py_FinalizeEx().
+    /* _PyPathConfig_Clear() cannot be called in Py_FinalizeEx().
        Py_Initialize() and Py_Finalize() can be called multiple times, but it
        must not "forget" parameters set by Py_SetProgramName(), Py_SetPath() or
-       Py_SetPythonHome(), whereas _PyPathConfig_Fini() clear all these
+       Py_SetPythonHome(), whereas _PyPathConfig_Clear() clear all these
        parameters. */
-    _PyPathConfig_Fini();
+    _PyPathConfig_Clear(&_Py_path_config);
 
     return 0;
 }

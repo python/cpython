@@ -52,6 +52,10 @@ typedef struct {
 
 #define _PyPathConfig_INIT {.module_search_path = NULL}
 
+PyAPI_DATA(_PyPathConfig) _Py_path_config;
+
+PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
+
 
 /* Full Python runtime state */
 
