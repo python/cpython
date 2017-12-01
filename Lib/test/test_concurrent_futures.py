@@ -902,10 +902,7 @@ class ExecutorDeadlockTest:
         ]
         for func, args, error, name in crash_cases:
             with self.subTest(name):
-                # skip the test involving pickle errors with manager as it
-                # breaks the manager and not the pool in this cases
-                # skip the test involving pickle errors with thread as the
-                # tasks and results are not pickled in this case
+                # The captured_stderr reduces the noise in the test report
                 with test.support.captured_stderr():
                     executor = self.executor_type(
                         max_workers=2, mp_context=get_context(self.ctx))
@@ -941,34 +938,6 @@ class ExecutorDeadlockTest:
             pass
         # Give some time for the Executor to detect the failure
         time.sleep(.5)
-
-    def test_crash_races(self):
-        self.executor.shutdown(wait=True)
-
-        for n_proc in [1, 2, 5, 17]:
-            with self.subTest(n_proc=n_proc):
-                # Test for external crash signal comming from neighbor
-                # with various race setup
-                executor = self.executor_type(
-                    max_workers=n_proc, mp_context=get_context(self.ctx))
-                pids = [pid for pid in executor.map(
-                        self._test_getpid, [None] * n_proc)]
-                assert None not in pids
-                res = executor.map(
-                    self._sleep_id, [True] * 2 * n_proc,
-                    [.001 * (j // 2) for j in range(2 * n_proc)],
-                    chunksize=1)
-                assert all(res)
-                res = executor.map(self._test_kill_worker, pids[::-1],
-                                   timeout=self.TIMEOUT)
-                with self.assertRaises(BrokenProcessPool):
-                    try:
-                        [v for v in res]
-                    except futures.TimeoutError:
-                        # If we did not recover before TIMEOUT seconds,
-                        # consider that the executor is in a deadlock state
-                        self._fail_on_deadlock(executor)
-                executor.shutdown(wait=True)
 
     def test_shutdown_deadlock(self):
         # Test that the pool calling shutdown do not cause deadlock

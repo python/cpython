@@ -95,9 +95,9 @@ def _python_exit():
     global _global_shutdown
     _global_shutdown = True
     items = list(_threads_wakeups.items())
-    for t, thread_wakeup in items:
+    for _, thread_wakeup in items:
         thread_wakeup.wakeup()
-    for t, q in items:
+    for t, _ in items:
         t.join()
 
 # Controls how many more calls than processes will be queued in the call queue.
@@ -160,7 +160,8 @@ class _SafeQueue(Queue):
             tb = traceback.format_exception(type(e), e, e.__traceback__)
             e.__cause__ = _RemoteTraceback('\n"""\n{}"""'.format(''.join(tb)))
             work_item = self.pending_work_items.pop(obj.work_id, None)
-            # work_item can be None if another process terminated (see above)
+            # work_item can be None if another process terminated. In this case,
+            # the queue_manager_thread fails all work_items with BrokenProcessPool
             if work_item is not None:
                 work_item.future.set_exception(e)
         else:
@@ -315,7 +316,7 @@ def _queue_management_worker(executor_reference,
         n_children_alive = sum(p.is_alive() for p in processes.values())
         n_children_to_stop = n_children_alive
         n_sentinels_sent = 0
-        # Sent the right number of sentinels, to make sure all children are
+        # Send the right number of sentinels, to make sure all children are
         # properly terminated.
         while n_sentinels_sent < n_children_to_stop and n_children_alive > 0:
             for i in range(n_children_to_stop - n_sentinels_sent):
@@ -343,7 +344,10 @@ def _queue_management_worker(executor_reference,
                                 call_queue)
 
         # Wait for a result to be ready in the result_queue while checking
-        # that all worker processes are still running.
+        # that all worker processes are still running, or for a wake up
+        # signal send. The wake up signals come either from new tasks being
+        # submitted, from the executor being shutdown/gc-ed, or from the
+        # shutdown of the python interpreter.
         worker_sentinels = [p.sentinel for p in processes.values()]
         ready = wait(readers + worker_sentinels)
 
@@ -509,7 +513,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
-        # Management threads
+        # Management thread
         self._queue_management_thread = None
 
         # Map of pids to processes

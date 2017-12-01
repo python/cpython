@@ -1054,6 +1054,7 @@ class _TestQueue(BaseTestCase):
                     obj.on_queue_feeder_error_was_called = True
 
         not_serializable_obj = NotSerializable()
+        # The captured_stderr reduces the noise in the test report
         with test.support.captured_stderr():
             q = SafeQueue(ctx=multiprocessing.get_context())
             q.put(not_serializable_obj)
