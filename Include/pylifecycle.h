@@ -109,7 +109,7 @@ PyAPI_FUNC(void) _PyPathConfig_Fini(void);
 #endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
-int _Py_CheckPython3();
+int _Py_CheckPython3(void);
 #endif
 
 /* In their own files */
