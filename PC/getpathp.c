@@ -130,9 +130,6 @@ typedef struct {
 } PyCalculatePath;
 
 
-static _PyPathConfig _Py_path_config = _PyPathConfig_INIT;
-
-
 /* determine if "ch" is a separator character */
 static int
 is_sep(wchar_t ch)
@@ -1061,23 +1058,6 @@ calculate_free(PyCalculatePath *calculate)
 }
 
 
-static void
-pathconfig_clear(_PyPathConfig *config)
-{
-#define CLEAR(ATTR) \
-    do { \
-        PyMem_RawFree(ATTR); \
-        ATTR = NULL; \
-    } while (0)
-
-    CLEAR(config->prefix);
-    CLEAR(config->program_full_path);
-    CLEAR(config->dll_path);
-    CLEAR(config->module_search_path);
-#undef CLEAR
-}
-
-
 /* Initialize paths for Py_GetPath(), Py_GetPrefix(), Py_GetExecPrefix()
    and Py_GetProgramFullPath() */
 _PyInitError
@@ -1108,107 +1088,10 @@ _PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
 
 done:
     if (_Py_INIT_FAILED(err)) {
-        pathconfig_clear(&new_path_config);
+        _PyPathConfig_Clear(&new_path_config);
     }
     calculate_free(&calculate);
     return err;
-}
-
-
-static void
-pathconfig_global_init(void)
-{
-    if (_Py_path_config.module_search_path) {
-        /* Already initialized */
-        return;
-    }
-
-    _PyInitError err;
-    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
-
-    err = _PyMainInterpreterConfig_ReadEnv(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto error;
-    }
-
-    err = _PyMainInterpreterConfig_Read(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto error;
-    }
-
-    err = _PyPathConfig_Init(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto error;
-    }
-
-    _PyMainInterpreterConfig_Clear(&config);
-    return;
-
-error:
-    _PyMainInterpreterConfig_Clear(&config);
-    _Py_FatalInitError(err);
-}
-
-
-void
-_PyPathConfig_Fini(void)
-{
-    pathconfig_clear(&_Py_path_config);
-}
-
-
-/* External interface */
-
-void
-Py_SetPath(const wchar_t *path)
-{
-    if (_Py_path_config.module_search_path != NULL) {
-        pathconfig_clear(&_Py_path_config);
-    }
-
-    if (path == NULL) {
-        return;
-    }
-
-    _PyPathConfig new_config;
-    new_config.program_full_path = _PyMem_RawWcsdup(Py_GetProgramName());
-    new_config.prefix = _PyMem_RawWcsdup(L"");
-    new_config.dll_path = _PyMem_RawWcsdup(L"");
-    new_config.module_search_path = _PyMem_RawWcsdup(path);
-
-    pathconfig_clear(&_Py_path_config);
-    _Py_path_config = new_config;
-}
-
-
-wchar_t *
-Py_GetPath(void)
-{
-    pathconfig_global_init();
-    return _Py_path_config.module_search_path;
-}
-
-
-wchar_t *
-Py_GetPrefix(void)
-{
-    pathconfig_global_init();
-    return _Py_path_config.prefix;
-}
-
-
-wchar_t *
-Py_GetExecPrefix(void)
-{
-    return Py_GetPrefix();
-}
-
-
-wchar_t *
-Py_GetProgramFullPath(void)
-{
-    pathconfig_global_init();
-    return _Py_path_config.program_full_path;
 }
 
 
