@@ -894,7 +894,7 @@ config_get_program_name(_PyMainInterpreterConfig *config)
             return SET_DECODE_ERROR("PYTHONEXECUTABLE environment "
                                     "variable", len);
         }
-        pymain->config.program_name = buffer;
+        config->program_name = program_name;
     }
 #ifdef WITH_NEXT_FRAMEWORK
     else {
@@ -909,7 +909,7 @@ config_get_program_name(_PyMainInterpreterConfig *config)
                 return SET_DECODE_ERROR("__PYVENV_LAUNCHER__ environment "
                                         "variable", len);
             }
-            pymain->config.program_name = program_name;
+            config->program_name = program_name;
         }
     }
 #endif   /* WITH_NEXT_FRAMEWORK */
