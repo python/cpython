@@ -804,7 +804,12 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
     }
 
     if (config->program_name == NULL) {
-        config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+#ifdef MS_WINDOWS
+        const wchar_t *program_name = L"python";
+#else
+        const wchar_t *program_name = L"python3";
+#endif
+        config->program_name = _PyMem_RawWcsdup(program_name);
         if (config->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
