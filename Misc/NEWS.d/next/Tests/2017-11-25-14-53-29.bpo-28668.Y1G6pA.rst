@@ -1,0 +1,3 @@
+test.support.requires_multiprocessing_queue is removed. Skip tests with
+test.support.import_module('multiprocessing.synchronize') instead when the
+semaphore implementation is broken or missing.
