@@ -116,15 +116,10 @@ class ExecutorMixin:
         except NotImplementedError as e:
             self.skipTest(str(e))
         self._prime_executor()
-        self.timer = threading.Timer(self.timeout, self._fail_on_deadlock)
-        self.timer.start()
 
     def tearDown(self):
-        self.timer.cancel()
-        self.timer.join()
         # Remove the reference to self.timer to avoid the thread_cleanup
         # warnings, as this class is re-used for multiple tests.
-        del self.timer
         self.executor.shutdown(wait=True)
         self.executor = None
 
@@ -142,23 +137,6 @@ class ExecutorMixin:
                    for _ in range(self.worker_count)]
         for f in futures:
             f.result()
-
-    def _fail_on_deadlock(self, executor=None):
-        # If we did not recover before TIMEOUT seconds,
-        # consider that the executor is in a deadlock state
-        if executor is None:
-            executor = self.executor
-        import faulthandler
-        from tempfile import TemporaryFile
-        with TemporaryFile(mode="w+") as f:
-            faulthandler.dump_traceback(file=f)
-            f.seek(0)
-            tb = f.read()
-        for p in executor._processes.values():
-            p.terminate()
-        executor.shutdown(wait=True)
-        print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
-        self.fail(f"Executor deadlock:\n\n{tb}")
 
 
 class ThreadPoolMixin(ExecutorMixin):
@@ -866,6 +844,21 @@ class ExecutorDeadlockTest:
         time.sleep(delay)
         return x
 
+    def _fail_on_deadlock(self, executor):
+        # If we did not recover before TIMEOUT seconds,
+        # consider that the executor is in a deadlock state
+        import faulthandler
+        from tempfile import TemporaryFile
+        with TemporaryFile(mode="w+") as f:
+            faulthandler.dump_traceback(file=f)
+            f.seek(0)
+            tb = f.read()
+        for p in executor._processes.values():
+            p.terminate()
+        executor.shutdown(wait=True)
+        print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
+        self.fail(f"Executor deadlock:\n\n{tb}")
+
     def test_crash(self):
         self.executor.shutdown(wait=True)
         # extensive testing for deadlock caused by crash in a pool
@@ -898,7 +891,9 @@ class ExecutorDeadlockTest:
             # Check problem occuring while unpickling a task in
             # the result_handler thread
             (_return_instance, (ErrorAtUnpickle,), BrokenProcessPool,
-             "error during result unpickle in result_handler")
+             "error during result unpickle in result_handler"),
+            (_return_instance, (ExitAtUnpickle,), BrokenProcessPool,
+             "exit during result unpickle in result_handler")
         ]
         for func, args, error, name in crash_cases:
             with self.subTest(name):
