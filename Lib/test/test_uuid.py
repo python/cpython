@@ -309,7 +309,11 @@ class BaseTestUUID:
 
         # Test it again to ensure consistency.
         node2 = self.uuid.getnode()
-        self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
+        if not (node1 & (1 << 40)):
+            # Not randomly generated
+            self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
+        elif node1 != node2 and support.verbose:
+            print("Can't retrieve a MAC address")
 
     def test_uuid1(self):
         equal = self.assertEqual
@@ -564,6 +568,9 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         # $4.1.6.
         self.assertTrue(node & (1 << 40), '%012x' % node)
         self.check_node(node)
+
+        node2 = self.uuid._random_getnode()
+        self.assertNotEqual(node2, node, '%012x' % node)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_unix_getnode(self):
