@@ -1514,6 +1514,8 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e, 0)) {
         return 0;
     }
+    /* In order to check for yield expressions under '-3', we clear
+       the generator flag, and restore it at the end */
     is_generator |= st->st_cur->ste_generator;
     st->st_cur->ste_generator = 0;
     /* Outermost iter is received as an argument */
@@ -1551,8 +1553,10 @@ static int
 symtable_visit_listcomp(struct symtable *st, expr_ty e)
 {
     asdl_seq *generators = e->v.ListComp.generators;
-    int i;
-    int is_generator = st->st_cur->ste_generator;
+    int i, is_generator;
+    /* In order to check for yield expressions under '-3', we clear
+       the generator flag, and restore it at the end */
+    is_generator = st->st_cur->ste_generator;
     st->st_cur->ste_generator = 0;
     VISIT(st, expr, e->v.ListComp.elt);
     for (i = 0; i < asdl_seq_LEN(generators); i++) {
