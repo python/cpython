@@ -712,8 +712,8 @@ form.
 
       >>> re.split(r'\b', 'Words, words, words.')
       ['', 'Words', ', ', 'words', ', ', 'words', '.']
-      >>> re.split(r'\W*', 'Words, words, words.')
-      ['', 'W', 'o', 'r', 'd', 's', 'w', 'o', 'r', 'd', 's', 'w', 'o', 'r', 'd', 's', '']
+      >>> re.split(r'(\W*)', '...words...')
+      ['', '...', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '']
 
    .. versionchanged:: 3.1
       Added the optional flags argument.

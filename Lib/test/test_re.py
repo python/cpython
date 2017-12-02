@@ -1754,11 +1754,17 @@ class ReTests(unittest.TestCase):
         # Issues 852532, 1647489, 3262, 25054.
         self.assertEqual(re.split(r"\b", "a::bc"), ['', 'a', '::', 'bc', ''])
         self.assertEqual(re.split(r"\b|:+", "a::bc"), ['', 'a', '', 'bc', ''])
+        self.assertEqual(re.split(r"(?<!\w)(?=\w)|:+", "a::bc"), ['', 'a', 'bc'])
+        self.assertEqual(re.split(r"(?<=\w)(?!\w)|:+", "a::bc"), ['a', '', 'bc', ''])
+
         self.assertEqual(re.sub(r"\b", "-", "a::bc"), '-a-::-bc-')
         self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a--bc-')
+        self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::]bc[]')
+
         self.assertEqual(re.findall(r"\b|:+", "a::bc"), ['', '', '::', '', ''])
         self.assertEqual(re.findall(r"\b|\w+", "a::bc"),
                          ['', 'a', '', '', 'bc', ''])
+
         self.assertEqual([m.span() for m in re.finditer(r"\b|:+", "a::bc")],
                          [(0, 0), (1, 1), (1, 3), (3, 3), (5, 5)])
         self.assertEqual([m.span() for m in re.finditer(r"\b|\w+", "a::bc")],
