@@ -129,7 +129,7 @@ This terminates the option list (following options are passed as
 arguments to the command).
 .TP
 .BI "\-\-check-hash-based-pycs " mode
-Configure how Python evaluates the up-to-dateness of hash-base pycs.
+Configure how Python evaluates the up-to-dateness of hash-based .pyc files.
 .TP
 .B \-d
 Turn on parser debugging output (for expert only, depending on
