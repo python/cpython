@@ -901,8 +901,8 @@ config_get_program_name(_PyMainInterpreterConfig *config)
         size_t len;
         wchar_t* program_name = Py_DecodeLocale(p, &len);
         if (program_name == NULL) {
-            return SET_DECODE_ERROR("PYTHONEXECUTABLE environment "
-                                    "variable", len);
+            SET_DECODE_ERROR("PYTHONEXECUTABLE environment variable", len);
+            return -1;
         }
         config->program_name = program_name;
     }
@@ -916,8 +916,9 @@ config_get_program_name(_PyMainInterpreterConfig *config)
             size_t len;
             wchar_t* program_name = Py_DecodeLocale(pyvenv_launcher, &len);
             if (program_name == NULL) {
-                return SET_DECODE_ERROR("__PYVENV_LAUNCHER__ environment "
-                                        "variable", len);
+                SET_DECODE_ERROR("__PYVENV_LAUNCHER__ environment variable",
+                                 len);
+                return -1;
             }
             config->program_name = program_name;
         }
