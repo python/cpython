@@ -728,17 +728,25 @@ form.
    strings.  The *string* is scanned left-to-right, and matches are returned in
    the order found.  If one or more groups are present in the pattern, return a
    list of groups; this will be a list of tuples if the pattern has more than
-   one group.  Empty matches are included in the result unless they touch the
-   beginning of another match.
+   one group.  Empty matches are included in the result only when not adjacent
+   to a previous match.
+
+   .. versionchanged:: 3.7
+      Non-empty matches can now start just after a previous empty match.  Empty
+      matches adjacent to a previous match no longer included in the result.
 
 
 .. function:: finditer(pattern, string, flags=0)
 
    Return an :term:`iterator` yielding :ref:`match objects <match-objects>` over
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
-   is scanned left-to-right, and matches are returned in the order found.  Empty
-   matches are included in the result unless they touch the beginning of another
-   match.
+   is scanned left-to-right, and matches are returned in the order found.
+   Empty matches are included in the result only when not adjacent
+   to a previous match.
+
+   .. versionchanged:: 3.7
+      Non-empty matches can now start just after a previous empty match.  Empty
+      matches adjacent to a previous match no longer included in the result.
 
 
 .. function:: sub(pattern, repl, string, count=0, flags=0)

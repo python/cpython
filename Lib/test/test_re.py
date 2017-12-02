@@ -1332,7 +1332,6 @@ class ReTests(unittest.TestCase):
     def test_bug_817234(self):
         iter = re.finditer(r".*", "asdf")
         self.assertEqual(next(iter).span(), (0, 4))
-        self.assertEqual(next(iter).span(), (4, 4))
         self.assertRaises(StopIteration, next, iter)
 
     def test_bug_6561(self):
@@ -1761,14 +1760,14 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a--bc-')
         self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::]bc[]')
 
-        self.assertEqual(re.findall(r"\b|:+", "a::bc"), ['', '', '::', '', ''])
+        self.assertEqual(re.findall(r"\b|:+", "a::bc"), ['', '', '::', ''])
         self.assertEqual(re.findall(r"\b|\w+", "a::bc"),
-                         ['', 'a', '', '', 'bc', ''])
+                         ['', 'a', '', 'bc'])
 
         self.assertEqual([m.span() for m in re.finditer(r"\b|:+", "a::bc")],
-                         [(0, 0), (1, 1), (1, 3), (3, 3), (5, 5)])
+                         [(0, 0), (1, 1), (1, 3), (5, 5)])
         self.assertEqual([m.span() for m in re.finditer(r"\b|\w+", "a::bc")],
-                         [(0, 0), (0, 1), (1, 1), (3, 3), (3, 5), (5, 5)])
+                         [(0, 0), (0, 1), (3, 3), (3, 5)])
 
     def test_bug_2537(self):
         # issue 2537: empty submatches

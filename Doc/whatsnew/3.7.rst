@@ -781,11 +781,13 @@ Changes in the Python API
   Python 3.5.
 
   For patterns that match both empty and non-empty strings, the result of
-  searching for all matches may also be changed in other cases.  For example
-  in the string ``'a\n\n'``, the pattern ``r'(?m)^\s*?$'`` will not only
-  match empty strings at positions 2 and 3, but also the string ``'\n'`` at
-  positions 2--3.  To match only blank lines, the pattern should be rewritten
-  as ``r'(?m)^[^\S\n]*$'``.
+  searching for all matches may also be changed in other cases.  Non-empty
+  matches can start just after the previous empty match, but empty matches
+  can not be found just after the end of the previous match.  For example
+  in the string ``'a\n\n'``, the pattern ``r'(?m)^\s*?$'`` will match the
+  empty string at position 2 and the string ``'\n'`` at positions 2--3
+  instead of two empty strings at positions 2 and 3.  To match only blank
+  lines, the pattern should be rewritten as ``r'(?m)^[^\S\n]*$'``.
 
   (Contributed by Serhiy Storchaka in :issue:`25054`.)
 

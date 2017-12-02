@@ -811,7 +811,7 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
         if (status < 0)
             goto error;
 
-        state.must_advance = (state.ptr == state.start);
+        state.must_advance = 1;
         state.start = state.ptr;
     }
 
@@ -2431,7 +2431,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self)
     if (status == 0)
         state->start = NULL;
     else {
-        state->must_advance = (state->ptr == state->start);
+        state->must_advance = 1;
         state->start = state->ptr;
     }
 
@@ -2469,7 +2469,7 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self)
     if (status == 0)
         state->start = NULL;
     else {
-        state->must_advance = (state->ptr == state->start);
+        state->must_advance = 1;
         state->start = state->ptr;
     }
 
