@@ -86,11 +86,12 @@ compile Python sources.
 .. cmdoption:: --invalidation-mode [timestamp|checked-hash|unchecked-hash]
 
    Control how the generated pycs will be invalidated at runtime. The default
-   setting, ``timestamp``, means that pyc files with the source timestamp and
-   size embedded will be generated. The ``checked-hash`` and ``unchecked-hash``
-   values cause hash-based pycs to be generated. Hash-based pycs embed a hash of
-   the source file contents rather than a timestamp. See :ref:`pyc-invalidation`
-   for more information on how Python validates bytecode cache files at runtime.
+   setting, ``timestamp``, means that ``.pyc`` files with the source timestamp
+   and size embedded will be generated. The ``checked-hash`` and
+   ``unchecked-hash`` values cause hash-based pycs to be generated. Hash-based
+   pycs embed a hash of the source file contents rather than a timestamp. See
+   :ref:`pyc-invalidation` for more information on how Python validates bytecode
+   cache files at runtime.
 
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.

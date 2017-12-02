@@ -689,17 +689,18 @@ metadata.
 
 Python also supports "hash-based" cache files, which store a hash of a source
 file contents rather than its metadata. There are two variants of hash-based
-pycs: checked and unchecked. For checked hash-based pycs, Python validates the
-cache file by hashing the source file and comparing the resulting hash with the
-hash in the cache file. If a checked hash-based cache file is found to be
-invalid, Python regenerates it and writes a new checked hash-based cache
-file. For unchecked hash-based pycs, Python simply assumes the cache file is
-valid if it exists. Hash-based pyc validation behavior may be override with the
-:option:`--check-hash-based-pycs` flag.
+``.pyc`` files: checked and unchecked. For checked hash-based ``.pyc`` files,
+Python validates the cache file by hashing the source file and comparing the
+resulting hash with the hash in the cache file. If a checked hash-based cache
+file is found to be invalid, Python regenerates it and writes a new checked
+hash-based cache file. For unchecked hash-based ``.pyc`` files, Python simply
+assumes the cache file is valid if it exists. Hash-based ``.pyc`` files
+validation behavior may be override with the :option:`--check-hash-based-pycs`
+flag.
 
 .. versionchanged:: 3.7
-   Added hash-based pycs. Previously, Python only supported timestamp-based pyc
-   invalidation.
+   Added hash-based ``.pyc`` files. Previously, Python only supported
+   timestamp-based invalidation of bytecode caches.
 
 
 The Path Based Finder

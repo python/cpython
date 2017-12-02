@@ -1332,8 +1332,8 @@ an :term:`importer`.
 
 .. function:: source_hash(source_bytes)
 
-   Return the hash of *source_bytes* as byte string. A hash-based pyc embeds the
-   :func:`source_hash` of the corresponding source file's contents in its
+   Return the hash of *source_bytes* as bytes. A hash-based ``.pyc`` file embeds
+   the :func:`source_hash` of the corresponding source file's contents in its
    header.
 
    .. versionadded:: 3.7
