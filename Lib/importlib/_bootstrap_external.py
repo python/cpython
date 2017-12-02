@@ -448,18 +448,18 @@ def _classify_pyc(data, name, exc_details):
     """
     magic = data[:4]
     if magic != MAGIC_NUMBER:
-        message = 'bad magic number in {!r}: {!r}'.format(name, magic)
+        message = f'bad magic number in {name!r}: {magic!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     if len(data) < 16:
-        message = 'reached EOF while reading pyc header of {!r}'.format(name)
+        message = f'reached EOF while reading pyc header of {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise EOFError(message)
     flags = _r_long(data[4:8])
     # Only the first two flags are defined.
     if flags & ~0b11:
-        raise ImportError('invalid flags {!r} in {!r}'.format(flags, name),
-                          **exc_details)
+        message = f'invalid flags {flags!r} in {name!r}'
+        raise ImportError(message, **exc_details)
     return flags
 
 
@@ -483,13 +483,12 @@ def _validate_timestamp_pyc(data, source_mtime, source_size, name,
 
     """
     if _r_long(data[8:12]) != (source_mtime & 0xFFFFFFFF):
-        message = 'bytecode is stale for {!r}'.format(name)
+        message = f'bytecode is stale for {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     if (source_size is not None and
         _r_long(data[12:16]) != (source_size & 0xFFFFFFFF)):
-        raise ImportError('bytecode is stale for {!r}'.format(name),
-                          **exc_details)
+        raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
 
 
 def _validate_hash_pyc(data, source_hash, name, exc_details):
@@ -511,7 +510,7 @@ def _validate_hash_pyc(data, source_hash, name, exc_details):
     """
     if data[8:16] != source_hash:
         raise ImportError(
-            'hash in bytecode doesn\'t match hash of source {!r}'.format(name),
+            f'hash in bytecode doesn\'t match hash of source {name!r}',
             **exc_details,
         )
 
