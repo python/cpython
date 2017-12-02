@@ -2264,8 +2264,9 @@ PyInit_imp(void)
     if (d == NULL)
         goto failure;
     PyObject *pyc_mode = PyUnicode_FromString(_Py_CheckHashBasedPycsMode);
-    if (pyc_mode == NULL)
+    if (pyc_mode == NULL) {
         goto failure;
+    }
     if (PyDict_SetItemString(d, "check_hash_based_pycs", pyc_mode) < 0) {
         Py_DECREF(pyc_mode);
         goto failure;
