@@ -1008,16 +1008,10 @@ calculate_path_impl(const _PyMainInterpreterConfig *main_config,
 }
 
 
-/* Initialize paths for Py_GetPath(), Py_GetPrefix(), Py_GetExecPrefix()
-   and Py_GetProgramFullPath() */
 _PyInitError
-_PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
+_PyPathConfig_Calculate(_PyPathConfig *config,
+                        const _PyMainInterpreterConfig *main_config)
 {
-    if (_Py_path_config.module_search_path) {
-        /* Already initialized */
-        return _Py_INIT_OK();
-    }
-
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
@@ -1026,16 +1020,11 @@ _PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
         goto done;
     }
 
-    _PyPathConfig new_path_config;
-    memset(&new_path_config, 0, sizeof(new_path_config));
-
-    err = calculate_path_impl(main_config, &calculate, &new_path_config);
+    err = calculate_path_impl(main_config, &calculate, config);
     if (_Py_INIT_FAILED(err)) {
-        _PyPathConfig_Clear(&new_path_config);
         goto done;
     }
 
-    _Py_path_config = new_path_config;
     err = _Py_INIT_OK();
 
 done:

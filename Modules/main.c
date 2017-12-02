@@ -876,6 +876,16 @@ static _PyInitError
 config_get_program_name(_PyMainInterpreterConfig *config)
 {
     assert(config->program_name == NULL);
+
+    /* If Py_SetProgramName() was called, use its value */
+    wchar_t *program_name = _Py_path_config.program_name;
+    if (program_name != NULL) {
+        config->program_name = _PyMem_RawWcsdup(program_name);
+        if (config->program_name == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
 #ifdef __APPLE__
     char *p;
     /* On MacOS X, when the Python interpreter is embedded in an
@@ -914,6 +924,7 @@ config_get_program_name(_PyMainInterpreterConfig *config)
     }
 #endif   /* WITH_NEXT_FRAMEWORK */
 #endif   /* __APPLE__ */
+
     return _Py_INIT_OK();
 }
 
@@ -947,13 +958,6 @@ static int
 pymain_init_main_interpreter(_PyMain *pymain)
 {
     _PyInitError err;
-
-    /* TODO: Print any exceptions raised by these operations */
-    err = _PyMainInterpreterConfig_Read(&pymain->config);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
-        return -1;
-    }
 
     err = _Py_InitializeMainInterpreter(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
@@ -1412,14 +1416,13 @@ config_init_pythonpath(_PyMainInterpreterConfig *config)
 
 
 static _PyInitError
-config_init_pythonhome(_PyMainInterpreterConfig *config)
+config_init_home(_PyMainInterpreterConfig *config)
 {
     wchar_t *home;
 
-    home = Py_GetPythonHome();
+    /* If Py_SetPythonHome() was called, use its value */
+    home = _Py_path_config.home;
     if (home) {
-        /* Py_SetPythonHome() has been called before Py_Main(),
-           use its value */
         config->home = _PyMem_RawWcsdup(home);
         if (config->home == NULL) {
             return _Py_INIT_NO_MEMORY();
@@ -1439,7 +1442,7 @@ config_init_pythonhome(_PyMainInterpreterConfig *config)
 _PyInitError
 _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
 {
-    _PyInitError err = config_init_pythonhome(config);
+    _PyInitError err = config_init_home(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1543,6 +1546,12 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
         return -1;
     }
 
+    _PyInitError err = _PyMainInterpreterConfig_Read(&pymain->config);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1565,11 +1574,6 @@ static int
 pymain_init_python(_PyMain *pymain)
 {
     pymain_init_stdio(pymain);
-
-    Py_SetProgramName(pymain->config.program_name);
-    /* Don't free program_name here: the argument to Py_SetProgramName
-       must remain valid until Py_FinalizeEx is called. The string is freed
-       by pymain_free(). */
 
     pymain->err = _Py_InitializeCore(&pymain->core_config);
     if (_Py_INIT_FAILED(pymain->err)) {
