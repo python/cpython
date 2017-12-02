@@ -16,6 +16,8 @@ py_fullname = python$(py_version)$(abiflags)
 export STDLIB_DIR := lib/python$(py_version)
 
 
+ROOT_MAKE := $(MAKE) -f Makefile-$(BUILD_TYPE)
+
 # Target variables names.
 python := $(py_host_dir)/python
 config_status := $(py_host_dir)/config.status
@@ -119,11 +121,11 @@ $(config_status): $(makefile) $(py_srcdir)/configure
 	    $(config_args)
 
 $(python): native_python external_libraries openssl $(config_status)
-	$(MAKE) host
+	$(ROOT_MAKE) host
 
 configure: native_python external_libraries openssl
 	@rm -f $(config_status)
-	$(MAKE) $(config_status)
+	$(ROOT_MAKE) $(config_status)
 
 disabled_modules: setup_tmp := $(py_host_dir)/Modules/_Setup.tmp
 disabled_modules: setup_file := $(py_host_dir)/Modules/Setup

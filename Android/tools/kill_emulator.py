@@ -4,9 +4,9 @@ import sys
 import os
 import telnetlib
 
-def main():
+def kill_emulator(port):
     try:
-        with telnetlib.Telnet('localhost', 5554) as tn:
+        with telnetlib.Telnet('localhost', port) as tn:
             idx, _, bytes_read = tn.expect([b'Android Console'], timeout=5)
             if idx != 0:
                 if bytes_read:
@@ -22,7 +22,13 @@ def main():
         return e
 
 if __name__ == "__main__":
-    err = main()
+    err = None
+    try:
+        port = int(sys.argv[1])
+    except (ValueError, IndexError) as e:
+        err = e
+    else:
+        err = kill_emulator(port)
     if err is not None:
         print('Error: Cannot telnet to the Android Console: %s.' % err)
         sys.exit(1)

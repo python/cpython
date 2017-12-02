@@ -11,6 +11,9 @@ from subprocess import PIPE, STDOUT
 
 class AndroidError(BaseException): pass
 
+adb_command = [os.environ['ADB'],
+               '-s', 'emulator-%s' % os.environ['CONSOLE_PORT']]
+
 def emulator_listens(port):
     """Check that an emulator is listening on 'port'."""
     try:
@@ -36,7 +39,7 @@ _android_api = None
 def get_android_api():
     global _android_api
     if _android_api is None:
-        proc = subprocess.run([os.environ['ADB'], 'shell',
+        proc = subprocess.run(adb_command + ['shell',
                                'getprop ro.build.version.sdk'],
                               check=True, stdout=PIPE, stderr=PIPE)
         _android_api = int(proc.stdout)
@@ -49,16 +52,15 @@ _first_invocation = True
 def adb_shell(cmd, wait_for_sdcard=False):
     global _first_invocation
 
-    adb = os.environ['ADB']
     if not (wait_for_sdcard and _first_invocation):
-        run_subprocess(adb, 'shell', cmd)
+        run_subprocess(*adb_command, 'shell', cmd)
         return
     _first_invocation = False
 
     # Use a random key to find out if the shell command was successfull as the
     # adb shell does not report the exit status of the executed command.
     key = str(random.random())
-    args = [adb, 'shell',
+    args = adb_command + ['shell',
             '{ %s; } && echo "%s%s"' % (cmd.strip(';'), KEY_MSG, key)]
     key = key.encode(encoding='ascii')
 
@@ -79,7 +81,8 @@ def adb_shell(cmd, wait_for_sdcard=False):
                 break
 
             if curtime == starttime:
-                print('%s shell %s' % (adb, cmd), end='', flush=True)
+                print('%s shell %s' % (' '.join(adb_command), cmd), end='',
+                      flush=True)
             else:
                 print('.', end='', flush=True)
             time.sleep(.500)
@@ -89,7 +92,7 @@ def adb_shell(cmd, wait_for_sdcard=False):
                            (cmd, rc, stdout))
 
     if curtime == starttime:
-        print('%s shell %s' % (adb, cmd))
+        print('%s shell %s' % (' '.join(adb_command), cmd))
 
     if stdout:
         for line in stdout.decode().split('\n'):
@@ -108,7 +111,7 @@ def adb_push_to_dir(src, dest):
                        else False)
     adb_shell('mkdir -p %s' % dest, wait_for_sdcard=wait_for_sdcard)
     print('Please wait: pushing %s to %s...' % (src, dest), flush=True)
-    run_subprocess(os.environ['ADB'], 'push', src, dest, verbose=False)
+    run_subprocess(*adb_command, 'push', src, dest, verbose=False)
 
 def run_script(script_path):
     """Push a script to the emulator and run it."""
@@ -117,4 +120,4 @@ def run_script(script_path):
     script_path = os.path.join(bin_dir, os.path.basename(script_path))
     print()
     print('Running %s' % script_path, flush=True)
-    subprocess.run([os.environ['ADB'], 'shell', 'sh %s' % script_path])
+    subprocess.run(adb_command + ['shell', 'sh %s' % script_path])

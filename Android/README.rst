@@ -352,18 +352,22 @@ Emulator Makefile targets
         $ make python PYTHON_ARGS="-c 'print(\\\"Hello world.\\\")'"
 
 *emulator*
-    Create the AVD if it does not exist, start the emulator ensuring first
-    that there is no other emulator running [4]_ and start and adb_ shell (see
-    the ``adb_shell`` target description below).
+    Create the AVD if it does not exist, start the emulator ensuring first that
+    there is no other emulator using the same console port and start an adb_
+    shell (see the ``adb_shell`` target description below).
 
     When the AVD is being created, it is not necessary to answer the following
     question printed on the screen at that time::
 
         Do you wish to create a custom hardware profile? [no]
 
+    Upon the first invocation, python may fail to start with the error ``No
+    module named 'encodings'``. In that case, just wait few seconds until
+    ``/sdcard`` is mounted and try again.
+
 *kill_emulator*
     Kill the emulator. Useful when the emulator refuses to be shutdown from its
-    GUI.
+    GUI or when there is no GUI.
 
 *adb_shell*
     Create an adb_ shell on the emulator.
@@ -374,7 +378,7 @@ Emulator Makefile targets
 
     - Set ``PATH`` and ``LD_LIBRARY_PATH``.
     - Set ``HOME`` to the parent directory of ``sys.exec_prefix``, a writable
-      part of Android that is not set as noexec [5]_.
+      part of Android that is not set as noexec [4]_.
     - Set miscellaneous stuff such as the terminal type, the terminal width and
       the readline inputrc configuration file.
     - Change the current directory to ``$HOME``.
@@ -424,10 +428,7 @@ Emulator Makefile targets
 
    android-ndk-r14 needs 2.8 Gb of disk space.
 
-.. [4] There is currently no support for multiple concurrent emulator sessions
-   in this build system.
-
-.. [5] There is no support in Android for creating temporary files and
+.. [4] There is no support in Android for creating temporary files and
    directories. Some functions of the Python ``tempfile`` module fall back to
    ``$HOME`` when no directories are available for such creations and this is
    the reason why the script sets the ``HOME`` variable to the parent directory
