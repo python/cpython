@@ -687,15 +687,15 @@ writing it. At runtime, the import system then validates the cache file by
 checking the stored metadata in the cache file against at source's
 metadata.
 
-Python also supports "hash-based" cache files, which store a hash of a source
-file contents rather than its metadata. There are two variants of hash-based
+Python also supports "hash-based" cache files, which store a hash of the source
+file's contents rather than its metadata. There are two variants of hash-based
 ``.pyc`` files: checked and unchecked. For checked hash-based ``.pyc`` files,
 Python validates the cache file by hashing the source file and comparing the
 resulting hash with the hash in the cache file. If a checked hash-based cache
 file is found to be invalid, Python regenerates it and writes a new checked
 hash-based cache file. For unchecked hash-based ``.pyc`` files, Python simply
 assumes the cache file is valid if it exists. Hash-based ``.pyc`` files
-validation behavior may be override with the :option:`--check-hash-based-pycs`
+validation behavior may be overridden with the :option:`--check-hash-based-pycs`
 flag.
 
 .. versionchanged:: 3.7
