@@ -133,9 +133,8 @@ def dump(co):
 
 # Needed for test_closure_injection below
 # Defined at global scope to avoid implicitly closing over __class__
-def __getitem__(self, i):
-    print('foreign getitem')
-    return super().__getitem__(i)
+def external_getitem(self, i):
+    return f"Foreign getitem: {super().__getitem__(i)}"
 
 class CodeTest(unittest.TestCase):
 
@@ -155,29 +154,25 @@ class CodeTest(unittest.TestCase):
         def create_closure(__class__):
             return (lambda: __class__).__closure__
 
-        def new_code(c_or_f):
+        def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            c = c_or_f.__code__ if isinstance(c_or_f, FunctionType) else c_or_f
             return CodeType(
                 c.co_argcount, c.co_kwonlyargcount, c.co_nlocals,
                 c.co_stacksize, c.co_flags, c.co_code, c.co_consts, c.co_names,
                 c.co_varnames, c.co_filename, c.co_name, c.co_firstlineno,
                 c.co_lnotab, c.co_freevars + ('__class__',), c.co_cellvars)
 
-        def add_foreign_method(cls, f):
+        def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
-            name = f.__name__
+            assert not f.__closure__
+            closure = create_closure(cls)
             defaults = f.__defaults__
-            closure = (f.__closure__ or ()) + create_closure(cls)
             setattr(cls, name, FunctionType(code, globals(), name, defaults, closure))
 
         class List(list):
-            def append(self, elem):
-                super().append(elem)
-            def extend(self, elems):
-                super().extend(elems)
+            pass
 
-        add_foreign_method(List, __getitem__)
+        add_foreign_method(List, "__getitem__", external_getitem)
 
         # Ensure the closure injection actually worked
         function = List.__getitem__
@@ -185,11 +180,12 @@ class CodeTest(unittest.TestCase):
         self.assertIs(class_ref, List)
 
         # Ensure the code correctly indicates it accesses a free variable
-        self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE)
+        self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE,
+                         hex(function.__code__.co_flags))
 
-        # Ensure the implicit super() call actually works
-        obj = List([1,2,3])
-        self.assertEqual(obj[0], 1)
+        # Ensure the zero-arg super() call in the injected method works
+        obj = List([1, 2, 3])
+        self.assertEqual(obj[0], "Foreign getitem: 1")
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
