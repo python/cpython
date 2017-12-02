@@ -185,7 +185,6 @@ class CodeTest(unittest.TestCase):
         self.assertIs(class_ref, List)
 
         # Ensure the code correctly indicates it accesses a free variable
-        import dis; dis.show_code(function)
         self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE)
 
         # Ensure the implicit super() call actually works
