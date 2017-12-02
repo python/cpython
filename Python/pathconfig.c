@@ -10,17 +10,17 @@ extern "C" {
 
 
 _PyPathConfig _Py_path_config = _PyPathConfig_INIT;
-#ifdef MS_WINDOWS
-static wchar_t *progname = L"python";
-#else
-static wchar_t *progname = L"python3";
-#endif
-static wchar_t *default_home = NULL;
 
 
 void
 _PyPathConfig_Clear(_PyPathConfig *config)
 {
+    /* _PyMem_SetDefaultAllocator() is needed to get a known memory allocator,
+       since Py_SetPath(), Py_SetPythonHome() and Py_SetProgramName() can be
+       called before Py_Initialize() which can changes the memory allocator. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
 #define CLEAR(ATTR) \
     do { \
         PyMem_RawFree(ATTR); \
@@ -35,57 +35,64 @@ _PyPathConfig_Clear(_PyPathConfig *config)
     CLEAR(config->exec_prefix);
 #endif
     CLEAR(config->module_search_path);
+    CLEAR(config->home);
+    CLEAR(config->program_name);
 #undef CLEAR
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
-void
-Py_SetProgramName(wchar_t *pn)
+/* Initialize paths for Py_GetPath(), Py_GetPrefix(), Py_GetExecPrefix()
+   and Py_GetProgramFullPath() */
+_PyInitError
+_PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
 {
-    if (pn && *pn)
-        progname = pn;
-}
-
-
-wchar_t *
-Py_GetProgramName(void)
-{
-    return progname;
-}
-
-
-void
-Py_SetPythonHome(wchar_t *home)
-{
-    default_home = home;
-}
-
-
-wchar_t*
-Py_GetPythonHome(void)
-{
-    /* Use a static buffer to avoid heap memory allocation failure.
-       Py_GetPythonHome() doesn't allow to report error, and the caller
-       doesn't release memory. */
-    static wchar_t buffer[MAXPATHLEN+1];
-
-    if (default_home) {
-        return default_home;
+    if (_Py_path_config.module_search_path) {
+        /* Already initialized */
+        return _Py_INIT_OK();
     }
 
-    char *home = Py_GETENV("PYTHONHOME");
-    if (!home) {
-        return NULL;
+    _PyInitError err;
+    _PyPathConfig new_config = _PyPathConfig_INIT;
+
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Calculate program_full_path, prefix, exec_prefix (Unix)
+       or dll_path (Windows), and module_search_path */
+    err = _PyPathConfig_Calculate(&new_config, main_config);
+    if (_Py_INIT_FAILED(err)) {
+        _PyPathConfig_Clear(&new_config);
+        goto done;
     }
 
-    size_t size = Py_ARRAY_LENGTH(buffer);
-    size_t r = mbstowcs(buffer, home, size);
-    if (r == (size_t)-1 || r >= size) {
-        /* conversion failed or the static buffer is too small */
-        return NULL;
+    /* Copy home and program_name from main_config */
+    if (main_config->home != NULL) {
+        new_config.home = _PyMem_RawWcsdup(main_config->home);
+        if (new_config.home == NULL) {
+            err = _Py_INIT_NO_MEMORY();
+            goto done;
+        }
+    }
+    else {
+        new_config.home = NULL;
     }
 
-    return buffer;
+    new_config.program_name = _PyMem_RawWcsdup(main_config->program_name);
+    if (new_config.program_name == NULL) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    _PyPathConfig_Clear(&_Py_path_config);
+    _Py_path_config = new_config;
+
+    err = _Py_INIT_OK();
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return err;
 }
 
 
@@ -134,6 +141,9 @@ Py_SetPath(const wchar_t *path)
         return;
     }
 
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     _PyPathConfig new_config;
     new_config.program_full_path = _PyMem_RawWcsdup(Py_GetProgramName());
     new_config.prefix = _PyMem_RawWcsdup(L"");
@@ -144,8 +154,58 @@ Py_SetPath(const wchar_t *path)
 #endif
     new_config.module_search_path = _PyMem_RawWcsdup(path);
 
+    /* steal the home and program_name values (to leave them unchanged) */
+    new_config.home = _Py_path_config.home;
+    _Py_path_config.home = NULL;
+    new_config.program_name = _Py_path_config.program_name;
+    _Py_path_config.program_name = NULL;
+
     _PyPathConfig_Clear(&_Py_path_config);
     _Py_path_config = new_config;
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+
+void
+Py_SetPythonHome(wchar_t *home)
+{
+    if (home == NULL) {
+        return;
+    }
+
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    PyMem_RawFree(_Py_path_config.home);
+    _Py_path_config.home = _PyMem_RawWcsdup(home);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_Py_path_config.home == NULL) {
+        Py_FatalError("Py_SetPythonHome() failed: out of memory");
+    }
+}
+
+
+void
+Py_SetProgramName(wchar_t *program_name)
+{
+    if (program_name == NULL || program_name[0] == L'\0') {
+        return;
+    }
+
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    PyMem_RawFree(_Py_path_config.program_name);
+    _Py_path_config.program_name = _PyMem_RawWcsdup(program_name);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_Py_path_config.program_name == NULL) {
+        Py_FatalError("Py_SetProgramName() failed: out of memory");
+    }
 }
 
 
@@ -183,6 +243,23 @@ Py_GetProgramFullPath(void)
     pathconfig_global_init();
     return _Py_path_config.program_full_path;
 }
+
+
+wchar_t*
+Py_GetPythonHome(void)
+{
+    pathconfig_global_init();
+    return _Py_path_config.home;
+}
+
+
+wchar_t *
+Py_GetProgramName(void)
+{
+    pathconfig_global_init();
+    return _Py_path_config.program_name;
+}
+
 
 #ifdef __cplusplus
 }
