@@ -118,6 +118,7 @@
 #endif
 
 typedef struct {
+    wchar_t *module_search_path_env;   /* PYTHONPATH environment variable */
     wchar_t *path_env;                 /* PATH environment variable */
     wchar_t *home;                     /* PYTHONHOME environment variable */
 
@@ -125,6 +126,7 @@ typedef struct {
     wchar_t *machine_path;   /* from HKEY_LOCAL_MACHINE */
     wchar_t *user_path;      /* from HKEY_CURRENT_USER */
 
+    wchar_t *program_name;             /* Program name */
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t zip_path[MAXPATHLEN+1];
 } PyCalculatePath;
@@ -501,8 +503,7 @@ get_dll_path(PyCalculatePath *calculate, _PyPathConfig *config)
 
 
 static _PyInitError
-get_program_full_path(const _PyMainInterpreterConfig *main_config,
-                      PyCalculatePath *calculate, _PyPathConfig *config)
+get_program_full_path(PyCalculatePath *calculate, _PyPathConfig *config)
 {
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
@@ -517,13 +518,12 @@ get_program_full_path(const _PyMainInterpreterConfig *main_config,
      * $PATH isn't exported, you lose.
      */
 #ifdef ALTSEP
-    if (wcschr(main_config->program_name, SEP) ||
-        wcschr(main_config->program_name, ALTSEP))
+    if (wcschr(calculate->program_name, SEP) || wcschr(calculate->program_name, ALTSEP))
 #else
-    if (wcschr(main_config->program_name, SEP))
+    if (wcschr(calculate->program_name, SEP))
 #endif
     {
-        wcsncpy(program_full_path, main_config->program_name, MAXPATHLEN);
+        wcsncpy(program_full_path, calculate->program_name, MAXPATHLEN);
     }
     else if (calculate->path_env) {
         wchar_t *path = calculate->path_env;
@@ -542,7 +542,7 @@ get_program_full_path(const _PyMainInterpreterConfig *main_config,
             }
 
             /* join() is safe for MAXPATHLEN+1 size buffer */
-            join(program_full_path, main_config->program_name);
+            join(program_full_path, calculate->program_name);
             if (exists(program_full_path)) {
                 break;
             }
@@ -713,6 +713,9 @@ calculate_init(PyCalculatePath *calculate,
                const _PyMainInterpreterConfig *main_config)
 {
     calculate->home = main_config->home;
+    calculate->module_search_path_env = main_config->module_search_path_env;
+    calculate->program_name = main_config->program_name;
+
     calculate->path_env = _wgetenv(L"PATH");
 }
 
@@ -812,9 +815,7 @@ calculate_home_prefix(PyCalculatePath *calculate, wchar_t *prefix)
 
 
 static _PyInitError
-calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
-                             PyCalculatePath *calculate, _PyPathConfig *config,
-                             wchar_t *prefix)
+calculate_module_search_path(PyCalculatePath *calculate, _PyPathConfig *config, wchar_t *prefix)
 {
     int skiphome = calculate->home==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
@@ -823,7 +824,7 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */
-    int skipdefault = (main_config->module_search_path_env!=NULL || calculate->home!=NULL || \
+    int skipdefault = (calculate->module_search_path_env!=NULL || calculate->home!=NULL || \
                        calculate->machine_path!=NULL || calculate->user_path!=NULL);
 
     /* We need to construct a path from the following parts.
@@ -860,8 +861,8 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
         bufsz += wcslen(calculate->machine_path) + 1;
     }
     bufsz += wcslen(calculate->zip_path) + 1;
-    if (main_config->module_search_path_env != NULL) {
-        bufsz += wcslen(main_config->module_search_path_env) + 1;
+    if (calculate->module_search_path_env != NULL) {
+        bufsz += wcslen(calculate->module_search_path_env) + 1;
     }
 
     wchar_t *buf, *start_buf;
@@ -869,9 +870,9 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
     if (buf == NULL) {
         /* We can't exit, so print a warning and limp along */
         fprintf(stderr, "Can't malloc dynamic PYTHONPATH.\n");
-        if (main_config->module_search_path_env) {
+        if (calculate->module_search_path_env) {
             fprintf(stderr, "Using environment $PYTHONPATH.\n");
-            config->module_search_path = main_config->module_search_path_env;
+            config->module_search_path = calculate->module_search_path_env;
         }
         else {
             fprintf(stderr, "Using default static path.\n");
@@ -881,8 +882,8 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
     }
     start_buf = buf;
 
-    if (main_config->module_search_path_env) {
-        if (wcscpy_s(buf, bufsz - (buf - start_buf), main_config->module_search_path_env)) {
+    if (calculate->module_search_path_env) {
+        if (wcscpy_s(buf, bufsz - (buf - start_buf), calculate->module_search_path_env)) {
             return INIT_ERR_BUFFER_OVERFLOW();
         }
         buf = wcschr(buf, L'\0');
@@ -995,8 +996,8 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
 
 
 static _PyInitError
-calculate_path_impl(const _PyMainInterpreterConfig *main_config,
-                    PyCalculatePath *calculate, _PyPathConfig *config)
+calculate_path_impl(PyCalculatePath *calculate, _PyPathConfig *config,
+                    const _PyMainInterpreterConfig *main_config)
 {
     _PyInitError err;
 
@@ -1005,7 +1006,7 @@ calculate_path_impl(const _PyMainInterpreterConfig *main_config,
         return err;
     }
 
-    err = get_program_full_path(main_config, calculate, config);
+    err = get_program_full_path(calculate, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1031,7 +1032,7 @@ calculate_path_impl(const _PyMainInterpreterConfig *main_config,
 
     calculate_home_prefix(calculate, prefix);
 
-    err = calculate_module_search_path(main_config, calculate, config, prefix);
+    err = calculate_module_search_path(calculate, config, prefix);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1091,7 +1092,7 @@ _PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
     _PyPathConfig new_path_config;
     memset(&new_path_config, 0, sizeof(new_path_config));
 
-    err = calculate_path_impl(main_config, &calculate, &new_path_config);
+    err = calculate_path_impl(&calculate, &new_path_config, main_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -1120,26 +1121,14 @@ pathconfig_global_init(void)
     _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
 
     err = _PyMainInterpreterConfig_ReadEnv(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto error;
+    if (!_Py_INIT_FAILED(err)) {
+        err = _PyPathConfig_Init(&config);
     }
-
-    err = _PyMainInterpreterConfig_Read(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto error;
-    }
-
-    err = _PyPathConfig_Init(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto error;
-    }
-
     _PyMainInterpreterConfig_Clear(&config);
-    return;
 
-error:
-    _PyMainInterpreterConfig_Clear(&config);
-    _Py_FatalInitError(err);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
 }
 
 
