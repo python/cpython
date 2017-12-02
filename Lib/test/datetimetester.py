@@ -1597,14 +1597,26 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (2000, 2, 29),
             (2004, 11, 12),
             (2004, 4, 3),
-            (2017, 5, 30),
+            (2017, 5, 30)
         ]
 
         for dt_tuple in base_dates:
             dt = self.theclass(*dt_tuple)
-            dt_rt = dt.fromisoformat(dt.isoformat())
+            dt_str = dt.isoformat()
+            with self.subTest(dt_str=dt_str):
+                dt_rt = self.theclass.fromisoformat(dt.isoformat())
 
-            self.assertEqual(dt, dt_rt)
+                self.assertEqual(dt, dt_rt)
+
+    def test_fromisoformat_subclass(self):
+        class DateSubclass(self.theclass):
+            pass
+
+        dt = DateSubclass(2014, 12, 14)
+
+        dt_rt = DateSubclass.fromisoformat(dt.isoformat())
+
+        self.assertIsInstance(dt_rt, DateSubclass)
 
     def test_fromisoformat_fails(self):
         # Test that fromisoformat() fails on invalid values
@@ -1617,12 +1629,15 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-12-0a',       # Invalid character in day
             '2009-01-32',       # Invalid day
             '2009-02-29',       # Invalid leap day
+            '20090228',         # Valid ISO8601 output not from isoformat()
         ]
 
         for bad_str in bad_strs:
             with self.assertRaises(ValueError):
                 self.theclass.fromisoformat(bad_str)
 
+    def test_fromisoformat_fails_typeerror(self):
+        # Test that fromisoformat fails when passed the wrong type
         bad_types = [b'2009-03-01', None]
         for bad_type in bad_types:
             with self.assertRaises(TypeError):
@@ -2374,14 +2389,149 @@ class TestDateTime(TestDate):
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month +
                                           dt1.second - 7)
 
-    @unittest.skip('Not implemented yet')
     def test_fromisoformat(self):
-        pass
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
 
-    @unittest.skip('Not implemented yet')
-    def test_fromisoformat_fails(self):
-        pass
-    
+        super().test_fromisoformat()
+
+    def test_fromisoformat_datetime(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        # Test that isoformat() is reversible
+        base_dates = [
+            (1, 1, 1),
+            (1000, 2, 14),
+            (1900, 1, 1),
+            (2004, 11, 12),
+            (2004, 4, 3),
+            (2017, 5, 30)
+        ]
+
+        base_times = [
+            (0, 0, 0, 0),
+            (0, 0, 0, 241000),
+            (0, 0, 0, 234567),
+            (23, 59, 47),
+            (12, 30, 45, 234567)
+        ]
+
+        separators = [
+            ' ', 'T', '\u007f',     # 1-bit widths
+            '\u0080', 'ʁ',          # 2-bit widths
+            'ᛇ', '時',               # 3-bit widths
+            '🐍'                     # 4-bit widths
+        ]
+
+        tzinfos = [None, timezone.utc,
+                   timezone(timedelta(hours=-5)),
+                   timezone(timedelta(hours=2)),
+                   timezone(timedelta(hours=6, minutes=27))]
+
+        dts = [self.theclass(*date_tuple, *time_tuple, tzinfo=tzi)
+               for date_tuple in base_dates
+               for time_tuple in base_times
+               for tzi in tzinfos]
+
+        for dt in dts:
+            for sep in separators:
+                dtstr = dt.isoformat(sep=sep)
+
+                with self.subTest(dtstr=dtstr):
+                    dt_rt = self.theclass.fromisoformat(dtstr)
+                    self.assertEqual(dt, dt_rt)
+
+    def test_fromisoformat_timespecs(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        datetime_bases = [
+            (2009, 12, 4, 8, 17, 45, 123456),
+            (2009, 12, 4, 8, 17, 45, 0)]
+
+        tzinfos = [None, timezone.utc,
+                   timezone(timedelta(hours=-5)),
+                   timezone(timedelta(hours=2)),
+                   timezone(timedelta(hours=6, minutes=27))]
+
+        timespecs = ['hours', 'minutes', 'seconds',
+                     'milliseconds', 'microseconds']
+
+        for ip, ts in enumerate(timespecs):
+            for tzi in tzinfos:
+                for dt_tuple in datetime_bases:
+                    if ts == 'milliseconds':
+                        new_microseconds = 1000 * (dt_tuple[6] // 1000)
+                        dt_tuple = dt_tuple[0:6] + (new_microseconds,)
+
+                    dt = self.theclass(*(dt_tuple[0:(4 + ip)]), tzinfo=tzi)
+                    dtstr = dt.isoformat(timespec=ts)
+                    with self.subTest(dtstr=dtstr):
+                        dt_rt = self.theclass.fromisoformat(dtstr)
+                        self.assertEqual(dt, dt_rt)
+
+    def test_fromisoformat_fails_datetime(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        # Test that fromisoformat() fails on invalid values
+        bad_strs = [
+            '',                             # Empty string
+            '2009.04-19T03',                # Wrong first separator
+            '2009-04.19T03',                # Wrong second separator
+            '2009-04-19T0a',                # Invalid hours
+            '2009-04-19T03:1a:45',          # Invalid minutes
+            '2009-04-19T03:15:4a',          # Invalid seconds
+            '2009-04-19T03;15:45',          # Bad first time separator
+            '2009-04-19T03:15;45',          # Bad second time separator
+            '2009-04-19T03:15:4500:00',     # Bad time zone separator
+            '2009-04-19T03:15:45.2345',     # Too many digits for milliseconds
+            '2009-04-19T03:15:45.1234567',  # Too many digits for microseconds
+            '2009-04-19T03:15:45.123456+24:30',    # Invalid time zone offset
+            '2009-04-19T03:15:45.123456-24:30',    # Invalid negative offset
+            '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Too many unicode separators
+            '2009-04-19T1',                 # Incomplete hours
+            '2009-04-19T12:3',              # Incomplete minutes
+            '2009-04-19T12:30:4',           # Incomplete seconds
+            '2009-04-19T12:',               # Ends with time separator
+            '2009-04-19T12:30:',            # Ends with time separator
+            '2009-04-19T12:30:45.',         # Ends with time separator
+            '2009-04-19T12:30:45.123456+',  # Ends with timzone separator
+            '2009-04-19T12:30:45.123456-',  # Ends with timzone separator
+            '2009-04-19T12:30:45.123456-05:00a',    # Extra text
+            '2009-04-19T12:30:45.123-05:00a',       # Extra text
+            '2009-04-19T12:30:45-05:00a',           # Extra text
+        ]
+
+        for bad_str in bad_strs:
+            with self.assertRaises(ValueError):
+                self.theclass.fromisoformat(bad_str)
+
+    def test_fromisoformat_utc(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        dt_str = '2014-04-19T13:21:13+00:00'
+        dt = self.theclass.fromisoformat(dt_str)
+
+        self.assertIs(dt.tzinfo, timezone.utc)
+
+    def test_fromisoformat_subclass(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        class DateTimeSubclass(self.theclass):
+            pass
+
+        dt = DateTimeSubclass(2014, 12, 14, 9, 30, 45, 457390,
+                              tzinfo=timezone(timedelta(hours=10, minutes=45)))
+
+        dt_rt = DateTimeSubclass.fromisoformat(dt.isoformat())
+
+        self.assertEqual(dt, dt_rt)
+        self.assertIsInstance(dt_rt, DateTimeSubclass)
+
 
 class TestSubclassDateTime(TestDateTime):
     theclass = SubclassDatetime
