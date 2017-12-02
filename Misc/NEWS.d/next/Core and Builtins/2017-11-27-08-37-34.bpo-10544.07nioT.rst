@@ -1,0 +1,4 @@
+Yield expressions are now deprecated in comprehensions and generator
+expressions when checking Python 3 compatibility. They are still
+permitted in the definition of the outermost iterable, as that is
+evaluated directly in the enclosing scope.

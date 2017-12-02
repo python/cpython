@@ -1524,13 +1524,7 @@ Yield by itself yields None:
 [None]
 
 
-
-An obscene abuse of a yield expression within a generator expression:
-
->>> list((yield 21) for i in range(4))
-[21, None, 21, None, 21, None, 21, None]
-
-And a more sane, but still weird usage:
+Yield is allowed only in the outermost iterable in generator expression:
 
 >>> def f(): list(i for i in [(yield 26)])
 >>> type(f())
@@ -1571,7 +1565,7 @@ SyntaxError: 'yield' outside function
 >>> def f(): return lambda x=(yield): 1
 Traceback (most recent call last):
   ...
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.coroutine[22]>, line 1)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.coroutine[21]>, line 1)
 
 >>> def f(): x = yield = y
 Traceback (most recent call last):
@@ -1784,7 +1778,7 @@ enclosing function a generator:
 >>> type(f())
 <type 'generator'>
 
->>> def f(): x=(i for i in (yield) if (yield))
+>>> def f(): x=(i for i in (yield) if i)
 >>> type(f())
 <type 'generator'>
 

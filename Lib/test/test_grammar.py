@@ -493,6 +493,46 @@ hello world
     def testYield(self):
         check_syntax_error(self, "class foo:yield 1")
 
+    def test_yield_in_comprehensions(self):
+        # Check yield in comprehensions
+        def g(): [x for x in [(yield 1)]]
+
+        def check(code, warntext):
+            with check_py3k_warnings((warntext, DeprecationWarning)):
+                compile(code, '<test string>', 'exec')
+            if sys.py3kwarning:
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('error', category=DeprecationWarning)
+                    with self.assertRaises(SyntaxError) as cm:
+                        compile(code, '<test string>', 'exec')
+                    self.assertIn(warntext, str(cm.exception))
+
+        check("def g(): [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("def g(): [x for x in () if not (yield x)]",
+              "'yield' inside list comprehension")
+        check("def g(): [y for x in () for y in [(yield x)]]",
+              "'yield' inside list comprehension")
+        check("def g(): {(yield x) for x in ()}",
+              "'yield' inside set comprehension")
+        check("def g(): {(yield x): x for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): {x: (yield x) for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        with check_py3k_warnings(("'yield' inside list comprehension",
+                                  DeprecationWarning)):
+            check_syntax_error(self, "class C: [(yield x) for x in ()]")
+        check("class C: ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        with check_py3k_warnings(("'yield' inside list comprehension",
+                                  DeprecationWarning)):
+            check_syntax_error(self, "[(yield x) for x in ()]")
+        check("((yield x) for x in ())",
+              "'yield' inside generator expression")
+
     def testRaise(self):
         # 'raise' test [',' test]
         try: raise RuntimeError, 'just testing'

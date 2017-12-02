@@ -162,12 +162,14 @@ PyTypeObject PySTEntry_Type = {
 };
 
 static int symtable_analyze(struct symtable *st);
-static int symtable_warn(struct symtable *st, char *msg, int lineno);
+static int symtable_warn(struct symtable *st,
+                         PyObject *warn, const char *msg, int lineno);
 static int symtable_enter_block(struct symtable *st, identifier name,
                                 _Py_block_ty block, void *ast, int lineno);
 static int symtable_exit_block(struct symtable *st, void *ast);
 static int symtable_visit_stmt(struct symtable *st, stmt_ty s);
 static int symtable_visit_expr(struct symtable *st, expr_ty s);
+static int symtable_visit_listcomp(struct symtable *st, expr_ty e);
 static int symtable_visit_genexp(struct symtable *st, expr_ty s);
 static int symtable_visit_setcomp(struct symtable *st, expr_ty e);
 static int symtable_visit_dictcomp(struct symtable *st, expr_ty e);
@@ -796,14 +798,18 @@ symtable_analyze(struct symtable *st)
 
 
 static int
-symtable_warn(struct symtable *st, char *msg, int lineno)
+symtable_warn(struct symtable *st, PyObject *warn, const char *msg, int lineno)
 {
-    if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, st->st_filename,
-                           lineno, NULL, NULL) < 0)     {
-        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+    if (lineno < 0) {
+        lineno = st->st_cur->ste_lineno;
+    }
+    if (PyErr_WarnExplicit(warn, msg, st->st_filename, lineno, NULL, NULL) < 0) {
+        if (PyErr_ExceptionMatches(warn)) {
+            /* Replace the warning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
             PyErr_SetString(PyExc_SyntaxError, msg);
-            PyErr_SyntaxLocation(st->st_filename,
-                                 st->st_cur->ste_lineno);
+            PyErr_SyntaxLocation(st->st_filename, lineno);
         }
         return 0;
     }
@@ -1153,7 +1159,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                     PyOS_snprintf(buf, sizeof(buf),
                                   GLOBAL_AFTER_USE,
                                   c_name);
-                if (!symtable_warn(st, buf, s->lineno))
+                if (!symtable_warn(st, PyExc_SyntaxWarning, buf, s->lineno))
                     return 0;
             }
             if (!symtable_add_def(st, name, DEF_GLOBAL))
@@ -1221,8 +1227,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ(st, expr, e->v.Set.elts);
         break;
     case ListComp_kind:
-        VISIT(st, expr, e->v.ListComp.elt);
-        VISIT_SEQ(st, comprehension, e->v.ListComp.generators);
+        if (!symtable_visit_listcomp(st, e))
+            return 0;
         break;
     case GeneratorExp_kind:
         if (!symtable_visit_genexp(st, e))
@@ -1420,12 +1426,11 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
         return r;
     }
     else {
-        if (st->st_cur->ste_type != ModuleBlock) {
-            int lineno = st->st_cur->ste_lineno;
-            if (!symtable_warn(st, IMPORT_STAR_WARNING, lineno)) {
-                Py_DECREF(store_name);
-                return 0;
-            }
+        if (st->st_cur->ste_type != ModuleBlock &&
+            !symtable_warn(st, PyExc_SyntaxWarning, IMPORT_STAR_WARNING, -1))
+        {
+            Py_DECREF(store_name);
+            return 0;
         }
         st->st_cur->ste_unoptimized |= OPT_IMPORT_STAR;
         Py_DECREF(store_name);
@@ -1509,7 +1514,10 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e, 0)) {
         return 0;
     }
-    st->st_cur->ste_generator = is_generator;
+    /* In order to check for yield expressions under '-3', we clear
+       the generator flag, and restore it at the end */
+    is_generator |= st->st_cur->ste_generator;
+    st->st_cur->ste_generator = 0;
     /* Outermost iter is received as an argument */
     if (!symtable_implicit_arg(st, 0)) {
         symtable_exit_block(st, (void *)e);
@@ -1527,7 +1535,53 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (value)
         VISIT_IN_BLOCK(st, expr, value, (void*)e);
     VISIT_IN_BLOCK(st, expr, elt, (void*)e);
+    if (Py_Py3kWarningFlag && st->st_cur->ste_generator) {
+        const char *msg = (
+            (e->kind == SetComp_kind) ? "'yield' inside set comprehension" :
+            (e->kind == DictComp_kind) ? "'yield' inside dict comprehension" :
+            "'yield' inside generator expression");
+        if (!symtable_warn(st, PyExc_DeprecationWarning, msg, -1)) {
+            symtable_exit_block(st, (void *)e);
+            return 0;
+        }
+    }
+    st->st_cur->ste_generator |= is_generator;
     return symtable_exit_block(st, (void *)e);
+}
+
+static int
+symtable_visit_listcomp(struct symtable *st, expr_ty e)
+{
+    asdl_seq *generators = e->v.ListComp.generators;
+    int i, is_generator;
+    /* In order to check for yield expressions under '-3', we clear
+       the generator flag, and restore it at the end */
+    is_generator = st->st_cur->ste_generator;
+    st->st_cur->ste_generator = 0;
+    VISIT(st, expr, e->v.ListComp.elt);
+    for (i = 0; i < asdl_seq_LEN(generators); i++) {
+        comprehension_ty lc = (comprehension_ty)asdl_seq_GET(generators, i);
+        VISIT(st, expr, lc->target);
+        if (i == 0 && !st->st_cur->ste_generator) {
+            /* 'yield' in the outermost iterator doesn't cause a warning */
+            VISIT(st, expr, lc->iter);
+            is_generator |= st->st_cur->ste_generator;
+            st->st_cur->ste_generator = 0;
+        }
+        else {
+            VISIT(st, expr, lc->iter);
+        }
+        VISIT_SEQ(st, expr, lc->ifs);
+    }
+
+    if (Py_Py3kWarningFlag && st->st_cur->ste_generator) {
+        const char *msg = "'yield' inside list comprehension";
+        if (!symtable_warn(st, PyExc_DeprecationWarning, msg, -1)) {
+            return 0;
+        }
+    }
+    st->st_cur->ste_generator |= is_generator;
+    return 1;
 }
 
 static int
