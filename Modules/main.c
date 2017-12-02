@@ -412,6 +412,7 @@ typedef struct {
     /* non-zero if filename, command (-c) or module (-m) is set
        on the command line */
     int run_code;
+    wchar_t *program_name;
     /* Error message if a function failed */
     _PyInitError err;
     /* PYTHONWARNINGS env var */
@@ -428,6 +429,7 @@ typedef struct {
      .config = _PyMainInterpreterConfig_INIT, \
      .main_importer_path = NULL, \
      .run_code = -1, \
+     .program_name = NULL, \
      .err = _Py_INIT_OK(), \
      .env_warning_options = {0, NULL}}
 
@@ -453,6 +455,7 @@ pymain_free_impl(_PyMain *pymain)
 
     pymain_optlist_clear(&pymain->env_warning_options);
     Py_CLEAR(pymain->main_importer_path);
+    PyMem_RawFree(pymain->program_name);
 
     _PyMainInterpreterConfig_Clear(&pymain->config);
 
@@ -871,21 +874,14 @@ pymain_init_stdio(_PyMain *pymain)
 
 
 /* Get the program name: use PYTHONEXECUTABLE and __PYVENV_LAUNCHER__
-   environment variables on macOS if available. */
-static _PyInitError
-config_get_program_name(_PyMainInterpreterConfig *config)
+   environment variables on macOS if available, use argv[0] by default.
+
+   Return 0 on success.
+   Set pymain->err and return -1 on error. */
+static int
+pymain_get_program_name(_PyMain *pymain)
 {
-    assert(config->program_name == NULL);
-
-    /* If Py_SetProgramName() was called, use its value */
-    wchar_t *program_name = _Py_path_config.program_name;
-    if (program_name != NULL) {
-        config->program_name = _PyMem_RawWcsdup(program_name);
-        if (config->program_name == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
+    assert(pymain->program_name == NULL);
 #ifdef __APPLE__
     char *p;
     /* On MacOS X, when the Python interpreter is embedded in an
@@ -898,13 +894,17 @@ config_get_program_name(_PyMainInterpreterConfig *config)
        See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
        script. */
     if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0') {
-        size_t len;
-        wchar_t* program_name = Py_DecodeLocale(p, &len);
-        if (program_name == NULL) {
-            return SET_DECODE_ERROR("PYTHONEXECUTABLE environment "
-                                    "variable", len);
+        wchar_t* buffer;
+        size_t len = strlen(p) + 1;
+
+        buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
+        if (buffer == NULL) {
+            pymain->err = _Py_INIT_NO_MEMORY();
+            return -1;
         }
-        config->program_name = program_name;
+
+        mbstowcs(buffer, p, len);
+        pymain->program_name = buffer;
     }
 #ifdef WITH_NEXT_FRAMEWORK
     else {
@@ -914,30 +914,21 @@ config_get_program_name(_PyMainInterpreterConfig *config)
              * the argv0 of the stub executable
              */
             size_t len;
-            wchar_t* program_name = Py_DecodeLocale(pyvenv_launcher, &len);
-            if (program_name == NULL) {
-                return SET_DECODE_ERROR("__PYVENV_LAUNCHER__ environment "
-                                        "variable", len);
+            wchar_t* wbuf = Py_DecodeLocale(pyvenv_launcher, &len);
+            if (wbuf == NULL) {
+                SET_DECODE_ERROR("__PYVENV_LAUNCHER__", len);
+                return -1;
             }
-            config->program_name = program_name;
+            pymain->program_name = wbuf;
         }
     }
 #endif   /* WITH_NEXT_FRAMEWORK */
 #endif   /* __APPLE__ */
 
-    return _Py_INIT_OK();
-}
-
-
-/* If config_get_program_name() found no program name: use argv[0] by default.
-   Return 0 on success. Set pymain->err and return -1 on error. */
-static int
-pymain_get_program_name(_PyMain *pymain)
-{
-    if (pymain->config.program_name == NULL) {
+    if (pymain->program_name == NULL) {
         /* Use argv[0] by default */
-        pymain->config.program_name = pymain_wstrdup(pymain, pymain->argv[0]);
-        if (pymain->config.program_name == NULL) {
+        pymain->program_name = pymain_wstrdup(pymain, pymain->argv[0]);
+        if (pymain->program_name == NULL) {
             return -1;
         }
     }
@@ -958,6 +949,13 @@ static int
 pymain_init_main_interpreter(_PyMain *pymain)
 {
     _PyInitError err;
+
+    /* TODO: Print any exceptions raised by these operations */
+    err = _PyMainInterpreterConfig_Read(&pymain->config);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
+        return -1;
+    }
 
     err = _Py_InitializeMainInterpreter(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
@@ -1416,13 +1414,14 @@ config_init_pythonpath(_PyMainInterpreterConfig *config)
 
 
 static _PyInitError
-config_init_home(_PyMainInterpreterConfig *config)
+config_init_pythonhome(_PyMainInterpreterConfig *config)
 {
     wchar_t *home;
 
-    /* If Py_SetPythonHome() was called, use its value */
-    home = _Py_path_config.home;
+    home = Py_GetPythonHome();
     if (home) {
+        /* Py_SetPythonHome() has been called before Py_Main(),
+           use its value */
         config->home = _PyMem_RawWcsdup(home);
         if (config->home == NULL) {
             return _Py_INIT_NO_MEMORY();
@@ -1442,7 +1441,7 @@ config_init_home(_PyMainInterpreterConfig *config)
 _PyInitError
 _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
 {
-    _PyInitError err = config_init_home(config);
+    _PyInitError err = config_init_pythonhome(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1452,9 +1451,11 @@ _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
         return err;
     }
 
-    err = config_get_program_name(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    /* FIXME: _PyMainInterpreterConfig_Read() has the same code. Remove it
+       here? See also pymain_get_program_name() and pymain_parse_envvars(). */
+    config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+    if (config->program_name == NULL) {
+        return _Py_INIT_NO_MEMORY();
     }
 
     return _Py_INIT_OK();
@@ -1480,17 +1481,25 @@ pymain_parse_envvars(_PyMain *pymain)
     if (pymain_warnings_envvar(pymain) < 0) {
         return -1;
     }
+    if (pymain_get_program_name(pymain) < 0) {
+        return -1;
+    }
+    core_config->allocator = Py_GETENV("PYTHONMALLOC");
+
+    /* FIXME: move pymain_get_program_name() code into
+       _PyMainInterpreterConfig_ReadEnv().
+       Problem: _PyMainInterpreterConfig_ReadEnv() doesn't have access
+       to argv[0]. */
+    Py_SetProgramName(pymain->program_name);
+    /* Don't free program_name here: the argument to Py_SetProgramName
+       must remain valid until Py_FinalizeEx is called. The string is freed
+       by pymain_free(). */
 
     _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&pymain->config);
     if (_Py_INIT_FAILED(pymain->err)) {
         pymain->err = err;
         return -1;
     }
-    if (pymain_get_program_name(pymain) < 0) {
-        return -1;
-    }
-
-    core_config->allocator = Py_GETENV("PYTHONMALLOC");
 
     /* -X options */
     if (pymain_get_xoption(pymain, L"showrefcount")) {
@@ -1543,12 +1552,6 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
     pymain_set_global_config(pymain);
 
     if (pymain_parse_envvars(pymain) < 0) {
-        return -1;
-    }
-
-    _PyInitError err = _PyMainInterpreterConfig_Read(&pymain->config);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
         return -1;
     }
 
@@ -1668,14 +1671,6 @@ pymain_impl(_PyMain *pymain)
            other special meaning */
         pymain->status = 120;
     }
-
-    /* _PyPathConfig_Clear() cannot be called in Py_FinalizeEx().
-       Py_Initialize() and Py_Finalize() can be called multiple times, but it
-       must not "forget" parameters set by Py_SetProgramName(), Py_SetPath() or
-       Py_SetPythonHome(), whereas _PyPathConfig_Clear() clear all these
-       parameters. */
-    _PyPathConfig_Clear(&_Py_path_config);
-
     return 0;
 }
 
