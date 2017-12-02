@@ -72,8 +72,7 @@ typedef struct {
     (_PyMainInterpreterConfig){\
      .install_signal_handlers = -1, \
      .module_search_path_env = NULL, \
-     .home = NULL, \
-     .program_name = NULL}
+     .home = NULL}
 
 typedef struct _is {
 

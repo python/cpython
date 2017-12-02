@@ -48,36 +48,9 @@ typedef struct {
 #endif
     /* Set by Py_SetPath(), or computed by _PyPathConfig_Init() */
     wchar_t *module_search_path;
-    /* Python program name */
-    wchar_t *program_name;
-    /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
-    wchar_t *home;
 } _PyPathConfig;
 
-#ifdef MS_WINDOWS
-#define _PyPathConfig_INIT \
-    {.program_full_path = NULL, \
-     .prefix = NULL, \
-     .dll_path = NULL, \
-     .module_search_path = NULL, \
-     .program_name = NULL, \
-     .home = NULL}
-#else
-#define _PyPathConfig_INIT \
-    {.program_full_path = NULL, \
-     .prefix = NULL, \
-     .exec_prefix = NULL, \
-     .module_search_path = NULL, \
-     .program_name = NULL, \
-     .home = NULL}
-#endif
-
-PyAPI_DATA(_PyPathConfig) _Py_path_config;
-
-PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
-    _PyPathConfig *config,
-    const _PyMainInterpreterConfig *main_config);
-PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
+#define _PyPathConfig_INIT {.module_search_path = NULL}
 
 
 /* Full Python runtime state */
