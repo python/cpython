@@ -271,7 +271,7 @@ class SmallPtyTests(unittest.TestCase):
             # called with three empty lists as file descriptors to wait
             # on.  Behavior of real select is platform-dependent and
             # likely infinite blocking on Linux.
-            raise self.fail("mock select on no waitables")
+            self.fail("mock select on no waitables")
         rfds_result = self.select_rfds_results.pop(0)
 
         if rfds_result is _MockSelectEternalWait:
@@ -279,7 +279,9 @@ class SmallPtyTests(unittest.TestCase):
         return rfds_result, [], []
 
     def test__mock_stdin_stdout(self):
-        self.assertGreater(pty.STDIN_FILENO, 2, "replaced by our mock")
+        """Test that _mock_stdin_stdout was called during setUp."""
+        self.assertGreater(pty.STDIN_FILENO, 2, "stdin replaced by our mock")
+        self.assertGreater(pty.STDOUT_FILENO, 2, "stdout replaced by our mock")
 
     def test__mock_select(self):
         # Test the select proxy of this test class. Meta testing.
@@ -365,18 +367,6 @@ class SmallPtyTests(unittest.TestCase):
         # We expect that everything is consumed
         self.assertEqual(self.select_rfds_results, [])
         self.assertEqual(self.select_rfds_lengths, [])
-
-        # Test that STDIN was not touched.  This test simulated the
-        # scenario where the child process immediately closed its end of
-        # the pipe.  This means, nothing should be copied.
-        rfds = select.select([self.read_from_stdout_fd, pty.STDIN_FILENO], [], [], 0)[0]
-        # data or EOF is still sitting unconsumed in STDIN
-        self.assertEqual(rfds, [pty.STDIN_FILENO])
-        unconsumed = os.read(pty.STDIN_FILENO, 20)
-        if close_stdin:
-            self.assertFalse(unconsumed) #EOF
-        else:
-            self.assertEqual(unconsumed, b'from stdin')
 
     def test__copy_eof_on_all(self):
         # Test the empty read EOF case on both master_fd and stdin.
