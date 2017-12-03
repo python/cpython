@@ -1,19 +1,54 @@
-"""Lib/ctypes support for LoadLibrary interface to dlopen() for AIX
-Similar kind of support (i.e., as a separate file)
-as has been done for Darwin support ctypes.macholib.*
-rather than as separate, detailed if: sections in utils.py
+"""
+Lib/ctypes.util.find_library() support for AIX
+Similar approach as done for Darwin support by using seperate files
+but unlike Darwin - no extension such as ctypes.macholib.*
 
 dlopen() is an interface to AIX initAndLoad() - primary documentation at:
 https://www.ibm.com/support/knowledgecenter/en/ssw_aix_61/com.ibm.aix.basetrf1/dlopen.htm
 https://www.ibm.com/support/knowledgecenter/en/ssw_aix_61/com.ibm.aix.basetrf1/load.htm
+
+AIX supports two styles for dlopen(): svr4 (System V Release 4) which is common on posix
+platforms, but also a BSD style - aka SVR3.
+
+From AIX 5.3 Difference Addendum (December 2004)
+2.9 SVR4 linking affinity
+Nowadays, there are two major object file formats used by the operating systems:
+XCOFF: The COFF enhanced by IBM and others. The original COFF (Common
+Object FIle Format) was the base of SVR3 and BSD 4.2 systems.
+ELF:   Executable and Linking Format that was developed by AT&T and is a
+base for SVR4 UNIX.
+
+While the shared library content is identical on AIX - one is located as a filepath name
+(svr4 style) and the other is located as a member of an archive (and the archive
+is located as a filepath name).
+
+The key difference arises when supporting multiple abi formats (i.e., 32 and 64 bit).
+For svr4 either only one ABI is supported, or there are two directories, or there
+are different file names. The most common solution for multiple ABI is multiple
+directories.
+
+For the XCOFF (aka AIX) style - one directory (one archive file) is sufficient
+as multiple shared libraries can be in the archive - even sharing the same name.
+In documentation the archive is also referred to as the "base" and the shared
+library object is referred to as the "member".
+
+For dlopen() on AIX (read initAndLoad()) the calls are similiar.
+Default activity is achived by not providing any path information. When path
+information is provided dlopen() does not search any alturnate directories.
+
+For SVR4 - the shared library name is the name of the file expected: libFOO.so
+For AIX - the shared library is expressed as base(member). The search is for the
+base (e.g., libFOO.a) and once the base is found the shared library - identified by
+member (e.g., libFOO.so, or shr.o) is located and loaded.
+
+The mode bit RTLD_MEMBER tells initAndLoad() that it needs to use the AIX (SVR3)
+naming style.
 """
 __author__ = "Michael Felt <aixtools@felt.demon.nl>"
 __version__ = "1.0.0"
 
-# Latest Update (comments): 13 October 2016
-# Thanks to Martin Panter for his patience and comments
 
-from re import search, match, escape
+import re
 from os import environ, path
 from sys import executable
 from ctypes import c_void_p, sizeof
@@ -52,7 +87,7 @@ def get_ld_headers(file):
         # these lines start with a digit
         info = []
         for line in p.stdout:
-            if match("[0-9]", line):
+            if re.match("[0-9]", line):
                 info.append(line)
             else:
                 # Should be a blank separator line, safe to consume
@@ -90,7 +125,7 @@ def get_one_match(expr, lines):
     """
     # member names in the ld_headers output are between square brackets
     expr = r'\[(%s)\]' % expr
-    matches = list(filter(None, (search(expr, line) for line in lines)))
+    matches = list(filter(None, (re.search(expr, line) for line in lines)))
     if len(matches) == 1:
         return matches[0].group(1)
     else:
@@ -115,7 +150,7 @@ def get_legacy(members):
         # shr.o is the preffered name so we look for shr.o first
         #  i.e., shr4.o is returned only when shr.o does not exist
         for name in ['shr.o', 'shr4.o']:
-            member = get_one_match(escape(name), members)
+            member = get_one_match(re.escape(name), members)
             if member:
                 return member
     return None
@@ -151,7 +186,7 @@ def get_version(name, members):
     for expr in exprs:
         versions = []
         for line in members:
-            m = search(expr, line)
+            m = re.search(expr, line)
             if m:
                 versions.append(m.group(0))
         if versions:
@@ -244,7 +279,7 @@ def find_library(name):
             archive = path.join(dir, base)
             if path.exists(archive):
                 members = get_shared(get_ld_headers(archive))
-                member = get_member(escape(name), members)
+                member = get_member(re.escape(name), members)
                 if member != None:
                     return (base, member)
                 else:
