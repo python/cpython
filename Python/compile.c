@@ -5273,11 +5273,6 @@ compute_code_flags(struct compiler *c)
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
 
-    if (!PyDict_GET_SIZE(c->u->u_freevars) &&
-        !PyDict_GET_SIZE(c->u->u_cellvars)) {
-        flags |= CO_NOFREE;
-    }
-
     return flags;
 }
 

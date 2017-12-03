@@ -124,12 +124,20 @@ PyCode_New(int argcount, int kwonlyargcount,
     if (PyUnicode_READY(filename) < 0)
         return NULL;
 
-    n_cellvars = PyTuple_GET_SIZE(cellvars);
     intern_strings(names);
     intern_strings(varnames);
     intern_strings(freevars);
     intern_strings(cellvars);
     intern_string_constants(consts);
+
+    /* Check for any inner or outer closure references */
+    n_cellvars = PyTuple_GET_SIZE(cellvars);
+    if (!n_cellvars && !PyTuple_GET_SIZE(freevars)) {
+        flags |= CO_NOFREE;
+    } else {
+        flags &= ~CO_NOFREE;
+    }
+
     /* Create mapping between cells and arguments if needed. */
     if (n_cellvars) {
         Py_ssize_t total_args = argcount + kwonlyargcount +
