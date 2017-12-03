@@ -1730,8 +1730,9 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         mod = import_find_and_load(abs_name);
-        if (mod == NULL)
+        if (mod == NULL) {
             goto error;
+        }
     }
 
     has_from = 0;
