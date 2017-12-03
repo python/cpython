@@ -182,7 +182,7 @@ def _main(argv=None):
         "--altinstall",
         action="store_true",
         default=False,
-        help=("Make an alternate install, installing only the X.Y versioned"
+        help=("Make an alternate install, installing only the X.Y versioned "
               "scripts (Default: pipX, pipX.Y, easy_install-X.Y)"),
     )
     parser.add_argument(
