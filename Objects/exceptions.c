@@ -2847,7 +2847,10 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
     // PRINT_OFFSET is to remove `print ` word from the data.
     const int PRINT_OFFSET = 6;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
-    PyObject *data = PyUnicode_Substring(self->text, PRINT_OFFSET, text_len);
+    // Issue 32028: Handle case when whitespace is used with print call
+    PyObject *initial_data = _PyUnicode_XStrip(self->text, 2, strip_sep_obj);
+    PyObject *data = PyUnicode_Substring(initial_data, PRINT_OFFSET, text_len);
+    Py_DECREF(initial_data);
 
     if (data == NULL) {
         Py_DECREF(strip_sep_obj);
