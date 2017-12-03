@@ -1223,7 +1223,7 @@ class DistributionMetadata:
         import distutils.versionpredicate
         for v in value:
             distutils.versionpredicate.VersionPredicate(v)
-        self.requires = value
+        self.requires = list(value)
 
     def get_provides(self):
         return self.provides or []
@@ -1242,7 +1242,7 @@ class DistributionMetadata:
         import distutils.versionpredicate
         for v in value:
             distutils.versionpredicate.VersionPredicate(v)
-        self.obsoletes = value
+        self.obsoletes = list(value)
 
 def fix_help_options(options):
     """Convert a 4-tuple 'help_options' list as found in various command
