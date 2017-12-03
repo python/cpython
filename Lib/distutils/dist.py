@@ -9,7 +9,10 @@ import os
 import re
 from email import message_from_file
 
-import warnings
+try:
+    import warnings
+except ImportError:
+    warnings = None
 
 from distutils.errors import *
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
@@ -238,7 +241,10 @@ Common commands: (see '--help-commands' for more)
                 attrs['license'] = attrs['licence']
                 del attrs['licence']
                 msg = "'licence' distribution option is deprecated; use 'license'"
-                warnings.warn(msg)
+                if warnings is not None:
+                    warnings.warn(msg)
+                else:
+                    sys.stderr.write(msg + "\n")
 
             # Now work on the rest of the attributes.  Any attribute that's
             # not already defined is invalid!
