@@ -275,7 +275,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertLessEqual(len(returns), 2)
+        self.assertEqual(len(returns), 2)
 
     def test_make_function_doesnt_bail(self):
         def f():
