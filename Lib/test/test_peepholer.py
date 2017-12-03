@@ -256,12 +256,12 @@ class TestTranforms(BytecodeTestCase):
             while 1:
                 if cond1: return 4
                 return 5
-            return 6
+            return 6 # will be eliminated
         self.assertNotInBytecode(f, 'JUMP_FORWARD')
         self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertLessEqual(len(returns), 6)
+        self.assertEqual(len(returns), 5)
 
     def test_elim_jump_after_return2(self):
         # Eliminate dead code: jumps immediately after returns can't be reached
