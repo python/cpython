@@ -201,20 +201,24 @@ class _Framer:
         if self.current_frame:
             f = self.current_frame
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
-                with f.getbuffer() as data:
-                    write = self.file_write
-                    # Issue a single call to the write nethod of the underlying
-                    # file object for the frame opcode with the size of the
-                    # frame. The concatenation is expected to be less expensive
-                    # than issuing an additional call to write.
-                    write(FRAME + pack("<Q", len(data)))
+                data = f.getbuffer()
+                write = self.file_write
+                # Issue a single call to the write nethod of the underlying
+                # file object for the frame opcode with the size of the
+                # frame. The concatenation is expected to be less expensive
+                # than issuing an additional call to write.
+                write(FRAME + pack("<Q", len(data)))
 
-                    # Issue a separate call to write to append the frame
-                    # contents without concatenation to the above to avoid a
-                    # memory copy.
-                    write(data)
-                f.seek(0)
-                f.truncate()
+                # Issue a separate call to write to append the frame
+                # contents without concatenation to the above to avoid a
+                # memory copy.
+                write(data)
+
+                # Start the new frame with a new io.BytesIO instance so that
+                # the file object can have delayed access to the previous frame
+                # contents via an unreleased memoryview of the previous
+                # io.BytesIO instance.
+                self.current_frame = io.BytesIO()
 
     def write(self, data):
         if self.current_frame:

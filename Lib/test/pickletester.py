@@ -2165,40 +2165,54 @@ class AbstractPickleTests(unittest.TestCase):
                             count_opcode(pickle.FRAME, pickled))
             self.assertEqual(obj, self.loads(some_frames_pickle))
 
-    def test_framed_write_sizes(self):
-        class Writer:
+    def test_framed_write_sizes_with_delayed_writer(self):
+        class ChunkAccumulator:
+            """Accumulate pickler output in a list of raw chunks."""
 
             def __init__(self):
                 self.chunks = []
 
             def write(self, chunk):
-                self.chunks.append(bytes(chunk))
+                self.chunks.append(chunk)
+
+            def concatenate_chunks(self):
+                # Some chunks can be memoryview instances, we need to convert
+                # them to bytes to be able to call join
+                return b"".join([c.tobytes() if hasattr(c, 'tobytes') else c
+                                 for c in w.chunks])
 
         small_objects = [(str(i).encode('ascii'), i % 42, {'i': str(i)})
                          for i in range(int(1e4))]
 
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             # Protocol 4 packs groups of small objects into frames and issues
-            # calls to write only once per frame.
-            w = Writer()
-            self.pickler(w, proto).dump(small_objects)
-            pickled = b"".join(w.chunks)
+            # calls to write only once or twice per frame:
+            # The C pickler issues one call to write per-frame (header and
+            # contents) while Python pickler issues two calls to write: one for
+            # the frame header and one for the frame binary contents.
+            writer = ChunkAccumulator()
+            self.pickler(writer, proto).dump(small_objects)
+
+            # Actually read the binary content of the chunks after the end
+            # of the call to dump: ant memoryview passed to write should not
+            # be released otherwise this delayed access would not be possible.
+            pickled = writer.concatenate_chunks()
             reconstructed = self.loads(pickled)
             self.assertEqual(reconstructed, small_objects)
-            self.assertGreater(len(w.chunks), 1)
+            self.assertGreater(len(writer.chunks), 1)
 
             n_frames, remainder = divmod(len(pickled), self.FRAME_SIZE_TARGET)
             if remainder > 0:
                 n_frames += 1
 
             # There should be at least one call to write per frame
-            self.assertGreaterEqual(len(w.chunks), n_frames)
+            self.assertGreaterEqual(len(writer.chunks), n_frames)
 
             # but not too many either: there can be one for the proto,
             # one per-frame header and one per frame for the actual contents.
-            self.assertGreaterEqual(2 * n_frames + 1, len(w.chunks))
+            self.assertGreaterEqual(2 * n_frames + 1, len(writer.chunks))
 
-            chunk_sizes = [len(c) for c in w.chunks[:-1]]
+            chunk_sizes = [len(c) for c in writer.chunks[:-1]]
             large_sizes = [s for s in chunk_sizes
                            if s >= self.FRAME_SIZE_TARGET]
             small_sizes = [s for s in chunk_sizes
@@ -2208,7 +2222,7 @@ class AbstractPickleTests(unittest.TestCase):
             for chunk_size in large_sizes:
                 self.assertGreater(2 * self.FRAME_SIZE_TARGET, chunk_size)
 
-            last_chunk_size = len(w.chunks[-1])
+            last_chunk_size = len(writer.chunks[-1])
             self.assertGreater(2 * self.FRAME_SIZE_TARGET, last_chunk_size)
 
             # Small chunks (if any) should be very small
