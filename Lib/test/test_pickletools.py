@@ -17,7 +17,7 @@ class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
     test_pickle_to_2x = None
 
     # Test relies on writing by chunks into a file object.
-    test_framed_write_sizes = None
+    test_framed_write_sizes_with_delayed_writer = None
 
     def test_optimize_long_binget(self):
         data = [str(i) for i in range(257)]

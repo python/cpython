@@ -2179,7 +2179,7 @@ class AbstractPickleTests(unittest.TestCase):
                 # Some chunks can be memoryview instances, we need to convert
                 # them to bytes to be able to call join
                 return b"".join([c.tobytes() if hasattr(c, 'tobytes') else c
-                                 for c in w.chunks])
+                                 for c in self.chunks])
 
         small_objects = [(str(i).encode('ascii'), i % 42, {'i': str(i)})
                          for i in range(int(1e4))]
