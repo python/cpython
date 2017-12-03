@@ -84,14 +84,11 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
-def_op('WITH_CLEANUP_START', 40)
-def_op('WITH_CLEANUP_FINISH', 41)
-
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
 def_op('ENTER_WITH', 53)
-
+def_op('PUSH_NO_EXCEPT', 54)
 def_op('INPLACE_ADD', 55)
 def_op('INPLACE_SUBTRACT', 56)
 def_op('INPLACE_MULTIPLY', 57)
@@ -118,14 +115,14 @@ def_op('INPLACE_RSHIFT', 76)
 def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
-def_op('RERAISE', 80)
-
+def_op('WITH_CLEANUP_START', 81)
+def_op('WITH_CLEANUP_FINISH', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
 def_op('POP_BLOCK', 87)
-def_op('PUSH_NO_EXCEPT', 88)
+def_op('END_FINALLY', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
@@ -188,8 +185,7 @@ hasfree.append(138)
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
-def_op('EXTENDED_ARG', 144)
-EXTENDED_ARG = 144
+jrel_op('SETUP_WITH', 143)
 
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
@@ -198,11 +194,16 @@ def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 
+def_op('EXTENDED_ARG', 144)
+EXTENDED_ARG = 144
+
 def_op('BUILD_LIST_UNPACK', 149)
 def_op('BUILD_MAP_UNPACK', 150)
 def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
 def_op('BUILD_TUPLE_UNPACK', 152)
 def_op('BUILD_SET_UNPACK', 153)
+
+jrel_op('SETUP_ASYNC_WITH', 154)
 
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
@@ -211,5 +212,7 @@ def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
+
+jrel_op('CALL_FINALLY', 163)
 
 del def_op, name_op, jrel_op, jabs_op

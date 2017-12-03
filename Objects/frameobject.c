@@ -101,7 +101,7 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
             setup_op = code[blockstack[blockstack_top-1]];
             if (setup_op == SETUP_FINALLY) {
                 /* This is the start of a 'finally' block.
-                 * It will end with RERAISE (if a 'try..finally' block)
+                 * It will end with END_FINALLY (if a 'try..finally' block)
                  * or WITH_CLEANUP_FINISH (if a 'with' block).
                  */
                 in_finally[blockstack_top-1] = 1;
@@ -111,14 +111,14 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
             }
             break;
 
-        case RERAISE:
+        case END_FINALLY:
             if (blockstack_top > 0) {
                 setup_op = code[blockstack[blockstack_top-1]];
                 if (setup_op == SETUP_FINALLY) {
                     /* This is the end of a 'finally' block. */
                     blockstack_top--;
                 }
-                /* RERAISE is also used by SETUP_EXCEPT, but we don't care. */
+                /* END_FINALLY is also used by SETUP_EXCEPT, but we don't care. */
             }
             break;
         case WITH_CLEANUP_FINISH:
@@ -169,7 +169,7 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
  *  o Lines with an 'except' statement on them can't be jumped to, because
  *    they expect an exception to be on the top of the stack.
  *  o Lines that live in a 'finally' block can't be jumped from or to, since
- *    the RERAISE expects to clean up the stack after the 'try' block.
+ *    the END_FINALLY expects to clean up the stack after the 'try' block.
  *  o 'try', 'with' and 'async with' blocks can't be jumped into because
  *    the blockstack needs to be set up before their code runs.
  *  o 'for' and 'async for' loops can't be jumped into because the
@@ -291,7 +291,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     }
 
     /* You can't jump into or out of a 'finally' block because the 'try'
-     * block leaves something on the stack for the RERAISE to clean up.
+     * block leaves something on the stack for the END_FINALLY to clean up.
      * So we walk the bytecode, maintaining a simulated blockstack.
      * When we reach the old or new address and it's in a 'finally' block
      * we note the address of the corresponding SETUP_FINALLY.  The jump

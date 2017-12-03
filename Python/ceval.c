@@ -926,8 +926,9 @@ main_loop:
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
-                _Py_OPCODE(*next_instr) == YIELD_FROM) {
+            if (/*_Py_OPCODE(*next_instr) == SETUP_EXCEPT ||
+                _Py_OPCODE(*next_instr) == SETUP_FINALLY ||
+                */_Py_OPCODE(*next_instr) == YIELD_FROM) {
                 /* Two cases where we skip running signal handlers and other
                    pending calls:
                    - If we're about to enter the try: of a try/finally (not
@@ -1898,34 +1899,41 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(PUSH_NO_EXCEPT) {
-            int i;
-            STACKADJ(6);
-            for (i = 1; i <= 6; i++) {
-                SET_VALUE(i, NULL);
-            }
+        TARGET(CALL_FINALLY) {
+            PyObject *ret = PyLong_FromLong(INSTR_OFFSET());
+            if (ret == NULL)
+                goto error;
+            PUSH(ret);
+            JUMPBY(oparg);
             FAST_DISPATCH();
         }
 
-        TARGET(RERAISE) {
+        TARGET(PUSH_NO_EXCEPT) {
+            PUSH(NULL);
+            FAST_DISPATCH();
+        }
+
+        TARGET(END_FINALLY) {
             PyObject *exc = POP();
-            PyObject *val = POP();
-            PyObject *tb = POP();
             if (exc == NULL) {
-                int i;
-                assert(val == NULL);
-                assert(tb == NULL);
-                /* Unwind stored exception state */
-                for (i = 0; i < 3; i++) {
-                    Py_XDECREF(POP());
+                FAST_DISPATCH();
+            }
+            else if (PyLong_Check(exc)) {
+                int ret = _PyLong_AsInt(exc);
+                Py_DECREF(exc);
+                if (ret == -1 && PyErr_Occurred()) {
+                    goto error;
                 }
+                JUMPTO(ret);
+                FAST_DISPATCH();
             }
             else {
+                PyObject *val = POP();
+                PyObject *tb = POP();
                 assert(PyExceptionClass_Check(exc));
                 PyErr_Restore(exc, val, tb);
                 goto exception_unwind;
             }
-            FAST_DISPATCH();
         }
 
         TARGET(LOAD_BUILD_CLASS) {
@@ -2901,6 +2909,12 @@ main_loop:
             DISPATCH();
         }
 
+        TARGET(SETUP_WITH)
+        TARGET(SETUP_ASYNC_WITH) {
+            PyErr_SetNone(PyExc_SystemError);
+            goto error;
+        }
+
         TARGET(ENTER_WITH) {
             /* Replace TOP with TOP.__exit__ and push the result
              * of calling TOP.__enter__()
@@ -2929,10 +2943,10 @@ main_loop:
         }
 
         TARGET(WITH_CLEANUP_START) {
-            /* At the top of the stack are 4 or 7 values:
+            /* At the top of the stack are 2 or 7 values:
                Either:
-                - 6 NULLs
-                - SEVENTH: the context.__exit__ bound method
+                - NULL
+                - SECOND: the context.__exit__ bound method
                or:
                 - (TOP, SECOND, THIRD) = exc_info()
                 - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
@@ -2947,18 +2961,16 @@ main_loop:
             PyObject *exc, *val, *tb, *res;
 
             exc = TOP();
-            val = SECOND();
-            tb = THIRD();
-            if (exc == NULL) {
-                assert(val == NULL);
-                assert(tb == NULL);
-                exit_func = PEEK(7);
+            if (exc == NULL || PyLong_Check(exc)) {
+                exit_func = SECOND();
                 exit_stack[0] = Py_None;
                 exit_stack[1] = Py_None;
                 exit_stack[2] = Py_None;
             }
             else {
-                assert(!PyLong_Check(exc));
+                val = SECOND();
+                tb = THIRD();
+                assert(PyExceptionClass_Check(exc));
                 exit_func = PEEK(7);
                 exit_stack[0] = exc;
                 exit_stack[1] = val;
@@ -2979,31 +2991,32 @@ main_loop:
         TARGET(WITH_CLEANUP_FINISH) {
             PyObject *res = POP();
             PyObject *exc = POP();
-            int err;
 
-            if (exc != NULL)
-                err = PyObject_IsTrue(res);
-            else
-                err = 0;
-            Py_DECREF(res);
-            Py_XDECREF(exc);
-            if (err < 0)
-                goto error;
-
-            if (exc == NULL) {
-                /* At the top of the stack are 7 values:
-                    - 6 NULLs
-                    - SEVENTH: the context.__exit__ bound method
-                */
-                int i;
-                for (i = 0; i < 7; i++) {
-                    /* Pop the 6 values pushed by JUMP_FINALLY +
-                     * the bound __exit__ method
-                     */
-                    Py_XDECREF(POP());
+            if (exc == NULL || PyLong_Check(exc)) {
+                Py_DECREF(res);
+                if (exc != NULL) {
+                    int ret = _PyLong_AsInt(exc);
+                    Py_DECREF(exc);
+                    if (ret == -1 && PyErr_Occurred()) {
+                        goto error;
+                    }
+                    JUMPTO(ret);
                 }
+                /* At the top of the stack are 2 values:
+                    - NULL or int
+                    - SECOND: the context.__exit__ bound method
+                */
+                assert(TOP() == exc);
+                STACKADJ(-1);
+                Py_DECREF(POP());
             }
             else {
+                int err = PyObject_IsTrue(res);
+                Py_DECREF(res);
+                Py_DECREF(exc);
+                if (err < 0)
+                    goto error;
+
                 /* The stack has the values pushed by the block which
                  * errored out + the 7 values described in WITH_CLEANUP_START.
                  * We will pop them all, one way or the other.
@@ -3019,7 +3032,6 @@ main_loop:
                     UNWIND_EXCEPT_HANDLER(b);
                     /* The bound __exit__ method is still on top */
                     Py_DECREF(POP());
-                    DISPATCH();
                 }
                 else {
                     PyObject *val, *tb;
