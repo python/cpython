@@ -366,10 +366,7 @@ list_repr(PyListObject *v)
                 goto error;
         }
 
-        if (Py_EnterRecursiveCall(" while getting the repr of a list"))
-            goto error;
         s = PyObject_Repr(v->ob_item[i]);
-        Py_LeaveRecursiveCall();
         if (s == NULL)
             goto error;
 
