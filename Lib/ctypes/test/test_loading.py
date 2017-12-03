@@ -45,14 +45,9 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(OSError, cdll.LoadLibrary, "libc.so.9")
         self.assertRaises(OSError, cdll.LoadLibrary, self.unknowndll)
 
-    # this should only have libraries that are known to exist on all platforms
-    # it is known than "m" aka libm does not have a shared library on AIX
-    # so, add self.assertTrue as these must succeed
-    # or change to a warn message? in an else statement
     def test_find(self):
-        for name in ("c", "ssl"):
+        for name in ("c", "m"):
             lib = find_library(name)
-            self.assertTrue(lib)
             if lib:
                 cdll.LoadLibrary(lib)
                 CDLL(lib)
