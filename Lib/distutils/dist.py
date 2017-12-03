@@ -9,10 +9,7 @@ import os
 import re
 from email import message_from_file
 
-try:
-    import warnings
-except ImportError:
-    warnings = None
+import warnings
 
 from distutils.errors import *
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
@@ -241,10 +238,7 @@ Common commands: (see '--help-commands' for more)
                 attrs['license'] = attrs['licence']
                 del attrs['licence']
                 msg = "'licence' distribution option is deprecated; use 'license'"
-                if warnings is not None:
-                    warnings.warn(msg)
-                else:
-                    sys.stderr.write(msg + "\n")
+                warnings.warn(msg)
 
             # Now work on the rest of the attributes.  Any attribute that's
             # not already defined is invalid!
@@ -257,10 +251,7 @@ Common commands: (see '--help-commands' for more)
                     setattr(self, key, val)
                 else:
                     msg = "Unknown distribution option: %s" % repr(key)
-                    if warnings is not None:
-                        warnings.warn(msg)
-                    else:
-                        sys.stderr.write(msg + "\n")
+                    warnings.warn(msg)
 
         # no-user-cfg is handled before other command line args
         # because other args override the config files, and this
