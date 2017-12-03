@@ -1,0 +1,5 @@
+co_flags.CO_NOFREE is now always set correctly by the code object
+constructor based on freevars and cellvars, rather than needing to be set
+correctly by the caller. This ensures it will be cleared automatically when
+additional cell references are injected into a modified code object and
+function.
