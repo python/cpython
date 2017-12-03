@@ -11,7 +11,8 @@ from unittest import mock
 from distutils.dist import Distribution, fix_help_options, DistributionMetadata
 from distutils.cmd import Command
 
-from test.support import TESTFN, captured_stdout, run_unittest
+from test.support import TESTFN, captured_stdout, captured_stderr, \
+     run_unittest
 from distutils.tests import support
 from distutils import log
 
@@ -353,9 +354,10 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
     def test_classifier_invalid_type(self):
         attrs = {'name': 'Boa', 'version': '3.0',
                  'classifiers': ('Programming Language :: Python :: 3',)}
-        msg = "'classifiers' should be a 'list', not 'tuple'"
-        with self.assertWarnsRegex(RuntimeWarning, msg):
+        msg = "should be a list"
+        with captured_stderr() as error:
             d = Distribution(attrs)
+        self.assertIn(msg, error.getvalue())
         self.assertIsInstance(d.metadata.classifiers, list)
         self.assertEqual(d.metadata.classifiers,
                          list(attrs['classifiers']))
@@ -370,9 +372,10 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
     def test_keywords_invalid_type(self):
         attrs = {'name': 'Monty', 'version': '1.0',
                  'keywords': ('spam', 'eggs', 'life of brian')}
-        msg = "'keywords' should be a 'list', not 'tuple'"
-        with self.assertWarnsRegex(RuntimeWarning, msg):
+        msg = "should be a list"
+        with captured_stderr() as error:
             d = Distribution(attrs)
+        self.assertIn(msg, error.getvalue())
         self.assertIsInstance(d.metadata.keywords, list)
         self.assertEqual(d.metadata.keywords, list(attrs['keywords']))
 
@@ -386,9 +389,10 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
     def test_platforms_invalid_types(self):
         attrs = {'name': 'Monty', 'version': '1.0',
                  'platforms': ('GNU/Linux', 'Some Evil Platform')}
-        msg = "'platforms' should be a 'list', not 'tuple'"
-        with self.assertWarnsRegex(RuntimeWarning, msg):
+        msg = "should be a list"
+        with captured_stderr() as error:
             d = Distribution(attrs)
+        self.assertIn(msg, error.getvalue())
         self.assertIsInstance(d.metadata.platforms, list)
         self.assertEqual(d.metadata.platforms, list(attrs['platforms']))
 
