@@ -2,6 +2,7 @@
 import unittest
 import UserDict
 import test_support
+import sys
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -644,6 +645,14 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
         d = self._full_mapping({1: BadRepr()})
         self.assertRaises(Exc, repr, d)
+
+    def test_repr_deep(self):
+        d = self._empty_mapping()
+        for i in range(sys.getrecursionlimit() + 100):
+            d0 = d
+            d = self._empty_mapping()
+            d[1] = d0
+        self.assertRaises(RuntimeError, repr, d)
 
     def test_le(self):
         self.assertTrue(not (self._empty_mapping() < self._empty_mapping()))
