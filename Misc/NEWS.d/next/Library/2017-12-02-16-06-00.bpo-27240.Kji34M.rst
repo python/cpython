@@ -1,0 +1,3 @@
+The header folding algorithm for the new email policies has been rewritten,
+which also fixes bpo-30788, bpo-31831, and bpo-32182.  In particular, RFC2231
+folding is now done correctly.
