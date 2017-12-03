@@ -141,7 +141,7 @@ class _Folded:
                 self.stickyspace = None
                 self.firstline = False
                 return True
-            if token.has_fws:
+            if token.has_leading_fws:
                 ws = token.pop_leading_fws()
                 if ws is not None:
                     self.stickyspace += str(ws)
@@ -267,7 +267,7 @@ class TokenList(list):
         return self[0].startswith_fws()
 
     def pop_leading_fws(self):
-        if self[0].token_type == 'fws':
+        if self[0].token_type == 'fws' or self[0].token_type == 'cfws':
             return self.pop(0)
         return self[0].pop_leading_fws()
 
@@ -281,6 +281,14 @@ class TokenList(list):
         for part in self:
             if part.has_fws:
                 return True
+        return False
+
+    @property
+    def has_leading_fws(self):
+        for part in self:
+            if part.has_fws:
+                return True
+            break
         return False
 
     def has_leading_comment(self):
@@ -1292,6 +1300,8 @@ class WhiteSpaceTerminal(Terminal):
 
     has_fws = True
 
+    has_leading_fws = True
+
 
 class ValueTerminal(Terminal):
 
@@ -1303,6 +1313,8 @@ class ValueTerminal(Terminal):
         return False
 
     has_fws = False
+
+    has_leading_fws = False
 
     def as_encoded_word(self, charset):
         return _ew.encode(str(self), charset)
@@ -1322,6 +1334,8 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
         return ''
 
     has_fws = True
+
+    has_leading_fws = True
 
 
 # XXX these need to become classes and used as instances so
