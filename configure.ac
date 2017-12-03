@@ -2043,7 +2043,7 @@ dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(asm/types.h conio.h direct.h dlfcn.h errno.h \
+AC_CHECK_HEADERS(asm/types.h conio.h crypt.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -2679,6 +2679,7 @@ AC_MSG_RESULT($SHLIBS)
 AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
+AC_CHECK_LIB(crypt, crypt)	# crypt() on Linux
 
 AC_MSG_CHECKING(for uuid_generate_time_safe)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
@@ -3409,8 +3410,8 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
- fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ clock confstr crypt_r ctermid dup3 execv faccessat fchmod fchmodat fchown \
+ fchownat fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \

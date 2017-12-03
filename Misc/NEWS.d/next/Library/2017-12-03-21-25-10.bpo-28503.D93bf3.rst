@@ -1,0 +1,1 @@
+Let the `_crypt` module use `crypt_r()` when available for thread safety.

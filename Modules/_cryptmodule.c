@@ -5,6 +5,11 @@
 
 #include <sys/types.h>
 
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
+#include <unistd.h>
+
 /* Module crypt */
 
 /*[clinic input]
@@ -34,7 +39,13 @@ static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt)
 /*[clinic end generated code: output=0512284a03d2803c input=0e8edec9c364352b]*/
 {
+#ifdef HAVE_CRYPT_R
+    struct crypt_data data;
+    data.initialized = 0;
+    return Py_BuildValue("s", crypt_r(word, salt, &data));
+#else
     return Py_BuildValue("s", crypt(word, salt));
+#endif
 }
 
 
