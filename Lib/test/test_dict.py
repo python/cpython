@@ -468,6 +468,12 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    def test_repr_deep(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {1: d}
+        self.assertRaises(RecursionError, repr, d)
+
     def test_eq(self):
         self.assertEqual({}, {})
         self.assertEqual({1: 2}, {1: 2})

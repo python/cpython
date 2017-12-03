@@ -1,0 +1,2 @@
+The repr of deeply nested dict now raises a RecursionError instead of
+crashing due to a stack overflow.
