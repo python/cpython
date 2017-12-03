@@ -64,7 +64,7 @@ native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Set
 # Target-specific exported variables.
 $(config_status):           export CPPFLAGS := -I$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/include
 $(config_status):           export LDFLAGS := -L$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib
-build configure host python_dist: \
+build configure host pythoninfo python_dist: \
                             export PATH := $(native_build_dir):$(PATH)
 external_libraries:         export CC := $(CC)
 external_libraries openssl: export AR := $(AR)
@@ -154,6 +154,9 @@ host: disabled_modules
 	    echo "Error: please run 'make config', missing $(config_status)"; \
 	    false; \
 	fi
+
+pythoninfo:
+	$(MAKE) -C $(py_host_dir) pythoninfo
 
 python_dist: $(python)
 	@echo "---> Install Python for $(BUILD_TYPE)."
@@ -250,5 +253,6 @@ else
       directory.)
 endif
 
-.PHONY: build configure host native_python external_libraries openssl \
+.PHONY: build configure host pythoninfo native_python \
+        external_libraries openssl \
         dist python_dist distclean hostclean clean
