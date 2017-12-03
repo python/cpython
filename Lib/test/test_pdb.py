@@ -938,25 +938,25 @@ def test_pdb_issue_20766():
     pdb 2: <built-in function default_int_handler>
     """
 
-class PdbTestCase(unittest.TestCase):
-
-    def run_pdb(self, script, commands):
+class PdbBaseTestCase(unittest.TestCase):
+    def _run_pdb(self, pdb_args, commands):
         """Run 'script' lines with pdb and the pdb 'commands'."""
-        filename = 'main.py'
-        with open(filename, 'w') as f:
-            f.write(textwrap.dedent(script))
-        self.addCleanup(support.unlink, filename)
         self.addCleanup(support.rmtree, '__pycache__')
-        cmd = [sys.executable, '-m', 'pdb', filename]
+        cmd = [sys.executable, '-m', 'pdb'] + pdb_args
         stdout = stderr = None
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                   stdin=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT,
-                                   ) as proc:
+        with subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+        ) as proc:
             stdout, stderr = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
         stderr = stderr and bytes.decode(stderr)
         return stdout, stderr
+
+
+class PdbScriptTestCase(PdbBaseTestCase):
 
     def _assert_find_function(self, file_content, func_name, expected):
         file_content = textwrap.dedent(file_content)
@@ -968,6 +968,13 @@ class PdbTestCase(unittest.TestCase):
             expected[0], support.TESTFN, expected[1])
         self.assertEqual(
             expected, pdb.find_function(func_name, support.TESTFN))
+
+    def run_pdb(self, script, commands):
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(support.unlink, filename)
+        return self._run_pdb([filename], commands)
 
     def test_find_function_empty_file(self):
         self._assert_find_function('', 'foo', None)
@@ -1123,9 +1130,65 @@ class PdbTestCase(unittest.TestCase):
         support.unlink(support.TESTFN)
 
 
+class PdbModuleTestCase(PdbBaseTestCase):
+    """Re-runs all tests used for a script but using a module"""
+
+    def run_pdb(self, script, commands):
+        module_name = 't_main'
+        main_file = module_name + '/__main__.py'
+        init_file = module_name + '/__init__.py'
+        os.mkdir(module_name)
+        with open(init_file, 'w') as f:
+            pass
+        with open(main_file, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(support.rmtree, module_name)
+        return self._run_pdb(['-m', module_name], commands)
+
+    def test_run_module(self):
+        script = """print("SUCCESS")"""
+        commands = """
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
+
+    def test_module_is_run_as_main(self):
+        script = """
+            if __name__ == '__main__':
+                print("SUCCESS")
+        """
+        commands = """
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
+
+    def test_breakpoint(self):
+        script = """
+            if __name__ == '__main__':
+                pass
+                print("SUCCESS")
+                pass
+        """
+        commands = f"""
+            b t_main/__main__.py:3
+            quit
+        """
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertTrue(any("Breakpoint 1 at" in l for l in stdout.splitlines()), stdout)
+        self.assertTrue(all("SUCCESS" not in l for l in stdout.splitlines()), stdout)
+
+
 def load_tests(*args):
     from test import test_pdb
-    suites = [unittest.makeSuite(PdbTestCase), doctest.DocTestSuite(test_pdb)]
+    suites = [
+        unittest.makeSuite(PdbScriptTestCase),
+        unittest.makeSuite(PdbModuleTestCase),
+        doctest.DocTestSuite(test_pdb)
+    ]
     return unittest.TestSuite(suites)
 
 
