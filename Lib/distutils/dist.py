@@ -1186,7 +1186,8 @@ class DistributionMetadata:
         # a string.
         if not isinstance(value, (list, str)):
             msg = "'keywords' should be a 'list', not %r"
-            raise TypeError(msg % type(value).__name__)
+            warnings.warn(msg % type(value).__name__, RuntimeWarning, 2)
+            value = list(value)
         self.keywords = value
 
     def get_platforms(self):
@@ -1199,7 +1200,8 @@ class DistributionMetadata:
         # a string.
         if not isinstance(value, (list, str)):
             msg = "'platforms' should be a 'list', not %r"
-            raise TypeError(msg % type(value).__name__)
+            warnings.warn(msg % type(value).__name__, RuntimeWarning, 2)
+            value = list(value)
         self.platforms = value
 
     def get_classifiers(self):
@@ -1208,7 +1210,8 @@ class DistributionMetadata:
     def set_classifiers(self, value):
         if not isinstance(value, list):
             msg = "'classifiers' should be a 'list', not %r"
-            raise TypeError(msg % type(value).__name__)
+            warnings.warn(msg % type(value).__name__, RuntimeWarning, 2)
+            value = list(value)
         self.classifiers = value
 
     def get_download_url(self):
