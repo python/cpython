@@ -354,11 +354,11 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         attrs = {'name': 'Boa', 'version': '3.0',
                  'classifiers': ('Programming Language :: Python :: 3',)}
         msg = "'classifiers' should be a 'list', not 'tuple'"
-        with self.assertWarns(RuntimeWarning) as warns:
+        with self.assertWarnsRegex(RuntimeWarning, msg):
             d = Distribution(attrs)
-            self.assertIsInstance(d.metadata.classifiers, list)
-            self.assertEqual(d.metadata.classifiers,
-                             list(attrs['classifiers']))
+        self.assertIsInstance(d.metadata.classifiers, list)
+        self.assertEqual(d.metadata.classifiers,
+                         list(attrs['classifiers']))
 
     def test_keywords(self):
         attrs = {'name': 'Monty', 'version': '1.0',
@@ -371,10 +371,10 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         attrs = {'name': 'Monty', 'version': '1.0',
                  'keywords': ('spam', 'eggs', 'life of brian')}
         msg = "'keywords' should be a 'list', not 'tuple'"
-        with self.assertWarns(RuntimeWarning) as warns:
+        with self.assertWarnsRegex(RuntimeWarning, msg):
             d = Distribution(attrs)
-            self.assertIsInstance(d.metadata.keywords, list)
-            self.assertEqual(d.metadata.keywords, list(attrs['keywords']))
+        self.assertIsInstance(d.metadata.keywords, list)
+        self.assertEqual(d.metadata.keywords, list(attrs['keywords']))
 
     def test_platforms(self):
         attrs = {'name': 'Monty', 'version': '1.0',
@@ -387,10 +387,10 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         attrs = {'name': 'Monty', 'version': '1.0',
                  'platforms': ('GNU/Linux', 'Some Evil Platform')}
         msg = "'platforms' should be a 'list', not 'tuple'"
-        with self.assertWarns(RuntimeWarning) as warns:
+        with self.assertWarnsRegex(RuntimeWarning, msg):
             d = Distribution(attrs)
-            self.assertIsInstance(d.metadata.platforms, list)
-            self.assertEqual(d.metadata.platforms, list(attrs['platforms']))
+        self.assertIsInstance(d.metadata.platforms, list)
+        self.assertEqual(d.metadata.platforms, list(attrs['platforms']))
 
     def test_download_url(self):
         attrs = {'name': 'Boa', 'version': '3.0',
