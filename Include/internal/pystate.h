@@ -80,6 +80,20 @@ PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
 PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
 
+/* Cross-interpreter data sharing */
+
+struct _cid;
+
+typedef struct _cid {
+    void *data;
+    PyObject *(*new_object)(struct _cid *);
+    void (*free)(void *);
+
+    PyInterpreterState *interp;
+    PyObject *object;
+} _PyCrossInterpreterData;
+
+
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
