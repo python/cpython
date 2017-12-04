@@ -3,6 +3,13 @@ Released on 2018-06-18?
 ========================
 
 
+bpo-32207: Improve tk event exception tracebacks in IDLE.
+When tk event handling is driven by IDLE's run loop, a confusing
+and distracting queue.EMPTY traceback context is no longer added
+to tk event exception tracebacks.  The traceback is now the same
+as when event handling is driven by user code.  Patch based on
+a suggestion by Serhiy Storchaka.
+
 bpo-32164: Delete unused file idlelib/tabbedpages.py.
 Use of TabbedPageSet in configdialog was replaced by ttk.Notebook.
 
