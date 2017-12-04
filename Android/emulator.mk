@@ -4,10 +4,12 @@ avd_name := $(BUILD_TYPE)
 native_python_exe := $(native_build_dir)/python
 python_cmd := $(native_python_exe) -B
 
-# Update this variable to the current Python version in development after a
-# major Python release. This is used to differentiate the emulators when a
-# buildbot is running both the 3.x and the maintenance versions.
+# This variable is used to differentiate the emulators when a buildbot is
+# running both the 3.x and the maintenance versions.
 python_devpt_version := 3.7
+ifdef PYTHON_DEVPT_VERSION
+   python_devpt_version := $(PYTHON_DEVPT_VERSION)
+endif
 
 ifeq ($(py_version), $(python_devpt_version))
     ifeq ($(ANDROID_ARCH), x86)
@@ -64,7 +66,9 @@ buildbottest: export PY_SRCDIR := $(py_srcdir)
 buildbottest: export PATH := $(native_build_dir):$(PATH)
 buildbottest: emulator_install
 	@echo "---> Run buildbottest."
-	-$(MAKE) -C $(py_host_dir) TESTRUNNER="$(TESTRUNNER)" buildbottest
+	-$(MAKE) -C $(py_host_dir) TESTRUNNER="$(TESTRUNNER)" \
+	    TESTOPTS="$(TESTOPTS)" TESTTIMEOUT="$(TESTTIMEOUT)" \
+	    buildbottest
 	$(ROOT_MAKE) kill_emulator
 
 gdb: export APP_ABI := $(APP_ABI)

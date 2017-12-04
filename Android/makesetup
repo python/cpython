@@ -28,7 +28,8 @@ emulator_header ()
 	export SDCARD := /sdcard
 	export PACKAGE_NAME := org.python
 	export SYS_PREFIX := \$(SDCARD)/\$(PACKAGE_NAME)
-	export EMULATOR_CMD_LINE_OPTIONS := $EMULATOR_CMD_LINE_OPTIONS
+	EMULATOR_CMD_LINE_OPTIONS := $EMULATOR_CMD_LINE_OPTIONS
+	PYTHON_DEVPT_VERSION := $PYTHON_DEVPT_VERSION
 
 	EOF
 }
@@ -116,7 +117,7 @@ else
 fi
 
 for var in $with_libraries; do
-    echo "export $var := 1" >> $makefile
+    echo "$var := 1" >> $makefile
 done
 for var in $defined_variables; do
     eval value=\$$var
