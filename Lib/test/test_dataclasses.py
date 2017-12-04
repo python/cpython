@@ -1820,8 +1820,8 @@ class TestCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'init=False'):
             replace(c, x=3, z=20, t=50)
         with self.assertRaisesRegex(ValueError, 'init=False'):
-             replace(c, z=20)
-             replace(c, x=3, z=20, t=50)
+            replace(c, z=20)
+            replace(c, x=3, z=20, t=50)
 
         # Make sure the result is still frozen.
         with self.assertRaisesRegex(FrozenInstanceError, "cannot assign to field 'x'"):
@@ -1836,46 +1836,46 @@ class TestCase(unittest.TestCase):
             c1 = replace(c, x=20, a=5)
 
     def test_helper_replace_invalid_field_name(self):
-      @dataclass(frozen=True)
-      class C:
-          x: int
-          y: int
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
 
-      c = C(1, 2)
-      with self.assertRaisesRegex(TypeError, "__init__\(\) got an unexpected "
-                                             "keyword argument 'z'"):
-          c1 = replace(c, z=3)
+            c = C(1, 2)
+            with self.assertRaisesRegex(TypeError, "__init__\(\) got an unexpected "
+                                                   "keyword argument 'z'"):
+                c1 = replace(c, z=3)
 
     def test_helper_replace_invalid_object(self):
-      @dataclass(frozen=True)
-      class C:
-          x: int
-          y: int
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
 
-      with self.assertRaisesRegex(TypeError, 'dataclass instance'):
-          replace(C, x=3)
+            with self.assertRaisesRegex(TypeError, 'dataclass instance'):
+                replace(C, x=3)
 
-      with self.assertRaisesRegex(TypeError, 'dataclass instance'):
-          replace(0, x=3)
+                with self.assertRaisesRegex(TypeError, 'dataclass instance'):
+                    replace(0, x=3)
 
     def test_helper_replace_no_init(self):
-      @dataclass
-      class C:
-          x: int
-          y: int = field(init=False, default=10)
+        @dataclass
+        class C:
+            x: int
+            y: int = field(init=False, default=10)
 
-      c = C(1)
-      c.y = 20
+            c = C(1)
+            c.y = 20
 
-      # Make sure y gets the default value.
-      c1 = replace(c, x=5)
-      self.assertEqual((c1.x, c1.y), (5, 10))
+            # Make sure y gets the default value.
+            c1 = replace(c, x=5)
+            self.assertEqual((c1.x, c1.y), (5, 10))
 
-      # Trying to replace y is an error.
-      with self.assertRaisesRegex(ValueError, 'init=False'):
-          replace(c, x=2, y=30)
-      with self.assertRaisesRegex(ValueError, 'init=False'):
-          replace(c, y=30)
+            # Trying to replace y is an error.
+            with self.assertRaisesRegex(ValueError, 'init=False'):
+                replace(c, x=2, y=30)
+                with self.assertRaisesRegex(ValueError, 'init=False'):
+                    replace(c, y=30)
 
     def test_dataclassses_pickleable(self):
         global P, Q, R
