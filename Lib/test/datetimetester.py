@@ -2390,16 +2390,7 @@ class TestDateTime(TestDate):
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month +
                                           dt1.second - 7)
 
-    def test_fromisoformat(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
-        super().test_fromisoformat()
-
     def test_fromisoformat_datetime(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         # Test that isoformat() is reversible
         base_dates = [
             (1, 1, 1),
@@ -2444,9 +2435,6 @@ class TestDateTime(TestDate):
                     self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_timespecs(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         datetime_bases = [
             (2009, 12, 4, 8, 17, 45, 123456),
             (2009, 12, 4, 8, 17, 45, 0)]
@@ -2473,9 +2461,6 @@ class TestDateTime(TestDate):
                         self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_fails_datetime(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                             # Empty string
@@ -2510,18 +2495,12 @@ class TestDateTime(TestDate):
                 self.theclass.fromisoformat(bad_str)
 
     def test_fromisoformat_utc(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         dt_str = '2014-04-19T13:21:13+00:00'
         dt = self.theclass.fromisoformat(dt_str)
 
         self.assertIs(dt.tzinfo, timezone.utc)
 
     def test_fromisoformat_subclass(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         class DateTimeSubclass(self.theclass):
             pass
 
