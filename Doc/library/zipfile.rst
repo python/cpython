@@ -385,9 +385,9 @@ ZipFile Objects
 
 .. method:: ZipFile.writestr(zinfo_or_arcname, data[, compress_type])
 
-   Write the string *data* to the archive; *zinfo_or_arcname* is either the file
-   name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
-   an instance, at least the filename, date, and time must be given.  If it's a
+   Write the string or bytes *data* to the archive; if it is a *str*, it should be encoded as UTF-8.
+   *zinfo_or_arcname* is either the name of the file in the archive or a :class:`ZipInfo` instance.
+   If it's an instance, at least the filename, date, and time must be given. If it's a
    name, the date and time is set to the current date and time.
    The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
 
