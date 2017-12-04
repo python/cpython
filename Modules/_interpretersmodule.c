@@ -7,6 +7,20 @@
 #include "internal/pystate.h"
 
 
+/* sharing-specific functions */
+
+static int
+_PyObject_CheckShareable(PyObject *obj)
+{
+    if (PyBytes_CheckExact(obj))
+        return 0;
+    PyErr_SetString(PyExc_ValueError,
+                    "obj is not a cross-interpreter shareable type");
+    return 1;
+}
+
+/* interpreter-specific functions */
+
 static PyInterpreterState *
 _get_current(void)
 {
@@ -403,10 +417,9 @@ object_is_shareable(PyObject *self, PyObject *args)
     PyObject *obj;
     if (!PyArg_UnpackTuple(args, "is_shareable", 1, 1, &obj))
         return NULL;
-
-    if (PyBytes_CheckExact(obj))
+    if (_PyObject_CheckShareable(obj) == 0)
         Py_RETURN_TRUE;
-
+    PyErr_Clear();
     Py_RETURN_FALSE;
 }
 
