@@ -74,7 +74,7 @@ typedef struct basicblock_ {
     int b_offset;
 } basicblock;
 
-/* fblockinfo tracks the current frame block.
+/* fblock tracks the current frame block.
 
 A frame block is used to handle loops, try/except, and try/finally.
 It's called a frame block to distinguish it from a basic block in the
@@ -84,12 +84,15 @@ compiler IR.
 enum fblocktype { LOOP, EXCEPT, FINALLY_TRY, FINALLY_END, HANDLER_CLEANUP,
                   WITH, ASYNC_WITH, NO_TYPE };
 
-struct fblockinfo;
+struct fblock_;
 struct compiler;
 
-typedef int (*fb_unwind_cb)(struct compiler *, struct fblockinfo *, int preserve_tos);
+typedef int (*fb_unwind_cb)(struct compiler *, struct fblock_ *, int preserve_tos);
 
-struct fblockinfo {
+typedef struct fblock_ {
+    /* enclosing fblock or NULL */
+    struct fblock_ *fb_parent;
+
     enum fblocktype fb_type;
     basicblock *fb_block;
 
@@ -99,7 +102,7 @@ struct fblockinfo {
     void *fb_datum;
     /* (optional) type-specific exit block */
     basicblock *fb_exit;
-};
+} fblock;
 
 enum {
     COMPILER_SCOPE_MODULE,
@@ -140,7 +143,7 @@ struct compiler_unit {
     basicblock *u_curblock; /* pointer to current block */
 
     int u_nfblocks;
-    struct fblockinfo u_fblock[CO_MAXBLOCKS];
+    fblock *u_fblock; /* pointer to current fblock */
 
     int u_firstlineno; /* the first lineno of the block */
     int u_lineno;          /* the lineno for the current stmt */
@@ -512,6 +515,7 @@ static void
 compiler_unit_free(struct compiler_unit *u)
 {
     basicblock *b, *next;
+    fblock *f, *f_next;
 
     compiler_unit_check(u);
     b = u->u_blocks;
@@ -521,6 +525,12 @@ compiler_unit_free(struct compiler_unit *u)
         next = b->b_list;
         PyObject_Free((void *)b);
         b = next;
+    }
+    f = u->u_fblock;
+    while (f != NULL) {
+        f_next = f->fb_parent;
+        PyObject_Free((void *)f);
+        f = f_next;
     }
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
@@ -1437,32 +1447,51 @@ find_ann(asdl_seq *stmts)
  */
 
 static int
-compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b,
-                     fb_unwind_cb unwind, void *datum, basicblock *exit)
+compiler_push_fblock(struct compiler *c, enum fblocktype t,
+                     basicblock *b, fb_unwind_cb unwind, void *datum,
+                     basicblock *exit)
 {
-    struct fblockinfo *f;
+    fblock *f;
+    /* FIXME: this limit should be reviewed now that we dynamically
+     * allocate fblocks.  Do we still need a limit or should we just
+     * check for memory exhaustion? */
     if (c->u->u_nfblocks >= CO_MAXBLOCKS) {
         PyErr_SetString(PyExc_SyntaxError,
                         "too many statically nested blocks");
         return 0;
     }
-    f = &c->u->u_fblock[c->u->u_nfblocks++];
+    f = (fblock *)PyObject_Malloc(sizeof(fblock));
+    if (f == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    memset((void *)f, 0, sizeof(fblock));
+    /* init struct members */
     f->fb_type = t;
     f->fb_block = b;
     f->fb_unwind = unwind;
     f->fb_datum = datum;
     f->fb_exit = exit;
+    /* link new fblock into singly linked list of blocks */
+    f->fb_parent = c->u->u_fblock;
+    c->u->u_fblock = f;
+    c->u->u_nfblocks++;
     return 1;
 }
 
 static void
 compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 {
+    fblock *f;
     struct compiler_unit *u = c->u;
     assert(u->u_nfblocks > 0);
     u->u_nfblocks--;
-    assert(u->u_fblock[u->u_nfblocks].fb_type == t);
-    assert(u->u_fblock[u->u_nfblocks].fb_block == b);
+    f = u->u_fblock;
+    assert(f != NULL);
+    assert(f->fb_type == t);
+    assert(f->fb_block == b);
+    u->u_fblock = f->fb_parent;
+    PyObject_Free((void *)f);
 }
 
 /* Unwind frame blocks until either a block of type *stop* or *error*
@@ -1472,14 +1501,11 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
  */
 static int
 compiler_unwind_fblock(struct compiler *c, enum fblocktype stop,
-                       enum fblocktype error, struct fblockinfo **found,
+                       enum fblocktype error, fblock **found,
                        int preserve_tos)
 {
-    struct fblockinfo *info;
-    int depth = c->u->u_nfblocks;
-    while (depth) {
-        depth--;
-        info = &c->u->u_fblock[depth];
+    fblock *info = c->u->u_fblock;
+    while (info != NULL) {
         if (info->fb_type == stop) {
             *found = info;
             return 1;
@@ -1497,6 +1523,7 @@ compiler_unwind_fblock(struct compiler *c, enum fblocktype stop,
             if (res == 0)
                 return 0;
         }
+        info = info->fb_parent;
     }
     *found = NULL;
     return 1;
@@ -1505,7 +1532,7 @@ compiler_unwind_fblock(struct compiler *c, enum fblocktype stop,
 /* Unwinders for various kinds of frame blocks */
 
 static int
-fblock_unwind_for_loop(struct compiler *c, struct fblockinfo *info, int preserve_tos)
+fblock_unwind_for_loop(struct compiler *c, fblock *info, int preserve_tos)
 {
     /* Pop the iterator */
     if (preserve_tos)
@@ -1515,34 +1542,45 @@ fblock_unwind_for_loop(struct compiler *c, struct fblockinfo *info, int preserve
 }
 
 static int
-fblock_unwind_except(struct compiler *c, struct fblockinfo *info, int preserve_tos)
+fblock_unwind_except(struct compiler *c, fblock *info, int preserve_tos)
 {
     ADDOP(c, POP_BLOCK);
     return 1;
 }
 
-/* exiting from a try body, emit code for the final body */
+/* unwinding from a try body, emit code for the final body */
 static int
-fblock_unwind_finally_try(struct compiler *c, struct fblockinfo *info, int preserve_tos)
+fblock_unwind_finally_try(struct compiler *c, fblock *info, int preserve_tos)
 {
-    struct fblockinfo f = c->u->u_fblock[c->u->u_nfblocks-1]; /* top block */
+    /* We need to monkey with u_fblock so that exits from the final body
+     * will unwind from the correct place.  Perhaps this should be done
+     * inside compiler_unwind_fblock() but right now this is the only
+     * unwind that needs to do it.
+     *
+     * Note that emitting code for the final body might push new fblocks
+     * on top of the fblock stack (e.g. if there is a try block inside the
+     * final body).  Those blocks will be popped before we return from this
+     * function.
+     * */
+    fblock *saved_fblock = c->u->u_fblock;
+    /* set current fblock to one for final body */
+    c->u->u_fblock = info->fb_parent;
     ADDOP(c, POP_BLOCK);
-    /* pop current block, we don't want exits from final body to unwind it */
-    compiler_pop_fblock(c, f.fb_type, f.fb_block);
-    /* emit code for final body.  This causes the code for the final body to be
-     * duplicated for every exit from the try body.  That's wasteful in terms
-     * of bytecode but is simpler than jumping to the final body and then
-     * returning again (e.g. push return address, have final body pop address
-     * and jump back.  It seems that Java compilers do the same duplication.
+    /* emit code for final body.  This causes the code for the final body to
+     * be duplicated for every exit from the try body.  That's wasteful in
+     * terms of bytecode but is simpler than jumping to the final body and
+     * then returning again (e.g. push return address, have final body pop
+     * address and jump back.  It seems that Java compilers do the same
+     * duplication.
      */
     VISIT_SEQ(c, stmt, info->fb_datum);
-    /* restore current block, we may be emitting more code for the try body */
-    compiler_push_fblock(c, f.fb_type, f.fb_block, f.fb_unwind, f.fb_datum, f.fb_exit);
+    /* restore fblock, we may emit more code for the try body */
+    c->u->u_fblock = saved_fblock;
     return 1;
 }
 
 static int
-fblock_unwind_async_with(struct compiler *c, struct fblockinfo *info, int preserve_tos)
+fblock_unwind_async_with(struct compiler *c, fblock *info, int preserve_tos)
 {
     ADDOP(c, POP_BLOCK);
     if (preserve_tos)
@@ -1560,7 +1598,7 @@ fblock_unwind_async_with(struct compiler *c, struct fblockinfo *info, int preser
 }
 
 static int
-fblock_unwind_handler_cleanup(struct compiler *c, struct fblockinfo *info, int preserve_tos)
+fblock_unwind_handler_cleanup(struct compiler *c, fblock *info, int preserve_tos)
 {
     if (info->fb_datum) {
         /* Save TOS or None in named local */
@@ -1584,7 +1622,7 @@ fblock_unwind_handler_cleanup(struct compiler *c, struct fblockinfo *info, int p
 }
 
 static int
-fblock_unwind_with(struct compiler *c, struct fblockinfo *info, int preserve_tos)
+fblock_unwind_with(struct compiler *c, fblock *info, int preserve_tos)
 {
     ADDOP(c, POP_BLOCK);
     if (preserve_tos)
@@ -2662,7 +2700,7 @@ compiler_continue(struct compiler *c)
     static const char IN_FINALLY_ERROR_MSG[] =
                     "'continue' not supported inside 'finally' clause";
     int err;
-    struct fblockinfo *found;
+    fblock *found;
 
     err = compiler_unwind_fblock(c, LOOP, FINALLY_END, &found, 0);
     if (err == 0)
@@ -3131,7 +3169,7 @@ static int
 compiler_visit_stmt(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n;
-    struct fblockinfo *found;
+    fblock *found;
 
     /* Always assign a lineno to the next instruction for a stmt. */
     c->u->u_lineno = s->lineno;
