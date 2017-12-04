@@ -158,7 +158,7 @@ class TestPy2MigrationHint(unittest.TestCase):
 
     def test_string_with_leading_whitespace(self):
         python2_print_str = '''if 1:
-    print "Hello World"
+            print "Hello World"
         '''
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
