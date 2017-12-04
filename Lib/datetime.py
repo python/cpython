@@ -276,8 +276,6 @@ def _parse_isoformat_time(tstr):
 
         if next_char != ':':
             raise ValueError('Invalid time separator')
-        if pos >= len_str:
-            break
 
         pos += 1
 
@@ -285,7 +283,7 @@ def _parse_isoformat_time(tstr):
     if pos < len_str and tstr[pos] == '.':
         pos += 1
         len_remainder = len_str - pos
-        
+
         # Valid isoformat strings at this point can be:
         # fff (length 3)
         # ffffff (length 6)
@@ -308,14 +306,11 @@ def _parse_isoformat_time(tstr):
 
         hh = int(tstr[pos+1:pos+3])
         mm = int(tstr[pos+4:pos+6])
-        
+
         pos += 6
         td = (-1 if sep_char == '-' else 1) * timedelta(hours=hh, minutes=mm)
-        
-        time_comps[-1] = timezone(td)
 
-    if pos < len_str:
-        raise ValueError('Invalid isoformat time')
+        time_comps[-1] = timezone(td)
 
     return time_comps
 
@@ -1604,6 +1599,31 @@ class datetime(date):
         return cls(date.year, date.month, date.day,
                    time.hour, time.minute, time.second, time.microsecond,
                    tzinfo, fold=time.fold)
+
+    @classmethod
+    def fromisoformat(cls, dtstr):
+        """Construct a datetime from the output of datetime.isoformat()."""
+        if not isinstance(dtstr, str):
+            raise TypeError('fromisoformat: argument must be str')
+
+        # Split this at the separator
+        dstr = dtstr[0:10]
+        tstr = dtstr[11:]
+
+        try:
+            date_components = _parse_isoformat_date(dstr)
+        except ValueError:
+            raise ValueError('Invalid isoformat string: {}'.format(dtstr))
+
+        if tstr:
+            try:
+                time_components = _parse_isoformat_time(tstr)
+            except ValueError:
+                raise ValueError('Invalid isoformat string: {}'.format(dtstr))
+        else:
+            time_components = [0, 0, 0, 0, None]
+
+        return cls(*(date_components + time_components))
 
     def timetuple(self):
         "Return local time tuple compatible with time.localtime()."
