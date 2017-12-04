@@ -674,14 +674,14 @@ def getnode():
         getters = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
                    _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
-    for getter in getters:
+    for getter in getters + [_random_getnode]:
         try:
             _node = getter()
         except:
             continue
         if _node is not None:
             return _node
-    return _random_getnode()
+    assert False, '_random_getnode() returned None'
 
 
 _last_timestamp = None
