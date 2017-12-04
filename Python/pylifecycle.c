@@ -804,7 +804,12 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
     }
 
     if (config->program_name == NULL) {
-        config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+#ifdef MS_WINDOWS
+        const wchar_t *program_name = L"python";
+#else
+        const wchar_t *program_name = L"python3";
+#endif
+        config->program_name = _PyMem_RawWcsdup(program_name);
         if (config->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -1273,8 +1278,6 @@ Py_FinalizeEx(void)
 
     call_ll_exitfuncs();
 
-    _PyPathConfig_Fini();
-
     _PyRuntime_Finalize();
     return status;
 }
@@ -1489,61 +1492,6 @@ Py_EndInterpreter(PyThreadState *tstate)
     PyInterpreterState_Clear(interp);
     PyThreadState_Swap(NULL);
     PyInterpreterState_Delete(interp);
-}
-
-#ifdef MS_WINDOWS
-static wchar_t *progname = L"python";
-#else
-static wchar_t *progname = L"python3";
-#endif
-
-void
-Py_SetProgramName(wchar_t *pn)
-{
-    if (pn && *pn)
-        progname = pn;
-}
-
-wchar_t *
-Py_GetProgramName(void)
-{
-    return progname;
-}
-
-static wchar_t *default_home = NULL;
-
-void
-Py_SetPythonHome(wchar_t *home)
-{
-    default_home = home;
-}
-
-
-wchar_t*
-Py_GetPythonHome(void)
-{
-    /* Use a static buffer to avoid heap memory allocation failure.
-       Py_GetPythonHome() doesn't allow to report error, and the caller
-       doesn't release memory. */
-    static wchar_t buffer[MAXPATHLEN+1];
-
-    if (default_home) {
-        return default_home;
-    }
-
-    char *home = Py_GETENV("PYTHONHOME");
-    if (!home) {
-        return NULL;
-    }
-
-    size_t size = Py_ARRAY_LENGTH(buffer);
-    size_t r = mbstowcs(buffer, home, size);
-    if (r == (size_t)-1 || r >= size) {
-        /* conversion failed or the static buffer is too small */
-        return NULL;
-    }
-
-    return buffer;
 }
 
 /* Add the __main__ module */
