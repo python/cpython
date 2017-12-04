@@ -2713,7 +2713,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     /* `try` block */
     ADDOP_JREL(c, SETUP_FINALLY, final);
     compiler_use_next_block(c, body);
-    if (!compiler_push_finally_try(c, body, s->v.Try.finalbody))
+    if (!compiler_push_finally_try(c, final, s->v.Try.finalbody))
         return 0;
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
         if (!compiler_try_except(c, s))
@@ -2724,7 +2724,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     }
     ADDOP(c, POP_BLOCK);
     ADDOP(c, PUSH_NO_EXCEPT);
-    compiler_pop_fblock(c, FINALLY_TRY, body);
+    compiler_pop_fblock(c, FINALLY_TRY, final);
 
     /* `finally` block */
     compiler_use_next_block(c, final);
