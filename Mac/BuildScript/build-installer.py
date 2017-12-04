@@ -845,7 +845,6 @@ def build_universal_openssl(basedir, archList):
             "enable-tlsext",
             "no-ssl2",
             "no-ssl3",
-            "no-ssl3-method",
             # "enable-unit-test",
             "shared",
             "--install_prefix=%s"%shellQuote(archbase),
