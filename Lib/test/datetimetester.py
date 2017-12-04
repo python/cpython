@@ -49,7 +49,6 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 INF = float("inf")
 NAN = float("nan")
 
-
 #############################################################################
 # module tests
 
@@ -1638,7 +1637,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_fromisoformat_fails_typeerror(self):
         # Test that fromisoformat fails when passed the wrong type
-        bad_types = [b'2009-03-01', None]
+        import io
+
+        bad_types = [b'2009-03-01', None, io.StringIO('2009-03-01')]
         for bad_type in bad_types:
             with self.assertRaises(TypeError):
                 self.theclass.fromisoformat(bad_type)
@@ -3253,6 +3254,119 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         # But if they're not identical, it isn't ignored.
         t2 = t2.replace(tzinfo=Varies())
         self.assertTrue(t1 < t2)  # t1's offset counter still going up
+
+    def test_fromisoformat(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        time_examples = [
+            (0, 0, 0, 0),
+            (23, 59, 59, 999999),
+        ]
+
+        hh = (9, 12, 20)
+        mm = (5, 30)
+        ss = (4, 45)
+        usec = (0, 245000, 678901)
+
+        time_examples += list(itertools.product(hh, mm, ss, usec))
+
+        tzinfos = [None, timezone.utc,
+                   timezone(timedelta(hours=-5)),
+                   timezone(timedelta(hours=2)),
+                   timezone(timedelta(hours=6, minutes=27))]
+
+        for ttup in time_examples:
+            for tzi in tzinfos:
+                t = self.theclass(*ttup, tzinfo=tzi)
+                tstr = t.isoformat()
+
+                with self.subTest(tstr=tstr):
+                    t_rt = self.theclass.fromisoformat(tstr)
+                    self.assertEqual(t, t_rt)
+
+    def test_fromisoformat_timespecs(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        time_bases = [
+            (8, 17, 45, 123456),
+            (8, 17, 45, 0)
+        ]
+
+        tzinfos = [None, timezone.utc,
+                   timezone(timedelta(hours=-5)),
+                   timezone(timedelta(hours=2)),
+                   timezone(timedelta(hours=6, minutes=27))]
+
+        timespecs = ['hours', 'minutes', 'seconds',
+                     'milliseconds', 'microseconds']
+
+        for ip, ts in enumerate(timespecs):
+            for tzi in tzinfos:
+                for t_tuple in time_bases:
+                    if ts == 'milliseconds':
+                        new_microseconds = 1000 * (t_tuple[-1] // 1000)
+                        t_tuple = t_tuple[0:-1] + (new_microseconds,)
+
+                    t = self.theclass(*(t_tuple[0:(1 + ip)]), tzinfo=tzi)
+                    tstr = t.isoformat(timespec=ts)
+                    with self.subTest(tstr=tstr):
+                        t_rt = self.theclass.fromisoformat(tstr)
+                        self.assertEqual(t, t_rt)
+
+    def test_fromisoformat_fails(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        bad_strs = [
+            '',                         # Empty string
+            '12:',                      # Ends on a separator
+            '12:30:',                   # Ends on a separator
+            '12:30:15.',                # Ends on a separator
+            '1a:30:45.334034',          # Invalid character in hours
+            '12:a0:45.334034',          # Invalid character in minutes
+            '12:30:a5.334034',          # Invalid character in seconds
+            '12:30:45.1234',            # Too many digits for milliseconds
+            '12:30:45.1234567',         # Too many digits for microseconds
+            '12:30:45.123456+24:30',    # Invalid time zone offset
+            '12:30:45.123456-24:30',    # Invalid negative offset
+            '12：30：45',                 # Uses full-width unicode colons
+            '12:30:45․123456',          # Uses \u2024 in place of decimal point
+        ]
+
+        for bad_str in bad_strs:
+            try:
+                self.theclass.fromisoformat(bad_str)
+                self.assertTrue(False)
+            except ValueError:
+                pass
+
+    def test_fromisoformat_fails_typeerror(self):
+        # Test the fromisoformat fails when passed the wrong type
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        import io
+
+        bad_types = [b'12:30:45', None, io.StringIO('12:30:45')]
+
+        for bad_type in bad_types:
+            with self.assertRaises(TypeError):
+                self.theclass(bad_type)
+
+    def test_fromisoformat_subclass(self):
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
+        class TimeSubclass(self.theclass):
+            pass
+
+        tsc = TimeSubclass(12, 14, 45, 203745, tzinfo=timezone.utc)
+        tsc_rt = TimeSubclass.fromisoformat(tsc.isoformat())
+
+        self.assertEqual(tsc, tsc_rt)
+        self.assertIsInstance(tsc_rt, TimeSubclass)
 
     def test_subclass_timetz(self):
 
