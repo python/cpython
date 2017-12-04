@@ -7,6 +7,17 @@
 #include "internal/pystate.h"
 
 
+static PyInterpreterState *
+_get_current(void)
+{
+    PyThreadState *tstate;
+
+    tstate = PyThreadState_Get();
+    if (tstate == NULL)
+        return NULL;
+    return tstate->interp;
+}
+
 /* sharing-specific functions */
 
 static int
@@ -19,18 +30,76 @@ _PyObject_CheckShareable(PyObject *obj)
     return 1;
 }
 
-/* interpreter-specific functions */
-
-static PyInterpreterState *
-_get_current(void)
+static PyObject *
+_new_bytes_object(_PyCrossInterpreterData *data)
 {
-    PyThreadState *tstate;
-
-    tstate = PyThreadState_Get();
-    if (tstate == NULL)
-        return NULL;
-    return tstate->interp;
+    return PyBytes_FromString((char *)(data->data));
 }
+
+static int
+_bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    data->data = (void *)(PyBytes_AS_STRING(obj));
+    data->new_object = _new_bytes_object;
+    data->free = NULL;
+    return 0;
+}
+
+static int
+_PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    Py_INCREF(obj);
+
+    if (_PyObject_CheckShareable(obj) != 0) {
+        Py_DECREF(obj);
+        return 1;
+    }
+
+    data->interp = _get_current();
+    data->object = obj;
+
+    if (PyBytes_CheckExact(obj)) {
+        return _bytes_shared(obj, data);
+    }
+
+    return 0;
+};
+
+static void
+_PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
+{
+    PyThreadState *save_tstate = NULL;
+    if (data->interp != NULL) {
+        // Switch to the original interpreter.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(data->interp);
+        save_tstate = PyThreadState_Swap(tstate);
+    }
+
+    if (data->free != NULL) {
+        data->free(data->data);
+    }
+    Py_XDECREF(data->object);
+
+    // Switch back.
+    if (save_tstate != NULL)
+        PyThreadState_Swap(save_tstate);
+}
+
+static PyObject *
+_PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
+{
+    return data->new_object(data);
+}
+
+static PyObject *
+_PyCrossInterpreterData_Use(_PyCrossInterpreterData *data)
+{
+    PyObject *obj = _PyCrossInterpreterData_NewObject(data);
+    _PyCrossInterpreterData_Release(data);
+    return obj;
+}
+
+/* interpreter-specific functions */
 
 static PyInterpreterState *
 _look_up_int64(PY_INT64_T requested_id)
