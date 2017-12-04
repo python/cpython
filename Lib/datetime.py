@@ -811,16 +811,16 @@ class date:
         return cls(y, m, d)
 
     @classmethod
-    def fromisoformat(cls, dtstr):
+    def fromisoformat(cls, date_string):
         """Construct a date from the output of date.isoformat()."""
-        if not isinstance(dtstr, str):
+        if not isinstance(date_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
         try:
-            assert len(dtstr) == 10
-            return cls(*_parse_isoformat_date(dtstr))
+            assert len(date_string) == 10
+            return cls(*_parse_isoformat_date(date_string))
         except:
-            raise ValueError('Invalid isoformat string: {}'.format(dtstr))
+            raise ValueError('Invalid isoformat string: %s' % date_string)
 
 
     # Conversions to string
@@ -1336,15 +1336,15 @@ class time:
     __str__ = isoformat
 
     @classmethod
-    def fromisoformat(cls, tstr):
+    def fromisoformat(cls, time_string):
         """Construct a time from the output of isoformat()."""
-        if not isinstance(tstr, str):
+        if not isinstance(time_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
         try:
             return cls(*_parse_isoformat_time(time_string))
         except:
-            raise ValueError('Invalid isoformat string: {}'.format(tstr))
+            raise ValueError('Invalid isoformat string: %s' % time_string)
 
 
     def strftime(self, fmt):
@@ -1601,25 +1601,25 @@ class datetime(date):
                    tzinfo, fold=time.fold)
 
     @classmethod
-    def fromisoformat(cls, dtstr):
+    def fromisoformat(cls, date_string):
         """Construct a datetime from the output of datetime.isoformat()."""
-        if not isinstance(dtstr, str):
+        if not isinstance(date_string, str):
             raise TypeError('fromisoformat: argument must be str')
 
         # Split this at the separator
-        dstr = dtstr[0:10]
-        tstr = dtstr[11:]
+        dstr = date_string[0:10]
+        tstr = date_string[11:]
 
         try:
             date_components = _parse_isoformat_date(dstr)
         except ValueError:
-            raise ValueError('Invalid isoformat string: {}'.format(dtstr))
+            raise ValueError('Invalid isoformat string: %s' % date_string)
 
         if tstr:
             try:
                 time_components = _parse_isoformat_time(tstr)
             except ValueError:
-                raise ValueError('Invalid isoformat string: {}'.format(dtstr))
+                raise ValueError('Invalid isoformat string: %s' % date_string)
         else:
             time_components = [0, 0, 0, 0, None]
 
