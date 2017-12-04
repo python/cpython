@@ -1,0 +1,3 @@
+Fixed searching regular expression patterns that could match an empty
+string. Non-empty string can now be correctly found after matching an empty
+string.

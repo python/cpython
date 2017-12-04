@@ -260,10 +260,7 @@ class PrettyPrinter:
                 chunks.append(rep)
             else:
                 # A list of alternating (non-space, space) strings
-                parts = re.findall(r'\S*\s*', line)
-                assert parts
-                assert not parts[-1]
-                parts.pop()  # drop empty last part
+                parts = re.findall(r'(?:\S+|\s)\s*', line)
                 max_width2 = max_width
                 current = ''
                 for j, part in enumerate(parts):
