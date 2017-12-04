@@ -728,7 +728,7 @@ form.
    strings.  The *string* is scanned left-to-right, and matches are returned in
    the order found.  If one or more groups are present in the pattern, return a
    list of groups; this will be a list of tuples if the pattern has more than
-   one group.
+   one group.  Empty matches are included in the result.
 
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
@@ -738,7 +738,8 @@ form.
 
    Return an :term:`iterator` yielding :ref:`match objects <match-objects>` over
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
-   is scanned left-to-right, and matches are returned in the order found.
+   is scanned left-to-right, and matches are returned in the order found.  Empty
+   matches are included in the result.
 
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
