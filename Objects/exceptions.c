@@ -2849,29 +2849,40 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
     const int STRIP_BOTH = 2;
     // Issue 32028: Handle case when whitespace is used with print call
     PyObject *initial_data = _PyUnicode_XStrip(self->text, STRIP_BOTH, strip_sep_obj);
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(initial_data);
-    PyObject *data = _PyUnicode_XStrip( \
-        PyUnicode_Substring(initial_data, PRINT_OFFSET, text_len), \
-        STRIP_BOTH, strip_sep_obj);
 
+    if (initial_data == NULL) {
+        Py_DECREF(strip_sep_obj);
+        return -1;
+    }
+
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(initial_data);
+
+    PyObject *data = PyUnicode_Substring(initial_data, PRINT_OFFSET, text_len);
     Py_DECREF(initial_data);
-    Py_DECREF(strip_sep_obj);
 
     if (data == NULL) {
+        Py_DECREF(strip_sep_obj);
+        return -1;
+    }
+
+    PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
+    Py_DECREF(strip_sep_obj);
+
+    if (new_data == NULL) {
         return -1;
     }
 
     // gets the modified text_len after stripping `print `
-    text_len = PyUnicode_GET_LENGTH(data);
+    text_len = PyUnicode_GET_LENGTH(new_data);
     const char *maybe_end_arg = "";
-    if (text_len > 0 && PyUnicode_READ_CHAR(data, text_len-1) == ',') {
+    if (text_len > 0 && PyUnicode_READ_CHAR(new_data, text_len-1) == ',') {
         maybe_end_arg = " end=\" \"";
     }
     PyObject *error_msg = PyUnicode_FromFormat(
         "Missing parentheses in call to 'print'. Did you mean print(%U%s)?",
-        data, maybe_end_arg
+        new_data, maybe_end_arg
     );
-    Py_DECREF(data);
+    Py_DECREF(new_data);
     if (error_msg == NULL)
         return -1;
 
