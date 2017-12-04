@@ -309,11 +309,7 @@ class BaseTestUUID:
 
         # Test it again to ensure consistency.
         node2 = self.uuid.getnode()
-        if not (node1 & (1 << 40)):
-            # Not randomly generated
-            self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
-        elif node1 != node2 and support.verbose:
-            print("Can't retrieve a MAC address")
+        self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
     def test_uuid1(self):
         equal = self.assertEqual
