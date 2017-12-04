@@ -63,6 +63,12 @@ constants below:
    +-----------------------+-----------------------------------------------+
    | :const:`EVENT_WRITE`  | Available for write                           |
    +-----------------------+-----------------------------------------------+
+   | :const:`EVENT_URGENT` | Available for urgent data to read             |
+   |                       | (not supported by KqueueSelector)             |
+   +-----------------------+-----------------------------------------------+
+
+   .. versionchanged:: 3.7
+      Added :const:`EVENT_URGENT`.
 
 
 .. class:: SelectorKey

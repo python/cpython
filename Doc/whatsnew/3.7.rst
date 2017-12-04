@@ -364,6 +364,12 @@ The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
 can be set within the scope of a group.
 (Contributed by Serhiy Storchaka in :issue:`31690`.)
 
+selectors
+---------
+
+Added :const:`~selectors.EVENT_URGENT` module constant for urgent data to
+read event support. (Contributed by Pim Klanke in :issue:`30844`.)
+
 string
 ------
 
