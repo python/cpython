@@ -3256,9 +3256,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertTrue(t1 < t2)  # t1's offset counter still going up
 
     def test_fromisoformat(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         time_examples = [
             (0, 0, 0, 0),
             (23, 59, 59, 999999),
@@ -3286,9 +3283,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                     self.assertEqual(t, t_rt)
 
     def test_fromisoformat_timespecs(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         time_bases = [
             (8, 17, 45, 123456),
             (8, 17, 45, 0)
@@ -3316,14 +3310,14 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                         self.assertEqual(t, t_rt)
 
     def test_fromisoformat_fails(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         bad_strs = [
             '',                         # Empty string
             '12:',                      # Ends on a separator
             '12:30:',                   # Ends on a separator
             '12:30:15.',                # Ends on a separator
+            '1',                        # Incomplete hours
+            '12:3',                     # Incomplete minutes
+            '12:30:1',                  # Incomplete seconds
             '1a:30:45.334034',          # Invalid character in hours
             '12:a0:45.334034',          # Invalid character in minutes
             '12:30:a5.334034',          # Invalid character in seconds
@@ -3333,32 +3327,27 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456-24:30',    # Invalid negative offset
             '12：30：45',                 # Uses full-width unicode colons
             '12:30:45․123456',          # Uses \u2024 in place of decimal point
+            '12:30:45a',                # Extra at tend of basic time
+            '12:30:45.123a',            # Extra at end of millisecond time
+            '12:30:45.123456a',         # Extra at end of microsecond time
+            '12:30:45.123456+12:00a',   # Extra at end of full time
         ]
 
         for bad_str in bad_strs:
-            try:
+            with self.assertRaises(ValueError):
                 self.theclass.fromisoformat(bad_str)
-                self.assertTrue(False)
-            except ValueError:
-                pass
 
     def test_fromisoformat_fails_typeerror(self):
         # Test the fromisoformat fails when passed the wrong type
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         import io
 
         bad_types = [b'12:30:45', None, io.StringIO('12:30:45')]
 
         for bad_type in bad_types:
             with self.assertRaises(TypeError):
-                self.theclass(bad_type)
+                self.theclass.fromisoformat(bad_type)
 
     def test_fromisoformat_subclass(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         class TimeSubclass(self.theclass):
             pass
 
