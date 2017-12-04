@@ -9,71 +9,30 @@ import sys
 import traceback
 import types
 
-from . import compat
+from collections.abc import Awaitable, Coroutine
+
+from . import constants
 from . import events
 from . import base_futures
 from .log import logger
 
 
-# Opcode of "yield from" instruction
-_YIELD_FROM = opcode.opmap['YIELD_FROM']
-
-# If you set _DEBUG to true, @coroutine will wrap the resulting
-# generator objects in a CoroWrapper instance (defined below).  That
-# instance will log a message when the generator is never iterated
-# over, which may happen when you forget to use "yield from" with a
-# coroutine call.  Note that the value of the _DEBUG flag is taken
-# when the decorator is used, so to be of any use it must be set
-# before you define your coroutines.  A downside of using this feature
-# is that tracebacks show entries for the CoroWrapper.__next__ method
-# when _DEBUG is true.
-_DEBUG = (not sys.flags.ignore_environment and
-          bool(os.environ.get('PYTHONASYNCIODEBUG')))
-
-
-try:
-    _types_coroutine = types.coroutine
-    _types_CoroutineType = types.CoroutineType
-except AttributeError:
-    # Python 3.4
-    _types_coroutine = None
-    _types_CoroutineType = None
-
-try:
-    _inspect_iscoroutinefunction = inspect.iscoroutinefunction
-except AttributeError:
-    # Python 3.4
-    _inspect_iscoroutinefunction = lambda func: False
-
-try:
-    from collections.abc import Coroutine as _CoroutineABC, \
-                                Awaitable as _AwaitableABC
-except ImportError:
-    _CoroutineABC = _AwaitableABC = None
+def _is_debug_mode():
+    # If you set _DEBUG to true, @coroutine will wrap the resulting
+    # generator objects in a CoroWrapper instance (defined below).  That
+    # instance will log a message when the generator is never iterated
+    # over, which may happen when you forget to use "yield from" with a
+    # coroutine call.  Note that the value of the _DEBUG flag is taken
+    # when the decorator is used, so to be of any use it must be set
+    # before you define your coroutines.  A downside of using this feature
+    # is that tracebacks show entries for the CoroWrapper.__next__ method
+    # when _DEBUG is true.
+    return (sys.flags.dev_mode
+            or (not sys.flags.ignore_environment
+                and bool(os.environ.get('PYTHONASYNCIODEBUG'))))
 
 
-# Check for CPython issue #21209
-def has_yield_from_bug():
-    class MyGen:
-        def __init__(self):
-            self.send_args = None
-        def __iter__(self):
-            return self
-        def __next__(self):
-            return 42
-        def send(self, *what):
-            self.send_args = what
-            return None
-    def yield_from_gen(gen):
-        yield from gen
-    value = (1, 2, 3)
-    gen = MyGen()
-    coro = yield_from_gen(gen)
-    next(coro)
-    coro.send(value)
-    return gen.send_args != (value,)
-_YIELD_FROM_BUG = has_yield_from_bug()
-del has_yield_from_bug
+_DEBUG = _is_debug_mode()
 
 
 def debug_wrapper(gen):
@@ -91,7 +50,7 @@ class CoroWrapper:
         assert inspect.isgenerator(gen) or inspect.iscoroutine(gen), gen
         self.gen = gen
         self.func = func  # Used to unwrap @coroutine decorator
-        self._source_traceback = traceback.extract_stack(sys._getframe(1))
+        self._source_traceback = events.extract_stack(sys._getframe(1))
         self.__name__ = getattr(gen, '__name__', None)
         self.__qualname__ = getattr(gen, '__qualname__', None)
 
@@ -108,21 +67,8 @@ class CoroWrapper:
     def __next__(self):
         return self.gen.send(None)
 
-    if _YIELD_FROM_BUG:
-        # For for CPython issue #21209: using "yield from" and a custom
-        # generator, generator.send(tuple) unpacks the tuple instead of passing
-        # the tuple unchanged. Check if the caller is a generator using "yield
-        # from" to decide if the parameter should be unpacked or not.
-        def send(self, *value):
-            frame = sys._getframe()
-            caller = frame.f_back
-            assert caller.f_lasti >= 0
-            if caller.f_code.co_code[caller.f_lasti] != _YIELD_FROM:
-                value = value[0]
-            return self.gen.send(value)
-    else:
-        def send(self, value):
-            return self.gen.send(value)
+    def send(self, value):
+        return self.gen.send(value)
 
     def throw(self, type, value=None, traceback=None):
         return self.gen.throw(type, value, traceback)
@@ -142,35 +88,33 @@ class CoroWrapper:
     def gi_code(self):
         return self.gen.gi_code
 
-    if compat.PY35:
+    def __await__(self):
+        cr_await = getattr(self.gen, 'cr_await', None)
+        if cr_await is not None:
+            raise RuntimeError(
+                "Cannot await on coroutine {!r} while it's "
+                "awaiting for {!r}".format(self.gen, cr_await))
+        return self
 
-        def __await__(self):
-            cr_await = getattr(self.gen, 'cr_await', None)
-            if cr_await is not None:
-                raise RuntimeError(
-                    "Cannot await on coroutine {!r} while it's "
-                    "awaiting for {!r}".format(self.gen, cr_await))
-            return self
+    @property
+    def gi_yieldfrom(self):
+        return self.gen.gi_yieldfrom
 
-        @property
-        def gi_yieldfrom(self):
-            return self.gen.gi_yieldfrom
+    @property
+    def cr_await(self):
+        return self.gen.cr_await
 
-        @property
-        def cr_await(self):
-            return self.gen.cr_await
+    @property
+    def cr_running(self):
+        return self.gen.cr_running
 
-        @property
-        def cr_running(self):
-            return self.gen.cr_running
+    @property
+    def cr_code(self):
+        return self.gen.cr_code
 
-        @property
-        def cr_code(self):
-            return self.gen.cr_code
-
-        @property
-        def cr_frame(self):
-            return self.gen.cr_frame
+    @property
+    def cr_frame(self):
+        return self.gen.cr_frame
 
     def __del__(self):
         # Be careful accessing self.gen.frame -- self.gen might not exist.
@@ -183,8 +127,9 @@ class CoroWrapper:
             tb = getattr(self, '_source_traceback', ())
             if tb:
                 tb = ''.join(traceback.format_list(tb))
-                msg += ('\nCoroutine object created at '
-                        '(most recent call last):\n')
+                msg += (f'\nCoroutine object created at '
+                        f'(most recent call last, truncated to '
+                        f'{constants.DEBUG_STACK_DEPTH} last lines):\n')
                 msg += tb.rstrip()
             logger.error(msg)
 
@@ -195,7 +140,7 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
-    if _inspect_iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defined with "async def".
         # Wrapping in CoroWrapper will happen via
@@ -211,7 +156,7 @@ def coroutine(func):
             if (base_futures.isfuture(res) or inspect.isgenerator(res) or
                 isinstance(res, CoroWrapper)):
                 res = yield from res
-            elif _AwaitableABC is not None:
+            else:
                 # If 'func' returns an Awaitable (new in 3.5) we
                 # want to run it.
                 try:
@@ -219,15 +164,12 @@ def coroutine(func):
                 except AttributeError:
                     pass
                 else:
-                    if isinstance(res, _AwaitableABC):
+                    if isinstance(res, Awaitable):
                         res = yield from await_meth()
             return res
 
     if not _DEBUG:
-        if _types_coroutine is None:
-            wrapper = coro
-        else:
-            wrapper = _types_coroutine(coro)
+        wrapper = types.coroutine(coro)
     else:
         @functools.wraps(func)
         def wrapper(*args, **kwds):
@@ -252,17 +194,14 @@ _is_coroutine = object()
 
 def iscoroutinefunction(func):
     """Return True if func is a decorated coroutine function."""
-    return (getattr(func, '_is_coroutine', None) is _is_coroutine or
-            _inspect_iscoroutinefunction(func))
+    return (inspect.iscoroutinefunction(func) or
+            getattr(func, '_is_coroutine', None) is _is_coroutine)
 
 
-_COROUTINE_TYPES = (types.GeneratorType, CoroWrapper)
-if _CoroutineABC is not None:
-    _COROUTINE_TYPES += (_CoroutineABC,)
-if _types_CoroutineType is not None:
-    # Prioritize native coroutine check to speed-up
-    # asyncio.iscoroutine.
-    _COROUTINE_TYPES = (_types_CoroutineType,) + _COROUTINE_TYPES
+# Prioritize native coroutine check to speed-up
+# asyncio.iscoroutine.
+_COROUTINE_TYPES = (types.CoroutineType, types.GeneratorType,
+                    Coroutine, CoroWrapper)
 
 
 def iscoroutine(obj):

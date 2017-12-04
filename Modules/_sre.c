@@ -97,12 +97,12 @@ static const char copyright[] =
 #define SRE_IS_WORD(ch)\
     ((ch) < 128 && (Py_ISALNUM(ch) || (ch) == '_'))
 
-static unsigned int sre_lower(unsigned int ch)
+static unsigned int sre_lower_ascii(unsigned int ch)
 {
     return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
 }
 
-static unsigned int sre_upper(unsigned int ch)
+static unsigned int sre_upper_ascii(unsigned int ch)
 {
     return ((ch) < 128 ? Py_TOUPPER(ch) : ch);
 }
@@ -187,6 +187,15 @@ sre_category(SRE_CODE category, unsigned int ch)
     }
     return 0;
 }
+
+LOCAL(int)
+char_loc_ignore(SRE_CODE pattern, SRE_CODE ch)
+{
+    return ch == pattern
+        || (SRE_CODE) sre_lower_locale(ch) == pattern
+        || (SRE_CODE) sre_upper_locale(ch) == pattern;
+}
+
 
 /* helpers */
 
@@ -286,7 +295,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch != sre_lower(ch) || ch != sre_upper(ch);
+    return ch != sre_lower_ascii(ch) || ch != sre_upper_ascii(ch);
 }
 
 /*[clinic input]
@@ -317,7 +326,7 @@ static int
 _sre_ascii_tolower_impl(PyObject *module, int character)
 /*[clinic end generated code: output=228294ed6ff2a612 input=272c609b5b61f136]*/
 {
-    return sre_lower(character);
+    return sre_lower_ascii(character);
 }
 
 /*[clinic input]
@@ -447,19 +456,6 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->string = string;
     state->pos = start;
     state->endpos = end;
-
-    if (pattern->flags & SRE_FLAG_LOCALE) {
-        state->lower = sre_lower_locale;
-        state->upper = sre_upper_locale;
-    }
-    else if (pattern->flags & SRE_FLAG_UNICODE) {
-        state->lower = sre_lower_unicode;
-        state->upper = sre_upper_unicode;
-    }
-    else {
-        state->lower = sre_lower;
-        state->upper = sre_upper;
-    }
 
     return string;
   err:
@@ -1533,7 +1529,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
             break;
 
         case SRE_OP_RANGE:
-        case SRE_OP_RANGE_IGNORE:
+        case SRE_OP_RANGE_UNI_IGNORE:
             GET_ARG;
             GET_ARG;
             break;
@@ -1630,6 +1626,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_NOT_LITERAL:
         case SRE_OP_LITERAL_IGNORE:
         case SRE_OP_NOT_LITERAL_IGNORE:
+        case SRE_OP_LITERAL_UNI_IGNORE:
+        case SRE_OP_NOT_LITERAL_UNI_IGNORE:
         case SRE_OP_LITERAL_LOC_IGNORE:
         case SRE_OP_NOT_LITERAL_LOC_IGNORE:
             GET_ARG;
@@ -1669,6 +1667,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_IN:
         case SRE_OP_IN_IGNORE:
+        case SRE_OP_IN_UNI_IGNORE:
         case SRE_OP_IN_LOC_IGNORE:
             GET_SKIP;
             /* Stop 1 before the end; we check the FAILURE below */
@@ -1805,6 +1804,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_GROUPREF:
         case SRE_OP_GROUPREF_IGNORE:
+        case SRE_OP_GROUPREF_UNI_IGNORE:
+        case SRE_OP_GROUPREF_LOC_IGNORE:
             GET_ARG;
             if (arg >= (size_t)groups)
                 FAIL;

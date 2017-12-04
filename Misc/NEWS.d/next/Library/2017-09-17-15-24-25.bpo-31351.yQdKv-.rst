@@ -1,2 +1,0 @@
-python -m ensurepip now exits with non-zero exit code if pip bootstrapping
-has failed.

@@ -1,0 +1,3 @@
+Add a ``subprocess.Popen(text=False)`` keyword argument to `subprocess`
+functions to be more explicit about when the library should attempt to
+decode outputs into text. Patch by Andrew Clegg.

@@ -11,6 +11,7 @@
 #include "pythonrun.h"
 
 #include <assert.h>
+#include <stdbool.h>
 
 static int validate_stmts(asdl_seq *);
 static int validate_exprs(asdl_seq *, expr_context_ty, int);
@@ -611,7 +612,7 @@ static stmt_ty ast_for_with_stmt(struct compiling *, const node *, int);
 static stmt_ty ast_for_for_stmt(struct compiling *, const node *, int);
 
 /* Note different signature for ast_for_call */
-static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
+static expr_ty ast_for_call(struct compiling *, const node *, expr_ty, bool);
 
 static PyObject *parsenumber(struct compiling *, const char *);
 static expr_ty parsestrplus(struct compiling *, const node *n);
@@ -1545,7 +1546,7 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else {
-        d = ast_for_call(c, CHILD(n, 3), name_expr);
+        d = ast_for_call(c, CHILD(n, 3), name_expr, true);
         if (!d)
             return NULL;
         name_expr = NULL;
@@ -2368,7 +2369,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             return Call(left_expr, NULL, NULL, LINENO(n),
                         n->n_col_offset, c->c_arena);
         else
-            return ast_for_call(c, CHILD(n, 1), left_expr);
+            return ast_for_call(c, CHILD(n, 1), left_expr, true);
     }
     else if (TYPE(CHILD(n, 0)) == DOT) {
         PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
@@ -2705,14 +2706,14 @@ ast_for_expr(struct compiling *c, const node *n)
 }
 
 static expr_ty
-ast_for_call(struct compiling *c, const node *n, expr_ty func)
+ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
 {
     /*
       arglist: argument (',' argument)*  [',']
       argument: ( test [comp_for] | '*' test | test '=' test | '**' test )
     */
 
-    int i, nargs, nkeywords, ngens;
+    int i, nargs, nkeywords;
     int ndoublestars;
     asdl_seq *args;
     asdl_seq *keywords;
@@ -2721,14 +2722,22 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 
     nargs = 0;
     nkeywords = 0;
-    ngens = 0;
     for (i = 0; i < NCH(n); i++) {
         node *ch = CHILD(n, i);
         if (TYPE(ch) == argument) {
             if (NCH(ch) == 1)
                 nargs++;
-            else if (TYPE(CHILD(ch, 1)) == comp_for)
-                ngens++;
+            else if (TYPE(CHILD(ch, 1)) == comp_for) {
+                nargs++;
+                if (!allowgen) {
+                    ast_error(c, ch, "invalid syntax");
+                    return NULL;
+                }
+                if (NCH(n) > 1) {
+                    ast_error(c, ch, "Generator expression must be parenthesized");
+                    return NULL;
+                }
+            }
             else if (TYPE(CHILD(ch, 0)) == STAR)
                 nargs++;
             else
@@ -2736,13 +2745,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 nkeywords++;
         }
     }
-    if (ngens > 1 || (ngens && (nargs || nkeywords))) {
-        ast_error(c, n, "Generator expression must be parenthesized "
-                  "if not sole argument");
-        return NULL;
-    }
 
-    args = _Py_asdl_seq_new(nargs + ngens, c->c_arena);
+    args = _Py_asdl_seq_new(nargs, c->c_arena);
     if (!args)
         return NULL;
     keywords = _Py_asdl_seq_new(nkeywords, c->c_arena);
@@ -3974,7 +3978,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (!dummy_name)
             return NULL;
         dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset, c->c_arena);
-        call = ast_for_call(c, CHILD(n, 3), dummy);
+        call = ast_for_call(c, CHILD(n, 3), dummy, false);
         if (!call)
             return NULL;
     }
@@ -4147,7 +4151,7 @@ decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 
 static int
 warn_invalid_escape_sequence(struct compiling *c, const node *n,
-                             char first_invalid_escape_char)
+                             unsigned char first_invalid_escape_char)
 {
     PyObject *msg = PyUnicode_FromFormat("invalid escape sequence \\%c",
                                          first_invalid_escape_char);
@@ -4156,18 +4160,19 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     }
     if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
                                    c->c_filename, LINENO(n),
-                                   NULL, NULL) < 0 &&
-        PyErr_ExceptionMatches(PyExc_DeprecationWarning))
+                                   NULL, NULL) < 0)
     {
-        const char *s;
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            const char *s;
 
-        /* Replace the DeprecationWarning exception with a SyntaxError
-           to get a more accurate error report */
-        PyErr_Clear();
+            /* Replace the DeprecationWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
 
-        s = PyUnicode_AsUTF8(msg);
-        if (s != NULL) {
-            ast_error(c, n, s);
+            s = PyUnicode_AsUTF8(msg);
+            if (s != NULL) {
+                ast_error(c, n, s);
+            }
         }
         Py_DECREF(msg);
         return -1;
@@ -4287,7 +4292,7 @@ static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
 
    `parent` is the enclosing node.
    `n` is the node which locations are going to be fixed relative to parent.
-   `expr_str` is the child node's string representation, incuding braces.
+   `expr_str` is the child node's string representation, including braces.
 */
 static void
 fstring_fix_node_location(const node *parent, node *n, char *expr_str)

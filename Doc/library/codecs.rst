@@ -802,7 +802,7 @@ The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
 
 
-.. class:: StreamReaderWriter(stream, Reader, Writer, errors)
+.. class:: StreamReaderWriter(stream, Reader, Writer, errors='strict')
 
    Creates a :class:`StreamReaderWriter` instance. *stream* must be a file-like
    object. *Reader* and *Writer* must be factory functions or classes providing the
@@ -826,7 +826,7 @@ The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
 
 
-.. class:: StreamRecoder(stream, encode, decode, Reader, Writer, errors)
+.. class:: StreamRecoder(stream, encode, decode, Reader, Writer, errors='strict')
 
    Creates a :class:`StreamRecoder` instance which implements a two-way conversion:
    *encode* and *decode* work on the frontend — the data visible to

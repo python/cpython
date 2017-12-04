@@ -267,7 +267,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    should be about 16 or more bytes from a proper source, e.g. :func:`os.urandom`.
 
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
-   factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MB).
+   factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
 
    Availability: OpenSSL 1.1+

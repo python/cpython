@@ -1,0 +1,4 @@
+The warnings module doesn't leak memory anymore in the hidden warnings
+registry for the "ignore" action of warnings filters. warn_explicit()
+function doesn't add the warning key to the registry anymore for the
+"ignore" action.

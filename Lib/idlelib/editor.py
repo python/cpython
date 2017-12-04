@@ -99,10 +99,6 @@ class EditorWindow(object):
         self.flist = flist
         root = root or flist.root
         self.root = root
-        try:
-            sys.ps1
-        except AttributeError:
-            sys.ps1 = '>>> '
         self.menubar = Menu(root)
         self.top = top = windows.ListedToplevel(root, menu=self.menubar)
         if flist:
@@ -116,6 +112,8 @@ class EditorWindow(object):
             self.top.instance_dict = {}
         self.recent_files_path = os.path.join(
                 idleConf.userdir, 'recent-files.lst')
+
+        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         self.width = idleConf.GetOption('main', 'EditorWindow',
@@ -670,7 +668,7 @@ class EditorWindow(object):
 
     def open_path_browser(self, event=None):
         from idlelib import pathbrowser
-        pathbrowser.PathBrowser(self.flist)
+        pathbrowser.PathBrowser(self.root)
         return "break"
 
     def open_turtle_demo(self, event = None):
@@ -1213,13 +1211,9 @@ class EditorWindow(object):
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
-        if self.context_use_ps1:
-            last_line_of_prompt = sys.ps1.split('\n')[-1]
-        else:
-            last_line_of_prompt = ''
         ncharsdeleted = 0
         while 1:
-            if chars == last_line_of_prompt:
+            if chars == self.prompt_last_line:  # '' unless PyShell
                 break
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
@@ -1288,8 +1282,7 @@ class EditorWindow(object):
             indent = line[:i]
             # strip whitespace before insert point unless it's in the prompt
             i = 0
-            last_line_of_prompt = sys.ps1.split('\n')[-1]
-            while line and line[-1] in " \t" and line != last_line_of_prompt:
+            while line and line[-1] in " \t" and line != self.prompt_last_line:
                 line = line[:-1]
                 i = i+1
             if i:

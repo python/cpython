@@ -1,2 +1,0 @@
-Maintain a list of open buffered files, flush them before exiting the
-interpreter.  Based on a patch from Armin Rigo.

@@ -412,8 +412,6 @@ def _default_mime_types():
         '.bin'    : 'application/octet-stream',
         '.bmp'    : 'image/x-ms-bmp',
         '.c'      : 'text/plain',
-        # Duplicates :(
-        '.cdf'    : 'application/x-cdf',
         '.cdf'    : 'application/x-netcdf',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
@@ -522,8 +520,6 @@ def _default_mime_types():
         '.wsdl'   : 'application/xml',
         '.xbm'    : 'image/x-xbitmap',
         '.xlb'    : 'application/vnd.ms-excel',
-        # Duplicates :(
-        '.xls'    : 'application/excel',
         '.xls'    : 'application/vnd.ms-excel',
         '.xml'    : 'text/xml',
         '.xpdl'   : 'application/xml',

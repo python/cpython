@@ -46,22 +46,22 @@ typedef uint32_t digit;
 typedef int32_t sdigit; /* signed variant of digit */
 typedef uint64_t twodigits;
 typedef int64_t stwodigits; /* signed variant of twodigits */
-#define PyLong_SHIFT	30
-#define _PyLong_DECIMAL_SHIFT	9 /* max(e such that 10**e fits in a digit) */
-#define _PyLong_DECIMAL_BASE	((digit)1000000000) /* 10 ** DECIMAL_SHIFT */
+#define PyLong_SHIFT    30
+#define _PyLong_DECIMAL_SHIFT   9 /* max(e such that 10**e fits in a digit) */
+#define _PyLong_DECIMAL_BASE    ((digit)1000000000) /* 10 ** DECIMAL_SHIFT */
 #elif PYLONG_BITS_IN_DIGIT == 15
 typedef unsigned short digit;
 typedef short sdigit; /* signed variant of digit */
 typedef unsigned long twodigits;
 typedef long stwodigits; /* signed variant of twodigits */
-#define PyLong_SHIFT	15
-#define _PyLong_DECIMAL_SHIFT	4 /* max(e such that 10**e fits in a digit) */
-#define _PyLong_DECIMAL_BASE	((digit)10000) /* 10 ** DECIMAL_SHIFT */
+#define PyLong_SHIFT    15
+#define _PyLong_DECIMAL_SHIFT   4 /* max(e such that 10**e fits in a digit) */
+#define _PyLong_DECIMAL_BASE    ((digit)10000) /* 10 ** DECIMAL_SHIFT */
 #else
 #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
 #endif
-#define PyLong_BASE	((digit)1 << PyLong_SHIFT)
-#define PyLong_MASK	((digit)(PyLong_BASE - 1))
+#define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
+#define PyLong_MASK     ((digit)(PyLong_BASE - 1))
 
 #if PyLong_SHIFT % 5 != 0
 #error "longobject.c requires that PyLong_SHIFT be divisible by 5"
@@ -69,12 +69,12 @@ typedef long stwodigits; /* signed variant of twodigits */
 
 /* Long integer representation.
    The absolute value of a number is equal to
-   	SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
+        SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
    Negative numbers are represented with ob_size < 0;
    zero is represented by ob_size == 0.
    In a normalized number, ob_digit[abs(ob_size)-1] (the most significant
    digit) is never zero.  Also, in all cases, for all valid i,
-   	0 <= ob_digit[i] <= MASK.
+        0 <= ob_digit[i] <= MASK.
    The allocation function takes care of allocating extra memory
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
 
@@ -83,8 +83,8 @@ typedef long stwodigits; /* signed variant of twodigits */
 */
 
 struct _longobject {
-	PyObject_VAR_HEAD
-	digit ob_digit[1];
+    PyObject_VAR_HEAD
+    digit ob_digit[1];
 };
 
 PyAPI_FUNC(PyLongObject *) _PyLong_New(Py_ssize_t);

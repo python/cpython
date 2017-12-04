@@ -35,32 +35,57 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-void
-_PyRuntimeState_Init(_PyRuntimeState *runtime)
+static _PyInitError
+_PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 {
     memset(runtime, 0, sizeof(*runtime));
 
-    _PyObject_Initialize(&runtime->obj);
-    _PyMem_Initialize(&runtime->mem);
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
 
     runtime->gilstate.check_enabled = 1;
-    runtime->gilstate.autoTLSkey = -1;
+
+    /* A TSS key must be initialized with Py_tss_NEEDS_INIT
+       in accordance with the specification. */
+    Py_tss_t initial = Py_tss_NEEDS_INIT;
+    runtime->gilstate.autoTSSkey = initial;
 
     runtime->interpreters.mutex = PyThread_allocate_lock();
-    if (runtime->interpreters.mutex == NULL)
-        Py_FatalError("Can't initialize threads for interpreter");
+    if (runtime->interpreters.mutex == NULL) {
+        return _Py_INIT_ERR("Can't initialize threads for interpreter");
+    }
+
     runtime->interpreters.next_id = -1;
+    return _Py_INIT_OK();
+}
+
+_PyInitError
+_PyRuntimeState_Init(_PyRuntimeState *runtime)
+{
+    /* Force default allocator, since _PyRuntimeState_Fini() must
+       use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    _PyInitError err = _PyRuntimeState_Init_impl(runtime);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return err;
 }
 
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+    /* Force the allocator used by _PyRuntimeState_Init(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     if (runtime->interpreters.mutex != NULL) {
         PyThread_free_lock(runtime->interpreters.mutex);
         runtime->interpreters.mutex = NULL;
     }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
@@ -69,7 +94,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
-void
+_PyInitError
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     runtime->interpreters.next_id = 0;
@@ -78,9 +103,11 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
        initialized here. */
     if (runtime->interpreters.mutex == NULL) {
         runtime->interpreters.mutex = PyThread_allocate_lock();
-        if (runtime->interpreters.mutex == NULL)
-            Py_FatalError("Can't initialize threads for interpreter");
+        if (runtime->interpreters.mutex == NULL) {
+            return _Py_INIT_ERR("Can't initialize threads for interpreter");
+        }
     }
+    return _Py_INIT_OK();
 }
 
 PyInterpreterState *
@@ -89,55 +116,60 @@ PyInterpreterState_New(void)
     PyInterpreterState *interp = (PyInterpreterState *)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
-    if (interp != NULL) {
-        interp->modules = NULL;
-        interp->modules_by_index = NULL;
-        interp->sysdict = NULL;
-        interp->builtins = NULL;
-        interp->builtins_copy = NULL;
-        interp->tstate_head = NULL;
-        interp->check_interval = 100;
-        interp->num_threads = 0;
-        interp->pythread_stacksize = 0;
-        interp->codec_search_path = NULL;
-        interp->codec_search_cache = NULL;
-        interp->codec_error_registry = NULL;
-        interp->codecs_initialized = 0;
-        interp->fscodec_initialized = 0;
-        interp->importlib = NULL;
-        interp->import_func = NULL;
-        interp->eval_frame = _PyEval_EvalFrameDefault;
-        interp->co_extra_user_count = 0;
+    if (interp == NULL) {
+        return NULL;
+    }
+
+
+    interp->modules = NULL;
+    interp->modules_by_index = NULL;
+    interp->sysdict = NULL;
+    interp->builtins = NULL;
+    interp->builtins_copy = NULL;
+    interp->tstate_head = NULL;
+    interp->check_interval = 100;
+    interp->num_threads = 0;
+    interp->pythread_stacksize = 0;
+    interp->codec_search_path = NULL;
+    interp->codec_search_cache = NULL;
+    interp->codec_error_registry = NULL;
+    interp->codecs_initialized = 0;
+    interp->fscodec_initialized = 0;
+    interp->core_config = _PyCoreConfig_INIT;
+    interp->config = _PyMainInterpreterConfig_INIT;
+    interp->importlib = NULL;
+    interp->import_func = NULL;
+    interp->eval_frame = _PyEval_EvalFrameDefault;
+    interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
-        interp->dlopenflags = RTLD_NOW;
+    interp->dlopenflags = RTLD_NOW;
 #else
-        interp->dlopenflags = RTLD_LAZY;
+    interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
 #ifdef HAVE_FORK
-        interp->before_forkers = NULL;
-        interp->after_forkers_parent = NULL;
-        interp->after_forkers_child = NULL;
+    interp->before_forkers = NULL;
+    interp->after_forkers_parent = NULL;
+    interp->after_forkers_child = NULL;
 #endif
 
-        HEAD_LOCK();
-        interp->next = _PyRuntime.interpreters.head;
-        if (_PyRuntime.interpreters.main == NULL) {
-            _PyRuntime.interpreters.main = interp;
-        }
-        _PyRuntime.interpreters.head = interp;
-        if (_PyRuntime.interpreters.next_id < 0) {
-            /* overflow or Py_Initialize() not called! */
-            PyErr_SetString(PyExc_RuntimeError,
-                            "failed to get an interpreter ID");
-            interp = NULL;
-        } else {
-            interp->id = _PyRuntime.interpreters.next_id;
-            _PyRuntime.interpreters.next_id += 1;
-        }
-        HEAD_UNLOCK();
+    HEAD_LOCK();
+    interp->next = _PyRuntime.interpreters.head;
+    if (_PyRuntime.interpreters.main == NULL) {
+        _PyRuntime.interpreters.main = interp;
     }
+    _PyRuntime.interpreters.head = interp;
+    if (_PyRuntime.interpreters.next_id < 0) {
+        /* overflow or Py_Initialize() not called! */
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to get an interpreter ID");
+        interp = NULL;
+    } else {
+        interp->id = _PyRuntime.interpreters.next_id;
+        _PyRuntime.interpreters.next_id += 1;
+    }
+    HEAD_UNLOCK();
 
     return interp;
 }
@@ -240,6 +272,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->recursion_depth = 0;
         tstate->overflowed = 0;
         tstate->recursion_critical = 0;
+        tstate->stackcheck_counter = 0;
         tstate->tracing = 0;
         tstate->use_tracing = 0;
         tstate->gilstate_counter = 0;
@@ -252,9 +285,11 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->curexc_value = NULL;
         tstate->curexc_traceback = NULL;
 
-        tstate->exc_type = NULL;
-        tstate->exc_value = NULL;
-        tstate->exc_traceback = NULL;
+        tstate->exc_state.exc_type = NULL;
+        tstate->exc_state.exc_value = NULL;
+        tstate->exc_state.exc_traceback = NULL;
+        tstate->exc_state.previous_item = NULL;
+        tstate->exc_info = &tstate->exc_state;
 
         tstate->c_profilefunc = NULL;
         tstate->c_tracefunc = NULL;
@@ -439,9 +474,16 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->curexc_value);
     Py_CLEAR(tstate->curexc_traceback);
 
-    Py_CLEAR(tstate->exc_type);
-    Py_CLEAR(tstate->exc_value);
-    Py_CLEAR(tstate->exc_traceback);
+    Py_CLEAR(tstate->exc_state.exc_type);
+    Py_CLEAR(tstate->exc_state.exc_value);
+    Py_CLEAR(tstate->exc_state.exc_traceback);
+
+    /* The stack of exception states should contain just this thread. */
+    assert(tstate->exc_info->previous_item == NULL);
+    if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state) {
+        fprintf(stderr,
+          "PyThreadState_Clear: warning: thread still has a generator\n");
+    }
 
     tstate->c_profilefunc = NULL;
     tstate->c_tracefunc = NULL;
@@ -485,9 +527,9 @@ PyThreadState_Delete(PyThreadState *tstate)
     if (tstate == GET_TSTATE())
         Py_FatalError("PyThreadState_Delete: tstate is still current");
     if (_PyRuntime.gilstate.autoInterpreterState &&
-        PyThread_get_key_value(_PyRuntime.gilstate.autoTLSkey) == tstate)
+        PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey) == tstate)
     {
-        PyThread_delete_key_value(_PyRuntime.gilstate.autoTLSkey);
+        PyThread_tss_set(&_PyRuntime.gilstate.autoTSSkey, NULL);
     }
     tstate_delete_common(tstate);
 }
@@ -502,9 +544,9 @@ PyThreadState_DeleteCurrent()
             "PyThreadState_DeleteCurrent: no current tstate");
     tstate_delete_common(tstate);
     if (_PyRuntime.gilstate.autoInterpreterState &&
-        PyThread_get_key_value(_PyRuntime.gilstate.autoTLSkey) == tstate)
+        PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey) == tstate)
     {
-        PyThread_delete_key_value(_PyRuntime.gilstate.autoTLSkey);
+        PyThread_tss_set(&_PyRuntime.gilstate.autoTSSkey, NULL);
     }
     SET_TSTATE(NULL);
     PyEval_ReleaseLock();
@@ -761,11 +803,11 @@ void
 _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
 {
     assert(i && t); /* must init with valid states */
-    _PyRuntime.gilstate.autoTLSkey = PyThread_create_key();
-    if (_PyRuntime.gilstate.autoTLSkey == -1)
-        Py_FatalError("Could not allocate TLS entry");
+    if (PyThread_tss_create(&_PyRuntime.gilstate.autoTSSkey) != 0) {
+        Py_FatalError("Could not allocate TSS entry");
+    }
     _PyRuntime.gilstate.autoInterpreterState = i;
-    assert(PyThread_get_key_value(_PyRuntime.gilstate.autoTLSkey) == NULL);
+    assert(PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey) == NULL);
     assert(t->gilstate_counter == 0);
 
     _PyGILState_NoteThreadState(t);
@@ -780,14 +822,13 @@ _PyGILState_GetInterpreterStateUnsafe(void)
 void
 _PyGILState_Fini(void)
 {
-    PyThread_delete_key(_PyRuntime.gilstate.autoTLSkey);
-    _PyRuntime.gilstate.autoTLSkey = -1;
+    PyThread_tss_delete(&_PyRuntime.gilstate.autoTSSkey);
     _PyRuntime.gilstate.autoInterpreterState = NULL;
 }
 
-/* Reset the TLS key - called by PyOS_AfterFork_Child().
+/* Reset the TSS key - called by PyOS_AfterFork_Child().
  * This should not be necessary, but some - buggy - pthread implementations
- * don't reset TLS upon fork(), see issue #10517.
+ * don't reset TSS upon fork(), see issue #10517.
  */
 void
 _PyGILState_Reinit(void)
@@ -796,15 +837,18 @@ _PyGILState_Reinit(void)
     if (_PyRuntime.interpreters.mutex == NULL)
         Py_FatalError("Can't initialize threads for interpreter");
     PyThreadState *tstate = PyGILState_GetThisThreadState();
-    PyThread_delete_key(_PyRuntime.gilstate.autoTLSkey);
-    if ((_PyRuntime.gilstate.autoTLSkey = PyThread_create_key()) == -1)
-        Py_FatalError("Could not allocate TLS entry");
+    PyThread_tss_delete(&_PyRuntime.gilstate.autoTSSkey);
+    if (PyThread_tss_create(&_PyRuntime.gilstate.autoTSSkey) != 0) {
+        Py_FatalError("Could not allocate TSS entry");
+    }
 
     /* If the thread had an associated auto thread state, reassociate it with
      * the new key. */
-    if (tstate && PyThread_set_key_value(_PyRuntime.gilstate.autoTLSkey,
-                                         (void *)tstate) < 0)
-        Py_FatalError("Couldn't create autoTLSkey mapping");
+    if (tstate &&
+        PyThread_tss_set(&_PyRuntime.gilstate.autoTSSkey, (void *)tstate) != 0)
+    {
+        Py_FatalError("Couldn't create autoTSSkey mapping");
+    }
 }
 
 /* When a thread state is created for a thread by some mechanism other than
@@ -815,13 +859,13 @@ _PyGILState_Reinit(void)
 static void
 _PyGILState_NoteThreadState(PyThreadState* tstate)
 {
-    /* If autoTLSkey isn't initialized, this must be the very first
+    /* If autoTSSkey isn't initialized, this must be the very first
        threadstate created in Py_Initialize().  Don't do anything for now
        (we'll be back here when _PyGILState_Init is called). */
     if (!_PyRuntime.gilstate.autoInterpreterState)
         return;
 
-    /* Stick the thread state for this thread in thread local storage.
+    /* Stick the thread state for this thread in thread specific storage.
 
        The only situation where you can legitimately have more than one
        thread state for an OS level thread is when there are multiple
@@ -833,12 +877,11 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
        The first thread state created for that given OS level thread will
        "win", which seems reasonable behaviour.
     */
-    if (PyThread_get_key_value(_PyRuntime.gilstate.autoTLSkey) == NULL) {
-        if ((PyThread_set_key_value(_PyRuntime.gilstate.autoTLSkey,
-                                    (void *)tstate)
-             ) < 0)
+    if (PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey) == NULL) {
+        if ((PyThread_tss_set(&_PyRuntime.gilstate.autoTSSkey, (void *)tstate)
+             ) != 0)
         {
-            Py_FatalError("Couldn't create autoTLSkey mapping");
+            Py_FatalError("Couldn't create autoTSSkey mapping");
         }
     }
 
@@ -852,8 +895,7 @@ PyGILState_GetThisThreadState(void)
 {
     if (_PyRuntime.gilstate.autoInterpreterState == NULL)
         return NULL;
-    return (PyThreadState *)PyThread_get_key_value(
-                _PyRuntime.gilstate.autoTLSkey);
+    return (PyThreadState *)PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey);
 }
 
 int
@@ -864,8 +906,9 @@ PyGILState_Check(void)
     if (!_PyGILState_check_enabled)
         return 1;
 
-    if (_PyRuntime.gilstate.autoTLSkey == -1)
+    if (!PyThread_tss_is_created(&_PyRuntime.gilstate.autoTSSkey)) {
         return 1;
+    }
 
     tstate = GET_TSTATE();
     if (tstate == NULL)
@@ -879,6 +922,8 @@ PyGILState_Ensure(void)
 {
     int current;
     PyThreadState *tcur;
+    int need_init_threads = 0;
+
     /* Note that we do not auto-init Python here - apart from
        potential races with 2 threads auto-initializing, pep-311
        spells out other issues.  Embedders are expected to have
@@ -886,13 +931,10 @@ PyGILState_Ensure(void)
     */
     /* Py_Initialize() hasn't been called! */
     assert(_PyRuntime.gilstate.autoInterpreterState);
-    tcur = (PyThreadState *)PyThread_get_key_value(
-                _PyRuntime.gilstate.autoTLSkey);
+
+    tcur = (PyThreadState *)PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey);
     if (tcur == NULL) {
-        /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
-           called from a new thread for the first time, we need the create the
-           GIL. */
-        PyEval_InitThreads();
+        need_init_threads = 1;
 
         /* Create a new thread state for this thread */
         tcur = PyThreadState_New(_PyRuntime.gilstate.autoInterpreterState);
@@ -903,24 +945,36 @@ PyGILState_Ensure(void)
         tcur->gilstate_counter = 0;
         current = 0; /* new thread state is never current */
     }
-    else
+    else {
         current = PyThreadState_IsCurrent(tcur);
-    if (current == 0)
+    }
+
+    if (current == 0) {
         PyEval_RestoreThread(tcur);
+    }
+
     /* Update our counter in the thread-state - no need for locks:
        - tcur will remain valid as we hold the GIL.
        - the counter is safe as we are the only thread "allowed"
          to modify this value
     */
     ++tcur->gilstate_counter;
+
+    if (need_init_threads) {
+        /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
+           called from a new thread for the first time, we need the create the
+           GIL. */
+        PyEval_InitThreads();
+    }
+
     return current ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 
 void
 PyGILState_Release(PyGILState_STATE oldstate)
 {
-    PyThreadState *tcur = (PyThreadState *)PyThread_get_key_value(
-                                _PyRuntime.gilstate.autoTLSkey);
+    PyThreadState *tcur = (PyThreadState *)PyThread_tss_get(
+                                &_PyRuntime.gilstate.autoTSSkey);
     if (tcur == NULL)
         Py_FatalError("auto-releasing thread-state, "
                       "but no thread-state for this thread");

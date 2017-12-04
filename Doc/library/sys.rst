@@ -334,6 +334,7 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
+   :const:`dev_mode`             :option:`-X` ``dev``
    ============================= =============================
 
    .. versionchanged:: 3.2
@@ -344,6 +345,9 @@ always available.
 
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
+
+   .. versionchanged:: 3.7
+      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag.
 
 
 .. data:: float_info
@@ -1275,9 +1279,9 @@ always available.
      Under all platforms though, you can override this value by setting the
      :envvar:`PYTHONIOENCODING` environment variable before starting Python.
 
-   * When interactive, standard streams are line-buffered.  Otherwise, they
-     are block-buffered like regular text files.  You can override this
-     value with the :option:`-u` command-line option.
+   * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
+     Otherwise, they are block-buffered like regular text files.  You can
+     override this value with the :option:`-u` command-line option.
 
    .. note::
 
@@ -1336,7 +1340,7 @@ always available.
    |                  |  * ``None`` if this information is unknown              |
    +------------------+---------------------------------------------------------+
    | :const:`version` | Name and version of the thread library. It is a string, |
-   |                  | or ``None`` if these informations are unknown.          |
+   |                  | or ``None`` if this information is unknown.             |
    +------------------+---------------------------------------------------------+
 
    .. versionadded:: 3.3
