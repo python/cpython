@@ -2850,7 +2850,10 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
     // Issue 32028: Handle case when whitespace is used with print call
     PyObject *initial_data = _PyUnicode_XStrip(self->text, STRIP_BOTH, strip_sep_obj);
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(initial_data);
-    PyObject *data = PyUnicode_Substring(initial_data, PRINT_OFFSET, text_len);
+    PyObject *data = _PyUnicode_XStrip( \
+        PyUnicode_Substring(initial_data, PRINT_OFFSET, text_len), \
+        STRIP_BOTH, strip_sep_obj);
+
     Py_DECREF(initial_data);
     Py_DECREF(strip_sep_obj);
 
