@@ -1521,11 +1521,23 @@ fblock_unwind_except(struct compiler *c, struct fblockinfo *info, int preserve_t
     return 1;
 }
 
+/* exiting from a try body, emit code for the final body */
 static int
 fblock_unwind_finally_try(struct compiler *c, struct fblockinfo *info, int preserve_tos)
 {
+    struct fblockinfo f = c->u->u_fblock[c->u->u_nfblocks-1]; /* top block */
     ADDOP(c, POP_BLOCK);
+    /* pop current block, we don't want exits from final body to unwind it */
+    compiler_pop_fblock(c, f.fb_type, f.fb_block);
+    /* emit code for final body.  This causes the code for the final body to be
+     * duplicated for every exit from the try body.  That's wasteful in terms
+     * of bytecode but is simpler than jumping to the final body and then
+     * returning again (e.g. push return address, have final body pop address
+     * and jump back.  It seems that Java compilers do the same duplication.
+     */
     VISIT_SEQ(c, stmt, info->fb_datum);
+    /* restore current block, we may be emitting more code for the try body */
+    compiler_push_fblock(c, f.fb_type, f.fb_block, f.fb_unwind, f.fb_datum, f.fb_exit);
     return 1;
 }
 
