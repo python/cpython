@@ -43,11 +43,11 @@ number of platforms, with Windows, Mac OS X, GTK, X11, all listed as
 current stable targets.  Language bindings are available for a number
 of languages including Python, Perl, Ruby, etc.
 
-wxPython (https://www.wxpython.org) is the Python binding for wxwidgets.
-While it often lags slightly behind the official wxWidgets releases, it also
-offers a number of features via pure Python extensions that are not
-available in other language bindings.  There is an active wxPython user and
-developer community.
+`wxPython <https://www.wxpython.org>`_ is the Python binding for
+wxwidgets.  While it often lags slightly behind the official wxWidgets
+releases, it also offers a number of features via pure Python
+extensions that are not available in other language bindings.  There
+is an active wxPython user and developer community.
 
 Both wxWidgets and wxPython are free, open source, software with
 permissive licences that allow their use in commercial products as
