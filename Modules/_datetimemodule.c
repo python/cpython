@@ -730,8 +730,9 @@ static int parse_isoformat_date(const char *dtstr,
     }                                               \
 }
 
-static int parse_isoformat_time(const char *dtstr, int* hour, int *minute, int *second,
-                        int* microsecond, int *tzoffset) {
+static int
+parse_isoformat_time(const char *dtstr, int* hour, int *minute, int *second,
+                     int* microsecond, int *tzoffset) {
     // Parse the time portion of a datetime.isoformat() string
     //
     // Return codes:
@@ -798,6 +799,7 @@ parse_timezone:;
 
     return 1;
 }
+
 
 /* ---------------------------------------------------------------------------
  * Create various objects, mostly without range checking.
@@ -1197,6 +1199,27 @@ append_keyword_fold(PyObject *repr, int fold)
     repr = PyUnicode_FromFormat("%U, fold=%d)", temp, fold);
     Py_DECREF(temp);
     return repr;
+}
+
+static inline PyObject *
+tzinfo_from_isoformat_results(int rv, int tzoffset) {
+    PyObject *tzinfo;
+    if (rv == 1) {
+        // Create a timezone from offset in seconds (0 returns UTC)
+        if (tzoffset == 0) {
+            Py_INCREF(PyDateTime_TimeZone_UTC);
+            return PyDateTime_TimeZone_UTC;
+        }
+
+        PyObject *delta = new_delta(0, tzoffset, 0, 1);
+        tzinfo = new_timezone(delta, NULL);
+        Py_XDECREF(delta);
+    } else {
+        tzinfo = Py_None;
+        Py_INCREF(Py_None);
+    }
+
+    return tzinfo;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2779,7 +2802,6 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
         PyErr_SetString(PyExc_TypeError, "fromisoformat: argument must be str");
         return NULL;
     }
-    assert(dtstr != NULL || PyUnicode_Check(dtstr));
 
     Py_ssize_t len;
 
@@ -4154,6 +4176,45 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     return clone;
 }
 
+static PyObject *
+time_fromisoformat(PyObject *cls, PyObject *tstr) {
+    assert(tstr != NULL);
+
+    if (!PyUnicode_Check(tstr)) {
+        PyErr_SetString(PyExc_TypeError, "fromisoformat: argument must be str");
+        return NULL;
+    }
+
+    const char *p = PyUnicode_AsUTF8(tstr);
+
+    int hour = 0, minute = 0, second = 0, microsecond = 0, tzoffset = 0;
+    int rv = parse_isoformat_time(p, &hour, &minute, &second, &microsecond,
+                                  &tzoffset);
+
+    if (rv < 0) {
+        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", p);
+        return NULL;
+    }
+
+    PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset);
+
+    if (tzinfo == NULL) {
+        return NULL;
+    }
+
+    PyObject *t;
+    if ( (PyTypeObject *)cls == &PyDateTime_TimeType ) {
+        t = new_time(hour, minute, second, microsecond, tzinfo, 0);
+    } else {
+        t = PyObject_CallFunction(cls, "iiiiO",
+                                  hour, minute, second, microsecond, tzinfo);
+    }
+
+    Py_DECREF(tzinfo);
+    return t;
+}
+
+
 /* Pickle support, a simple use of __reduce__. */
 
 /* Let basestate be the non-tzinfo data string.
@@ -4222,6 +4283,9 @@ static PyMethodDef time_methods[] = {
 
     {"replace",     (PyCFunction)time_replace,          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},
+
+     {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
+     PyDoc_STR("string -> time from time.isoformat() output")},
 
     {"__reduce_ex__", (PyCFunction)time_reduce_ex,        METH_VARARGS,
      PyDoc_STR("__reduce_ex__(proto) -> (cls, state)")},
@@ -4726,27 +4790,17 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
         }
 
         rv = parse_isoformat_time(p, &hour, &minute, &second,
-                                 &microsecond, &tzoffset);
+                                  &microsecond, &tzoffset);
     }
     if (rv < 0) {
         PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", dt_ptr);
         return NULL;
     }
 
-
-    PyObject* tzinfo = NULL;
-    if (rv == 1) {        
-        if( tzoffset == 0 ) {
-            tzinfo = PyDateTime_TimeZone_UTC;
-        } else {
-            PyObject* delta = new_delta(0, tzoffset, 0, 1);
-            tzinfo = new_timezone(delta, NULL);
-            Py_DECREF(delta);
-        }
-    } else {
-        tzinfo = Py_None;
+    PyObject* tzinfo = tzinfo_from_isoformat_results(rv, tzoffset);
+    if (tzinfo == NULL) {
+        return NULL;
     }
-    Py_INCREF(tzinfo);
 
     PyObject* dt;
     if ( (PyTypeObject*)cls == &PyDateTime_DateTimeType ) {
