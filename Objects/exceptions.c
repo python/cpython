@@ -2849,30 +2849,23 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
     const int STRIP_BOTH = 2;
     // Issue 32028: Handle case when whitespace is used with print call
     PyObject *initial_data = _PyUnicode_XStrip(self->text, STRIP_BOTH, strip_sep_obj);
-
     if (initial_data == NULL) {
         Py_DECREF(strip_sep_obj);
         return -1;
     }
-
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(initial_data);
-
     PyObject *data = PyUnicode_Substring(initial_data, PRINT_OFFSET, text_len);
     Py_DECREF(initial_data);
-
     if (data == NULL) {
         Py_DECREF(strip_sep_obj);
         return -1;
     }
-
     PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
     Py_DECREF(data);
     Py_DECREF(strip_sep_obj);
-
     if (new_data == NULL) {
         return -1;
     }
-
     // gets the modified text_len after stripping `print `
     text_len = PyUnicode_GET_LENGTH(new_data);
     const char *maybe_end_arg = "";
