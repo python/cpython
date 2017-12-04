@@ -1,0 +1,6 @@
+Improve tk event exception tracebacks in IDLE.
+When tk event handling is driven by IDLE's run loop, a confusing
+and distracting queue.EMPTY traceback context is no longer added
+to tk event exception tracebacks.  The traceback is now the same
+as when event handling is driven by user code.  Patch based on a
+suggestion by Serhiy Storchaka.
