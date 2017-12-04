@@ -1,0 +1,1 @@
+uuid.getnode() now returns the MAC address on Android.
