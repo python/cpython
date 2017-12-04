@@ -1,0 +1,1 @@
+Added support of splitting on a pattern that could match an empty string.

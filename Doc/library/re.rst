@@ -708,37 +708,19 @@ form.
    That way, separator components are always found at the same relative
    indices within the result list.
 
-   .. note::
+   The pattern can match empty strings. ::
 
-      :func:`split` doesn't currently split a string on an empty pattern match.
-      For example::
-
-         >>> re.split('x*', 'axbc')
-         ['a', 'bc']
-
-      Even though ``'x*'`` also matches 0 'x' before 'a', between 'b' and 'c',
-      and after 'c', currently these matches are ignored.  The correct behavior
-      (i.e. splitting on empty matches too and returning ``['', 'a', 'b', 'c',
-      '']``) will be implemented in future versions of Python, but since this
-      is a backward incompatible change, a :exc:`FutureWarning` will be raised
-      in the meanwhile.
-
-      Patterns that can only match empty strings currently never split the
-      string.  Since this doesn't match the expected behavior, a
-      :exc:`ValueError` will be raised starting from Python 3.5::
-
-         >>> re.split("^$", "foo\n\nbar\n", flags=re.M)
-         Traceback (most recent call last):
-           File "<stdin>", line 1, in <module>
-           ...
-         ValueError: split() requires a non-empty pattern match.
+      >>> re.split(r'\b', 'Words, words, words.')
+      ['', 'Words', ', ', 'words', ', ', 'words', '.']
+      >>> re.split(r'(\W*)', '...words...')
+      ['', '...', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '']
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
 
-   .. versionchanged:: 3.5
-      Splitting on a pattern that could match an empty string now raises
-      a warning.  Patterns that can only match empty strings are now rejected.
+   .. versionchanged:: 3.7
+      Added support of splitting on a pattern that could match an empty string.
+
 
 .. function:: findall(pattern, string, flags=0)
 
@@ -746,8 +728,10 @@ form.
    strings.  The *string* is scanned left-to-right, and matches are returned in
    the order found.  If one or more groups are present in the pattern, return a
    list of groups; this will be a list of tuples if the pattern has more than
-   one group.  Empty matches are included in the result unless they touch the
-   beginning of another match.
+   one group.  Empty matches are included in the result.
+
+   .. versionchanged:: 3.7
+      Non-empty matches can now start just after a previous empty match.
 
 
 .. function:: finditer(pattern, string, flags=0)
@@ -755,8 +739,10 @@ form.
    Return an :term:`iterator` yielding :ref:`match objects <match-objects>` over
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
    is scanned left-to-right, and matches are returned in the order found.  Empty
-   matches are included in the result unless they touch the beginning of another
-   match.
+   matches are included in the result.
+
+   .. versionchanged:: 3.7
+      Non-empty matches can now start just after a previous empty match.
 
 
 .. function:: sub(pattern, repl, string, count=0, flags=0)

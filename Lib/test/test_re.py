@@ -331,21 +331,21 @@ class ReTests(unittest.TestCase):
                          ['', 'a', '', '', 'c'])
 
         for sep, expected in [
-            (':*', ['', 'a', 'b', 'c']),
-            ('(?::*)', ['', 'a', 'b', 'c']),
-            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c']),
-            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c']),
+            (':*', ['', 'a', 'b', 'c', '']),
+            ('(?::*)', ['', 'a', 'b', 'c', '']),
+            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c', '', '']),
+            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c', None, '']),
         ]:
-            with self.subTest(sep=sep), self.assertWarns(FutureWarning):
+            with self.subTest(sep=sep):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
         for sep, expected in [
-            ('', [':a:b::c']),
-            (r'\b', [':a:b::c']),
-            (r'(?=:)', [':a:b::c']),
-            (r'(?<=:)', [':a:b::c']),
+            ('', ['', ':', 'a', ':', 'b', ':', ':', 'c', '']),
+            (r'\b', [':', 'a', ':', 'b', '::', 'c', '']),
+            (r'(?=:)', ['', ':a', ':b', ':', ':c']),
+            (r'(?<=:)', [':', 'a:', 'b:', ':', 'c']),
         ]:
-            with self.subTest(sep=sep), self.assertRaises(ValueError):
+            with self.subTest(sep=sep):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
     def test_qualified_re_split(self):
@@ -356,9 +356,8 @@ class ReTests(unittest.TestCase):
                          ['', ':', 'a', ':', 'b::c'])
         self.assertEqual(re.split("(:+)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
-        with self.assertWarns(FutureWarning):
-            self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
-                             ['', ':', 'a', ':', 'b::c'])
+        self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
+                         ['', ':', 'a', ':', 'b::c'])
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
@@ -1751,6 +1750,25 @@ class ReTests(unittest.TestCase):
                          "span=(3, 5), match='bb'>" %
                          (type(second).__module__, type(second).__qualname__))
 
+    def test_zerowidth(self):
+        # Issues 852532, 1647489, 3262, 25054.
+        self.assertEqual(re.split(r"\b", "a::bc"), ['', 'a', '::', 'bc', ''])
+        self.assertEqual(re.split(r"\b|:+", "a::bc"), ['', 'a', '', 'bc', ''])
+        self.assertEqual(re.split(r"(?<!\w)(?=\w)|:+", "a::bc"), ['', 'a', 'bc'])
+        self.assertEqual(re.split(r"(?<=\w)(?!\w)|:+", "a::bc"), ['a', '', 'bc', ''])
+
+        self.assertEqual(re.sub(r"\b", "-", "a::bc"), '-a-::-bc-')
+        self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a--bc-')
+        self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::]bc[]')
+
+        self.assertEqual(re.findall(r"\b|:+", "a::bc"), ['', '', '::', '', ''])
+        self.assertEqual(re.findall(r"\b|\w+", "a::bc"),
+                         ['', 'a', '', '', 'bc', ''])
+
+        self.assertEqual([m.span() for m in re.finditer(r"\b|:+", "a::bc")],
+                         [(0, 0), (1, 1), (1, 3), (3, 3), (5, 5)])
+        self.assertEqual([m.span() for m in re.finditer(r"\b|\w+", "a::bc")],
+                         [(0, 0), (0, 1), (1, 1), (3, 3), (3, 5), (5, 5)])
 
     def test_bug_2537(self):
         # issue 2537: empty submatches
