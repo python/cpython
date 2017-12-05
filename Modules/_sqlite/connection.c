@@ -1602,7 +1602,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
             }
 #else
             Py_ssize_t size;
-            const wchar_t *wide = PyUnicode_AsWideCharString(target, &size);
+            wchar_t *wide = PyUnicode_AsWideCharString(target, &size);
 
             if (wide != NULL) {
                 if (!DeleteFileW(wide)) {
