@@ -1607,8 +1607,6 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
             if (wide != NULL) {
                 if (!DeleteFileW(wide)) {
                     PyMem_Free(wide);
-                    /* FIXME: this should probably be chained to the outstanding
-                       exception */
                     (void) PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
                                                                         GetLastError(),
                                                                         target);
