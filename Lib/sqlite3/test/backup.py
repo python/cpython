@@ -1,7 +1,9 @@
 import os
 import sqlite3 as sqlite
-from tempfile import NamedTemporaryFile
 import unittest
+
+from test import support
+
 
 @unittest.skipIf(sqlite.sqlite_version_info < (3, 6, 11), "Backup API not supported")
 class BackupTests(unittest.TestCase):
@@ -10,6 +12,14 @@ class BackupTests(unittest.TestCase):
         cx.execute('CREATE TABLE foo (key INTEGER)')
         cx.executemany('INSERT INTO foo (key) VALUES (?)', [(3,), (4,)])
         cx.commit()
+        os.mkdir(support.TESTFN)
+        self.addCleanup(support.rmtree, support.TESTFN)
+        self.temp_counter = 0
+
+    @property
+    def temp_file_name(self):
+        self.temp_counter += 1
+        return os.path.join(support.TESTFN, 'bcktest_%d' % self.temp_counter)
 
     def tearDown(self):
         self.cx.close()
@@ -29,9 +39,9 @@ class BackupTests(unittest.TestCase):
             self.cx.backup('foo', 1)
 
     def CheckSimple(self):
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name)
-            self.testBackup(bckfn.name)
+        bckfn = self.temp_file_name
+        self.cx.backup(bckfn)
+        self.testBackup(bckfn)
 
     def CheckProgress(self):
         journal = []
@@ -39,9 +49,9 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(status)
 
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, pages=1, progress=progress)
-            self.testBackup(bckfn.name)
+        bckfn = self.temp_file_name
+        self.cx.backup(bckfn, pages=1, progress=progress)
+        self.testBackup(bckfn)
 
         self.assertEqual(len(journal), 2)
         self.assertEqual(journal[0], sqlite.SQLITE_OK)
@@ -53,9 +63,9 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(remaining)
 
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, progress=progress)
-            self.testBackup(bckfn.name)
+        bckfn = self.temp_file_name
+        self.cx.backup(bckfn, progress=progress)
+        self.testBackup(bckfn)
 
         self.assertEqual(len(journal), 1)
         self.assertEqual(journal[0], 0)
@@ -66,18 +76,18 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(remaining)
 
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, pages=-1, progress=progress)
-            self.testBackup(bckfn.name)
+        bckfn = self.temp_file_name
+        self.cx.backup(bckfn, pages=-1, progress=progress)
+        self.testBackup(bckfn)
 
         self.assertEqual(len(journal), 1)
         self.assertEqual(journal[0], 0)
 
     def CheckNonCallableProgress(self):
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            with self.assertRaises(TypeError) as err:
-                self.cx.backup(bckfn.name, pages=1, progress='bar')
-            self.assertEqual(str(err.exception), 'progress argument must be a callable')
+        bckfn = self.temp_file_name
+        with self.assertRaises(TypeError) as err:
+            self.cx.backup(bckfn, pages=1, progress='bar')
+        self.assertEqual(str(err.exception), 'progress argument must be a callable')
 
     def CheckModifyingProgress(self):
         journal = []
@@ -88,15 +98,15 @@ class BackupTests(unittest.TestCase):
                 self.cx.commit()
             journal.append(remaining)
 
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, pages=1, progress=progress)
-            self.testBackup(bckfn.name)
+        bckfn = self.temp_file_name
+        self.cx.backup(bckfn, pages=1, progress=progress)
+        self.testBackup(bckfn)
 
-            cx = sqlite.connect(bckfn.name)
-            result = cx.execute("SELECT key FROM foo"
-                                " WHERE key >= 1000"
-                                " ORDER BY key").fetchall()
-            self.assertEqual(result[0][0], 1001)
+        cx = sqlite.connect(bckfn)
+        result = cx.execute("SELECT key FROM foo"
+                            " WHERE key >= 1000"
+                            " ORDER BY key").fetchall()
+        self.assertEqual(result[0][0], 1001)
 
         self.assertEqual(len(journal), 3)
         self.assertEqual(journal[0], 1)
@@ -107,26 +117,26 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             raise SystemError('nearly out of space')
 
-        with NamedTemporaryFile(suffix='.sqlite', delete=False) as bckfn:
-            with self.assertRaises(SystemError) as err:
-                self.cx.backup(bckfn.name, progress=progress)
-            self.assertEqual(str(err.exception), 'nearly out of space')
-            self.assertFalse(os.path.exists(bckfn.name))
+        bckfn = self.temp_file_name
+        with self.assertRaises(SystemError) as err:
+            self.cx.backup(bckfn, progress=progress)
+        self.assertEqual(str(err.exception), 'nearly out of space')
+        self.assertFalse(os.path.exists(bckfn))
 
     def CheckDatabaseSourceName(self):
-        with NamedTemporaryFile(suffix='.sqlite', delete=False) as bckfn:
-            self.cx.backup(bckfn.name, name='main')
-            self.cx.backup(bckfn.name, name='temp')
-            with self.assertRaises(sqlite.OperationalError):
-                self.cx.backup(bckfn.name, name='non-existing')
-            self.assertFalse(os.path.exists(bckfn.name))
+        bckfn = self.temp_file_name
+        self.cx.backup(bckfn, name='main')
+        self.cx.backup(bckfn, name='temp')
+        with self.assertRaises(sqlite.OperationalError):
+            self.cx.backup(bckfn, name='non-existing')
+        self.assertFalse(os.path.exists(bckfn))
         self.cx.execute("ATTACH DATABASE ':memory:' AS attached_db")
         self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
         self.cx.executemany('INSERT INTO attached_db.foo (key) VALUES (?)', [(3,), (4,)])
         self.cx.commit()
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, name='attached_db')
-            self.testBackup(bckfn.name)
+        bckfn = self.temp_file_name
+        self.cx.backup(bckfn, name='attached_db')
+        self.testBackup(bckfn)
 
     def CheckBackupToOtherConnection(self):
         dx = sqlite.connect(':memory:')
