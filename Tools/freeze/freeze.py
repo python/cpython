@@ -217,7 +217,12 @@ def main():
 
     # locations derived from options
     version = '%d.%d' % sys.version_info[:2]
-    flagged_version = version + sys.abiflags
+    if sys.platform != "win32":
+        # on Windows this will make freeze traceback
+        # because abiflags is not in sys.
+        flaggedver_sion = version + sys.abiflags
+    else:
+        flaggedver_sion = version
     if win:
         extensions_c = 'frozen_extensions.c'
     if ishome:
