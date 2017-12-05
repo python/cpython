@@ -24,7 +24,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #else
-extern int unlink(const char *);
+#ifdef MS_WINDOWS
+#include <windows.h>
+#endif
 #endif
 
 #include "cache.h"
@@ -1578,12 +1580,18 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         Py_INCREF(Py_None);
         retval = Py_None;
     } else {
+#ifdef MS_WINDOWS
+#define unlink(fpath) !DeleteFileW(fpath)
+#endif
         /* Remove the probably incomplete/invalid backup */
         if (filename != NULL && unlink(filename) < 0) {
             /* FIXME: this should probably be chained to the outstanding
                exception */
             return PyErr_SetFromErrno(PyExc_OSError);
         }
+#ifdef MS_WINDOWS
+#undef unlink
+#endif
     }
 
 finally:
