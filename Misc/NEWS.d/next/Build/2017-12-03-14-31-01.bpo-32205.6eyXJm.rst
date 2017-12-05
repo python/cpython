@@ -1,0 +1,1 @@
+test.pythoninfo now prints the cross-built sysconfig data
