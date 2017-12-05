@@ -270,9 +270,9 @@ def library_recipes():
     if PYTHON_3:
         result.extend([
           dict(
-              name="XZ 5.2.2",
-              url="http://tukaani.org/xz/xz-5.2.2.tar.gz",
-              checksum='7cf6a8544a7dae8e8106fdf7addfa28c',
+              name="XZ 5.2.3",
+              url="http://tukaani.org/xz/xz-5.2.3.tar.gz",
+              checksum='ef68674fb47a8b8e741b34e429d86e9d',
               configure_pre=[
                     '--disable-dependency-tracking',
               ]
