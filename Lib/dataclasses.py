@@ -709,7 +709,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, **kwargs):
     of either (name, type) or (name, type, Field) objects. Field
     objects are created by calling 'field(name, type [, Field])'.
 
-      C = make_class('C', [('a', int), ('b', int, Field(init=False))], bases=Base)
+      C = make_dataclass('C', [('a', int), ('b', int, Field(init=False))], bases=Base)
 
     is equivalent to:
 
