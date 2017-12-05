@@ -1466,7 +1466,7 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
     assert(u->u_fblock[u->u_nfblocks].fb_block == b);
 }
 
-/* Unwind a frame blocks.  If *preserve_tos* is true, the TOS before
+/* Unwind a frame block.  If preserve_tos is true, the TOS before
  * popping the blocks will be restored afterwards.
  */
 static int
@@ -1506,71 +1506,18 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
         case HANDLER_CLEANUP:
             if (preserve_tos)
                 ADDOP(c, ROT_FOUR);
-            if (info->fb_exit)
+            if (info->fb_exit) {
                 ADDOP(c, POP_BLOCK);
-            ADDOP(c, POP_EXCEPT);
-            if (info->fb_exit)
+                ADDOP(c, POP_EXCEPT);
                 ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+            }
+            else {
+                ADDOP(c, POP_EXCEPT);
+            }
             return 1;
     }
     Py_UNREACHABLE();
 }
-
-/* Helpers to push various kinds of frame blocks */
-
-static int
-compiler_push_for_loop(struct compiler *c, basicblock *start,
-                       basicblock *exit)
-{
-    return compiler_push_fblock(c, FOR_LOOP, start, exit);
-}
-
-static int
-compiler_push_while_loop(struct compiler *c, basicblock *start,
-                         basicblock *exit)
-{
-    return compiler_push_fblock(c, WHILE_LOOP, start, exit);
-}
-
-static int
-compiler_push_except(struct compiler *c, basicblock *try)
-{
-    return compiler_push_fblock(c, EXCEPT, try, NULL);
-}
-
-static int
-compiler_push_finally_try(struct compiler *c, basicblock *block,
-                          basicblock *cleanup)
-{
-    return compiler_push_fblock(c, FINALLY_TRY, block, cleanup);
-}
-
-static int
-compiler_push_with(struct compiler *c, basicblock *block, basicblock *cleanup)
-{
-    return compiler_push_fblock(c, WITH, block, cleanup);
-}
-
-static int
-compiler_push_async_with(struct compiler *c, basicblock *block,
-                         basicblock *cleanup)
-{
-    return compiler_push_fblock(c, ASYNC_WITH, block, cleanup);
-}
-
-static int
-compiler_push_finally_end(struct compiler *c, basicblock *final)
-{
-    return compiler_push_fblock(c, FINALLY_END, final, NULL);
-}
-
-static int
-compiler_push_except_handler(struct compiler *c, basicblock *body,
-                             basicblock *cleanup)
-{
-    return compiler_push_fblock(c, HANDLER_CLEANUP, body, cleanup);
-}
-
 
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
@@ -2410,7 +2357,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     if (start == NULL || end == NULL || cleanup == NULL)
         return 0;
 
-    if (!compiler_push_for_loop(c, start, end))
+    if (!compiler_push_fblock(c, FOR_LOOP, start, end))
         return 0;
 
     VISIT(c, expr, s->v.For.iter);
@@ -2455,7 +2402,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
             || after_try == NULL || try_cleanup == NULL)
         return 0;
 
-    if (!compiler_push_for_loop(c, try, after_loop))
+    if (!compiler_push_fblock(c, FOR_LOOP, try, after_loop))
         return 0;
 
     VISIT(c, expr, s->v.AsyncFor.iter);
@@ -2466,7 +2413,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     /* SETUP_EXCEPT to guard the __anext__ call */
     ADDOP_JREL(c, SETUP_EXCEPT, except);
-    if (!compiler_push_except(c, try))
+    if (!compiler_push_fblock(c, EXCEPT, try, NULL))
         return 0;
 
     ADDOP(c, GET_ANEXT);
@@ -2489,6 +2436,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
+    ADDOP(c, POP_TOP);  /* pop iterator from stack */
     ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
 
 
@@ -2508,7 +2456,6 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     /* `else` block */
     compiler_use_next_block(c, after_loop_else);
-    ADDOP(c, POP_TOP);  /* pop iterator from stack */
     VISIT_SEQ(c, stmt, s->v.For.orelse);
 
     compiler_use_next_block(c, end);
@@ -2545,7 +2492,7 @@ compiler_while(struct compiler *c, stmt_ty s)
         orelse = NULL;
 
     compiler_use_next_block(c, loop);
-    if (!compiler_push_while_loop(c, loop, end))
+    if (!compiler_push_fblock(c, WHILE_LOOP, loop, end))
         return 0;
     if (constant == -1) {
         if (!compiler_jump_if(c, s->v.While.test, anchor, 0))
@@ -2572,22 +2519,23 @@ compiler_while(struct compiler *c, stmt_ty s)
 static int
 compiler_return(struct compiler *c, stmt_ty s)
 {
+    int preserve_tos = (s->v.Return.value != NULL);
     if (c->u->u_ste->ste_type != FunctionBlock)
         return compiler_error(c, "'return' outside function");
-    if (s->v.Return.value) {
+    if (preserve_tos) {
         if (c->u->u_ste->ste_coroutine && c->u->u_ste->ste_generator)
             return compiler_error(
                 c, "'return' with value in async generator");
         VISIT(c, expr, s->v.Return.value);
     }
-    else
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
-    /* Unwind all frame blocks but preserve TOS */
     for (int depth = c->u->u_nfblocks; depth--;) {
         struct fblockinfo *info = &c->u->u_fblock[depth];
 
-        if (!compiler_unwind_fblock(c, info, 1))
+        if (!compiler_unwind_fblock(c, info, preserve_tos))
             return 0;
+    }
+    if (!preserve_tos) {
+        ADDOP_O(c, LOAD_CONST, Py_None, consts);
     }
     ADDOP(c, RETURN_VALUE);
 
@@ -2613,9 +2561,6 @@ compiler_break(struct compiler *c)
 static int
 compiler_continue(struct compiler *c)
 {
-    static const char LOOP_ERROR_MSG[] = "'continue' not properly in loop";
-    static const char IN_FINALLY_ERROR_MSG[] =
-                    "'continue' not supported inside 'finally' clause";
     for (int depth = c->u->u_nfblocks; depth--;) {
         struct fblockinfo *info = &c->u->u_fblock[depth];
 
@@ -2624,22 +2569,23 @@ compiler_continue(struct compiler *c)
             return 1;
         }
         if (info->fb_type == FINALLY_END) {
-            return compiler_error(c, IN_FINALLY_ERROR_MSG);
+            return compiler_error(c,
+                    "'continue' not supported inside 'finally' clause");
         }
         if (!compiler_unwind_fblock(c, info, 0))
             return 0;
     }
-    return compiler_error(c, LOOP_ERROR_MSG);
+    return compiler_error(c, "'continue' not properly in loop");
 }
 
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
-        SETUP_FINALLY           F
+        SETUP_FINALLY           L
         <code for body>
         POP_BLOCK
         PUSH_NO_EXCEPT
-    F:
+    L:
         <code for finalbody>
         END_FINALLY
     EXIT:
@@ -2681,7 +2627,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     /* `try` block */
     ADDOP_JREL(c, SETUP_FINALLY, final);
     compiler_use_next_block(c, body);
-    if (!compiler_push_finally_try(c, body, final))
+    if (!compiler_push_fblock(c, FINALLY_TRY, body, final))
         return 0;
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
         if (!compiler_try_except(c, s))
@@ -2696,7 +2642,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 
     /* `finally` block */
     compiler_use_next_block(c, final);
-    if (!compiler_push_finally_end(c, final))
+    if (!compiler_push_fblock(c, FINALLY_END, final, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
@@ -2751,7 +2697,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         return 0;
     ADDOP_JREL(c, SETUP_EXCEPT, except);
     compiler_use_next_block(c, body);
-    if (!compiler_push_except(c, body))
+    if (!compiler_push_fblock(c, EXCEPT, body, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
     ADDOP(c, POP_BLOCK);
@@ -2802,7 +2748,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* second try: */
             ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
             compiler_use_next_block(c, cleanup_body);
-            if (!compiler_push_except_handler(c, cleanup_body, cleanup_end))
+            if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, cleanup_end))
                 return 0;
 
             /* second # body */
@@ -2814,7 +2760,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /* finally: */
             compiler_use_next_block(c, cleanup_end);
-            if (!compiler_push_finally_end(c, cleanup_end))
+            if (!compiler_push_fblock(c, FINALLY_END, cleanup_end, NULL))
                 return 0;
 
             /* name = None; del name */
@@ -2835,7 +2781,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP(c, POP_TOP);
             ADDOP(c, POP_TOP);
             compiler_use_next_block(c, cleanup_body);
-            if (!compiler_push_except_handler(c, cleanup_body, NULL))
+            if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL))
                 return 0;
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             ADDOP(c, POP_EXCEPT);
@@ -4059,7 +4005,7 @@ compiler_async_comprehension_generator(struct compiler *c,
 
 
     ADDOP_JREL(c, SETUP_EXCEPT, except);
-    if (!compiler_push_except(c, try))
+    if (!compiler_push_fblock(c, EXCEPT, try, NULL))
         return 0;
 
     ADDOP(c, GET_ANEXT);
@@ -4379,7 +4325,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     ADDOP_JREL(c, SETUP_FINALLY, final);
     compiler_use_next_block(c, block);
-    if (!compiler_push_async_with(c, block, final))
+    if (!compiler_push_fblock(c, ASYNC_WITH, block, final))
         return 0;
 
     pos++;
@@ -4396,7 +4342,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* `finally` block: await __exit__(*exc_info) */
     compiler_use_next_block(c, final);
-    if (!compiler_push_finally_end(c, final))
+    if (!compiler_push_fblock(c, FINALLY_END, final, NULL))
         return 0;
 
     ADDOP(c, WITH_CLEANUP_START);
@@ -4466,7 +4412,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     ADDOP_JREL(c, SETUP_FINALLY, final);
     compiler_use_next_block(c, block);
-    if (!compiler_push_with(c, block, final))
+    if (!compiler_push_fblock(c, WITH, block, final))
         return 0;
 
     pos++;
@@ -4483,7 +4429,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* `finally` block */
     compiler_use_next_block(c, final);
-    if (!compiler_push_finally_end(c, final))
+    if (!compiler_push_fblock(c, FINALLY_END, final, NULL))
         return 0;
 
     ADDOP(c, WITH_CLEANUP_START);
