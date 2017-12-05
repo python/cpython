@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "frameobject.h"
+#include "internal/pystate.h"
 
 
 static PyInterpreterState *
