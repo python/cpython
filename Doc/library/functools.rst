@@ -379,7 +379,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.7
-   The :func:`register` attribute supports using type annotations.
+      The :func:`register` attribute supports using type annotations.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
