@@ -1,0 +1,1 @@
+Update OS X installer to use SQLite 3.21.0.
