@@ -2394,10 +2394,8 @@ class TestDateTime(TestDate):
         # Test that isoformat() is reversible
         base_dates = [
             (1, 1, 1),
-            (1000, 2, 14),
             (1900, 1, 1),
             (2004, 11, 12),
-            (2004, 4, 3),
             (2017, 5, 30)
         ]
 
@@ -2405,16 +2403,10 @@ class TestDateTime(TestDate):
             (0, 0, 0, 0),
             (0, 0, 0, 241000),
             (0, 0, 0, 234567),
-            (23, 59, 47),
             (12, 30, 45, 234567)
         ]
 
-        separators = [
-            ' ', 'T', '\u007f',     # 1-bit widths
-            '\u0080', 'ʁ',          # 2-bit widths
-            'ᛇ', '時',               # 3-bit widths
-            '🐍'                     # 4-bit widths
-        ]
+        separators = [' ', 'T']
 
         tzinfos = [None, timezone.utc,
                    timezone(timedelta(hours=-5)),
@@ -2433,6 +2425,22 @@ class TestDateTime(TestDate):
                 with self.subTest(dtstr=dtstr):
                     dt_rt = self.theclass.fromisoformat(dtstr)
                     self.assertEqual(dt, dt_rt)
+
+    def test_fromisoformat_separators(self):
+        separators = [
+            ' ', 'T', '\u007f',     # 1-bit widths
+            '\u0080', 'ʁ',          # 2-bit widths
+            'ᛇ', '時',               # 3-bit widths
+            '🐍'                     # 4-bit widths
+        ]
+
+        for sep in separators:
+            dt = self.theclass(2018, 1, 31, 23, 59, 47, 124789)
+            dtstr = dt.isoformat(sep=sep)
+
+            with self.subTest(dtstr=dtstr):
+                dt_rt = self.theclass.fromisoformat(dtstr)
+                self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_timespecs(self):
         datetime_bases = [
