@@ -14,8 +14,10 @@ import string
 import textwrap
 import shutil
 import subprocess
+import tempfile
 
-from android_utils import (adb_push_to_dir, run_script, AndroidError)
+from android_utils import (adb_push_to_dir, run_script, AndroidError,
+                           adb_pull)
 
 # Maximum file name size on nearly all current file systems.
 MAX_FNAME_SIZE = 255
@@ -29,7 +31,7 @@ Set the environment by sourcing python_shell.sh with the following command:
 
 """
 
-def build_script():
+def build_script(argv=None, result_fname=None):
     script = """
         # Set the environment variables and change the current directory to
         # SYS_EXEC_PREFIX.
@@ -43,7 +45,7 @@ def build_script():
 
     """
     script = textwrap.dedent(script)
-    if len(sys.argv) == 1:
+    if argv is None:
         script_name = 'python_shell.sh'
 
         # The adb shell starts up with an annoying 80 characters width, use
@@ -53,14 +55,19 @@ def build_script():
         script += 'export COLUMNS=$COLUMNS\n'
     else:
         args = ''.join(map(lambda c: c if c.isalnum() else '_',
-                           '_'.join(sys.argv[1:])))
+                           '_'.join(argv)))
         s = 'python_%s.sh' % args
         l = len(s)
         if l > MAX_FNAME_SIZE:
             slice = MAX_FNAME_SIZE // 2 - 2
             s = s[:slice] + '____' + s[l - slice:]
         script_name = s
-        script += 'python %s\n' % ' '.join(sys.argv[1:])
+        if result_fname is not None:
+            script += 'mkdir -p tmp\n'
+            script += '> tmp/%s\n' % result_fname
+        script += 'python %s\n' % ' '.join(argv)
+        if result_fname is not None:
+            script += 'echo -n $$? > tmp/%s\n' % result_fname
 
     script_path = os.path.join(os.environ['DIST_DIR'], script_name)
     with open(script_path, 'w') as f:
@@ -69,8 +76,6 @@ def build_script():
     return script_path
 
 def main():
-    script_path = build_script()
-
     # The adb shell is mksh (The MirBSD Korn Shell) and it would be possible
     # to update its configuration file at /system/etc/mkshrc on Android to add
     # those environment variables by remounting /system read-write when root
@@ -79,18 +84,45 @@ def main():
     # See
     # http://stackoverflow.com/questions/11950131/android-adb-shell-ash-or-ksh.
     if len(sys.argv) == 1:
+        script_path = build_script()
         bin_dir = os.path.join(os.environ['SYS_EXEC_PREFIX'], 'bin')
         adb_push_to_dir(script_path, bin_dir)
         print(string.Template(USAGE).substitute(os.environ))
-    else:
-        run_script(script_path)
+        return 0
+
+    try:
+        fd, fn = tempfile.mkstemp()
+        os.close(fd)
+        basename = os.path.split(fn)[1]
+        script_path = build_script(sys.argv[1:], basename)
+        try:
+            run_script(script_path)
+            adb_pull(os.path.join(os.environ['SYS_EXEC_PREFIX'],
+                                  'tmp', basename), fn)
+            with open(fn) as f:
+                result = f.read()
+            if not result:
+                raise AndroidError('Error: no return code from %s' %
+                                    os.path.basename(script_path))
+            return int(result)
+        finally:
+            # Remove the file on Android.
+            script_path = build_script(['-c', '"from os import unlink; '
+                                        'unlink(\\"tmp/%s\\")"' % basename])
+            run_script(script_path)
+    finally:
+        try:
+            os.unlink(fn)
+        except OSError:
+            pass
 
 if __name__ == "__main__":
     try:
-        main()
+        st = main()
     except subprocess.CalledProcessError as e:
         print('CalledProcessError: Command %(cmd)s: stdout=<%(output)s> '
                'stderr=<%(stderr)s>' % e.__dict__, file=sys.stderr)
-        sys.exit(1)
+        st = 1
     except AndroidError as e:
-        sys.exit(e)
+        st = e
+    sys.exit(st)

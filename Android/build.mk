@@ -214,7 +214,7 @@ $(PY_STDLIB_ZIP): python_dist
 	        -x \*.so \*.pyo \*opt-\*.pyc
 
 # Make things clean, before making a distribution.
-distclean: hostclean
+distclean: kill_emulator hostclean
 	rm -f $(PYTHON_ZIP)
 	rm -f $(PY_STDLIB_ZIP)
 	rm -f $(DIST_DIR)/*.sh

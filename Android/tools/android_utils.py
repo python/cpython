@@ -113,11 +113,20 @@ def adb_push_to_dir(src, dest):
     print('Please wait: pushing %s to %s...' % (src, dest), flush=True)
     run_subprocess(*adb_command, 'push', src, dest, verbose=False)
 
+def adb_pull(remote, dest):
+    run_subprocess(*adb_command, 'pull', remote, dest, verbose=False)
+
 def run_script(script_path):
     """Push a script to the emulator and run it."""
-    bin_dir = os.path.join(os.environ['SYS_EXEC_PREFIX'], 'bin')
-    adb_push_to_dir(script_path, bin_dir)
-    script_path = os.path.join(bin_dir, os.path.basename(script_path))
-    print()
-    print('Running %s' % script_path, flush=True)
-    subprocess.run(adb_command + ['shell', 'sh %s' % script_path])
+    try:
+        bin_dir = os.path.join(os.environ['SYS_EXEC_PREFIX'], 'bin')
+        adb_push_to_dir(script_path, bin_dir)
+        path = os.path.join(bin_dir, os.path.basename(script_path))
+        print()
+        print('Running %s' % path, flush=True)
+        subprocess.run(adb_command + ['shell', 'sh %s' % path])
+    finally:
+        try:
+            os.unlink(script_path)
+        except OSError:
+            pass

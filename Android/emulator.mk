@@ -56,8 +56,7 @@ install: emulator_install
 ifneq ($(PYTHON_ARGS), )
 python: emulator_install
 	@echo "---> Run <python $(PYTHON_ARGS)>."
-	-$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py "$(PYTHON_ARGS)"
-	$(ROOT_MAKE) kill_emulator
+	$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py "$(PYTHON_ARGS)"
 endif
 
 buildbottest: TESTRUNNER := $(python_cmd) $(py_srcdir)/Android/tools/python_shell.py
@@ -66,10 +65,9 @@ buildbottest: export PY_SRCDIR := $(py_srcdir)
 buildbottest: export PATH := $(native_build_dir):$(PATH)
 buildbottest: emulator_install
 	@echo "---> Run buildbottest."
-	-$(MAKE) -C $(py_host_dir) TESTRUNNER="$(TESTRUNNER)" \
+	$(MAKE) -C $(py_host_dir) TESTRUNNER="$(TESTRUNNER)" \
 	    TESTOPTS="$(TESTOPTS)" TESTTIMEOUT="$(TESTTIMEOUT)" \
 	    buildbottest
-	$(ROOT_MAKE) kill_emulator
 
 gdb: export APP_ABI := $(APP_ABI)
 gdb: export PY_HOST_DIR := $(py_host_dir)
@@ -87,7 +85,7 @@ $(avd_dir)/$(avd_name):
 
 kill_emulator:
 	@echo "---> Kill the emulator."
-	$(python_cmd) $(py_srcdir)/Android/tools/kill_emulator.py $(CONSOLE_PORT)
+	-$(python_cmd) $(py_srcdir)/Android/tools/kill_emulator.py $(CONSOLE_PORT)
 
 emulator_checks:
 	@echo "---> Check that an emulator is not currently running."
