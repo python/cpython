@@ -1466,7 +1466,6 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     int pages = -1;
     PyObject* progress = Py_None;
     char* name = "main";
-    PyObject* retval = NULL;
     int rc;
     int cberr = 0;
     double sleep_secs = 0.250;
@@ -1474,20 +1473,20 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     sqlite3_backup *bckhandle;
     static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
-        goto finally;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$iOsd:backup", keywords,
                                      &target, &pages, &progress, &name, &sleep_secs)) {
+        return NULL;
     }
 
     if (!PyUnicode_Check(target) && !PyObject_TypeCheck(target, &pysqlite_ConnectionType)) {
         PyErr_SetString(PyExc_TypeError,
                         "target argument must be either a string or a Connection instance");
-        goto finally;
+        return NULL;
     }
 
     if (progress != Py_None && !PyCallable_Check(progress)) {
         PyErr_SetString(PyExc_TypeError, "progress argument must be a callable");
-        goto finally;
+        return NULL;
     }
 
     if (pages == 0) {
@@ -1497,7 +1496,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     if (PyUnicode_Check(target)) {
         filename = PyUnicode_AsUTF8(target);
         if (filename == NULL) {
-            goto finally;
+            return NULL;
         }
 
         Py_BEGIN_ALLOW_THREADS
@@ -1513,20 +1512,20 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
             } else {
                 (void)PyErr_NoMemory();
             }
-            goto finally;
+            return NULL;
         }
     }
     else {
         if ((pysqlite_Connection*)target == self) {
             PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
-            goto finally;
+            return NULL;
         }
 #if SQLITE_VERSION_NUMBER < 3008007
         /* Since 3.8.7 this is already done, per commit
            https://www.sqlite.org/src/info/169b5505498c0a7e */
         if (!sqlite3_get_autocommit(((pysqlite_Connection*)target)->db)) {
             PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
-            goto finally;
+            return NULL;
         }
 #endif
         filename = NULL;
@@ -1588,8 +1587,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     }
 
     if (cberr == 0 && rc == SQLITE_OK) {
-        Py_INCREF(Py_None);
-        retval = Py_None;
+        Py_RETURN_NONE;
     } else {
         /* Remove the probably incomplete/invalid backup */
         if (filename != NULL) {
@@ -1617,10 +1615,8 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
 
             _PyErr_ChainExceptions(exc, val, tb);
         }
+        return NULL;
     }
-
-finally:
-    return retval;
 }
 #endif
 
