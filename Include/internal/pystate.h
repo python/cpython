@@ -54,23 +54,8 @@ typedef struct {
     wchar_t *home;
 } _PyPathConfig;
 
-#ifdef MS_WINDOWS
-#define _PyPathConfig_INIT \
-    {.program_full_path = NULL, \
-     .prefix = NULL, \
-     .dll_path = NULL, \
-     .module_search_path = NULL, \
-     .program_name = NULL, \
-     .home = NULL}
-#else
-#define _PyPathConfig_INIT \
-    {.program_full_path = NULL, \
-     .prefix = NULL, \
-     .exec_prefix = NULL, \
-     .module_search_path = NULL, \
-     .program_name = NULL, \
-     .home = NULL}
-#endif
+#define _PyPathConfig_INIT {.module_search_path = NULL}
+/* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyPathConfig) _Py_path_config;
 
@@ -116,6 +101,7 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+/* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);

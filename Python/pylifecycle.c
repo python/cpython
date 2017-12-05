@@ -606,10 +606,6 @@ _Py_SetLocaleFromEnv(int category)
  * safe to call without calling Py_Initialize first)
  */
 
-/* TODO: Progressively move functionality from Py_BeginInitialization to
- * Py_ReadConfig and Py_EndInitialization
- */
-
 _PyInitError
 _Py_InitializeCore(const _PyCoreConfig *config)
 {
@@ -881,10 +877,9 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_OK();
     }
 
-    /* TODO: Report exceptions rather than fatal errors below here */
-
-    if (_PyTime_Init() < 0)
+    if (_PyTime_Init() < 0) {
         return _Py_INIT_ERR("can't initialize time");
+    }
 
     /* GetPath may initialize state that _PySys_EndInit locks
        in, and so has to be called first. */
