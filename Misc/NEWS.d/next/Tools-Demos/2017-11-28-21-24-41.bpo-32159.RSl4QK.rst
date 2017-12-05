@@ -1,0 +1,3 @@
+Remove CVS and Subversion tools: remove svneol.py and treesync.py scripts.
+CPython migrated from CVS to Subversion, to Mercurial, and then to Git. CVS
+and Subversion are no longer used to develop CPython.

@@ -1281,47 +1281,26 @@ PyInit_faulthandler(void)
     return m;
 }
 
-/* Call faulthandler.enable() if the PYTHONFAULTHANDLER environment variable
-   is defined, or if sys._xoptions has a 'faulthandler' key. */
-
 static int
-faulthandler_env_options(void)
+faulthandler_init_enable(void)
 {
-    PyObject *xoptions, *key, *module, *res;
-    char *p;
-
-    if (!((p = Py_GETENV("PYTHONFAULTHANDLER")) && *p != '\0')) {
-        /* PYTHONFAULTHANDLER environment variable is missing
-           or an empty string */
-        int has_key;
-
-        xoptions = PySys_GetXOptions();
-        if (xoptions == NULL)
-            return -1;
-
-        key = PyUnicode_FromString("faulthandler");
-        if (key == NULL)
-            return -1;
-
-        has_key = PyDict_Contains(xoptions, key);
-        Py_DECREF(key);
-        if (has_key <= 0)
-            return has_key;
-    }
-
-    module = PyImport_ImportModule("faulthandler");
+    PyObject *module = PyImport_ImportModule("faulthandler");
     if (module == NULL) {
         return -1;
     }
-    res = _PyObject_CallMethodId(module, &PyId_enable, NULL);
+
+    PyObject *res = _PyObject_CallMethodId(module, &PyId_enable, NULL);
     Py_DECREF(module);
-    if (res == NULL)
+    if (res == NULL) {
         return -1;
+    }
     Py_DECREF(res);
+
     return 0;
 }
 
-int _PyFaulthandler_Init(void)
+_PyInitError
+_PyFaulthandler_Init(int enable)
 {
 #ifdef HAVE_SIGALTSTACK
     int err;
@@ -1345,14 +1324,17 @@ int _PyFaulthandler_Init(void)
     thread.cancel_event = PyThread_allocate_lock();
     thread.running = PyThread_allocate_lock();
     if (!thread.cancel_event || !thread.running) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "could not allocate locks for faulthandler");
-        return -1;
+        return _Py_INIT_ERR("failed to allocate locks for faulthandler");
     }
     PyThread_acquire_lock(thread.cancel_event, 1);
 #endif
 
-    return faulthandler_env_options();
+    if (enable) {
+        if (faulthandler_init_enable() < 0) {
+            return _Py_INIT_ERR("failed to enable faulthandler");
+        }
+    }
+    return _Py_INIT_OK();
 }
 
 void _PyFaulthandler_Fini(void)

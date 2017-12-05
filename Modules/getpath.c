@@ -1,13 +1,14 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "osdefs.h"
 
 #include <sys/types.h>
 #include <string.h>
 
 #ifdef __APPLE__
-#include <mach-o/dyld.h>
+#  include <mach-o/dyld.h>
 #endif
 
 /* Search in some common locations for the associated Python libraries.
@@ -97,7 +98,7 @@
  */
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 
@@ -109,13 +110,31 @@
 #define LANDMARK L"os.py"
 #endif
 
-static wchar_t prefix[MAXPATHLEN+1];
-static wchar_t exec_prefix[MAXPATHLEN+1];
-static wchar_t progpath[MAXPATHLEN+1];
-static wchar_t *module_search_path = NULL;
+#define DECODE_LOCALE_ERR(NAME, LEN) \
+    ((LEN) == (size_t)-2) \
+     ? _Py_INIT_USER_ERR("cannot decode " #NAME) \
+     : _Py_INIT_NO_MEMORY()
+
+typedef struct {
+    wchar_t *path_env;                 /* PATH environment variable */
+
+    wchar_t *pythonpath;               /* PYTHONPATH define */
+    wchar_t *prefix;                   /* PREFIX define */
+    wchar_t *exec_prefix;              /* EXEC_PREFIX define */
+
+    wchar_t *lib_python;               /* "lib/pythonX.Y" */
+    wchar_t argv0_path[MAXPATHLEN+1];
+    wchar_t zip_path[MAXPATHLEN+1];    /* ".../lib/pythonXY.zip" */
+
+    int prefix_found;         /* found platform independent libraries? */
+    int exec_prefix_found;    /* found the platform dependent libraries? */
+} PyCalculatePath;
+
+static const wchar_t delimiter[2] = {DELIM, '\0'};
+static const wchar_t separator[2] = {SEP, '\0'};
+
 
 /* Get file status. Encode the path to the locale encoding. */
-
 static int
 _Py_wstat(const wchar_t* path, struct stat *buf)
 {
@@ -131,6 +150,7 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
     return err;
 }
 
+
 static void
 reduce(wchar_t *dir)
 {
@@ -140,14 +160,17 @@ reduce(wchar_t *dir)
     dir[i] = '\0';
 }
 
+
 static int
 isfile(wchar_t *filename)          /* Is file, not directory */
 {
     struct stat buf;
-    if (_Py_wstat(filename, &buf) != 0)
+    if (_Py_wstat(filename, &buf) != 0) {
         return 0;
-    if (!S_ISREG(buf.st_mode))
+    }
+    if (!S_ISREG(buf.st_mode)) {
         return 0;
+    }
     return 1;
 }
 
@@ -155,41 +178,50 @@ isfile(wchar_t *filename)          /* Is file, not directory */
 static int
 ismodule(wchar_t *filename)        /* Is module -- check for .pyc too */
 {
-    if (isfile(filename))
+    if (isfile(filename)) {
         return 1;
+    }
 
     /* Check for the compiled version of prefix. */
     if (wcslen(filename) < MAXPATHLEN) {
         wcscat(filename, L"c");
-        if (isfile(filename))
+        if (isfile(filename)) {
             return 1;
+        }
     }
     return 0;
 }
 
 
+/* Is executable file */
 static int
-isxfile(wchar_t *filename)         /* Is executable file */
+isxfile(wchar_t *filename)
 {
     struct stat buf;
-    if (_Py_wstat(filename, &buf) != 0)
+    if (_Py_wstat(filename, &buf) != 0) {
         return 0;
-    if (!S_ISREG(buf.st_mode))
+    }
+    if (!S_ISREG(buf.st_mode)) {
         return 0;
-    if ((buf.st_mode & 0111) == 0)
+    }
+    if ((buf.st_mode & 0111) == 0) {
         return 0;
+    }
     return 1;
 }
 
 
+/* Is directory */
 static int
-isdir(wchar_t *filename)                   /* Is directory */
+isdir(wchar_t *filename)
 {
     struct stat buf;
-    if (_Py_wstat(filename, &buf) != 0)
+    if (_Py_wstat(filename, &buf) != 0) {
         return 0;
-    if (!S_ISDIR(buf.st_mode))
+    }
+    if (!S_ISDIR(buf.st_mode)) {
         return 0;
+    }
     return 1;
 }
 
@@ -207,40 +239,48 @@ static void
 joinpath(wchar_t *buffer, wchar_t *stuff)
 {
     size_t n, k;
-    if (stuff[0] == SEP)
+    if (stuff[0] == SEP) {
         n = 0;
+    }
     else {
         n = wcslen(buffer);
-        if (n > 0 && buffer[n-1] != SEP && n < MAXPATHLEN)
+        if (n > 0 && buffer[n-1] != SEP && n < MAXPATHLEN) {
             buffer[n++] = SEP;
+        }
     }
-    if (n > MAXPATHLEN)
+    if (n > MAXPATHLEN) {
         Py_FatalError("buffer overflow in getpath.c's joinpath()");
+    }
     k = wcslen(stuff);
-    if (n + k > MAXPATHLEN)
+    if (n + k > MAXPATHLEN) {
         k = MAXPATHLEN - n;
+    }
     wcsncpy(buffer+n, stuff, k);
     buffer[n+k] = '\0';
 }
+
 
 /* copy_absolute requires that path be allocated at least
    MAXPATHLEN + 1 bytes and that p be no more than MAXPATHLEN bytes. */
 static void
 copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
 {
-    if (p[0] == SEP)
+    if (p[0] == SEP) {
         wcscpy(path, p);
+    }
     else {
         if (!_Py_wgetcwd(path, pathlen)) {
             /* unable to get the current directory */
             wcscpy(path, p);
             return;
         }
-        if (p[0] == '.' && p[1] == SEP)
+        if (p[0] == '.' && p[1] == SEP) {
             p += 2;
+        }
         joinpath(path, p);
     }
 }
+
 
 /* absolutize() requires that path be allocated at least MAXPATHLEN+1 bytes. */
 static void
@@ -248,17 +288,18 @@ absolutize(wchar_t *path)
 {
     wchar_t buffer[MAXPATHLEN+1];
 
-    if (path[0] == SEP)
+    if (path[0] == SEP) {
         return;
+    }
     copy_absolute(buffer, path, MAXPATHLEN+1);
     wcscpy(path, buffer);
 }
+
 
 /* search for a prefix value in an environment file. If found, copy it
    to the provided buffer, which is expected to be no more than MAXPATHLEN
    bytes long.
 */
-
 static int
 find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
 {
@@ -272,15 +313,18 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
         PyObject * decoded;
         int n;
 
-        if (p == NULL)
+        if (p == NULL) {
             break;
+        }
         n = strlen(p);
         if (p[n - 1] != '\n') {
             /* line has overflowed - bail */
             break;
         }
-        if (p[0] == '#')    /* Comment - skip */
+        if (p[0] == '#') {
+            /* Comment - skip */
             continue;
+        }
         decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
         if (decoded != NULL) {
             Py_ssize_t k;
@@ -307,70 +351,116 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
     return result;
 }
 
+
 /* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
    bytes long.
 */
 static int
-search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix,
-                  wchar_t *lib_python)
+search_for_prefix(const _PyMainInterpreterConfig *main_config,
+                  PyCalculatePath *calculate, wchar_t *prefix)
 {
     size_t n;
     wchar_t *vpath;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
-    if (home) {
-        wchar_t *delim;
-        wcsncpy(prefix, home, MAXPATHLEN);
+    if (main_config->home) {
+        wcsncpy(prefix, main_config->home, MAXPATHLEN);
         prefix[MAXPATHLEN] = L'\0';
-        delim = wcschr(prefix, DELIM);
-        if (delim)
+        wchar_t *delim = wcschr(prefix, DELIM);
+        if (delim) {
             *delim = L'\0';
-        joinpath(prefix, lib_python);
+        }
+        joinpath(prefix, calculate->lib_python);
         joinpath(prefix, LANDMARK);
         return 1;
     }
 
     /* Check to see if argv[0] is in the build directory */
-    wcsncpy(prefix, argv0_path, MAXPATHLEN);
+    wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
     prefix[MAXPATHLEN] = L'\0';
     joinpath(prefix, L"Modules/Setup");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = Py_DecodeLocale(VPATH, NULL);
         if (vpath != NULL) {
-            wcsncpy(prefix, argv0_path, MAXPATHLEN);
+            wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
             prefix[MAXPATHLEN] = L'\0';
             joinpath(prefix, vpath);
             PyMem_RawFree(vpath);
             joinpath(prefix, L"Lib");
             joinpath(prefix, LANDMARK);
-            if (ismodule(prefix))
+            if (ismodule(prefix)) {
                 return -1;
+            }
         }
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(prefix, argv0_path, MAXPATHLEN+1);
+    copy_absolute(prefix, calculate->argv0_path, MAXPATHLEN+1);
     do {
         n = wcslen(prefix);
-        joinpath(prefix, lib_python);
+        joinpath(prefix, calculate->lib_python);
         joinpath(prefix, LANDMARK);
-        if (ismodule(prefix))
+        if (ismodule(prefix)) {
             return 1;
+        }
         prefix[n] = L'\0';
         reduce(prefix);
     } while (prefix[0]);
 
     /* Look at configure's PREFIX */
-    wcsncpy(prefix, _prefix, MAXPATHLEN);
+    wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
     prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, lib_python);
+    joinpath(prefix, calculate->lib_python);
     joinpath(prefix, LANDMARK);
-    if (ismodule(prefix))
+    if (ismodule(prefix)) {
         return 1;
+    }
 
     /* Fail */
     return 0;
+}
+
+
+static void
+calculate_prefix(const _PyMainInterpreterConfig *main_config,
+                 PyCalculatePath *calculate, wchar_t *prefix)
+{
+    calculate->prefix_found = search_for_prefix(main_config, calculate, prefix);
+    if (!calculate->prefix_found) {
+        if (!Py_FrozenFlag) {
+            fprintf(stderr,
+                "Could not find platform independent libraries <prefix>\n");
+        }
+        wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
+        joinpath(prefix, calculate->lib_python);
+    }
+    else {
+        reduce(prefix);
+    }
+}
+
+
+static void
+calculate_reduce_prefix(PyCalculatePath *calculate, wchar_t *prefix)
+{
+    /* Reduce prefix and exec_prefix to their essence,
+     * e.g. /usr/local/lib/python1.5 is reduced to /usr/local.
+     * If we're loading relative to the build directory,
+     * return the compiled-in defaults instead.
+     */
+    if (calculate->prefix_found > 0) {
+        reduce(prefix);
+        reduce(prefix);
+        /* The prefix is the root directory, but reduce() chopped
+         * off the "/". */
+        if (!prefix[0]) {
+            wcscpy(prefix, separator);
+        }
+    }
+    else {
+        wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
+    }
 }
 
 
@@ -378,21 +468,22 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix,
    MAXPATHLEN bytes long.
 */
 static int
-search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
-                       wchar_t *_exec_prefix, wchar_t *lib_python)
+search_for_exec_prefix(const _PyMainInterpreterConfig *main_config,
+                       PyCalculatePath *calculate, wchar_t *exec_prefix)
 {
     size_t n;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
-    if (home) {
-        wchar_t *delim;
-        delim = wcschr(home, DELIM);
-        if (delim)
+    if (main_config->home) {
+        wchar_t *delim = wcschr(main_config->home, DELIM);
+        if (delim) {
             wcsncpy(exec_prefix, delim+1, MAXPATHLEN);
-        else
-            wcsncpy(exec_prefix, home, MAXPATHLEN);
+        }
+        else {
+            wcsncpy(exec_prefix, main_config->home, MAXPATHLEN);
+        }
         exec_prefix[MAXPATHLEN] = L'\0';
-        joinpath(exec_prefix, lib_python);
+        joinpath(exec_prefix, calculate->lib_python);
         joinpath(exec_prefix, L"lib-dynload");
         return 1;
     }
@@ -400,13 +491,14 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
     /* Check to see if argv[0] is in the build directory. "pybuilddir.txt"
        is written by setup.py and contains the relative path to the location
        of shared library modules. */
-    wcsncpy(exec_prefix, argv0_path, MAXPATHLEN);
+    wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
     exec_prefix[MAXPATHLEN] = L'\0';
     joinpath(exec_prefix, L"pybuilddir.txt");
     if (isfile(exec_prefix)) {
         FILE *f = _Py_wfopen(exec_prefix, L"rb");
-        if (f == NULL)
+        if (f == NULL) {
             errno = 0;
+        }
         else {
             char buf[MAXPATHLEN+1];
             PyObject *decoded;
@@ -422,7 +514,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
                 Py_DECREF(decoded);
                 if (k >= 0) {
                     rel_builddir_path[k] = L'\0';
-                    wcsncpy(exec_prefix, argv0_path, MAXPATHLEN);
+                    wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
                     exec_prefix[MAXPATHLEN] = L'\0';
                     joinpath(exec_prefix, rel_builddir_path);
                     return -1;
@@ -432,54 +524,75 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(exec_prefix, argv0_path, MAXPATHLEN+1);
+    copy_absolute(exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
     do {
         n = wcslen(exec_prefix);
-        joinpath(exec_prefix, lib_python);
+        joinpath(exec_prefix, calculate->lib_python);
         joinpath(exec_prefix, L"lib-dynload");
-        if (isdir(exec_prefix))
+        if (isdir(exec_prefix)) {
             return 1;
+        }
         exec_prefix[n] = L'\0';
         reduce(exec_prefix);
     } while (exec_prefix[0]);
 
     /* Look at configure's EXEC_PREFIX */
-    wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
+    wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
     exec_prefix[MAXPATHLEN] = L'\0';
-    joinpath(exec_prefix, lib_python);
+    joinpath(exec_prefix, calculate->lib_python);
     joinpath(exec_prefix, L"lib-dynload");
-    if (isdir(exec_prefix))
+    if (isdir(exec_prefix)) {
         return 1;
+    }
 
     /* Fail */
     return 0;
 }
 
-static void
-calculate_path(void)
-{
-    extern wchar_t *Py_GetProgramName(void);
 
-    static const wchar_t delimiter[2] = {DELIM, '\0'};
-    static const wchar_t separator[2] = {SEP, '\0'};
-    char *_rtpypath = Py_GETENV("PYTHONPATH"); /* XXX use wide version on Windows */
-    wchar_t *rtpypath = NULL;
-    wchar_t *home = Py_GetPythonHome();
-    char *_path = getenv("PATH");
-    wchar_t *path_buffer = NULL;
-    wchar_t *path = NULL;
-    wchar_t *prog = Py_GetProgramName();
-    wchar_t argv0_path[MAXPATHLEN+1];
-    wchar_t zip_path[MAXPATHLEN+1];
-    int pfound, efound; /* 1 if found; -1 if found build directory */
-    wchar_t *buf;
-    size_t bufsz;
-    size_t prefixsz;
-    wchar_t *defpath;
-#ifdef WITH_NEXT_FRAMEWORK
-    NSModule pythonModule;
-    const char*    modPath;
-#endif
+static void
+calculate_exec_prefix(const _PyMainInterpreterConfig *main_config,
+                      PyCalculatePath *calculate, wchar_t *exec_prefix)
+{
+    calculate->exec_prefix_found = search_for_exec_prefix(main_config,
+                                                          calculate,
+                                                          exec_prefix);
+    if (!calculate->exec_prefix_found) {
+        if (!Py_FrozenFlag) {
+            fprintf(stderr,
+                "Could not find platform dependent libraries <exec_prefix>\n");
+        }
+        wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
+        joinpath(exec_prefix, L"lib/lib-dynload");
+    }
+    /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
+}
+
+
+static void
+calculate_reduce_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
+{
+    if (calculate->exec_prefix_found > 0) {
+        reduce(exec_prefix);
+        reduce(exec_prefix);
+        reduce(exec_prefix);
+        if (!exec_prefix[0]) {
+            wcscpy(exec_prefix, separator);
+        }
+    }
+    else {
+        wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
+    }
+}
+
+
+static _PyInitError
+calculate_program_full_path(const _PyMainInterpreterConfig *main_config,
+                            PyCalculatePath *calculate, _PyPathConfig *config)
+{
+    wchar_t program_full_path[MAXPATHLEN+1];
+    memset(program_full_path, 0, sizeof(program_full_path));
+
 #ifdef __APPLE__
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
     uint32_t nsexeclength = MAXPATHLEN;
@@ -488,32 +601,15 @@ calculate_path(void)
 #endif
     char execpath[MAXPATHLEN+1];
 #endif
-    wchar_t *_pythonpath, *_prefix, *_exec_prefix;
-    wchar_t *lib_python;
-
-    _pythonpath = Py_DecodeLocale(PYTHONPATH, NULL);
-    _prefix = Py_DecodeLocale(PREFIX, NULL);
-    _exec_prefix = Py_DecodeLocale(EXEC_PREFIX, NULL);
-    lib_python = Py_DecodeLocale("lib/python" VERSION, NULL);
-
-    if (!_pythonpath || !_prefix || !_exec_prefix || !lib_python) {
-        Py_FatalError(
-            "Unable to decode path variables in getpath.c: "
-            "memory error");
-    }
-
-    if (_path) {
-        path_buffer = Py_DecodeLocale(_path, NULL);
-        path = path_buffer;
-    }
 
     /* If there is no slash in the argv0 path, then we have to
      * assume python is on the user's $PATH, since there's no
      * other way to find a directory to start the search from.  If
      * $PATH isn't exported, you lose.
      */
-    if (wcschr(prog, SEP))
-        wcsncpy(progpath, prog, MAXPATHLEN);
+    if (wcschr(main_config->program_name, SEP)) {
+        wcsncpy(program_full_path, main_config->program_name, MAXPATHLEN);
+    }
 #ifdef __APPLE__
      /* On Mac OS X, if a script uses an interpreter of the form
       * "#!/opt/python2.3/bin/python", the kernel only passes "python"
@@ -525,48 +621,71 @@ calculate_path(void)
       * will fail if a relative path was used. but in that case,
       * absolutize() should help us out below
       */
-    else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) && execpath[0] == SEP) {
-        size_t r = mbstowcs(progpath, execpath, MAXPATHLEN+1);
-        if (r == (size_t)-1 || r > MAXPATHLEN) {
-            /* Could not convert execpath, or it's too long. */
-            progpath[0] = '\0';
+    else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) &&
+            execpath[0] == SEP)
+    {
+        size_t len;
+        wchar_t *path = Py_DecodeLocale(execpath, &len);
+        if (path == NULL) {
+            return DECODE_LOCALE_ERR("executable path", len);
         }
+        wcsncpy(program_full_path, path, MAXPATHLEN);
+        PyMem_RawFree(path);
     }
 #endif /* __APPLE__ */
-    else if (path) {
+    else if (calculate->path_env) {
+        wchar_t *path = calculate->path_env;
         while (1) {
             wchar_t *delim = wcschr(path, DELIM);
 
             if (delim) {
                 size_t len = delim - path;
-                if (len > MAXPATHLEN)
+                if (len > MAXPATHLEN) {
                     len = MAXPATHLEN;
-                wcsncpy(progpath, path, len);
-                *(progpath + len) = '\0';
+                }
+                wcsncpy(program_full_path, path, len);
+                program_full_path[len] = '\0';
             }
-            else
-                wcsncpy(progpath, path, MAXPATHLEN);
+            else {
+                wcsncpy(program_full_path, path, MAXPATHLEN);
+            }
 
-            joinpath(progpath, prog);
-            if (isxfile(progpath))
+            joinpath(program_full_path, main_config->program_name);
+            if (isxfile(program_full_path)) {
                 break;
+            }
 
             if (!delim) {
-                progpath[0] = L'\0';
+                program_full_path[0] = L'\0';
                 break;
             }
             path = delim + 1;
         }
     }
-    else
-        progpath[0] = '\0';
-    PyMem_RawFree(path_buffer);
-    if (progpath[0] != SEP && progpath[0] != '\0')
-        absolutize(progpath);
-    wcsncpy(argv0_path, progpath, MAXPATHLEN);
-    argv0_path[MAXPATHLEN] = '\0';
+    else {
+        program_full_path[0] = '\0';
+    }
+    if (program_full_path[0] != SEP && program_full_path[0] != '\0') {
+        absolutize(program_full_path);
+    }
+
+    config->program_full_path = _PyMem_RawWcsdup(program_full_path);
+    if (config->program_full_path == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_path)
+{
+    wcsncpy(calculate->argv0_path, program_full_path, MAXPATHLEN);
+    calculate->argv0_path[MAXPATHLEN] = '\0';
 
 #ifdef WITH_NEXT_FRAMEWORK
+    NSModule pythonModule;
+
     /* On Mac OS X we have a special case if we're running from a framework.
     ** This is because the python home should be set relative to the library,
     ** which is in the framework, not relative to the executable, which may
@@ -574,7 +693,7 @@ calculate_path(void)
     */
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
-    modPath = NSLibraryNameForModule(pythonModule);
+    const char* modPath = NSLibraryNameForModule(pythonModule);
     if (modPath != NULL) {
         /* We're in a framework. */
         /* See if we might be in the build directory. The framework in the
@@ -584,147 +703,142 @@ calculate_path(void)
         ** be running the interpreter in the build directory, so we use the
         ** build-directory-specific logic to find Lib and such.
         */
-        wchar_t* wbuf = Py_DecodeLocale(modPath, NULL);
+        size_t len;
+        wchar_t* wbuf = Py_DecodeLocale(modPath, &len);
         if (wbuf == NULL) {
-            Py_FatalError("Cannot decode framework location");
+            return DECODE_LOCALE_ERR("framework location", len);
         }
 
-        wcsncpy(argv0_path, wbuf, MAXPATHLEN);
-        reduce(argv0_path);
-        joinpath(argv0_path, lib_python);
-        joinpath(argv0_path, LANDMARK);
-        if (!ismodule(argv0_path)) {
+        wcsncpy(calculate->argv0_path, wbuf, MAXPATHLEN);
+        reduce(calculate->argv0_path);
+        joinpath(calculate->argv0_path, calculate->lib_python);
+        joinpath(calculate->argv0_path, LANDMARK);
+        if (!ismodule(calculate->argv0_path)) {
             /* We are in the build directory so use the name of the
                executable - we know that the absolute path is passed */
-            wcsncpy(argv0_path, progpath, MAXPATHLEN);
+            wcsncpy(calculate->argv0_path, program_full_path, MAXPATHLEN);
         }
         else {
-            /* Use the location of the library as the progpath */
-            wcsncpy(argv0_path, wbuf, MAXPATHLEN);
+            /* Use the location of the library as the program_full_path */
+            wcsncpy(calculate->argv0_path, wbuf, MAXPATHLEN);
         }
         PyMem_RawFree(wbuf);
     }
 #endif
 
 #if HAVE_READLINK
-    {
-        wchar_t tmpbuffer[MAXPATHLEN+1];
-        int linklen = _Py_wreadlink(progpath, tmpbuffer, MAXPATHLEN);
-        while (linklen != -1) {
-            if (tmpbuffer[0] == SEP)
-                /* tmpbuffer should never be longer than MAXPATHLEN,
-                   but extra check does not hurt */
-                wcsncpy(argv0_path, tmpbuffer, MAXPATHLEN);
-            else {
-                /* Interpret relative to progpath */
-                reduce(argv0_path);
-                joinpath(argv0_path, tmpbuffer);
-            }
-            linklen = _Py_wreadlink(argv0_path, tmpbuffer, MAXPATHLEN);
+    wchar_t tmpbuffer[MAXPATHLEN+1];
+    int linklen = _Py_wreadlink(program_full_path, tmpbuffer, MAXPATHLEN);
+    while (linklen != -1) {
+        if (tmpbuffer[0] == SEP) {
+            /* tmpbuffer should never be longer than MAXPATHLEN,
+               but extra check does not hurt */
+            wcsncpy(calculate->argv0_path, tmpbuffer, MAXPATHLEN);
         }
+        else {
+            /* Interpret relative to program_full_path */
+            reduce(calculate->argv0_path);
+            joinpath(calculate->argv0_path, tmpbuffer);
+        }
+        linklen = _Py_wreadlink(calculate->argv0_path, tmpbuffer, MAXPATHLEN);
     }
 #endif /* HAVE_READLINK */
 
-    reduce(argv0_path);
+    reduce(calculate->argv0_path);
     /* At this point, argv0_path is guaranteed to be less than
-       MAXPATHLEN bytes long.
-    */
+       MAXPATHLEN bytes long. */
+    return _Py_INIT_OK();
+}
 
-    /* Search for an environment configuration file, first in the
-       executable's directory and then in the parent directory.
-       If found, open it for use when searching for prefixes.
-    */
 
-    {
-        wchar_t tmpbuffer[MAXPATHLEN+1];
-        wchar_t *env_cfg = L"pyvenv.cfg";
-        FILE * env_file = NULL;
+/* Search for an "pyvenv.cfg" environment configuration file, first in the
+   executable's directory and then in the parent directory.
+   If found, open it for use when searching for prefixes.
+*/
+static void
+calculate_read_pyenv(PyCalculatePath *calculate)
+{
+    wchar_t tmpbuffer[MAXPATHLEN+1];
+    wchar_t *env_cfg = L"pyvenv.cfg";
+    FILE *env_file;
 
-        wcscpy(tmpbuffer, argv0_path);
+    wcscpy(tmpbuffer, calculate->argv0_path);
 
+    joinpath(tmpbuffer, env_cfg);
+    env_file = _Py_wfopen(tmpbuffer, L"r");
+    if (env_file == NULL) {
+        errno = 0;
+
+        reduce(tmpbuffer);
+        reduce(tmpbuffer);
         joinpath(tmpbuffer, env_cfg);
+
         env_file = _Py_wfopen(tmpbuffer, L"r");
         if (env_file == NULL) {
             errno = 0;
-            reduce(tmpbuffer);
-            reduce(tmpbuffer);
-            joinpath(tmpbuffer, env_cfg);
-            env_file = _Py_wfopen(tmpbuffer, L"r");
-            if (env_file == NULL) {
-                errno = 0;
-            }
-        }
-        if (env_file != NULL) {
-            /* Look for a 'home' variable and set argv0_path to it, if found */
-            if (find_env_config_value(env_file, L"home", tmpbuffer)) {
-                wcscpy(argv0_path, tmpbuffer);
-            }
-            fclose(env_file);
-            env_file = NULL;
         }
     }
 
-    pfound = search_for_prefix(argv0_path, home, _prefix, lib_python);
-    if (!pfound) {
-        if (!Py_FrozenFlag)
-            fprintf(stderr,
-                "Could not find platform independent libraries <prefix>\n");
-        wcsncpy(prefix, _prefix, MAXPATHLEN);
-        joinpath(prefix, lib_python);
-    }
-    else
-        reduce(prefix);
-
-    wcsncpy(zip_path, prefix, MAXPATHLEN);
-    zip_path[MAXPATHLEN] = L'\0';
-    if (pfound > 0) { /* Use the reduced prefix returned by Py_GetPrefix() */
-        reduce(zip_path);
-        reduce(zip_path);
-    }
-    else
-        wcsncpy(zip_path, _prefix, MAXPATHLEN);
-    joinpath(zip_path, L"lib/python00.zip");
-    bufsz = wcslen(zip_path);   /* Replace "00" with version */
-    zip_path[bufsz - 6] = VERSION[0];
-    zip_path[bufsz - 5] = VERSION[2];
-
-    efound = search_for_exec_prefix(argv0_path, home,
-                                    _exec_prefix, lib_python);
-    if (!efound) {
-        if (!Py_FrozenFlag)
-            fprintf(stderr,
-                "Could not find platform dependent libraries <exec_prefix>\n");
-        wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
-        joinpath(exec_prefix, L"lib/lib-dynload");
-    }
-    /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
-
-    if ((!pfound || !efound) && !Py_FrozenFlag)
-        fprintf(stderr,
-                "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
-
-    /* Calculate size of return buffer.
-     */
-    bufsz = 0;
-
-    if (_rtpypath && _rtpypath[0] != '\0') {
-        size_t rtpypath_len;
-        rtpypath = Py_DecodeLocale(_rtpypath, &rtpypath_len);
-        if (rtpypath != NULL)
-            bufsz += rtpypath_len + 1;
+    if (env_file == NULL) {
+        return;
     }
 
-    defpath = _pythonpath;
-    prefixsz = wcslen(prefix) + 1;
+    /* Look for a 'home' variable and set argv0_path to it, if found */
+    if (find_env_config_value(env_file, L"home", tmpbuffer)) {
+        wcscpy(calculate->argv0_path, tmpbuffer);
+    }
+    fclose(env_file);
+}
+
+
+static void
+calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix)
+{
+    wcsncpy(calculate->zip_path, prefix, MAXPATHLEN);
+    calculate->zip_path[MAXPATHLEN] = L'\0';
+
+    if (calculate->prefix_found > 0) {
+        /* Use the reduced prefix returned by Py_GetPrefix() */
+        reduce(calculate->zip_path);
+        reduce(calculate->zip_path);
+    }
+    else {
+        wcsncpy(calculate->zip_path, calculate->prefix, MAXPATHLEN);
+    }
+    joinpath(calculate->zip_path, L"lib/python00.zip");
+
+    /* Replace "00" with version */
+    size_t bufsz = wcslen(calculate->zip_path);
+    calculate->zip_path[bufsz - 6] = VERSION[0];
+    calculate->zip_path[bufsz - 5] = VERSION[2];
+}
+
+
+static _PyInitError
+calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
+                             PyCalculatePath *calculate,
+                             const wchar_t *prefix, const wchar_t *exec_prefix,
+                             _PyPathConfig *config)
+{
+    /* Calculate size of return buffer */
+    size_t bufsz = 0;
+    if (main_config->module_search_path_env != NULL) {
+        bufsz += wcslen(main_config->module_search_path_env) + 1;
+    }
+
+    wchar_t *defpath = calculate->pythonpath;
+    size_t prefixsz = wcslen(prefix) + 1;
     while (1) {
         wchar_t *delim = wcschr(defpath, DELIM);
 
-        if (defpath[0] != SEP)
+        if (defpath[0] != SEP) {
             /* Paths are relative to prefix */
             bufsz += prefixsz;
+        }
 
-        if (delim)
+        if (delim) {
             bufsz += delim - defpath + 1;
+        }
         else {
             bufsz += wcslen(defpath) + 1;
             break;
@@ -732,38 +846,39 @@ calculate_path(void)
         defpath = delim + 1;
     }
 
-    bufsz += wcslen(zip_path) + 1;
+    bufsz += wcslen(calculate->zip_path) + 1;
     bufsz += wcslen(exec_prefix) + 1;
 
-    buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
+    /* Allocate the buffer */
+    wchar_t *buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
     if (buf == NULL) {
-        Py_FatalError(
-            "Not enough memory for dynamic PYTHONPATH");
+        return _Py_INIT_NO_MEMORY();
     }
+    buf[0] = '\0';
 
     /* Run-time value of $PYTHONPATH goes first */
-    if (rtpypath) {
-        wcscpy(buf, rtpypath);
+    if (main_config->module_search_path_env) {
+        wcscpy(buf, main_config->module_search_path_env);
         wcscat(buf, delimiter);
     }
-    else
-        buf[0] = '\0';
 
     /* Next is the default zip path */
-    wcscat(buf, zip_path);
+    wcscat(buf, calculate->zip_path);
     wcscat(buf, delimiter);
 
     /* Next goes merge of compile-time $PYTHONPATH with
      * dynamically located prefix.
      */
-    defpath = _pythonpath;
+    defpath = calculate->pythonpath;
     while (1) {
         wchar_t *delim = wcschr(defpath, DELIM);
 
         if (defpath[0] != SEP) {
             wcscat(buf, prefix);
             if (prefixsz >= 2 && prefix[prefixsz - 2] != SEP &&
-                defpath[0] != (delim ? DELIM : L'\0')) {  /* not empty */
+                defpath[0] != (delim ? DELIM : L'\0'))
+            {
+                /* not empty */
                 wcscat(buf, separator);
             }
         }
@@ -772,7 +887,7 @@ calculate_path(void)
             size_t len = delim - defpath + 1;
             size_t end = wcslen(buf) + len;
             wcsncat(buf, defpath, len);
-            *(buf + end) = '\0';
+            buf[end] = '\0';
         }
         else {
             wcscat(buf, defpath);
@@ -785,94 +900,137 @@ calculate_path(void)
     /* Finally, on goes the directory for dynamic-load modules */
     wcscat(buf, exec_prefix);
 
-    /* And publish the results */
-    module_search_path = buf;
+    config->module_search_path = buf;
+    return _Py_INIT_OK();
+}
 
-    /* Reduce prefix and exec_prefix to their essence,
-     * e.g. /usr/local/lib/python1.5 is reduced to /usr/local.
-     * If we're loading relative to the build directory,
-     * return the compiled-in defaults instead.
-     */
-    if (pfound > 0) {
-        reduce(prefix);
-        reduce(prefix);
-        /* The prefix is the root directory, but reduce() chopped
-         * off the "/". */
-        if (!prefix[0])
-                wcscpy(prefix, separator);
+
+static _PyInitError
+calculate_init(PyCalculatePath *calculate,
+               const _PyMainInterpreterConfig *main_config)
+{
+    size_t len;
+    char *path = getenv("PATH");
+    if (path) {
+        calculate->path_env = Py_DecodeLocale(path, &len);
+        if (!calculate->path_env) {
+            return DECODE_LOCALE_ERR("PATH environment variable", len);
+        }
     }
-    else
-        wcsncpy(prefix, _prefix, MAXPATHLEN);
 
-    if (efound > 0) {
-        reduce(exec_prefix);
-        reduce(exec_prefix);
-        reduce(exec_prefix);
-        if (!exec_prefix[0])
-                wcscpy(exec_prefix, separator);
+    calculate->pythonpath = Py_DecodeLocale(PYTHONPATH, &len);
+    if (!calculate->pythonpath) {
+        return DECODE_LOCALE_ERR("PYTHONPATH define", len);
     }
-    else
-        wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
-
-    PyMem_RawFree(_pythonpath);
-    PyMem_RawFree(_prefix);
-    PyMem_RawFree(_exec_prefix);
-    PyMem_RawFree(lib_python);
-    PyMem_RawFree(rtpypath);
-}
-
-
-/* External interface */
-void
-Py_SetPath(const wchar_t *path)
-{
-    if (module_search_path != NULL) {
-        PyMem_RawFree(module_search_path);
-        module_search_path = NULL;
+    calculate->prefix = Py_DecodeLocale(PREFIX, &len);
+    if (!calculate->prefix) {
+        return DECODE_LOCALE_ERR("PREFIX define", len);
     }
-    if (path != NULL) {
-        extern wchar_t *Py_GetProgramName(void);
-        wchar_t *prog = Py_GetProgramName();
-        wcsncpy(progpath, prog, MAXPATHLEN);
-        exec_prefix[0] = prefix[0] = L'\0';
-        module_search_path = PyMem_RawMalloc((wcslen(path) + 1) * sizeof(wchar_t));
-        if (module_search_path != NULL)
-            wcscpy(module_search_path, path);
+    calculate->exec_prefix = Py_DecodeLocale(EXEC_PREFIX, &len);
+    if (!calculate->prefix) {
+        return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
+    calculate->lib_python = Py_DecodeLocale("lib/python" VERSION, &len);
+    if (!calculate->lib_python) {
+        return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
+    }
+    return _Py_INIT_OK();
 }
 
-wchar_t *
-Py_GetPath(void)
+
+static void
+calculate_free(PyCalculatePath *calculate)
 {
-    if (!module_search_path)
-        calculate_path();
-    return module_search_path;
+    PyMem_RawFree(calculate->pythonpath);
+    PyMem_RawFree(calculate->prefix);
+    PyMem_RawFree(calculate->exec_prefix);
+    PyMem_RawFree(calculate->lib_python);
+    PyMem_RawFree(calculate->path_env);
 }
 
-wchar_t *
-Py_GetPrefix(void)
+
+static _PyInitError
+calculate_path_impl(const _PyMainInterpreterConfig *main_config,
+                    PyCalculatePath *calculate, _PyPathConfig *config)
 {
-    if (!module_search_path)
-        calculate_path();
-    return prefix;
+    _PyInitError err;
+
+    err = calculate_program_full_path(main_config, calculate, config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = calculate_argv0_path(calculate, config->program_full_path);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    calculate_read_pyenv(calculate);
+
+    wchar_t prefix[MAXPATHLEN+1];
+    memset(prefix, 0, sizeof(prefix));
+    calculate_prefix(main_config, calculate, prefix);
+
+    calculate_zip_path(calculate, prefix);
+
+    wchar_t exec_prefix[MAXPATHLEN+1];
+    memset(exec_prefix, 0, sizeof(exec_prefix));
+    calculate_exec_prefix(main_config, calculate, exec_prefix);
+
+    if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
+        !Py_FrozenFlag)
+    {
+        fprintf(stderr,
+                "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
+    }
+
+    err = calculate_module_search_path(main_config, calculate,
+                                       prefix, exec_prefix, config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    calculate_reduce_prefix(calculate, prefix);
+
+    config->prefix = _PyMem_RawWcsdup(prefix);
+    if (config->prefix == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    calculate_reduce_exec_prefix(calculate, exec_prefix);
+
+    config->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
+    if (config->exec_prefix == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    return _Py_INIT_OK();
 }
 
-wchar_t *
-Py_GetExecPrefix(void)
+
+_PyInitError
+_PyPathConfig_Calculate(_PyPathConfig *config,
+                        const _PyMainInterpreterConfig *main_config)
 {
-    if (!module_search_path)
-        calculate_path();
-    return exec_prefix;
-}
+    PyCalculatePath calculate;
+    memset(&calculate, 0, sizeof(calculate));
 
-wchar_t *
-Py_GetProgramFullPath(void)
-{
-    if (!module_search_path)
-        calculate_path();
-    return progpath;
-}
+    _PyInitError err = calculate_init(&calculate, main_config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
 
+    err = calculate_path_impl(main_config, &calculate, config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _Py_INIT_OK();
+
+done:
+    calculate_free(&calculate);
+    return err;
+}
 
 #ifdef __cplusplus
 }

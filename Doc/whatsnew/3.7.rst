@@ -185,6 +185,19 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+New Development Mode: -X dev
+----------------------------
+
+Add a new "development mode": ``-X dev`` command line option to enable debug
+checks at runtime.
+
+In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
+default -X faulthandler ...``, except that the PYTHONMALLOC environment
+variable is not set in practice.
+
+See :option:`-X` ``dev`` for the details.
+
+
 Other Language Changes
 ======================
 
@@ -267,6 +280,9 @@ crypt
 Added support for the Blowfish method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
+The :func:`~crypt.mksalt` function now allows to specify the number of rounds
+for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
+
 dis
 ---
 
@@ -281,6 +297,10 @@ distutils
 README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
+
+:class:`distutils.core.setup` now warns if the ``classifiers``, ``keywords``
+and ``platforms`` fields are not specified as a list or a string.
+(Contributed by Berker Peksag in :issue:`19610`.)
 
 http.client
 -----------
@@ -342,12 +362,21 @@ The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
 can be set within the scope of a group.
 (Contributed by Serhiy Storchaka in :issue:`31690`.)
 
+:func:`re.split` now supports splitting on a pattern like ``r'\b'``,
+``'^$'`` or ``(?=-)`` that matches an empty string.
+(Contributed by Serhiy Storchaka in :issue:`25054`.)
+
 string
 ------
 
 :class:`string.Template` now lets you to optionally modify the regular
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+sys
+---
+
+Added :attr:`sys.flags.dev_mode` flag for the new development mode.
 
 time
 ----
@@ -371,6 +400,19 @@ Add new clock identifiers:
 * :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
   the time the system has been running and not suspended, providing accurate
   uptime measurement, both absolute and interval.
+
+Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
+to get per-thread CPU time measurements.
+(Contributed by Antoine Pitrou in :issue:`32025`.)
+
+
+unittest
+--------
+Added new command-line option ``-k`` to filter tests to run with a substring or
+Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
+tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
+but not ``bar_tests.FooTest.test_something``.
+
 
 unittest.mock
 -------------
@@ -530,6 +572,18 @@ Other CPython Implementation Changes
 Deprecated
 ==========
 
+* Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
+  in comprehensions and generator expressions (aside from the iterable expression
+  in the leftmost :keyword:`for` clause). This ensures that comprehensions
+  always immediately return a container of the appropriate type (rather than
+  potentially returning a :term:`generator iterator` object), while generator
+  expressions won't attempt to interleave their implicit output with the output
+  from any explicit yield expressions.
+
+  In Python 3.7, such expressions emit :exc:`DeprecationWarning` when compiled,
+  in Python 3.8+ they will emit :exc:`SyntaxError`. (Contributed by Serhiy
+  Storchaka in :issue:`10544`.)
+
 - Function :c:func:`PySlice_GetIndicesEx` is deprecated and replaced with
   a macro if ``Py_LIMITED_API`` is not set or set to the value between
   ``0x03050400`` and ``0x03060000`` (not including) or ``0x03060100`` or
@@ -630,8 +684,37 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in Python behavior
+--------------------------
+
+* Due to an oversight, earlier Python versions erroneously accepted the
+  following syntax::
+
+      f(1 for x in [1],)
+
+      class C(1 for x in [1]):
+          pass
+
+  Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
+  expression always needs to be directly inside a set of parentheses
+  and cannot have a comma on either side, and the duplication of the
+  parentheses can be omitted only on calls.
+  (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
+
+
 Changes in the Python API
 -------------------------
+
+* The ``asyncio.windows_utils.socketpair()`` function has been
+  removed: use directly :func:`socket.socketpair` which is available on all
+  platforms since Python 3.5 (before, it wasn't available on Windows).
+  ``asyncio.windows_utils.socketpair()`` was just an alias to
+  ``socket.socketpair`` on Python 3.5 and newer.
+
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
 
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in
@@ -677,6 +760,38 @@ Changes in the Python API
   function, the user specified handler *onerror* is now called with the first
   argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
   is failed.
+
+* Support of nested sets and set operations in regular expressions as in
+  `Unicode Technical Standard #18`_ might be added in the future.  This would
+  change the syntax, so to facilitate this change a :exc:`FutureWarning` will
+  be raised in ambiguous cases for the time being.
+  That include sets starting with a literal ``'['`` or containing literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+  avoid a warning escape them with a backslash.
+  (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+* The result of splitting a string on a :mod:`regular expression <re>`
+  that could match an empty string has been changed.  For example
+  splitting on ``r'\s*'`` will now split not only on whitespaces as it
+  did previously, but also between any pair of non-whitespace
+  characters.  The previous behavior can be restored by changing the pattern
+  to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
+  Python 3.5.
+
+  For patterns that match both empty and non-empty strings, the result of
+  searching for all matches may also be changed in other cases.  For example
+  in the string ``'a\n\n'``, the pattern ``r'(?m)^\s*?$'`` will not only
+  match empty strings at positions 2 and 3, but also the string ``'\n'`` at
+  positions 2--3.  To match only blank lines, the pattern should be rewritten
+  as ``r'(?m)^[^\S\n]*$'``.
+
+  (Contributed by Serhiy Storchaka in :issue:`25054`.)
+
+* :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
+  recent to be more consistent with :mod:`traceback`.
+  (Contributed by Jesse Bakker in :issue:`32121`.)
+
+.. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
 
 Changes in the C API

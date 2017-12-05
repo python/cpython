@@ -18,23 +18,11 @@ def _create_transport_context(server_side, server_hostname):
     # Client side may pass ssl=True to use a default
     # context; in that case the sslcontext passed is None.
     # The default is secure for client connections.
-    if hasattr(ssl, 'create_default_context'):
-        # Python 3.4+: use up-to-date strong settings.
-        sslcontext = ssl.create_default_context()
-        if not server_hostname:
-            sslcontext.check_hostname = False
-    else:
-        # Fallback for Python 3.3.
-        sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        sslcontext.options |= ssl.OP_NO_SSLv2
-        sslcontext.options |= ssl.OP_NO_SSLv3
-        sslcontext.set_default_verify_paths()
-        sslcontext.verify_mode = ssl.CERT_REQUIRED
+    # Python 3.4+: use up-to-date strong settings.
+    sslcontext = ssl.create_default_context()
+    if not server_hostname:
+        sslcontext.check_hostname = False
     return sslcontext
-
-
-def _is_sslproto_available():
-    return hasattr(ssl, "MemoryBIO")
 
 
 # States of an _SSLPipe.

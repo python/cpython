@@ -3,6 +3,29 @@ Released on 2018-06-18?
 ========================
 
 
+bpo-32207: Improve tk event exception tracebacks in IDLE.
+When tk event handling is driven by IDLE's run loop, a confusing
+and distracting queue.EMPTY traceback context is no longer added
+to tk event exception tracebacks.  The traceback is now the same
+as when event handling is driven by user code.  Patch based on
+a suggestion by Serhiy Storchaka.
+
+bpo-32164: Delete unused file idlelib/tabbedpages.py.
+Use of TabbedPageSet in configdialog was replaced by ttk.Notebook.
+
+bpo-32100: Fix old and new bugs in pathbrowser; improve tests.
+Patch mostly by Cheryl Sabella.
+
+bpo-31860: The font sample in the settings dialog is now editable.
+Edits persist while IDLE remains open.
+Patch by Serhiy Storchake and Terry Jan Reedy.
+
+bpo-31858: Restrict shell prompt manipulaton to the shell.
+Editor and output windows only see an empty last prompt line.  This
+simplifies the code and fixes a minor bug when newline is inserted.
+Sys.ps1, if present, is read on Shell start-up, but is not set or changed.
+Patch by Terry Jan Reedy.
+
 bpo-28603: Fix a TypeError that caused a shell restart when printing
 a traceback that includes an exception that is unhashable.
 Patch by Zane Bitter.

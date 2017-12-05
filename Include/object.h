@@ -728,7 +728,6 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 /* Py_REF_DEBUG also controls the display of refcounts and memory block
  * allocations at the interactive prompt and at interpreter shutdown
  */
-PyAPI_FUNC(PyObject *) _PyDebug_XOptionShowRefCount(void);
 PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #else
 #define _Py_INC_REFTOTAL

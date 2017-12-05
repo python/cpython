@@ -135,9 +135,9 @@ extern double PyFPE_dummy(void *);
 
 #define PyFPE_START_PROTECT(err_string, leave_stmt) \
 if (!PyFPE_counter++ && setjmp(PyFPE_jbuf)) { \
-	PyErr_SetString(PyExc_FloatingPointError, err_string); \
-	PyFPE_counter = 0; \
-	leave_stmt; \
+        PyErr_SetString(PyExc_FloatingPointError, err_string); \
+        PyFPE_counter = 0; \
+        leave_stmt; \
 }
 
 /*

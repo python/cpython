@@ -2,6 +2,7 @@
 
 import errno
 import os
+import selectors
 import signal
 import socket
 import stat
@@ -18,7 +19,6 @@ from . import coroutines
 from . import events
 from . import futures
 from . import selector_events
-from . import selectors
 from . import transports
 from .coroutines import coroutine
 from .log import logger
@@ -38,13 +38,6 @@ def _sighandler_noop(signum, frame):
     pass
 
 
-try:
-    _fspath = os.fspath
-except AttributeError:
-    # Python 3.5 or earlier
-    _fspath = lambda path: path
-
-
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Unix event loop.
 
@@ -54,9 +47,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def __init__(self, selector=None):
         super().__init__(selector)
         self._signal_handlers = {}
-
-    def _socketpair(self):
-        return socket.socketpair()
 
     def close(self):
         super().close()
@@ -77,7 +67,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise RuntimeError if there is a problem setting up the handler.
         """
         if (coroutines.iscoroutine(callback)
-        or coroutines.iscoroutinefunction(callback)):
+                or coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)
@@ -212,7 +202,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
     @coroutine
-    def create_unix_connection(self, protocol_factory, path, *,
+    def create_unix_connection(self, protocol_factory, path=None, *,
                                ssl=None, sock=None,
                                server_hostname=None):
         assert server_hostname is None or isinstance(server_hostname, str)
@@ -229,6 +219,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
+            path = os.fspath(path)
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
             try:
                 sock.setblocking(False)
@@ -262,7 +253,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
-            path = _fspath(path)
+            path = os.fspath(path)
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
             # Check for abstract socket. `str` and `bytes` paths are supported.
@@ -274,7 +265,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     pass
                 except OSError as err:
                     # Directory may have permissions only to create socket.
-                    logger.error('Unable to check or remove stale UNIX socket %r: %r', path, err)
+                    logger.error('Unable to check or remove stale UNIX socket '
+                                 '%r: %r', path, err)
 
             try:
                 sock.bind(path)
@@ -308,18 +300,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return server
 
 
-if hasattr(os, 'set_blocking'):
-    def _set_nonblocking(fd):
-        os.set_blocking(fd, False)
-else:
-    import fcntl
-
-    def _set_nonblocking(fd):
-        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-        flags = flags | os.O_NONBLOCK
-        fcntl.fcntl(fd, fcntl.F_SETFL, flags)
-
-
 class _UnixReadPipeTransport(transports.ReadTransport):
 
     max_size = 256 * 1024  # max bytes we read in one event loop iteration
@@ -342,7 +322,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             self._protocol = None
             raise ValueError("Pipe transport is for pipes/sockets only.")
 
-        _set_nonblocking(self._fileno)
+        os.set_blocking(self._fileno, False)
 
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
@@ -471,7 +451,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             raise ValueError("Pipe transport is only for "
                              "pipes, sockets and character devices")
 
-        _set_nonblocking(self._fileno)
+        os.set_blocking(self._fileno, False)
         self._loop.call_soon(self._protocol.connection_made, self)
 
         # On AIX, the reader trick (to be notified when the read end of the
@@ -650,22 +630,6 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             self._loop = None
 
 
-if hasattr(os, 'set_inheritable'):
-    # Python 3.4 and newer
-    _set_inheritable = os.set_inheritable
-else:
-    import fcntl
-
-    def _set_inheritable(fd, inheritable):
-        cloexec_flag = getattr(fcntl, 'FD_CLOEXEC', 1)
-
-        old = fcntl.fcntl(fd, fcntl.F_GETFD)
-        if not inheritable:
-            fcntl.fcntl(fd, fcntl.F_SETFD, old | cloexec_flag)
-        else:
-            fcntl.fcntl(fd, fcntl.F_SETFD, old & ~cloexec_flag)
-
-
 class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
@@ -676,13 +640,7 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # socket (which we use in order to detect closing of the
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
-            stdin, stdin_w = self._loop._socketpair()
-
-            # Mark the write end of the stdin pipe as non-inheritable,
-            # needed by close_fds=False on Python 3.3 and older
-            # (Python 3.4 implements the PEP 446, socketpair returns
-            # non-inheritable sockets)
-            _set_inheritable(stdin_w.fileno(), False)
+            stdin, stdin_w = socket.socketpair()
         self._proc = subprocess.Popen(
             args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
             universal_newlines=False, bufsize=bufsize, **kwargs)
@@ -1037,8 +995,8 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
         super().set_event_loop(loop)
 
-        if self._watcher is not None and \
-            isinstance(threading.current_thread(), threading._MainThread):
+        if (self._watcher is not None and
+                isinstance(threading.current_thread(), threading._MainThread)):
             self._watcher.attach_loop(loop)
 
     def get_child_watcher(self):

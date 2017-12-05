@@ -85,15 +85,10 @@ static size_t count_reuse = 0;
 static void
 show_alloc(void)
 {
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showalloccount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (!inter->core_config.show_alloc_count) {
         return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
-    if (value != Py_True)
-        return;
+    }
 
     fprintf(stderr, "List allocations: %" PY_FORMAT_SIZE_T "d\n",
         count_alloc);
@@ -369,10 +364,7 @@ list_repr(PyListObject *v)
                 goto error;
         }
 
-        if (Py_EnterRecursiveCall(" while getting the repr of a list"))
-            goto error;
         s = PyObject_Repr(v->ob_item[i]);
-        Py_LeaveRecursiveCall();
         if (s == NULL)
             goto error;
 

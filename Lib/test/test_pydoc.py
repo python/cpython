@@ -357,7 +357,7 @@ def get_pydoc_html(module):
 def get_pydoc_link(module):
     "Returns a documentation web link of a module"
     dirname = os.path.dirname
-    basedir = dirname(dirname(os.path.realpath(__file__)))
+    basedir = dirname(dirname(__file__))
     doc = pydoc.TextDoc()
     loc = doc.getdocloc(module, basedir=basedir)
     return loc
@@ -824,7 +824,7 @@ class TestDescriptions(unittest.TestCase):
         T = typing.TypeVar('T')
         class C(typing.Generic[T], typing.Mapping[int, str]): ...
         self.assertEqual(pydoc.render_doc(foo).splitlines()[-1],
-                         'f\x08fo\x08oo\x08o(data:List[Any], x:int)'
+                         'f\x08fo\x08oo\x08o(data: List[Any], x: int)'
                          ' -> Iterator[Tuple[int, Any]]')
         self.assertEqual(pydoc.render_doc(C).splitlines()[2],
                          'class C\x08C(typing.Mapping)')
