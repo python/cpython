@@ -666,22 +666,13 @@ set_date_fields(PyDateTime_Date *self, int y, int m, int d)
 /* ---------------------------------------------------------------------------
  * String parsing utilities and helper functions
  */
-static inline unsigned int to_int(char ptr)
-{
-    return (unsigned int)(ptr - '0');
-}
 
-static inline int is_digit(unsigned int tmp)
-{
-    return tmp <= 9;
-}
-
-static inline const char* parse_digits(const char* ptr, int* var,
+static const char* parse_digits(const char* ptr, int* var,
                                        size_t num_digits)
 {
     for (size_t i = 0; i < num_digits; ++i) {
-        int tmp = to_int(*(ptr++));
-        if (!is_digit(tmp)) { return NULL; }
+        unsigned int tmp = (unsigned int)(*(ptr++) - '0');
+        if (tmp > 9) { return NULL; }
         *var *= 10;
         *var += (signed int)tmp;
     }
