@@ -656,6 +656,56 @@ class ThreadTests(BaseTestCase):
                 t.join()
             self.assertRaises(ValueError, bs.release)
 
+    def test_semaphore_docs(self):
+        """Basic test to validate that the behavior described in the docs is
+        accurate.
+        """
+        s = threading.Semaphore(1)
+
+        # note: no mutex since we know only one thread is executing at once
+        results = []
+
+        def put_result():
+            results.append(s.acquire())
+
+        th1 = threading.Thread(target=put_result)
+        th2 = threading.Thread(target=put_result)
+        th3 = threading.Thread(target=put_result)
+
+        th1.start()
+        th2.start()
+        th3.start()
+
+        start = time.time()
+        while th1.is_alive():
+            assert time.time() - start < 0.5
+            time.sleep(0.05)
+
+        s.release()
+        while sum([th2.is_alive(), th3.is_alive()]) == 2:
+            assert time.time() - start < 0.5
+            time.sleep(0.05)
+
+        assert sum([th2.is_alive(), th3.is_alive()]) == 1
+        assert s._value == 0
+
+        s.release()
+        while sum([th2.is_alive(), th3.is_alive()]) == 1:
+            assert time.time() - start < 0.5
+            time.sleep(0.05)
+
+        assert sum([th2.is_alive(), th3.is_alive()]) == 0
+        assert s._value == 0
+
+        assert all([v == True for v in results])
+
+        s.release()
+        assert s._value == 1
+
+        # not bounded
+        s.release()
+        assert s._value == 2
+
     @cpython_only
     def test_frame_tstate_tracing(self):
         # Issue #14432: Crash when a generator is created in a C thread that is
