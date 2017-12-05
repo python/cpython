@@ -312,8 +312,8 @@ The :mod:`functools` module defines the following functions:
      >>> @fun.register(complex)
      ... def _(arg, verbose=False):
      ...     if verbose:
-     ...         print("Strength in numbers, eh?", end=" ")
-     ...     print(arg)
+     ...         print("Better than complicated.", end=" ")
+     ...     print(arg.real, arg.imag)
      ...
 
    The :func:`register` attribute returns the undecorated function which
