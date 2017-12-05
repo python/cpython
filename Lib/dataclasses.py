@@ -142,7 +142,7 @@ def _tuple_str(obj_name, fields):
     #  return "(self.x,self.y)".
 
     # Special case for the 0-tuple.
-    if len(fields) == 0:
+    if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
@@ -286,7 +286,7 @@ def _init_fn(fields, frozen, has_post_init, self_name):
         body_lines += [f'{self_name}.{_POST_INIT_NAME}({params_str})']
 
     # If no body lines, use 'pass'.
-    if len(body_lines) == 0:
+    if not body_lines:
         body_lines = ['pass']
 
     locals = {f'_type_{f.name}': f.type for f in fields}
@@ -571,6 +571,8 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 # _cls should never be specified by keyword, so start it with an
 #  underscore. The presense of _cls is used to detect if this
 #  decorator is being called with parameters or not.
+
+# Why hash=None instead of hash=False?
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
               hash=None, frozen=False):
     """Returns the same class as was passed in, with dunder methods
@@ -619,6 +621,9 @@ def _isdataclass(obj):
     return not isinstance(obj, type) and hasattr(obj, _MARKER)
 
 
+# Shouldn't the default factor be collections.OrderedDict()?
+# The class itself is ordered and instances may or may not be
+# intrinsically ordered depending on the "ordered" keyword.
 def asdict(obj, *, dict_factory=dict):
     """Return the fields of a dataclass instance as a new dictionary mapping
     field names to field values.
@@ -697,14 +702,14 @@ def _astuple_inner(obj, tuple_factory):
         return deepcopy(obj)
 
 
-def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
+def make_dataclass(cls_name, fields, *, bases=(), namespace=None, **kwargs):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an interable
     of either (name, type) or (name, type, Field) objects. Field
     objects are created by calling 'field(name, type [, Field])'.
 
-      C = make_class('C', [('a', int', ('b', int, Field(init=False))], bases=Base)
+      C = make_class('C', [('a', int), ('b', int, Field(init=False))], bases=Base)
 
     is equivalent to:
 
@@ -729,7 +734,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
             name, tp, spec = item
             namespace[name] = spec
     cls = type(cls_name, bases, namespace)
-    return dataclass(cls)
+    return dataclass(cls, **kwargs)
 
 
 def replace(obj, **changes):

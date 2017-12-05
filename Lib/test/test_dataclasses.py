@@ -1915,6 +1915,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual((c.x, c.y), (10, 5))
         self.assertEqual(c.add_one(), 11)
 
+    def test_helper_make_dataclass_keywords(self):
+        C = make_dataclass('C', [('x', int), ('y', int)], order=True, hash=True)
+        self.assertLess(C(10, 20), C(10, 25))
+        self.assertEqual(hash(C(10, 20)), hash(C(10, 20)))
 
     def test_helper_make_dataclass_no_mutate_namespace(self):
         # Make sure a provided namespace isn't mutated.
