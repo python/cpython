@@ -285,14 +285,14 @@ The :mod:`functools` module defines the following functions:
    parameter and decorating a function implementing the operation for that
    type::
 
-     >>> @fun.register(int)
-     ... def _(arg, verbose=False):
+     >>> @fun.register
+     ... def _(arg: int, verbose=False):
      ...     if verbose:
      ...         print("Strength in numbers, eh?", end=" ")
      ...     print(arg)
      ...
-     >>> @fun.register(list)
-     ... def _(arg, verbose=False):
+     >>> @fun.register
+     ... def _(arg: list, verbose=False):
      ...     if verbose:
      ...         print("Enumerate this:")
      ...     for i, elem in enumerate(arg):
@@ -305,6 +305,16 @@ The :mod:`functools` module defines the following functions:
      ...     print("Nothing.")
      ...
      >>> fun.register(type(None), nothing)
+
+   This form of the :func:`register` attribute can also be used as
+   a decorator (note: no type annotations on the function now)::
+
+     >>> @fun.register(complex)
+     ... def _(arg, verbose=False):
+     ...     if verbose:
+     ...         print("Strength in numbers, eh?", end=" ")
+     ...     print(arg)
+     ...
 
    The :func:`register` attribute returns the undecorated function which
    enables decorator stacking, pickling, as well as creating unit tests for
@@ -367,6 +377,9 @@ The :mod:`functools` module defines the following functions:
     <function fun at 0x103fe0000>
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.7
+   The :func:`register` attribute supports using type annotations.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
