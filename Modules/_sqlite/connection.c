@@ -21,10 +21,13 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "Python.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #else
 #ifdef MS_WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 #endif
@@ -1580,18 +1583,32 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         Py_INCREF(Py_None);
         retval = Py_None;
     } else {
-#ifdef MS_WINDOWS
-#define unlink(fpath) !DeleteFileW(fpath)
-#endif
         /* Remove the probably incomplete/invalid backup */
-        if (filename != NULL && unlink(filename) < 0) {
-            /* FIXME: this should probably be chained to the outstanding
-               exception */
-            return PyErr_SetFromErrno(PyExc_OSError);
-        }
-#ifdef MS_WINDOWS
-#undef unlink
+        if (filename != NULL) {
+#ifndef MS_WINDOWS
+            if (unlink(filename) < 0) {
+                /* FIXME: this should probably be chained to the outstanding
+                   exception */
+                return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, target);
+            }
+#else
+            Py_ssize_t size;
+            const wchar_t *wide = PyUnicode_AsWideCharString(target, &size);
+
+            if (!wide)
+                return NULL;
+
+            if (!DeleteFileW(wide)) {
+                PyMem_Free(wide);
+                /* FIXME: this should probably be chained to the outstanding
+                   exception */
+                return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
+                                                                    GetLastError(),
+                                                                    target);
+            }
+            PyMem_Free(wide);
 #endif
+        }
     }
 
 finally:
