@@ -1469,14 +1469,14 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     PyObject* retval = NULL;
     int rc;
     int cberr = 0;
-    int sleep = 250;
+    double sleep_secs = 0.250;
     sqlite3 *bckconn;
     sqlite3_backup *bckhandle;
     static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$iOsi:backup", keywords,
-                                     &target, &pages, &progress, &name, &sleep)) {
         goto finally;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$iOsd:backup", keywords,
+                                     &target, &pages, &progress, &name, &sleep_secs)) {
     }
 
     if (!PyUnicode_Check(target) && !PyObject_TypeCheck(target, &pysqlite_ConnectionType)) {
@@ -1558,7 +1558,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
                the engine could not make any progress */
             if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
                 Py_BEGIN_ALLOW_THREADS
-                sqlite3_sleep(sleep);
+                sqlite3_sleep(sleep_secs * 1000.0);
                 Py_END_ALLOW_THREADS
             }
         } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);

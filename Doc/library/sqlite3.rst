@@ -521,7 +521,7 @@ Connection Objects
                  f.write('%s\n' % line)
 
 
-   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=250)
+   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
 
       This method makes a backup of a SQLite database into the mandatory argument
       *target*, even while it's being accessed by other clients, or concurrently by
@@ -542,8 +542,9 @@ Connection Objects
       database, ``"temp"`` to indicate the temporary database or the name specified
       after the ``AS`` keyword in an ``ATTACH`` statement for an attached database.
 
-      The *sleep* argument specifies the number of milliseconds to sleep by between
-      successive attempts to backup remaining pages.
+      The *sleep* argument specifies the number of seconds to sleep by between
+      successive attempts to backup remaining pages, can be specified either as an
+      integer or a floating point value.
 
       Example 1, copy an existing database into another file::
 
