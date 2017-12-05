@@ -1,2 +1,0 @@
-Add 3 new clock identifiers: :data:`time.CLOCK_BOOTTIME`,
-:data:`time.CLOCK_PROF` and :data:`time.CLOCK_UPTIME`.

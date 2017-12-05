@@ -1,2 +1,0 @@
-Fix method set_protocol() of class _SSLProtocolTransport in asyncio module.
-This method was previously modifying a wrong reference to the protocol.

@@ -1,3 +1,0 @@
-io.FileIO.readall() and io.FileIO.read() now release the GIL when
-getting the file size. Fixed hang of all threads with inaccessible NFS
-server.  Patch by Nir Soffer.

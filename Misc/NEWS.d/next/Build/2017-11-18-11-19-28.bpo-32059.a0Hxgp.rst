@@ -1,2 +1,0 @@
-``detect_modules()`` in ``setup.py`` now also searches the sysroot paths
-when cross-compiling.

@@ -1,2 +1,0 @@
-PEP 557, Data Classes. Provides a decorator which adds boilerplate methods
-to classes which use type annotations so specify fields.

@@ -1,3 +1,0 @@
-Fixed stack corruption in curses.box() and curses.ungetmouse() when the size
-of types chtype or mmask_t is less than the size of C long.  curses.box()
-now accepts characters as arguments.  Based on patch by Steve Fink.
