@@ -1,0 +1,4 @@
+``setup()`` now warns about invalid types for some fields.
+
+The ``distutils.dist.Distribution`` class now warns when ``classifiers``,
+``keywords`` and ``platforms`` fields are not specified as a list or a string.

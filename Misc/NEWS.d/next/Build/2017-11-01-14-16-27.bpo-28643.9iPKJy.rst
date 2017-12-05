@@ -1,0 +1,1 @@
+Record profile-opt build progress with stamp files.

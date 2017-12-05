@@ -26,7 +26,7 @@ struct _gilstate_runtime_state {
     */
     /* TODO: Given interp_main, it may be possible to kill this ref */
     PyInterpreterState *autoInterpreterState;
-    int autoTLSkey;
+    Py_tss_t autoTSSkey;
 };
 
 /* hook for PyEval_GetFrame(), requested for Psyco */
@@ -35,6 +35,34 @@ struct _gilstate_runtime_state {
 /* Issue #26558: Flag to disable PyGILState_Check().
    If set to non-zero, PyGILState_Check() always return 1. */
 #define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
+
+
+typedef struct {
+    /* Full path to the Python program */
+    wchar_t *program_full_path;
+    wchar_t *prefix;
+#ifdef MS_WINDOWS
+    wchar_t *dll_path;
+#else
+    wchar_t *exec_prefix;
+#endif
+    /* Set by Py_SetPath(), or computed by _PyPathConfig_Init() */
+    wchar_t *module_search_path;
+    /* Python program name */
+    wchar_t *program_name;
+    /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
+    wchar_t *home;
+} _PyPathConfig;
+
+#define _PyPathConfig_INIT {.module_search_path = NULL}
+/* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
+
+PyAPI_DATA(_PyPathConfig) _Py_path_config;
+
+PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
+    _PyPathConfig *config,
+    const _PyMainInterpreterConfig *main_config);
+PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
 
 /* Full Python runtime state */
@@ -64,9 +92,7 @@ typedef struct pyruntimestate {
     int nexitfuncs;
     void (*pyexitfunc)(void);
 
-    struct _pyobj_runtime_state obj;
     struct _gc_runtime_state gc;
-    struct _pymem_runtime_state mem;
     struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
@@ -74,9 +100,16 @@ typedef struct pyruntimestate {
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
+#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+/* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
+
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(void) _PyRuntimeState_Init(_PyRuntimeState *);
+PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+
+/* Initialize _PyRuntimeState.
+   Return NULL on success, or return an error message on failure. */
+PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)
@@ -84,7 +117,7 @@ PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
 
 /* Other */
 
-PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
+PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
 
 #ifdef __cplusplus
 }

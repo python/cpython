@@ -167,34 +167,34 @@ class TestAsyncAwait(GrammarTest):
             async def foo(): await x
         """)
 
-        self.invalid_syntax("await x")
-        self.invalid_syntax("""def foo():
-                                   await x""")
+        self.validate("await x")
+        self.validate("""def foo():
+                        await x""")
 
-        self.invalid_syntax("""def foo():
+        self.validate("""def foo():
             def foo(): pass
             async def foo(): pass
             await x
         """)
 
     def test_async_var(self):
-        self.validate("""async = 1""")
-        self.validate("""await = 1""")
-        self.validate("""def async(): pass""")
+        self.invalid_syntax("""async = 1""")
+        self.invalid_syntax("""await = 1""")
+        self.invalid_syntax("""def async(): pass""")
 
     def test_async_with(self):
         self.validate("""async def foo():
                              async for a in b: pass""")
 
-        self.invalid_syntax("""def foo():
-                                   async for a in b: pass""")
+        self.validate("""def foo():
+                             async for a in b: pass""")
 
     def test_async_for(self):
         self.validate("""async def foo():
                              async with a: pass""")
 
-        self.invalid_syntax("""def foo():
-                                   async with a: pass""")
+        self.validate("""def foo():
+                             async with a: pass""")
 
 
 class TestRaiseChanges(GrammarTest):
@@ -459,6 +459,13 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
+class TestGeneratorExpressions(GrammarTest):
+
+    def test_trailing_comma_after_generator_expression_argument_works(self):
+        # BPO issue 27494
+        self.validate("set(x for x in [],)")
+
+
 def diff(fn, result):
     try:
         with open('@', 'w') as f:
@@ -470,3 +477,7 @@ def diff(fn, result):
             os.remove("@")
         except OSError:
             pass
+
+
+if __name__ == '__main__':
+    unittest.main()

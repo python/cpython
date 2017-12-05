@@ -755,7 +755,9 @@ class BaseServerTestCase(unittest.TestCase):
         self.evt = threading.Event()
         # start server thread to handle requests
         serv_args = (self.evt, self.request_count, self.requestHandler)
-        threading.Thread(target=self.threadFunc, args=serv_args).start()
+        thread = threading.Thread(target=self.threadFunc, args=serv_args)
+        thread.start()
+        self.addCleanup(thread.join)
 
         # wait for the server to be ready
         self.evt.wait()
@@ -1173,13 +1175,7 @@ class GzipUtilTestCase(unittest.TestCase):
 class ServerProxyTestCase(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
-        if threading:
-            self.url = URL
-        else:
-            # Without threading, http_server() and http_multi_server() will not
-            # be executed and URL is still equal to None. 'http://' is a just
-            # enough to choose the scheme (HTTP)
-            self.url = 'http://'
+        self.url = URL
 
     def test_close(self):
         p = xmlrpclib.ServerProxy(self.url)
@@ -1206,7 +1202,9 @@ class FailingServerTestCase(unittest.TestCase):
         self.evt = threading.Event()
         # start server thread to handle requests
         serv_args = (self.evt, 1)
-        threading.Thread(target=http_server, args=serv_args).start()
+        thread = threading.Thread(target=http_server, args=serv_args)
+        thread.start()
+        self.addCleanup(thread.join)
 
         # wait for the server to be ready
         self.evt.wait()

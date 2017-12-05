@@ -244,8 +244,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._thread_id = None
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
-        self.set_debug((not sys.flags.ignore_environment
-                        and bool(os.environ.get('PYTHONASYNCIODEBUG'))))
+        self.set_debug(coroutines._is_debug_mode())
         # In debug mode, if the execution of a callback or a step of a task
         # exceed this duration in seconds, the slow callback/task is logged.
         self.slow_callback_duration = 0.1
@@ -859,6 +858,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if family == 0:
                     raise ValueError('unexpected address family')
                 addr_pairs_info = (((family, proto), (None, None)),)
+            elif hasattr(socket, 'AF_UNIX') and family == socket.AF_UNIX:
+                for addr in (local_addr, remote_addr):
+                    if addr is not None and not isinstance(addr, str):
+                        raise TypeError('string is expected')
+                addr_pairs_info = (((family, proto),
+                                    (local_addr, remote_addr)), )
             else:
                 # join address by (family, protocol)
                 addr_infos = collections.OrderedDict()
@@ -1216,6 +1221,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         This is called when an exception occurs and no exception
         handler is set, and can be called by a custom exception
         handler that wants to defer to the default behavior.
+
+        This default handler logs the error message and other
+        context-dependent information.  In debug mode, a truncated
+        stack trace is also appended showing where the given object
+        (e.g. a handle or future or task) was created, if any.
 
         The context parameter has the same meaning as in
         `call_exception_handler()`.

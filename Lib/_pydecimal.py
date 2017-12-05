@@ -431,10 +431,7 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 ##### Context Functions ##################################################
 
 # The getcontext() and setcontext() function manage access to a thread-local
-# current context.  Py2.4 offers direct support for thread locals.  If that
-# is not available, use threading.current_thread() which is slower but will
-# work for older Pythons.  If threads are not part of the build, create a
-# mock threading object with threading.local() returning the module namespace.
+# current context.
 
 import threading
 

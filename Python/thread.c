@@ -84,7 +84,7 @@ PyThread_init_thread(void)
 #   define PYTHREAD_NAME "nt"
 #   include "thread_nt.h"
 #else
-#   error "Require native thread feature. See https://bugs.python.org/issue30832"
+#   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
 
@@ -111,41 +111,37 @@ PyThread_set_stacksize(size_t size)
 }
 
 
-/* ------------------------------------------------------------------------
-Per-thread data ("key") support.
+/* Thread Specific Storage (TSS) API
 
-Use PyThread_create_key() to create a new key.  This is typically shared
-across threads.
+   Cross-platform components of TSS API implementation.
+*/
 
-Use PyThread_set_key_value(thekey, value) to associate void* value with
-thekey in the current thread.  Each thread has a distinct mapping of thekey
-to a void* value.  Caution:  if the current thread already has a mapping
-for thekey, value is ignored.
+Py_tss_t *
+PyThread_tss_alloc(void)
+{
+    Py_tss_t *new_key = (Py_tss_t *)PyMem_RawMalloc(sizeof(Py_tss_t));
+    if (new_key == NULL) {
+        return NULL;
+    }
+    new_key->_is_initialized = 0;
+    return new_key;
+}
 
-Use PyThread_get_key_value(thekey) to retrieve the void* value associated
-with thekey in the current thread.  This returns NULL if no value is
-associated with thekey in the current thread.
+void
+PyThread_tss_free(Py_tss_t *key)
+{
+    if (key != NULL) {
+        PyThread_tss_delete(key);
+        PyMem_RawFree((void *)key);
+    }
+}
 
-Use PyThread_delete_key_value(thekey) to forget the current thread's associated
-value for thekey.  PyThread_delete_key(thekey) forgets the values associated
-with thekey across *all* threads.
-
-While some of these functions have error-return values, none set any
-Python exception.
-
-None of the functions does memory management on behalf of the void* values.
-You need to allocate and deallocate them yourself.  If the void* values
-happen to be PyObject*, these functions don't do refcount operations on
-them either.
-
-The GIL does not need to be held when calling these functions; they supply
-their own locking.  This isn't true of PyThread_create_key(), though (see
-next paragraph).
-
-There's a hidden assumption that PyThread_create_key() will be called before
-any of the other functions are called.  There's also a hidden assumption
-that calls to PyThread_create_key() are serialized externally.
------------------------------------------------------------------------- */
+int
+PyThread_tss_is_created(Py_tss_t *key)
+{
+    assert(key != NULL);
+    return key->_is_initialized;
+}
 
 
 PyDoc_STRVAR(threadinfo__doc__,

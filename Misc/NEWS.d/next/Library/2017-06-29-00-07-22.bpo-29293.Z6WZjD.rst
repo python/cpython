@@ -1,5 +1,0 @@
-Add missing parameter "n" on multiprocessing.Condition.notify().
-
-The doc claims multiprocessing.Condition behaves like threading.Condition,
-but its notify() method lacked the optional "n" argument (to specify the
-number of sleepers to wake up) that threading.Condition.notify() accepts.

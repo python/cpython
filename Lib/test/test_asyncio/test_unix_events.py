@@ -13,6 +13,7 @@ import tempfile
 import threading
 import unittest
 from unittest import mock
+from test import support
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -239,6 +240,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_existing_path_sock(self):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX)
@@ -251,7 +253,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
-    @unittest.skipUnless(hasattr(os, 'fspath'), 'no os.fspath')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_pathlib(self):
         with test_utils.unix_socket_path() as path:
             path = pathlib.Path(path)
@@ -259,6 +261,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             srv = self.loop.run_until_complete(srv_coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
+
+    def test_create_unix_connection_pathlib(self):
+        with test_utils.unix_socket_path() as path:
+            path = pathlib.Path(path)
+            coro = self.loop.create_unix_connection(lambda: None, path)
+            with self.assertRaises(FileNotFoundError):
+                # If pathlib.Path wasn't supported, the exception would be
+                # different.
+                self.loop.run_until_complete(coro)
 
     def test_create_unix_server_existing_path_nonsock(self):
         with tempfile.NamedTemporaryFile() as file:
@@ -300,6 +311,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'no socket.SOCK_NONBLOCK (linux only)')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
         sock = socket.socket(
             socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
@@ -319,7 +331,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()
         with sock:
-            coro = self.loop.create_unix_connection(lambda: None, path=None,
+            coro = self.loop.create_unix_connection(lambda: None,
                                                     sock=sock)
             with self.assertRaisesRegex(ValueError,
                                         'A UNIX Domain Stream.*was expected'):
@@ -382,7 +394,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
+        blocking_patcher = mock.patch('os.set_blocking')
         blocking_patcher.start()
         self.addCleanup(blocking_patcher.stop)
 
@@ -532,7 +544,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
+        blocking_patcher = mock.patch('os.set_blocking')
         blocking_patcher.start()
         self.addCleanup(blocking_patcher.stop)
 
@@ -1614,6 +1626,76 @@ class PolicyTests(unittest.TestCase):
 
         loop.close()
         new_loop.close()
+
+
+class TestFunctional(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+        asyncio.set_event_loop(None)
+
+    def test_add_reader_invalid_argument(self):
+        def assert_raises():
+            return self.assertRaisesRegex(ValueError, r'Invalid file object')
+
+        cb = lambda: None
+
+        with assert_raises():
+            self.loop.add_reader(object(), cb)
+        with assert_raises():
+            self.loop.add_writer(object(), cb)
+
+        with assert_raises():
+            self.loop.remove_reader(object())
+        with assert_raises():
+            self.loop.remove_writer(object())
+
+    def test_add_reader_or_writer_transport_fd(self):
+        def assert_raises():
+            return self.assertRaisesRegex(
+                RuntimeError,
+                r'File descriptor .* is used by transport')
+
+        async def runner():
+            tr, pr = await self.loop.create_connection(
+                lambda: asyncio.Protocol(), sock=rsock)
+
+            try:
+                cb = lambda: None
+
+                with assert_raises():
+                    self.loop.add_reader(rsock, cb)
+                with assert_raises():
+                    self.loop.add_reader(rsock.fileno(), cb)
+
+                with assert_raises():
+                    self.loop.remove_reader(rsock)
+                with assert_raises():
+                    self.loop.remove_reader(rsock.fileno())
+
+                with assert_raises():
+                    self.loop.add_writer(rsock, cb)
+                with assert_raises():
+                    self.loop.add_writer(rsock.fileno(), cb)
+
+                with assert_raises():
+                    self.loop.remove_writer(rsock)
+                with assert_raises():
+                    self.loop.remove_writer(rsock.fileno())
+
+            finally:
+                tr.close()
+
+        rsock, wsock = socket.socketpair()
+        try:
+            self.loop.run_until_complete(runner())
+        finally:
+            rsock.close()
+            wsock.close()
 
 
 if __name__ == '__main__':

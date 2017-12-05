@@ -109,6 +109,40 @@ always available.
    This function should be used for internal and specialized purposes only.
 
 
+.. function:: breakpointhook()
+
+   This hook function is called by built-in :func:`breakpoint`.  By default,
+   it drops you into the :mod:`pdb` debugger, but it can be set to any other
+   function so that you can choose which debugger gets used.
+
+   The signature of this function is dependent on what it calls.  For example,
+   the default binding (e.g. ``pdb.set_trace()``) expects no arguments, but
+   you might bind it to a function that expects additional arguments
+   (positional and/or keyword).  The built-in ``breakpoint()`` function passes
+   its ``*args`` and ``**kws`` straight through.  Whatever
+   ``breakpointhooks()`` returns is returned from ``breakpoint()``.
+
+   The default implementation first consults the environment variable
+   :envvar:`PYTHONBREAKPOINT`.  If that is set to ``"0"`` then this function
+   returns immediately; i.e. it is a no-op.  If the environment variable is
+   not set, or is set to the empty string, ``pdb.set_trace()`` is called.
+   Otherwise this variable should name a function to run, using Python's
+   dotted-import nomenclature, e.g. ``package.subpackage.module.function``.
+   In this case, ``package.subpackage.module`` would be imported and the
+   resulting module must have a callable named ``function()``.  This is run,
+   passing in ``*args`` and ``**kws``, and whatever ``function()`` returns,
+   ``sys.breakpointhook()`` returns to the built-in :func:`breakpoint`
+   function.
+
+   Note that if anything goes wrong while importing the callable named by
+   :envvar:`PYTHONBREAKPOINT`, a :exc:`RuntimeWarning` is reported and the
+   breakpoint is ignored.
+
+   Also note that if ``sys.breakpointhook()`` is overridden programmatically,
+   :envvar:`PYTHONBREAKPOINT` is *not* consulted.
+
+   .. versionadded:: 3.7
+
 .. function:: _debugmallocstats()
 
    Print low-level information to stderr about the state of CPython's memory
@@ -187,13 +221,18 @@ always available.
    customized by assigning another three-argument function to ``sys.excepthook``.
 
 
-.. data:: __displayhook__
+.. data:: __breakpointhook__
+          __displayhook__
           __excepthook__
 
-   These objects contain the original values of ``displayhook`` and ``excepthook``
-   at the start of the program.  They are saved so that ``displayhook`` and
-   ``excepthook`` can be restored in case they happen to get replaced with broken
+   These objects contain the original values of ``breakpointhook``,
+   ``displayhook``, and ``excepthook`` at the start of the program.  They are
+   saved so that ``breakpointhook``, ``displayhook`` and ``excepthook`` can be
+   restored in case they happen to get replaced with broken or alternative
    objects.
+
+   .. versionadded:: 3.7
+      __breakpointhook__
 
 
 .. function:: exc_info()
@@ -295,6 +334,7 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
+   :const:`dev_mode`             :option:`-X` ``dev``
    ============================= =============================
 
    .. versionchanged:: 3.2
@@ -305,6 +345,9 @@ always available.
 
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
+
+   .. versionchanged:: 3.7
+      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag.
 
 
 .. data:: float_info
@@ -1236,9 +1279,9 @@ always available.
      Under all platforms though, you can override this value by setting the
      :envvar:`PYTHONIOENCODING` environment variable before starting Python.
 
-   * When interactive, standard streams are line-buffered.  Otherwise, they
-     are block-buffered like regular text files.  You can override this
-     value with the :option:`-u` command-line option.
+   * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
+     Otherwise, they are block-buffered like regular text files.  You can
+     override this value with the :option:`-u` command-line option.
 
    .. note::
 
@@ -1297,7 +1340,7 @@ always available.
    |                  |  * ``None`` if this information is unknown              |
    +------------------+---------------------------------------------------------+
    | :const:`version` | Name and version of the thread library. It is a string, |
-   |                  | or ``None`` if these informations are unknown.          |
+   |                  | or ``None`` if this information is unknown.             |
    +------------------+---------------------------------------------------------+
 
    .. versionadded:: 3.3

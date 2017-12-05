@@ -1,2 +1,0 @@
-re.compile() no longer raises a BytesWarning when compiling a bytes instance
-with misplaced inline modifier.  Patch by Roy Williams.

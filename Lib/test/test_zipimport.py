@@ -17,6 +17,10 @@ import doctest
 import inspect
 import io
 from traceback import extract_tb, extract_stack, print_tb
+try:
+    import zlib
+except ImportError:
+    zlib = None
 
 test_src = """\
 def get_name():
@@ -664,10 +668,37 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         with self.assertWarns(DeprecationWarning):
             zipimport.zipimporter(memoryview(os.fsencode(filename)))
 
+    @support.cpython_only
+    def testUninitializedZipimporter(self):
+        # The interpreter shouldn't crash in case of calling methods of an
+        # uninitialized zipimport.zipimporter object.
+        zi = zipimport.zipimporter.__new__(zipimport.zipimporter)
+        self.assertRaises(ValueError, zi.find_module, 'foo')
+        self.assertRaises(ValueError, zi.find_loader, 'foo')
+        self.assertRaises(ValueError, zi.load_module, 'foo')
+        self.assertRaises(ValueError, zi.get_filename, 'foo')
+        self.assertRaises(ValueError, zi.is_package, 'foo')
+        self.assertRaises(ValueError, zi.get_data, 'foo')
+        self.assertRaises(ValueError, zi.get_code, 'foo')
+        self.assertRaises(ValueError, zi.get_source, 'foo')
+
 
 @support.requires_zlib
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
+
+    @support.cpython_only
+    def test_issue31602(self):
+        # There shouldn't be an assertion failure in zipimporter.get_source()
+        # in case of a bad zlib.decompress().
+        def bad_decompress(*args):
+            return None
+        with ZipFile(TEMP_ZIP, 'w') as zip_file:
+            self.addCleanup(support.unlink, TEMP_ZIP)
+            zip_file.writestr('bar.py', b'print("hello world")', ZIP_DEFLATED)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        with support.swap_attr(zlib, 'decompress', bad_decompress):
+            self.assertRaises(TypeError, zi.get_source, 'bar')
 
 
 class BadFileZipImportTestCase(unittest.TestCase):

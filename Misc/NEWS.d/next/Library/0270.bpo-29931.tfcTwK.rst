@@ -1,2 +1,0 @@
-Fixed comparison check for ipaddress.ip_interface objects. Patch by Sanjay
-Sundaresan.

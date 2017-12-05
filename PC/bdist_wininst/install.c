@@ -1614,7 +1614,7 @@ SelectPythonDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
             if (count == 0) {
                 char Buffer[4096];
-                char *msg;
+                const char *msg;
                 if (target_version && target_version[0]) {
                     wsprintf(Buffer,
                              "Python version %s required, which was not found"

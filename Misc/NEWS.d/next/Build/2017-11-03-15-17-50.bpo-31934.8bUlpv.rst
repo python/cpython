@@ -1,0 +1,1 @@
+Abort the build when building out of a not clean source tree.

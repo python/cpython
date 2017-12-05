@@ -2019,6 +2019,8 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_cache_invalidation(self):
         from collections import UserDict
+        import weakref
+
         class TracingDict(UserDict):
             def __init__(self, *args, **kwargs):
                 super(TracingDict, self).__init__(*args, **kwargs)
@@ -2033,90 +2035,89 @@ class TestSingleDispatch(unittest.TestCase):
                 self.data[key] = value
             def clear(self):
                 self.data.clear()
-        _orig_wkd = functools.WeakKeyDictionary
+
         td = TracingDict()
-        functools.WeakKeyDictionary = lambda: td
-        c = collections.abc
-        @functools.singledispatch
-        def g(arg):
-            return "base"
-        d = {}
-        l = []
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "base")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(td.get_ops, [])
-        self.assertEqual(td.set_ops, [dict])
-        self.assertEqual(td.data[dict], g.registry[object])
-        self.assertEqual(g(l), "base")
-        self.assertEqual(len(td), 2)
-        self.assertEqual(td.get_ops, [])
-        self.assertEqual(td.set_ops, [dict, list])
-        self.assertEqual(td.data[dict], g.registry[object])
-        self.assertEqual(td.data[list], g.registry[object])
-        self.assertEqual(td.data[dict], td.data[list])
-        self.assertEqual(g(l), "base")
-        self.assertEqual(g(d), "base")
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(td.set_ops, [dict, list])
-        g.register(list, lambda arg: "list")
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "base")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict])
-        self.assertEqual(td.data[dict],
-                         functools._find_impl(dict, g.registry))
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 2)
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict, list])
-        self.assertEqual(td.data[list],
-                         functools._find_impl(list, g.registry))
-        class X:
-            pass
-        c.MutableMapping.register(X)   # Will not invalidate the cache,
-                                       # not using ABCs yet.
-        self.assertEqual(g(d), "base")
-        self.assertEqual(g(l), "list")
-        self.assertEqual(td.get_ops, [list, dict, dict, list])
-        self.assertEqual(td.set_ops, [dict, list, dict, list])
-        g.register(c.Sized, lambda arg: "sized")
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "sized")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(td.get_ops, [list, dict, dict, list])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict])
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 2)
-        self.assertEqual(td.get_ops, [list, dict, dict, list])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
-        self.assertEqual(g(l), "list")
-        self.assertEqual(g(d), "sized")
-        self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
-        g.dispatch(list)
-        g.dispatch(dict)
-        self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict,
-                                      list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
-        c.MutableSet.register(X)       # Will invalidate the cache.
-        self.assertEqual(len(td), 2)   # Stale cache.
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 1)
-        g.register(c.MutableMapping, lambda arg: "mutablemapping")
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "mutablemapping")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 2)
-        g.register(dict, lambda arg: "dict")
-        self.assertEqual(g(d), "dict")
-        self.assertEqual(g(l), "list")
-        g._clear_cache()
-        self.assertEqual(len(td), 0)
-        functools.WeakKeyDictionary = _orig_wkd
+        with support.swap_attr(weakref, "WeakKeyDictionary", lambda: td):
+            c = collections.abc
+            @functools.singledispatch
+            def g(arg):
+                return "base"
+            d = {}
+            l = []
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "base")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(td.get_ops, [])
+            self.assertEqual(td.set_ops, [dict])
+            self.assertEqual(td.data[dict], g.registry[object])
+            self.assertEqual(g(l), "base")
+            self.assertEqual(len(td), 2)
+            self.assertEqual(td.get_ops, [])
+            self.assertEqual(td.set_ops, [dict, list])
+            self.assertEqual(td.data[dict], g.registry[object])
+            self.assertEqual(td.data[list], g.registry[object])
+            self.assertEqual(td.data[dict], td.data[list])
+            self.assertEqual(g(l), "base")
+            self.assertEqual(g(d), "base")
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(td.set_ops, [dict, list])
+            g.register(list, lambda arg: "list")
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "base")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict])
+            self.assertEqual(td.data[dict],
+                             functools._find_impl(dict, g.registry))
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 2)
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict, list])
+            self.assertEqual(td.data[list],
+                             functools._find_impl(list, g.registry))
+            class X:
+                pass
+            c.MutableMapping.register(X)   # Will not invalidate the cache,
+                                           # not using ABCs yet.
+            self.assertEqual(g(d), "base")
+            self.assertEqual(g(l), "list")
+            self.assertEqual(td.get_ops, [list, dict, dict, list])
+            self.assertEqual(td.set_ops, [dict, list, dict, list])
+            g.register(c.Sized, lambda arg: "sized")
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "sized")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(td.get_ops, [list, dict, dict, list])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict])
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 2)
+            self.assertEqual(td.get_ops, [list, dict, dict, list])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
+            self.assertEqual(g(l), "list")
+            self.assertEqual(g(d), "sized")
+            self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
+            g.dispatch(list)
+            g.dispatch(dict)
+            self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict,
+                                          list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
+            c.MutableSet.register(X)       # Will invalidate the cache.
+            self.assertEqual(len(td), 2)   # Stale cache.
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 1)
+            g.register(c.MutableMapping, lambda arg: "mutablemapping")
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "mutablemapping")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 2)
+            g.register(dict, lambda arg: "dict")
+            self.assertEqual(g(d), "dict")
+            self.assertEqual(g(l), "list")
+            g._clear_cache()
+            self.assertEqual(len(td), 0)
 
 
 if __name__ == '__main__':

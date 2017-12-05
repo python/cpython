@@ -157,6 +157,13 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
         Py_DECREF(bases);
         return NULL;
     }
+    if (!PyMapping_Check(ns)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s.__prepare__() must return a mapping, not %.200s",
+                     isclass ? ((PyTypeObject *)meta)->tp_name : "<metaclass>",
+                     Py_TYPE(ns)->tp_name);
+        goto error;
+    }
     cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
@@ -415,6 +422,28 @@ builtin_callable(PyObject *module, PyObject *obj)
     return PyBool_FromLong((long)PyCallable_Check(obj));
 }
 
+static PyObject *
+builtin_breakpoint(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
+{
+    PyObject *hook = PySys_GetObject("breakpointhook");
+
+    if (hook == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
+        return NULL;
+    }
+    Py_INCREF(hook);
+    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
+    Py_DECREF(hook);
+    return retval;
+}
+
+PyDoc_STRVAR(breakpoint_doc,
+"breakpoint(*args, **kws)\n\
+\n\
+Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
+whatever arguments are passed.\n\
+\n\
+By default, this drops you into the pdb debugger.");
 
 typedef struct {
     PyObject_HEAD
@@ -1913,7 +1942,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     /* If we're interactive, use (GNU) readline */
     if (tty) {
         PyObject *po = NULL;
-        char *promptstr;
+        const char *promptstr;
         char *s = NULL;
         PyObject *stdin_encoding = NULL, *stdin_errors = NULL;
         PyObject *stdout_encoding = NULL, *stdout_errors = NULL;
@@ -2050,19 +2079,23 @@ builtin_repr(PyObject *module, PyObject *obj)
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect
- *     or a semantic change to accept None for "ndigits"
- */
-static PyObject *
-builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyObject *ndigits = NULL;
-    static char *kwlist[] = {"number", "ndigits", 0};
-    PyObject *number, *round, *result;
+/*[clinic input]
+round as builtin_round
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:round",
-                                     kwlist, &number, &ndigits))
-        return NULL;
+    number: object
+    ndigits: object = NULL
+
+Round a number to a given precision in decimal digits.
+
+The return value is an integer if ndigits is omitted or None.  Otherwise
+the return value has the same type as the number.  ndigits may be negative.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
+/*[clinic end generated code: output=ff0d9dd176c02ede input=854bc3a217530c3d]*/
+{
+    PyObject *round, *result;
 
     if (Py_TYPE(number)->tp_dict == NULL) {
         if (PyType_Ready(Py_TYPE(number)) < 0)
@@ -2085,13 +2118,6 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
     Py_DECREF(round);
     return result;
 }
-
-PyDoc_STRVAR(round_doc,
-"round(number[, ndigits]) -> number\n\
-\n\
-Round a number to a given precision in decimal digits (default 0 digits).\n\
-This returns an int when called with one argument, otherwise the\n\
-same type as the number. ndigits may be negative.");
 
 
 /*AC: we need to keep the kwds dict intact to easily call into the
@@ -2620,6 +2646,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
+    {"breakpoint",      (PyCFunction)builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
@@ -2649,7 +2676,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_POW_METHODDEF
     {"print",           (PyCFunction)builtin_print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
     BUILTIN_REPR_METHODDEF
-    {"round",           (PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
+    BUILTIN_ROUND_METHODDEF
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF

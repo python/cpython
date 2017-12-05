@@ -143,7 +143,7 @@ WIN32 is still required for the locale module.
    structures etc so it can optionally use new Windows features if it
    determines at runtime they are available.
 */
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN) || defined(Py_BUILD_CORE_MODULE)
 #ifndef NTDDI_VERSION
 #define NTDDI_VERSION Py_NTDDI
 #endif
@@ -277,21 +277,20 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* For an MSVC DLL, we can nominate the .lib files used by extensions */
 #ifdef MS_COREDLL
-#       ifndef Py_BUILD_CORE /* not building the core - must be an ext */
-#               ifndef Py_BUILD_CORE_MODULE
-#                       if defined(_MSC_VER)
-                                /* So MSVC users need not specify the .lib
-                                file in their Makefile (other compilers are
-                                generally taken care of by distutils.) */
-#                               if defined(_DEBUG)
-#                                       pragma comment(lib,"python37_d.lib")
-#                               elif defined(Py_LIMITED_API)
-#                                       pragma comment(lib,"python3.lib")
-#                               else
-#                                       pragma comment(lib,"python37.lib")
-#                               endif /* _DEBUG */
-#                       endif /* _MSC_VER */
-#               endif /* Py_BUILD_CORE_MODULE */
+#       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+                /* not building the core - must be an ext */
+#               if defined(_MSC_VER)
+                        /* So MSVC users need not specify the .lib
+                        file in their Makefile (other compilers are
+                        generally taken care of by distutils.) */
+#                       if defined(_DEBUG)
+#                               pragma comment(lib,"python37_d.lib")
+#                       elif defined(Py_LIMITED_API)
+#                               pragma comment(lib,"python3.lib")
+#                       else
+#                               pragma comment(lib,"python37.lib")
+#                       endif /* _DEBUG */
+#               endif /* _MSC_VER */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
 

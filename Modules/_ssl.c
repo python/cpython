@@ -2798,7 +2798,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
     SSL_CTX_set_options(self->ctx, options);
 
-    /* A bare minimum cipher list without completly broken cipher suites.
+    /* A bare minimum cipher list without completely broken cipher suites.
      * It's far from perfect but gives users a better head start. */
     if (proto_version != PY_SSL_VERSION_SSL2) {
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL:!MD5");
@@ -3086,7 +3086,7 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
 /*[clinic end generated code: output=87599a7f76651a9b input=9bba964595d519be]*/
 {
 #ifdef HAVE_ALPN
-    if (protos->len > UINT_MAX) {
+    if ((size_t)protos->len > UINT_MAX) {
         PyErr_Format(PyExc_OverflowError,
             "protocols longer than %d bytes", UINT_MAX);
         return NULL;
@@ -3227,10 +3227,10 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
         return -1;
     if (check_hostname &&
             SSL_CTX_get_verify_mode(self->ctx) == SSL_VERIFY_NONE) {
-        PyErr_SetString(PyExc_ValueError,
-                        "check_hostname needs a SSL context with either "
-                        "CERT_OPTIONAL or CERT_REQUIRED");
-        return -1;
+        /* check_hostname = True sets verify_mode = CERT_REQUIRED */
+        if (_set_verify_mode(self->ctx, PY_SSL_CERT_REQUIRED) == -1) {
+            return -1;
+        }
     }
     self->check_hostname = check_hostname;
     return 0;

@@ -12,7 +12,6 @@ if hasattr(socket, 'AF_UNIX'):
     __all__.extend(['open_unix_connection', 'start_unix_server'])
 
 from . import coroutines
-from . import compat
 from . import events
 from . import protocols
 from .coroutines import coroutine
@@ -35,6 +34,9 @@ class IncompleteReadError(EOFError):
         self.partial = partial
         self.expected = expected
 
+    def __reduce__(self):
+        return type(self), (self.partial, self.expected)
+
 
 class LimitOverrunError(Exception):
     """Reached the buffer limit while looking for a separator.
@@ -45,6 +47,9 @@ class LimitOverrunError(Exception):
     def __init__(self, message, consumed):
         super().__init__(message)
         self.consumed = consumed
+
+    def __reduce__(self):
+        return type(self), (self.args[0], self.consumed)
 
 
 @coroutine
@@ -149,7 +154,7 @@ class FlowControlMixin(protocols.Protocol):
     """Reusable flow control logic for StreamWriter.drain().
 
     This implements the protocol methods pause_writing(),
-    resume_reading() and connection_lost().  If the subclass overrides
+    resume_writing() and connection_lost().  If the subclass overrides
     these it must call the super methods.
 
     StreamWriter.drain() must wait for _drain_helper() coroutine.
@@ -676,20 +681,12 @@ class StreamReader:
         self._maybe_resume_transport()
         return data
 
-    if compat.PY35:
-        @coroutine
-        def __aiter__(self):
-            return self
+    def __aiter__(self):
+        return self
 
-        @coroutine
-        def __anext__(self):
-            val = yield from self.readline()
-            if val == b'':
-                raise StopAsyncIteration
-            return val
-
-    if compat.PY352:
-        # In Python 3.5.2 and greater, __aiter__ should return
-        # the asynchronous iterator directly.
-        def __aiter__(self):
-            return self
+    @coroutine
+    def __anext__(self):
+        val = yield from self.readline()
+        if val == b'':
+            raise StopAsyncIteration
+        return val

@@ -1,5 +1,6 @@
 """Selector and proactor event loops for Windows."""
 
+import _overlapped
 import _winapi
 import errno
 import math
@@ -14,7 +15,6 @@ from . import proactor_events
 from . import selector_events
 from . import tasks
 from . import windows_utils
-from . import _overlapped
 from .coroutines import coroutine
 from .log import logger
 
@@ -296,9 +296,6 @@ class PipeServer(object):
 class _WindowsSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Windows version of selector event loop."""
 
-    def _socketpair(self):
-        return windows_utils.socketpair()
-
 
 class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     """Windows version of proactor event loop using IOCP."""
@@ -307,9 +304,6 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         if proactor is None:
             proactor = IocpProactor()
         super().__init__(proactor)
-
-    def _socketpair(self):
-        return windows_utils.socketpair()
 
     @coroutine
     def create_pipe_connection(self, protocol_factory, address):
@@ -434,6 +428,28 @@ class IocpProactor:
                 ov.WSARecv(conn.fileno(), nbytes, flags)
             else:
                 ov.ReadFile(conn.fileno(), nbytes)
+        except BrokenPipeError:
+            return self._result(b'')
+
+        def finish_recv(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_recv)
+
+    def recv_into(self, conn, buf, flags=0):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+        try:
+            if isinstance(conn, socket.socket):
+                ov.WSARecvInto(conn.fileno(), buf, flags)
+            else:
+                ov.ReadFileInto(conn.fileno(), buf)
         except BrokenPipeError:
             return self._result(b'')
 

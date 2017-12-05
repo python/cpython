@@ -1539,8 +1539,8 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [help], \
-                                          [metavar])
+                                          [option_string], [dest], [required] \
+                                          [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,
    for example, the ``svn`` program can invoke sub-commands like ``svn
@@ -1575,6 +1575,9 @@ Sub-commands
 
    * dest_ - name of the attribute under which sub-command name will be
      stored; by default ``None`` and no value is stored
+
+   * required_ - Whether or not a subcommand must be provided, by default
+     ``True``.
 
    * help_ - help for sub-parser group in help output, by default ``None``
 

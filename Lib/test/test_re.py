@@ -331,21 +331,21 @@ class ReTests(unittest.TestCase):
                          ['', 'a', '', '', 'c'])
 
         for sep, expected in [
-            (':*', ['', 'a', 'b', 'c']),
-            ('(?::*)', ['', 'a', 'b', 'c']),
-            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c']),
-            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c']),
+            (':*', ['', 'a', 'b', 'c', '']),
+            ('(?::*)', ['', 'a', 'b', 'c', '']),
+            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c', '', '']),
+            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c', None, '']),
         ]:
-            with self.subTest(sep=sep), self.assertWarns(FutureWarning):
+            with self.subTest(sep=sep):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
         for sep, expected in [
-            ('', [':a:b::c']),
-            (r'\b', [':a:b::c']),
-            (r'(?=:)', [':a:b::c']),
-            (r'(?<=:)', [':a:b::c']),
+            ('', ['', ':', 'a', ':', 'b', ':', ':', 'c', '']),
+            (r'\b', [':', 'a', ':', 'b', '::', 'c', '']),
+            (r'(?=:)', ['', ':a', ':b', ':', ':c']),
+            (r'(?<=:)', [':', 'a:', 'b:', ':', 'c']),
         ]:
-            with self.subTest(sep=sep), self.assertRaises(ValueError):
+            with self.subTest(sep=sep):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
     def test_qualified_re_split(self):
@@ -356,9 +356,8 @@ class ReTests(unittest.TestCase):
                          ['', ':', 'a', ':', 'b::c'])
         self.assertEqual(re.split("(:+)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
-        with self.assertWarns(FutureWarning):
-            self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
-                             ['', ':', 'a', ':', 'b::c'])
+        self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
+                         ['', ':', 'a', ':', 'b::c'])
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
@@ -914,6 +913,51 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
         self.assertEqual(re.search(r"\s([^a]*)", " bb").group(1), "bb")
 
+    def test_possible_set_operations(self):
+        s = bytes(range(128)).decode()
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9--1]')
+        self.assertEqual(p.findall(s), list('-./0123456789'))
+        self.assertEqual(re.findall(r'[--1]', s), list('-./01'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[%--1]')
+        self.assertEqual(p.findall(s), list("%&'()*+,-1"))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[%--]')
+        self.assertEqual(p.findall(s), list("%&'()*+,-"))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9&&1]')
+        self.assertEqual(p.findall(s), list('&0123456789'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[\d&&1]')
+        self.assertEqual(p.findall(s), list('&0123456789'))
+        self.assertEqual(re.findall(r'[&&1]', s), list('&1'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9||a]')
+        self.assertEqual(p.findall(s), list('0123456789a|'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[\d||a]')
+        self.assertEqual(p.findall(s), list('0123456789a|'))
+        self.assertEqual(re.findall(r'[||1]', s), list('1|'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[0-9~~1]')
+        self.assertEqual(p.findall(s), list('0123456789~'))
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[\d~~1]')
+        self.assertEqual(p.findall(s), list('0123456789~'))
+        self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[[0-9]|]')
+        self.assertEqual(p.findall(s), list('0123456789[]'))
+
+        with self.assertWarns(FutureWarning):
+            p = re.compile(r'[[:digit:]|]')
+        self.assertEqual(p.findall(s), list(':[]dgit'))
+
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
         self.assertEqual(re.search(r"a\s", "a ").group(0), "a ")
@@ -932,7 +976,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(), match)
         self.assertEqual(m.span(), span)
 
-    LITERAL_CHARS = string.ascii_letters + string.digits + '!"%&\',/:;<=>@_`~'
+    LITERAL_CHARS = string.ascii_letters + string.digits + '!"%\',/:;<=>@_`'
 
     def test_re_escape(self):
         p = ''.join(chr(i) for i in range(256))
@@ -1470,11 +1514,11 @@ class ReTests(unittest.TestCase):
             self.assertIsNone(pat.match(b'\xe0'))
         # Incompatibilities
         self.assertRaises(ValueError, re.compile, br'\w', re.UNICODE)
-        self.assertRaises(ValueError, re.compile, br'(?u)\w')
+        self.assertRaises(re.error, re.compile, br'(?u)\w')
         self.assertRaises(ValueError, re.compile, r'\w', re.UNICODE | re.ASCII)
         self.assertRaises(ValueError, re.compile, r'(?u)\w', re.ASCII)
         self.assertRaises(ValueError, re.compile, r'(?a)\w', re.UNICODE)
-        self.assertRaises(ValueError, re.compile, r'(?au)\w')
+        self.assertRaises(re.error, re.compile, r'(?au)\w')
 
     def test_locale_flag(self):
         import locale
@@ -1516,11 +1560,11 @@ class ReTests(unittest.TestCase):
             self.assertIsNone(pat.match(bletter))
         # Incompatibilities
         self.assertRaises(ValueError, re.compile, '', re.LOCALE)
-        self.assertRaises(ValueError, re.compile, '(?L)')
+        self.assertRaises(re.error, re.compile, '(?L)')
         self.assertRaises(ValueError, re.compile, b'', re.LOCALE | re.ASCII)
         self.assertRaises(ValueError, re.compile, b'(?L)', re.ASCII)
         self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
-        self.assertRaises(ValueError, re.compile, b'(?aL)')
+        self.assertRaises(re.error, re.compile, b'(?aL)')
 
     def test_scoped_flags(self):
         self.assertTrue(re.match(r'(?i:a)b', 'Ab'))
@@ -1535,12 +1579,18 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'(?-x: a) b', ' ab', re.VERBOSE))
         self.assertIsNone(re.match(r'(?-x: a) b', 'ab', re.VERBOSE))
 
-        self.checkPatternError(r'(?a:\w)',
-                               'bad inline flags: cannot turn on global flag', 3)
+        self.assertTrue(re.match(r'\w(?a:\W)\w', '\xe0\xe0\xe0'))
+        self.assertTrue(re.match(r'(?a:\W(?u:\w)\W)', '\xe0\xe0\xe0'))
+        self.assertTrue(re.match(r'\W(?u:\w)\W', '\xe0\xe0\xe0', re.ASCII))
+
         self.checkPatternError(r'(?a)(?-a:\w)',
-                               'bad inline flags: cannot turn off global flag', 8)
+                "bad inline flags: cannot turn off flags 'a', 'u' and 'L'", 8)
         self.checkPatternError(r'(?i-i:a)',
-                               'bad inline flags: flag turned on and off', 5)
+                'bad inline flags: flag turned on and off', 5)
+        self.checkPatternError(r'(?au:a)',
+                "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
+        self.checkPatternError(br'(?aL:a)',
+                "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
 
         self.checkPatternError(r'(?-', 'missing flag', 3)
         self.checkPatternError(r'(?-+', 'missing flag', 3)
@@ -1596,9 +1646,9 @@ class ReTests(unittest.TestCase):
     def test_compile(self):
         # Test return value when given string and pattern as parameter
         pattern = re.compile('random pattern')
-        self.assertIsInstance(pattern, re._pattern_type)
+        self.assertIsInstance(pattern, re.Pattern)
         same_pattern = re.compile(pattern)
-        self.assertIsInstance(same_pattern, re._pattern_type)
+        self.assertIsInstance(same_pattern, re.Pattern)
         self.assertIs(same_pattern, pattern)
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)
@@ -1700,6 +1750,25 @@ class ReTests(unittest.TestCase):
                          "span=(3, 5), match='bb'>" %
                          (type(second).__module__, type(second).__qualname__))
 
+    def test_zerowidth(self):
+        # Issues 852532, 1647489, 3262, 25054.
+        self.assertEqual(re.split(r"\b", "a::bc"), ['', 'a', '::', 'bc', ''])
+        self.assertEqual(re.split(r"\b|:+", "a::bc"), ['', 'a', '', 'bc', ''])
+        self.assertEqual(re.split(r"(?<!\w)(?=\w)|:+", "a::bc"), ['', 'a', 'bc'])
+        self.assertEqual(re.split(r"(?<=\w)(?!\w)|:+", "a::bc"), ['a', '', 'bc', ''])
+
+        self.assertEqual(re.sub(r"\b", "-", "a::bc"), '-a-::-bc-')
+        self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a--bc-')
+        self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::]bc[]')
+
+        self.assertEqual(re.findall(r"\b|:+", "a::bc"), ['', '', '::', '', ''])
+        self.assertEqual(re.findall(r"\b|\w+", "a::bc"),
+                         ['', 'a', '', '', 'bc', ''])
+
+        self.assertEqual([m.span() for m in re.finditer(r"\b|:+", "a::bc")],
+                         [(0, 0), (1, 1), (1, 3), (3, 3), (5, 5)])
+        self.assertEqual([m.span() for m in re.finditer(r"\b|\w+", "a::bc")],
+                         [(0, 0), (0, 1), (1, 1), (3, 3), (3, 5), (5, 5)])
 
     def test_bug_2537(self):
         # issue 2537: empty submatches

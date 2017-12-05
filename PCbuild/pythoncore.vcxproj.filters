@@ -141,9 +141,6 @@
     <ClInclude Include="..\Include\internal\mem.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pymalloc.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -897,6 +894,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\mystrtoul.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\pathconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\peephole.c">

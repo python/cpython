@@ -341,9 +341,10 @@ Creating connections
 
 .. coroutinemethod:: AbstractEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
 
-   Create datagram connection: socket family :py:data:`~socket.AF_INET` or
-   :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
-   socket type :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
+   Create datagram connection: socket family :py:data:`~socket.AF_INET`,
+   :py:data:`~socket.AF_INET6` or :py:data:`~socket.AF_UNIX` depending on
+   *host* (or *family* if specified), socket type
+   :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method is a :ref:`coroutine <coroutine>` which will try to
@@ -390,7 +391,7 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
@@ -402,12 +403,16 @@ Creating connections
    coroutine returns a ``(transport, protocol)`` pair.
 
    *path* is the name of a UNIX domain socket, and is required unless a *sock*
-   parameter is specified.  Abstract UNIX sockets, :class:`str`, and
-   :class:`bytes` paths are supported.
+   parameter is specified.  Abstract UNIX sockets, :class:`str`,
+   :class:`bytes`, and :class:`~pathlib.Path` paths are supported.
 
    See the :meth:`AbstractEventLoop.create_connection` method for parameters.
 
    Availability: UNIX.
+
+   .. versionchanged:: 3.7
+
+      The *path* parameter can now be a :class:`~pathlib.Path` object.
 
 
 Creating listening connections
@@ -478,9 +483,17 @@ Creating listening connections
    Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
 
+   *path* is the name of a UNIX domain socket, and is required unless a *sock*
+   parameter is specified.  Abstract UNIX sockets, :class:`str`,
+   :class:`bytes`, and :class:`~pathlib.Path` paths are supported.
+
    This method is a :ref:`coroutine <coroutine>`.
 
    Availability: UNIX.
+
+   .. versionchanged:: 3.7
+
+      The *path* parameter can now be a :class:`~pathlib.Path` object.
 
 .. coroutinemethod:: BaseEventLoop.connect_accepted_socket(protocol_factory, sock, \*, ssl=None)
 
@@ -499,6 +512,9 @@ Creating listening connections
 
    This method is a :ref:`coroutine <coroutine>`.  When completed, the
    coroutine returns a ``(transport, protocol)`` pair.
+
+   .. versionadded:: 3.5.3
+
 
 Watch file descriptors
 ----------------------
@@ -553,6 +569,21 @@ Low-level socket operations
    non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
+
+.. coroutinemethod:: AbstractEventLoop.sock_recv_into(sock, buf)
+
+   Receive data from the socket.  Modeled after blocking
+   :meth:`socket.socket.recv_into` method.
+
+   The received data is written into *buf* (a writable buffer).
+   The return value is the number of bytes written.
+
+   With :class:`SelectorEventLoop` event loop, the socket *sock* must be
+   non-blocking.
+
+   This method is a :ref:`coroutine <coroutine>`.
+
+   .. versionadded:: 3.7
 
 .. coroutinemethod:: AbstractEventLoop.sock_sendall(sock, data)
 
@@ -851,6 +882,12 @@ Handle
       Cancel the call.  If the callback is already canceled or executed,
       this method has no effect.
 
+   .. method:: cancelled()
+
+      Return ``True`` if the call was cancelled.
+
+      .. versionadded:: 3.7
+
 
 Event loop examples
 -------------------
@@ -930,10 +967,7 @@ Wait until a file descriptor received some data using the
 :meth:`AbstractEventLoop.add_reader` method and then close the event loop::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    from socket import socketpair
 
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()

@@ -1,0 +1,4 @@
+SyntaxError is now correctly raised when a generator expression without
+parenthesis is passed as an argument, but followed by a trailing comma.
+A generator expression always needs to be directly inside a set of parentheses
+and cannot have a comma on either side.
