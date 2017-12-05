@@ -51,3 +51,5 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*decimal*                  @rhettinger @skrah
 
 **/*idlelib*                  @terryjreedy
+
+**/*typing*                   @gvanrossum @ilevkivslyi
