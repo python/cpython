@@ -707,8 +707,8 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       - If the internal counter is zero on entry, block until awoken by a call to
         :meth:`~Semaphore.release`.  Once awoken (and the counter is greater
         than 0), decrement the counter by 1 and return true.  Exactly one
-        thread will be awoken by each call to ``release()``.  The order in
-        which threads are awoken should not be relied on.
+        thread will be awoken by each call to :meth:`~Semaphore.release`.  The
+        order in which threads are awoken should not be relied on.
 
       When invoked with *blocking* set to false, do not block.  If a call
       without an argument would block, return false immediately; otherwise, do

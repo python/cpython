@@ -706,6 +706,10 @@ class ThreadTests(BaseTestCase):
         s.release()
         assert s._value == 2
 
+        assert s.aquire(blocking=False) == True
+        assert s.aquire(blocking=False) == True
+        assert s.aquire(blocking=False) == False
+
     @cpython_only
     def test_frame_tstate_tracing(self):
         # Issue #14432: Crash when a generator is created in a C thread that is
