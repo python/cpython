@@ -53,3 +53,5 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*dataclasses*              @ericvsmith
 
 **/*idlelib*                  @terryjreedy
+
+**/*typing*                   @gvanrossum @ilevkivskyi
