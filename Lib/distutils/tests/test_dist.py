@@ -321,6 +321,13 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                            "version": "1.0",
                            "requires": ["my.pkg (splat)"]})
 
+    def test_requires_to_list(self):
+        attrs = {"name": "package",
+                 "requires": iter(["other"])}
+        dist = Distribution(attrs)
+        self.assertIsInstance(dist.metadata.requires, list)
+
+
     def test_obsoletes(self):
         attrs = {"name": "package",
                  "version": "1.0",
@@ -342,6 +349,12 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                           {"name": "package",
                            "version": "1.0",
                            "obsoletes": ["my.pkg (splat)"]})
+
+    def test_obsoletes_to_list(self):
+        attrs = {"name": "package",
+                 "obsoletes": iter(["other"])}
+        dist = Distribution(attrs)
+        self.assertIsInstance(dist.metadata.obsoletes, list)
 
     def test_classifier(self):
         attrs = {'name': 'Boa', 'version': '3.0',
