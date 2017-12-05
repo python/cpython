@@ -38,19 +38,8 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT \
-    (_PyCoreConfig){\
-     .ignore_environment = 0, \
-     .use_hash_seed = -1, \
-     .hash_seed = 0, \
-     ._disable_importlib = 0, \
-     .allocator = NULL, \
-     .dev_mode = 0, \
-     .faulthandler = 0, \
-     .tracemalloc = 0, \
-     .import_time = 0, \
-     .show_ref_count = 0, \
-     .show_alloc_count = 0}
+#define _PyCoreConfig_INIT (_PyCoreConfig){.use_hash_seed = -1}
+/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
  *
@@ -69,11 +58,8 @@ typedef struct {
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \
-    (_PyMainInterpreterConfig){\
-     .install_signal_handlers = -1, \
-     .module_search_path_env = NULL, \
-     .home = NULL, \
-     .program_name = NULL}
+    (_PyMainInterpreterConfig){.install_signal_handlers = -1}
+/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
 typedef struct _is {
 
