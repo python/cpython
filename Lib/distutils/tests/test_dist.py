@@ -11,8 +11,9 @@ from unittest import mock
 from distutils.dist import Distribution, fix_help_options, DistributionMetadata
 from distutils.cmd import Command
 
-from test.support import TESTFN, captured_stdout, captured_stderr, \
-     run_unittest
+from test.support import (
+     TESTFN, captured_stdout, captured_stderr, run_unittest
+)
 from distutils.tests import support
 from distutils import log
 

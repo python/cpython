@@ -26,6 +26,7 @@ from distutils.debug import DEBUG
 # to look for a Python module named after the command.
 command_re = re.compile(r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
+
 def _ensure_list(value, fieldname):
     if isinstance(value, str):
         # a string containing comma separated values is okay.  It will
@@ -38,6 +39,7 @@ def _ensure_list(value, fieldname):
         log.log(log.WARN, msg)
         value = list(value)
     return value
+
 
 class Distribution:
     """The core of the Distutils.  Most of the work hiding behind 'setup'
