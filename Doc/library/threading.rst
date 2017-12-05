@@ -702,9 +702,10 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       Acquire a semaphore.
 
       When invoked without arguments:
-      - If the internal counter is larger than zero on entry, decrement it by
+
+      * If the internal counter is larger than zero on entry, decrement it by
         one and return true immediately.
-      - If the internal counter is zero on entry, block until awoken by a call to
+      * If the internal counter is zero on entry, block until awoken by a call to
         :meth:`~Semaphore.release`.  Once awoken (and the counter is greater
         than 0), decrement the counter by 1 and return true.  Exactly one
         thread will be awoken by each call to :meth:`~Semaphore.release`.  The
