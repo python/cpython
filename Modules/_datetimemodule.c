@@ -667,12 +667,15 @@ set_date_fields(PyDateTime_Date *self, int y, int m, int d)
  * String parsing utilities and helper functions
  */
 
-static const char* parse_digits(const char* ptr, int* var,
+static const char*
+parse_digits(const char* ptr, int* var,
                                        size_t num_digits)
 {
     for (size_t i = 0; i < num_digits; ++i) {
         unsigned int tmp = (unsigned int)(*(ptr++) - '0');
-        if (tmp > 9) { return NULL; }
+        if (tmp > 9) {
+            return NULL;
+        }
         *var *= 10;
         *var += (signed int)tmp;
     }
@@ -691,24 +694,36 @@ static int parse_isoformat_date(const char *dtstr,
     */
     const char *p = dtstr;
     p = parse_digits(p, year, 4);
-    if (NULL == p) { return -1; }
+    if (NULL == p) {
+        return -1;
+    }
     
-    if (*(p++) != '-') { return -2; }
+    if (*(p++) != '-') {
+        return -2;
+    }
 
     p = parse_digits(p, month, 2);
-    if (NULL == p) { return -1; }
+    if (NULL == p) {
+        return -1;
+    }
 
-    if (*(p++) != '-') { return -2; }
+    if (*(p++) != '-') {
+        return -2;
+    }
 
     p = parse_digits(p, day, 2);
-    if (p == NULL) { return -1; }
+    if (p == NULL) {
+        return -1;
+    }
 
     return 0;
 }
 
 // Macro that short-circuits to timezone parsing
-#define PARSE_ISOFORMAT_ADVANCE_TIME_SEP(SEP) {       \
-    if (*p == '\0') { return 0; }                   \
+#define PARSE_ISOFORMAT_ADVANCE_TIME_SEP(SEP) {     \
+    if (*p == '\0') {                               \
+        return 0;                                   \
+    }                                               \
     switch(*(p++)) {                                \
         case SEP:                                   \
             break;                                  \
@@ -739,32 +754,44 @@ parse_isoformat_time(const char *dtstr, int* hour, int *minute, int *second,
     // Parse time - all components are optional except hour
     int tzsign = 1;
     p = parse_digits(p, hour, 2);
-    if (NULL == p) { return -3; }
+    if (NULL == p) {
+        return -3; 
+    }
 
     PARSE_ISOFORMAT_ADVANCE_TIME_SEP(':');
 
     p = parse_digits(p, minute, 2);
-    if (NULL == p) { return -3; }
+    if (NULL == p) {
+        return -3; 
+    }
 
     PARSE_ISOFORMAT_ADVANCE_TIME_SEP(':');
 
     p = parse_digits(p, second, 2);
-    if (NULL == p) { return -3; }
+    if (NULL == p) {
+        return -3; 
+    }
 
     PARSE_ISOFORMAT_ADVANCE_TIME_SEP('.');
 
     p = parse_digits(p, microsecond, 3);
-    if (NULL == p) { return -3; }
+    if (NULL == p) {
+        return -3; 
+    }
 
     // Microseconds
     if (*p >= '0' && *p <= '9') {
         p = parse_digits(p, microsecond, 3);
-        if (NULL == p) { return -3; }
+        if (NULL == p) {
+            return -3; 
+        }
     } else {
         *microsecond *= 1000;
     }
 
-    if (*p == '\0') { return 0; }
+    if (*p == '\0') {
+        return 0;
+    }
     
     switch(*(p++)) {
         case '-':
@@ -778,15 +805,21 @@ parse_isoformat_time(const char *dtstr, int* hour, int *minute, int *second,
 parse_timezone:;
     int tzhours = 0, tzminutes = 0;
     p = parse_digits(p, &tzhours, 2);
-    if (NULL == p || *(p++) != ':') { return -5; }
+    if (NULL == p || *(p++) != ':') {
+        return -5;
+    }
     
     p = parse_digits(p, &tzminutes, 2);
-    if (NULL == p) { return -5; }
+    if (NULL == p) {
+        return -5;
+    }
 
     // Convert hours:minutes into seconds
     *tzoffset = tzsign * ((3600 * tzhours) + (60 * tzminutes));
 
-    if (*p != '\0') { return -6; }
+    if (*p != '\0') {
+        return -6;
+    }
 
     return 1;
 }
