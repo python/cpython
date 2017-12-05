@@ -160,7 +160,7 @@ pymain_get_env_var(const char *name)
 
 
 static void
-pymain_run_statup(PyCompilerFlags *cf)
+pymain_run_startup(PyCompilerFlags *cf)
 {
     char *startup = Py_GETENV("PYTHONSTARTUP");
     if (startup == NULL || startup[0] == '\0') {
@@ -367,8 +367,6 @@ pymain_run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
 
 /* Main program */
 
-/*TODO: Add arg processing to PEP 432 as a new configuration setup API
- */
 typedef struct {
     size_t len;
     wchar_t **options;
@@ -949,8 +947,6 @@ pymain_get_program_name(_PyMain *pymain)
  *
  * Replaces previous call to Py_Initialize()
  *
- * TODO: Move environment queries (etc) into Py_ReadConfig
- *
  * Return 0 on success.
  * Set pymain->err and return -1 on error.
  */
@@ -1121,10 +1117,9 @@ pymain_run_filename(_PyMain *pymain)
 
     if (cmdline->filename == NULL && pymain->stdin_is_interactive) {
         Py_InspectFlag = 0; /* do exit on SystemExit */
-        pymain_run_statup(&pymain->cf);
+        pymain_run_startup(&pymain->cf);
         pymain_run_interactive_hook();
     }
-    /* XXX */
 
     if (pymain->main_importer_path != NULL) {
         pymain->status = pymain_run_main_from_importer(pymain);
@@ -1162,7 +1157,7 @@ pymain_repl(_PyMain *pymain)
 
     Py_InspectFlag = 0;
     pymain_run_interactive_hook();
-    /* XXX */
+
     int res = PyRun_AnyFileFlags(stdin, "<stdin>", &pymain->cf);
     pymain->status = (res != 0);
 }
@@ -1630,7 +1625,6 @@ pymain_init(_PyMain *pymain)
     }
 
     pymain->core_config._disable_importlib = 0;
-    /* TODO: Moar config options! */
     pymain->config.install_signal_handlers = 1;
 
     orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
