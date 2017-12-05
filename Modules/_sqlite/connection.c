@@ -1613,7 +1613,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
                                                                         GetLastError(),
                                                                         target);
                 }
-                PyMem_Free(wide);
+                else PyMem_Free(wide);
             }
 #endif
 
