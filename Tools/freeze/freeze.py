@@ -220,9 +220,9 @@ def main():
     if sys.platform != "win32":
         # on Windows this will make freeze traceback
         # because abiflags is not in sys.
-        flaggedver_sion = version + sys.abiflags
+        flagged_version = version + sys.abiflags
     else:
-        flaggedver_sion = version
+        flagged_version = version
     if win:
         extensions_c = 'frozen_extensions.c'
     if ishome:
