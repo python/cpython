@@ -52,4 +52,4 @@ Python/bootstrap_hash.c       @python/crypto-team
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivslyi
+**/*typing*                   @gvanrossum @ilevkivskyi
