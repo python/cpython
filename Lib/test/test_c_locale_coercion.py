@@ -130,7 +130,7 @@ class EncodingDetails(_EncodingDetails):
         that.
         """
         result, py_cmd = run_python_until_end(
-            "-c", cls.CHILD_PROCESS_SCRIPT,
+            "-X", "utf8=0", "-c", cls.CHILD_PROCESS_SCRIPT,
             __isolated=True,
             **env_vars
         )

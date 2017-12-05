@@ -270,7 +270,7 @@ def _args_from_interpreter_flags():
     if 'dev' in xoptions:
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'showalloccount', 'showrefcount'):
+                'showalloccount', 'showrefcount', 'utf8'):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:

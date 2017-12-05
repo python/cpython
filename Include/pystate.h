@@ -38,6 +38,7 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
+    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT (_PyCoreConfig){.use_hash_seed = -1}
