@@ -50,4 +50,6 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*functools*                @ncoghlan @rhettinger
 **/*decimal*                  @rhettinger @skrah
 
+**/*dataclasses*              @ericvsmith
+
 **/*idlelib*                  @terryjreedy
