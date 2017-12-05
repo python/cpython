@@ -2188,7 +2188,5 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(str(exc.exception).endswith(msg_suffix))
 
 
-
-
 if __name__ == '__main__':
     unittest.main()
