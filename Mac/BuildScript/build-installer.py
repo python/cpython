@@ -213,9 +213,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.0.2k",
-              url="https://www.openssl.org/source/openssl-1.0.2k.tar.gz",
-              checksum='f965fc0bf01bf882b31314b61391ae65',
+              name="OpenSSL 1.0.2m",
+              url="https://www.openssl.org/source/openssl-1.0.2m.tar.gz",
+              checksum='10e9e37f492094b9ef296f68f24a7666',
               patches=[
                   "openssl_sdk_makedepend.patch",
                    ],
@@ -845,7 +845,6 @@ def build_universal_openssl(basedir, archList):
             "enable-tlsext",
             "no-ssl2",
             "no-ssl3",
-            "no-ssl3-method",
             # "enable-unit-test",
             "shared",
             "--install_prefix=%s"%shellQuote(archbase),
