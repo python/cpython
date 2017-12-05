@@ -411,13 +411,13 @@ This table lists the bitwise operations sorted in ascending priority:
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
 +============+================================+==========+
-| ``x | y``  | bitwise :dfn:`or` of *x* and   |          |
+| ``x | y``  | bitwise :dfn:`or` of *x* and   |   (4)    |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x ^ y``  | bitwise :dfn:`exclusive or` of |          |
+| ``x ^ y``  | bitwise :dfn:`exclusive or` of |   (4)    |
 |            | *x* and *y*                    |          |
 +------------+--------------------------------+----------+
-| ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
+| ``x & y``  | bitwise :dfn:`and` of *x* and  |   (4)    |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
 | ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
