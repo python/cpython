@@ -1593,29 +1593,31 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     } else {
         /* Remove the probably incomplete/invalid backup */
         if (filename != NULL) {
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+
 #ifndef MS_WINDOWS
             if (unlink(filename) < 0) {
-                /* FIXME: this should probably be chained to the outstanding
-                   exception */
-                return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, target);
+              (void) PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, target);
             }
 #else
             Py_ssize_t size;
             const wchar_t *wide = PyUnicode_AsWideCharString(target, &size);
 
-            if (!wide)
-                return NULL;
-
-            if (!DeleteFileW(wide)) {
+            if (wide != NULL) {
+                if (!DeleteFileW(wide)) {
+                    PyMem_Free(wide);
+                    /* FIXME: this should probably be chained to the outstanding
+                       exception */
+                    (void) PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
+                                                                        GetLastError(),
+                                                                        target);
+                }
                 PyMem_Free(wide);
-                /* FIXME: this should probably be chained to the outstanding
-                   exception */
-                return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
-                                                                    GetLastError(),
-                                                                    target);
             }
-            PyMem_Free(wide);
 #endif
+
+            _PyErr_ChainExceptions(exc, val, tb);
         }
     }
 
