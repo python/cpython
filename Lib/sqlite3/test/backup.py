@@ -24,26 +24,26 @@ class BackupTests(unittest.TestCase):
     def tearDown(self):
         self.cx.close()
 
-    def testBackup(self, bckfn):
+    def verify_backup(self, bckfn):
         cx = sqlite.connect(bckfn)
         result = cx.execute("SELECT key FROM foo ORDER BY key").fetchall()
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
-    def CheckBadTarget(self):
+    def test_bad_target(self):
         with self.assertRaises(TypeError):
             self.cx.backup(None)
 
-    def CheckKeywordOnlyArgs(self):
+    def test_keyword_only_args(self):
         with self.assertRaises(TypeError):
             self.cx.backup('foo', 1)
 
-    def CheckSimple(self):
+    def test_simple(self):
         bckfn = self.temp_file_name
         self.cx.backup(bckfn)
-        self.testBackup(bckfn)
+        self.verify_backup(bckfn)
 
-    def CheckProgress(self):
+    def test_progress(self):
         journal = []
 
         def progress(status, remaining, total):
@@ -51,13 +51,13 @@ class BackupTests(unittest.TestCase):
 
         bckfn = self.temp_file_name
         self.cx.backup(bckfn, pages=1, progress=progress)
-        self.testBackup(bckfn)
+        self.verify_backup(bckfn)
 
         self.assertEqual(len(journal), 2)
         self.assertEqual(journal[0], sqlite.SQLITE_OK)
         self.assertEqual(journal[1], sqlite.SQLITE_DONE)
 
-    def CheckProgressAllPagesAtOnce_0(self):
+    def test_progress_all_pages_at_once_1(self):
         journal = []
 
         def progress(status, remaining, total):
@@ -65,12 +65,12 @@ class BackupTests(unittest.TestCase):
 
         bckfn = self.temp_file_name
         self.cx.backup(bckfn, progress=progress)
-        self.testBackup(bckfn)
+        self.verify_backup(bckfn)
 
         self.assertEqual(len(journal), 1)
         self.assertEqual(journal[0], 0)
 
-    def CheckProgressAllPagesAtOnce_1(self):
+    def test_progress_all_pages_at_once_2(self):
         journal = []
 
         def progress(status, remaining, total):
@@ -78,18 +78,18 @@ class BackupTests(unittest.TestCase):
 
         bckfn = self.temp_file_name
         self.cx.backup(bckfn, pages=-1, progress=progress)
-        self.testBackup(bckfn)
+        self.verify_backup(bckfn)
 
         self.assertEqual(len(journal), 1)
         self.assertEqual(journal[0], 0)
 
-    def CheckNonCallableProgress(self):
+    def test_non_callable_progress(self):
         bckfn = self.temp_file_name
         with self.assertRaises(TypeError) as err:
             self.cx.backup(bckfn, pages=1, progress='bar')
         self.assertEqual(str(err.exception), 'progress argument must be a callable')
 
-    def CheckModifyingProgress(self):
+    def test_modifying_progress(self):
         journal = []
 
         def progress(status, remaining, total):
@@ -100,7 +100,7 @@ class BackupTests(unittest.TestCase):
 
         bckfn = self.temp_file_name
         self.cx.backup(bckfn, pages=1, progress=progress)
-        self.testBackup(bckfn)
+        self.verify_backup(bckfn)
 
         cx = sqlite.connect(bckfn)
         result = cx.execute("SELECT key FROM foo"
@@ -113,7 +113,7 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(journal[1], 1)
         self.assertEqual(journal[2], 0)
 
-    def CheckFailingProgress(self):
+    def test_failing_progress(self):
         def progress(status, remaining, total):
             raise SystemError('nearly out of space')
 
@@ -123,7 +123,7 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(str(err.exception), 'nearly out of space')
         self.assertFalse(os.path.exists(bckfn))
 
-    def CheckDatabaseSourceName(self):
+    def test_database_source_name(self):
         bckfn = self.temp_file_name
         self.cx.backup(bckfn, name='main')
         self.cx.backup(bckfn, name='temp')
@@ -136,16 +136,16 @@ class BackupTests(unittest.TestCase):
         self.cx.commit()
         bckfn = self.temp_file_name
         self.cx.backup(bckfn, name='attached_db')
-        self.testBackup(bckfn)
+        self.verify_backup(bckfn)
 
-    def CheckBackupToOtherConnection(self):
+    def test_backup_to_other_connection(self):
         dx = sqlite.connect(':memory:')
         self.cx.backup(dx)
         result = dx.execute("SELECT key FROM foo ORDER BY key").fetchall()
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
-    def CheckBackupToOtherConnectionInTransaction(self):
+    def test_backup_to_other_connection_in_transaction(self):
         dx = sqlite.connect(':memory:')
         dx.execute('CREATE TABLE bar (key INTEGER)')
         dx.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
@@ -156,7 +156,7 @@ class BackupTests(unittest.TestCase):
             dx.rollback()
 
 def suite():
-    return unittest.TestSuite(unittest.makeSuite(BackupTests, "Check"))
+    return unittest.TestSuite(unittest.makeSuite(BackupTests, "test_"))
 
 def test():
     runner = unittest.TextTestRunner()
