@@ -1,0 +1,3 @@
+Two minor fixes for ``typing`` module: allow shallow copying instances of
+generic classes, improve interaction of ``__init_subclass__`` with generics.
+Original PRs by Ivan Levkivskyi.
