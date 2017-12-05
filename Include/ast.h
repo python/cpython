@@ -15,10 +15,16 @@ PyAPI_FUNC(mod_ty) PyAST_FromNodeObject(
     PyCompilerFlags *flags,
     PyObject *filename,
     PyArena *arena);
-PyAPI_FUNC(PyObject *) PyAST_UnicodeFromAstExpr(
+
+#ifndef Py_LIMITED_API
+
+/* _PyAST_ExprAsUnicode is defined in ast_unparse.c */
+PyAPI_FUNC(PyObject *) _PyAST_ExprAsUnicode(
     expr_ty e,
     int omit_parens,
     int omit_string_brackets);
+
+#endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

@@ -110,6 +110,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         from __future__ import annotations
         def f() -> {ann}:
             ...
+        def g(arg: {ann}) -> None:
+            ...
         var: {ann}
         var2: {ann} = None
         """
@@ -118,12 +120,14 @@ class AnnotationsFutureTestCase(unittest.TestCase):
     def getActual(self, annotation):
         scope = {}
         exec(self.template.format(ann=annotation), {}, scope)
-        func_ann = scope['f'].__annotations__['return']
+        func_ret_ann = scope['f'].__annotations__['return']
+        func_arg_ann = scope['g'].__annotations__['arg']
         var_ann1 = scope['__annotations__']['var']
         var_ann2 = scope['__annotations__']['var2']
-        self.assertEqual(func_ann, var_ann1)
-        self.assertEqual(func_ann, var_ann2)
-        return func_ann
+        self.assertEqual(func_ret_ann, func_arg_ann)
+        self.assertEqual(func_ret_ann, var_ann1)
+        self.assertEqual(func_ret_ann, var_ann2)
+        return func_ret_ann
 
     def assertAnnotationEqual(
         self, annotation, drop_parens=False, is_tuple=False
@@ -162,19 +166,20 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('Name1 or (Name2 and Name3)')
         eq('(Name1 and Name2) or (Name3 and Name4)')
         eq('Name1 or (Name2 and Name3) or Name4')
-        eq('1 << 2')
-        eq('1 >> 2')
-        eq('((1 + 2) - (3 * 4)) ^ (((5 ** 6) / 7) // 8)')
-        eq('not True')
-        eq('~True')
-        eq('+1')
+        eq('v1 << 2')
+        eq('1 >> v2')
+        eq(r'1 % finished')
+        eq('((1 + v2) - (v3 * 4)) ^ (((5 ** v6) / 7) // 8)')
+        eq('not great')
+        eq('~great')
+        eq('+value')
         eq('-1')
-        eq('(~int) and (not ((True ^ (123 + 2)) | True))')
+        eq('(~int) and (not ((v1 ^ (123 + v2)) | True))')
         eq('lambda arg: None')
         eq('lambda a=True: a')
         eq('lambda a, b, c=True: a')
-        eq("lambda a, b, c=True, *, d=(1 << 2), e='str': a")
-        eq("lambda a, b, c=True, *vararg, d=(1 << 2), e='str', **kwargs: a + b")
+        eq("lambda a, b, c=True, *, d=(1 << v2), e='str': a")
+        eq("lambda a, b, c=True, *vararg, d=(v1 << 2), e='str', **kwargs: a + b")
         eq('1 if True else 2')
         eq('(str or None) if True else (str or bytes or None)')
         eq('(str or None) if (1 if True else 2) else (str or bytes or None)')
@@ -182,21 +187,23 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("{'2.7': dead, '3.7': (long_live or die_hard), **{'3.6': verygood}}")
         eq("{**a, **b, **c}")
         eq("{'2.7', '3.6', '3.7', '3.8', '3.9', ('4.0' if gilectomy else '3.10')}")
-        eq("({'a': 'b'}, (True or False), (+1), 'string', b'bytes') or None")
+        eq("({'a': 'b'}, (True or False), (+value), 'string', b'bytes') or None")
         eq("()")
-        eq("(1, )")
+        eq("(1,)")
+        eq("(1, 2)")
+        eq("(1, 2, 3)")
         eq("[]")
         eq("[1, 2, 3, 4, 5, 6, 7, 8, 9, (10 or A), (11 or B), (12 or C)]")
         eq("{i for i in (1, 2, 3)}")
         eq("{(i ** 2) for i in (1, 2, 3)}")
-        eq("{(i ** 2) for i, _ in [(1, 'a'), (2, 'b'), (3, 'c')]}")
+        eq("{(i ** 2) for i, _ in ((1, 'a'), (2, 'b'), (3, 'c'))}")
         eq("{((i ** 2) + j) for i in (1, 2, 3) for j in (1, 2, 3)}")
         eq("[i for i in (1, 2, 3)]")
         eq("[(i ** 2) for i in (1, 2, 3)]")
-        eq("[(i ** 2) for i, _ in [(1, 'a'), (2, 'b'), (3, 'c')]]")
+        eq("[(i ** 2) for i, _ in ((1, 'a'), (2, 'b'), (3, 'c'))]")
         eq("[((i ** 2) + j) for i in (1, 2, 3) for j in (1, 2, 3)]")
-        eq("{i: 0 for i in (1, 2, 3)}")
-        eq("{i: j for i, j in [(1, 'a'), (2, 'b'), (3, 'c')]}")
+        eq(r"{i: 0 for i in (1, 2, 3)}")
+        eq("{i: j for i, j in ((1, 'a'), (2, 'b'), (3, 'c'))}")
         eq("Python3 > Python2 > COBOL")
         eq("Life is Life")
         eq("call()")
@@ -206,11 +213,21 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("call(arg, another, kwarg='hey', **kwargs)")
         eq("lukasz.langa.pl")
         eq("call.me(maybe)")
+        eq("1 .real")
+        eq("1.0 .real")
+        eq("....__class__")
         eq("list[str]")
         eq("dict[str, int]")
         eq("tuple[str, ...]")
         eq("tuple[str, int, float, dict[str, int]]")
-        eq('(str or None) if (sys.version_info[0] > (3, )) else (str or bytes or None)')
+        eq("slice[0]")
+        eq("slice[0:1]")
+        eq("slice[0:1:2]")
+        eq("slice[:]")
+        eq("slice[:-1]")
+        eq("slice[1:]")
+        eq("slice[::-1]")
+        eq('(str or None) if (sys.version_info[0] > (3,)) else (str or bytes or None)')
 
     def test_annotations_no_fstring_support_implemented(self):
         # FIXME: Add f-string support in ast_unparse.c.
@@ -234,8 +251,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('Name1 or Name2 and Name3')
         eq('Name1 and Name2 or Name3 and Name4')
         eq('Name1 or Name2 and Name3 or Name4')
-        eq('1 + 2 - 3 * 4 ^ 5 ** 6 / 7 // 8')
-        eq('~int and not True ^ 123 + 2 | True')
+        eq('1 + v2 - v3 * 4 ^ v5 ** 6 / 7 // 8')
+        eq('~int and not v1 ^ 123 + v2 | True')
         eq('str or None if True else str or bytes or None')
         eq("{'2.7': dead, '3.7': long_live or die_hard}")
         eq("{'2.7', '3.6', '3.7', '3.8', '3.9', '4.0' if gilectomy else '3.10'}")
@@ -252,7 +269,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("(Good, Bad, Ugly)")
         eq("(i for i in (1, 2, 3))")
         eq("((i ** 2) for i in (1, 2, 3))")
-        eq("((i ** 2) for i, _ in [(1, 'a'), (2, 'b'), (3, 'c')])")
+        eq("((i ** 2) for i, _ in ((1, 'a'), (2, 'b'), (3, 'c')))")
         eq("(((i ** 2) + j) for i in (1, 2, 3) for j in (1, 2, 3))")
         eq("(*starred)")
         eq('(yield from outside_of_generator)')
