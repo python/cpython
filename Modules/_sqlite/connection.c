@@ -1505,7 +1505,14 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         Py_END_ALLOW_THREADS
 
         if (rc != SQLITE_OK) {
-            _pysqlite_seterror(bckconn, NULL);
+            if (bckconn) {
+                _pysqlite_seterror(bckconn, NULL);
+                Py_BEGIN_ALLOW_THREADS
+                SQLITE3_CLOSE(bckconn);
+                Py_END_ALLOW_THREADS
+            } else {
+                (void)PyErr_NoMemory();
+            }
             goto finally;
         }
     }
@@ -1576,7 +1583,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
 
     if (filename != NULL) {
         Py_BEGIN_ALLOW_THREADS
-        sqlite3_close(bckconn);
+        SQLITE3_CLOSE(bckconn);
         Py_END_ALLOW_THREADS
     }
 
