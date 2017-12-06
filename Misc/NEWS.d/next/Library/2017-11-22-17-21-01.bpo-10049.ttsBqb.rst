@@ -1,3 +1,0 @@
-Added *nullcontext* no-op context manager to contextlib. This provides a
-simpler and faster alternative to ExitStack() when handling optional context
-managers.
