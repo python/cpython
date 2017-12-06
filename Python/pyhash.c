@@ -175,7 +175,7 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
             case 2: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
             case 1: hash = ((hash << 5) + hash) + *p++; break;
             default:
-                assert(0);
+                Py_UNREACHABLE();
         }
         hash ^= len;
         hash ^= (Py_uhash_t) _Py_HashSecret.djbx33a.suffix;
@@ -196,7 +196,7 @@ _PyHash_Fini(void)
 #ifdef Py_HASH_STATS
     int i;
     Py_ssize_t total = 0;
-    char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
+    const char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
 
     fprintf(stderr, "len   calls    total\n");
     for (i = 1; i <= Py_HASH_STATS_MAX; i++) {
@@ -393,13 +393,13 @@ siphash24(const void *src, Py_ssize_t src_sz) {
     pt = (uint8_t *)&t;
     m = (uint8_t *)in;
     switch (src_sz) {
-        case 7: pt[6] = m[6];
-        case 6: pt[5] = m[5];
-        case 5: pt[4] = m[4];
+        case 7: pt[6] = m[6]; /* fall through */
+        case 6: pt[5] = m[5]; /* fall through */
+        case 5: pt[4] = m[4]; /* fall through */
         case 4: memcpy(pt, m, sizeof(uint32_t)); break;
-        case 3: pt[2] = m[2];
-        case 2: pt[1] = m[1];
-        case 1: pt[0] = m[0];
+        case 3: pt[2] = m[2]; /* fall through */
+        case 2: pt[1] = m[1]; /* fall through */
+        case 1: pt[0] = m[0]; /* fall through */
     }
     b |= _le64toh(t);
 

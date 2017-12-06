@@ -4,6 +4,7 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -41,21 +42,20 @@ _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(threading);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern wchar_t *Py_GetPath(void);
-
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
-static void initmain(PyInterpreterState *interp);
-static int initfsencoding(PyInterpreterState *interp);
-static void initsite(void);
-static int initstdio(void);
-static void initsigs(void);
+static _PyInitError add_main_module(PyInterpreterState *interp);
+static _PyInitError initfsencoding(PyInterpreterState *interp);
+static _PyInitError initsite(void);
+static _PyInitError init_sys_streams(void);
+static _PyInitError initsigs(void);
 static void call_py_exitfuncs(void);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
@@ -64,17 +64,47 @@ extern int _PyStructSequence_Init(void);
 extern void _PyUnicode_Fini(void);
 extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
-extern int _PyFaulthandler_Init(void);
+extern _PyInitError _PyFaulthandler_Init(int enable);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
-extern int _PyTraceMalloc_Init(void);
+extern int _PyTraceMalloc_Init(int enable);
 extern int _PyTraceMalloc_Fini(void);
 extern void _Py_ReadyTypes(void);
 
-#ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
 extern void _PyGILState_Fini(void);
-#endif /* WITH_THREAD */
+
+_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
+
+_PyInitError
+_PyRuntime_Initialize(void)
+{
+    /* XXX We only initialize once in the process, which aligns with
+       the static initialization of the former globals now found in
+       _PyRuntime.  However, _PyRuntime *should* be initialized with
+       every Py_Initialize() call, but doing so breaks the runtime.
+       This is because the runtime state is not properly finalized
+       currently. */
+    static int initialized = 0;
+    if (initialized) {
+        return _Py_INIT_OK();
+    }
+    initialized = 1;
+
+    return _PyRuntimeState_Init(&_PyRuntime);
+}
+
+void
+_PyRuntime_Finalize(void)
+{
+    _PyRuntimeState_Fini(&_PyRuntime);
+}
+
+int
+_Py_IsFinalizing(void)
+{
+    return _PyRuntime.finalizing != NULL;
+}
 
 /* Global configuration variable declarations are in pydebug.h */
 /* XXX (ncoghlan): move those declarations to pylifecycle.h? */
@@ -86,7 +116,6 @@ int Py_InspectFlag; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
-int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
@@ -98,8 +127,6 @@ int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
-
-PyThreadState *_Py_Finalizing = NULL;
 
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
@@ -118,19 +145,17 @@ PyModule_GetWarningsModule(void)
  *
  * Can be called prior to Py_Initialize.
  */
-int _Py_CoreInitialized = 0;
-int _Py_Initialized = 0;
 
 int
 _Py_IsCoreInitialized(void)
 {
-    return _Py_CoreInitialized;
+    return _PyRuntime.core_initialized;
 }
 
 int
 Py_IsInitialized(void)
 {
-    return _Py_Initialized;
+    return _PyRuntime.initialized;
 }
 
 /* Helper to allow an embedding application to override the normal
@@ -178,6 +203,7 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     return 0;
 }
 
+
 /* Global initializations.  Can be undone by Py_FinalizeEx().  Don't
    call this twice without an intervening Py_FinalizeEx() call.  When
    initializations fail, a fatal error is issued and the function does
@@ -189,17 +215,6 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
    having the lock, but you cannot use multiple threads.)
 
 */
-
-static int
-add_flag(int flag, const char *envs)
-{
-    int env = atoi(envs);
-    if (flag < env)
-        flag = env;
-    if (flag < 1)
-        flag = 1;
-    return flag;
-}
 
 static char*
 get_codec_name(const char *encoding)
@@ -237,11 +252,7 @@ error:
 static char*
 get_locale_encoding(void)
 {
-#ifdef MS_WINDOWS
-    char codepage[100];
-    PyOS_snprintf(codepage, sizeof(codepage), "cp%d", GetACP());
-    return get_codec_name(codepage);
-#elif defined(HAVE_LANGINFO_H) && defined(CODESET)
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
     char* codeset = nl_langinfo(CODESET);
     if (!codeset || codeset[0] == '\0') {
         PyErr_SetString(PyExc_ValueError, "CODESET is not set or empty");
@@ -256,66 +267,68 @@ get_locale_encoding(void)
 #endif
 }
 
-static void
+static _PyInitError
 initimport(PyInterpreterState *interp, PyObject *sysmod)
 {
     PyObject *importlib;
     PyObject *impmod;
-    PyObject *sys_modules;
     PyObject *value;
+    _PyInitError err;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
-        Py_FatalError("Py_Initialize: can't import _frozen_importlib");
+        return _Py_INIT_ERR("can't import _frozen_importlib");
     }
     else if (Py_VerboseFlag) {
         PySys_FormatStderr("import _frozen_importlib # frozen\n");
     }
     importlib = PyImport_AddModule("_frozen_importlib");
     if (importlib == NULL) {
-        Py_FatalError("Py_Initialize: couldn't get _frozen_importlib from "
-                      "sys.modules");
+        return _Py_INIT_ERR("couldn't get _frozen_importlib from sys.modules");
     }
     interp->importlib = importlib;
     Py_INCREF(interp->importlib);
 
     interp->import_func = PyDict_GetItemString(interp->builtins, "__import__");
     if (interp->import_func == NULL)
-        Py_FatalError("Py_Initialize: __import__ not found");
+        return _Py_INIT_ERR("__import__ not found");
     Py_INCREF(interp->import_func);
 
     /* Import the _imp module */
     impmod = PyInit_imp();
     if (impmod == NULL) {
-        Py_FatalError("Py_Initialize: can't import _imp");
+        return _Py_INIT_ERR("can't import _imp");
     }
     else if (Py_VerboseFlag) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    sys_modules = PyImport_GetModuleDict();
-    if (Py_VerboseFlag) {
-        PySys_FormatStderr("import sys # builtin\n");
-    }
-    if (PyDict_SetItemString(sys_modules, "_imp", impmod) < 0) {
-        Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
+    if (_PyImport_SetModuleString("_imp", impmod) < 0) {
+        return _Py_INIT_ERR("can't save _imp to sys.modules");
     }
 
     /* Install importlib as the implementation of import */
     value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
-    if (value != NULL)
+    if (value != NULL) {
+        Py_DECREF(value);
         value = PyObject_CallMethod(importlib,
                                     "_install_external_importers", "");
+    }
     if (value == NULL) {
         PyErr_Print();
-        Py_FatalError("Py_Initialize: importlib install failed");
+        return _Py_INIT_ERR("importlib install failed");
     }
     Py_DECREF(value);
     Py_DECREF(impmod);
 
-    _PyImportZip_Init();
+    err = _PyImportZip_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    return _Py_INIT_OK();
 }
 
-static void
+static _PyInitError
 initexternalimport(PyInterpreterState *interp)
 {
     PyObject *value;
@@ -323,8 +336,243 @@ initexternalimport(PyInterpreterState *interp)
                                 "_install_external_importers", "");
     if (value == NULL) {
         PyErr_Print();
-        Py_FatalError("Py_EndInitialization: external importer setup failed");
+        return _Py_INIT_ERR("external importer setup failed");
     }
+    Py_DECREF(value);
+    return _Py_INIT_OK();
+}
+
+/* Helper functions to better handle the legacy C locale
+ *
+ * The legacy C locale assumes ASCII as the default text encoding, which
+ * causes problems not only for the CPython runtime, but also other
+ * components like GNU readline.
+ *
+ * Accordingly, when the CLI detects it, it attempts to coerce it to a
+ * more capable UTF-8 based alternative as follows:
+ *
+ *     if (_Py_LegacyLocaleDetected()) {
+ *         _Py_CoerceLegacyLocale();
+ *     }
+ *
+ * See the documentation of the PYTHONCOERCECLOCALE setting for more details.
+ *
+ * Locale coercion also impacts the default error handler for the standard
+ * streams: while the usual default is "strict", the default for the legacy
+ * C locale and for any of the coercion target locales is "surrogateescape".
+ */
+
+int
+_Py_LegacyLocaleDetected(void)
+{
+#ifndef MS_WINDOWS
+    /* On non-Windows systems, the C locale is considered a legacy locale */
+    /* XXX (ncoghlan): some platforms (notably Mac OS X) don't appear to treat
+     *                 the POSIX locale as a simple alias for the C locale, so
+     *                 we may also want to check for that explicitly.
+     */
+    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+    return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
+#else
+    /* Windows uses code pages instead of locales, so no locale is legacy */
+    return 0;
+#endif
+}
+
+static const char *_C_LOCALE_WARNING =
+    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
+    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
+    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
+    "locales is recommended.\n";
+
+static int
+_legacy_locale_warnings_enabled(void)
+{
+    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    return (coerce_c_locale != NULL &&
+            strncmp(coerce_c_locale, "warn", 5) == 0);
+}
+
+static void
+_emit_stderr_warning_for_legacy_locale(void)
+{
+    if (_legacy_locale_warnings_enabled()) {
+        if (_Py_LegacyLocaleDetected()) {
+            fprintf(stderr, "%s", _C_LOCALE_WARNING);
+        }
+    }
+}
+
+typedef struct _CandidateLocale {
+    const char *locale_name; /* The locale to try as a coercion target */
+} _LocaleCoercionTarget;
+
+static _LocaleCoercionTarget _TARGET_LOCALES[] = {
+    {"C.UTF-8"},
+    {"C.utf8"},
+    {"UTF-8"},
+    {NULL}
+};
+
+static char *
+get_default_standard_stream_error_handler(void)
+{
+    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+    if (ctype_loc != NULL) {
+        /* "surrogateescape" is the default in the legacy C locale */
+        if (strcmp(ctype_loc, "C") == 0) {
+            return "surrogateescape";
+        }
+
+#ifdef PY_COERCE_C_LOCALE
+        /* "surrogateescape" is the default in locale coercion target locales */
+        const _LocaleCoercionTarget *target = NULL;
+        for (target = _TARGET_LOCALES; target->locale_name; target++) {
+            if (strcmp(ctype_loc, target->locale_name) == 0) {
+                return "surrogateescape";
+            }
+        }
+#endif
+   }
+
+   /* Otherwise return NULL to request the typical default error handler */
+   return NULL;
+}
+
+#ifdef PY_COERCE_C_LOCALE
+static const char *_C_LOCALE_COERCION_WARNING =
+    "Python detected LC_CTYPE=C: LC_CTYPE coerced to %.20s (set another locale "
+    "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
+
+static void
+_coerce_default_locale_settings(const _LocaleCoercionTarget *target)
+{
+    const char *newloc = target->locale_name;
+
+    /* Reset locale back to currently configured defaults */
+    _Py_SetLocaleFromEnv(LC_ALL);
+
+    /* Set the relevant locale environment variable */
+    if (setenv("LC_CTYPE", newloc, 1)) {
+        fprintf(stderr,
+                "Error setting LC_CTYPE, skipping C locale coercion\n");
+        return;
+    }
+    if (_legacy_locale_warnings_enabled()) {
+        fprintf(stderr, _C_LOCALE_COERCION_WARNING, newloc);
+    }
+
+    /* Reconfigure with the overridden environment variables */
+    _Py_SetLocaleFromEnv(LC_ALL);
+}
+#endif
+
+void
+_Py_CoerceLegacyLocale(void)
+{
+#ifdef PY_COERCE_C_LOCALE
+    /* We ignore the Python -E and -I flags here, as the CLI needs to sort out
+     * the locale settings *before* we try to do anything with the command
+     * line arguments. For cross-platform debugging purposes, we also need
+     * to give end users a way to force even scripts that are otherwise
+     * isolated from their environment to use the legacy ASCII-centric C
+     * locale.
+     *
+     * Ignoring -E and -I is safe from a security perspective, as we only use
+     * the setting to turn *off* the implicit locale coercion, and anyone with
+     * access to the process environment already has the ability to set
+     * `LC_ALL=C` to override the C level locale settings anyway.
+     */
+    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+        /* PYTHONCOERCECLOCALE is not set, or is set to something other than "0" */
+        const char *locale_override = getenv("LC_ALL");
+        if (locale_override == NULL || *locale_override == '\0') {
+            /* LC_ALL is also not set (or is set to an empty string) */
+            const _LocaleCoercionTarget *target = NULL;
+            for (target = _TARGET_LOCALES; target->locale_name; target++) {
+                const char *new_locale = setlocale(LC_CTYPE,
+                                                   target->locale_name);
+                if (new_locale != NULL) {
+#if !defined(__APPLE__) && !defined(__ANDROID__) && \
+    defined(HAVE_LANGINFO_H) && defined(CODESET)
+                    /* Also ensure that nl_langinfo works in this locale */
+                    char *codeset = nl_langinfo(CODESET);
+                    if (!codeset || *codeset == '\0') {
+                        /* CODESET is not set or empty, so skip coercion */
+                        new_locale = NULL;
+                        _Py_SetLocaleFromEnv(LC_CTYPE);
+                        continue;
+                    }
+#endif
+                    /* Successfully configured locale, so make it the default */
+                    _coerce_default_locale_settings(target);
+                    return;
+                }
+            }
+        }
+    }
+    /* No C locale warning here, as Py_Initialize will emit one later */
+#endif
+}
+
+/* _Py_SetLocaleFromEnv() is a wrapper around setlocale(category, "") to
+ * isolate the idiosyncrasies of different libc implementations. It reads the
+ * appropriate environment variable and uses its value to select the locale for
+ * 'category'. */
+char *
+_Py_SetLocaleFromEnv(int category)
+{
+#ifdef __ANDROID__
+    const char *locale;
+    const char **pvar;
+#ifdef PY_COERCE_C_LOCALE
+    const char *coerce_c_locale;
+#endif
+    const char *utf8_locale = "C.UTF-8";
+    const char *env_var_set[] = {
+        "LC_ALL",
+        "LC_CTYPE",
+        "LANG",
+        NULL,
+    };
+
+    /* Android setlocale(category, "") doesn't check the environment variables
+     * and incorrectly sets the "C" locale at API 24 and older APIs. We only
+     * check the environment variables listed in env_var_set. */
+    for (pvar=env_var_set; *pvar; pvar++) {
+        locale = getenv(*pvar);
+        if (locale != NULL && *locale != '\0') {
+            if (strcmp(locale, utf8_locale) == 0 ||
+                    strcmp(locale, "en_US.UTF-8") == 0) {
+                return setlocale(category, utf8_locale);
+            }
+            return setlocale(category, "C");
+        }
+    }
+
+    /* Android uses UTF-8, so explicitly set the locale to C.UTF-8 if none of
+     * LC_ALL, LC_CTYPE, or LANG is set to a non-empty string.
+     * Quote from POSIX section "8.2 Internationalization Variables":
+     * "4. If the LANG environment variable is not set or is set to the empty
+     * string, the implementation-defined default locale shall be used." */
+
+#ifdef PY_COERCE_C_LOCALE
+    coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    if (coerce_c_locale == NULL || strcmp(coerce_c_locale, "0") != 0) {
+        /* Some other ported code may check the environment variables (e.g. in
+         * extension modules), so we make sure that they match the locale
+         * configuration */
+        if (setenv("LC_CTYPE", utf8_locale, 1)) {
+            fprintf(stderr, "Warning: failed setting the LC_CTYPE "
+                            "environment variable to %s\n", utf8_locale);
+        }
+    }
+#endif
+    return setlocale(category, utf8_locale);
+#else /* __ANDROID__ */
+    return setlocale(category, "");
+#endif /* __ANDROID__ */
 }
 
 
@@ -358,28 +606,34 @@ initexternalimport(PyInterpreterState *interp)
  * safe to call without calling Py_Initialize first)
  */
 
-/* TODO: Progresively move functionality from Py_BeginInitialization to
- * Py_ReadConfig and Py_EndInitialization
- */
-
-void _Py_InitializeCore(const _PyCoreConfig *config)
+_PyInitError
+_Py_InitializeCore(const _PyCoreConfig *config)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
     PyObject *bimod, *sysmod, *pstderr;
-    char *p;
     _PyCoreConfig core_config = _PyCoreConfig_INIT;
     _PyMainInterpreterConfig preinit_config = _PyMainInterpreterConfig_INIT;
+    _PyInitError err;
+
+    err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     if (config != NULL) {
         core_config = *config;
     }
 
-    if (_Py_Initialized) {
-        Py_FatalError("Py_InitializeCore: main interpreter already initialized");
+    if (_PyMem_SetupAllocators(core_config.allocator) < 0) {
+        return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
     }
-    if (_Py_CoreInitialized) {
-        Py_FatalError("Py_InitializeCore: runtime core already initialized");
+
+    if (_PyRuntime.initialized) {
+        return _Py_INIT_ERR("main interpreter already initialized");
+    }
+    if (_PyRuntime.core_initialized) {
+        return _Py_INIT_ERR("runtime core already initialized");
     }
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
@@ -391,53 +645,42 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
      * threads still hanging around from a previous Py_Initialize/Finalize
      * pair :(
      */
-    _Py_Finalizing = NULL;
+    _PyRuntime.finalizing = NULL;
 
-#ifdef HAVE_SETLOCALE
+#ifndef MS_WINDOWS
     /* Set up the LC_CTYPE locale, so we can obtain
        the locale's charset without having to switch
        locales. */
-    setlocale(LC_CTYPE, "");
+    _Py_SetLocaleFromEnv(LC_CTYPE);
+    _emit_stderr_warning_for_legacy_locale();
 #endif
 
-    if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
-        Py_DebugFlag = add_flag(Py_DebugFlag, p);
-    if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
-        Py_VerboseFlag = add_flag(Py_VerboseFlag, p);
-    if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
-        Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
-    if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
-        Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
-    /* The variable is only tested for existence here;
-       _Py_HashRandomization_Init will check its value further. */
-    if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
-        Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
-#ifdef MS_WINDOWS
-    if ((p = Py_GETENV("PYTHONLEGACYWINDOWSFSENCODING")) && *p != '\0')
-        Py_LegacyWindowsFSEncodingFlag = add_flag(Py_LegacyWindowsFSEncodingFlag, p);
-    if ((p = Py_GETENV("PYTHONLEGACYWINDOWSSTDIO")) && *p != '\0')
-        Py_LegacyWindowsStdioFlag = add_flag(Py_LegacyWindowsStdioFlag, p);
-#endif
+    err = _Py_HashRandomization_Init(&core_config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
-    _Py_HashRandomization_Init(&core_config);
     if (!core_config.use_hash_seed || core_config.hash_seed) {
         /* Random or non-zero hash seed */
         Py_HashRandomizationFlag = 1;
     }
 
-    _PyInterpreterState_Init();
+    err = _PyInterpreterState_Enable(&_PyRuntime);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     interp = PyInterpreterState_New();
     if (interp == NULL)
-        Py_FatalError("Py_InitializeCore: can't make main interpreter");
+        return _Py_INIT_ERR("can't make main interpreter");
     interp->core_config = core_config;
     interp->config = preinit_config;
 
     tstate = PyThreadState_New(interp);
     if (tstate == NULL)
-        Py_FatalError("Py_InitializeCore: can't make first thread");
+        return _Py_INIT_ERR("can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
-#ifdef WITH_THREAD
     /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
        destroying the GIL might fail when it is being referenced from
        another running thread (see issue #9901).
@@ -446,79 +689,94 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     _PyEval_FiniThreads();
     /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
-#endif /* WITH_THREAD */
 
     _Py_ReadyTypes();
 
     if (!_PyFrame_Init())
-        Py_FatalError("Py_InitializeCore: can't init frames");
+        return _Py_INIT_ERR("can't init frames");
 
     if (!_PyLong_Init())
-        Py_FatalError("Py_InitializeCore: can't init longs");
+        return _Py_INIT_ERR("can't init longs");
 
     if (!PyByteArray_Init())
-        Py_FatalError("Py_InitializeCore: can't init bytearray");
+        return _Py_INIT_ERR("can't init bytearray");
 
     if (!_PyFloat_Init())
-        Py_FatalError("Py_InitializeCore: can't init float");
+        return _Py_INIT_ERR("can't init float");
 
-    interp->modules = PyDict_New();
-    if (interp->modules == NULL)
-        Py_FatalError("Py_InitializeCore: can't make modules dictionary");
+    PyObject *modules = PyDict_New();
+    if (modules == NULL)
+        return _Py_INIT_ERR("can't make modules dictionary");
+    interp->modules = modules;
+
+    err = _PySys_BeginInit(&sysmod);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    interp->sysdict = PyModule_GetDict(sysmod);
+    if (interp->sysdict == NULL) {
+        return _Py_INIT_ERR("can't initialize sys dict");
+    }
+
+    Py_INCREF(interp->sysdict);
+    PyDict_SetItemString(interp->sysdict, "modules", modules);
+    _PyImport_FixupBuiltin(sysmod, "sys", modules);
 
     /* Init Unicode implementation; relies on the codec registry */
     if (_PyUnicode_Init() < 0)
-        Py_FatalError("Py_InitializeCore: can't initialize unicode");
+        return _Py_INIT_ERR("can't initialize unicode");
 
     if (_PyStructSequence_Init() < 0)
-        Py_FatalError("Py_InitializeCore: can't initialize structseq");
+        return _Py_INIT_ERR("can't initialize structseq");
 
     bimod = _PyBuiltin_Init();
     if (bimod == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize builtins modules");
-    _PyImport_FixupBuiltin(bimod, "builtins");
+        return _Py_INIT_ERR("can't initialize builtins modules");
+    _PyImport_FixupBuiltin(bimod, "builtins", modules);
     interp->builtins = PyModule_GetDict(bimod);
     if (interp->builtins == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize builtins dict");
+        return _Py_INIT_ERR("can't initialize builtins dict");
     Py_INCREF(interp->builtins);
 
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
 
-    sysmod = _PySys_BeginInit();
-    if (sysmod == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize sys");
-    interp->sysdict = PyModule_GetDict(sysmod);
-    if (interp->sysdict == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize sys dict");
-    Py_INCREF(interp->sysdict);
-    _PyImport_FixupBuiltin(sysmod, "sys");
-    PyDict_SetItemString(interp->sysdict, "modules",
-                         interp->modules);
-
     /* Set up a preliminary stderr printer until we have enough
        infrastructure for the io module in place. */
     pstderr = PyFile_NewStdPrinter(fileno(stderr));
     if (pstderr == NULL)
-        Py_FatalError("Py_InitializeCore: can't set preliminary stderr");
+        return _Py_INIT_ERR("can't set preliminary stderr");
     _PySys_SetObjectId(&PyId_stderr, pstderr);
     PySys_SetObject("__stderr__", pstderr);
     Py_DECREF(pstderr);
 
-    _PyImport_Init();
+    err = _PyImport_Init(interp);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
-    _PyImportHooks_Init();
+    err = _PyImportHooks_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     /* Initialize _warnings. */
-    _PyWarnings_Init();
+    if (_PyWarnings_InitWithConfig(&interp->core_config) == NULL) {
+        return _Py_INIT_ERR("can't initialize warnings");
+    }
 
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
-        initimport(interp, sysmod);
+        err = initimport(interp, sysmod);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
     /* Only when we get here is the runtime core fully initialized */
-    _Py_CoreInitialized = 1;
+    _PyRuntime.core_initialized = 1;
+    return _Py_INIT_OK();
 }
 
 /* Read configuration settings from standard locations
@@ -533,15 +791,45 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
  * this function multiple times with various preconfigured settings.
  */
 
-int _Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *config)
+_PyInitError
+_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
 {
     /* Signal handlers are installed by default */
     if (config->install_signal_handlers < 0) {
         config->install_signal_handlers = 1;
     }
 
-    return 0;
+    if (config->program_name == NULL) {
+#ifdef MS_WINDOWS
+        const wchar_t *program_name = L"python";
+#else
+        const wchar_t *program_name = L"python3";
+#endif
+        config->program_name = _PyMem_RawWcsdup(program_name);
+        if (config->program_name == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    return _Py_INIT_OK();
 }
+
+
+void
+_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+{
+#define CLEAR(ATTR) \
+    do { \
+        PyMem_RawFree(ATTR); \
+        ATTR = NULL; \
+    } while (0)
+
+    CLEAR(config->module_search_path_env);
+    CLEAR(config->home);
+    CLEAR(config->program_name);
+#undef CLEAR
+}
+
 
 /* Update interpreter state based on supplied configuration settings
  *
@@ -554,25 +842,27 @@ int _Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *config)
  * Other errors should be reported as normal Python exceptions with a
  * non-zero return code.
  */
-int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
+_PyInitError
+_Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
+    _PyInitError err;
 
-    if (!_Py_CoreInitialized) {
-        Py_FatalError("Py_InitializeMainInterpreter: runtime core not initialized");
+    if (!_PyRuntime.core_initialized) {
+        return _Py_INIT_ERR("runtime core not initialized");
     }
-    if (_Py_Initialized) {
-        Py_FatalError("Py_InitializeMainInterpreter: main interpreter already initialized");
+    if (_PyRuntime.initialized) {
+        return _Py_INIT_ERR("main interpreter already initialized");
     }
 
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
     if (!tstate)
-        Py_FatalError("Py_InitializeMainInterpreter: failed to read thread state");
+        return _Py_INIT_ERR("failed to read thread state");
     interp = tstate->interp;
     if (!interp)
-        Py_FatalError("Py_InitializeMainInterpreter: failed to get interpreter");
+        return _Py_INIT_ERR("failed to get interpreter");
 
     /* Now finish configuring the main interpreter */
     interp->config = *config;
@@ -583,40 +873,62 @@ int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
          * This means anything which needs support from extension modules
          * or pure Python code in the standard library won't work.
          */
-        _Py_Initialized = 1;
-        return 0;
+        _PyRuntime.initialized = 1;
+        return _Py_INIT_OK();
     }
-    /* TODO: Report exceptions rather than fatal errors below here */
 
-    if (_PyTime_Init() < 0)
-        Py_FatalError("Py_InitializeMainInterpreter: can't initialize time");
+    if (_PyTime_Init() < 0) {
+        return _Py_INIT_ERR("can't initialize time");
+    }
 
-    /* Finish setting up the sys module and import system */
     /* GetPath may initialize state that _PySys_EndInit locks
        in, and so has to be called first. */
-    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
-    PySys_SetPath(Py_GetPath());
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
+
+    /* Finish setting up the sys module and import system */
+    PySys_SetPath(sys_path);
     if (_PySys_EndInit(interp->sysdict) < 0)
-        Py_FatalError("Py_InitializeMainInterpreter: can't finish initializing sys");
-    initexternalimport(interp);
+        return _Py_INIT_ERR("can't finish initializing sys");
+
+    err = initexternalimport(interp);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     /* initialize the faulthandler module */
-    if (_PyFaulthandler_Init())
-        Py_FatalError("Py_InitializeMainInterpreter: can't initialize faulthandler");
+    err = _PyFaulthandler_Init(interp->core_config.faulthandler);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
-    if (initfsencoding(interp) < 0)
-        Py_FatalError("Py_InitializeMainInterpreter: unable to load the file system codec");
+    err = initfsencoding(interp);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
-    if (config->install_signal_handlers)
-        initsigs(); /* Signal handling stuff, including initintr() */
+    if (interp->config.install_signal_handlers) {
+        err = initsigs(); /* Signal handling stuff, including initintr() */
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
 
-    if (_PyTraceMalloc_Init() < 0)
-        Py_FatalError("Py_InitializeMainInterpreter: can't initialize tracemalloc");
+    if (_PyTraceMalloc_Init(interp->core_config.tracemalloc) < 0)
+        return _Py_INIT_ERR("can't initialize tracemalloc");
 
-    initmain(interp); /* Module __main__ */
-    if (initstdio() < 0)
-        Py_FatalError(
-            "Py_InitializeMainInterpreter: can't initialize sys standard streams");
+    err = add_main_module(interp);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = init_sys_streams();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     /* Initialize warnings. */
     if (PySys_HasWarnOptions()) {
@@ -628,39 +940,66 @@ int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         Py_XDECREF(warnings_module);
     }
 
-    _Py_Initialized = 1;
+    _PyRuntime.initialized = 1;
 
-    if (!Py_NoSiteFlag)
-        initsite(); /* Module site */
+    if (!Py_NoSiteFlag) {
+        err = initsite(); /* Module site */
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
 
-    return 0;
+    return _Py_INIT_OK();
 }
 
 #undef _INIT_DEBUG_PRINT
 
-void
+_PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
     _PyCoreConfig core_config = _PyCoreConfig_INIT;
     _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
+    _PyInitError err;
 
-    /* TODO: Moar config options! */
     core_config.ignore_environment = Py_IgnoreEnvironmentFlag;
     core_config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
-    _Py_InitializeCore(&core_config);
-    /* TODO: Print any exceptions raised by these operations */
-    if (_Py_ReadMainInterpreterConfig(&config))
-        Py_FatalError("Py_Initialize: Py_ReadMainInterpreterConfig failed");
-    if (_Py_InitializeMainInterpreter(&config))
-        Py_FatalError("Py_Initialize: Py_InitializeMainInterpreter failed");
+
+    err = _Py_InitializeCore(&core_config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _PyMainInterpreterConfig_ReadEnv(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _PyMainInterpreterConfig_Read(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _Py_InitializeMainInterpreter(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _Py_INIT_OK();
+
+done:
+    _PyMainInterpreterConfig_Clear(&config);
+    return err;
 }
 
 
 void
 Py_InitializeEx(int install_sigs)
 {
-    _Py_InitializeEx_Private(install_sigs, 1);
+    _PyInitError err = _Py_InitializeEx_Private(install_sigs, 1);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
 }
 
 void
@@ -744,7 +1083,7 @@ Py_FinalizeEx(void)
     PyThreadState *tstate;
     int status = 0;
 
-    if (!_Py_Initialized)
+    if (!_PyRuntime.initialized)
         return status;
 
     wait_for_thread_shutdown();
@@ -764,11 +1103,15 @@ Py_FinalizeEx(void)
     tstate = PyThreadState_GET();
     interp = tstate->interp;
 
+    /* Copy the core config to be able to use it even
+       after PyInterpreterState_Delete() */
+    _PyCoreConfig core_config = interp->core_config;
+
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
-    _Py_Finalizing = tstate;
-    _Py_Initialized = 0;
-    _Py_CoreInitialized = 0;
+    _PyRuntime.finalizing = tstate;
+    _PyRuntime.initialized = 0;
+    _PyRuntime.core_initialized = 0;
 
     /* Flush sys.stdout and sys.stderr */
     if (flush_std_files() < 0) {
@@ -798,6 +1141,7 @@ Py_FinalizeEx(void)
     while (_PyGC_CollectIfEnabled() > 0)
         /* nothing */;
 #endif
+
     /* Destroy all modules */
     PyImport_Cleanup();
 
@@ -845,7 +1189,11 @@ Py_FinalizeEx(void)
     /* dump hash stats */
     _PyHash_Fini();
 
-    _PY_DEBUG_PRINT_TOTAL_REFS();
+#ifdef Py_REF_DEBUG
+    if (core_config.show_ref_count) {
+        _PyDebug_PrintTotalRefs();
+    }
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display all objects still alive -- this can invoke arbitrary
@@ -853,8 +1201,9 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (core_config.dump_refs) {
         _Py_PrintReferences(stderr);
+    }
 #endif /* Py_TRACE_REFS */
 
     /* Clear interpreter state and all thread states. */
@@ -904,9 +1253,7 @@ Py_FinalizeEx(void)
     PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
     /* Cleanup auto-thread-state */
-#ifdef WITH_THREAD
     _PyGILState_Fini();
-#endif /* WITH_THREAD */
 
     /* Delete current thread. After this, many C API calls become crashy. */
     PyThreadState_Swap(NULL);
@@ -918,18 +1265,19 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (core_config.dump_refs) {
         _Py_PrintReferenceAddresses(stderr);
+    }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
-    if (_PyMem_PymallocEnabled()) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
-        if (opt != NULL && *opt != '\0')
-            _PyObject_DebugMallocStats(stderr);
+    if (core_config.malloc_stats) {
+        _PyObject_DebugMallocStats(stderr);
     }
 #endif
 
     call_ll_exitfuncs();
+
+    _PyRuntime_Finalize();
     return status;
 }
 
@@ -952,30 +1300,33 @@ Py_Finalize(void)
 
 */
 
-PyThreadState *
-Py_NewInterpreter(void)
+static _PyInitError
+new_interpreter(PyThreadState **tstate_p)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate, *save_tstate;
     PyObject *bimod, *sysmod;
+    _PyInitError err;
 
-    if (!_Py_Initialized)
-        Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
+    if (!_PyRuntime.initialized) {
+        return _Py_INIT_ERR("Py_Initialize must be called first");
+    }
 
-#ifdef WITH_THREAD
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
     _PyGILState_check_enabled = 0;
-#endif
 
     interp = PyInterpreterState_New();
-    if (interp == NULL)
-        return NULL;
+    if (interp == NULL) {
+        *tstate_p = NULL;
+        return _Py_INIT_OK();
+    }
 
     tstate = PyThreadState_New(interp);
     if (tstate == NULL) {
         PyInterpreterState_Delete(interp);
-        return NULL;
+        *tstate_p = NULL;
+        return _Py_INIT_OK();
     }
 
     save_tstate = PyThreadState_Swap(tstate);
@@ -991,11 +1342,31 @@ Py_NewInterpreter(void)
         interp->config = main_interp->config;
     }
 
+    err = _PyPathConfig_Init(&interp->config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
+
     /* XXX The following is lax in error checking */
+    PyObject *modules = PyDict_New();
+    if (modules == NULL) {
+        return _Py_INIT_ERR("can't make modules dictionary");
+    }
+    interp->modules = modules;
 
-    interp->modules = PyDict_New();
+    sysmod = _PyImport_FindBuiltin("sys", modules);
+    if (sysmod != NULL) {
+        interp->sysdict = PyModule_GetDict(sysmod);
+        if (interp->sysdict == NULL)
+            goto handle_error;
+        Py_INCREF(interp->sysdict);
+        PyDict_SetItemString(interp->sysdict, "modules", modules);
+        PySys_SetPath(sys_path);
+        _PySys_EndInit(interp->sysdict);
+    }
 
-    bimod = _PyImport_FindBuiltin("builtins");
+    bimod = _PyImport_FindBuiltin("builtins", modules);
     if (bimod != NULL) {
         interp->builtins = PyModule_GetDict(bimod);
         if (interp->builtins == NULL)
@@ -1006,45 +1377,63 @@ Py_NewInterpreter(void)
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
 
-    sysmod = _PyImport_FindBuiltin("sys");
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
 
-        interp->sysdict = PyModule_GetDict(sysmod);
-        if (interp->sysdict == NULL)
-            goto handle_error;
-        Py_INCREF(interp->sysdict);
-        _PySys_EndInit(interp->sysdict);
-        PySys_SetPath(Py_GetPath());
-        PyDict_SetItemString(interp->sysdict, "modules",
-                             interp->modules);
         /* Set up a preliminary stderr printer until we have enough
            infrastructure for the io module in place. */
         pstderr = PyFile_NewStdPrinter(fileno(stderr));
-        if (pstderr == NULL)
-            Py_FatalError("Py_NewInterpreter: can't set preliminary stderr");
+        if (pstderr == NULL) {
+            return _Py_INIT_ERR("can't set preliminary stderr");
+        }
         _PySys_SetObjectId(&PyId_stderr, pstderr);
         PySys_SetObject("__stderr__", pstderr);
         Py_DECREF(pstderr);
 
-        _PyImportHooks_Init();
+        err = _PyImportHooks_Init();
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
 
-        initimport(interp, sysmod);
-        initexternalimport(interp);
+        err = initimport(interp, sysmod);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
 
-        if (initfsencoding(interp) < 0)
-            goto handle_error;
+        err = initexternalimport(interp);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
 
-        if (initstdio() < 0)
-            Py_FatalError(
-                "Py_NewInterpreter: can't initialize sys standard streams");
-        initmain(interp);
-        if (!Py_NoSiteFlag)
-            initsite();
+        err = initfsencoding(interp);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+
+        err = init_sys_streams();
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+
+        err = add_main_module(interp);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+
+        if (!Py_NoSiteFlag) {
+            err = initsite();
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+        }
     }
 
-    if (!PyErr_Occurred())
-        return tstate;
+    if (PyErr_Occurred()) {
+        goto handle_error;
+    }
+
+    *tstate_p = tstate;
+    return _Py_INIT_OK();
 
 handle_error:
     /* Oops, it didn't work.  Undo it all. */
@@ -1055,7 +1444,20 @@ handle_error:
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
 
-    return NULL;
+    *tstate_p = NULL;
+    return _Py_INIT_OK();
+}
+
+PyThreadState *
+Py_NewInterpreter(void)
+{
+    PyThreadState *tstate;
+    _PyInitError err = new_interpreter(&tstate);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
+    return tstate;
+
 }
 
 /* Delete an interpreter and its last thread.  This requires that the
@@ -1091,77 +1493,35 @@ Py_EndInterpreter(PyThreadState *tstate)
     PyInterpreterState_Delete(interp);
 }
 
-#ifdef MS_WINDOWS
-static wchar_t *progname = L"python";
-#else
-static wchar_t *progname = L"python3";
-#endif
+/* Add the __main__ module */
 
-void
-Py_SetProgramName(wchar_t *pn)
-{
-    if (pn && *pn)
-        progname = pn;
-}
-
-wchar_t *
-Py_GetProgramName(void)
-{
-    return progname;
-}
-
-static wchar_t *default_home = NULL;
-static wchar_t env_home[MAXPATHLEN+1];
-
-void
-Py_SetPythonHome(wchar_t *home)
-{
-    default_home = home;
-}
-
-wchar_t *
-Py_GetPythonHome(void)
-{
-    wchar_t *home = default_home;
-    if (home == NULL && !Py_IgnoreEnvironmentFlag) {
-        char* chome = Py_GETENV("PYTHONHOME");
-        if (chome) {
-            size_t size = Py_ARRAY_LENGTH(env_home);
-            size_t r = mbstowcs(env_home, chome, size);
-            if (r != (size_t)-1 && r < size)
-                home = env_home;
-        }
-
-    }
-    return home;
-}
-
-/* Create __main__ module */
-
-static void
-initmain(PyInterpreterState *interp)
+static _PyInitError
+add_main_module(PyInterpreterState *interp)
 {
     PyObject *m, *d, *loader, *ann_dict;
     m = PyImport_AddModule("__main__");
     if (m == NULL)
-        Py_FatalError("can't create __main__ module");
+        return _Py_INIT_ERR("can't create __main__ module");
+
     d = PyModule_GetDict(m);
     ann_dict = PyDict_New();
     if ((ann_dict == NULL) ||
         (PyDict_SetItemString(d, "__annotations__", ann_dict) < 0)) {
-        Py_FatalError("Failed to initialize __main__.__annotations__");
+        return _Py_INIT_ERR("Failed to initialize __main__.__annotations__");
     }
     Py_DECREF(ann_dict);
+
     if (PyDict_GetItemString(d, "__builtins__") == NULL) {
         PyObject *bimod = PyImport_ImportModule("builtins");
         if (bimod == NULL) {
-            Py_FatalError("Failed to retrieve builtins module");
+            return _Py_INIT_ERR("Failed to retrieve builtins module");
         }
         if (PyDict_SetItemString(d, "__builtins__", bimod) < 0) {
-            Py_FatalError("Failed to initialize __main__.__builtins__");
+            return _Py_INIT_ERR("Failed to initialize __main__.__builtins__");
         }
         Py_DECREF(bimod);
     }
+
     /* Main is a little special - imp.is_builtin("__main__") will return
      * False, but BuiltinImporter is still the most appropriate initial
      * setting for its __loader__ attribute. A more suitable value will
@@ -1173,41 +1533,40 @@ initmain(PyInterpreterState *interp)
         PyObject *loader = PyObject_GetAttrString(interp->importlib,
                                                   "BuiltinImporter");
         if (loader == NULL) {
-            Py_FatalError("Failed to retrieve BuiltinImporter");
+            return _Py_INIT_ERR("Failed to retrieve BuiltinImporter");
         }
         if (PyDict_SetItemString(d, "__loader__", loader) < 0) {
-            Py_FatalError("Failed to initialize __main__.__loader__");
+            return _Py_INIT_ERR("Failed to initialize __main__.__loader__");
         }
         Py_DECREF(loader);
     }
+    return _Py_INIT_OK();
 }
 
-static int
+static _PyInitError
 initfsencoding(PyInterpreterState *interp)
 {
     PyObject *codec;
 
 #ifdef MS_WINDOWS
-    if (Py_LegacyWindowsFSEncodingFlag)
-    {
+    if (Py_LegacyWindowsFSEncodingFlag) {
         Py_FileSystemDefaultEncoding = "mbcs";
         Py_FileSystemDefaultEncodeErrors = "replace";
     }
-    else
-    {
+    else {
         Py_FileSystemDefaultEncoding = "utf-8";
         Py_FileSystemDefaultEncodeErrors = "surrogatepass";
     }
 #else
-    if (Py_FileSystemDefaultEncoding == NULL)
-    {
+    if (Py_FileSystemDefaultEncoding == NULL) {
         Py_FileSystemDefaultEncoding = get_locale_encoding();
-        if (Py_FileSystemDefaultEncoding == NULL)
-            Py_FatalError("Py_Initialize: Unable to get the locale encoding");
+        if (Py_FileSystemDefaultEncoding == NULL) {
+            return _Py_INIT_ERR("Unable to get the locale encoding");
+        }
 
         Py_HasFileSystemDefaultEncoding = 0;
         interp->fscodec_initialized = 1;
-        return 0;
+        return _Py_INIT_OK();
     }
 #endif
 
@@ -1217,29 +1576,25 @@ initfsencoding(PyInterpreterState *interp)
         /* Such error can only occurs in critical situations: no more
          * memory, import a module of the standard library failed,
          * etc. */
-        return -1;
+        return _Py_INIT_ERR("unable to load the file system codec");
     }
     Py_DECREF(codec);
     interp->fscodec_initialized = 1;
-    return 0;
+    return _Py_INIT_OK();
 }
 
 /* Import the site module (not into __main__ though) */
 
-static void
+static _PyInitError
 initsite(void)
 {
     PyObject *m;
     m = PyImport_ImportModule("site");
     if (m == NULL) {
-        fprintf(stderr, "Failed to import the site module\n");
-        PyErr_Print();
-        Py_Finalize();
-        exit(1);
+        return _Py_INIT_USER_ERR("Failed to import the site module");
     }
-    else {
-        Py_DECREF(m);
-    }
+    Py_DECREF(m);
+    return _Py_INIT_OK();
 }
 
 /* Check if a file descriptor is valid or not.
@@ -1279,7 +1634,7 @@ create_stdio(PyObject* io,
     PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
     const char* mode;
     const char* newline;
-    PyObject *line_buffering;
+    PyObject *line_buffering, *write_through;
     int buffering, isatty;
     _Py_IDENTIFIER(open);
     _Py_IDENTIFIER(isatty);
@@ -1336,7 +1691,11 @@ create_stdio(PyObject* io,
     Py_DECREF(res);
     if (isatty == -1)
         goto error;
-    if (isatty || Py_UnbufferedStdioFlag)
+    if (Py_UnbufferedStdioFlag)
+        write_through = Py_True;
+    else
+        write_through = Py_False;
+    if (isatty && !Py_UnbufferedStdioFlag)
         line_buffering = Py_True;
     else
         line_buffering = Py_False;
@@ -1355,9 +1714,9 @@ create_stdio(PyObject* io,
     newline = "\n";
 #endif
 
-    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssO",
+    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssOO",
                                     buf, encoding, errors,
-                                    newline, line_buffering);
+                                    newline, line_buffering, write_through);
     Py_CLEAR(buf);
     if (stream == NULL)
         goto error;
@@ -1389,16 +1748,17 @@ error:
 }
 
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
-static int
-initstdio(void)
+static _PyInitError
+init_sys_streams(void)
 {
     PyObject *iomod = NULL, *wrapper;
     PyObject *bimod = NULL;
     PyObject *m;
     PyObject *std = NULL;
-    int status = 0, fd;
+    int fd;
     PyObject * encoding_attr;
     char *pythonioencoding = NULL, *encoding, *errors;
+    _PyInitError res = _Py_INIT_OK();
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -1454,12 +1814,8 @@ initstdio(void)
             }
         }
         if (!errors && !(pythonioencoding && *pythonioencoding)) {
-            /* When the LC_CTYPE locale is the POSIX locale ("C locale"),
-               stdin and stdout use the surrogateescape error handler by
-               default, instead of the strict error handler. */
-            char *loc = setlocale(LC_CTYPE, NULL);
-            if (loc != NULL && strcmp(loc, "C") == 0)
-                errors = "surrogateescape";
+            /* Choose the default error handler based on the current locale */
+            errors = get_default_standard_stream_error_handler();
         }
     }
 
@@ -1516,11 +1872,12 @@ initstdio(void)
     Py_DECREF(std);
 #endif
 
-    if (0) {
-  error:
-        status = -1;
-    }
+    goto done;
 
+error:
+    res = _Py_INIT_ERR("can't initialize sys standard streams");
+
+done:
     /* We won't need them anymore. */
     if (_Py_StandardStreamEncoding) {
         PyMem_RawFree(_Py_StandardStreamEncoding);
@@ -1533,7 +1890,7 @@ initstdio(void)
     PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
-    return status;
+    return res;
 }
 
 
@@ -1610,16 +1967,46 @@ _Py_FatalError_PrintExc(int fd)
 
 /* Print fatal error message and abort */
 
-void
-Py_FatalError(const char *msg)
+#ifdef MS_WINDOWS
+static void
+fatal_output_debug(const char *msg)
+{
+    /* buffer of 256 bytes allocated on the stack */
+    WCHAR buffer[256 / sizeof(WCHAR)];
+    size_t buflen = Py_ARRAY_LENGTH(buffer) - 1;
+    size_t msglen;
+
+    OutputDebugStringW(L"Fatal Python error: ");
+
+    msglen = strlen(msg);
+    while (msglen) {
+        size_t i;
+
+        if (buflen > msglen) {
+            buflen = msglen;
+        }
+
+        /* Convert the message to wchar_t. This uses a simple one-to-one
+           conversion, assuming that the this error message actually uses
+           ASCII only. If this ceases to be true, we will have to convert. */
+        for (i=0; i < buflen; ++i) {
+            buffer[i] = msg[i];
+        }
+        buffer[i] = L'\0';
+        OutputDebugStringW(buffer);
+
+        msg += buflen;
+        msglen -= buflen;
+    }
+    OutputDebugStringW(L"\n");
+}
+#endif
+
+static void _Py_NO_RETURN
+fatal_error(const char *prefix, const char *msg, int status)
 {
     const int fd = fileno(stderr);
     static int reentrant = 0;
-#ifdef MS_WINDOWS
-    size_t len;
-    WCHAR* buffer;
-    size_t i;
-#endif
 
     if (reentrant) {
         /* Py_FatalError() caused a second fatal error.
@@ -1628,17 +2015,30 @@ Py_FatalError(const char *msg)
     }
     reentrant = 1;
 
-    fprintf(stderr, "Fatal Python error: %s\n", msg);
+    fprintf(stderr, "Fatal Python error: ");
+    if (prefix) {
+        fputs(prefix, stderr);
+        fputs(": ", stderr);
+    }
+    if (msg) {
+        fputs(msg, stderr);
+    }
+    else {
+        fprintf(stderr, "<message not set>");
+    }
+    fputs("\n", stderr);
     fflush(stderr); /* it helps in Windows debug build */
 
     /* Print the exception (if an exception is set) with its traceback,
      * or display the current Python stack. */
-    if (!_Py_FatalError_PrintExc(fd))
+    if (!_Py_FatalError_PrintExc(fd)) {
         _Py_FatalError_DumpTracebacks(fd);
+    }
 
-    /* The main purpose of faulthandler is to display the traceback. We already
-     * did our best to display it. So faulthandler can now be disabled.
-     * (Don't trigger it on abort().) */
+    /* The main purpose of faulthandler is to display the traceback.
+       This function already did its best to display a traceback.
+       Disable faulthandler to prevent writing a second traceback
+       on abort(). */
     _PyFaulthandler_Fini();
 
     /* Check if the current Python thread hold the GIL */
@@ -1648,46 +2048,53 @@ Py_FatalError(const char *msg)
     }
 
 #ifdef MS_WINDOWS
-    len = strlen(msg);
-
-    /* Convert the message to wchar_t. This uses a simple one-to-one
-    conversion, assuming that the this error message actually uses ASCII
-    only. If this ceases to be true, we will have to convert. */
-    buffer = alloca( (len+1) * (sizeof *buffer));
-    for( i=0; i<=len; ++i)
-        buffer[i] = msg[i];
-    OutputDebugStringW(L"Fatal Python error: ");
-    OutputDebugStringW(buffer);
-    OutputDebugStringW(L"\n");
+    fatal_output_debug(msg);
 #endif /* MS_WINDOWS */
 
 exit:
+    if (status < 0) {
 #if defined(MS_WINDOWS) && defined(_DEBUG)
-    DebugBreak();
+        DebugBreak();
 #endif
-    abort();
+        abort();
+    }
+    else {
+        exit(status);
+    }
+}
+
+void
+Py_FatalError(const char *msg)
+{
+    fatal_error(NULL, msg, -1);
+}
+
+void
+_Py_FatalInitError(_PyInitError err)
+{
+    /* On "user" error: exit with status 1.
+       For all other errors, call abort(). */
+    int status = err.user_err ? 1 : -1;
+    fatal_error(err.prefix, err.msg, status);
 }
 
 /* Clean up and exit */
 
-#ifdef WITH_THREAD
 #  include "pythread.h"
-#endif
 
-static void (*pyexitfunc)(void) = NULL;
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(void))
 {
-    pyexitfunc = func;
+    _PyRuntime.pyexitfunc = func;
 }
 
 static void
 call_py_exitfuncs(void)
 {
-    if (pyexitfunc == NULL)
+    if (_PyRuntime.pyexitfunc == NULL)
         return;
 
-    (*pyexitfunc)();
+    (*_PyRuntime.pyexitfunc)();
     PyErr_Clear();
 }
 
@@ -1698,12 +2105,9 @@ call_py_exitfuncs(void)
 static void
 wait_for_thread_shutdown(void)
 {
-#ifdef WITH_THREAD
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *threading = PyMapping_GetItemString(tstate->interp->modules,
-                                                  "threading");
+    PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();
@@ -1717,26 +2121,22 @@ wait_for_thread_shutdown(void)
         Py_DECREF(result);
     }
     Py_DECREF(threading);
-#endif
 }
 
 #define NEXITFUNCS 32
-static void (*exitfuncs[NEXITFUNCS])(void);
-static int nexitfuncs = 0;
-
 int Py_AtExit(void (*func)(void))
 {
-    if (nexitfuncs >= NEXITFUNCS)
+    if (_PyRuntime.nexitfuncs >= NEXITFUNCS)
         return -1;
-    exitfuncs[nexitfuncs++] = func;
+    _PyRuntime.exitfuncs[_PyRuntime.nexitfuncs++] = func;
     return 0;
 }
 
 static void
 call_ll_exitfuncs(void)
 {
-    while (nexitfuncs > 0)
-        (*exitfuncs[--nexitfuncs])();
+    while (_PyRuntime.nexitfuncs > 0)
+        (*_PyRuntime.exitfuncs[--_PyRuntime.nexitfuncs])();
 
     fflush(stdout);
     fflush(stderr);
@@ -1752,7 +2152,7 @@ Py_Exit(int sts)
     exit(sts);
 }
 
-static void
+static _PyInitError
 initsigs(void)
 {
 #ifdef SIGPIPE
@@ -1766,8 +2166,9 @@ initsigs(void)
 #endif
     PyOS_InitInterrupts(); /* May imply initsignal() */
     if (PyErr_Occurred()) {
-        Py_FatalError("Py_Initialize: can't import signal");
+        return _Py_INIT_ERR("can't import signal");
     }
+    return _Py_INIT_OK();
 }
 
 

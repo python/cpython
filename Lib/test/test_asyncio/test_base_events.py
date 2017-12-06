@@ -529,6 +529,27 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(ValueError,
             other_loop.run_until_complete, task)
 
+    def test_run_until_complete_loop_orphan_future_close_loop(self):
+        class ShowStopper(BaseException):
+            pass
+
+        async def foo(delay):
+            await asyncio.sleep(delay, loop=self.loop)
+
+        def throw():
+            raise ShowStopper
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(throw)
+        try:
+            self.loop.run_until_complete(foo(0.1))
+        except ShowStopper:
+            pass
+
+        # This call fails if run_until_complete does not clean up
+        # done-callback for the previous future.
+        self.loop.run_until_complete(foo(0.2))
+
     def test_subprocess_exec_invalid_args(self):
         args = [sys.executable, '-c', 'pass']
 
@@ -800,6 +821,10 @@ class BaseEventLoopTests(test_utils.TestCase):
         sts, stdout, stderr = assert_python_ok('-E', '-c', code,
                                                PYTHONASYNCIODEBUG='1')
         self.assertEqual(stdout.rstrip(), b'False')
+
+        sts, stdout, stderr = assert_python_ok('-E', '-X', 'dev',
+                                               '-c', code)
+        self.assertEqual(stdout.rstrip(), b'True')
 
     def test_create_task(self):
         class MyTask(asyncio.Task):
@@ -1524,6 +1549,17 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
             sock=sock)
         transport, protocol = self.loop.run_until_complete(fut)
+        transport.close()
+        self.loop.run_until_complete(protocol.done)
+        self.assertEqual('CLOSED', protocol.state)
+
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    def test_create_datagram_endpoint_sock_unix(self):
+        fut = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            family=socket.AF_UNIX)
+        transport, protocol = self.loop.run_until_complete(fut)
+        assert transport._sock.family == socket.AF_UNIX
         transport.close()
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)

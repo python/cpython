@@ -61,8 +61,6 @@
 
 #define T_HANDLE T_POINTER
 
-#define DWORD_MAX 4294967295U
-
 /* Grab CancelIoEx dynamically from kernel32 */
 static int has_CancelIoEx = -1;
 static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
@@ -114,7 +112,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_Finalizing == NULL)
+        else if (_Py_IsFinalizing())
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -184,11 +182,11 @@ class DWORD_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == DWORD_MAX", data)
+        self.err_occurred_if("_return_value == PY_DWORD_MAX", data)
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=94819e72d2c6d558]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4527052fe06e5823]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -723,9 +721,13 @@ getenvironment(PyObject* environment)
     }
 
     keys = PyMapping_Keys(environment);
+    if (!keys) {
+        return NULL;
+    }
     values = PyMapping_Values(environment);
-    if (!keys || !values)
+    if (!values) {
         goto error;
+    }
 
     envsize = PySequence_Fast_GET_SIZE(keys);
     if (PySequence_Fast_GET_SIZE(values) != envsize) {
@@ -742,6 +744,20 @@ getenvironment(PyObject* environment)
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
                 "environment can only contain strings");
+            goto error;
+        }
+        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
+            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto error;
+        }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key) == 0 ||
+            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
             goto error;
         }
         if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(key) - 1) {
@@ -846,12 +862,13 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
 
     if (env_mapping != Py_None) {
         environment = getenvironment(env_mapping);
-        if (! environment)
+        if (environment == NULL) {
             return NULL;
+        }
+        /* contains embedded null characters */
         wenvironment = PyUnicode_AsUnicode(environment);
-        if (wenvironment == NULL)
-        {
-            Py_XDECREF(environment);
+        if (wenvironment == NULL) {
+            Py_DECREF(environment);
             return NULL;
         }
     }
@@ -990,7 +1007,7 @@ _winapi_GetExitCodeProcess_impl(PyObject *module, HANDLE process)
 
     if (! result) {
         PyErr_SetFromWindowsErr(GetLastError());
-        exit_code = DWORD_MAX;
+        exit_code = PY_DWORD_MAX;
     }
 
     return exit_code;
@@ -1447,7 +1464,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    len = (DWORD)Py_MIN(buf->len, DWORD_MAX);
+    len = (DWORD)Py_MIN(buf->len, PY_DWORD_MAX);
     ret = WriteFile(handle, buf->buf, len, &written,
                     overlapped ? &overlapped->overlapped : NULL);
     Py_END_ALLOW_THREADS
@@ -1578,6 +1595,18 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, WAIT_OBJECT_0);
     WINAPI_CONSTANT(F_DWORD, WAIT_ABANDONED_0);
     WINAPI_CONSTANT(F_DWORD, WAIT_TIMEOUT);
+    
+    WINAPI_CONSTANT(F_DWORD, ABOVE_NORMAL_PRIORITY_CLASS);
+    WINAPI_CONSTANT(F_DWORD, BELOW_NORMAL_PRIORITY_CLASS);
+    WINAPI_CONSTANT(F_DWORD, HIGH_PRIORITY_CLASS);
+    WINAPI_CONSTANT(F_DWORD, IDLE_PRIORITY_CLASS);
+    WINAPI_CONSTANT(F_DWORD, NORMAL_PRIORITY_CLASS);
+    WINAPI_CONSTANT(F_DWORD, REALTIME_PRIORITY_CLASS);
+    
+    WINAPI_CONSTANT(F_DWORD, CREATE_NO_WINDOW);
+    WINAPI_CONSTANT(F_DWORD, DETACHED_PROCESS);
+    WINAPI_CONSTANT(F_DWORD, CREATE_DEFAULT_ERROR_MODE);
+    WINAPI_CONSTANT(F_DWORD, CREATE_BREAKAWAY_FROM_JOB);
 
     WINAPI_CONSTANT("i", NULL);
 

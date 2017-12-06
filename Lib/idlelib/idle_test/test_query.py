@@ -258,6 +258,7 @@ class QueryGuiTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        del cls.dialog.destroy
         del cls.dialog
         cls.root.destroy()
         del cls.root

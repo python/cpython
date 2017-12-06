@@ -61,8 +61,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(datetime.MAXYEAR, 9999)
 
     def test_name_cleanup(self):
-        if '_Fast' not in str(self):
-            return
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
         datetime = datetime_module
         names = set(name for name in dir(datetime)
                     if not name.startswith('__') and not name.endswith('__'))
@@ -72,8 +73,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(names - allowed, set([]))
 
     def test_divide_and_round(self):
-        if '_Fast' in str(self):
-            return
+        if '_Fast' in self.__class__.__name__:
+            self.skipTest('Only run for Pure Python implementation')
+
         dar = datetime_module._divide_and_round
 
         self.assertEqual(dar(-10, -3), 3)
@@ -253,14 +255,15 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual(timezone.min.utcoffset(None), -limit)
         self.assertEqual(timezone.max.utcoffset(None), limit)
 
-
     def test_constructor(self):
         self.assertIs(timezone.utc, timezone(timedelta(0)))
         self.assertIsNot(timezone.utc, timezone(timedelta(0), 'UTC'))
         self.assertEqual(timezone.utc, timezone(timedelta(0), 'UTC'))
+        for subminute in [timedelta(microseconds=1), timedelta(seconds=1)]:
+            tz = timezone(subminute)
+            self.assertNotEqual(tz.utcoffset(None) % timedelta(minutes=1), 0)
         # invalid offsets
-        for invalid in [timedelta(microseconds=1), timedelta(1, 1),
-                        timedelta(seconds=1), timedelta(1), -timedelta(1)]:
+        for invalid in [timedelta(1, 1), timedelta(1)]:
             self.assertRaises(ValueError, timezone, invalid)
             self.assertRaises(ValueError, timezone, -invalid)
 
@@ -298,6 +301,15 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual('UTC+09:30', timezone(9.5 * HOUR).tzname(None))
         self.assertEqual('UTC-00:01', timezone(timedelta(minutes=-1)).tzname(None))
         self.assertEqual('XYZ', timezone(-5 * HOUR, 'XYZ').tzname(None))
+
+        # Sub-minute offsets:
+        self.assertEqual('UTC+01:06:40', timezone(timedelta(0, 4000)).tzname(None))
+        self.assertEqual('UTC-01:06:40',
+                         timezone(-timedelta(0, 4000)).tzname(None))
+        self.assertEqual('UTC+01:06:40.000001',
+                         timezone(timedelta(0, 4000, 1)).tzname(None))
+        self.assertEqual('UTC-01:06:40.000001',
+                         timezone(-timedelta(0, 4000, 1)).tzname(None))
 
         with self.assertRaises(TypeError): self.EST.tzname('')
         with self.assertRaises(TypeError): self.EST.tzname(5)
@@ -656,11 +668,21 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
     def test_repr(self):
         name = 'datetime.' + self.theclass.__name__
         self.assertEqual(repr(self.theclass(1)),
-                         "%s(1)" % name)
+                         "%s(days=1)" % name)
         self.assertEqual(repr(self.theclass(10, 2)),
-                         "%s(10, 2)" % name)
+                         "%s(days=10, seconds=2)" % name)
         self.assertEqual(repr(self.theclass(-10, 2, 400000)),
-                         "%s(-10, 2, 400000)" % name)
+                         "%s(days=-10, seconds=2, microseconds=400000)" % name)
+        self.assertEqual(repr(self.theclass(seconds=60)),
+                         "%s(seconds=60)" % name)
+        self.assertEqual(repr(self.theclass()),
+                         "%s(0)" % name)
+        self.assertEqual(repr(self.theclass(microseconds=100)),
+                         "%s(microseconds=100)" % name)
+        self.assertEqual(repr(self.theclass(days=1, microseconds=100)),
+                         "%s(days=1, microseconds=100)" % name)
+        self.assertEqual(repr(self.theclass(seconds=1, microseconds=100)),
+                         "%s(seconds=1, microseconds=100)" % name)
 
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
@@ -843,6 +865,46 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ZeroDivisionError, divmod, t, zerotd)
 
         self.assertRaises(TypeError, divmod, t, 10)
+
+    def test_issue31293(self):
+        # The interpreter shouldn't crash in case a timedelta is divided or
+        # multiplied by a float with a bad as_integer_ratio() method.
+        def get_bad_float(bad_ratio):
+            class BadFloat(float):
+                def as_integer_ratio(self):
+                    return bad_ratio
+            return BadFloat()
+
+        with self.assertRaises(TypeError):
+            timedelta() / get_bad_float(1 << 1000)
+        with self.assertRaises(TypeError):
+            timedelta() * get_bad_float(1 << 1000)
+
+        for bad_ratio in [(), (42, ), (1, 2, 3)]:
+            with self.assertRaises(ValueError):
+                timedelta() / get_bad_float(bad_ratio)
+            with self.assertRaises(ValueError):
+                timedelta() * get_bad_float(bad_ratio)
+
+    def test_issue31752(self):
+        # The interpreter shouldn't crash because divmod() returns negative
+        # remainder.
+        class BadInt(int):
+            def __mul__(self, other):
+                return Prod()
+
+        class Prod:
+            def __radd__(self, other):
+                return Sum()
+
+        class Sum(int):
+            def __divmod__(self, other):
+                # negative remainder
+                return (0, -1)
+
+        timedelta(microseconds=BadInt(1))
+        timedelta(hours=BadInt(1))
+        timedelta(weeks=BadInt(1))
 
 
 #############################################################################
@@ -1457,6 +1519,13 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # Out of bounds.
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
+
+    def test_subclass_replace(self):
+        class DateSubclass(self.theclass):
+            pass
+
+        dt = DateSubclass(2012, 1, 1)
+        self.assertIs(type(dt.replace(year=2013)), DateSubclass)
 
     def test_subclass_date(self):
 
@@ -2085,6 +2154,10 @@ class TestDateTime(TestDate):
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
+        self.assertEqual(
+            strptime("-00:02:01.000003", "%z").utcoffset(),
+            -timedelta(minutes=2, seconds=1, microseconds=3)
+        )
         # Only local timezone and UTC are supported
         for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
                                  (-_time.timezone, _time.tzname[0])):
@@ -2140,6 +2213,9 @@ class TestDateTime(TestDate):
         t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
         self.assertEqual(t.strftime("%m %d %y %f %S %M %H %j"),
                                     "12 31 04 000047 33 22 06 366")
+        tz = timezone(-timedelta(hours=2, seconds=33, microseconds=123))
+        t = t.replace(tzinfo=tz)
+        self.assertEqual(t.strftime("%z"), "-020033.000123")
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -2557,6 +2633,13 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
+    def test_subclass_replace(self):
+        class TimeSubclass(self.theclass):
+            pass
+
+        ctime = TimeSubclass(12, 30)
+        self.assertIs(type(ctime.replace(hour=10)), TimeSubclass)
+
     def test_subclass_time(self):
 
         class C(self.theclass):
@@ -2705,8 +2788,8 @@ class TZInfoBase:
             def utcoffset(self, dt): return timedelta(microseconds=61)
             def dst(self, dt): return timedelta(microseconds=-81)
         t = cls(1, 1, 1, tzinfo=C7())
-        self.assertRaises(ValueError, t.utcoffset)
-        self.assertRaises(ValueError, t.dst)
+        self.assertEqual(t.utcoffset(), timedelta(microseconds=61))
+        self.assertEqual(t.dst(), timedelta(microseconds=-81))
 
     def test_aware_compare(self):
         cls = self.theclass
@@ -2851,7 +2934,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(TypeError, t.strftime, "%Z")
 
         # Issue #6697:
-        if '_Fast' in str(self):
+        if '_Fast' in self.__class__.__name__:
             Badtzname.tz = '\ud800'
             self.assertRaises(ValueError, t.strftime, "%Z")
 
@@ -3164,8 +3247,6 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(dt.timetz(), time(18, 45, 3, 1234, tzinfo=met))
 
     def test_tz_aware_arithmetic(self):
-        import random
-
         now = self.theclass.now()
         tz55 = FixedOffset(-330, "west 5:30")
         timeaware = now.time().replace(tzinfo=tz55)
@@ -4285,7 +4366,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertEqual(gdt.strftime("%c %Z"),
                          'Mon Jun 23 22:00:00 1941 UTC')
 
-
     def test_constructors(self):
         t = time(0, fold=1)
         dt = datetime(1, 1, 1, fold=1)
@@ -4360,7 +4440,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertEqual(t0.fold, 0)
         self.assertEqual(t1.fold, 1)
 
-
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_timestamp(self):
         dt0 = datetime(2014, 11, 2, 1, 30)
@@ -4378,7 +4457,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         s1 = t.replace(fold=1).timestamp()
         self.assertEqual(s0 + 1800, s1)
 
-
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_astimezone(self):
         dt0 = datetime(2014, 11, 2, 1, 30)
@@ -4393,7 +4471,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         # Aware instances with fixed offset tzinfo's always have fold=0
         self.assertEqual(adt0.fold, 0)
         self.assertEqual(adt1.fold, 0)
-
 
     def test_pickle_fold(self):
         t = time(fold=1)

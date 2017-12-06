@@ -13,7 +13,6 @@ import warnings
 import weakref
 
 from . import base_tasks
-from . import compat
 from . import coroutines
 from . import events
 from . import futures
@@ -144,6 +143,7 @@ class Task(futures.Future):
         terminates with a CancelledError exception (even if cancel()
         was not called).
         """
+        self._log_traceback = False
         if self.done():
             return False
         if self._fut_waiter is not None:
@@ -333,6 +333,15 @@ def wait_for(fut, timeout, *, loop=None):
     if timeout is None:
         return (yield from fut)
 
+    if timeout <= 0:
+        fut = ensure_future(fut, loop=loop)
+
+        if fut.done():
+            return fut.result()
+
+        fut.cancel()
+        raise futures.TimeoutError()
+
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
     cb = functools.partial(_release_waiter, waiter)
@@ -515,7 +524,7 @@ def ensure_future(coro_or_future, *, loop=None):
         if task._source_traceback:
             del task._source_traceback[-1]
         return task
-    elif compat.PY35 and inspect.isawaitable(coro_or_future):
+    elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:
         raise TypeError('An asyncio.Future, a coroutine or an awaitable is '

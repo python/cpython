@@ -72,7 +72,7 @@ PyDoc_STRVAR(_sha256_sha256__doc__,
 "Return a new SHA-256 hash object; optionally initialized with a string.");
 
 #define _SHA256_SHA256_METHODDEF    \
-    {"sha256", (PyCFunction)_sha256_sha256, METH_FASTCALL, _sha256_sha256__doc__},
+    {"sha256", (PyCFunction)_sha256_sha256, METH_FASTCALL|METH_KEYWORDS, _sha256_sha256__doc__},
 
 static PyObject *
 _sha256_sha256_impl(PyObject *module, PyObject *string);
@@ -102,7 +102,7 @@ PyDoc_STRVAR(_sha256_sha224__doc__,
 "Return a new SHA-224 hash object; optionally initialized with a string.");
 
 #define _SHA256_SHA224_METHODDEF    \
-    {"sha224", (PyCFunction)_sha256_sha224, METH_FASTCALL, _sha256_sha224__doc__},
+    {"sha224", (PyCFunction)_sha256_sha224, METH_FASTCALL|METH_KEYWORDS, _sha256_sha224__doc__},
 
 static PyObject *
 _sha256_sha224_impl(PyObject *module, PyObject *string);
@@ -124,4 +124,4 @@ _sha256_sha224(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7ef4927ee2a3aac4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84e7b8365b3ca4d3 input=a9049054013a1b77]*/

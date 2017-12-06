@@ -252,7 +252,6 @@ class _BaseSelectorImpl(BaseSelector):
         return key
 
     def modify(self, fileobj, events, data=None):
-        # TODO: Subclasses can probably optimize this even further.
         try:
             key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
@@ -342,6 +341,8 @@ class SelectSelector(_BaseSelectorImpl):
 class _PollLikeSelector(_BaseSelectorImpl):
     """Base class shared between poll, epoll and devpoll selectors."""
     _selector_cls = None
+    _EVENT_READ = None
+    _EVENT_WRITE = None
 
     def __init__(self):
         super().__init__()
@@ -356,7 +357,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             poller_events |= self._EVENT_WRITE
         try:
             self._selector.register(key.fd, poller_events)
-        except Exception:
+        except:
             super().unregister(fileobj)
             raise
         return key
@@ -369,6 +370,33 @@ class _PollLikeSelector(_BaseSelectorImpl):
             # This can happen if the FD was closed since it
             # was registered.
             pass
+        return key
+
+    def modify(self, fileobj, events, data=None):
+        try:
+            key = self._fd_to_key[self._fileobj_lookup(fileobj)]
+        except KeyError:
+            raise KeyError(f"{fileobj!r} is not registered") from None
+
+        changed = False
+        if events != key.events:
+            selector_events = 0
+            if events & EVENT_READ:
+                selector_events |= self._EVENT_READ
+            if events & EVENT_WRITE:
+                selector_events |= self._EVENT_WRITE
+            try:
+                self._selector.modify(key.fd, selector_events)
+            except:
+                super().unregister(fileobj)
+                raise
+            changed = True
+        if data != key.data:
+            changed = True
+
+        if changed:
+            key = key._replace(events=events, data=data)
+            self._fd_to_key[key.fd] = key
         return key
 
     def select(self, timeout=None):
@@ -496,7 +524,7 @@ if hasattr(select, 'kqueue'):
                     kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                         select.KQ_EV_ADD)
                     self._selector.control([kev], 0, 0)
-            except Exception:
+            except:
                 super().unregister(fileobj)
                 raise
             return key

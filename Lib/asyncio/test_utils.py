@@ -6,6 +6,7 @@ import io
 import logging
 import os
 import re
+import selectors
 import socket
 import socketserver
 import sys
@@ -28,23 +29,17 @@ except ImportError:  # pragma: no cover
 from . import base_events
 from . import events
 from . import futures
-from . import selectors
 from . import tasks
 from .coroutines import coroutine
 from .log import logger
-
-
-if sys.platform == 'win32':  # pragma: no cover
-    from .windows_utils import socketpair
-else:
-    from socket import socketpair  # pragma: no cover
+from test import support
 
 
 def dummy_ssl_context():
     if ssl is None:
         return None
     else:
-        return ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        return ssl.SSLContext(ssl.PROTOCOL_TLS)
 
 
 def run_briefly(loop):
@@ -360,6 +355,13 @@ class TestLoop(base_events.BaseEventLoop):
             handle._args, args)
 
     def _ensure_fd_no_transport(self, fd):
+        if not isinstance(fd, int):
+            try:
+                fd = int(fd.fileno())
+            except (AttributeError, TypeError, ValueError):
+                # This code matches selectors._fileobj_to_fd function.
+                raise ValueError("Invalid file object: "
+                                 "{!r}".format(fd)) from None
         try:
             transport = self._transports[fd]
         except KeyError:
@@ -436,12 +438,19 @@ def get_function_source(func):
 
 
 class TestCase(unittest.TestCase):
+    @staticmethod
+    def close_loop(loop):
+        executor = loop._default_executor
+        if executor is not None:
+            executor.shutdown(wait=True)
+        loop.close()
+
     def set_event_loop(self, loop, *, cleanup=True):
         assert loop is not None
         # ensure that the event loop is passed explicitly in asyncio
         events.set_event_loop(None)
         if cleanup:
-            self.addCleanup(loop.close)
+            self.addCleanup(self.close_loop, loop)
 
     def new_test_loop(self, gen=None):
         loop = TestLoop(gen)
@@ -454,6 +463,7 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         self._get_running_loop = events._get_running_loop
         events._get_running_loop = lambda: None
+        self._thread_cleanup = support.threading_setup()
 
     def tearDown(self):
         self.unpatch_get_running_loop()
@@ -463,6 +473,10 @@ class TestCase(unittest.TestCase):
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
         self.assertEqual(sys.exc_info(), (None, None, None))
+
+        self.doCleanups()
+        support.threading_cleanup(*self._thread_cleanup)
+        support.reap_children()
 
 
 @contextlib.contextmanager
@@ -488,8 +502,3 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
-
-
-def force_legacy_ssl_support():
-    return mock.patch('asyncio.sslproto._is_sslproto_available',
-                      return_value=False)

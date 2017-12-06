@@ -1,6 +1,8 @@
 /* Cell object implementation */
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 
 PyObject *
 PyCell_New(PyObject *obj)
@@ -51,22 +53,15 @@ cell_dealloc(PyCellObject *op)
     PyObject_GC_Del(op);
 }
 
-#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
-
 static PyObject *
 cell_richcompare(PyObject *a, PyObject *b, int op)
 {
-    int result;
-    PyObject *v;
-
     /* neither argument should be NULL, unless something's gone wrong */
     assert(a != NULL && b != NULL);
 
     /* both arguments should be instances of PyCellObject */
     if (!PyCell_Check(a) || !PyCell_Check(b)) {
-        v = Py_NotImplemented;
-        Py_INCREF(v);
-        return v;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     /* compare cells by contents; empty cells come before anything else */
@@ -75,32 +70,7 @@ cell_richcompare(PyObject *a, PyObject *b, int op)
     if (a != NULL && b != NULL)
         return PyObject_RichCompare(a, b, op);
 
-    result = (b == NULL) - (a == NULL);
-    switch (op) {
-    case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-    case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-    case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-    case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-    case Py_LT:
-        v = TEST_COND(result < 0);
-        break;
-    case Py_GT:
-        v = TEST_COND(result > 0);
-        break;
-    default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(b == NULL, a == NULL, op);
 }
 
 static PyObject *
@@ -140,8 +110,17 @@ cell_get_contents(PyCellObject *op, void *closure)
     return op->ob_ref;
 }
 
+static int
+cell_set_contents(PyCellObject *op, PyObject *obj)
+{
+    Py_XINCREF(obj);
+    Py_XSETREF(op->ob_ref, obj);
+    return 0;
+}
+
 static PyGetSetDef cell_getsetlist[] = {
-    {"cell_contents", (getter)cell_get_contents, NULL},
+    {"cell_contents", (getter)cell_get_contents,
+                      (setter)cell_set_contents, NULL},
     {NULL} /* sentinel */
 };
 

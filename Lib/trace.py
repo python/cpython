@@ -61,21 +61,15 @@ import dis
 import pickle
 from time import monotonic as _time
 
-try:
-    import threading
-except ImportError:
-    _settrace = sys.settrace
+import threading
 
-    def _unsettrace():
-        sys.settrace(None)
-else:
-    def _settrace(func):
-        threading.settrace(func)
-        sys.settrace(func)
+def _settrace(func):
+    threading.settrace(func)
+    sys.settrace(func)
 
-    def _unsettrace():
-        sys.settrace(None)
-        threading.settrace(None)
+def _unsettrace():
+    sys.settrace(None)
+    threading.settrace(None)
 
 PRAGMA_NOCOVER = "#pragma NO COVER"
 

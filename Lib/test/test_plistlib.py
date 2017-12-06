@@ -169,6 +169,17 @@ class TestPlistlib(unittest.TestCase):
                     self.assertRaises(OverflowError, plistlib.dumps,
                                       pl, fmt=fmt)
 
+    def test_bytearray(self):
+        for pl in (b'<binary gunk>', b"<lots of binary gunk>\0\1\2\3" * 10):
+            for fmt in ALL_FORMATS:
+                with self.subTest(pl=pl, fmt=fmt):
+                    data = plistlib.dumps(bytearray(pl), fmt=fmt)
+                    pl2 = plistlib.loads(data)
+                    self.assertIsInstance(pl2, bytes)
+                    self.assertEqual(pl2, pl)
+                    data2 = plistlib.dumps(pl2, fmt=fmt)
+                    self.assertEqual(data, data2)
+
     def test_bytes(self):
         pl = self._create()
         data = plistlib.dumps(pl)
@@ -353,11 +364,13 @@ class TestPlistlib(unittest.TestCase):
             testString = "string containing %s" % c
             if i >= 32 or c in "\r\n\t":
                 # \r, \n and \t are the only legal control chars in XML
-                plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                data = plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                if c != "\r":
+                    self.assertEqual(plistlib.loads(data), testString)
             else:
-                self.assertRaises(ValueError,
-                                  plistlib.dumps,
-                                  testString)
+                with self.assertRaises(ValueError):
+                    plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+            plistlib.dumps(testString, fmt=plistlib.FMT_BINARY)
 
     def test_non_bmp_characters(self):
         pl = {'python': '\U0001f40d'}
@@ -365,6 +378,14 @@ class TestPlistlib(unittest.TestCase):
             with self.subTest(fmt=fmt):
                 data = plistlib.dumps(pl, fmt=fmt)
                 self.assertEqual(plistlib.loads(data), pl)
+
+    def test_lone_surrogates(self):
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\ud8ff', fmt=fmt)
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\udcff', fmt=fmt)
 
     def test_nondictroot(self):
         for fmt in ALL_FORMATS:
@@ -421,6 +442,9 @@ class TestPlistlib(unittest.TestCase):
                 pl2 = plistlib.loads(data)
                 self.assertEqual(dict(pl), dict(pl2))
 
+
+class TestBinaryPlistlib(unittest.TestCase):
+
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
         data = (b'bplist00'
@@ -433,6 +457,47 @@ class TestPlistlib(unittest.TestCase):
                 b'\x00\x00\x00\x00\x00\x00\x00\x13')
         self.assertEqual(plistlib.loads(data), {'a': 'b'})
 
+    def test_dump_duplicates(self):
+        # Test effectiveness of saving duplicated objects
+        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  plistlib.Data(b'abcde'), bytearray(b'abcde'),
+                  [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*1000, fmt=plistlib.FMT_BINARY)
+                self.assertLess(len(data), 1100, repr(data))
+
+    def test_identity(self):
+        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  plistlib.Data(b'abcde'), bytearray(b'abcde'),
+                  [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*2, fmt=plistlib.FMT_BINARY)
+                a, b = plistlib.loads(data)
+                if isinstance(x, tuple):
+                    x = list(x)
+                self.assertEqual(a, x)
+                self.assertEqual(b, x)
+                self.assertIs(a, b)
+
+    def test_cycles(self):
+        # recursive list
+        a = []
+        a.append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0], b)
+        # recursive tuple
+        a = ([],)
+        a[0].append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0][0], b)
+        # recursive dict
+        a = {}
+        a['x'] = a
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b['x'], b)
+
     def test_large_timestamp(self):
         # Issue #26709: 32-bit timestamp out of range
         for ts in -2**31-1, 2**31:
@@ -441,6 +506,56 @@ class TestPlistlib(unittest.TestCase):
                      datetime.timedelta(seconds=ts))
                 data = plistlib.dumps(d, fmt=plistlib.FMT_BINARY)
                 self.assertEqual(plistlib.loads(data), d)
+
+    def test_invalid_binary(self):
+        for data in [
+                # too short data
+                b'',
+                # too large offset_table_offset and nonstandard offset_size
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x03\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x2a',
+                # integer overflow in offset_table_offset
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\xff\xff\xff\xff\xff\xff\xff\xff',
+                # offset_size = 0
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x09',
+                # ref_size = 0
+                b'\xa1\x01\x00\x08\x0a'
+                b'\x00\x00\x00\x00\x00\x00\x01\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x02'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+                # integer overflow in offset
+                b'\x00\xff\xff\xff\xff\xff\xff\xff\xff'
+                b'\x00\x00\x00\x00\x00\x00\x08\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x09',
+                # invalid ASCII
+                b'\x51\xff\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0a',
+                # invalid UTF-16
+                b'\x61\xd8\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+                ]:
+            with self.assertRaises(plistlib.InvalidFileException):
+                plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
 
 
 class TestPlistlibDeprecated(unittest.TestCase):

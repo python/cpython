@@ -751,6 +751,26 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(set(keys), expectedkeys)
         self.assertEqual(len(keys), len(expectedkeys))
 
+        # Check case where inner iterator is used after advancing the groupby
+        # iterator
+        s = list(zip('AABBBAAAA', range(9)))
+        it = groupby(s, testR)
+        _, g1 = next(it)
+        _, g2 = next(it)
+        _, g3 = next(it)
+        self.assertEqual(list(g1), [])
+        self.assertEqual(list(g2), [])
+        self.assertEqual(next(g3), ('A', 5))
+        list(it)  # exhaust the groupby iterator
+        self.assertEqual(list(g3), [])
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            it = groupby(s, testR)
+            _, g = next(it)
+            next(it)
+            next(it)
+            self.assertEqual(list(pickle.loads(pickle.dumps(g, proto))), [])
+
         # Exercise pipes and filters style
         s = 'abracadabra'
         # sort s | uniq
@@ -1242,6 +1262,19 @@ class TestBasicOps(unittest.TestCase):
         list(it) # exhaust the iterator
         support.gc_collect()
         self.assertIsNone(wr())
+
+        # Issue #30537: islice can accept integer-like objects as
+        # arguments
+        class IntLike(object):
+            def __init__(self, val):
+                self.val = val
+            def __index__(self):
+                return self.val
+        self.assertEqual(list(islice(range(100), IntLike(10))), list(range(10)))
+        self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50))),
+                         list(range(10, 50)))
+        self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50), IntLike(5))),
+                         list(range(10,50,5)))
 
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
@@ -1984,6 +2017,30 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(it)
 
+    def test_issue30347_1(self):
+        def f(n):
+            if n == 5:
+                list(b)
+            return n != 6
+        for (k, b) in groupby(range(10), f):
+            list(b)  # shouldn't crash
+
+    def test_issue30347_2(self):
+        class K:
+            def __init__(self, v):
+                pass
+            def __eq__(self, other):
+                nonlocal i
+                i += 1
+                if i == 1:
+                    next(g, None)
+                return True
+        i = 0
+        g = next(groupby(range(10), K))[1]
+        for j in range(2):
+            next(g, None)  # shouldn't crash
+
+
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
         # count is not subclassable...
@@ -1996,7 +2053,7 @@ class SubclassWithKwargsTest(unittest.TestCase):
                 Subclass(newarg=1)
             except TypeError as err:
                 # we expect type errors because of wrong argument count
-                self.assertNotIn("does not take keyword arguments", err.args[0])
+                self.assertNotIn("keyword arguments", err.args[0])
 
 @support.cpython_only
 class SizeofTest(unittest.TestCase):

@@ -10,9 +10,10 @@ import sysconfig
 import tempfile
 import textwrap
 import time
+import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
-    findtests, runtest,
+    findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR,
     PROGRESS_MIN_TIME, format_test_result)
@@ -28,7 +29,13 @@ except ImportError:
 # to keep the test files in a subfolder.  This eases the cleanup of leftover
 # files using the "make distclean" command.
 if sysconfig.is_python_build():
-    TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+    TEMPDIR = sysconfig.get_config_var('abs_builddir')
+    if TEMPDIR is None:
+        # bpo-30284: On Windows, only srcdir is available. Using abs_builddir
+        # mostly matters on UNIX when building Python out of the source tree,
+        # especially when the source tree is read only.
+        TEMPDIR = sysconfig.get_config_var('srcdir')
+    TEMPDIR = os.path.join(TEMPDIR, 'build')
 else:
     TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
@@ -125,8 +132,9 @@ class Regrtest:
 
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count}"
-        if self.bad and not self.ns.pgo:
-            line = f"{line}/{len(self.bad)}"
+        fails = len(self.bad) + len(self.environment_changed)
+        if fails and not self.ns.pgo:
+            line = f"{line}/{fails}"
         line = f"[{line}] {test}"
 
         # add the system load prefix: "load avg: 1.80 "
@@ -241,6 +249,33 @@ class Regrtest:
     def list_tests(self):
         for name in self.selected:
             print(name)
+
+    def _list_cases(self, suite):
+        for test in suite:
+            if isinstance(test, unittest.loader._FailedTest):
+                continue
+            if isinstance(test, unittest.TestSuite):
+                self._list_cases(test)
+            elif isinstance(test, unittest.TestCase):
+                if support.match_test(test):
+                    print(test.id())
+
+    def list_cases(self):
+        support.verbose = False
+        support.set_match_tests(self.ns.match_tests)
+
+        for test in self.selected:
+            abstest = get_abs_module(self.ns, test)
+            try:
+                suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
+                self._list_cases(suite)
+            except unittest.SkipTest:
+                self.skipped.append(test)
+
+        if self.skipped:
+            print(file=sys.stderr)
+            print(count(len(self.skipped), "test"), "skipped:", file=sys.stderr)
+            printlist(self.skipped, file=sys.stderr)
 
     def rerun_failed_tests(self):
         self.ns.verbose = True
@@ -381,14 +416,14 @@ class Regrtest:
                 yield test
                 if self.bad:
                     return
+                if self.ns.fail_env_changed and self.environment_changed:
+                    return
 
     def display_header(self):
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
-        print("== hash algorithm:", sys.hash_info.algorithm,
-              "64bit" if sys.maxsize > 2**32 else "32bit")
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
@@ -396,7 +431,6 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
-        print("Testing with flags:", sys.flags)
 
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
@@ -444,6 +478,8 @@ class Regrtest:
             result = "FAILURE"
         elif self.interrupted:
             result = "INTERRUPTED"
+        elif self.ns.fail_env_changed and self.environment_changed:
+            result = "ENV CHANGED"
         else:
             result = "SUCCESS"
         print("Tests result: %s" % result)
@@ -493,6 +529,10 @@ class Regrtest:
             self.list_tests()
             sys.exit(0)
 
+        if self.ns.list_cases:
+            self.list_cases()
+            sys.exit(0)
+
         self.run_tests()
         self.display_result()
 
@@ -500,7 +540,13 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
-        sys.exit(len(self.bad) > 0 or self.interrupted)
+        if self.bad:
+            sys.exit(2)
+        if self.interrupted:
+            sys.exit(130)
+        if self.ns.fail_env_changed and self.environment_changed:
+            sys.exit(3)
+        sys.exit(0)
 
 
 def removepy(names):
@@ -519,7 +565,7 @@ def count(n, word):
         return "%d %ss" % (n, word)
 
 
-def printlist(x, width=70, indent=4):
+def printlist(x, width=70, indent=4, file=None):
     """Print the elements of iterable x to stdout.
 
     Optional arg width (default 70) is the maximum line length.
@@ -530,7 +576,8 @@ def printlist(x, width=70, indent=4):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks))
+                        initial_indent=blanks, subsequent_indent=blanks),
+          file=file)
 
 
 def main(tests=None, **kwargs):

@@ -599,8 +599,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
    On POSIX, use fstat().
 
    On Windows, use GetFileType() and GetFileInformationByHandle() which support
-   files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
-   than 2 GB because the file size type is a signed 32-bit integer: see issue
+   files larger than 2 GiB.  fstat() may fail with EOVERFLOW on files larger
+   than 2 GiB because the file size type is a signed 32-bit integer: see issue
    #23152.
 
    On Windows, set the last Windows error and return nonzero on error. On
@@ -665,8 +665,8 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
    On POSIX, use fstat().
 
    On Windows, use GetFileType() and GetFileInformationByHandle() which support
-   files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
-   than 2 GB because the file size type is a signed 32-bit integer: see issue
+   files larger than 2 GiB.  fstat() may fail with EOVERFLOW on files larger
+   than 2 GiB because the file size type is a signed 32-bit integer: see issue
    #23152.
 
    Raise an exception and return -1 on error. On Windows, set the last Windows
@@ -680,9 +680,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
 {
     int res;
 
-#ifdef WITH_THREAD
     assert(PyGILState_Check());
-#endif
 
     Py_BEGIN_ALLOW_THREADS
     res = _Py_fstat_noraise(fd, status);
@@ -711,21 +709,32 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
     struct _stat wstatbuf;
-    wchar_t *wpath;
+    const wchar_t *wpath;
 
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return -2;
+
     err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
     return err;
 #else
     int ret;
-    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
+    PyObject *bytes;
+    char *cpath;
+
+    bytes = PyUnicode_EncodeFSDefault(path);
     if (bytes == NULL)
         return -2;
-    ret = stat(PyBytes_AS_STRING(bytes), statbuf);
+
+    /* check for embedded null bytes */
+    if (PyBytes_AsStringAndSize(bytes, &cpath, NULL) == -1) {
+        Py_DECREF(bytes);
+        return -2;
+    }
+
+    ret = stat(cpath, statbuf);
     Py_DECREF(bytes);
     return ret;
 #endif
@@ -988,10 +997,8 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 int
 _Py_open(const char *pathname, int flags)
 {
-#ifdef WITH_THREAD
     /* _Py_open() must be called with the GIL held. */
     assert(PyGILState_Check());
-#endif
     return _Py_open_impl(pathname, flags, 1);
 }
 
@@ -1080,13 +1087,11 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     FILE *f;
     int async_err = 0;
 #ifdef MS_WINDOWS
-    wchar_t *wpath;
+    const wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
 
-#ifdef WITH_THREAD
     assert(PyGILState_Check());
-#endif
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError,
@@ -1094,7 +1099,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return NULL;
 
@@ -1114,9 +1119,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     PyObject *bytes;
     char *path_bytes;
 
-#ifdef WITH_THREAD
     assert(PyGILState_Check());
-#endif
 
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
@@ -1166,9 +1169,7 @@ _Py_read(int fd, void *buf, size_t count)
     int err;
     int async_err = 0;
 
-#ifdef WITH_THREAD
     assert(PyGILState_Check());
-#endif
 
     /* _Py_read() must not be called with an exception set, otherwise the
      * caller may think that read() was interrupted by a signal and the signal
@@ -1307,9 +1308,7 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 Py_ssize_t
 _Py_write(int fd, const void *buf, size_t count)
 {
-#ifdef WITH_THREAD
     assert(PyGILState_Check());
-#endif
 
     /* _Py_write() must not be called with an exception set, otherwise the
      * caller may think that write() was interrupted by a signal and the signal
@@ -1460,9 +1459,7 @@ _Py_dup(int fd)
     DWORD ftype;
 #endif
 
-#ifdef WITH_THREAD
     assert(PyGILState_Check());
-#endif
 
 #ifdef MS_WINDOWS
     _Py_BEGIN_SUPPRESS_IPH

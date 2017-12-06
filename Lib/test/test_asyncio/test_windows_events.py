@@ -1,4 +1,5 @@
 import os
+import socket
 import sys
 import unittest
 from unittest import mock
@@ -6,10 +7,10 @@ from unittest import mock
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
+import _overlapped
 import _winapi
 
 import asyncio
-from asyncio import _overlapped
 from asyncio import test_utils
 from asyncio import windows_events
 
@@ -36,7 +37,7 @@ class ProactorTests(test_utils.TestCase):
         self.set_event_loop(self.loop)
 
     def test_close(self):
-        a, b = self.loop._socketpair()
+        a, b = socket.socketpair()
         trans = self.loop._make_socket_transport(a, asyncio.Protocol())
         f = asyncio.ensure_future(self.loop.sock_recv(b, 100))
         trans.close()
@@ -118,7 +119,9 @@ class ProactorTests(test_utils.TestCase):
 
         self.assertEqual(done, False)
         self.assertFalse(fut.result())
-        self.assertTrue(0.48 < elapsed < 0.9, elapsed)
+        # bpo-31008: Tolerate only 450 ms (at least 500 ms expected),
+        # because of bad clock resolution on Windows
+        self.assertTrue(0.45 <= elapsed <= 0.9, elapsed)
 
         _overlapped.SetEvent(event)
 

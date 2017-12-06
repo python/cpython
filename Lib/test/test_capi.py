@@ -1,29 +1,26 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
-from collections import namedtuple
+from collections import OrderedDict
 import os
 import pickle
-import platform
 import random
 import re
 import subprocess
 import sys
 import sysconfig
 import textwrap
+import threading
 import time
 import unittest
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
 except ImportError:
     _posixsubprocess = None
-try:
-    import threading
-except ImportError:
-    threading = None
+
 # Skip this test if the _testcapi module isn't available.
 _testcapi = support.import_module('_testcapi')
 
@@ -52,7 +49,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(testfunction.attribute, "test")
         self.assertRaises(AttributeError, setattr, inst.testfunction, "attribute", "test")
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_no_FatalError_infinite_loop(self):
         with support.SuppressCrashReport():
             p = subprocess.Popen([sys.executable, "-c",
@@ -243,8 +239,83 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
+    def test_set_nomemory(self):
+        code = """if 1:
+            import _testcapi
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
+            class C(): pass
+
+            # The first loop tests both functions and that remove_mem_hooks()
+            # can be called twice in a row. The second loop checks a call to
+            # set_nomemory() after a call to remove_mem_hooks(). The third
+            # loop checks the start and stop arguments of set_nomemory().
+            for outer_cnt in range(1, 4):
+                start = 10 * outer_cnt
+                for j in range(100):
+                    if j == 0:
+                        if outer_cnt != 3:
+                            _testcapi.set_nomemory(start)
+                        else:
+                            _testcapi.set_nomemory(start, start + 1)
+                    try:
+                        C()
+                    except MemoryError as e:
+                        if outer_cnt != 3:
+                            _testcapi.remove_mem_hooks()
+                        print('MemoryError', outer_cnt, j)
+                        _testcapi.remove_mem_hooks()
+                        break
+        """
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'MemoryError 1 10', out)
+        self.assertIn(b'MemoryError 2 20', out)
+        self.assertIn(b'MemoryError 3 30', out)
+
+    def test_mapping_keys_values_items(self):
+        class Mapping1(dict):
+            def keys(self):
+                return list(super().keys())
+            def values(self):
+                return list(super().values())
+            def items(self):
+                return list(super().items())
+        class Mapping2(dict):
+            def keys(self):
+                return tuple(super().keys())
+            def values(self):
+                return tuple(super().values())
+            def items(self):
+                return tuple(super().items())
+        dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
+
+        for mapping in [{}, OrderedDict(), Mapping1(), Mapping2(),
+                        dict_obj, OrderedDict(dict_obj),
+                        Mapping1(dict_obj), Mapping2(dict_obj)]:
+            self.assertListEqual(_testcapi.get_mapping_keys(mapping),
+                                 list(mapping.keys()))
+            self.assertListEqual(_testcapi.get_mapping_values(mapping),
+                                 list(mapping.values()))
+            self.assertListEqual(_testcapi.get_mapping_items(mapping),
+                                 list(mapping.items()))
+
+    def test_mapping_keys_values_items_bad_arg(self):
+        self.assertRaises(AttributeError, _testcapi.get_mapping_keys, None)
+        self.assertRaises(AttributeError, _testcapi.get_mapping_values, None)
+        self.assertRaises(AttributeError, _testcapi.get_mapping_items, None)
+
+        class BadMapping:
+            def keys(self):
+                return None
+            def values(self):
+                return None
+            def items(self):
+                return None
+        bad_mapping = BadMapping()
+        self.assertRaises(TypeError, _testcapi.get_mapping_keys, bad_mapping)
+        self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
+        self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
+
+
 class TestPendingCalls(unittest.TestCase):
 
     def pendingcalls_submit(self, l, n):
@@ -346,183 +417,6 @@ class SubinterpreterTest(unittest.TestCase):
 class Test6012(unittest.TestCase):
     def test(self):
         self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
-
-
-class EmbeddingTests(unittest.TestCase):
-    def setUp(self):
-        here = os.path.abspath(__file__)
-        basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
-        exename = "_testembed"
-        if sys.platform.startswith("win"):
-            ext = ("_d" if "_d" in sys.executable else "") + ".exe"
-            exename += ext
-            exepath = os.path.dirname(sys.executable)
-        else:
-            exepath = os.path.join(basepath, "Programs")
-        self.test_exe = exe = os.path.join(exepath, exename)
-        if not os.path.exists(exe):
-            self.skipTest("%r doesn't exist" % exe)
-        # This is needed otherwise we get a fatal error:
-        # "Py_Initialize: Unable to get the locale encoding
-        # LookupError: no codec search functions registered: can't find encoding"
-        self.oldcwd = os.getcwd()
-        os.chdir(basepath)
-
-    def tearDown(self):
-        os.chdir(self.oldcwd)
-
-    def run_embedded_interpreter(self, *args):
-        """Runs a test in the embedded interpreter"""
-        cmd = [self.test_exe]
-        cmd.extend(args)
-        p = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             universal_newlines=True)
-        (out, err) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-                         "bad returncode %d, stderr is %r" %
-                         (p.returncode, err))
-        return out, err
-
-    def run_repeated_init_and_subinterpreters(self):
-        out, err = self.run_embedded_interpreter("repeated_init_and_subinterpreters")
-        self.assertEqual(err, "")
-
-        # The output from _testembed looks like this:
-        # --- Pass 0 ---
-        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
-        # interp 1 <0x1d4f690>, thread state <0x1d35350>: id(modules) = 139650431165784
-        # interp 2 <0x1d5a690>, thread state <0x1d99ed0>: id(modules) = 139650413140368
-        # interp 3 <0x1d4f690>, thread state <0x1dc3340>: id(modules) = 139650412862200
-        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
-        # --- Pass 1 ---
-        # ...
-
-        interp_pat = (r"^interp (\d+) <(0x[\dA-F]+)>, "
-                      r"thread state <(0x[\dA-F]+)>: "
-                      r"id\(modules\) = ([\d]+)$")
-        Interp = namedtuple("Interp", "id interp tstate modules")
-
-        numloops = 0
-        current_run = []
-        for line in out.splitlines():
-            if line == "--- Pass {} ---".format(numloops):
-                self.assertEqual(len(current_run), 0)
-                if support.verbose:
-                    print(line)
-                numloops += 1
-                continue
-
-            self.assertLess(len(current_run), 5)
-            match = re.match(interp_pat, line)
-            if match is None:
-                self.assertRegex(line, interp_pat)
-
-            # Parse the line from the loop.  The first line is the main
-            # interpreter and the 3 afterward are subinterpreters.
-            interp = Interp(*match.groups())
-            if support.verbose:
-                print(interp)
-            self.assertTrue(interp.interp)
-            self.assertTrue(interp.tstate)
-            self.assertTrue(interp.modules)
-            current_run.append(interp)
-
-            # The last line in the loop should be the same as the first.
-            if len(current_run) == 5:
-                main = current_run[0]
-                self.assertEqual(interp, main)
-                yield current_run
-                current_run = []
-
-    def test_subinterps_main(self):
-        for run in self.run_repeated_init_and_subinterpreters():
-            main = run[0]
-
-            self.assertEqual(main.id, '0')
-
-    def test_subinterps_different_ids(self):
-        for run in self.run_repeated_init_and_subinterpreters():
-            main, *subs, _ = run
-
-            mainid = int(main.id)
-            for i, sub in enumerate(subs):
-                self.assertEqual(sub.id, str(mainid + i + 1))
-
-    def test_subinterps_distinct_state(self):
-        for run in self.run_repeated_init_and_subinterpreters():
-            main, *subs, _ = run
-
-            if '0x0' in main:
-                # XXX Fix on Windows (and other platforms): something
-                # is going on with the pointers in Programs/_testembed.c.
-                # interp.interp is 0x0 and interp.modules is the same
-                # between interpreters.
-                raise unittest.SkipTest('platform prints pointers as 0x0')
-
-            for sub in subs:
-                # A new subinterpreter may have the same
-                # PyInterpreterState pointer as a previous one if
-                # the earlier one has already been destroyed.  So
-                # we compare with the main interpreter.  The same
-                # applies to tstate.
-                self.assertNotEqual(sub.interp, main.interp)
-                self.assertNotEqual(sub.tstate, main.tstate)
-                self.assertNotEqual(sub.modules, main.modules)
-
-    @staticmethod
-    def _get_default_pipe_encoding():
-        rp, wp = os.pipe()
-        try:
-            with os.fdopen(wp, 'w') as w:
-                default_pipe_encoding = w.encoding
-        finally:
-            os.close(rp)
-        return default_pipe_encoding
-
-    def test_forced_io_encoding(self):
-        # Checks forced configuration of embedded interpreter IO streams
-        out, err = self.run_embedded_interpreter("forced_io_encoding")
-        if support.verbose:
-            print()
-            print(out)
-            print(err)
-        expected_errors = sys.__stdout__.errors
-        expected_stdin_encoding = sys.__stdin__.encoding
-        expected_pipe_encoding = self._get_default_pipe_encoding()
-        expected_output = '\n'.join([
-        "--- Use defaults ---",
-        "Expected encoding: default",
-        "Expected errors: default",
-        "stdin: {in_encoding}:{errors}",
-        "stdout: {out_encoding}:{errors}",
-        "stderr: {out_encoding}:backslashreplace",
-        "--- Set errors only ---",
-        "Expected encoding: default",
-        "Expected errors: ignore",
-        "stdin: {in_encoding}:ignore",
-        "stdout: {out_encoding}:ignore",
-        "stderr: {out_encoding}:backslashreplace",
-        "--- Set encoding only ---",
-        "Expected encoding: latin-1",
-        "Expected errors: default",
-        "stdin: latin-1:{errors}",
-        "stdout: latin-1:{errors}",
-        "stderr: latin-1:backslashreplace",
-        "--- Set encoding and errors ---",
-        "Expected encoding: latin-1",
-        "Expected errors: replace",
-        "stdin: latin-1:replace",
-        "stdout: latin-1:replace",
-        "stderr: latin-1:backslashreplace"])
-        expected_output = expected_output.format(
-                                in_encoding=expected_stdin_encoding,
-                                out_encoding=expected_pipe_encoding,
-                                errors=expected_errors)
-        # This is useful if we ever trip over odd platform behaviour
-        self.maxDiff = None
-        self.assertEqual(out.strip(), expected_output)
 
 
 class SkipitemTest(unittest.TestCase):
@@ -656,7 +550,6 @@ class SkipitemTest(unittest.TestCase):
             parse((1,), {}, 'O|OO', ['', 'a', ''])
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
 
     @support.reap_threads
@@ -683,11 +576,16 @@ class TestThreadState(unittest.TestCase):
 
 class Test_testcapi(unittest.TestCase):
     def test__testcapi(self):
+        if support.verbose:
+            print()
         for name in dir(_testcapi):
-            if name.startswith('test_'):
-                with self.subTest("internal", name=name):
-                    test = getattr(_testcapi, name)
-                    test()
+            if not name.startswith('test_'):
+                continue
+            with self.subTest("internal", name=name):
+                if support.verbose:
+                    print(f"  {name}", flush=True)
+                test = getattr(_testcapi, name)
+                test()
 
 
 class PyMemDebugTests(unittest.TestCase):
@@ -733,7 +631,6 @@ class PyMemDebugTests(unittest.TestCase):
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
-    @unittest.skipUnless(threading, 'Test requires a GIL (multithreading)')
     def check_malloc_without_gil(self, code):
         out = self.check(code)
         expected = ('Fatal Python error: Python memory allocator called '
@@ -757,8 +654,7 @@ class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 
 
-@unittest.skipUnless(sysconfig.get_config_var('WITH_PYMALLOC') == 1,
-                     'need pymalloc')
+@unittest.skipUnless(support.with_pymalloc(), 'need pymalloc')
 class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
 

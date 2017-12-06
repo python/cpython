@@ -3,6 +3,10 @@
 Tasks and coroutines
 ====================
 
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
 .. _coroutine:
 
 Coroutines
@@ -212,7 +216,7 @@ Future
      raise an exception when the future isn't done yet.
 
    - Callbacks registered with :meth:`add_done_callback` are always called
-     via the event loop's :meth:`~AbstractEventLoop.call_soon_threadsafe`.
+     via the event loop's :meth:`~AbstractEventLoop.call_soon`.
 
    - This class is not compatible with the :func:`~concurrent.futures.wait` and
      :func:`~concurrent.futures.as_completed` functions in the
@@ -370,7 +374,7 @@ Task
    running in different threads. While a task waits for the completion of a
    future, the event loop executes a new task.
 
-   The cancellation of a task is different from the cancelation of a
+   The cancellation of a task is different from the cancellation of a
    future. Calling :meth:`cancel` will throw a
    :exc:`~concurrent.futures.CancelledError` to the wrapped
    coroutine. :meth:`~Future.cancelled` only returns ``True`` if the
@@ -539,6 +543,11 @@ Task functions
    A deprecated alias to :func:`ensure_future`.
 
    .. deprecated:: 3.4.4
+
+.. function:: wrap_future(future, \*, loop=None)
+
+   Wrap a :class:`concurrent.futures.Future` object in a :class:`Future`
+   object.
 
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 

@@ -1342,6 +1342,16 @@ class FPTest(NumberTest):
     def assertEntryEqual(self, entry1, entry2):
         self.assertAlmostEqual(entry1, entry2)
 
+    def test_nan(self):
+        a = array.array(self.typecode, [float('nan')])
+        b = array.array(self.typecode, [float('nan')])
+        self.assertIs(a != b, True)
+        self.assertIs(a == b, False)
+        self.assertIs(a > b, False)
+        self.assertIs(a >= b, False)
+        self.assertIs(a < b, False)
+        self.assertIs(a <= b, False)
+
     def test_byteswap(self):
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.byteswap, 42)

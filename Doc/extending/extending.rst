@@ -41,7 +41,7 @@ A Simple Example
 
 Let's create an extension module called ``spam`` (the favorite food of Monty
 Python fans...) and let's say we want to create a Python interface to the C
-library function :c:func:`system`. [#]_ This function takes a null-terminated
+library function :c:func:`system` [#]_. This function takes a null-terminated
 character string as argument and returns an integer.  We want this function to
 be callable from Python as follows::
 
@@ -334,12 +334,12 @@ function.
 The method table must be referenced in the module definition structure::
 
    static struct PyModuleDef spammodule = {
-      PyModuleDef_HEAD_INIT,
-      "spam",   /* name of module */
-      spam_doc, /* module documentation, may be NULL */
-      -1,       /* size of per-interpreter state of the module,
-                   or -1 if the module keeps state in global variables. */
-      SpamMethods
+       PyModuleDef_HEAD_INIT,
+       "spam",   /* name of module */
+       spam_doc, /* module documentation, may be NULL */
+       -1,       /* size of per-interpreter state of the module,
+                    or -1 if the module keeps state in global variables. */
+       SpamMethods
    };
 
 This structure, in turn, must be passed to the interpreter in the module's
@@ -918,7 +918,7 @@ It is also possible to :dfn:`borrow` [#]_ a reference to an object.  The
 borrower of a reference should not call :c:func:`Py_DECREF`.  The borrower must
 not hold on to the object longer than the owner from which it was borrowed.
 Using a borrowed reference after the owner has disposed of it risks using freed
-memory and should be avoided completely. [#]_
+memory and should be avoided completely [#]_.
 
 The advantage of borrowing over owning a reference is that you don't need to
 take care of disposing of the reference on all possible paths through the code
@@ -1089,7 +1089,7 @@ checking.
 
 The C function calling mechanism guarantees that the argument list passed to C
 functions (``args`` in the examples) is never *NULL* --- in fact it guarantees
-that it is always a tuple. [#]_
+that it is always a tuple [#]_.
 
 It is a severe error to ever let a *NULL* pointer "escape" to the Python user.
 

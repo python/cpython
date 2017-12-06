@@ -4,7 +4,6 @@ __all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
 
 import collections
 
-from . import compat
 from . import events
 from . import futures
 from .coroutines import coroutine
@@ -67,23 +66,21 @@ class _ContextManagerMixin:
         yield from self.acquire()
         return _ContextManager(self)
 
-    if compat.PY35:
+    def __await__(self):
+        # To make "with await lock" work.
+        yield from self.acquire()
+        return _ContextManager(self)
 
-        def __await__(self):
-            # To make "with await lock" work.
-            yield from self.acquire()
-            return _ContextManager(self)
+    @coroutine
+    def __aenter__(self):
+        yield from self.acquire()
+        # We have no use for the "as ..."  clause in the with
+        # statement for locks.
+        return None
 
-        @coroutine
-        def __aenter__(self):
-            yield from self.acquire()
-            # We have no use for the "as ..."  clause in the with
-            # statement for locks.
-            return None
-
-        @coroutine
-        def __aexit__(self, exc_type, exc, tb):
-            self.release()
+    @coroutine
+    def __aexit__(self, exc_type, exc, tb):
+        self.release()
 
 
 class Lock(_ContextManagerMixin):
@@ -176,6 +173,10 @@ class Lock(_ContextManagerMixin):
             yield from fut
             self._locked = True
             return True
+        except futures.CancelledError:
+            if not self._locked:
+                self._wake_up_first()
+            raise
         finally:
             self._waiters.remove(fut)
 
@@ -192,13 +193,16 @@ class Lock(_ContextManagerMixin):
         """
         if self._locked:
             self._locked = False
-            # Wake up the first waiter who isn't cancelled.
-            for fut in self._waiters:
-                if not fut.done():
-                    fut.set_result(True)
-                    break
+            self._wake_up_first()
         else:
             raise RuntimeError('Lock is not acquired.')
+
+    def _wake_up_first(self):
+        """Wake up the first waiter who isn't cancelled."""
+        for fut in self._waiters:
+            if not fut.done():
+                fut.set_result(True)
+                break
 
 
 class Event:

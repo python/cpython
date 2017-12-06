@@ -84,11 +84,16 @@ def find_spec(name, package=None):
     if fullname not in sys.modules:
         parent_name = fullname.rpartition('.')[0]
         if parent_name:
-            # Use builtins.__import__() in case someone replaced it.
             parent = __import__(parent_name, fromlist=['__path__'])
-            return _find_spec(fullname, parent.__path__)
+            try:
+                parent_path = parent.__path__
+            except AttributeError as e:
+                raise ModuleNotFoundError(
+                    f"__path__ attribute not found on {parent_name!r}"
+                    f"while trying to find {fullname!r}", name=fullname) from e
         else:
-            return _find_spec(fullname, None)
+            parent_path = None
+        return _find_spec(fullname, parent_path)
     else:
         module = sys.modules[fullname]
         if module is None:

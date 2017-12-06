@@ -4,8 +4,8 @@
 
 @interface MyAppDelegate : NSObject
 {
-    BOOL	initial_action_done;
-    BOOL	should_terminate;
+    BOOL        initial_action_done;
+    BOOL        should_terminate;
 }
 - (id)init;
 - (IBAction)showPreferences:(id)sender;

@@ -98,21 +98,40 @@ The token constants are:
           RARROW
           ELLIPSIS
           OP
-          AWAIT
-          ASYNC
           ERRORTOKEN
-          COMMENT
-          NL
-          ENCODING
           N_TOKENS
           NT_OFFSET
 
-   .. versionchanged:: 3.5
-      Added :data:`AWAIT` and :data:`ASYNC` tokens. Starting with
-      Python 3.7, "async" and "await" will be tokenized as :data:`NAME`
-      tokens, and :data:`AWAIT` and :data:`ASYNC` will be removed.
 
-   .. versionchanged:: 3.7
-      Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING` to bring
-      the tokens in the C code in line with the tokens needed in
-      :mod:`tokenize` module. These tokens aren't used by the C tokenizer.
+The following token type values aren't used by the C tokenizer but are needed for
+the :mod:`tokenize` module.
+
+.. data:: COMMENT
+
+   Token value used to indicate a comment.
+
+
+.. data:: NL
+
+   Token value used to indicate a non-terminating newline.  The
+   :data:`NEWLINE` token indicates the end of a logical line of Python code;
+   ``NL`` tokens are generated when a logical line of code is continued over
+   multiple physical lines.
+
+
+.. data:: ENCODING
+
+   Token value that indicates the encoding used to decode the source bytes
+   into text. The first token returned by :func:`tokenize.tokenize` will
+   always be an ``ENCODING`` token.
+
+
+.. versionchanged:: 3.5
+   Added :data:`AWAIT` and :data:`ASYNC` tokens.
+
+.. versionchanged:: 3.7
+   Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING` tokens.
+
+.. versionchanged:: 3.7
+   Removed :data:`AWAIT` and :data:`ASYNC` tokens. "async" and "await" are
+   now tokenized as :data:`NAME` tokens.

@@ -373,7 +373,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    Please note that this function works like :meth:`format_string` but will
    only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
-   ``'%.0f'`` are both valid specifiers, but ``'%f kB'`` is not.
+   ``'%.0f'`` are both valid specifiers, but ``'%f KiB'`` is not.
 
    For whole format strings, use :func:`format_string`.
 
@@ -551,17 +551,23 @@ library.
 Access to message catalogs
 --------------------------
 
+.. function:: gettext(msg)
+.. function:: dgettext(domain, msg)
+.. function:: dcgettext(domain, msg, category)
+.. function:: textdomain(domain)
+.. function:: bindtextdomain(domain, dir)
+
 The locale module exposes the C library's gettext interface on systems that
-provide this interface.  It consists of the functions :func:`gettext`,
-:func:`dgettext`, :func:`dcgettext`, :func:`textdomain`, :func:`bindtextdomain`,
-and :func:`bind_textdomain_codeset`.  These are similar to the same functions in
+provide this interface.  It consists of the functions :func:`!gettext`,
+:func:`!dgettext`, :func:`!dcgettext`, :func:`!textdomain`, :func:`!bindtextdomain`,
+and :func:`!bind_textdomain_codeset`.  These are similar to the same functions in
 the :mod:`gettext` module, but use the C library's binary format for message
 catalogs, and the C library's search algorithms for locating message catalogs.
 
 Python applications should normally find no need to invoke these functions, and
 should use :mod:`gettext` instead.  A known exception to this rule are
 applications that link with additional C libraries which internally invoke
-:c:func:`gettext` or :func:`dcgettext`.  For these applications, it may be
+:c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.
 

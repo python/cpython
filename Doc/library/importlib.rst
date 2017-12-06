@@ -32,7 +32,7 @@ generically as an :term:`importer`) to participate in the import process.
     :ref:`import`
         The language reference for the :keyword:`import` statement.
 
-    `Packages specification <http://legacy.python.org/doc/essays/packages.html>`__
+    `Packages specification <https://www.python.org/doc/essays/packages/>`__
         Original specification of packages. Some semantics have changed since
         the writing of this document (e.g. redirecting based on ``None``
         in :data:`sys.modules`).
@@ -1048,7 +1048,15 @@ find and load modules.
 
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
-   A specification for a module's import-system-related state.
+   A specification for a module's import-system-related state.  This is
+   typically exposed as the module's ``__spec__`` attribute.  In the
+   descriptions below, the names in parentheses give the corresponding
+   attribute available directly on the module object.
+   E.g. ``module.__spec__.origin == module.__file__``.  Note however that
+   while the *values* are usually equivalent, they can differ since there is
+   no synchronization between the two objects.  Thus it is possible to update
+   the module's ``__path__`` at runtime, and this will not be automatically
+   reflected in ``__spec__.submodule_search_locations``.
 
    .. versionadded:: 3.4
 
@@ -1214,6 +1222,11 @@ an :term:`importer`.
    **name** and **package** work the same as for :func:`import_module`.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.7
+      Raises :exc:`ModuleNotFoundError` instead of :exc:`AttributeError` if
+      **package** is in fact not a package (i.e. lacks a :attr:`__path__`
+      attribute).
 
 .. function:: module_from_spec(spec)
 

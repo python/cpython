@@ -78,7 +78,7 @@ class Queue(object):
         self._poll = self._reader.poll
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed
+        assert not self._closed, "Queue {0!r} has been closed".format(self)
         if not self._sem.acquire(block, timeout):
             raise Full
 
@@ -101,7 +101,7 @@ class Queue(object):
             try:
                 if block:
                     timeout = deadline - time.time()
-                    if timeout < 0 or not self._poll(timeout):
+                    if not self._poll(timeout):
                         raise Empty
                 elif not self._poll():
                     raise Empty
@@ -140,7 +140,7 @@ class Queue(object):
 
     def join_thread(self):
         debug('Queue.join_thread()')
-        assert self._closed
+        assert self._closed, "Queue {0!r} not closed".format(self)
         if self._jointhread:
             self._jointhread()
 
@@ -169,14 +169,7 @@ class Queue(object):
         self._thread.start()
         debug('... done self._thread.start()')
 
-        # On process exit we will wait for data to be flushed to pipe.
-        #
-        # However, if this process created the queue then all
-        # processes which use the queue will be descendants of this
-        # process.  Therefore waiting for the queue to be flushed
-        # is pointless once all the child processes have been joined.
-        created_by_this_process = (self._opid == os.getpid())
-        if not self._joincancelled and not created_by_this_process:
+        if not self._joincancelled:
             self._jointhread = Finalize(
                 self._thread, Queue._finalize_join,
                 [weakref.ref(self._thread)],
@@ -288,7 +281,7 @@ class JoinableQueue(Queue):
         self._cond, self._unfinished_tasks = state[-2:]
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed
+        assert not self._closed, "Queue {0!r} is closed".format(self)
         if not self._sem.acquire(block, timeout):
             raise Full
 

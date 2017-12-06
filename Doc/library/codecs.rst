@@ -554,19 +554,19 @@ define in order to be compatible with the Python codec registry.
       if necessary, to reset the encoder and to get the output.
 
 
-.. method:: IncrementalEncoder.getstate()
+   .. method:: getstate()
 
-   Return the current state of the encoder which must be an integer. The
-   implementation should make sure that ``0`` is the most common state. (States
-   that are more complicated than integers can be converted into an integer by
-   marshaling/pickling the state and encoding the bytes of the resulting string
-   into an integer).
+      Return the current state of the encoder which must be an integer. The
+      implementation should make sure that ``0`` is the most common
+      state. (States that are more complicated than integers can be converted
+      into an integer by marshaling/pickling the state and encoding the bytes
+      of the resulting string into an integer).
 
 
-.. method:: IncrementalEncoder.setstate(state)
+   .. method:: setstate(state)
 
-   Set the state of the encoder to *state*. *state* must be an encoder state
-   returned by :meth:`getstate`.
+      Set the state of the encoder to *state*. *state* must be an encoder state
+      returned by :meth:`getstate`.
 
 
 .. _incremental-decoder-objects:
@@ -802,7 +802,7 @@ The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
 
 
-.. class:: StreamReaderWriter(stream, Reader, Writer, errors)
+.. class:: StreamReaderWriter(stream, Reader, Writer, errors='strict')
 
    Creates a :class:`StreamReaderWriter` instance. *stream* must be a file-like
    object. *Reader* and *Writer* must be factory functions or classes providing the
@@ -826,7 +826,7 @@ The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
 
 
-.. class:: StreamRecoder(stream, encode, decode, Reader, Writer, errors)
+.. class:: StreamRecoder(stream, encode, decode, Reader, Writer, errors='strict')
 
    Creates a :class:`StreamRecoder` instance which implements a two-way conversion:
    *encode* and *decode* work on the frontend — the data visible to
