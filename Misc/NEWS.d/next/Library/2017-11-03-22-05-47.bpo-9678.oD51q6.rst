@@ -1,6 +1,0 @@
-Fixed determining the MAC address in the uuid module:
-
-* Using ifconfig on NetBSD and OpenBSD.
-* Using arp on Linux, FreeBSD, NetBSD and OpenBSD.
-
-Based on patch by Takayuki Shimizukawa.

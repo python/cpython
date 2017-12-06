@@ -1,5 +1,0 @@
-Implement the :pep:`564`, add new 6 new functions with nanosecond resolution to
-the :mod:`time` module: :func:`~time.clock_gettime_ns`,
-:func:`~time.clock_settime_ns`, :func:`~time.monotonic_ns`,
-:func:`~time.perf_counter_ns`, :func:`~time.process_time_ns`,
-:func:`~time.time_ns`.
