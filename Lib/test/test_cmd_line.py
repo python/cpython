@@ -541,7 +541,7 @@ class CmdLineTest(unittest.TestCase):
         code = ("import sys, warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
-        if sys.flags.debug:
+        if hasattr(sys, 'gettotalrefcount'):
             resource_action = "default"
         else:
             resource_action = "ignore"

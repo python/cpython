@@ -534,8 +534,8 @@ if not _warnings_defaults:
         bytes_action = "ignore"
     simplefilter(bytes_action, category=BytesWarning, append=1)
 
-    # resource usage warnings are enabled by default in pydebug mode
-    if sys.flags.debug:
+    # resource usage warnings are enabled by default in pydebug builds
+    if hasattr(sys, 'gettotalrefcount'):
         resource_action = "default"
     else:
         resource_action = "ignore"
