@@ -1186,12 +1186,20 @@ init_filters(const _PyCoreConfig *config)
                     create_filter(PyExc_ImportWarning, &PyId_ignore));
 
     _Py_Identifier *bytes_action;
-    if (Py_BytesWarningFlag > 1)
+    if (Py_BytesWarningFlag > 1) {
         bytes_action = &PyId_error;
-    else if (Py_BytesWarningFlag)
+    } else if (Py_BytesWarningFlag) {
         bytes_action = &PyId_default;
-    else
+    } else {
+        /* We set the 'ignore' action by default, but we don't actually rely
+         * on the warnings machinery to ignore BytesWarning, as it's too slow.
+         *
+         * Instead, the relevant code in bytesobject.c and bytearrayobject.c
+         * checks Py_BytesWarningFlag directly, and skips the PyErr_WarnEx call
+         * entirely if it isn't set.
+         */
         bytes_action = &PyId_ignore;
+    }
     PyList_SET_ITEM(filters, pos++,
                     create_filter(PyExc_BytesWarning, bytes_action));
 
