@@ -264,7 +264,7 @@ object.
 Edge and Level Trigger Polling (epoll) Objects
 ----------------------------------------------
 
-   http://linux.die.net/man/4/epoll
+   https://linux.die.net/man/4/epoll
 
    *eventmask*
 

@@ -68,7 +68,7 @@ taken on the bug.
 
 .. seealso::
 
-   `How to Report Bugs Effectively <http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>`_
+   `How to Report Bugs Effectively <https://www.chiark.greenend.org.uk/~sgtatham/bugs.html>`_
       Article which goes into some detail about how to create a useful bug report.
       This describes what kind of information is useful and why it is useful.
 

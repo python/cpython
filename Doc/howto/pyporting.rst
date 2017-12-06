@@ -449,4 +449,4 @@ to make sure everything functions as expected in both versions of Python.
 
 .. _"What's New": https://docs.python.org/3/whatsnew/index.html
 
-.. _Why Python 3 exists: http://www.snarky.ca/why-python-3-exists
+.. _Why Python 3 exists: https://snarky.ca/why-python-3-exists

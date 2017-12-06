@@ -238,8 +238,8 @@ and the ``__annotations__`` attribute.
       and Guido van Rossum. Implemented by Ivan Levkivskyi.
 
    Tools that use or will use the new syntax:
-   `mypy <http://github.com/python/mypy>`_,
-   `pytype <http://github.com/google/pytype>`_, PyCharm, etc.
+   `mypy <http://www.mypy-lang.org/>`_,
+   `pytype <https://github.com/google/pytype>`_, PyCharm, etc.
 
 
 .. _whatsnew36-pep515:
