@@ -1172,32 +1172,18 @@ create_filter(PyObject *category, _Py_Identifier *id)
 static PyObject *
 init_filters(const _PyCoreConfig *config)
 {
-    int dev_mode = config->dev_mode;
-
-    Py_ssize_t count = 2;
-    if (dev_mode) {
-        count++;
-    }
-#ifndef Py_DEBUG
-    if (!dev_mode) {
-        count += 3;
-    }
-#endif
+    Py_ssize_t count = 5;
     PyObject *filters = PyList_New(count);
     if (filters == NULL)
         return NULL;
 
     size_t pos = 0;  /* Post-incremented in each use. */
-#ifndef Py_DEBUG
-    if (!dev_mode) {
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_DeprecationWarning, &PyId_ignore));
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_ImportWarning, &PyId_ignore));
-    }
-#endif
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_DeprecationWarning, &PyId_ignore));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ImportWarning, &PyId_ignore));
 
     _Py_Identifier *bytes_action;
     if (Py_BytesWarningFlag > 1)
@@ -1206,23 +1192,19 @@ init_filters(const _PyCoreConfig *config)
         bytes_action = &PyId_default;
     else
         bytes_action = &PyId_ignore;
-    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
-                    bytes_action));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_BytesWarning, bytes_action));
 
     _Py_Identifier *resource_action;
+
     /* resource usage warnings are enabled by default in pydebug mode */
 #ifdef Py_DEBUG
     resource_action = &PyId_default;
 #else
-    resource_action = (dev_mode ? &PyId_default: &PyId_ignore);
+    resource_action = &PyId_ignore;
 #endif
-    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
-                    resource_action));
-
-    if (dev_mode) {
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_Warning, &PyId_default));
-    }
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ResourceWarning, resource_action));
 
     for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {

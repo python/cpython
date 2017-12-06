@@ -241,7 +241,7 @@ def _optim_args_from_interpreter_flags():
 
 def _args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
-    settings in sys.flags and sys.warnoptions."""
+    settings in sys.flags, sys.warnoptions and sys._xoptions."""
     flag_opt_map = {
         'debug': 'd',
         # 'inspect': 'i',
@@ -268,6 +268,7 @@ def _args_from_interpreter_flags():
     # -X options
     xoptions = getattr(sys, '_xoptions', {})
     if 'dev' in xoptions:
+        args.remove('-Wdefault')
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
                 'showalloccount', 'showrefcount'):

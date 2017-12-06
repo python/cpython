@@ -541,31 +541,47 @@ class CmdLineTest(unittest.TestCase):
         code = ("import sys, warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
+        if sys.flags.debug:
+            resource_action = "default"
+        else:
+            resource_action = "ignore"
 
         out = self.run_xdev("-c", code)
         self.assertEqual(out,
+                         "default::Warning "
+                         "ignore::DeprecationWarning "
+                         "ignore::PendingDeprecationWarning "
+                         "ignore::ImportWarning "
                          "ignore::BytesWarning "
-                         "default::ResourceWarning "
-                         "default::Warning")
+                         f"{resource_action}::ResourceWarning")
 
         out = self.run_xdev("-b", "-c", code)
         self.assertEqual(out,
+                         "default::Warning "
+                         "ignore::DeprecationWarning "
+                         "ignore::PendingDeprecationWarning "
+                         "ignore::ImportWarning "
                          "default::BytesWarning "
-                         "default::ResourceWarning "
-                         "default::Warning")
+                         f"{resource_action}::ResourceWarning")
 
         out = self.run_xdev("-bb", "-c", code)
         self.assertEqual(out,
+                         "default::Warning "
+                         "ignore::DeprecationWarning "
+                         "ignore::PendingDeprecationWarning "
+                         "ignore::ImportWarning "
                          "error::BytesWarning "
-                         "default::ResourceWarning "
-                         "default::Warning")
+                         f"{resource_action}::ResourceWarning")
 
         out = self.run_xdev("-Werror", "-c", code)
         self.assertEqual(out,
                          "error::Warning "
+                         "default::Warning "
+                         "ignore::DeprecationWarning "
+                         "ignore::PendingDeprecationWarning "
+                         "ignore::ImportWarning "
                          "ignore::BytesWarning "
-                         "default::ResourceWarning "
-                         "default::Warning")
+                         f"{resource_action}::ResourceWarning")
 
         # Memory allocator debug hooks
         try:
