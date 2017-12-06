@@ -762,11 +762,28 @@ pymain_add_warnings_options(_PyMain *pymain)
 {
     PySys_ResetWarnOptions();
 
-    if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
+    /* The priority order for warnings configuration is (highest precedence
+     * first):
+     *
+     * - any '-W' command line options; then
+     * - the 'PYTHONWARNINGS' environment variable; then
+     * - the dev mode filter ('-X dev', 'PYTHONDEVMODE'); then
+     * - any implicit filters added by _warnings.c/warnings.py
+     *
+     * TODO: Move the -b/-bb command line option to the head of the list
+     *       See https://bugs.python.org/issue32231 for discussion
+     *
+     * All settings except the last are passed to the warnings module via
+     * the `sys.warnoptions` list. Since the warnings module works on the basis
+     * of "the most recently added filter will be checked first", we add
+     * the lowest precedence entries first so that later entries override them.
+     */
+
+    if (pymain_add_warnings_dev_mode(&pymain->core_config) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
-    if (pymain_add_warnings_dev_mode(&pymain->core_config) < 0) {
+    if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
