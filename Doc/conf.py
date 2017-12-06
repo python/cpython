@@ -94,7 +94,10 @@ latex_engine = 'xelatex'
 
 # Get LaTeX to handle Unicode correctly
 latex_elements = {
-    'fontenc': r'\usepackage[T2A,TS1,T1]{fontenc}',
+    'passoptionstopackages': r'''
+\PassOptionsToPackage{T2A}{fontenc}%   for cyrillic Є
+\PassOptionsToPackage{warn}{textcomp}% unneeded with Sphinx 1.6.6 or later
+''',
 }
 
 # Additional stuff for the LaTeX preamble (inc. handling of stray Unicode chars)
