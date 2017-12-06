@@ -24,10 +24,6 @@ PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
 /* Try to get the allocators name set by _PyMem_SetupAllocators(). */
 PyAPI_FUNC(const char*) _PyMem_GetAllocatorsName(void);
 
-#ifdef WITH_PYMALLOC
-PyAPI_FUNC(int) _PyMem_PymallocEnabled(void);
-#endif
-
 /* Track an allocated memory block in the tracemalloc module.
    Return 0 on success, return -1 on error (failed to allocate memory to store
    the trace).

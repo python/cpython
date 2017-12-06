@@ -1103,6 +1103,10 @@ Py_FinalizeEx(void)
     tstate = PyThreadState_GET();
     interp = tstate->interp;
 
+    /* Copy the core config to be able to use it even
+       after PyInterpreterState_Delete() */
+    _PyCoreConfig core_config = interp->core_config;
+
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
     _PyRuntime.finalizing = tstate;
@@ -1186,7 +1190,7 @@ Py_FinalizeEx(void)
     _PyHash_Fini();
 
 #ifdef Py_REF_DEBUG
-    if (interp->core_config.show_ref_count) {
+    if (core_config.show_ref_count) {
         _PyDebug_PrintTotalRefs();
     }
 #endif
@@ -1197,8 +1201,9 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (core_config.dump_refs) {
         _Py_PrintReferences(stderr);
+    }
 #endif /* Py_TRACE_REFS */
 
     /* Clear interpreter state and all thread states. */
@@ -1260,14 +1265,13 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (core_config.dump_refs) {
         _Py_PrintReferenceAddresses(stderr);
+    }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
-    if (_PyMem_PymallocEnabled()) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
-        if (opt != NULL && *opt != '\0')
-            _PyObject_DebugMallocStats(stderr);
+    if (core_config.malloc_stats) {
+        _PyObject_DebugMallocStats(stderr);
     }
 #endif
 
