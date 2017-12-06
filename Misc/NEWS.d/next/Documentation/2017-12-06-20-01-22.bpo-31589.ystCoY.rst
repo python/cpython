@@ -1,0 +1,2 @@
+Provide latex Unicode configuration for successful PDF builds with pdfLaTeX.
+Patch by jfbu.
