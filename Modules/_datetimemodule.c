@@ -803,7 +803,7 @@ parse_isoformat_time(const char *dtstr, int* hour, int *minute, int *second,
     }
 
 parse_timezone:;
-    int tzhours = 0, tzminutes = 0;
+    int tzhours = 0, tzminutes = 0, tzseconds = 0;
     p = parse_digits(p, &tzhours, 2);
     if (NULL == p || *(p++) != ':') {
         return -5;
@@ -814,8 +814,16 @@ parse_timezone:;
         return -5;
     }
 
+    if (*p == ':') {
+        p++;
+        p = parse_digits(p, &tzseconds, 2);
+        if (NULL == p) {
+            return -5;
+        }
+    }
+
     // Convert hours:minutes into seconds
-    *tzoffset = tzsign * ((3600 * tzhours) + (60 * tzminutes));
+    *tzoffset = tzsign * ((3600 * tzhours) + (60 * tzminutes) + tzseconds);
 
     if (*p != '\0') {
         return -6;

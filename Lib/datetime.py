@@ -288,11 +288,22 @@ def _parse_isoformat_time(tstr):
         # fff (length 3)
         # ffffff (length 6)
         # fff+HH:MM (length 9)
+        # fff+HH:MM:SS (length 12)
         # ffffff+HH:MM (length 12)
-        if not (12 >= len_remainder > 0) or len_remainder % 3:
+        # ffffff+HH:MM:SS (length 15)
+        if not (15 >= len_remainder > 0) or len_remainder % 3:
             raise ValueError('Invalid microseconds or offset')
 
-        len_micro = len_remainder - (6 if len_remainder > 8 else 0)
+        if len_remainder > 8:
+            if len_remainder == 15 or (len_remainder == 12 and
+                                       tstr[-6] == ':'):
+                len_tz = 9
+            else:
+                len_tz = 6
+        else:
+            len_tz = 0
+
+        len_micro = len_remainder - len_tz
         units = (1 if len_micro == 6 else 1000)   # Micro- or milli- seconds
         time_comps[3] = units * int(tstr[pos:pos+len_micro])
         pos += len_micro
@@ -301,14 +312,23 @@ def _parse_isoformat_time(tstr):
     if pos < len_str:
         sep_char = tstr[pos]
 
-        if sep_char not in '-+' or (len_str - pos) != 6 or tstr[pos+3] != ':':
+        tzlen = len_str - pos
+        if (sep_char not in '-+' or
+                tzlen not in (6, 9) or tstr[pos+3] != ':'):
             raise ValueError('Malformed time zone string')
 
         hh = int(tstr[pos+1:pos+3])
         mm = int(tstr[pos+4:pos+6])
 
-        pos += 6
-        td = (-1 if sep_char == '-' else 1) * timedelta(hours=hh, minutes=mm)
+        if tzlen == 9:
+            ss = int(tstr[pos+7:pos+9])
+        else:
+            ss = 0
+
+        pos += tzlen
+        td = (-1 if sep_char == '-' else 1) * timedelta(hours=hh,
+                                                        minutes=mm,
+                                                        seconds=ss)
 
         time_comps[-1] = timezone(td)
 

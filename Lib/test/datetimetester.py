@@ -3256,7 +3256,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         time_examples += list(itertools.product(hh, mm, ss, usec))
 
         tzinfos = [None, timezone.utc,
-                   timezone(timedelta(hours=-5)),
                    timezone(timedelta(hours=2)),
                    timezone(timedelta(hours=6, minutes=27))]
 
@@ -3268,6 +3267,24 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                 with self.subTest(tstr=tstr):
                     t_rt = self.theclass.fromisoformat(tstr)
                     self.assertEqual(t, t_rt)
+
+    def test_fromisoformat_timezone(self):
+        base_time = self.theclass(12, 30, 45, 217456)
+
+        tzinfos = [None, timezone.utc,
+                   timezone(timedelta(hours=0)),
+                   timezone(timedelta(hours=-5)),
+                   timezone(timedelta(hours=2)),
+                   timezone(timedelta(hours=6, minutes=27)),
+                   timezone(timedelta(hours=12, minutes=32, seconds=30))]
+
+        for tzi in tzinfos:
+            t = base_time.replace(tzinfo=tzi)
+            tstr = t.isoformat()
+
+            with self.subTest(tstr=tstr):
+                t_rt = self.theclass.fromisoformat(tstr)
+                assert t == t_rt
 
     def test_fromisoformat_timespecs(self):
         time_bases = [
@@ -3317,7 +3334,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45a',                # Extra at tend of basic time
             '12:30:45.123a',            # Extra at end of millisecond time
             '12:30:45.123456a',         # Extra at end of microsecond time
-            '12:30:45.123456+12:00a',   # Extra at end of full time
+            '12:30:45.123456+12:00:30a',    # Extra at end of full time
         ]
 
         for bad_str in bad_strs:
