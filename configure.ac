@@ -2442,7 +2442,8 @@ then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED='ld -b'
+			LDSHARED='$(CC) -b'
+			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
