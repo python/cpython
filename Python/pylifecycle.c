@@ -751,7 +751,7 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     PySys_SetObject("__stderr__", pstderr);
     Py_DECREF(pstderr);
 
-    err = _PyImport_Init();
+    err = _PyImport_Init(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }

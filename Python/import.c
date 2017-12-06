@@ -31,8 +31,6 @@ extern struct _inittab _PyImport_Inittab[];
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
-static PyObject *initstr = NULL;
-
 /*[clinic input]
 module _imp
 [clinic start generated code]*/
@@ -43,14 +41,8 @@ module _imp
 /* Initialize things */
 
 _PyInitError
-_PyImport_Init(void)
+_PyImport_Init(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
-    initstr = PyUnicode_InternFromString("__init__");
-    if (initstr == NULL) {
-        return _Py_INIT_ERR("Can't initialize import variables");
-    }
-
     interp->builtins_copy = PyDict_Copy(interp->builtins);
     if (interp->builtins_copy == NULL) {
         return _Py_INIT_ERR("Can't backup builtins dict");
