@@ -1459,13 +1459,13 @@ finally:
 
 #ifdef HAVE_BACKUP_API
 static PyObject *
-pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* kwds)
+pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *kwds)
 {
-    PyObject* target = NULL;
-    const char* filename;
+    PyObject *target = NULL;
+    const char *filename;
     int pages = -1;
-    PyObject* progress = Py_None;
-    char* name = "main";
+    PyObject *progress = Py_None;
+    char *name = "main";
     int rc;
     int cberr = 0;
     double sleep_secs = 0.250;
@@ -1516,20 +1516,20 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         }
     }
     else {
-        if ((pysqlite_Connection*)target == self) {
+        if ((pysqlite_Connection *)target == self) {
             PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
             return NULL;
         }
 #if SQLITE_VERSION_NUMBER < 3008007
         /* Since 3.8.7 this is already done, per commit
            https://www.sqlite.org/src/info/169b5505498c0a7e */
-        if (!sqlite3_get_autocommit(((pysqlite_Connection*)target)->db)) {
+        if (!sqlite3_get_autocommit(((pysqlite_Connection *)target)->db)) {
             PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
             return NULL;
         }
 #endif
         filename = NULL;
-        bckconn = ((pysqlite_Connection*)target)->db;
+        bckconn = ((pysqlite_Connection *)target)->db;
     }
 
     Py_BEGIN_ALLOW_THREADS
