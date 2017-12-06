@@ -762,12 +762,11 @@ pymain_add_warnings_options(_PyMain *pymain)
 {
     PySys_ResetWarnOptions();
 
-    if (pymain_add_warnings_dev_mode(&pymain->core_config) < 0) {
+    if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
-
-    if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
+    if (pymain_add_warnings_dev_mode(&pymain->core_config) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
