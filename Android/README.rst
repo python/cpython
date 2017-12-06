@@ -188,7 +188,7 @@ Requirements
 ^^^^^^^^^^^^
 
 - Android NDK [3]_.
-- GNU make, find, xargs, md5sum, awk.
+- GNU make, find, xargs, md5sum, awk, sed.
 - The native compiler of the build platform to build the native Python.
 - wget or curl for downloading the external libraries unless those files are
   downloaded by other means and copied by hand to build/external-libraries.
@@ -316,25 +316,25 @@ Makefile targets
 Common Makefile targets
 ^^^^^^^^^^^^^^^^^^^^^^^
 *build*
-    Compile the native Python interpreter. Cross-compile the external libraries
-    and Python. This is the default target.
+    Compile the native Python interpreter and cross-compile the external
+    libraries and python. This is the default target.
 
 *dist*
-    When building for a device, this target runs ``make install`` on the Python
-    Makefile and Python is installed on DESTDIR.
+    * When building for a device, this target runs ``make install`` on the
+      Python Makefile and Python is installed on DESTDIR.
+    * When building for the emulator, this target makes a distribution
+      consisting of:
 
-    When building for the emulator, this target makes a distribution consisting
-    of:
-
-    - The machine-specific Python library zip file.
-    - The Python standard library zip file.
+      - The machine-specific Python library zip file.
+      - The Python standard library zip file.
 
 *distclean*
-    Make things clean, before making a distribution. This also removes the
-    DESTDIR directory where the external libraries have been copied
-    and where the cross-compiled Python has been installed by the command ``make
-    DESTDIR=$(PY_DESTDIR) install`` run on Python own Makefile. The external
-    libraries will not be rebuilt on the next make invocation.
+    * Kill the emulator if it is running.
+    * Make things clean, before making a distribution.
+    * Removes the DESTDIR directory where the external libraries have been
+      copied and where the cross-compiled Python has been installed by the
+      command ``make DESTDIR=$(PY_DESTDIR) install`` run on Python own Makefile.
+      The external libraries will not be rebuilt on the next make invocation.
 
 *clean*
     Remove everything for the given (api, architecture) except the AVD.
@@ -342,45 +342,36 @@ Common Makefile targets
 Emulator Makefile targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+When the AVD is being created by one of the targets, it is not necessary to
+answer the following question printed on the screen at that time::
+
+    Do you wish to create a custom hardware profile? [no]
+
+Upon starting the emulator, python may fail to start with the error ``No module
+named 'encodings'`` because ``/sdcard`` is not mounted yet. This does not happen
+with the ``install`` target, but a user running the ``python`` or ``adb_shell``
+target must ensure that python is not run too early after the emulator has been
+started.
+
 *install*
     Make a distribution, create the AVD if it does not exist, start the emulator
-    and install the content of the two zip files on the emulator. Then start an
-    adb_ shell (see the ``adb_shell`` target description below).
+    after having wiped out previous data and install the content of the two zip
+    files on the emulator. Then start an adb_ shell (see the ``adb_shell``
+    target description below).
 
     Run ``make distclean install`` to get an install from scratch.
 
 *python*
-    Make a distribution, create the AVD if it does not exist, start the
-    emulator, install Python and run the python command defined by
+    Start the emulator if needed and run the python command defined by
     ``PYTHON_ARGS``.  This variable is set on make command line or as an
-    environment variable. It must be defined and not empty, to start an
-    interactive Python interpreter one must run the ``install``, ``adb_shell``
-    or ``emulator`` target instead. Quotes in the command are interpreted both
-    by the shell when interpreting the make command line and by make itself, so
-    they must be escaped properly such as in this example::
+    environment variable.  Quotes in the command are interpreted both by the
+    shell when interpreting the make command line and by make itself, so they
+    must be escaped properly such as in this example::
 
         $ make python PYTHON_ARGS="-c 'print(\\\"Hello world.\\\")'"
 
-*emulator*
-    Create the AVD if it does not exist, start the emulator ensuring first that
-    there is no other emulator using the same console port and start an adb_
-    shell (see the ``adb_shell`` target description below).
-
-    When the AVD is being created, it is not necessary to answer the following
-    question printed on the screen at that time::
-
-        Do you wish to create a custom hardware profile? [no]
-
-    Upon the first invocation, python may fail to start with the error ``No
-    module named 'encodings'``. In that case, just wait few seconds until
-    ``/sdcard`` is mounted and try again.
-
-*kill_emulator*
-    Kill the emulator. Useful when the emulator refuses to be shutdown from its
-    GUI or when there is no GUI.
-
 *adb_shell*
-    Create an adb_ shell on the emulator.
+    Start the emulator if needed and create an adb_ shell on the emulator.
 
     At the first shell prompt a message is printed giving the shell command to
     run, to source a shell script that sets the environment variables needed to
@@ -394,6 +385,10 @@ Emulator Makefile targets
     - Change the current directory to ``$HOME``.
 
     After sourcing this script one can run the Python interpreter.
+
+*kill_emulator*
+    Kill the emulator. Useful when the emulator refuses to be shutdown from its
+    GUI or when there is no GUI.
 
 *avdclean*
     Remove the AVD. This is the proper way to remove an AVD, do not just remove

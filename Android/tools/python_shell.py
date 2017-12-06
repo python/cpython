@@ -95,21 +95,15 @@ def main():
         os.close(fd)
         basename = os.path.split(fn)[1]
         script_path = build_script(sys.argv[1:], basename)
-        try:
-            run_script(script_path)
-            adb_pull(os.path.join(os.environ['SYS_EXEC_PREFIX'],
-                                  'tmp', basename), fn)
-            with open(fn) as f:
-                result = f.read()
-            if not result:
-                raise AndroidError('Error: no return code from %s' %
-                                    os.path.basename(script_path))
-            return int(result)
-        finally:
-            # Remove the file on Android.
-            script_path = build_script(['-c', '"from os import unlink; '
-                                        'unlink(\\"tmp/%s\\")"' % basename])
-            run_script(script_path)
+        run_script(script_path)
+        adb_pull(os.path.join(os.environ['SYS_EXEC_PREFIX'],
+                              'tmp', basename), fn)
+        with open(fn) as f:
+            result = f.read()
+        if not result:
+            raise AndroidError('Error: no return code from %s' %
+                                os.path.basename(script_path))
+        return int(result)
     finally:
         try:
             os.unlink(fn)

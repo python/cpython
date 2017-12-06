@@ -64,7 +64,7 @@ native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Set
 # Target-specific exported variables.
 $(config_status):           export CPPFLAGS := -I$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/include
 $(config_status):           export LDFLAGS := -L$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib
-build configure host pythoninfo python_dist: \
+build configure host python_dist: \
                             export PATH := $(native_build_dir):$(PATH)
 external_libraries:         export CC := $(CC)
 external_libraries openssl: export AR := $(AR)
@@ -155,12 +155,9 @@ host: disabled_modules
 	    false; \
 	fi
 
-pythoninfo:
-	$(MAKE) -C $(py_host_dir) pythoninfo
-
 python_dist: $(python)
 	@echo "---> Install Python for $(BUILD_TYPE)."
-	$(MAKE) DESTDIR=$(PY_DESTDIR) -C $(py_host_dir) install
+	$(MAKE) DESTDIR=$(PY_DESTDIR) -C $(py_host_dir) install > make_install.log
 	cp --no-dereference $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so* $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib
 	chmod u+w $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so*
 	tdir=$(SYS_EXEC_PREFIX)/share/terminfo/l; mkdir -p $(PY_DESTDIR)/$$tdir && \
@@ -253,6 +250,6 @@ else
       directory.)
 endif
 
-.PHONY: build configure host pythoninfo native_python \
+.PHONY: build configure host native_python \
         external_libraries openssl \
         dist python_dist distclean hostclean clean

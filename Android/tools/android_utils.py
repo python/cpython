@@ -14,8 +14,8 @@ class AndroidError(BaseException): pass
 adb_command = [os.environ['ADB'],
                '-s', 'emulator-%s' % os.environ['CONSOLE_PORT']]
 
-def emulator_listens(port):
-    """Check that an emulator is listening on 'port'."""
+def is_emulator_listening(port):
+    """Check if an emulator is listening on 'port'."""
     try:
         sock = socket.create_connection(('localhost', port))
         sock.close()

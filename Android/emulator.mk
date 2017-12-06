@@ -36,34 +36,50 @@ export ADB := $(ANDROID_SDK_ROOT)/platform-tools/adb
 
 
 # Rules.
-emulator: emulator_checks _emulator adb_shell
+exists_python_cmd:
+	@if test ! -f "$(native_python_exe)"; then \
+	    echo "Error: the native python executable is missing"; \
+	    exit 1; \
+	fi
 
-emulator_install: wipe_data := -wipe-data
-emulator_install: emulator_checks dist _emulator
-	@echo "---> Install Python on the avd and start the emulator."
-	$(python_cmd) $(py_srcdir)/Android/tools/install.py
-
-adb_shell:
+adb_shell: exists_python_cmd _emulator
 	@echo "---> Run an adb shell."
 	$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py
 	@$(ADB) -s emulator-$(CONSOLE_PORT) shell
 
-install: emulator_install
+# The 'all' target is used by the buildbots.
+# Abort when the emulator is already running so that we install on a clean
+# emulator.
+all: wipe_data := -wipe-data
+all: export PY_SRCDIR := $(py_srcdir)
+all: dist is_emulator_listening _emulator
+	@echo "---> Install Python on the avd and start the emulator."
+	$(python_cmd) $(py_srcdir)/Android/tools/install.py
+
+install: all
 	@echo "---> Run an adb shell."
 	$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py
 	@$(ADB) -s emulator-$(CONSOLE_PORT) shell
 
 ifneq ($(PYTHON_ARGS), )
-python: emulator_install
+python: exists_python_cmd _emulator
 	@echo "---> Run <python $(PYTHON_ARGS)>."
 	$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py "$(PYTHON_ARGS)"
 endif
 
+pythoninfo: exists_python_cmd _emulator
+	@echo "---> Run pythoninfo."
+	@ndk_version=$$(sed -n -e 's/Pkg.Revision\s*=\s*\(\S*\).*/\1/p' \
+	                $(ANDROID_NDK_ROOT)/source.properties); \
+	    echo "Python debug information"; \
+	    echo "========================"; \
+	    echo "NDK version: $$ndk_version"; echo
+	$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py -m test.pythoninfo
+
 buildbottest: TESTRUNNER := $(python_cmd) $(py_srcdir)/Android/tools/python_shell.py
 buildbottest: TESTRUNNER += $(TESTPYTHONOPTS) $(SYS_EXEC_PREFIX)/bin/run_tests.py
-buildbottest: export PY_SRCDIR := $(py_srcdir)
 buildbottest: export PATH := $(native_build_dir):$(PATH)
-buildbottest: emulator_install
+buildbottest: exists_python_cmd _emulator
 	@echo "---> Run buildbottest."
 	$(MAKE) -C $(py_host_dir) TESTRUNNER="$(TESTRUNNER)" \
 	    TESTOPTS="$(TESTOPTS)" TESTTIMEOUT="$(TESTTIMEOUT)" \
@@ -83,21 +99,19 @@ $(avd_dir)/$(avd_name):
 	    --package "system-images;android-$(ANDROID_API);default;$(APP_ABI)" \
 	    --abi default/$(APP_ABI) --path $(avd_dir)/$(avd_name)
 
-kill_emulator:
+kill_emulator: exists_python_cmd
 	@echo "---> Kill the emulator."
 	-$(python_cmd) $(py_srcdir)/Android/tools/kill_emulator.py $(CONSOLE_PORT)
 
-emulator_checks:
+is_emulator_listening: exists_python_cmd
 	@echo "---> Check that an emulator is not currently running."
-	@if test -f "$(native_python_exe)"; then \
-	    cd $(py_srcdir)/Android/tools; \
-	        $(python_cmd) -c "import sys, android_utils; \
-                    sys.exit(android_utils.emulator_listens($(CONSOLE_PORT)))"; \
-	fi
+	cd $(py_srcdir)/Android/tools; \
+	    $(python_cmd) -c "import sys, android_utils; \
+	        sys.exit(android_utils.is_emulator_listening($(CONSOLE_PORT)))"
 
-_emulator: $(avd_dir)/$(avd_name)
-	@echo "---> Start the emulator."
-	$(ANDROID_SDK_ROOT)/emulator/emulator -avd $(avd_name) \
+_emulator: exists_python_cmd $(avd_dir)/$(avd_name)
+	@echo "---> Start the emulator if not already running."
+	$(python_cmd) $(py_srcdir)/Android/tools/start_emulator.py -avd $(avd_name) \
 	    -port $(CONSOLE_PORT) $(wipe_data) $(EMULATOR_CMD_LINE_OPTIONS) &
 	@ echo "---> Waiting for device to be ready."
 	@$(ADB) -s emulator-$(CONSOLE_PORT) wait-for-device shell getprop init.svc.bootanim; \
@@ -111,5 +125,5 @@ avdclean:
 	fi
 	-rmdir $(avd_dir)
 
-.PHONY: emulator adb_shell install python buildbottest gdb \
-        avdclean _emulator kill_emulator emulator_checks emulator_install
+.PHONY: exists_python_cmd adb_shell all install python pythoninfo buildbottest gdb \
+        kill_emulator is_emulator_listening _emulator avdclean
