@@ -1,2 +1,0 @@
-Restored blocking "from package import module" by setting
-sys.modules["package.module"] to None.

@@ -1,2 +1,0 @@
-Fix a segmentation fault caused by a combination of the async soft keyword
-and continuation lines.

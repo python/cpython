@@ -1,2 +1,0 @@
-Fixed an assertion failure in Python parser in case of a bad `unicodedata.normalize()`.
-Patch by Oren Milman.
