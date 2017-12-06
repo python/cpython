@@ -1525,10 +1525,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._wait_for_mainpyfile = True
         self.mainpyfile = self.canonic(module_name)
         self._user_requested_quit = False
-        #code = f'import runpy; runpy.run_module("{module_name}", run_name="__main__")'
-        code = f'import runpy; runpy._run_module_as_main("{module_name}")'
-        statement = f'exec(compile("""{code}""", "{self.mainpyfile}", "exec"))'
-        self.run(statement)
+        import runpy
+        mod_name, _, code = runpy._get_module_details(module_name)
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({
+            "__name__": "__main__",
+            "__package__": module_name,
+            "__builtins__": __builtins__,
+        })
+        self.run(code)
 
     def _runscript(self, filename):
         # The script has to run in __main__ namespace (or imports from
