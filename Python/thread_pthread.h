@@ -74,6 +74,7 @@
      defined(HAVE_SEM_TIMEDWAIT))
 #  define USE_SEMAPHORES
 #else
+#  define MONOTONIC
 #  undef USE_SEMAPHORES
 #endif
 
@@ -89,24 +90,16 @@
 #  define SET_THREAD_SIGMASK sigprocmask
 #endif
 
-
-/* We assume all modern POSIX systems have gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-#define GETTIMEOFDAY(ptv) gettimeofday(ptv)
+#ifdef MONOTONIC
+#define GETTIME _PyTime_GetMonotonicClock
 #else
-#define GETTIMEOFDAY(ptv) gettimeofday(ptv, (struct timezone *)NULL)
+#define GETTIME _PyTime_GetSystemClock
 #endif
 
-#define MICROSECONDS_TO_TIMESPEC(microseconds, ts) \
+#define MICROSECONDS_TO_TIMESPEC(us, ts) \
 do { \
-    struct timeval tv; \
-    GETTIMEOFDAY(&tv); \
-    tv.tv_usec += microseconds % 1000000; \
-    tv.tv_sec += microseconds / 1000000; \
-    tv.tv_sec += tv.tv_usec / 1000000; \
-    tv.tv_usec %= 1000000; \
-    ts.tv_sec = tv.tv_sec; \
-    ts.tv_nsec = tv.tv_usec * 1000; \
+    _PyTime_t t = GETTIME() + _PyTime_FromNanoseconds(us * 1000); \
+    _PyTime_AsTimespec(t, &ts); \
 } while(0)
 
 
@@ -452,6 +445,7 @@ PyThread_allocate_lock(void)
 {
     pthread_lock *lock;
     int status, error = 0;
+    pthread_condattr_t attr;
 
     dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
@@ -472,9 +466,14 @@ PyThread_allocate_lock(void)
            will cause errors. */
         _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX(&lock->mut);
 
-        status = pthread_cond_init(&lock->lock_released,
-                                   pthread_condattr_default);
+        pthread_condattr_init(&attr);
+#ifdef MONOTONIC
+        status = pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+        CHECK_STATUS_PTHREAD("pthread_condattr_setclock");
+#endif
+        status = pthread_cond_init(&lock->lock_released, &attr);
         CHECK_STATUS_PTHREAD("pthread_cond_init");
+        pthread_condattr_destroy(&attr);
 
         if (error) {
             PyMem_RawFree((void *)lock);

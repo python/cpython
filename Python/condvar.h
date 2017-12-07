@@ -48,19 +48,7 @@
  * POSIX support
  */
 
-#define PyCOND_ADD_MICROSECONDS(tv, interval) \
-do { /* TODO: add overflow and truncation checks */ \
-    tv.tv_usec += (long) interval; \
-    tv.tv_sec += tv.tv_usec / 1000000; \
-    tv.tv_usec %= 1000000; \
-} while (0)
-
-/* We assume all modern POSIX systems have gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-#define PyCOND_GETTIMEOFDAY(ptv) gettimeofday(ptv)
-#else
-#define PyCOND_GETTIMEOFDAY(ptv) gettimeofday(ptv, (struct timezone *)NULL)
-#endif
+#include <pthread.h>
 
 /* The following functions return 0 on success, nonzero on error */
 #define PyMUTEX_INIT(mut)       pthread_mutex_init((mut), NULL)
@@ -68,24 +56,47 @@ do { /* TODO: add overflow and truncation checks */ \
 #define PyMUTEX_LOCK(mut)       pthread_mutex_lock(mut)
 #define PyMUTEX_UNLOCK(mut)     pthread_mutex_unlock(mut)
 
-#define PyCOND_INIT(cond)       pthread_cond_init((cond), NULL)
+#define PyCOND_T pthread_cond_t
 #define PyCOND_FINI(cond)       pthread_cond_destroy(cond)
 #define PyCOND_SIGNAL(cond)     pthread_cond_signal(cond)
 #define PyCOND_BROADCAST(cond)  pthread_cond_broadcast(cond)
 #define PyCOND_WAIT(cond, mut)  pthread_cond_wait((cond), (mut))
 
+#define MONOTONIC
+
+Py_LOCAL_INLINE(int)
+PyCOND_INIT(PyCOND_T *cond)
+{
+    pthread_condattr_t attr;
+    int err;
+
+    (void)pthread_condattr_init(&attr);
+#ifdef MONOTONIC
+    err = pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+    if (err)
+        return err;
+#endif
+    err = pthread_cond_init(cond, &attr);
+    (void)pthread_condattr_destroy(&attr);
+    return err;
+}
+
 /* return 0 for success, 1 on timeout, -1 on error */
 Py_LOCAL_INLINE(int)
-PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
+PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, PY_TIMEOUT_T us)
 {
     int r;
     struct timespec ts;
-    struct timeval deadline;
+    _PyTime_t deadline;
 
-    PyCOND_GETTIMEOFDAY(&deadline);
-    PyCOND_ADD_MICROSECONDS(deadline, us);
-    ts.tv_sec = deadline.tv_sec;
-    ts.tv_nsec = deadline.tv_usec * 1000;
+#ifdef MONOTONIC
+    deadline = _PyTime_GetMonotonicClock();
+#else
+    deadline = _PyTime_GetSystemClock();
+#endif
+
+    deadline += _PyTime_FromNanoseconds(us * 1000);
+    _PyTime_AsTimespec(deadline, &ts);
 
     r = pthread_cond_timedwait((cond), (mut), &ts);
     if (r == ETIMEDOUT)
