@@ -281,9 +281,9 @@ The :mod:`functools` module defines the following functions:
      ...     print(arg)
 
    To add overloaded implementations to the function, use the :func:`register`
-   attribute of the generic function.  It is a decorator, taking a type
-   parameter and decorating a function implementing the operation for that
-   type::
+   attribute of the generic function.  It is a decorator.  For functions
+   annotated with types, the decorator will infer the type of the first
+   argument automatically::
 
      >>> @fun.register
      ... def _(arg: int, verbose=False):
@@ -298,16 +298,8 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
-   To enable registering lambdas and pre-existing functions, the
-   :func:`register` attribute can be used in a functional form::
-
-     >>> def nothing(arg, verbose=False):
-     ...     print("Nothing.")
-     ...
-     >>> fun.register(type(None), nothing)
-
-   This form of the :func:`register` attribute can also be used as
-   a decorator (note: no type annotations on the function now)::
+   For code which doesn't use type annotations, the appropriate type
+   argument can be passed explicitly to the decorator itself::
 
      >>> @fun.register(complex)
      ... def _(arg, verbose=False):
@@ -315,6 +307,15 @@ The :mod:`functools` module defines the following functions:
      ...         print("Better than complicated.", end=" ")
      ...     print(arg.real, arg.imag)
      ...
+
+
+   To enable registering lambdas and pre-existing functions, the
+   :func:`register` attribute can be used in a functional form::
+
+     >>> def nothing(arg, verbose=False):
+     ...     print("Nothing.")
+     ...
+     >>> fun.register(type(None), nothing)
 
    The :func:`register` attribute returns the undecorated function which
    enables decorator stacking, pickling, as well as creating unit tests for
