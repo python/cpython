@@ -71,15 +71,13 @@ class _ContextManagerMixin:
         yield from self.acquire()
         return _ContextManager(self)
 
-    @coroutine
-    def __aenter__(self):
-        yield from self.acquire()
+    async def __aenter__(self):
+        await self.acquire()
         # We have no use for the "as ..."  clause in the with
         # statement for locks.
         return None
 
-    @coroutine
-    def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type, exc, tb):
         self.release()
 
 
@@ -251,8 +249,7 @@ class Event:
         to true again."""
         self._value = False
 
-    @coroutine
-    def wait(self):
+    async def wait(self):
         """Block until the internal flag is true.
 
         If the internal flag is true on entry, return True
@@ -265,7 +262,7 @@ class Event:
         fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
-            yield from fut
+            await fut
             return True
         finally:
             self._waiters.remove(fut)
@@ -307,8 +304,7 @@ class Condition(_ContextManagerMixin):
             extra = '{},waiters:{}'.format(extra, len(self._waiters))
         return '<{} [{}]>'.format(res[1:-1], extra)
 
-    @coroutine
-    def wait(self):
+    async def wait(self):
         """Wait until notified.
 
         If the calling coroutine has not acquired the lock when this
@@ -327,7 +323,7 @@ class Condition(_ContextManagerMixin):
             fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
-                yield from fut
+                await fut
                 return True
             finally:
                 self._waiters.remove(fut)
@@ -336,13 +332,12 @@ class Condition(_ContextManagerMixin):
             # Must reacquire lock even if wait is cancelled
             while True:
                 try:
-                    yield from self.acquire()
+                    await self.acquire()
                     break
                 except futures.CancelledError:
                     pass
 
-    @coroutine
-    def wait_for(self, predicate):
+    async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
 
         The predicate should be a callable which result will be
@@ -351,7 +346,7 @@ class Condition(_ContextManagerMixin):
         """
         result = predicate()
         while not result:
-            yield from self.wait()
+            await self.wait()
             result = predicate()
         return result
 
