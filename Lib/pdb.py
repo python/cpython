@@ -1523,10 +1523,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _runmodule(self, module_name):
         self._wait_for_mainpyfile = True
-        self.mainpyfile = os.path.join(self.canonic(module_name), "__main__.py")
         self._user_requested_quit = False
         import runpy
         mod_name, mod_spec, code = runpy._get_module_details(module_name)
+        self.mainpyfile = self.canonic(code.co_filename)
         import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update({
