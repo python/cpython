@@ -146,9 +146,15 @@ dircheck(fileio* self, PyObject *nameobj)
 {
 #if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
     struct stat buf;
+    int res;
     if (self->fd < 0)
         return 0;
-    if (fstat(self->fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fstat(self->fd, &buf);
+    Py_END_ALLOW_THREADS
+
+    if (res == 0 && S_ISDIR(buf.st_mode)) {
         errno = EISDIR;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, nameobj);
         return -1;
@@ -162,17 +168,34 @@ check_fd(int fd)
 {
 #if defined(HAVE_FSTAT)
     struct stat buf;
-    if (!_PyVerify_fd(fd) || (fstat(fd, &buf) < 0 && errno == EBADF)) {
-        PyObject *exc;
-        char *msg = strerror(EBADF);
-        exc = PyObject_CallFunction(PyExc_OSError, "(is)",
-                                    EBADF, msg);
-        PyErr_SetObject(PyExc_OSError, exc);
-        Py_XDECREF(exc);
-        return -1;
+    int res;
+    PyObject *exc;
+    char *msg;
+
+    if (!_PyVerify_fd(fd)) {
+        goto badfd;
     }
-#endif
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fstat(fd, &buf);
+    Py_END_ALLOW_THREADS
+
+    if (res < 0 && errno == EBADF) {
+        goto badfd;
+    }
+
     return 0;
+
+badfd:
+    msg = strerror(EBADF);
+    exc = PyObject_CallFunction(PyExc_OSError, "(is)",
+                                EBADF, msg);
+    PyErr_SetObject(PyExc_OSError, exc);
+    Py_XDECREF(exc);
+    return -1;
+#else
+    return 0;
+#endif
 }
 
 
@@ -519,9 +542,19 @@ new_buffersize(fileio *self, size_t currentsize)
 #ifdef HAVE_FSTAT
     off_t pos, end;
     struct stat st;
-    if (fstat(self->fd, &st) == 0) {
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fstat(self->fd, &st);
+    Py_END_ALLOW_THREADS
+
+    if (res == 0) {
         end = st.st_size;
+
+        Py_BEGIN_ALLOW_THREADS
         pos = lseek(self->fd, 0L, SEEK_CUR);
+        Py_END_ALLOW_THREADS
+
         /* Files claiming a size smaller than SMALLCHUNK may
            actually be streaming pseudo-files. In this case, we
            apply the more aggressive algorithm below.

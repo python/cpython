@@ -1,0 +1,4 @@
+Creating io.FileIO() and builtin file() objects now release the GIL when
+checking the file descriptor. io.FileIO.readall(), io.FileIO.read(), and
+file.read() now release the GIL when getting the file size.  Fixed hang of all
+threads with inaccessible NFS server.  Patch by Nir Soffer.
