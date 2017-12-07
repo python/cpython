@@ -1321,7 +1321,7 @@ class URandomTests(unittest.TestCase):
             'sys.stdout.buffer.flush()'))
         out = assert_python_ok('-c', code)
         stdout = out[1]
-        self.assertEqual(len(stdout), 16)
+        self.assertEqual(len(stdout), count)
         return stdout
 
     def test_urandom_subprocess(self):
