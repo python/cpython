@@ -355,10 +355,9 @@ class TokenEater:
         # ignore anything until we see the param list closing parenthesis
         if ttype == tokenize.OP:
             if tstring == ')':
-                if self.__parencount == 1:
+                self.__parencount -= 1
+                if self.__parencount == 0:
                     self.__state = self.__suiteseen
-                else:
-                    self.__parencount -= 1
             elif tstring == '(':
                 # count nested parens
                 self.__parencount += 1
