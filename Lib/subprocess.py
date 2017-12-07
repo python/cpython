@@ -262,7 +262,13 @@ def _args_from_interpreter_flags():
             args.append('-' + opt * v)
 
     # -W options
-    for opt in sys.warnoptions:
+    warnopts = sys.warnoptions[:]
+    bytes_warning = sys.flags.bytes_warning
+    if bytes_warning > 1:
+        warnopts.remove("error::BytesWarning")
+    elif bytes_warning:
+        warnopts.remove("default::BytesWarning")
+    for opt in warnopts:
         args.append('-W' + opt)
 
     # -X options

@@ -521,24 +521,11 @@ _processoptions(sys.warnoptions)
 if not _warnings_defaults:
     # TODO: Define a test case that ensures this fallback code always remains
     #       consistent with init_filters() in _warnings.c
-    simplefilter("ignore", category=DeprecationWarning, append=1)
-    simplefilter("ignore", category=PendingDeprecationWarning, append=1)
-    simplefilter("ignore", category=ImportWarning, append=1)
-
-    bytes_warning = sys.flags.bytes_warning
-    if bytes_warning > 1:
-        bytes_action = "error"
-    elif bytes_warning:
-        bytes_action = "default"
-    else:
-        bytes_action = "ignore"
-    simplefilter(bytes_action, category=BytesWarning, append=1)
-
-    # resource usage warnings are enabled by default in pydebug builds
-    if hasattr(sys, 'gettotalrefcount'):
-        resource_action = "default"
-    else:
-        resource_action = "ignore"
-    simplefilter(resource_action, category=ResourceWarning, append=1)
+    if not hasattr(sys, 'gettotalrefcount'):
+        # Several warning categories are ignored by default in Py_DEBUG builds
+        simplefilter("ignore", category=DeprecationWarning, append=1)
+        simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+        simplefilter("ignore", category=ImportWarning, append=1)
+        simplefilter("ignore", category=ResourceWarning, append=1)
 
 del _warnings_defaults
