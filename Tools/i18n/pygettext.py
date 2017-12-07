@@ -5,7 +5,7 @@
 # Minimally patched to make it even more xgettext compatible
 # by Peter Funk <pf@artcom-gmbh.de>
 #
-# 2002-11-22 Jürgen Hermann <jh@web.de>
+# 2002-11-22 Jï¿½rgen Hermann <jh@web.de>
 # Added checks that _() only contains string literals, and
 # command line args are resolved to module lists, i.e. you
 # can now pass a filename, a module or package name, or a
@@ -208,7 +208,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "Hï¿½he"' would result not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -340,12 +340,20 @@ class TokenEater:
                 elif ttype not in (tokenize.COMMENT, tokenize.NL):
                     self.__freshmodule = 0
                 return
-            # class docstring?
-            if ttype == tokenize.NAME and tstring in ('class', 'def'):
-                self.__state = self.__suiteseen
+            # class or func/method docstring?
+            if ttype == tokenize.NAME:
+                if tstring == 'def':
+                    self.__state = self.__funcseen
+                elif tstring == 'class':
+                    self.__state = self.__suiteseen
                 return
         if ttype == tokenize.NAME and tstring in opts.keywords:
             self.__state = self.__keywordseen
+
+    def __funcseen(self, ttype, tstring, lineno):
+        # ignore anything until we see the closing parenthesis
+        if ttype == tokenize.OP and tstring == ')':
+            self.__state = self.__suiteseen
 
     def __suiteseen(self, ttype, tstring, lineno):
         # ignore anything until we see the colon
