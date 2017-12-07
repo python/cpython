@@ -519,8 +519,6 @@ except ImportError:
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    # TODO: Define a test case that ensures this fallback code always remains
-    #       consistent with init_filters() in _warnings.c
     if not hasattr(sys, 'gettotalrefcount'):
         # Several warning categories are ignored by default in Py_DEBUG builds
         simplefilter("ignore", category=DeprecationWarning, append=1)

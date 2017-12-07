@@ -587,6 +587,46 @@ class CmdLineTest(unittest.TestCase):
             out = self.run_xdev("-c", code)
             self.assertEqual(out, "True")
 
+    def check_warnings_filters(self, cmdline_option, envvar, use_pywarning=False):
+        if use_pywarning:
+            code = ("import sys; from test.support import import_fresh_module; "
+                    "warnings = import_fresh_module('warnings', blocked=['_warnings']); ")
+        else:
+            code = "import sys, warnings; "
+        code += ("print(' '.join('%s::%s' % (f[0], f[2].__name__) "
+                                "for f in warnings.filters))")
+        args = (sys.executable, '-W', cmdline_option, '-bb', '-c', code)
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        env["PYTHONWARNINGS"] = envvar
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.returncode, 0, proc)
+        return proc.stdout.rstrip()
+
+    def test_warnings_filter_precedence(self):
+        expected_filters = ("error::BytesWarning "
+                            "once::UserWarning "
+                            "always::UserWarning")
+        if not hasattr(sys, 'gettotalrefcount'):
+            expected_filters += (" "
+                                 "ignore::DeprecationWarning "
+                                 "ignore::PendingDeprecationWarning "
+                                 "ignore::ImportWarning "
+                                 "ignore::ResourceWarning")
+
+        out = self.check_warnings_filters("once::UserWarning",
+                                          "always::UserWarning")
+        self.assertEqual(out, expected_filters)
+
+        out = self.check_warnings_filters("once::UserWarning",
+                                          "always::UserWarning",
+                                          use_pywarning=True)
+        self.assertEqual(out, expected_filters)
+
     def check_pythonmalloc(self, env_var, name):
         code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
         env = dict(os.environ)
