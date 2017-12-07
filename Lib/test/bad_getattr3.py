@@ -1,5 +1,5 @@
 def __getattr__(name):
     if name != 'delgetattr':
-        raise AttributeError('Only deletion')
+        raise AttributeError
     del globals()['__getattr__']
-    return 'OK, deleted'
+    raise AttributeError

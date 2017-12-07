@@ -168,11 +168,10 @@ a = A(destroyed)"""
 
     def test_module_getattr_tricky(self):
         from test import bad_getattr3
+        # these lookups should not crash
         with self.assertRaises(AttributeError):
             bad_getattr3.one
-        self.assertEqual(bad_getattr3.delgetattr, "OK, deleted")
         with self.assertRaises(AttributeError):
-            # this will not work second time
             bad_getattr3.delgetattr
         if 'test.bad_getattr3' in sys.modules:
             del sys.modules['test.bad_getattr3']
