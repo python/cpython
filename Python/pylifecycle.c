@@ -414,7 +414,7 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
     {NULL}
 };
 
-static char *
+static const char *
 get_default_standard_stream_error_handler(void)
 {
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
@@ -440,7 +440,7 @@ get_default_standard_stream_error_handler(void)
 }
 
 #ifdef PY_COERCE_C_LOCALE
-static const char *_C_LOCALE_COERCION_WARNING =
+static const char _C_LOCALE_COERCION_WARNING[] =
     "Python detected LC_CTYPE=C: LC_CTYPE coerced to %.20s (set another locale "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
@@ -1757,7 +1757,8 @@ init_sys_streams(void)
     PyObject *std = NULL;
     int fd;
     PyObject * encoding_attr;
-    char *pythonioencoding = NULL, *encoding, *errors;
+    char *pythonioencoding = NULL;
+    const char *encoding, *errors;
     _PyInitError res = _Py_INIT_OK();
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
