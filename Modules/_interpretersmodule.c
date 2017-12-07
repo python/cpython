@@ -168,81 +168,6 @@ _ensure_not_running(PyInterpreterState *interp)
     return 0;
 }
 
-static PyObject *
-_copy_module(PyObject *m, const char *name)
-{
-    PyObject *orig = PyModule_GetDict(m);  // borrowed
-    if (orig == NULL) {
-        return NULL;
-    }
-
-    PyObject *copy = PyModule_New(name);
-    if (copy == NULL) {
-        return NULL;
-    }
-    PyObject *ns = PyModule_GetDict(copy);  // borrowed
-    if (ns == NULL)
-        goto error;
-
-    if (PyDict_Merge(ns, orig, 1) < 0)
-        goto error;
-    return copy;
-
-error:
-    Py_DECREF(copy);
-    return NULL;
-}
-
-static PyObject *
-_copy_module_ns(PyInterpreterState *interp,
-                const char *name, const char *tempname)
-{
-    // Get the namespace in which to execute.  This involves creating
-    // a new module, updating it from the __main__ module and the given
-    // updates (if any), replacing the __main__ with the new module in
-    // sys.modules, and then using the new module's __dict__.  At the
-    // end we restore the original __main__ module.
-    PyObject *main_mod = PyMapping_GetItemString(interp->modules, name);
-    if (main_mod == NULL)
-        return NULL;
-    PyObject *m = _copy_module(main_mod, name);
-    if (m == NULL) {
-        Py_DECREF(main_mod);
-        return NULL;
-    }
-    if (tempname != NULL) {
-        if (PyMapping_SetItemString(interp->modules, tempname, main_mod) < 0) {
-            Py_DECREF(main_mod);
-            Py_DECREF(m);
-            return NULL;
-        }
-    }
-    Py_DECREF(main_mod);
-    if (PyMapping_SetItemString(interp->modules, name, m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    PyObject *ns = PyModule_GetDict(m);  // borrowed
-    Py_INCREF(ns);
-    Py_DECREF(m);
-    return ns;
-}
-
-static int
-_restore_module(PyInterpreterState *interp,
-                const char *name, const char *tempname)
-{
-    PyObject *main_mod = PyMapping_GetItemString(interp->modules, tempname);
-    if (main_mod == NULL)
-        return -1;
-    if (PyMapping_SetItemString(interp->modules, name, main_mod) < 0) {
-        Py_DECREF(main_mod);
-        return -1;
-    }
-    Py_DECREF(main_mod);
-    return 0;
-}
-
 struct _shareditem {
     Py_UNICODE *name;
     Py_ssize_t namelen;
@@ -344,27 +269,20 @@ static PyObject *
 _run_script(PyInterpreterState *interp, const char *codestr,
             struct _shareditem *shared, struct _shared_exception **exc)
 {
-    // XXX Do not copy.
-
-    // Get a copy of the __main__ module.
-    //
-    // This involves creating a new module, updating it from the
-    // __main__ module and the given updates (if any), replacing the
-    // __main__ with the new module in sys.modules, and then using the
-    // new module's __dict__.  At the end we restore the original
-    // __main__ module.
-    PyObject *ns = _copy_module_ns(interp, "__main__", "_orig___main___");
-    if (ns == NULL) {
+    PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
+    if (main_mod == NULL)
         return NULL;
-    }
+    PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
+    Py_DECREF(main_mod);
+    if (ns == NULL)
+        return NULL;
 
     // Apply the cross-interpreter data.
     if (shared != NULL) {
         for (struct _shareditem *item=shared; item->name != NULL; item += 1) {
             if (_shareditem_apply(shared, ns) != 0) {
                 Py_DECREF(ns);
-                ns = NULL;
-                goto done;
+                return NULL;
             }
         }
     }
@@ -379,12 +297,6 @@ _run_script(PyInterpreterState *interp, const char *codestr,
         Py_DECREF(result);  // We throw away the result.
     }
 
-done:
-    // Restore __main__.
-    if (_restore_module(interp, "__main__", "_orig___main___") != 0) {
-        // XXX How to propagate this exception...
-        //_PyErr_ChainExceptions(exc, value, tb);
-    }
     return ns;
 }
 
