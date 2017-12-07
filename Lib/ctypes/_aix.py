@@ -1,6 +1,6 @@
 """
 Lib/ctypes.util.find_library() support for AIX
-Similar approach as done for Darwin support by using seperate files
+Similar approach as done for Darwin support by using separate files
 but unlike Darwin - no extension such as ctypes.macholib.*
 
 dlopen() is an interface to AIX initAndLoad() - primary documentation at:
@@ -14,7 +14,7 @@ From AIX 5.3 Difference Addendum (December 2004)
 2.9 SVR4 linking affinity
 Nowadays, there are two major object file formats used by the operating systems:
 XCOFF: The COFF enhanced by IBM and others. The original COFF (Common
-Object FIle Format) was the base of SVR3 and BSD 4.2 systems.
+Object File Format) was the base of SVR3 and BSD 4.2 systems.
 ELF:   Executable and Linking Format that was developed by AT&T and is a
 base for SVR4 UNIX.
 
@@ -33,8 +33,8 @@ In documentation the archive is also referred to as the "base" and the shared
 library object is referred to as the "member".
 
 For dlopen() on AIX (read initAndLoad()) the calls are similiar.
-Default activity is achived by not providing any path information. When path
-information is provided dlopen() does not search any alturnate directories.
+Default activity occurs when no path information is provided. When path
+information is provided dlopen() does not search any other directories.
 
 For SVR4 - the shared library name is the name of the file expected: libFOO.so
 For AIX - the shared library is expressed as base(member). The search is for the
@@ -90,21 +90,27 @@ def get_ld_headers(file):
             if re.match("[0-9]", line):
                 info.append(line)
             else:
-                # Should be a blank separator line, safe to consume
+                # blank line (seperator), consume line and end for loop
                 break
         return info
 
     ldr_headers = []
-    with Popen(["/usr/bin/dump", "-X%s" % aix_abi(), "-H", file],
-        universal_newlines=True, stdout=PIPE, stderr=DEVNULL) as p:
+    p = Popen(["/usr/bin/dump", "-X%s" % aix_abi(), "-H", file],
+        universal_newlines=True, stdout=PIPE, stderr=DEVNULL)
+    # be sure to read to the end-of-file - getting all entries
+    while True:
             ld_header = get_ld_header(p)
             if ld_header:
                 ldr_headers.append((ld_header, get_ld_header_info(p)))
+            else:
+                break
+    p.stdout.close()
+    p.wait
     return ldr_headers
 
 def get_shared(ld_headers):
     """
-    extract a the shareable objects from ld_headers
+    extract the shareable objects from ld_headers
     character "[" is used to strip off the path information.
     Note: the "[" and "]" characters that are part of dump -H output
     are not removed here.
@@ -208,6 +214,11 @@ def get_member(name, members):
     member = get_one_match(expr, members)
     if member:
         return member
+    elif aix_abi() == 64:
+        expr = r'lib%s64\.so' % name
+        member = get_one_match(expr, members)
+    if member:
+        return member
 
     # since an exact match with .so as suffix was not found
     # look for a versioned name
@@ -245,7 +256,7 @@ def get_libpaths():
     return libpaths
 
 def find_library(name):
-    """AIX implemantation of ctypes.util.find_library()
+    """AIX implementation of ctypes.util.find_library()
     Find an archive member that will dlopen(). If not available,
     also search for a file (or link) with a .so suffix.
 
