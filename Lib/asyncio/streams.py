@@ -315,7 +315,7 @@ class StreamWriter:
         The intended use is to write
 
           w.write(data)
-          yield from w.drain()
+          await w.drain()
         """
         if self._reader is not None:
             exc = self._reader.exception()
@@ -326,7 +326,7 @@ class StreamWriter:
                 # Yield to the event loop so connection_lost() may be
                 # called.  Without this, _drain_helper() would return
                 # immediately, and code that calls
-                #     write(...); yield from drain()
+                #     write(...); await drain()
                 # in a loop would never call connection_lost(), so it
                 # would not see an error when the socket is closed.
                 await sleep(0, loop=self._loop)
