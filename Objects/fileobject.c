@@ -121,10 +121,15 @@ dircheck(PyFileObject* f)
 {
 #if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
     struct stat buf;
+    int res;
     if (f->f_fp == NULL)
         return f;
-    if (fstat(fileno(f->f_fp), &buf) == 0 &&
-        S_ISDIR(buf.st_mode)) {
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fstat(fileno(f->f_fp), &buf);
+    Py_END_ALLOW_THREADS
+
+    if (res == 0 && S_ISDIR(buf.st_mode)) {
         char *msg = strerror(EISDIR);
         PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(isO)",
                                               EISDIR, msg, f->f_name);
@@ -1010,7 +1015,13 @@ new_buffersize(PyFileObject *f, size_t currentsize)
 #ifdef HAVE_FSTAT
     off_t pos, end;
     struct stat st;
-    if (fstat(fileno(f->f_fp), &st) == 0) {
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = fstat(fileno(f->f_fp), &st);
+    Py_END_ALLOW_THREADS
+
+    if (res == 0) {
         end = st.st_size;
         /* The following is not a bug: we really need to call lseek()
            *and* ftell().  The reason is that some stdio libraries
@@ -1021,7 +1032,11 @@ new_buffersize(PyFileObject *f, size_t currentsize)
            works.  We can't use the lseek() value either, because we
            need to take the amount of buffered data into account.
            (Yet another reason why stdio stinks. :-) */
+
+        Py_BEGIN_ALLOW_THREADS
         pos = lseek(fileno(f->f_fp), 0L, SEEK_CUR);
+        Py_END_ALLOW_THREADS
+
         if (pos >= 0) {
             pos = ftell(f->f_fp);
         }
