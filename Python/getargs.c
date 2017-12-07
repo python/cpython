@@ -27,9 +27,9 @@ int _PyArg_VaParseTupleAndKeywordsFast(PyObject *, PyObject *,
 #ifdef HAVE_DECLSPEC_DLL
 /* Export functions */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
-PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject * const *args, Py_ssize_t nargs,
+PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject *const *args, Py_ssize_t nargs,
                                         const char *format, ...);
-PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords_SizeT(PyObject * const *args, Py_ssize_t nargs,
+PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs,
                                         PyObject *kwnames,
                                         struct _PyArg_Parser *parser, ...);
 PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, const char *, ...);
@@ -70,7 +70,7 @@ typedef struct {
 #define STATIC_FREELIST_ENTRIES 8
 
 /* Forward */
-static int vgetargs1_impl(PyObject *args, PyObject * const *stack, Py_ssize_t nargs,
+static int vgetargs1_impl(PyObject *args, PyObject *const *stack, Py_ssize_t nargs,
                           const char *format, va_list *p_va, int flags);
 static int vgetargs1(PyObject *, const char *, va_list *, int);
 static void seterror(Py_ssize_t, const char *, int *, const char *, const char *);
@@ -87,7 +87,7 @@ static int vgetargskeywords(PyObject *, PyObject *,
                             const char *, char **, va_list *, int);
 static int vgetargskeywordsfast(PyObject *, PyObject *,
                             struct _PyArg_Parser *, va_list *, int);
-static int vgetargskeywordsfast_impl(PyObject * const *args, Py_ssize_t nargs,
+static int vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                           PyObject *keywords, PyObject *kwnames,
                           struct _PyArg_Parser *parser,
                           va_list *p_va, int flags);
@@ -144,7 +144,7 @@ _PyArg_ParseTuple_SizeT(PyObject *args, const char *format, ...)
 
 
 int
-_PyArg_ParseStack(PyObject * const *args, Py_ssize_t nargs, const char *format, ...)
+_PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
 {
     int retval;
     va_list va;
@@ -156,7 +156,7 @@ _PyArg_ParseStack(PyObject * const *args, Py_ssize_t nargs, const char *format, 
 }
 
 int
-_PyArg_ParseStack_SizeT(PyObject * const *args, Py_ssize_t nargs, const char *format, ...)
+_PyArg_ParseStack_SizeT(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
 {
     int retval;
     va_list va;
@@ -251,7 +251,7 @@ cleanreturn(int retval, freelist_t *freelist)
 
 
 static int
-vgetargs1_impl(PyObject *compat_args, PyObject * const *stack, Py_ssize_t nargs, const char *format,
+vgetargs1_impl(PyObject *compat_args, PyObject *const *stack, Py_ssize_t nargs, const char *format,
                va_list *p_va, int flags)
 {
     char msgbuf[256];
@@ -1523,7 +1523,7 @@ _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
 }
 
 int
-_PyArg_ParseStackAndKeywords(PyObject * const *args, Py_ssize_t nargs, PyObject *kwnames,
+_PyArg_ParseStackAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
                   struct _PyArg_Parser *parser, ...)
 {
     int retval;
@@ -1536,7 +1536,7 @@ _PyArg_ParseStackAndKeywords(PyObject * const *args, Py_ssize_t nargs, PyObject 
 }
 
 int
-_PyArg_ParseStackAndKeywords_SizeT(PyObject * const *args, Py_ssize_t nargs, PyObject *kwnames,
+_PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
                         struct _PyArg_Parser *parser, ...)
 {
     int retval;
@@ -1989,7 +1989,7 @@ parser_clear(struct _PyArg_Parser *parser)
 }
 
 static PyObject*
-find_keyword(PyObject *kwargs, PyObject *kwnames, PyObject * const *kwstack, PyObject *key)
+find_keyword(PyObject *kwargs, PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
 {
     Py_ssize_t i, nkwargs;
 
@@ -2018,7 +2018,7 @@ find_keyword(PyObject *kwargs, PyObject *kwnames, PyObject * const *kwstack, PyO
 }
 
 static int
-vgetargskeywordsfast_impl(PyObject * const *args, Py_ssize_t nargs,
+vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                           PyObject *kwargs, PyObject *kwnames,
                           struct _PyArg_Parser *parser,
                           va_list *p_va, int flags)
@@ -2034,7 +2034,7 @@ vgetargskeywordsfast_impl(PyObject * const *args, Py_ssize_t nargs,
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
-    PyObject * const *kwstack = NULL;
+    PyObject *const *kwstack = NULL;
 
     freelist.entries = static_entries;
     freelist.first_available = 0;
@@ -2396,7 +2396,7 @@ err:
 
 
 static int
-unpack_stack(PyObject * const *args, Py_ssize_t nargs, const char *name,
+unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
              Py_ssize_t min, Py_ssize_t max, va_list vargs)
 {
     Py_ssize_t i;
@@ -2473,7 +2473,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 }
 
 int
-_PyArg_UnpackStack(PyObject * const *args, Py_ssize_t nargs, const char *name,
+_PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
                    Py_ssize_t min, Py_ssize_t max, ...)
 {
     int retval;

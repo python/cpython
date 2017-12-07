@@ -82,7 +82,7 @@ _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
                            PyObject *path);
 
 static PyObject *
-_imp__fix_co_filename(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
+_imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyCodeObject *code;
@@ -275,7 +275,7 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file);
 
 static PyObject *
-_imp_create_dynamic(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
+_imp_create_dynamic(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *spec;
@@ -361,4 +361,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=5a33ce3afc9b0f29 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=901d25af401f12b6 input=a9049054013a1b77]*/

@@ -97,7 +97,7 @@ PySys_SetObject(const char *name, PyObject *v)
 }
 
 static PyObject *
-sys_breakpointhook(PyObject *self, PyObject * const *args, Py_ssize_t nargs, PyObject *keywords)
+sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
     char *envar = Py_GETENV("PYTHONBREAKPOINT");

@@ -3703,10 +3703,10 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
 
 PyObject *
 _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
-           PyObject * const *args, Py_ssize_t argcount,
-           PyObject * const *kwnames, PyObject * const *kwargs,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *const *kwnames, PyObject *const *kwargs,
            Py_ssize_t kwcount, int kwstep,
-           PyObject * const *defs, Py_ssize_t defcount,
+           PyObject *const *defs, Py_ssize_t defcount,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
 {
@@ -3992,9 +3992,9 @@ fail: /* Jump here from prelude on failure */
 
 PyObject *
 PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
-                  PyObject * const *args, int argcount,
-                  PyObject * const *kws, int kwcount,
-                  PyObject * const *defs, int defcount,
+                  PyObject *const *args, int argcount,
+                  PyObject *const *kws, int kwcount,
+                  PyObject *const *defs, int defcount,
                   PyObject *kwdefs, PyObject *closure)
 {
     return _PyEval_EvalCodeWithName(_co, globals, locals,

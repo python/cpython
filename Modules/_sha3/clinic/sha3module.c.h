@@ -105,7 +105,7 @@ static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, unsigned long length);
 
 static PyObject *
-_sha3_shake_128_digest(SHA3object *self, PyObject * const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sha3_shake_128_digest(SHA3object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"length", NULL};
@@ -135,7 +135,7 @@ static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length);
 
 static PyObject *
-_sha3_shake_128_hexdigest(SHA3object *self, PyObject * const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sha3_shake_128_hexdigest(SHA3object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"length", NULL};
@@ -151,4 +151,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject * const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4beaa90ed14d219d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3aeb6c3b2fbd905 input=a9049054013a1b77]*/
