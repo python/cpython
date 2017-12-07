@@ -320,6 +320,7 @@ class TokenEater:
         self.__lineno = -1
         self.__freshmodule = 1
         self.__curfile = None
+        self.__parencount = 0
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
@@ -351,9 +352,16 @@ class TokenEater:
             self.__state = self.__keywordseen
 
     def __funcseen(self, ttype, tstring, lineno):
-        # ignore anything until we see the closing parenthesis
-        if ttype == tokenize.OP and tstring == ')':
-            self.__state = self.__suiteseen
+        # ignore anything until we see the param list closing parenthesis
+        if ttype == tokenize.OP:
+            if tstring == ')':
+                if self.__parencount == 1:
+                    self.__state = self.__suiteseen
+                else:
+                    self.__parencount -= 1
+            elif tstring == '(':
+                # count nested parens
+                self.__parencount += 1
 
     def __suiteseen(self, ttype, tstring, lineno):
         # ignore anything until we see the colon
