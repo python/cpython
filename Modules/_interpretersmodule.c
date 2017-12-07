@@ -59,7 +59,10 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     data->object = obj;
 
     if (PyBytes_CheckExact(obj)) {
-        return _bytes_shared(obj, data);
+        if (_bytes_shared(obj, data) != 0) {
+            Py_DECREF(obj);
+            return 1;
+        }
     }
 
     return 0;
@@ -89,14 +92,6 @@ static PyObject *
 _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 {
     return data->new_object(data);
-}
-
-static PyObject *
-_PyCrossInterpreterData_Use(_PyCrossInterpreterData *data)
-{
-    PyObject *obj = _PyCrossInterpreterData_NewObject(data);
-    _PyCrossInterpreterData_Release(data);
-    return obj;
 }
 
 /* interpreter-specific functions */
@@ -174,14 +169,14 @@ _ensure_not_running(PyInterpreterState *interp)
 }
 
 static PyObject *
-_copy_module(PyObject *m, PyObject *updates)
+_copy_module(PyObject *m, const char *name)
 {
     PyObject *orig = PyModule_GetDict(m);  // borrowed
     if (orig == NULL) {
         return NULL;
     }
 
-    PyObject *copy = PyModule_New("__main__");
+    PyObject *copy = PyModule_New(name);
     if (copy == NULL) {
         return NULL;
     }
@@ -191,8 +186,6 @@ _copy_module(PyObject *m, PyObject *updates)
 
     if (PyDict_Merge(ns, orig, 1) < 0)
         goto error;
-    if (updates != NULL && PyDict_Merge(ns, updates, 0) < 0)
-        goto error;
     return copy;
 
 error:
@@ -200,78 +193,235 @@ error:
     return NULL;
 }
 
-static int
-_run_string(PyInterpreterState *interp, const char *codestr, PyObject *ns)
-{
-    // Switch to interpreter.
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
-
-    // Run the string (see PyRun_SimpleStringFlags).
-    PyObject *exc = NULL, *value = NULL, *tb = NULL;
-    PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
-    if (result == NULL) {
-        // Get the exception from the subinterpreter.
-        PyErr_Fetch(&exc, &value, &tb);
-    } else {
-        Py_DECREF(result);  // We throw away the result.
-    }
-
-    // Switch back.
-    if (save_tstate != NULL)
-        PyThreadState_Swap(save_tstate);
-
-    // Propagate any exception out to the caller.
-    PyErr_Restore(exc, value, tb);
-
-    return result == NULL ? -1 : 0;
-}
-
 static PyObject *
-_run_string_in_main(PyInterpreterState *interp, const char *codestr,
-                    PyObject *updates)
+_copy_module_ns(PyInterpreterState *interp,
+                const char *name, const char *tempname)
 {
-    if (_ensure_not_running(interp) < 0)
-        return NULL;
-
     // Get the namespace in which to execute.  This involves creating
     // a new module, updating it from the __main__ module and the given
     // updates (if any), replacing the __main__ with the new module in
     // sys.modules, and then using the new module's __dict__.  At the
     // end we restore the original __main__ module.
-    PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
+    PyObject *main_mod = PyMapping_GetItemString(interp->modules, name);
     if (main_mod == NULL)
         return NULL;
-    PyObject *m = _copy_module(main_mod, updates);
+    PyObject *m = _copy_module(main_mod, name);
     if (m == NULL) {
         Py_DECREF(main_mod);
         return NULL;
     }
-    if (PyMapping_SetItemString(interp->modules, "__main__", m) < 0) {
-        Py_DECREF(main_mod);
+    if (tempname != NULL) {
+        if (PyMapping_SetItemString(interp->modules, tempname, main_mod) < 0) {
+            Py_DECREF(main_mod);
+            Py_DECREF(m);
+            return NULL;
+        }
+    }
+    Py_DECREF(main_mod);
+    if (PyMapping_SetItemString(interp->modules, name, m) < 0) {
         Py_DECREF(m);
         return NULL;
     }
     PyObject *ns = PyModule_GetDict(m);  // borrowed
     Py_INCREF(ns);
     Py_DECREF(m);
+    return ns;
+}
 
-    // Run the string.
-    PyObject *result = ns;
-    if (_run_string(interp, codestr, ns) < 0) {
-        result = NULL;
-        Py_DECREF(ns);
-    }
-
-    // Restore __main__.
-    PyObject *exc = NULL, *value = NULL, *tb = NULL;
-    PyErr_Fetch(&exc, &value, &tb);
-    if (PyMapping_SetItemString(interp->modules, "__main__", main_mod) < 0) {
-        _PyErr_ChainExceptions(exc, value, tb);
-    } else {
-        PyErr_Restore(exc, value, tb);
+static int
+_restore_module(PyInterpreterState *interp,
+                const char *name, const char *tempname)
+{
+    PyObject *main_mod = PyMapping_GetItemString(interp->modules, tempname);
+    if (main_mod == NULL)
+        return -1;
+    if (PyMapping_SetItemString(interp->modules, name, main_mod) < 0) {
+        Py_DECREF(main_mod);
+        return -1;
     }
     Py_DECREF(main_mod);
+    return 0;
+}
+
+struct _shareditem {
+    Py_UNICODE *name;
+    Py_ssize_t namelen;
+    _PyCrossInterpreterData data;
+};
+
+void
+_sharedns_clear(struct _shareditem *shared)
+{
+    for (struct _shareditem *item=shared; item->name != NULL; item += 1) {
+        _PyCrossInterpreterData_Release(&item->data);
+    }
+}
+
+static struct _shareditem *
+_get_shared_ns(PyObject *shareable)
+{
+    if (shareable == NULL || shareable == Py_None)
+        return NULL;
+    Py_ssize_t len = PyDict_Size(shareable);
+    if (len == 0)
+        return NULL;
+
+    struct _shareditem *shared = PyMem_NEW(struct _shareditem, len+1);
+    Py_ssize_t pos = 0;
+    for (Py_ssize_t i=0; i < len; i++) {
+        PyObject *key, *value;
+        if (PyDict_Next(shareable, &pos, &key, &value) == 0) {
+            break;
+        }
+        struct _shareditem *item = shared + i;
+
+        if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0)
+            break;
+        item->name = PyUnicode_AsUnicodeAndSize(key, &item->namelen);
+        if (item->name == NULL) {
+            _PyCrossInterpreterData_Release(&item->data);
+            break;
+        }
+        (item + 1)->name = NULL;  // Mark the next one as the last.
+    }
+    if (PyErr_Occurred()) {
+        _sharedns_clear(shared);
+        PyMem_Free(shared);
+        return NULL;
+    }
+    return shared;
+}
+
+static int
+_shareditem_apply(struct _shareditem *item, PyObject *ns)
+{
+    PyObject *name = PyUnicode_FromUnicode(item->name, item->namelen);
+    if (name == NULL) {
+        return 1;
+    }
+    PyObject *value = _PyCrossInterpreterData_NewObject(&item->data);
+    if (value == NULL) {
+        Py_DECREF(name);
+        return 1;
+    }
+    int res = PyDict_SetItem(ns, name, value);
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return res;
+}
+
+// XXX This cannot use PyObject fields.
+
+struct _shared_exception {
+    PyObject *exc;
+    PyObject *value;
+    PyObject *tb;
+};
+
+static struct _shared_exception *
+_get_shared_exception(void)
+{
+    struct _shared_exception *exc = PyMem_NEW(struct _shared_exception, 1);
+    // XXX Fatal if NULL?
+    PyErr_Fetch(&exc->exc, &exc->value, &exc->tb);
+    return exc;
+}
+
+static void
+_apply_shared_exception(struct _shared_exception *exc)
+{
+    if (PyErr_Occurred()) {
+        _PyErr_ChainExceptions(exc->exc, exc->value, exc->tb);
+    } else {
+        PyErr_Restore(exc->exc, exc->value, exc->tb);
+    }
+
+}
+
+// XXX Return int instead.
+
+static PyObject *
+_run_script(PyInterpreterState *interp, const char *codestr,
+            struct _shareditem *shared, struct _shared_exception **exc)
+{
+    // XXX Do not copy.
+
+    // Get a copy of the __main__ module.
+    //
+    // This involves creating a new module, updating it from the
+    // __main__ module and the given updates (if any), replacing the
+    // __main__ with the new module in sys.modules, and then using the
+    // new module's __dict__.  At the end we restore the original
+    // __main__ module.
+    PyObject *ns = _copy_module_ns(interp, "__main__", "_orig___main___");
+    if (ns == NULL) {
+        return NULL;
+    }
+
+    // Apply the cross-interpreter data.
+    if (shared != NULL) {
+        for (struct _shareditem *item=shared; item->name != NULL; item += 1) {
+            if (_shareditem_apply(shared, ns) != 0) {
+                Py_DECREF(ns);
+                ns = NULL;
+                goto done;
+            }
+        }
+    }
+
+    // Run the string (see PyRun_SimpleStringFlags).
+    PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
+    if (result == NULL) {
+        // Get the exception from the subinterpreter.
+        *exc = _get_shared_exception();
+        // XXX Clear the exception?
+    } else {
+        Py_DECREF(result);  // We throw away the result.
+    }
+
+done:
+    // Restore __main__.
+    if (_restore_module(interp, "__main__", "_orig___main___") != 0) {
+        // XXX How to propagate this exception...
+        //_PyErr_ChainExceptions(exc, value, tb);
+    }
+    return ns;
+}
+
+static PyObject *
+_run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
+                           PyObject *shareable)
+{
+    // XXX lock?
+    if (_ensure_not_running(interp) < 0)
+        return NULL;
+
+    struct _shareditem *shared = _get_shared_ns(shareable);
+    if (shared == NULL && PyErr_Occurred())
+        return NULL;
+
+    // Switch to interpreter.
+    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+
+    // Run the script.
+    struct _shared_exception *exc = NULL;
+    PyObject *result = _run_script(interp, codestr, shared, &exc);
+    // XXX What to do if result is NULL?
+
+    // Switch back.
+    if (save_tstate != NULL)
+        PyThreadState_Swap(save_tstate);
+
+    // Propagate any exception out to the caller.
+    if (exc != NULL) {
+        _apply_shared_exception(exc);
+    }
+
+    if (shared != NULL) {
+        _sharedns_clear(shared);
+        PyMem_Free(shared);
+    }
 
     return result;
 }
@@ -387,7 +537,8 @@ static PyObject *
 interp_run_string(PyObject *self, PyObject *args)
 {
     PyObject *id, *code;
-    if (!PyArg_UnpackTuple(args, "run_string", 2, 2, &id, &code))
+    PyObject *shared = NULL;
+    if (!PyArg_UnpackTuple(args, "run_string", 2, 3, &id, &code, &shared))
         return NULL;
     if (!PyLong_Check(id)) {
         PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
@@ -416,7 +567,7 @@ interp_run_string(PyObject *self, PyObject *args)
     }
 
     // Run the code in the interpreter.
-    PyObject *ns = _run_string_in_main(interp, codestr, NULL);
+    PyObject *ns = _run_script_in_interpreter(interp, codestr, shared);
     if (ns == NULL)
         return NULL;
     else
@@ -431,12 +582,14 @@ Execute the provided string in the identified interpreter.\n\
 See PyRun_SimpleStrings.");
 
 
+/* XXX Drop run_string_unrestricted(). */
+
 static PyObject *
 interp_run_string_unrestricted(PyObject *self, PyObject *args)
 {
-    PyObject *id, *code, *ns = NULL;
+    PyObject *id, *code, *shared = NULL;
     if (!PyArg_UnpackTuple(args, "run_string_unrestricted", 2, 3,
-                           &id, &code, &ns))
+                           &id, &code, &shared))
         return NULL;
     if (!PyLong_Check(id)) {
         PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
@@ -447,8 +600,8 @@ interp_run_string_unrestricted(PyObject *self, PyObject *args)
                         "second arg (code) must be a string");
         return NULL;
     }
-    if (ns == Py_None)
-        ns = NULL;
+    if (shared == Py_None)
+        shared = NULL;
 
     // Look up the interpreter.
     PyInterpreterState *interp = _look_up(id);
@@ -467,7 +620,7 @@ interp_run_string_unrestricted(PyObject *self, PyObject *args)
     }
 
     // Run the code in the interpreter.
-    return _run_string_in_main(interp, codestr, ns);
+    return _run_script_in_interpreter(interp, codestr, shared);
 }
 
 PyDoc_STRVAR(run_string_unrestricted_doc,
