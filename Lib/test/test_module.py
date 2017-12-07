@@ -131,7 +131,8 @@ a = A(destroyed)"""
         self.assertEqual(test, "There is test")
         self.assertEqual(gga.x, 1)
         self.assertEqual(gga.y, 2)
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(AttributeError,
+                                    "Deprecated, use whatever instead"):
             gga.yolo
         self.assertEqual(gga.whatever, "There is whatever")
         del sys.modules['test.good_getattr']
@@ -165,6 +166,16 @@ a = A(destroyed)"""
         if 'test.bad_getattr2' in sys.modules:
             del sys.modules['test.bad_getattr2']
 
+    def test_module_getattr_tricky(self):
+        from test import bad_getattr3
+        with self.assertRaises(AttributeError):
+            bad_getattr3.one
+        self.assertEqual(bad_getattr3.delgetattr, "OK, deleted")
+        with self.assertRaises(AttributeError):
+            # this will not work second time
+            bad_getattr3.delgetattr
+        if 'test.bad_getattr3' in sys.modules:
+            del sys.modules['test.bad_getattr3']
 
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
