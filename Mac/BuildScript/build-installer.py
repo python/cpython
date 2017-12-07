@@ -213,9 +213,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.0.2k",
-              url="https://www.openssl.org/source/openssl-1.0.2k.tar.gz",
-              checksum='f965fc0bf01bf882b31314b61391ae65',
+              name="OpenSSL 1.0.2m",
+              url="https://www.openssl.org/source/openssl-1.0.2m.tar.gz",
+              checksum='10e9e37f492094b9ef296f68f24a7666',
               patches=[
                   "openssl_sdk_makedepend.patch",
                    ],
@@ -270,9 +270,9 @@ def library_recipes():
     if PYTHON_3:
         result.extend([
           dict(
-              name="XZ 5.2.2",
-              url="http://tukaani.org/xz/xz-5.2.2.tar.gz",
-              checksum='7cf6a8544a7dae8e8106fdf7addfa28c',
+              name="XZ 5.2.3",
+              url="http://tukaani.org/xz/xz-5.2.3.tar.gz",
+              checksum='ef68674fb47a8b8e741b34e429d86e9d',
               configure_pre=[
                     '--disable-dependency-tracking',
               ]
@@ -315,13 +315,14 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.14.2",
-              url="https://www.sqlite.org/2016/sqlite-autoconf-3140200.tar.gz",
-              checksum='90c53cacb811db27f990b8292bd96159',
+              name="SQLite 3.21.0",
+              url="https://www.sqlite.org/2017/sqlite-autoconf-3210000.tar.gz",
+              checksum='7913de4c3126ba3c24689cb7a199ea31',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
+                            '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_TCL=0 '
                  '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
@@ -844,7 +845,6 @@ def build_universal_openssl(basedir, archList):
             "enable-tlsext",
             "no-ssl2",
             "no-ssl3",
-            "no-ssl3-method",
             # "enable-unit-test",
             "shared",
             "--install_prefix=%s"%shellQuote(archbase),

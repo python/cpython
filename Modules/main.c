@@ -124,7 +124,8 @@ static const char usage_6[] =
 "   hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
-"   locale coercion and locale compatibility warnings on stderr.\n";
+"   locale coercion and locale compatibility warnings on stderr.\n"
+"PYTHONDEVMODE: enable the development mode.\n";
 
 static void
 pymain_usage(int error, const wchar_t* program)
@@ -159,10 +160,10 @@ pymain_get_env_var(const char *name)
 
 
 static void
-pymain_run_statup(PyCompilerFlags *cf)
+pymain_run_startup(PyCompilerFlags *cf)
 {
-    char *startup = Py_GETENV("PYTHONSTARTUP");
-    if (startup == NULL || startup[0] == '\0') {
+    char *startup = pymain_get_env_var("PYTHONSTARTUP");
+    if (startup == NULL) {
         return;
     }
 
@@ -366,8 +367,6 @@ pymain_run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
 
 /* Main program */
 
-/*TODO: Add arg processing to PEP 432 as a new configuration setup API
- */
 typedef struct {
     size_t len;
     wchar_t **options;
@@ -378,23 +377,28 @@ typedef struct {
     wchar_t *command;            /* -c argument */
     wchar_t *module;             /* -m argument */
     _Py_OptList warning_options; /* -W options */
-    PyObject *extra_options;     /* -X options */
     int print_help;              /* -h, -? options */
     int print_version;           /* -V option */
-    int bytes_warning;           /* Py_BytesWarningFlag */
-    int debug;                   /* Py_DebugFlag */
-    int inspect;                 /* Py_InspectFlag */
-    int interactive;             /* Py_InteractiveFlag */
-    int isolated;                /* Py_IsolatedFlag */
-    int optimization_level;      /* Py_OptimizeFlag */
-    int dont_write_bytecode;     /* Py_DontWriteBytecodeFlag */
-    int no_user_site_directory;  /* Py_NoUserSiteDirectory */
-    int no_site_import;          /* Py_NoSiteFlag */
-    int use_unbuffered_io;       /* Py_UnbufferedStdioFlag */
-    int verbosity;               /* Py_VerboseFlag */
-    int quiet_flag;              /* Py_QuietFlag */
+    int bytes_warning;           /* Py_BytesWarningFlag, -b */
+    int debug;                   /* Py_DebugFlag, -b, PYTHONDEBUG */
+    int inspect;                 /* Py_InspectFlag, -i, PYTHONINSPECT */
+    int interactive;             /* Py_InteractiveFlag, -i */
+    int isolated;                /* Py_IsolatedFlag, -I */
+    int optimization_level;      /* Py_OptimizeFlag, -O, PYTHONOPTIMIZE */
+    int dont_write_bytecode;     /* Py_DontWriteBytecodeFlag, -B, PYTHONDONTWRITEBYTECODE */
+    int no_user_site_directory;  /* Py_NoUserSiteDirectory, -I, -s, PYTHONNOUSERSITE */
+    int no_site_import;          /* Py_NoSiteFlag, -S */
+    int use_unbuffered_io;       /* Py_UnbufferedStdioFlag, -u, PYTHONUNBUFFERED */
+    int verbosity;               /* Py_VerboseFlag, -v, PYTHONVERBOSE */
+    int quiet_flag;              /* Py_QuietFlag, -q */
     int skip_first_line;         /* -x option */
     _Py_OptList xoptions;        /* -X options */
+#ifdef MS_WINDOWS
+    int legacy_windows_fs_encoding;  /* Py_LegacyWindowsFSEncodingFlag,
+                                        PYTHONLEGACYWINDOWSFSENCODING */
+    int legacy_windows_stdio;        /* Py_LegacyWindowsStdioFlag,
+                                        PYTHONLEGACYWINDOWSSTDIO */
+#endif
 } _Py_CommandLineDetails;
 
 /* Structure used by Py_Main() to pass data to subfunctions */
@@ -411,7 +415,6 @@ typedef struct {
     /* non-zero if filename, command (-c) or module (-m) is set
        on the command line */
     int run_code;
-    wchar_t *program_name;
     /* Error message if a function failed */
     _PyInitError err;
     /* PYTHONWARNINGS env var */
@@ -428,7 +431,6 @@ typedef struct {
      .config = _PyMainInterpreterConfig_INIT, \
      .main_importer_path = NULL, \
      .run_code = -1, \
-     .program_name = NULL, \
      .err = _Py_INIT_OK(), \
      .env_warning_options = {0, NULL}}
 
@@ -454,7 +456,6 @@ pymain_free_impl(_PyMain *pymain)
 
     pymain_optlist_clear(&pymain->env_warning_options);
     Py_CLEAR(pymain->main_importer_path);
-    PyMem_RawFree(pymain->program_name);
 
     _PyMainInterpreterConfig_Clear(&pymain->config);
 
@@ -475,11 +476,9 @@ pymain_free_impl(_PyMain *pymain)
 static void
 pymain_free(_PyMain *pymain)
 {
-    /* Force malloc() memory allocator */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force the allocator used by pymain_parse_cmdline_envvars() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     pymain_free_impl(pymain);
 
@@ -701,19 +700,6 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
 }
 
 
-static void
-maybe_set_flag(int *flag, int value)
-{
-    /* Helper to set flag variables from command line options
-    *   - uses the higher of the two values if they're both set
-    *   - otherwise leaves the flag unset
-    */
-    if (*flag < value) {
-        *flag = value;
-    }
-}
-
-
 static int
 pymain_add_xoptions(_PyMain *pymain)
 {
@@ -796,9 +782,8 @@ pymain_warnings_envvar(_PyMain *pymain)
         PyMem_RawFree(buf);
     }
 #else
-    char *p;
-
-    if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
+    char *p = pymain_get_env_var("PYTHONWARNINGS");
+    if (p != NULL) {
         char *buf, *oldloc;
 
         /* settle for strtok here as there's no one standard
@@ -875,16 +860,22 @@ pymain_init_stdio(_PyMain *pymain)
 
 
 /* Get the program name: use PYTHONEXECUTABLE and __PYVENV_LAUNCHER__
-   environment variables on macOS if available, use argv[0] by default.
-
-   Return 0 on success.
-   Set pymain->err and return -1 on error. */
-static int
-pymain_get_program_name(_PyMain *pymain)
+   environment variables on macOS if available. */
+static _PyInitError
+config_get_program_name(_PyMainInterpreterConfig *config)
 {
-    assert(pymain->program_name == NULL);
+    assert(config->program_name == NULL);
+
+    /* If Py_SetProgramName() was called, use its value */
+    wchar_t *program_name = _Py_path_config.program_name;
+    if (program_name != NULL) {
+        config->program_name = _PyMem_RawWcsdup(program_name);
+        if (config->program_name == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
 #ifdef __APPLE__
-    char *p;
     /* On MacOS X, when the Python interpreter is embedded in an
        application bundle, it gets executed by a bootstrapping script
        that does os.execve() with an argv[0] that's different from the
@@ -894,18 +885,15 @@ pymain_get_program_name(_PyMain *pymain)
        so the actual executable path is passed in an environment variable.
        See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
        script. */
-    if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0') {
-        wchar_t* buffer;
-        size_t len = strlen(p) + 1;
-
-        buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
-        if (buffer == NULL) {
-            pymain->err = _Py_INIT_NO_MEMORY();
-            return -1;
+    char *p = pymain_get_env_var("PYTHONEXECUTABLE");
+    if (p != NULL) {
+        size_t len;
+        wchar_t* program_name = Py_DecodeLocale(p, &len);
+        if (program_name == NULL) {
+            return DECODE_LOCALE_ERR("PYTHONEXECUTABLE environment "
+                                     "variable", (Py_ssize_t)len);
         }
-
-        mbstowcs(buffer, p, len);
-        pymain->program_name = buffer;
+        config->program_name = program_name;
     }
 #ifdef WITH_NEXT_FRAMEWORK
     else {
@@ -915,21 +903,30 @@ pymain_get_program_name(_PyMain *pymain)
              * the argv0 of the stub executable
              */
             size_t len;
-            wchar_t* wbuf = Py_DecodeLocale(pyvenv_launcher, &len);
-            if (wbuf == NULL) {
-                SET_DECODE_ERROR("__PYVENV_LAUNCHER__", len);
-                return -1;
+            wchar_t* program_name = Py_DecodeLocale(pyvenv_launcher, &len);
+            if (program_name == NULL) {
+                return DECODE_LOCALE_ERR("__PYVENV_LAUNCHER__ environment "
+                                         "variable", (Py_ssize_t)len);
             }
-            pymain->program_name = wbuf;
+            config->program_name = program_name;
         }
     }
 #endif   /* WITH_NEXT_FRAMEWORK */
 #endif   /* __APPLE__ */
 
-    if (pymain->program_name == NULL) {
+    return _Py_INIT_OK();
+}
+
+
+/* If config_get_program_name() found no program name: use argv[0] by default.
+   Return 0 on success. Set pymain->err and return -1 on error. */
+static int
+pymain_get_program_name(_PyMain *pymain)
+{
+    if (pymain->config.program_name == NULL) {
         /* Use argv[0] by default */
-        pymain->program_name = pymain_wstrdup(pymain, pymain->argv[0]);
-        if (pymain->program_name == NULL) {
+        pymain->config.program_name = pymain_wstrdup(pymain, pymain->argv[0]);
+        if (pymain->config.program_name == NULL) {
             return -1;
         }
     }
@@ -941,8 +938,6 @@ pymain_get_program_name(_PyMain *pymain)
  *
  * Replaces previous call to Py_Initialize()
  *
- * TODO: Move environment queries (etc) into Py_ReadConfig
- *
  * Return 0 on success.
  * Set pymain->err and return -1 on error.
  */
@@ -950,13 +945,6 @@ static int
 pymain_init_main_interpreter(_PyMain *pymain)
 {
     _PyInitError err;
-
-    /* TODO: Print any exceptions raised by these operations */
-    err = _PyMainInterpreterConfig_Read(&pymain->config);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
-        return -1;
-    }
 
     err = _Py_InitializeMainInterpreter(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
@@ -1018,25 +1006,76 @@ pymain_set_argv(_PyMain *pymain)
 }
 
 
+static void
+pymain_get_flag(int flag, int *value)
+{
+    if (flag) {
+        *value = flag;
+    }
+}
+
+static void
+pymain_set_flag(int *flag, int value)
+{
+    /* Helper to set flag variables from command line options
+    *   - uses the higher of the two values if they're both set
+    *   - otherwise leaves the flag unset
+    */
+    if (*flag < value) {
+        *flag = value;
+    }
+}
+
+
+/* Get Py_xxx global configuration variables */
+static void
+pymain_get_global_config(_PyMain *pymain)
+{
+    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
+    pymain_get_flag(Py_BytesWarningFlag, &cmdline->bytes_warning);
+    pymain_get_flag(Py_DebugFlag, &cmdline->debug);
+    pymain_get_flag(Py_InspectFlag, &cmdline->inspect);
+    pymain_get_flag(Py_InteractiveFlag, &cmdline->interactive);
+    pymain_get_flag(Py_IsolatedFlag, &cmdline->isolated);
+    pymain_get_flag(Py_OptimizeFlag, &cmdline->optimization_level);
+    pymain_get_flag(Py_DontWriteBytecodeFlag, &cmdline->dont_write_bytecode);
+    pymain_get_flag(Py_NoUserSiteDirectory, &cmdline->no_user_site_directory);
+    pymain_get_flag(Py_NoSiteFlag, &cmdline->no_site_import);
+    pymain_get_flag(Py_UnbufferedStdioFlag, &cmdline->use_unbuffered_io);
+    pymain_get_flag(Py_VerboseFlag, &cmdline->verbosity);
+    pymain_get_flag(Py_QuietFlag, &cmdline->quiet_flag);
+#ifdef MS_WINDOWS
+    pymain_get_flag(Py_LegacyWindowsFSEncodingFlag, &cmdline->legacy_windows_fs_encoding);
+    pymain_get_flag(Py_LegacyWindowsStdioFlag, &cmdline->legacy_windows_stdio);
+#endif
+
+    pymain_get_flag(Py_IgnoreEnvironmentFlag, &pymain->core_config.ignore_environment);
+}
+
+
 /* Set Py_XXX global configuration variables */
 static void
 pymain_set_global_config(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
-    maybe_set_flag(&Py_BytesWarningFlag, cmdline->bytes_warning);
-    maybe_set_flag(&Py_DebugFlag, cmdline->debug);
-    maybe_set_flag(&Py_InspectFlag, cmdline->inspect);
-    maybe_set_flag(&Py_InteractiveFlag, cmdline->interactive);
-    maybe_set_flag(&Py_IsolatedFlag, cmdline->isolated);
-    maybe_set_flag(&Py_OptimizeFlag, cmdline->optimization_level);
-    maybe_set_flag(&Py_DontWriteBytecodeFlag, cmdline->dont_write_bytecode);
-    maybe_set_flag(&Py_NoUserSiteDirectory, cmdline->no_user_site_directory);
-    maybe_set_flag(&Py_NoSiteFlag, cmdline->no_site_import);
-    maybe_set_flag(&Py_UnbufferedStdioFlag, cmdline->use_unbuffered_io);
-    maybe_set_flag(&Py_VerboseFlag, cmdline->verbosity);
-    maybe_set_flag(&Py_QuietFlag, cmdline->quiet_flag);
+    pymain_set_flag(&Py_BytesWarningFlag, cmdline->bytes_warning);
+    pymain_set_flag(&Py_DebugFlag, cmdline->debug);
+    pymain_set_flag(&Py_InspectFlag, cmdline->inspect);
+    pymain_set_flag(&Py_InteractiveFlag, cmdline->interactive);
+    pymain_set_flag(&Py_IsolatedFlag, cmdline->isolated);
+    pymain_set_flag(&Py_OptimizeFlag, cmdline->optimization_level);
+    pymain_set_flag(&Py_DontWriteBytecodeFlag, cmdline->dont_write_bytecode);
+    pymain_set_flag(&Py_NoUserSiteDirectory, cmdline->no_user_site_directory);
+    pymain_set_flag(&Py_NoSiteFlag, cmdline->no_site_import);
+    pymain_set_flag(&Py_UnbufferedStdioFlag, cmdline->use_unbuffered_io);
+    pymain_set_flag(&Py_VerboseFlag, cmdline->verbosity);
+    pymain_set_flag(&Py_QuietFlag, cmdline->quiet_flag);
+#ifdef MS_WINDOWS
+    pymain_set_flag(&Py_LegacyWindowsFSEncodingFlag, cmdline->legacy_windows_fs_encoding);
+    pymain_set_flag(&Py_LegacyWindowsStdioFlag, cmdline->legacy_windows_stdio);
+#endif
 
-    maybe_set_flag(&Py_IgnoreEnvironmentFlag, pymain->core_config.ignore_environment);
+    pymain_set_flag(&Py_IgnoreEnvironmentFlag, pymain->core_config.ignore_environment);
 }
 
 
@@ -1120,10 +1159,9 @@ pymain_run_filename(_PyMain *pymain)
 
     if (cmdline->filename == NULL && pymain->stdin_is_interactive) {
         Py_InspectFlag = 0; /* do exit on SystemExit */
-        pymain_run_statup(&pymain->cf);
+        pymain_run_startup(&pymain->cf);
         pymain_run_interactive_hook();
     }
-    /* XXX */
 
     if (pymain->main_importer_path != NULL) {
         pymain->status = pymain_run_main_from_importer(pymain);
@@ -1161,7 +1199,7 @@ pymain_repl(_PyMain *pymain)
 
     Py_InspectFlag = 0;
     pymain_run_interactive_hook();
-    /* XXX */
+
     int res = PyRun_AnyFileFlags(stdin, "<stdin>", &pymain->cf);
     pymain->status = (res != 0);
 }
@@ -1334,24 +1372,25 @@ pymain_set_flag_from_env(int *flag, const char *name)
 static void
 pymain_set_flags_from_env(_PyMain *pymain)
 {
-    pymain_set_flag_from_env(&Py_DebugFlag,
+    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
+    pymain_set_flag_from_env(&cmdline->debug,
                              "PYTHONDEBUG");
-    pymain_set_flag_from_env(&Py_VerboseFlag,
+    pymain_set_flag_from_env(&cmdline->verbosity,
                              "PYTHONVERBOSE");
-    pymain_set_flag_from_env(&Py_OptimizeFlag,
+    pymain_set_flag_from_env(&cmdline->optimization_level,
                              "PYTHONOPTIMIZE");
-    pymain_set_flag_from_env(&Py_InspectFlag,
+    pymain_set_flag_from_env(&cmdline->inspect,
                              "PYTHONINSPECT");
-    pymain_set_flag_from_env(&Py_DontWriteBytecodeFlag,
+    pymain_set_flag_from_env(&cmdline->dont_write_bytecode,
                              "PYTHONDONTWRITEBYTECODE");
-    pymain_set_flag_from_env(&Py_NoUserSiteDirectory,
+    pymain_set_flag_from_env(&cmdline->no_user_site_directory,
                              "PYTHONNOUSERSITE");
-    pymain_set_flag_from_env(&Py_UnbufferedStdioFlag,
+    pymain_set_flag_from_env(&cmdline->use_unbuffered_io,
                              "PYTHONUNBUFFERED");
 #ifdef MS_WINDOWS
-    pymain_set_flag_from_env(&Py_LegacyWindowsFSEncodingFlag,
+    pymain_set_flag_from_env(&cmdline->legacy_windows_fs_encoding,
                              "PYTHONLEGACYWINDOWSFSENCODING");
-    pymain_set_flag_from_env(&Py_LegacyWindowsStdioFlag,
+    pymain_set_flag_from_env(&cmdline->legacy_windows_stdio,
                              "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 }
@@ -1415,14 +1454,13 @@ config_init_pythonpath(_PyMainInterpreterConfig *config)
 
 
 static _PyInitError
-config_init_pythonhome(_PyMainInterpreterConfig *config)
+config_init_home(_PyMainInterpreterConfig *config)
 {
     wchar_t *home;
 
-    home = Py_GetPythonHome();
+    /* If Py_SetPythonHome() was called, use its value */
+    home = _Py_path_config.home;
     if (home) {
-        /* Py_SetPythonHome() has been called before Py_Main(),
-           use its value */
         config->home = _PyMem_RawWcsdup(home);
         if (config->home == NULL) {
             return _Py_INIT_NO_MEMORY();
@@ -1442,7 +1480,7 @@ config_init_pythonhome(_PyMainInterpreterConfig *config)
 _PyInitError
 _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
 {
-    _PyInitError err = config_init_pythonhome(config);
+    _PyInitError err = config_init_home(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1452,11 +1490,9 @@ _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
         return err;
     }
 
-    /* FIXME: _PyMainInterpreterConfig_Read() has the same code. Remove it
-       here? See also pymain_get_program_name() and pymain_parse_envvars(). */
-    config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
-    if (config->program_name == NULL) {
-        return _Py_INIT_NO_MEMORY();
+    err = config_get_program_name(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
 
     return _Py_INIT_OK();
@@ -1482,25 +1518,17 @@ pymain_parse_envvars(_PyMain *pymain)
     if (pymain_warnings_envvar(pymain) < 0) {
         return -1;
     }
-    if (pymain_get_program_name(pymain) < 0) {
-        return -1;
-    }
-    core_config->allocator = Py_GETENV("PYTHONMALLOC");
-
-    /* FIXME: move pymain_get_program_name() code into
-       _PyMainInterpreterConfig_ReadEnv().
-       Problem: _PyMainInterpreterConfig_ReadEnv() doesn't have access
-       to argv[0]. */
-    Py_SetProgramName(pymain->program_name);
-    /* Don't free program_name here: the argument to Py_SetProgramName
-       must remain valid until Py_FinalizeEx is called. The string is freed
-       by pymain_free(). */
 
     _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&pymain->config);
     if (_Py_INIT_FAILED(pymain->err)) {
         pymain->err = err;
         return -1;
     }
+    if (pymain_get_program_name(pymain) < 0) {
+        return -1;
+    }
+
+    core_config->allocator = pymain_get_env_var("PYTHONMALLOC");
 
     /* -X options */
     if (pymain_get_xoption(pymain, L"showrefcount")) {
@@ -1522,11 +1550,21 @@ pymain_parse_envvars(_PyMain *pymain)
     if (pymain_init_tracemalloc(pymain) < 0) {
         return -1;
     }
-    if (pymain_get_xoption(pymain, L"dev")) {
+    if (pymain_get_xoption(pymain, L"dev" ) ||
+        pymain_get_env_var("PYTHONDEVMODE"))
+    {
         core_config->dev_mode = 1;
         core_config->faulthandler = 1;
         core_config->allocator = "debug";
     }
+    if (pymain_get_env_var("PYTHONDUMPREFS")) {
+        pymain->core_config.dump_refs = 1;
+    }
+    if (pymain_get_env_var("PYTHONMALLOCSTATS")) {
+        pymain->core_config.malloc_stats = 1;
+    }
+
+
     return 0;
 }
 
@@ -1548,9 +1586,16 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
         return 1;
     }
 
+    /* Set Py_IgnoreEnvironmentFlag needed by Py_GETENV() */
     pymain_set_global_config(pymain);
 
     if (pymain_parse_envvars(pymain) < 0) {
+        return -1;
+    }
+
+    _PyInitError err = _PyMainInterpreterConfig_Read(&pymain->config);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
         return -1;
     }
 
@@ -1561,23 +1606,22 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
 static int
 pymain_parse_cmdline_envvars(_PyMain *pymain)
 {
-    /* Force malloc() memory allocator */
-    PyMemAllocatorEx old_alloc, raw_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyMem_GetDefaultRawAllocator(&raw_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &raw_alloc);
+    /* Force default allocator, since pymain_free() must use the same allocator
+       than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     int res = pymain_parse_cmdline_envvars_impl(pymain);
 
-    /* Restore the old memory allocator */
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     return res;
 }
 
 static int
 pymain_init_python(_PyMain *pymain)
 {
+    pymain_set_global_config(pymain);
+
     pymain_init_stdio(pymain);
 
     pymain->err = _Py_InitializeCore(&pymain->core_config);
@@ -1635,7 +1679,6 @@ pymain_init(_PyMain *pymain)
     }
 
     pymain->core_config._disable_importlib = 0;
-    /* TODO: Moar config options! */
     pymain->config.install_signal_handlers = 1;
 
     orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
@@ -1651,6 +1694,8 @@ pymain_impl(_PyMain *pymain)
     if (res < 0) {
         return -1;
     }
+
+    pymain_get_global_config(pymain);
 
     res = pymain_parse_cmdline_envvars(pymain);
     if (res < 0) {
@@ -1673,6 +1718,14 @@ pymain_impl(_PyMain *pymain)
            other special meaning */
         pymain->status = 120;
     }
+
+    /* _PyPathConfig_Clear() cannot be called in Py_FinalizeEx().
+       Py_Initialize() and Py_Finalize() can be called multiple times, but it
+       must not "forget" parameters set by Py_SetProgramName(), Py_SetPath() or
+       Py_SetPythonHome(), whereas _PyPathConfig_Clear() clear all these
+       parameters. */
+    _PyPathConfig_Clear(&_Py_path_config);
+
     return 0;
 }
 

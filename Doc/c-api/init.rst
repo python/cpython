@@ -40,7 +40,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_GetCompiler`
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
-  * :c:func:`Py_GetProgramName`
   * :c:func:`Py_GetVersion`
 
 * Utilities:
@@ -58,8 +57,9 @@ The following functions can be safely called before Python is initialized:
 
    The following functions **should not be called** before
    :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
-   :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix` and
-   :c:func:`Py_GetProgramFullPath` and :c:func:`Py_GetPythonHome`.
+   :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
+   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
+   :c:func:`Py_GetProgramName` and :c:func:`PyEval_InitThreads`.
 
 
 .. _global-conf-vars:

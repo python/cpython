@@ -105,11 +105,10 @@ PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
 PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(
     const _PyMainInterpreterConfig *main_config);
-PyAPI_FUNC(void) _PyPathConfig_Fini(void);
 #endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
-int _Py_CheckPython3();
+int _Py_CheckPython3(void);
 #endif
 
 /* In their own files */
@@ -128,7 +127,7 @@ PyAPI_FUNC(const char *) _Py_gitversion(void);
 PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
 PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
 PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict);
-PyAPI_FUNC(_PyInitError) _PyImport_Init(void);
+PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);

@@ -1,3 +1,0 @@
-Remove the os.stat_float_times() function. It was introduced in Python 2.3
-for backward compatibility with Python 2.2, and was deprecated since Python
-3.1.

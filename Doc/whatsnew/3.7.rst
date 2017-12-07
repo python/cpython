@@ -185,10 +185,10 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
-New Developer Mode: -X dev
---------------------------
+New Development Mode: -X dev
+----------------------------
 
-Add a new "developer mode": ``-X dev`` command line option to enable debug
+Add a new "development mode": ``-X dev`` command line option to enable debug
 checks at runtime.
 
 In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
@@ -298,10 +298,8 @@ README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
 
-:class:`distutils.core.setup` now raises a :exc:`TypeError` if
-``classifiers``, ``keywords`` and ``platforms`` fields are not specified
-as a list.  However, to minimize backwards incompatibility concerns,
-``keywords`` and ``platforms`` fields still accept a comma separated string.
+:class:`distutils.core.setup` now warns if the ``classifiers``, ``keywords``
+and ``platforms`` fields are not specified as a list or a string.
 (Contributed by Berker Peksag in :issue:`19610`.)
 
 http.client
@@ -364,12 +362,21 @@ The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
 can be set within the scope of a group.
 (Contributed by Serhiy Storchaka in :issue:`31690`.)
 
+:func:`re.split` now supports splitting on a pattern like ``r'\b'``,
+``'^$'`` or ``(?=-)`` that matches an empty string.
+(Contributed by Serhiy Storchaka in :issue:`25054`.)
+
 string
 ------
 
 :class:`string.Template` now lets you to optionally modify the regular
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+sys
+---
+
+Added :attr:`sys.flags.dev_mode` flag for the new development mode.
 
 time
 ----
@@ -567,6 +574,18 @@ Other CPython Implementation Changes
 Deprecated
 ==========
 
+* Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
+  in comprehensions and generator expressions (aside from the iterable expression
+  in the leftmost :keyword:`for` clause). This ensures that comprehensions
+  always immediately return a container of the appropriate type (rather than
+  potentially returning a :term:`generator iterator` object), while generator
+  expressions won't attempt to interleave their implicit output with the output
+  from any explicit yield expressions.
+
+  In Python 3.7, such expressions emit :exc:`DeprecationWarning` when compiled,
+  in Python 3.8+ they will emit :exc:`SyntaxError`. (Contributed by Serhiy
+  Storchaka in :issue:`10544`.)
+
 - Function :c:func:`PySlice_GetIndicesEx` is deprecated and replaced with
   a macro if ``Py_LIMITED_API`` is not set or set to the value between
   ``0x03050400`` and ``0x03060000`` (not including) or ``0x03060100`` or
@@ -752,6 +771,27 @@ Changes in the Python API
   character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
   avoid a warning escape them with a backslash.
   (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+* The result of splitting a string on a :mod:`regular expression <re>`
+  that could match an empty string has been changed.  For example
+  splitting on ``r'\s*'`` will now split not only on whitespaces as it
+  did previously, but also between any pair of non-whitespace
+  characters.  The previous behavior can be restored by changing the pattern
+  to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
+  Python 3.5.
+
+  For patterns that match both empty and non-empty strings, the result of
+  searching for all matches may also be changed in other cases.  For example
+  in the string ``'a\n\n'``, the pattern ``r'(?m)^\s*?$'`` will not only
+  match empty strings at positions 2 and 3, but also the string ``'\n'`` at
+  positions 2--3.  To match only blank lines, the pattern should be rewritten
+  as ``r'(?m)^[^\S\n]*$'``.
+
+  (Contributed by Serhiy Storchaka in :issue:`25054`.)
+
+* :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
+  recent to be more consistent with :mod:`traceback`.
+  (Contributed by Jesse Bakker in :issue:`32121`.)
 
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
