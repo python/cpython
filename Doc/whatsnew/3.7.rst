@@ -854,8 +854,8 @@ Other CPython implementation changes
   setting ``Py_BytesWarningFlag`` to a value greater than one is no longer
   sufficient to both emit ``BytesWarning`` messages and have them converted
   to exceptions. Instead, the flag must be set (to cause the warnings to be
-  emitted in the first place), and an explicit ``error::BytesWarning`` warnings
-  filter added to convert them to exceptions.
+  emitted in the first place), and an explicit :code:`error::BytesWarning`
+  warnings filter added to convert them to exceptions.
 
 Documentation
 =============
