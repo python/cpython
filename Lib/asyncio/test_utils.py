@@ -43,8 +43,7 @@ def dummy_ssl_context():
 
 
 def run_briefly(loop):
-    @coroutine
-    def once():
+    async def once():
         pass
     gen = once()
     t = loop.create_task(gen)
