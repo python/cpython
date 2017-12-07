@@ -9,6 +9,7 @@ __all__ = ['Task',
 import concurrent.futures
 import functools
 import inspect
+import types
 import warnings
 import weakref
 
@@ -465,11 +466,15 @@ def as_completed(fs, *, loop=None, timeout=None):
         yield _wait_for_one()
 
 
-@coroutine
-def sleep(delay, result=None, *, loop=None):
+@types.coroutine
+def _sleep0():
+    yield
+
+
+async def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
     if delay == 0:
-        yield
+        await _sleep0()
         return result
 
     if loop is None:
@@ -479,7 +484,7 @@ def sleep(delay, result=None, *, loop=None):
                                 futures._set_result_unless_cancelled,
                                 future, result)
     try:
-        return (yield from future)
+        return await future
     finally:
         h.cancel()
 

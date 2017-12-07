@@ -628,14 +628,12 @@ class BaseTaskTests:
         loop = self.new_test_loop(gen)
 
         x = 0
-        waiters = []
 
         @asyncio.coroutine
         def task():
             nonlocal x
             while x < 10:
-                waiters.append(asyncio.sleep(0.1, loop=loop))
-                yield from waiters[-1]
+                yield from asyncio.sleep(0.1, loop=loop)
                 x += 1
                 if x == 2:
                     loop.stop()
@@ -649,9 +647,6 @@ class BaseTaskTests:
         self.assertEqual(x, 2)
         self.assertAlmostEqual(0.3, loop.time())
 
-        # close generators
-        for w in waiters:
-            w.close()
         t.cancel()
         self.assertRaises(asyncio.CancelledError, loop.run_until_complete, t)
 
