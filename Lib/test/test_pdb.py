@@ -1134,16 +1134,17 @@ class PdbModuleTestCase(PdbBaseTestCase):
     """Re-runs all tests used for a script but using a module"""
 
     def run_pdb(self, script, commands):
-        module_name = 't_main'
-        main_file = module_name + '/__main__.py'
-        init_file = module_name + '/__init__.py'
-        os.mkdir(module_name)
+        self.module_name = 't_main'
+        support.rmtree(self.module_name)
+        main_file = self.module_name + '/__main__.py'
+        init_file = self.module_name + '/__init__.py'
+        os.mkdir(self.module_name)
         with open(init_file, 'w') as f:
             pass
         with open(main_file, 'w') as f:
             f.write(textwrap.dedent(script))
-        self.addCleanup(support.rmtree, module_name)
-        return self._run_pdb(['-m', module_name], commands)
+        self.addCleanup(support.rmtree, self.module_name)
+        return self._run_pdb(['-m', self.module_name], commands)
 
     def test_run_module(self):
         script = """print("SUCCESS")"""
@@ -1174,12 +1175,95 @@ class PdbModuleTestCase(PdbBaseTestCase):
                 pass
         """
         commands = f"""
-            b t_main/__main__.py:3
+            b 3
             quit
         """
         stdout, stderr = self.run_pdb(script, commands)
         self.assertTrue(any("Breakpoint 1 at" in l for l in stdout.splitlines()), stdout)
         self.assertTrue(all("SUCCESS" not in l for l in stdout.splitlines()), stdout)
+
+    def test_run_pdb(self):
+        commands = f"""
+            c
+            quit
+        """
+        stdout, stderr = self._run_pdb(["-m", "pdb"], commands)
+        self.assertIn("Debug the Python program given by pyfile.", stdout.splitlines())
+
+    def test_blocks_at_first_code_line(self):
+        script = """
+                #This is a comment, on line 2
+
+                print("SUCCESS")
+        """
+        commands = f"""
+            quit
+        """
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertTrue(any(f"/{self.module_name}/__main__.py(4)<module>()"
+                            in l for l in stdout.splitlines()), stdout)
+
+    def test_module_without_a_main(self):
+        module_name = 't_main'
+        support.rmtree(module_name)
+        init_file = module_name + '/__init__.py'
+        os.mkdir(module_name)
+        with open(init_file, 'w') as f:
+            pass
+        self.addCleanup(support.rmtree, module_name)
+        stdout, stderr = self._run_pdb(['-m', module_name], "")
+        self.assertIn("ImportError: No module named t_main.__main__",
+                      stdout.splitlines())
+
+    def test_blocks_at_first_code_line(self):
+        script = """
+                #This is a comment, on line 2
+
+                print("SUCCESS")
+        """
+        commands = f"""
+            quit
+        """
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertTrue(any(f"/{self.module_name}/__main__.py(4)<module>()"
+                            in l for l in stdout.splitlines()), stdout)
+
+    def test_relative_imports(self):
+        self.module_name = 't_main'
+        support.rmtree(self.module_name)
+        main_file = self.module_name + '/__main__.py'
+        init_file = self.module_name + '/__init__.py'
+        module_file = self.module_name + '/module.py'
+        self.addCleanup(support.rmtree, self.module_name)
+        os.mkdir(self.module_name)
+        with open(init_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                top_var = "VAR from top"
+            """))
+        with open(main_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                from . import top_var
+                from .module import var
+                from . import module
+                pass # We'll stop here and print the vars
+            """))
+        with open(module_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                var = "VAR from module"
+                var2 = "second var"
+            """))
+        commands = f"""
+            b 5
+            c
+            p top_var
+            p var
+            p module.var2
+            quit
+        """
+        stdout, _ = self._run_pdb(['-m', self.module_name], commands)
+        self.assertTrue(any(f"VAR from module" in l for l in stdout.splitlines()))
+        self.assertTrue(any(f"VAR from top" in l for l in stdout.splitlines()))
+        self.assertTrue(any(f"second var" in l for l in stdout.splitlines()))
 
 
 def load_tests(*args):
