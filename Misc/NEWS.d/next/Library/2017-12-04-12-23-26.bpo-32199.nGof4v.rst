@@ -1,1 +1,1 @@
-uuid.getnode() now returns the MAC address on Android.
+The getnode() ip getter now uses 'ip link'.

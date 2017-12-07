@@ -401,8 +401,7 @@ def _ifconfig_getnode():
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    arg = 'link' if hasattr(sys, 'getandroidapilevel') else 'link list'
-    mac = _find_mac('ip', arg, [b'link/ether'], lambda i: i+1)
+    mac = _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
     return None
