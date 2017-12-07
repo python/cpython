@@ -13,11 +13,6 @@ def setUpModule():
         libc_name = find_library("c")
     elif sys.platform == "cygwin":
         libc_name = "cygwin1.dll"
-    elif sys.platform.startswith("aix"):
-        if (sys.maxsize < 2**32):
-            libc_name = "libc.a(shr.o)"
-        else:
-            libc_name = "libc.a(shr_64.o)"
     else:
         libc_name = find_library("c")
 
