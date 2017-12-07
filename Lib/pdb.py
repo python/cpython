@@ -1523,15 +1523,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _runmodule(self, module_name):
         self._wait_for_mainpyfile = True
-        self.mainpyfile = self.canonic(module_name)
+        self.mainpyfile = os.path.join(self.canonic(module_name), "__main__.py")
         self._user_requested_quit = False
         import runpy
-        mod_name, _, code = runpy._get_module_details(module_name)
+        mod_name, mod_spec, code = runpy._get_module_details(module_name)
         import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update({
             "__name__": "__main__",
-            "__package__": module_name,
+            "__file__": self.mainpyfile,
+#            "__package__": module_name,  # Not needed, will rely on __spec__.parent
+            "__loader__": mod_spec.loader,
+            "__spec__": mod_spec,
             "__builtins__": __builtins__,
         })
         self.run(code)
