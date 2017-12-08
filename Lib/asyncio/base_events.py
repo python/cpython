@@ -33,7 +33,6 @@ from . import coroutines
 from . import events
 from . import futures
 from . import tasks
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -329,10 +328,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create write pipe transport."""
         raise NotImplementedError
 
-    @coroutine
-    def _make_subprocess_transport(self, protocol, args, shell,
-                                   stdin, stdout, stderr, bufsize,
-                                   extra=None, **kwargs):
+    async def _make_subprocess_transport(self, protocol, args, shell,
+                                         stdin, stdout, stderr, bufsize,
+                                         extra=None, **kwargs):
         """Create subprocess transport."""
         raise NotImplementedError
 
@@ -799,9 +797,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                          sock, host, port, transport, protocol)
         return transport, protocol
 
-    @coroutine
-    def _create_connection_transport(self, sock, protocol_factory, ssl,
-                                     server_hostname, server_side=False):
+    async def _create_connection_transport(self, sock, protocol_factory, ssl,
+                                           server_hostname, server_side=False):
 
         sock.setblocking(False)
 
@@ -816,7 +813,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport = self._make_socket_transport(sock, protocol, waiter)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
@@ -950,25 +947,23 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         return transport, protocol
 
-    @coroutine
-    def _create_server_getaddrinfo(self, host, port, family, flags):
-        infos = yield from _ensure_resolved((host, port), family=family,
-                                            type=socket.SOCK_STREAM,
-                                            flags=flags, loop=self)
+    async def _create_server_getaddrinfo(self, host, port, family, flags):
+        infos = await _ensure_resolved((host, port), family=family,
+                                       type=socket.SOCK_STREAM,
+                                       flags=flags, loop=self)
         if not infos:
             raise OSError('getaddrinfo({!r}) returned empty list'.format(host))
         return infos
 
-    @coroutine
-    def create_server(self, protocol_factory, host=None, port=None,
-                      *,
-                      family=socket.AF_UNSPEC,
-                      flags=socket.AI_PASSIVE,
-                      sock=None,
-                      backlog=100,
-                      ssl=None,
-                      reuse_address=None,
-                      reuse_port=None):
+    async def create_server(self, protocol_factory, host=None, port=None,
+                            *,
+                            family=socket.AF_UNSPEC,
+                            flags=socket.AI_PASSIVE,
+                            sock=None,
+                            backlog=100,
+                            ssl=None,
+                            reuse_address=None,
+                            reuse_port=None):
         """Create a TCP server.
 
         The host parameter can be a string, in that case the TCP server is bound
@@ -1006,7 +1001,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             fs = [self._create_server_getaddrinfo(host, port, family=family,
                                                   flags=flags)
                   for host in hosts]
-            infos = yield from tasks.gather(*fs, loop=self)
+            infos = await tasks.gather(*fs, loop=self)
             infos = set(itertools.chain.from_iterable(infos))
 
             completed = False
@@ -1063,8 +1058,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             logger.info("%r is serving", server)
         return server
 
-    @coroutine
-    def connect_accepted_socket(self, protocol_factory, sock, *, ssl=None):
+    async def connect_accepted_socket(self, protocol_factory, sock,
+                                      *, ssl=None):
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of
@@ -1077,7 +1072,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'A Stream Socket was expected, got {!r}'.format(sock))
 
-        transport, protocol = yield from self._create_connection_transport(
+        transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
