@@ -1455,10 +1455,13 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__getattr__(self, name)
 
-   Called when an attribute lookup has not found the attribute in the usual places
-   (i.e. it is not an instance attribute nor is it found in the class tree for
-   ``self``).  ``name`` is the attribute name. This method should return the
-   (computed) attribute value or raise an :exc:`AttributeError` exception.
+   Called when an attribute lookup has not found the attribute in the usual
+   places, namely when it is a :func:`property` attribute whose :meth:`__get__`
+   method raises an :exc:`AttributeError`, when :meth:`__getattribute__` raises
+   an :exc:`AttributeError` because *name* is not an instance attribute, or
+   when it is not found in the class tree for ``self``.  This method should
+   return the (computed) attribute value or raise an :exc:`AttributeError`
+   exception.
 
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
