@@ -371,8 +371,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         self._asyncgens.add(agen)
 
-    @coroutine
-    def shutdown_asyncgens(self):
+    async def shutdown_asyncgens(self):
         """Shutdown all active asynchronous generators."""
         self._asyncgens_shutdown_called = True
 
@@ -384,12 +383,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         closing_agens = list(self._asyncgens)
         self._asyncgens.clear()
 
-        shutdown_coro = tasks.gather(
+        results = await tasks.gather(
             *[ag.aclose() for ag in closing_agens],
             return_exceptions=True,
             loop=self)
 
-        results = yield from shutdown_coro
         for result, agen in zip(results, closing_agens):
             if isinstance(result, Exception):
                 self.call_exception_handler({
@@ -1138,11 +1136,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                 info.append('stderr=%s' % _format_pipe(stderr))
         logger.debug(' '.join(info))
 
-    @coroutine
-    def subprocess_shell(self, protocol_factory, cmd, *, stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         universal_newlines=False, shell=True, bufsize=0,
-                         **kwargs):
+    async def subprocess_shell(self, protocol_factory, cmd, *,
+                               stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               universal_newlines=False,
+                               shell=True, bufsize=0,
+                               **kwargs):
         if not isinstance(cmd, (bytes, str)):
             raise ValueError("cmd must be a string")
         if universal_newlines:
@@ -1157,17 +1157,16 @@ class BaseEventLoop(events.AbstractEventLoop):
             # (password) and may be too long
             debug_log = 'run shell command %r' % cmd
             self._log_subprocess(debug_log, stdin, stdout, stderr)
-        transport = yield from self._make_subprocess_transport(
+        transport = await self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
         if self._debug:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
-    @coroutine
-    def subprocess_exec(self, protocol_factory, program, *args,
-                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE, universal_newlines=False,
-                        shell=False, bufsize=0, **kwargs):
+    async def subprocess_exec(self, protocol_factory, program, *args,
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, universal_newlines=False,
+                              shell=False, bufsize=0, **kwargs):
         if universal_newlines:
             raise ValueError("universal_newlines must be False")
         if shell:
@@ -1186,7 +1185,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             # (password) and may be too long
             debug_log = 'execute program %r' % program
             self._log_subprocess(debug_log, stdin, stdout, stderr)
-        transport = yield from self._make_subprocess_transport(
+        transport = await self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
         if self._debug:
