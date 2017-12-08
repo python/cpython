@@ -18,7 +18,7 @@ _get_current(void)
     return tstate->interp;
 }
 
-/* sharing-specific functions */
+/* sharing-specific functions and structs */
 
 static int
 _PyObject_CheckShareable(PyObject *obj)
@@ -92,80 +92,6 @@ static PyObject *
 _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 {
     return data->new_object(data);
-}
-
-/* interpreter-specific functions */
-
-static PyInterpreterState *
-_look_up_int64(PY_INT64_T requested_id)
-{
-    if (requested_id < 0)
-        goto error;
-
-    PyInterpreterState *interp = PyInterpreterState_Head();
-    while (interp != NULL) {
-        PY_INT64_T id = PyInterpreterState_GetID(interp);
-        if (id < 0)
-            return NULL;
-        if (requested_id == id)
-            return interp;
-        interp = PyInterpreterState_Next(interp);
-    }
-
-error:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %lld", requested_id);
-    return NULL;
-}
-
-static PyInterpreterState *
-_look_up(PyObject *requested_id)
-{
-    long long id = PyLong_AsLongLong(requested_id);
-    if (id == -1 && PyErr_Occurred() != NULL)
-        return NULL;
-    assert(id <= INT64_MAX);
-    return _look_up_int64(id);
-}
-
-static PyObject *
-_get_id(PyInterpreterState *interp)
-{
-    PY_INT64_T id = PyInterpreterState_GetID(interp);
-    if (id < 0)
-        return NULL;
-    return PyLong_FromLongLong(id);
-}
-
-static int
-_is_running(PyInterpreterState *interp)
-{
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    if (PyThreadState_Next(tstate) != NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "interpreter has more than one thread");
-        return -1;
-    }
-    PyFrameObject *frame = _PyThreadState_GetFrame(tstate);
-    if (frame == NULL) {
-        if (PyErr_Occurred() != NULL)
-            return -1;
-        return 0;
-    }
-    return (int)(frame->f_executing);
-}
-
-static int
-_ensure_not_running(PyInterpreterState *interp)
-{
-    int is_running = _is_running(interp);
-    if (is_running < 0)
-        return -1;
-    if (is_running) {
-        PyErr_Format(PyExc_RuntimeError, "interpreter already running");
-        return -1;
-    }
-    return 0;
 }
 
 struct _shareditem {
@@ -261,6 +187,80 @@ _apply_shared_exception(struct _shared_exception *exc)
         PyErr_Restore(exc->exc, exc->value, exc->tb);
     }
 
+}
+
+/* interpreter-specific functions */
+
+static PyInterpreterState *
+_look_up_int64(PY_INT64_T requested_id)
+{
+    if (requested_id < 0)
+        goto error;
+
+    PyInterpreterState *interp = PyInterpreterState_Head();
+    while (interp != NULL) {
+        PY_INT64_T id = PyInterpreterState_GetID(interp);
+        if (id < 0)
+            return NULL;
+        if (requested_id == id)
+            return interp;
+        interp = PyInterpreterState_Next(interp);
+    }
+
+error:
+    PyErr_Format(PyExc_RuntimeError,
+                 "unrecognized interpreter ID %lld", requested_id);
+    return NULL;
+}
+
+static PyInterpreterState *
+_look_up(PyObject *requested_id)
+{
+    long long id = PyLong_AsLongLong(requested_id);
+    if (id == -1 && PyErr_Occurred() != NULL)
+        return NULL;
+    assert(id <= INT64_MAX);
+    return _look_up_int64(id);
+}
+
+static PyObject *
+_get_id(PyInterpreterState *interp)
+{
+    PY_INT64_T id = PyInterpreterState_GetID(interp);
+    if (id < 0)
+        return NULL;
+    return PyLong_FromLongLong(id);
+}
+
+static int
+_is_running(PyInterpreterState *interp)
+{
+    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+    if (PyThreadState_Next(tstate) != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "interpreter has more than one thread");
+        return -1;
+    }
+    PyFrameObject *frame = _PyThreadState_GetFrame(tstate);
+    if (frame == NULL) {
+        if (PyErr_Occurred() != NULL)
+            return -1;
+        return 0;
+    }
+    return (int)(frame->f_executing);
+}
+
+static int
+_ensure_not_running(PyInterpreterState *interp)
+{
+    int is_running = _is_running(interp);
+    if (is_running < 0)
+        return -1;
+    if (is_running) {
+        PyErr_Format(PyExc_RuntimeError, "interpreter already running");
+        return -1;
+    }
+    return 0;
 }
 
 static int
