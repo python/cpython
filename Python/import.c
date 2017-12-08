@@ -1735,6 +1735,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
+        Py_XDECREF(mod);
         mod = import_find_and_load(abs_name);
         if (mod == NULL) {
             goto error;
