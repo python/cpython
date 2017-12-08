@@ -1,0 +1,3 @@
+:func:`~unittest.TestCase.assertWarns` no longer raises a ``RuntimeException``
+when accessing a module's ``__warningregistry__`` causes importation of a new
+module, or when a new module is imported in another thread. Patch by Kernc.
