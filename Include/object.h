@@ -197,6 +197,36 @@ PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
 PyAPI_FUNC(void*) PyType_GetSlot(struct _typeobject*, int);
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
+#endif
+
+
+#ifndef Py_LIMITED_API
+/* The *real* layout of a type object when allocated on the heap */
+typedef struct _heaptypeobject {
+    /* Note: there's a dependency on the order of these members
+       in slotptr() in typeobject.c . */
+    PyTypeObject ht_type;
+    PyAsyncMethods as_async;
+    PyNumberMethods as_number;
+    PyMappingMethods as_mapping;
+    PySequenceMethods as_sequence; /* as_sequence comes after as_mapping,
+                                      so that the mapping wins when both
+                                      the mapping and the sequence define
+                                      a given operator (e.g. __getitem__).
+                                      see add_operators() in typeobject.c . */
+    PyBufferProcs as_buffer;
+    PyObject *ht_name, *ht_slots, *ht_qualname;
+    struct _dictkeysobject *ht_cached_keys;
+    PyObject *ht_module;
+    /* here are optional user slots, followed by the members. */
+} PyHeapTypeObject;
+
+/* access macro to the members which are floating "behind" the object */
+#define PyHeapType_GET_MEMBERS(etype) \
+    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+#endif
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(struct _typeobject *, struct _typeobject *);
@@ -219,6 +249,11 @@ PyAPI_FUNC(PyObject *) PyType_GenericNew(struct _typeobject *,
                                                PyObject *, PyObject *);
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
 PyAPI_FUNC(void) PyType_Modified(struct _typeobject *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+/* New in 3.7 */
+PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
+#endif
 
 /* Generic operations on objects */
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
