@@ -1531,18 +1531,16 @@ class BaseTaskTests:
         fut1 = self.new_future(self.loop)
         fut2 = self.new_future(self.loop)
 
-        @asyncio.coroutine
-        def coro1(loop):
+        async def coro1(loop):
             self.assertTrue(Task.current_task(loop=loop) is task1)
-            yield from fut1
+            await fut1
             self.assertTrue(Task.current_task(loop=loop) is task1)
             fut2.set_result(True)
 
-        @asyncio.coroutine
-        def coro2(loop):
+        async def coro2(loop):
             self.assertTrue(Task.current_task(loop=loop) is task2)
             fut1.set_result(True)
-            yield from fut2
+            await fut2
             self.assertTrue(Task.current_task(loop=loop) is task2)
 
         task1 = self.new_task(self.loop, coro1(self.loop))
@@ -1560,22 +1558,20 @@ class BaseTaskTests:
         proof = 0
         waiter = self.new_future(self.loop)
 
-        @asyncio.coroutine
-        def inner():
+        async def inner():
             nonlocal proof
             try:
-                yield from waiter
+                await waiter
             except asyncio.CancelledError:
                 proof += 1
                 raise
             else:
                 self.fail('got past sleep() in inner()')
 
-        @asyncio.coroutine
-        def outer():
+        async def outer():
             nonlocal proof
             try:
-                yield from inner()
+                await inner()
             except asyncio.CancelledError:
                 proof += 100  # Expect this path.
             else:
@@ -1594,16 +1590,14 @@ class BaseTaskTests:
         proof = 0
         waiter = self.new_future(self.loop)
 
-        @asyncio.coroutine
-        def inner():
+        async def inner():
             nonlocal proof
-            yield from waiter
+            await waiter
             proof += 1
 
-        @asyncio.coroutine
-        def outer():
+        async def outer():
             nonlocal proof
-            d, p = yield from asyncio.wait([inner()], loop=self.loop)
+            d, p = await asyncio.wait([inner()], loop=self.loop)
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.loop)
@@ -1650,16 +1644,14 @@ class BaseTaskTests:
         proof = 0
         waiter = self.new_future(self.loop)
 
-        @asyncio.coroutine
-        def inner():
+        async def inner():
             nonlocal proof
-            yield from waiter
+            await waiter
             proof += 1
 
-        @asyncio.coroutine
-        def outer():
+        async def outer():
             nonlocal proof
-            yield from asyncio.shield(inner(), loop=self.loop)
+            await asyncio.shield(inner(), loop=self.loop)
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.loop)
