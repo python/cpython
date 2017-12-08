@@ -2,7 +2,7 @@
 
 __all__ = (
     'BaseProtocol', 'Protocol', 'DatagramProtocol',
-    'SubprocessProtocol',
+    'SubprocessProtocol', 'BufferedProtocol',
 )
 
 
@@ -92,6 +92,22 @@ class Protocol(BaseProtocol):
 
         The argument is a bytes object.
         """
+
+    def eof_received(self):
+        """Called when the other end calls write_eof() or equivalent.
+
+        If this returns a false value (including None), the transport
+        will close itself.  If it returns a true value, closing the
+        transport is up to the protocol.
+        """
+
+
+class BufferedProtocol(BaseProtocol):
+    def get_buffer(self):
+        raise NotImplementedError
+
+    def buffer_updated(self, nbytes):
+        pass
 
     def eof_received(self):
         """Called when the other end calls write_eof() or equivalent.
