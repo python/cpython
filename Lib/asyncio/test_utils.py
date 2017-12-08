@@ -30,7 +30,6 @@ from . import base_events
 from . import events
 from . import futures
 from . import tasks
-from .coroutines import coroutine
 from .log import logger
 from test import support
 
@@ -43,8 +42,7 @@ def dummy_ssl_context():
 
 
 def run_briefly(loop):
-    @coroutine
-    def once():
+    async def once():
         pass
     gen = once()
     t = loop.create_task(gen)
