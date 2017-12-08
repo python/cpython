@@ -764,8 +764,7 @@ class _SelectorSocketTransport(_SelectorTransport):
 
         try:
             buf = self._protocol.get_buffer()
-            with memoryview(buf) as mem:
-                nbytes = self._sock.recv_into(mem)
+            nbytes = self._sock.recv_into(buf)
         except (BlockingIOError, InterruptedError):
             pass
         except Exception as exc:
