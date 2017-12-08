@@ -34,6 +34,7 @@ _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__prepare__);
 _Py_IDENTIFIER(__round__);
+_Py_IDENTIFIER(__mro_entries__);
 _Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(errors);
 _Py_IDENTIFIER(fileno);
@@ -61,7 +62,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         if (PyType_Check(base)) {
             continue;
         }
-        if (!(meth = PyObject_GetAttrString(base, "__mro_entries__"))) {
+        if (!(meth = _PyObject_GetAttrId(base, &PyId___mro_entries__))) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 return NULL;
             }
@@ -74,25 +75,25 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
             Py_DECREF(meth);
             return NULL;
         }
-        if (!(new_base = _PyObject_FastCall(meth, stack, 1))){
-            Py_DECREF(meth);
+        new_base = _PyObject_FastCall(meth, stack, 1);
+        Py_DECREF(meth);
+        if (!new_base) {
             return NULL;
         }
         if (PyTuple_Check(new_base)) {
-            tot_extra += PyTuple_Size(new_base) - 1;
+            tot_extra += PyTuple_GET_SIZE(new_base) - 1;
         }
         else {
             PyErr_SetString(PyExc_TypeError,
                             "__mro_entries__ must return a tuple");
-            Py_DECREF(meth);
+            Py_DECREF(new_base);
             return NULL;
         }
         Py_DECREF(base);
         args[i] = new_base;
         *modified_bases = 1;
-        Py_DECREF(meth);
     }
-    if (!*modified_bases){
+    if (!*modified_bases) {
         return bases;
     }
     new_bases = PyTuple_New(nargs - 2 + tot_extra);
@@ -105,7 +106,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
             ind++;
         }
         else {
-            for (j = 0; j < PyTuple_Size(new_base); j++) {
+            for (j = 0; j < PyTuple_GET_SIZE(new_base); j++) {
                 new_sub_base = PyTuple_GET_ITEM(new_base, j);
                 Py_INCREF(new_sub_base);
                 PyTuple_SET_ITEM(new_bases, ind, new_sub_base);
@@ -250,7 +251,7 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
-        if (modified_bases){
+        if (modified_bases) {
             PyMapping_SetItemString(ns, "__orig_bases__", old_bases);
         }
         PyObject *margs[3] = {name, bases, ns};

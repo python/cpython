@@ -143,7 +143,6 @@ PyObject *
 PyObject_GetItem(PyObject *o, PyObject *key)
 {
     PyMappingMethods *m;
-    PyObject *meth, *result, *stack[2] = {o, key};
 
     if (o == NULL || key == NULL) {
         return null_error();
@@ -170,7 +169,9 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     }
 
     if (PyType_Check(o)) {
-        meth = PyObject_GetAttrString(o, "__class_getitem__");
+        PyObject *meth, *result, *stack[2] = {o, key};
+        _Py_IDENTIFIER(__class_getitem__);
+        meth = _PyObject_GetAttrId(o, &PyId___class_getitem__);
         if (meth) {
             if (!PyCallable_Check(meth)) {
                 PyErr_SetString(PyExc_TypeError,
