@@ -1,2 +1,2 @@
 sqlite3.Connection now exposes a backup() method, if the underlying SQLite
-library is at version 3.6.11 or higher. Patch by Lele Gaifax
+library is at version 3.6.11 or higher. Patch by Lele Gaifax.
