@@ -410,7 +410,7 @@ def _default_mime_types():
         '.bat'    : 'text/plain',
         '.bcpio'  : 'application/x-bcpio',
         '.bin'    : 'application/octet-stream',
-        '.bmp'    : 'image/x-ms-bmp',
+        '.bmp'    : 'image/bmp',
         '.c'      : 'text/plain',
         '.cdf'    : 'application/x-netcdf',
         '.cpio'   : 'application/x-cpio',
