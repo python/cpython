@@ -468,9 +468,13 @@ def as_completed(fs, *, loop=None, timeout=None):
 
 @types.coroutine
 def __sleep0():
-    # the hack is needed to make a quick pass
-    # of task step iteration when delay == 0
-    # Task._step has an optimization for bare yield
+    """Skip one event loop run cycle.
+
+    This is a private helper for 'asyncio.sleep()', used
+    when the 'delay' is set to 0.  It uses a bare 'yield'
+    expression (which Task._step knows how to handle)
+    instead of creating a Future object.
+    """
     yield
 
 
