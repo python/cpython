@@ -305,6 +305,42 @@ class ExecutionLoaderDefaultsTests(ABCTestHarness):
  ) = test_util.test_both(InspectLoaderDefaultsTests)
 
 
+class ResourceReader:
+
+    def open_resource(self, *args, **kwargs):
+        super().open_resource(*args, **kwargs)
+
+    def resource_path(self, *args, **kwargs):
+        super().resource_path(*args, **kwargs)
+
+    def is_resource(self, *args, **kwargs):
+        super().is_resource(*args, **kwargs)
+
+    def contents(self, *args, **kwargs):
+        super().contents(*args, **kwargs)
+
+
+class ResourceReaderDefaultsTests(ABCTestHarness):
+
+    SPLIT = make_abc_subclasses(ResourceReader)
+
+    def test_open_resource(self):
+        pass
+
+    def test_resource_path(self):
+        pass
+
+    def test_is_resource(self):
+        pass
+
+    def test_contents(self):
+        pass
+
+(Frozen_RRDefaultTests,
+ Source_RRDefaultsTests
+ ) = test_util.test_both(ResourceReaderDefaultsTests)
+
+
 ##### MetaPathFinder concrete methods ##########################################
 class MetaPathFinderFindModuleTests:
 
