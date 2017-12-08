@@ -666,9 +666,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     def getnameinfo(self, sockaddr, flags=0):
         return self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
 
-    async def create_connection(self, protocol_factory, host=None, port=None, *,
-                          ssl=None, family=0, proto=0, flags=0, sock=None,
-                          local_addr=None, server_hostname=None):
+    async def create_connection(self, protocol_factory, host=None, port=None,
+                                *, ssl=None, family=0,
+                                proto=0, flags=0, sock=None,
+                                local_addr=None, server_hostname=None):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given Internet host and
