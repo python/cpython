@@ -168,10 +168,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                    extra=None):
         return _UnixWritePipeTransport(self, pipe, protocol, waiter, extra)
 
-    @coroutine
-    def _make_subprocess_transport(self, protocol, args, shell,
-                                   stdin, stdout, stderr, bufsize,
-                                   extra=None, **kwargs):
+    async def _make_subprocess_transport(self, protocol, args, shell,
+                                         stdin, stdout, stderr, bufsize,
+                                         extra=None, **kwargs):
         with events.get_child_watcher() as watcher:
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
@@ -182,19 +181,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             watcher.add_child_handler(transp.get_pid(),
                                       self._child_watcher_callback, transp)
             try:
-                yield from waiter
-            except Exception as exc:
-                # Workaround CPython bug #23353: using yield/yield-from in an
-                # except block of a generator doesn't clear properly
-                # sys.exc_info()
-                err = exc
-            else:
-                err = None
-
-            if err is not None:
+                await waiter
+            except Exception:
                 transp.close()
-                yield from transp._wait()
-                raise err
+                await transp._wait()
+                raise
 
         return transp
 
