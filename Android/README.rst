@@ -48,7 +48,7 @@ Both scripts use the following environment variables:
 
 - ``ANDROID_NDK_ROOT``, the location where the Android NDK has been installed.
   The default location is ``$HOME/android/android-ndk`` when this variable is
-  not set.
+  not set and this is where the buildbots expect to find the NDK.
 - ``ANDROID_API``, the target API level for the cross-compilation. This is also
   the API level of the emulator AVD [2]_. The default value is 24.
 - ``ANDROID_ARCH``, the target architecture for the cross-compilation.  This is
@@ -75,7 +75,8 @@ When building for the emulator, the following environment variables are used by
 ``makesetup``:
 
 - ``ANDROID_SDK_ROOT``, the location where the Android SDK has been installed.
-  The default location is ``$HOME/android/android-sdk``.
+  The default location is ``$HOME/android/android-sdk`` and this is where the
+  buildbots expect to find the SDK.
 
 - ``EMULATOR_CMD_LINE_OPTIONS``, the emulator command line options (see
   `Start the Emulator from the Command Line`_). Some useful options:

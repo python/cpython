@@ -35,9 +35,11 @@ def build_script(argv=None, result_fname=None):
     script = """
         # Set the environment variables and change the current directory to
         # SYS_EXEC_PREFIX.
-        export HOME=$ANDROID_APP_DIR
+        export HOME=$SYS_EXEC_PREFIX
         export PATH=$SYS_EXEC_PREFIX/bin:$$PATH
         export LD_LIBRARY_PATH=$SYS_EXEC_PREFIX/lib
+        export TMPDIR=$SYS_EXEC_PREFIX/tmp
+        mkdir -p $$TMPDIR
         export TERM=linux
         export TERMINFO=$SYS_EXEC_PREFIX/share/terminfo
         export INPUTRC=$SYS_EXEC_PREFIX/etc/inputrc

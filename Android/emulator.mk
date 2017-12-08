@@ -81,6 +81,9 @@ buildbottest: TESTRUNNER += $(TESTPYTHONOPTS) $(SYS_EXEC_PREFIX)/bin/run_tests.p
 buildbottest: export PATH := $(native_build_dir):$(PATH)
 buildbottest: exists_python_cmd _emulator
 	@echo "---> Run buildbottest."
+	-@if which pybuildbot.identify >/dev/null 2>&1; then \
+	    pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
+	fi
 	$(MAKE) -C $(py_host_dir) TESTRUNNER="$(TESTRUNNER)" \
 	    TESTOPTS="$(TESTOPTS)" TESTTIMEOUT="$(TESTTIMEOUT)" \
 	    buildbottest
