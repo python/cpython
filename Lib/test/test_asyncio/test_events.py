@@ -285,10 +285,10 @@ class EventLoopTestsMixin:
         self.assertTrue(0.08 <= t1-t0 <= 0.8, t1-t0)
 
     def test_run_until_complete_stopped(self):
-        @asyncio.coroutine
-        def cb():
+
+        async def cb():
             self.loop.stop()
-            yield from asyncio.sleep(0.1, loop=self.loop)
+            await asyncio.sleep(0.1, loop=self.loop)
         task = cb()
         self.assertRaises(RuntimeError,
                           self.loop.run_until_complete, task)
@@ -1424,9 +1424,8 @@ class EventLoopTestsMixin:
         rpipe, wpipe = os.pipe()
         pipeobj = io.open(rpipe, 'rb', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            t, p = yield from self.loop.connect_read_pipe(
+        async def connect():
+            t, p = await self.loop.connect_read_pipe(
                 lambda: proto, pipeobj)
             self.assertIs(p, proto)
             self.assertIs(t, proto.transport)
@@ -1463,11 +1462,10 @@ class EventLoopTestsMixin:
         rpipeobj = io.open(rpipe, 'rb', 1024)
         wpipeobj = io.open(wpipe, 'w', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            read_transport, _ = yield from loop.connect_read_pipe(
+        async def connect():
+            read_transport, _ = await loop.connect_read_pipe(
                 lambda: read_proto, rpipeobj)
-            write_transport, _ = yield from loop.connect_write_pipe(
+            write_transport, _ = await loop.connect_write_pipe(
                 lambda: write_proto, wpipeobj)
             return read_transport, write_transport
 
@@ -1499,10 +1497,9 @@ class EventLoopTestsMixin:
         master, slave = os.openpty()
         master_read_obj = io.open(master, 'rb', 0)
 
-        @asyncio.coroutine
-        def connect():
-            t, p = yield from self.loop.connect_read_pipe(lambda: proto,
-                                                          master_read_obj)
+        async def connect():
+            t, p = await self.loop.connect_read_pipe(lambda: proto,
+                                                     master_read_obj)
             self.assertIs(p, proto)
             self.assertIs(t, proto.transport)
             self.assertEqual(['INITIAL', 'CONNECTED'], proto.state)
@@ -1713,11 +1710,10 @@ class EventLoopTestsMixin:
         if ov is not None:
             self.assertTrue(ov.pending)
 
-        @asyncio.coroutine
-        def main():
+        async def main():
             try:
                 self.loop.call_soon(f.cancel)
-                yield from f
+                await f
             except asyncio.CancelledError:
                 res = 'cancelled'
             else:
@@ -1750,14 +1746,13 @@ class EventLoopTestsMixin:
         self.loop._run_once_counter = 0
         self.loop._run_once = _run_once
 
-        @asyncio.coroutine
-        def wait():
+        async def wait():
             loop = self.loop
-            yield from asyncio.sleep(1e-2, loop=loop)
-            yield from asyncio.sleep(1e-4, loop=loop)
-            yield from asyncio.sleep(1e-6, loop=loop)
-            yield from asyncio.sleep(1e-8, loop=loop)
-            yield from asyncio.sleep(1e-10, loop=loop)
+            await asyncio.sleep(1e-2, loop=loop)
+            await asyncio.sleep(1e-4, loop=loop)
+            await asyncio.sleep(1e-6, loop=loop)
+            await asyncio.sleep(1e-8, loop=loop)
+            await asyncio.sleep(1e-10, loop=loop)
 
         self.loop.run_until_complete(wait())
         # The ideal number of call is 12, but on some platforms, the selector
@@ -2076,9 +2071,9 @@ class SubprocessTestsMixin:
         self.assertEqual(7, proto.returncode)
 
     def test_subprocess_exec_invalid_args(self):
-        @asyncio.coroutine
-        def connect(**kwds):
-            yield from self.loop.subprocess_exec(
+
+        async def connect(**kwds):
+            await self.loop.subprocess_exec(
                 asyncio.SubprocessProtocol,
                 'pwd', **kwds)
 
@@ -2090,11 +2085,11 @@ class SubprocessTestsMixin:
             self.loop.run_until_complete(connect(shell=True))
 
     def test_subprocess_shell_invalid_args(self):
-        @asyncio.coroutine
-        def connect(cmd=None, **kwds):
+
+        async def connect(cmd=None, **kwds):
             if not cmd:
                 cmd = 'pwd'
-            yield from self.loop.subprocess_shell(
+            await self.loop.subprocess_shell(
                 asyncio.SubprocessProtocol,
                 cmd, **kwds)
 
