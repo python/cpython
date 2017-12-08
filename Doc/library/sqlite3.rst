@@ -561,7 +561,7 @@ Connection Objects
          import sqlite3
 
          source = sqlite3.connect('existing_db.db')
-         dest = sqlite3.connect(':memory')
+         dest = sqlite3.connect(':memory:')
          source.backup(dest)
 
       .. note:: This is available only when the underlying SQLite library is at
