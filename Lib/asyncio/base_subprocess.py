@@ -4,7 +4,6 @@ import warnings
 
 from . import protocols
 from . import transports
-from .coroutines import coroutine
 from .log import logger
 
 

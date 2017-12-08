@@ -14,7 +14,6 @@ if hasattr(socket, 'AF_UNIX'):
 from . import coroutines
 from . import events
 from . import protocols
-from .coroutines import coroutine
 from .log import logger
 from .tasks import sleep
 

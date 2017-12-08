@@ -24,7 +24,6 @@ from . import events
 from . import futures
 from . import transports
 from . import sslproto
-from .coroutines import coroutine
 from .log import logger
 
 

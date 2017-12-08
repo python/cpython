@@ -6,7 +6,6 @@ from . import events
 from . import protocols
 from . import streams
 from . import tasks
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -122,9 +121,7 @@ class Process:
         return self._transport.get_returncode()
 
     async def wait(self):
-        """Wait until the process exit and return the process return code.
-
-        This method is a coroutine."""
+        """Wait until the process exit and return the process return code."""
         return await self._transport._wait()
 
     def send_signal(self, signal):

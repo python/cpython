@@ -30,7 +30,6 @@ from . import base_events
 from . import events
 from . import futures
 from . import tasks
-from .coroutines import coroutine
 from .log import logger
 from test import support
 

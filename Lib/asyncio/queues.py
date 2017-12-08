@@ -7,7 +7,6 @@ import heapq
 
 from . import events
 from . import locks
-from .coroutines import coroutine
 
 
 class QueueEmpty(Exception):
