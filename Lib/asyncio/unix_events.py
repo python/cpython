@@ -20,7 +20,6 @@ from . import events
 from . import futures
 from . import selector_events
 from . import transports
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -168,10 +167,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                    extra=None):
         return _UnixWritePipeTransport(self, pipe, protocol, waiter, extra)
 
-    @coroutine
-    def _make_subprocess_transport(self, protocol, args, shell,
-                                   stdin, stdout, stderr, bufsize,
-                                   extra=None, **kwargs):
+    async def _make_subprocess_transport(self, protocol, args, shell,
+                                         stdin, stdout, stderr, bufsize,
+                                         extra=None, **kwargs):
         with events.get_child_watcher() as watcher:
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
@@ -182,29 +180,20 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             watcher.add_child_handler(transp.get_pid(),
                                       self._child_watcher_callback, transp)
             try:
-                yield from waiter
-            except Exception as exc:
-                # Workaround CPython bug #23353: using yield/yield-from in an
-                # except block of a generator doesn't clear properly
-                # sys.exc_info()
-                err = exc
-            else:
-                err = None
-
-            if err is not None:
+                await waiter
+            except Exception:
                 transp.close()
-                yield from transp._wait()
-                raise err
+                await transp._wait()
+                raise
 
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
-    @coroutine
-    def create_unix_connection(self, protocol_factory, path=None, *,
-                               ssl=None, sock=None,
-                               server_hostname=None):
+    async def create_unix_connection(self, protocol_factory, path=None, *,
+                                     ssl=None, sock=None,
+                                     server_hostname=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -223,7 +212,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
             try:
                 sock.setblocking(False)
-                yield from self.sock_connect(sock, path)
+                await self.sock_connect(sock, path)
             except:
                 sock.close()
                 raise
@@ -238,13 +227,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     .format(sock))
             sock.setblocking(False)
 
-        transport, protocol = yield from self._create_connection_transport(
+        transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
         return transport, protocol
 
-    @coroutine
-    def create_unix_server(self, protocol_factory, path=None, *,
-                           sock=None, backlog=100, ssl=None):
+    async def create_unix_server(self, protocol_factory, path=None, *,
+                                 sock=None, backlog=100, ssl=None):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 

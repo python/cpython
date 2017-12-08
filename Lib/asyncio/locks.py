@@ -66,20 +66,21 @@ class _ContextManagerMixin:
         yield from self.acquire()
         return _ContextManager(self)
 
-    def __await__(self):
-        # To make "with await lock" work.
-        yield from self.acquire()
+    async def __acquire_ctx(self):
+        await self.acquire()
         return _ContextManager(self)
 
-    @coroutine
-    def __aenter__(self):
-        yield from self.acquire()
+    def __await__(self):
+        # To make "with await lock" work.
+        return self.__acquire_ctx().__await__()
+
+    async def __aenter__(self):
+        await self.acquire()
         # We have no use for the "as ..."  clause in the with
         # statement for locks.
         return None
 
-    @coroutine
-    def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type, exc, tb):
         self.release()
 
 
@@ -156,8 +157,7 @@ class Lock(_ContextManagerMixin):
         """Return True if lock is acquired."""
         return self._locked
 
-    @coroutine
-    def acquire(self):
+    async def acquire(self):
         """Acquire a lock.
 
         This method blocks until the lock is unlocked, then sets it to
@@ -170,7 +170,7 @@ class Lock(_ContextManagerMixin):
         fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
-            yield from fut
+            await fut
             self._locked = True
             return True
         except futures.CancelledError:
@@ -251,8 +251,7 @@ class Event:
         to true again."""
         self._value = False
 
-    @coroutine
-    def wait(self):
+    async def wait(self):
         """Block until the internal flag is true.
 
         If the internal flag is true on entry, return True
@@ -265,7 +264,7 @@ class Event:
         fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
-            yield from fut
+            await fut
             return True
         finally:
             self._waiters.remove(fut)
@@ -307,8 +306,7 @@ class Condition(_ContextManagerMixin):
             extra = '{},waiters:{}'.format(extra, len(self._waiters))
         return '<{} [{}]>'.format(res[1:-1], extra)
 
-    @coroutine
-    def wait(self):
+    async def wait(self):
         """Wait until notified.
 
         If the calling coroutine has not acquired the lock when this
@@ -327,7 +325,7 @@ class Condition(_ContextManagerMixin):
             fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
-                yield from fut
+                await fut
                 return True
             finally:
                 self._waiters.remove(fut)
@@ -336,13 +334,12 @@ class Condition(_ContextManagerMixin):
             # Must reacquire lock even if wait is cancelled
             while True:
                 try:
-                    yield from self.acquire()
+                    await self.acquire()
                     break
                 except futures.CancelledError:
                     pass
 
-    @coroutine
-    def wait_for(self, predicate):
+    async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
 
         The predicate should be a callable which result will be
@@ -351,7 +348,7 @@ class Condition(_ContextManagerMixin):
         """
         result = predicate()
         while not result:
-            yield from self.wait()
+            await self.wait()
             result = predicate()
         return result
 
@@ -432,8 +429,7 @@ class Semaphore(_ContextManagerMixin):
         """Returns True if semaphore can not be acquired immediately."""
         return self._value == 0
 
-    @coroutine
-    def acquire(self):
+    async def acquire(self):
         """Acquire a semaphore.
 
         If the internal counter is larger than zero on entry,
@@ -446,7 +442,7 @@ class Semaphore(_ContextManagerMixin):
             fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
-                yield from fut
+                await fut
             except:
                 # See the similar code in Queue.get.
                 fut.cancel()

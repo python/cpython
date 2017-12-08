@@ -69,21 +69,18 @@ class LockTests(test_utils.TestCase):
 
         self.assertTrue(self.loop.run_until_complete(lock.acquire()))
 
-        @asyncio.coroutine
-        def c1(result):
-            if (yield from lock.acquire()):
+        async def c1(result):
+            if await lock.acquire():
                 result.append(1)
             return True
 
-        @asyncio.coroutine
-        def c2(result):
-            if (yield from lock.acquire()):
+        async def c2(result):
+            if await lock.acquire():
                 result.append(2)
             return True
 
-        @asyncio.coroutine
-        def c3(result):
-            if (yield from lock.acquire()):
+        async def c3(result):
+            if await lock.acquire():
                 result.append(3)
             return True
 
@@ -145,12 +142,11 @@ class LockTests(test_utils.TestCase):
         # Setup: A has the lock, b and c are waiting.
         lock = asyncio.Lock(loop=self.loop)
 
-        @asyncio.coroutine
-        def lockit(name, blocker):
-            yield from lock.acquire()
+        async def lockit(name, blocker):
+            await lock.acquire()
             try:
                 if blocker is not None:
-                    yield from blocker
+                    await blocker
             finally:
                 lock.release()
 
@@ -294,19 +290,16 @@ class EventTests(test_utils.TestCase):
 
         result = []
 
-        @asyncio.coroutine
-        def c1(result):
-            if (yield from ev.wait()):
+        async def c1(result):
+            if await ev.wait():
                 result.append(1)
 
-        @asyncio.coroutine
-        def c2(result):
-            if (yield from ev.wait()):
+        async def c2(result):
+            if await ev.wait():
                 result.append(2)
 
-        @asyncio.coroutine
-        def c3(result):
-            if (yield from ev.wait()):
+        async def c3(result):
+            if await ev.wait():
                 result.append(3)
 
         t1 = asyncio.Task(c1(result), loop=self.loop)
@@ -359,9 +352,8 @@ class EventTests(test_utils.TestCase):
         ev = asyncio.Event(loop=self.loop)
         result = []
 
-        @asyncio.coroutine
-        def c1(result):
-            if (yield from ev.wait()):
+        async def c1(result):
+            if await ev.wait():
                 result.append(1)
             return True
 
@@ -408,24 +400,21 @@ class ConditionTests(test_utils.TestCase):
         cond = asyncio.Condition(loop=self.loop)
         result = []
 
-        @asyncio.coroutine
-        def c1(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c1(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(1)
             return True
 
-        @asyncio.coroutine
-        def c2(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c2(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(2)
             return True
 
-        @asyncio.coroutine
-        def c3(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c3(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(3)
             return True
 
@@ -522,10 +511,9 @@ class ConditionTests(test_utils.TestCase):
 
         result = []
 
-        @asyncio.coroutine
-        def c1(result):
-            yield from cond.acquire()
-            if (yield from cond.wait_for(predicate)):
+        async def c1(result):
+            await cond.acquire()
+            if await cond.wait_for(predicate):
                 result.append(1)
                 cond.release()
             return True
@@ -567,26 +555,23 @@ class ConditionTests(test_utils.TestCase):
         cond = asyncio.Condition(loop=self.loop)
         result = []
 
-        @asyncio.coroutine
-        def c1(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c1(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(1)
                 cond.release()
             return True
 
-        @asyncio.coroutine
-        def c2(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c2(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(2)
                 cond.release()
             return True
 
-        @asyncio.coroutine
-        def c3(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c3(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(3)
                 cond.release()
             return True
@@ -623,18 +608,16 @@ class ConditionTests(test_utils.TestCase):
 
         result = []
 
-        @asyncio.coroutine
-        def c1(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c1(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(1)
                 cond.release()
             return True
 
-        @asyncio.coroutine
-        def c2(result):
-            yield from cond.acquire()
-            if (yield from cond.wait()):
+        async def c2(result):
+            await cond.acquire()
+            if await cond.wait():
                 result.append(2)
                 cond.release()
             return True
@@ -791,27 +774,23 @@ class SemaphoreTests(test_utils.TestCase):
         self.assertTrue(self.loop.run_until_complete(sem.acquire()))
         self.assertFalse(sem.locked())
 
-        @asyncio.coroutine
-        def c1(result):
-            yield from sem.acquire()
+        async def c1(result):
+            await sem.acquire()
             result.append(1)
             return True
 
-        @asyncio.coroutine
-        def c2(result):
-            yield from sem.acquire()
+        async def c2(result):
+            await sem.acquire()
             result.append(2)
             return True
 
-        @asyncio.coroutine
-        def c3(result):
-            yield from sem.acquire()
+        async def c3(result):
+            await sem.acquire()
             result.append(3)
             return True
 
-        @asyncio.coroutine
-        def c4(result):
-            yield from sem.acquire()
+        async def c4(result):
+            await sem.acquire()
             result.append(4)
             return True
 

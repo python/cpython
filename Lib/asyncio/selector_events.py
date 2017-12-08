@@ -24,7 +24,6 @@ from . import events
 from . import futures
 from . import transports
 from . import sslproto
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -189,9 +188,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                                   sslcontext, server)
                 self.create_task(accept)
 
-    @coroutine
-    def _accept_connection2(self, protocol_factory, conn, extra,
-                            sslcontext=None, server=None):
+    async def _accept_connection2(self, protocol_factory, conn, extra,
+                                  sslcontext=None, server=None):
         protocol = None
         transport = None
         try:
@@ -207,7 +205,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     server=server)
 
             try:
-                yield from waiter
+                await waiter
             except:
                 transport.close()
                 raise
@@ -452,8 +450,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             fd = sock.fileno()
             self.add_writer(fd, self._sock_sendall, fut, fd, sock, data)
 
-    @coroutine
-    def sock_connect(self, sock, address):
+    async def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
 
         This method is a coroutine.
@@ -465,12 +462,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             resolved = base_events._ensure_resolved(
                 address, family=sock.family, proto=sock.proto, loop=self)
             if not resolved.done():
-                yield from resolved
+                await resolved
             _, _, _, _, address = resolved.result()[0]
 
         fut = self.create_future()
         self._sock_connect(fut, sock, address)
-        return (yield from fut)
+        return await fut
 
     def _sock_connect(self, fut, sock, address):
         fd = sock.fileno()

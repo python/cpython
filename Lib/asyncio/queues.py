@@ -7,7 +7,6 @@ import heapq
 
 from . import events
 from . import locks
-from .coroutines import coroutine
 
 
 class QueueEmpty(Exception):
@@ -28,7 +27,7 @@ class Queue:
     """A queue, useful for coordinating producer and consumer coroutines.
 
     If maxsize is less than or equal to zero, the queue size is infinite. If it
-    is an integer greater than 0, then "yield from put()" will block when the
+    is an integer greater than 0, then "await put()" will block when the
     queue reaches maxsize, until an item is removed by get().
 
     Unlike the standard library Queue, you can reliably know this Queue's size
@@ -116,20 +115,17 @@ class Queue:
         else:
             return self.qsize() >= self._maxsize
 
-    @coroutine
-    def put(self, item):
+    async def put(self, item):
         """Put an item into the queue.
 
         Put an item into the queue. If the queue is full, wait until a free
         slot is available before adding item.
-
-        This method is a coroutine.
         """
         while self.full():
             putter = self._loop.create_future()
             self._putters.append(putter)
             try:
-                yield from putter
+                await putter
             except:
                 putter.cancel()  # Just in case putter is not done yet.
                 if not self.full() and not putter.cancelled():
@@ -151,19 +147,16 @@ class Queue:
         self._finished.clear()
         self._wakeup_next(self._getters)
 
-    @coroutine
-    def get(self):
+    async def get(self):
         """Remove and return an item from the queue.
 
         If queue is empty, wait until an item is available.
-
-        This method is a coroutine.
         """
         while self.empty():
             getter = self._loop.create_future()
             self._getters.append(getter)
             try:
-                yield from getter
+                await getter
             except:
                 getter.cancel()  # Just in case getter is not done yet.
 
@@ -210,8 +203,7 @@ class Queue:
         if self._unfinished_tasks == 0:
             self._finished.set()
 
-    @coroutine
-    def join(self):
+    async def join(self):
         """Block until all items in the queue have been gotten and processed.
 
         The count of unfinished tasks goes up whenever an item is added to the
@@ -220,7 +212,7 @@ class Queue:
         When the count of unfinished tasks drops to zero, join() unblocks.
         """
         if self._unfinished_tasks > 0:
-            yield from self._finished.wait()
+            await self._finished.wait()
 
 
 class PriorityQueue(Queue):

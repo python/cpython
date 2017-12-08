@@ -219,7 +219,7 @@ class AbstractServer:
         """Stop serving.  This leaves existing connections open."""
         return NotImplemented
 
-    def wait_closed(self):
+    async def wait_closed(self):
         """Coroutine to wait until service is closed."""
         return NotImplemented
 
@@ -267,7 +267,7 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
-    def shutdown_asyncgens(self):
+    async def shutdown_asyncgens(self):
         """Shutdown all active asynchronous generators."""
         raise NotImplementedError
 
@@ -302,7 +302,7 @@ class AbstractEventLoop:
     def call_soon_threadsafe(self, callback, *args):
         raise NotImplementedError
 
-    def run_in_executor(self, executor, func, *args):
+    async def run_in_executor(self, executor, func, *args):
         raise NotImplementedError
 
     def set_default_executor(self, executor):
@@ -310,21 +310,23 @@ class AbstractEventLoop:
 
     # Network I/O methods returning Futures.
 
-    def getaddrinfo(self, host, port, *, family=0, type=0, proto=0, flags=0):
+    async def getaddrinfo(self, host, port, *,
+                          family=0, type=0, proto=0, flags=0):
         raise NotImplementedError
 
-    def getnameinfo(self, sockaddr, flags=0):
+    async def getnameinfo(self, sockaddr, flags=0):
         raise NotImplementedError
 
-    def create_connection(self, protocol_factory, host=None, port=None, *,
-                          ssl=None, family=0, proto=0, flags=0, sock=None,
-                          local_addr=None, server_hostname=None):
+    async def create_connection(self, protocol_factory, host=None, port=None,
+                                *, ssl=None, family=0, proto=0,
+                                flags=0, sock=None, local_addr=None,
+                                server_hostname=None):
         raise NotImplementedError
 
-    def create_server(self, protocol_factory, host=None, port=None, *,
-                      family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE,
-                      sock=None, backlog=100, ssl=None, reuse_address=None,
-                      reuse_port=None):
+    async def create_server(self, protocol_factory, host=None, port=None,
+                            *, family=socket.AF_UNSPEC,
+                            flags=socket.AI_PASSIVE, sock=None, backlog=100,
+                            ssl=None, reuse_address=None, reuse_port=None):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -362,13 +364,13 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
-    def create_unix_connection(self, protocol_factory, path=None, *,
-                               ssl=None, sock=None,
-                               server_hostname=None):
+    async def create_unix_connection(self, protocol_factory, path=None, *,
+                                     ssl=None, sock=None,
+                                     server_hostname=None):
         raise NotImplementedError
 
-    def create_unix_server(self, protocol_factory, path=None, *,
-                           sock=None, backlog=100, ssl=None):
+    async def create_unix_server(self, protocol_factory, path=None, *,
+                                 sock=None, backlog=100, ssl=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop
@@ -388,11 +390,11 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
-    def create_datagram_endpoint(self, protocol_factory,
-                                 local_addr=None, remote_addr=None, *,
-                                 family=0, proto=0, flags=0,
-                                 reuse_address=None, reuse_port=None,
-                                 allow_broadcast=None, sock=None):
+    async def create_datagram_endpoint(self, protocol_factory,
+                                       local_addr=None, remote_addr=None, *,
+                                       family=0, proto=0, flags=0,
+                                       reuse_address=None, reuse_port=None,
+                                       allow_broadcast=None, sock=None):
         """A coroutine which creates a datagram endpoint.
 
         This method will try to establish the endpoint in the background.
@@ -425,7 +427,7 @@ class AbstractEventLoop:
 
     # Pipes and subprocesses.
 
-    def connect_read_pipe(self, protocol_factory, pipe):
+    async def connect_read_pipe(self, protocol_factory, pipe):
         """Register read pipe in event loop. Set the pipe to non-blocking mode.
 
         protocol_factory should instantiate object with Protocol interface.
@@ -438,7 +440,7 @@ class AbstractEventLoop:
         # close fd in pipe transport then close f and vise versa.
         raise NotImplementedError
 
-    def connect_write_pipe(self, protocol_factory, pipe):
+    async def connect_write_pipe(self, protocol_factory, pipe):
         """Register write pipe in event loop.
 
         protocol_factory should instantiate object with BaseProtocol interface.
@@ -451,14 +453,18 @@ class AbstractEventLoop:
         # close fd in pipe transport then close f and vise versa.
         raise NotImplementedError
 
-    def subprocess_shell(self, protocol_factory, cmd, *, stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         **kwargs):
+    async def subprocess_shell(self, protocol_factory, cmd, *,
+                               stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               **kwargs):
         raise NotImplementedError
 
-    def subprocess_exec(self, protocol_factory, *args, stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                        **kwargs):
+    async def subprocess_exec(self, protocol_factory, *args,
+                              stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              **kwargs):
         raise NotImplementedError
 
     # Ready-based callback registration methods.
@@ -480,19 +486,19 @@ class AbstractEventLoop:
 
     # Completion based I/O methods returning Futures.
 
-    def sock_recv(self, sock, nbytes):
+    async def sock_recv(self, sock, nbytes):
         raise NotImplementedError
 
-    def sock_recv_into(self, sock, buf):
+    async def sock_recv_into(self, sock, buf):
         raise NotImplementedError
 
-    def sock_sendall(self, sock, data):
+    async def sock_sendall(self, sock, data):
         raise NotImplementedError
 
-    def sock_connect(self, sock, address):
+    async def sock_connect(self, sock, address):
         raise NotImplementedError
 
-    def sock_accept(self, sock):
+    async def sock_accept(self, sock):
         raise NotImplementedError
 
     # Signal handling.

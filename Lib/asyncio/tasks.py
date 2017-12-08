@@ -9,6 +9,7 @@ __all__ = ['Task',
 import concurrent.futures
 import functools
 import inspect
+import types
 import warnings
 import weakref
 
@@ -276,8 +277,7 @@ FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
 
-@coroutine
-def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
+async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures and coroutines given by fs to complete.
 
     The sequence futures must not be empty.
@@ -288,7 +288,7 @@ def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
 
     Usage:
 
-        done, pending = yield from asyncio.wait(fs)
+        done, pending = await asyncio.wait(fs)
 
     Note: This does not raise TimeoutError! Futures that aren't done
     when the timeout occurs are returned in the second set.
@@ -305,7 +305,7 @@ def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
-    return (yield from _wait(fs, timeout, return_when, loop))
+    return await _wait(fs, timeout, return_when, loop)
 
 
 def _release_waiter(waiter, *args):
@@ -313,8 +313,7 @@ def _release_waiter(waiter, *args):
         waiter.set_result(None)
 
 
-@coroutine
-def wait_for(fut, timeout, *, loop=None):
+async def wait_for(fut, timeout, *, loop=None):
     """Wait for the single Future or coroutine to complete, with timeout.
 
     Coroutine will be wrapped in Task.
@@ -331,7 +330,7 @@ def wait_for(fut, timeout, *, loop=None):
         loop = events.get_event_loop()
 
     if timeout is None:
-        return (yield from fut)
+        return await fut
 
     if timeout <= 0:
         fut = ensure_future(fut, loop=loop)
@@ -352,7 +351,7 @@ def wait_for(fut, timeout, *, loop=None):
     try:
         # wait until the future completes or the timeout
         try:
-            yield from waiter
+            await waiter
         except futures.CancelledError:
             fut.remove_done_callback(cb)
             fut.cancel()
@@ -368,8 +367,7 @@ def wait_for(fut, timeout, *, loop=None):
         timeout_handle.cancel()
 
 
-@coroutine
-def _wait(fs, timeout, return_when, loop):
+async def _wait(fs, timeout, return_when, loop):
     """Internal helper for wait() and wait_for().
 
     The fs argument must be a collection of Futures.
@@ -397,7 +395,7 @@ def _wait(fs, timeout, return_when, loop):
         f.add_done_callback(_on_completion)
 
     try:
-        yield from waiter
+        await waiter
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
@@ -423,10 +421,10 @@ def as_completed(fs, *, loop=None, timeout=None):
     This differs from PEP 3148; the proper way to use this is:
 
         for f in as_completed(fs):
-            result = yield from f  # The 'yield from' may raise.
+            result = await f  # The 'await' may raise.
             # Use result.
 
-    If a timeout is specified, the 'yield from' will raise
+    If a timeout is specified, the 'await' will raise
     TimeoutError when the timeout occurs before all Futures are done.
 
     Note: The futures 'f' are not necessarily members of fs.
@@ -453,9 +451,8 @@ def as_completed(fs, *, loop=None, timeout=None):
         if not todo and timeout_handle is not None:
             timeout_handle.cancel()
 
-    @coroutine
-    def _wait_for_one():
-        f = yield from done.get()
+    async def _wait_for_one():
+        f = await done.get()
         if f is None:
             # Dummy value from _on_timeout().
             raise futures.TimeoutError
@@ -469,11 +466,22 @@ def as_completed(fs, *, loop=None, timeout=None):
         yield _wait_for_one()
 
 
-@coroutine
-def sleep(delay, result=None, *, loop=None):
+@types.coroutine
+def __sleep0():
+    """Skip one event loop run cycle.
+
+    This is a private helper for 'asyncio.sleep()', used
+    when the 'delay' is set to 0.  It uses a bare 'yield'
+    expression (which Task._step knows how to handle)
+    instead of creating a Future object.
+    """
+    yield
+
+
+async def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
     if delay == 0:
-        yield
+        await __sleep0()
         return result
 
     if loop is None:
@@ -483,7 +491,7 @@ def sleep(delay, result=None, *, loop=None):
                                 futures._set_result_unless_cancelled,
                                 future, result)
     try:
-        return (yield from future)
+        return await future
     finally:
         h.cancel()
 
@@ -652,11 +660,11 @@ def shield(arg, *, loop=None):
 
     The statement
 
-        res = yield from shield(something())
+        res = await shield(something())
 
     is exactly equivalent to the statement
 
-        res = yield from something()
+        res = await something()
 
     *except* that if the coroutine containing it is cancelled, the
     task running in something() is not cancelled.  From the POV of
@@ -669,7 +677,7 @@ def shield(arg, *, loop=None):
     you can combine shield() with a try/except clause, as follows:
 
         try:
-            res = yield from shield(something())
+            res = await shield(something())
         except CancelledError:
             res = None
     """

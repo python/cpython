@@ -6,7 +6,6 @@ from . import events
 from . import protocols
 from . import streams
 from . import tasks
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -121,12 +120,9 @@ class Process:
     def returncode(self):
         return self._transport.get_returncode()
 
-    @coroutine
-    def wait(self):
-        """Wait until the process exit and return the process return code.
-
-        This method is a coroutine."""
-        return (yield from self._transport._wait())
+    async def wait(self):
+        """Wait until the process exit and return the process return code."""
+        return await self._transport._wait()
 
     def send_signal(self, signal):
         self._transport.send_signal(signal)
@@ -137,15 +133,14 @@ class Process:
     def kill(self):
         self._transport.kill()
 
-    @coroutine
-    def _feed_stdin(self, input):
+    async def _feed_stdin(self, input):
         debug = self._loop.get_debug()
         self.stdin.write(input)
         if debug:
             logger.debug('%r communicate: feed stdin (%s bytes)',
                         self, len(input))
         try:
-            yield from self.stdin.drain()
+            await self.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as exc:
             # communicate() ignores BrokenPipeError and ConnectionResetError
             if debug:
@@ -155,12 +150,10 @@ class Process:
             logger.debug('%r communicate: close stdin', self)
         self.stdin.close()
 
-    @coroutine
-    def _noop(self):
+    async def _noop(self):
         return None
 
-    @coroutine
-    def _read_stream(self, fd):
+    async def _read_stream(self, fd):
         transport = self._transport.get_pipe_transport(fd)
         if fd == 2:
             stream = self.stderr
@@ -170,15 +163,14 @@ class Process:
         if self._loop.get_debug():
             name = 'stdout' if fd == 1 else 'stderr'
             logger.debug('%r communicate: read %s', self, name)
-        output = yield from stream.read()
+        output = await stream.read()
         if self._loop.get_debug():
             name = 'stdout' if fd == 1 else 'stderr'
             logger.debug('%r communicate: close %s', self, name)
         transport.close()
         return output
 
-    @coroutine
-    def communicate(self, input=None):
+    async def communicate(self, input=None):
         if input is not None:
             stdin = self._feed_stdin(input)
         else:
@@ -191,36 +183,36 @@ class Process:
             stderr = self._read_stream(2)
         else:
             stderr = self._noop()
-        stdin, stdout, stderr = yield from tasks.gather(stdin, stdout, stderr,
-                                                        loop=self._loop)
-        yield from self.wait()
+        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr,
+                                                   loop=self._loop)
+        await self.wait()
         return (stdout, stderr)
 
 
-@coroutine
-def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
-                            loop=None, limit=streams._DEFAULT_LIMIT, **kwds):
+async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
+                                  loop=None, limit=streams._DEFAULT_LIMIT,
+                                  **kwds):
     if loop is None:
         loop = events.get_event_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
-    transport, protocol = yield from loop.subprocess_shell(
-                                            protocol_factory,
-                                            cmd, stdin=stdin, stdout=stdout,
-                                            stderr=stderr, **kwds)
+    transport, protocol = await loop.subprocess_shell(
+        protocol_factory,
+        cmd, stdin=stdin, stdout=stdout,
+        stderr=stderr, **kwds)
     return Process(transport, protocol, loop)
 
-@coroutine
-def create_subprocess_exec(program, *args, stdin=None, stdout=None,
-                           stderr=None, loop=None,
-                           limit=streams._DEFAULT_LIMIT, **kwds):
+
+async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
+                                 stderr=None, loop=None,
+                                 limit=streams._DEFAULT_LIMIT, **kwds):
     if loop is None:
         loop = events.get_event_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
-    transport, protocol = yield from loop.subprocess_exec(
-                                            protocol_factory,
-                                            program, *args,
-                                            stdin=stdin, stdout=stdout,
-                                            stderr=stderr, **kwds)
+    transport, protocol = await loop.subprocess_exec(
+        protocol_factory,
+        program, *args,
+        stdin=stdin, stdout=stdout,
+        stderr=stderr, **kwds)
     return Process(transport, protocol, loop)
