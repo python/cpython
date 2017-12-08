@@ -1465,7 +1465,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
     const char *filename;
     int pages = -1;
     PyObject *progress = Py_None;
-    char *name = "main";
+    const char *name = "main";
     int rc;
     int cberr = 0;
     double sleep_secs = 0.250;
