@@ -826,11 +826,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     @coroutine
-    def create_datagram_endpoint(self, protocol_factory,
-                                 local_addr=None, remote_addr=None, *,
-                                 family=0, proto=0, flags=0,
-                                 reuse_address=None, reuse_port=None,
-                                 allow_broadcast=None, sock=None):
+    async def create_datagram_endpoint(self, protocol_factory,
+                                       local_addr=None, remote_addr=None, *,
+                                       family=0, proto=0, flags=0,
+                                       reuse_address=None, reuse_port=None,
+                                       allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
             if not _is_dgram_socket(sock):
@@ -870,7 +870,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         assert isinstance(addr, tuple) and len(addr) == 2, (
                             '2-tuple is expected')
 
-                        infos = yield from _ensure_resolved(
+                        infos = await _ensure_resolved(
                             addr, family=family, type=socket.SOCK_DGRAM,
                             proto=proto, flags=flags, loop=self)
                         if not infos:
@@ -916,7 +916,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if local_addr:
                         sock.bind(local_address)
                     if remote_addr:
-                        yield from self.sock_connect(sock, remote_address)
+                        await self.sock_connect(sock, remote_address)
                         r_addr = remote_address
                 except OSError as exc:
                     if sock is not None:
@@ -946,7 +946,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                              remote_addr, transport, protocol)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
