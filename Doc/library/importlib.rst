@@ -230,6 +230,7 @@ ABC hierarchy::
      |    +-- MetaPathFinder
      |    +-- PathEntryFinder
      +-- Loader
+          +-- ResourceReader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
                +-- ExecutionLoader --+
@@ -463,6 +464,42 @@ ABC hierarchy::
 
         .. deprecated:: 3.4
            The import machinery now takes care of this automatically.
+
+
+.. class:: ResourceReader
+
+    Abstract base class for loaders to provide resource reading
+    support.
+
+    .. versionadded:: 3.7
+
+    .. abstractmethod:: open_resource(resource)
+
+        Return an opened, file-like object for binary reading.
+
+        The 'resource' argument is expected to represent only a file
+        name and thus not contain any subdirectory components.
+
+        If the resource cannot be found, FileNotFoundError is raised.
+
+    .. abstractmethod:: resource_path(resource)
+
+        Return the file system path to the specified resource.
+
+        The 'resource' argument is expected to represent only a file
+        name and thus not contain any subdirectory components.
+
+        If the resource does not exist on the file system, raise
+        FileNotFoundError.
+
+    .. abstractmethod:: is_resource(resource)
+
+        Return True if the named 'path' is consider a resource.
+
+    .. abstractmethod:: contents()
+
+        Return an iterator of strings over the contents of the
+        package.
 
 
 .. class:: ResourceLoader
