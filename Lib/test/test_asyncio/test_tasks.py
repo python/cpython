@@ -2631,14 +2631,19 @@ class CompatibilityTests(test_utils.TestCase):
     def test_await_old_style_coro(self):
 
         @asyncio.coroutine
-        def coro():
-            return 'ok'
+        def coro1():
+            return 'ok1'
+
+        @asyncio.coroutine
+        def coro2():
+            yield from asyncio.sleep(0, loop=self.loop)
+            return 'ok2'
 
         async def inner():
-            return await asyncio.wait_for(coro(), 0.5, loop=self.loop)
+            return await asyncio.gather(coro1(), coro2(), loop=self.loop)
 
         result = self.loop.run_until_complete(inner())
-        self.assertEqual('ok', result)
+        self.assertEqual(['ok1', 'ok2'], result)
 
 
 if __name__ == '__main__':
