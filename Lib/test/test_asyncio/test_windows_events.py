@@ -56,6 +56,7 @@ class ProactorTests(test_utils.TestCase):
         res = self.loop.run_until_complete(self._test_pipe())
         self.assertEqual(res, 'done')
 
+    @asyncio.coroutine
     def _test_pipe(self):
         ADDRESS = r'\\.\pipe\_test_pipe-%s' % os.getpid()
 
