@@ -1543,13 +1543,18 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
             Py_END_ALLOW_THREADS
 
             if (progress != Py_None) {
-                if (!PyObject_CallFunction(progress, "iii", rc,
-                                           sqlite3_backup_remaining(bckhandle),
-                                           sqlite3_backup_pagecount(bckhandle))) {
+                PyObject *res;
+
+                res = PyObject_CallFunction(progress, "iii", rc,
+                                            sqlite3_backup_remaining(bckhandle),
+                                            sqlite3_backup_pagecount(bckhandle));
+                if (res == NULL) {
                     /* User's callback raised an error: interrupt the loop and
                        propagate it. */
                     cberr = 1;
                     rc = -1;
+                } else {
+                    Py_DECREF(res);
                 }
             }
 
