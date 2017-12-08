@@ -2549,19 +2549,7 @@ class AbstractEventLoopTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, loop.call_soon_threadsafe, None)
         self.assertRaises(
-            NotImplementedError, loop.run_in_executor, f, f)
-        self.assertRaises(
             NotImplementedError, loop.set_default_executor, f)
-        self.assertRaises(
-            NotImplementedError, loop.getaddrinfo, 'localhost', 8080)
-        self.assertRaises(
-            NotImplementedError, loop.getnameinfo, ('localhost', 8080))
-        self.assertRaises(
-            NotImplementedError, loop.create_connection, f)
-        self.assertRaises(
-            NotImplementedError, loop.create_server, f)
-        self.assertRaises(
-            NotImplementedError, loop.create_datagram_endpoint, f)
         self.assertRaises(
             NotImplementedError, loop.add_reader, 1, f)
         self.assertRaises(
@@ -2571,32 +2559,11 @@ class AbstractEventLoopTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, loop.remove_writer, 1)
         self.assertRaises(
-            NotImplementedError, loop.sock_recv, f, 10)
-        self.assertRaises(
-            NotImplementedError, loop.sock_recv_into, f, 10)
-        self.assertRaises(
-            NotImplementedError, loop.sock_sendall, f, 10)
-        self.assertRaises(
-            NotImplementedError, loop.sock_connect, f, f)
-        self.assertRaises(
-            NotImplementedError, loop.sock_accept, f)
-        self.assertRaises(
             NotImplementedError, loop.add_signal_handler, 1, f)
         self.assertRaises(
             NotImplementedError, loop.remove_signal_handler, 1)
         self.assertRaises(
             NotImplementedError, loop.remove_signal_handler, 1)
-        self.assertRaises(
-            NotImplementedError, loop.connect_read_pipe, f,
-            mock.sentinel.pipe)
-        self.assertRaises(
-            NotImplementedError, loop.connect_write_pipe, f,
-            mock.sentinel.pipe)
-        self.assertRaises(
-            NotImplementedError, loop.subprocess_shell, f,
-            mock.sentinel)
-        self.assertRaises(
-            NotImplementedError, loop.subprocess_exec, f)
         self.assertRaises(
             NotImplementedError, loop.set_exception_handler, f)
         self.assertRaises(
@@ -2607,6 +2574,47 @@ class AbstractEventLoopTests(unittest.TestCase):
             NotImplementedError, loop.get_debug)
         self.assertRaises(
             NotImplementedError, loop.set_debug, f)
+
+    def test_not_implemented_async(self):
+
+        async def inner():
+            f = mock.Mock()
+            loop = asyncio.AbstractEventLoop()
+
+            with self.assertRaises(NotImplementedError):
+                await loop.run_in_executor(f, f)
+            with self.assertRaises(NotImplementedError):
+                await loop.getaddrinfo('localhost', 8080)
+            with self.assertRaises(NotImplementedError):
+                await loop.getnameinfo(('localhost', 8080))
+            with self.assertRaises(NotImplementedError):
+                await loop.create_connection(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.create_server(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.create_datagram_endpoint(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_recv(f, 10)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_recv_into(f, 10)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_sendall(f, 10)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_connect(f, f)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_accept(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.connect_read_pipe(f, mock.sentinel.pipe)
+            with self.assertRaises(NotImplementedError):
+                await loop.connect_write_pipe(f, mock.sentinel.pipe)
+            with self.assertRaises(NotImplementedError):
+                await loop.subprocess_shell(f, mock.sentinel)
+            with self.assertRaises(NotImplementedError):
+                await loop.subprocess_exec(f)
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(inner())
+        loop.close()
 
 
 class ProtocolsAbsTests(unittest.TestCase):
