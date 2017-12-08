@@ -220,13 +220,12 @@ class Server(events.AbstractServer):
             if not waiter.done():
                 waiter.set_result(waiter)
 
-    @coroutine
-    def wait_closed(self):
+    async def wait_closed(self):
         if self.sockets is None or self._waiters is None:
             return
         waiter = self._loop.create_future()
         self._waiters.append(waiter)
-        yield from waiter
+        await waiter
 
 
 class BaseEventLoop(events.AbstractEventLoop):
@@ -669,8 +668,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def getnameinfo(self, sockaddr, flags=0):
         return self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
 
-    @coroutine
-    def create_connection(self, protocol_factory, host=None, port=None, *,
+    async def create_connection(self, protocol_factory, host=None, port=None, *,
                           ssl=None, family=0, proto=0, flags=0, sock=None,
                           local_addr=None, server_hostname=None):
         """Connect to a TCP server.
@@ -720,7 +718,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 f2 = None
 
-            yield from tasks.wait(fs, loop=self)
+            await tasks.wait(fs, loop=self)
 
             infos = f1.result()
             if not infos:
@@ -753,7 +751,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                             continue
                     if self._debug:
                         logger.debug("connect %r to %r", sock, address)
-                    yield from self.sock_connect(sock, address)
+                    await self.sock_connect(sock, address)
                 except OSError as exc:
                     if sock is not None:
                         sock.close()
@@ -791,7 +789,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'A Stream Socket was expected, got {!r}'.format(sock))
 
-        transport, protocol = yield from self._create_connection_transport(
+        transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
         if self._debug:
             # Get the socket from the transport because SSL transport closes

@@ -1316,7 +1316,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         self.loop.getaddrinfo.side_effect = mock_getaddrinfo
         self.loop.sock_connect = mock.Mock()
-        self.loop.sock_connect.return_value = ()
+        self.loop.sock_connect.return_value = self.loop.create_future()
+        self.loop.sock_connect.return_value.set_result(None)
         self.loop._make_ssl_transport = mock.Mock()
 
         class _SelectorTransportMock:
