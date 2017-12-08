@@ -263,32 +263,31 @@ _apply_shared_exception(struct _shared_exception *exc)
 
 }
 
-// XXX Return int instead.
-
-static PyObject *
+static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             struct _shareditem *shared, struct _shared_exception **exc)
 {
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
     if (main_mod == NULL)
-        return NULL;
+        return -1;
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
     Py_DECREF(main_mod);
     if (ns == NULL)
-        return NULL;
+        return -1;
 
     // Apply the cross-interpreter data.
     if (shared != NULL) {
         for (struct _shareditem *item=shared; item->name != NULL; item += 1) {
             if (_shareditem_apply(shared, ns) != 0) {
                 Py_DECREF(ns);
-                return NULL;
+                return -1;
             }
         }
     }
 
     // Run the string (see PyRun_SimpleStringFlags).
     PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
+    Py_DECREF(ns);
     if (result == NULL) {
         // Get the exception from the subinterpreter.
         *exc = _get_shared_exception();
@@ -297,20 +296,20 @@ _run_script(PyInterpreterState *interp, const char *codestr,
         Py_DECREF(result);  // We throw away the result.
     }
 
-    return ns;
+    return 0;
 }
 
-static PyObject *
+static int
 _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
                            PyObject *shareable)
 {
     // XXX lock?
     if (_ensure_not_running(interp) < 0)
-        return NULL;
+        return -1;
 
     struct _shareditem *shared = _get_shared_ns(shareable);
     if (shared == NULL && PyErr_Occurred())
-        return NULL;
+        return -1;
 
     // Switch to interpreter.
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
@@ -318,8 +317,9 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Run the script.
     struct _shared_exception *exc = NULL;
-    PyObject *result = _run_script(interp, codestr, shared, &exc);
-    // XXX What to do if result is NULL?
+    if (_run_script(interp, codestr, shared, &exc) != 0) {
+        // XXX What to do if the the result isn't 0?
+    }
 
     // Switch back.
     if (save_tstate != NULL)
@@ -335,7 +335,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
         PyMem_Free(shared);
     }
 
-    return result;
+    return 0;
 }
 
 
@@ -479,68 +479,15 @@ interp_run_string(PyObject *self, PyObject *args)
     }
 
     // Run the code in the interpreter.
-    PyObject *ns = _run_script_in_interpreter(interp, codestr, shared);
-    if (ns == NULL)
+    if (_run_script_in_interpreter(interp, codestr, shared) != 0)
         return NULL;
-    else
-        Py_RETURN_NONE;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(run_string_doc,
 "run_string(ID, sourcetext)\n\
 \n\
 Execute the provided string in the identified interpreter.\n\
-\n\
-See PyRun_SimpleStrings.");
-
-
-/* XXX Drop run_string_unrestricted(). */
-
-static PyObject *
-interp_run_string_unrestricted(PyObject *self, PyObject *args)
-{
-    PyObject *id, *code, *shared = NULL;
-    if (!PyArg_UnpackTuple(args, "run_string_unrestricted", 2, 3,
-                           &id, &code, &shared))
-        return NULL;
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
-        return NULL;
-    }
-    if (!PyUnicode_Check(code)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "second arg (code) must be a string");
-        return NULL;
-    }
-    if (shared == Py_None)
-        shared = NULL;
-
-    // Look up the interpreter.
-    PyInterpreterState *interp = _look_up(id);
-    if (interp == NULL)
-        return NULL;
-
-    // Extract code.
-    Py_ssize_t size;
-    const char *codestr = PyUnicode_AsUTF8AndSize(code, &size);
-    if (codestr == NULL)
-        return NULL;
-    if (strlen(codestr) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
-                        "source code string cannot contain null bytes");
-        return NULL;
-    }
-
-    // Run the code in the interpreter.
-    return _run_script_in_interpreter(interp, codestr, shared);
-}
-
-PyDoc_STRVAR(run_string_unrestricted_doc,
-"run_string_unrestricted(ID, sourcetext, ns=None) -> main module ns\n\
-\n\
-Execute the provided string in the identified interpreter.  Return the\n\
-dict in which the code executed.  If the ns arg is provided then it is\n\
-merged into the execution namespace before the code is executed.\n\
 \n\
 See PyRun_SimpleStrings.");
 
@@ -575,8 +522,6 @@ static PyMethodDef module_functions[] = {
 
     {"run_string",              (PyCFunction)interp_run_string,
      METH_VARARGS, run_string_doc},
-    {"run_string_unrestricted", (PyCFunction)interp_run_string_unrestricted,
-     METH_VARARGS, run_string_unrestricted_doc},
 
     {"is_shareable",            (PyCFunction)object_is_shareable,
      METH_VARARGS, is_shareable_doc},
