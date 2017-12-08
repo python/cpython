@@ -530,7 +530,7 @@ Connection Objects
 
       By default, or when *pages* is either ``0`` or a negative integer, the entire
       database is copied in a single step; otherwise the method performs a loop
-      copying up to the specified *pages* at a time.
+      copying up to *pages* pages at a time.
 
       If *progress* is specified, it must either be ``None`` or a callable object that
       will be executed at each iteration with three integer arguments, respectively
