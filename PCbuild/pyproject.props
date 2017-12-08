@@ -5,7 +5,7 @@
     <OutDir>$(SolutionDir)</OutDir>
     <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>  
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>amd64</_PropertySheetDisplayName>
@@ -20,7 +20,7 @@
     <sqlite3Dir>$(externalsDir)\sqlite-3.8.11.0</sqlite3Dir>
     <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
     <lzmaDir>$(externalsDir)\xz-5.0.5</lzmaDir>
-    <opensslDir>$(externalsDir)\openssl-1.0.2j</opensslDir>
+    <opensslDir>$(externalsDir)\openssl-1.0.2k</opensslDir>
     <tcltkDir>$(externalsDir)\tcltk</tcltkDir>
     <tcltk64Dir>$(externalsDir)\tcltk64</tcltk64Dir>
     <tcltkLib>$(tcltkDir)\lib\tcl86t.lib;$(tcltkDir)\lib\tk86t.lib</tcltkLib>
