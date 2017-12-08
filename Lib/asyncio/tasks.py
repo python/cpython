@@ -468,6 +468,9 @@ def as_completed(fs, *, loop=None, timeout=None):
 
 @types.coroutine
 def _sleep0():
+    # the hack is needed to make a quick pass
+    # of task step iteration when delay == 0
+    # Task._step has an optimization for bare yield
     yield
 
 
