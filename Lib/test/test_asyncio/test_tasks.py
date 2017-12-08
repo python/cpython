@@ -1159,8 +1159,8 @@ class BaseTaskTests:
 
         loop = self.new_test_loop(gen)
 
-        a = asyncio.sleep(0.1, 'a', loop=loop)
-        b = asyncio.sleep(0.15, 'b', loop=loop)
+        a = loop.create_task(asyncio.sleep(0.1, 'a', loop=loop))
+        b = loop.create_task(asyncio.sleep(0.15, 'b', loop=loop))
 
         @asyncio.coroutine
         def foo():
