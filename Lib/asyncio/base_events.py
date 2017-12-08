@@ -1089,14 +1089,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             logger.debug("%r handled: (%r, %r)", sock, transport, protocol)
         return transport, protocol
 
-    @coroutine
-    def connect_read_pipe(self, protocol_factory, pipe):
+    async def connect_read_pipe(self, protocol_factory, pipe):
         protocol = protocol_factory()
         waiter = self.create_future()
         transport = self._make_read_pipe_transport(pipe, protocol, waiter)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
@@ -1106,14 +1105,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                          pipe.fileno(), transport, protocol)
         return transport, protocol
 
-    @coroutine
-    def connect_write_pipe(self, protocol_factory, pipe):
+    async def connect_write_pipe(self, protocol_factory, pipe):
         protocol = protocol_factory()
         waiter = self.create_future()
         transport = self._make_write_pipe_transport(pipe, protocol, waiter)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
