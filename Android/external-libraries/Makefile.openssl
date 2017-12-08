@@ -22,7 +22,9 @@ else
     export MACHINE := $(ANDROID_ARCH)
 endif
 
-all: $(BUILD_OPENSSL)
+all: openssl_header $(BUILD_OPENSSL)
+openssl_header:
+	@echo "---> Build the $(OPENSSL) external library."
 
 $(BUILD_DIR)/$(OPENSSL).tar.gz:
 	cd $(BUILD_DIR); \
@@ -42,4 +44,4 @@ $(BUILD_OPENSSL): $(BUILD_DIR)/$(OPENSSL).tar.gz
 	    $(MAKE) all; \
 	    $(MAKE) install CC=$(GCC) RANLIB=$(RANLIB)
 
-.PHONY: all
+.PHONY: all openssl_header

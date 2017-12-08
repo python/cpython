@@ -8,10 +8,18 @@ LIBFFI := libffi-3.2.1
 BUILD_DIR := $(BUILD_DIR)/external-libraries
 py_install_dir := $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)
 
-libffi: $(py_install_dir)/lib/libffi.a
-ncurses: $(py_install_dir)/lib/libncursesw.a
-readline: $(py_install_dir)/lib/libreadline.a
-sqlite: $(py_install_dir)/lib/libsqlite3.a
+libffi: libffi_header $(py_install_dir)/lib/libffi.a
+libffi_header:
+	@echo "---> Build the $(LIBFFI) external library."
+ncurses: ncurses_header $(py_install_dir)/lib/libncursesw.a
+ncurses_header:
+	@echo "---> Build the $(NCURSES) external library."
+readline: readline_header $(py_install_dir)/lib/libreadline.a
+readline_header:
+	@echo "---> Build the $(READLINE) external library."
+sqlite: sqlite_header $(py_install_dir)/lib/libsqlite3.a
+sqlite_header:
+	@echo "---> Build the sqlite external library (from $(SQLITE_FNAME).tar.gz)."
 
 $(BUILD_DIR)/$(NCURSES).tar.gz:
 	cd $(BUILD_DIR); \
@@ -80,4 +88,4 @@ endif
 	    --disable-shared
 	-$(MAKE) -C $(BUILD_DIR)/$(LIBFFI)-$(BUILD_TYPE) all install install-pkgconfigDATA
 
-.PHONY: all
+.PHONY: all libffi_header ncurses_header sqlite_header readline_header
