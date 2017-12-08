@@ -66,10 +66,13 @@ class _ContextManagerMixin:
         yield from self.acquire()
         return _ContextManager(self)
 
+    async def __acquire_ctx(self):
+        await self.acquire()
+        return _ContextManager(self)
+
     def __await__(self):
         # To make "with await lock" work.
-        yield from self.acquire()
-        return _ContextManager(self)
+        return self.__acquire_ctx().__await__()
 
     async def __aenter__(self):
         await self.acquire()
@@ -154,8 +157,7 @@ class Lock(_ContextManagerMixin):
         """Return True if lock is acquired."""
         return self._locked
 
-    @coroutine
-    def acquire(self):
+    async def acquire(self):
         """Acquire a lock.
 
         This method blocks until the lock is unlocked, then sets it to
@@ -168,7 +170,7 @@ class Lock(_ContextManagerMixin):
         fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
-            yield from fut
+            await fut
             self._locked = True
             return True
         except futures.CancelledError:
@@ -427,8 +429,7 @@ class Semaphore(_ContextManagerMixin):
         """Returns True if semaphore can not be acquired immediately."""
         return self._value == 0
 
-    @coroutine
-    def acquire(self):
+    async def acquire(self):
         """Acquire a semaphore.
 
         If the internal counter is larger than zero on entry,
@@ -441,7 +442,7 @@ class Semaphore(_ContextManagerMixin):
             fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
-                yield from fut
+                await fut
             except:
                 # See the similar code in Queue.get.
                 fut.cancel()

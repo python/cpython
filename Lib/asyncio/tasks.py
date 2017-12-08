@@ -467,7 +467,7 @@ def as_completed(fs, *, loop=None, timeout=None):
 
 
 @types.coroutine
-def _sleep0():
+def __sleep0():
     # the hack is needed to make a quick pass
     # of task step iteration when delay == 0
     # Task._step has an optimization for bare yield
@@ -477,7 +477,7 @@ def _sleep0():
 async def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
     if delay == 0:
-        await _sleep0()
+        await __sleep0()
         return result
 
     if loop is None:
