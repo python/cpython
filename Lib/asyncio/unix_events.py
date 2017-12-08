@@ -201,10 +201,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _child_watcher_callback(self, pid, returncode, transp):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
-    @coroutine
-    def create_unix_connection(self, protocol_factory, path=None, *,
-                               ssl=None, sock=None,
-                               server_hostname=None):
+    async def create_unix_connection(self, protocol_factory, path=None, *,
+                                     ssl=None, sock=None,
+                                     server_hostname=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -223,7 +222,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
             try:
                 sock.setblocking(False)
-                yield from self.sock_connect(sock, path)
+                await self.sock_connect(sock, path)
             except:
                 sock.close()
                 raise
@@ -238,13 +237,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     .format(sock))
             sock.setblocking(False)
 
-        transport, protocol = yield from self._create_connection_transport(
+        transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
         return transport, protocol
 
-    @coroutine
-    def create_unix_server(self, protocol_factory, path=None, *,
-                           sock=None, backlog=100, ssl=None):
+    async def create_unix_server(self, protocol_factory, path=None, *,
+                                 sock=None, backlog=100, ssl=None):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
