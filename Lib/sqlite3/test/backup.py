@@ -155,12 +155,5 @@ class BackupTests(unittest.TestCase):
         finally:
             dx.rollback()
 
-def suite():
-    return unittest.TestSuite(unittest.makeSuite(BackupTests, "test_"))
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
-
 if __name__ == "__main__":
-    test()
+    unittest.main()
