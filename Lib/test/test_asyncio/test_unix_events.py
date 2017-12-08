@@ -77,9 +77,8 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     def test_add_signal_handler_coroutine_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
 
-        @asyncio.coroutine
-        def simple_coroutine():
-            yield from []
+        async def simple_coroutine():
+            pass
 
         # callback must not be a coroutine function
         coro_func = simple_coroutine

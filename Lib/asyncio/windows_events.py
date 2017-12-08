@@ -15,7 +15,6 @@ from . import proactor_events
 from . import selector_events
 from . import tasks
 from . import windows_utils
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -305,17 +304,15 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             proactor = IocpProactor()
         super().__init__(proactor)
 
-    @coroutine
-    def create_pipe_connection(self, protocol_factory, address):
+    async def create_pipe_connection(self, protocol_factory, address):
         f = self._proactor.connect_pipe(address)
-        pipe = yield from f
+        pipe = await f
         protocol = protocol_factory()
         trans = self._make_duplex_pipe_transport(pipe, protocol,
                                                  extra={'addr': address})
         return trans, protocol
 
-    @coroutine
-    def start_serving_pipe(self, protocol_factory, address):
+    async def start_serving_pipe(self, protocol_factory, address):
         server = PipeServer(address)
 
         def loop_accept_pipe(f=None):
@@ -361,28 +358,20 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         self.call_soon(loop_accept_pipe)
         return [server]
 
-    @coroutine
-    def _make_subprocess_transport(self, protocol, args, shell,
-                                   stdin, stdout, stderr, bufsize,
-                                   extra=None, **kwargs):
+    async def _make_subprocess_transport(self, protocol, args, shell,
+                                         stdin, stdout, stderr, bufsize,
+                                         extra=None, **kwargs):
         waiter = self.create_future()
         transp = _WindowsSubprocessTransport(self, protocol, args, shell,
                                              stdin, stdout, stderr, bufsize,
                                              waiter=waiter, extra=extra,
                                              **kwargs)
         try:
-            yield from waiter
-        except Exception as exc:
-            # Workaround CPython bug #23353: using yield/yield-from in an
-            # except block of a generator doesn't clear properly sys.exc_info()
-            err = exc
-        else:
-            err = None
-
-        if err is not None:
+            await waiter
+        except Exception:
             transp.close()
-            yield from transp._wait()
-            raise err
+            await transp._wait()
+            raise
 
         return transp
 
@@ -498,11 +487,10 @@ class IocpProactor:
             conn.settimeout(listener.gettimeout())
             return conn, conn.getpeername()
 
-        @coroutine
-        def accept_coro(future, conn):
+        async def accept_coro(future, conn):
             # Coroutine closing the accept socket if the future is cancelled
             try:
-                yield from future
+                await future
             except futures.CancelledError:
                 conn.close()
                 raise
@@ -552,8 +540,7 @@ class IocpProactor:
 
         return self._register(ov, pipe, finish_accept_pipe)
 
-    @coroutine
-    def connect_pipe(self, address):
+    async def connect_pipe(self, address):
         delay = CONNECT_PIPE_INIT_DELAY
         while True:
             # Unfortunately there is no way to do an overlapped connect to a pipe.
@@ -568,7 +555,7 @@ class IocpProactor:
 
             # ConnectPipe() failed with ERROR_PIPE_BUSY: retry later
             delay = min(delay * 2, CONNECT_PIPE_MAX_DELAY)
-            yield from tasks.sleep(delay, loop=self._loop)
+            await tasks.sleep(delay, loop=self._loop)
 
         return windows_utils.PipeHandle(handle)
 
