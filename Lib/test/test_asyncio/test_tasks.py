@@ -2656,5 +2656,42 @@ class SleepTests(test_utils.TestCase):
         self.assertEqual(result, 11)
 
 
+class CompatibilityTests(test_utils.TestCase):
+    # Tests for checking a bridge between old-styled coroutines
+    # and async/await syntax
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+    def tearDown(self):
+        self.loop.close()
+        self.loop = None
+        super().tearDown()
+
+    def test_yield_from_awaitable(self):
+
+        @asyncio.coroutine
+        def coro():
+            yield from asyncio.sleep(0, loop=self.loop)
+            return 'ok'
+
+        result = self.loop.run_until_complete(coro())
+        self.assertEqual('ok', result)
+
+    def test_await_old_style_coro(self):
+
+        @asyncio.coroutine
+        def coro():
+            return 'ok'
+
+        async def inner():
+            return await asyncio.wait_for(coro(), 0.5, loop=self.loop)
+
+        result = self.loop.run_until_complete(inner())
+        self.assertEqual('ok', result)
+
+
 if __name__ == '__main__':
     unittest.main()
