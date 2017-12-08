@@ -120,8 +120,6 @@ class Queue:
 
         Put an item into the queue. If the queue is full, wait until a free
         slot is available before adding item.
-
-        This method is a coroutine.
         """
         while self.full():
             putter = self._loop.create_future()
@@ -153,8 +151,6 @@ class Queue:
         """Remove and return an item from the queue.
 
         If queue is empty, wait until an item is available.
-
-        This method is a coroutine.
         """
         while self.empty():
             getter = self._loop.create_future()
