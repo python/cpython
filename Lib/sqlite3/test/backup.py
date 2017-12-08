@@ -155,5 +155,9 @@ class BackupTests(unittest.TestCase):
         finally:
             dx.rollback()
 
+# Used by the Lib/test/test_sqlite.py
+def suite():
+    return unittest.makeSuite(BackupTests)
+
 if __name__ == "__main__":
     unittest.main()
