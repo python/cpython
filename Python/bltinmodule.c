@@ -51,10 +51,11 @@ static PyObject*
 update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
 {
     int i, j, ind, tot_extra = 0;
-    PyObject *base, *meth, *new_base, *new_sub_base, *new_bases;
+    PyObject *base, *meth, *new_base, *new_sub_base, *new_bases, *replacements;
     PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
 
+    replacements = NULL;
     /* We have a separate cycle to calculate replacements with the idea that in
        most cases we just scroll quickly though it and return original bases */
     for (i = 2; i < nargs; i++){
@@ -64,7 +65,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         }
         if (!(meth = _PyObject_GetAttrId(base, &PyId___mro_entries__))) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                return NULL;
+                goto error;
             }
             PyErr_Clear();
             continue;
@@ -73,12 +74,12 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
             PyErr_SetString(PyExc_TypeError,
                             "__mro_entries__ must be callable");
             Py_DECREF(meth);
-            return NULL;
+            goto error;
         }
         new_base = _PyObject_FastCall(meth, stack, 1);
         Py_DECREF(meth);
         if (!new_base) {
-            return NULL;
+            goto error;
         }
         if (PyTuple_Check(new_base)) {
             tot_extra += PyTuple_GET_SIZE(new_base) - 1;
@@ -87,10 +88,13 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
             PyErr_SetString(PyExc_TypeError,
                             "__mro_entries__ must return a tuple");
             Py_DECREF(new_base);
-            return NULL;
+            goto error;
         }
-        Py_DECREF(base);
-        args[i] = new_base;
+        if (!replacements) {
+            replacements = PyTuple_New(nargs - 2);
+        }
+        Py_INCREF(new_base);
+        PyTuple_SET_ITEM(replacements, i - 2, new_base);
         *modified_bases = 1;
     }
     if (!*modified_bases) {
@@ -99,10 +103,11 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
     new_bases = PyTuple_New(nargs - 2 + tot_extra);
     ind = 0;
     for (i = 2; i < nargs; i++) {
-        new_base = args[i];
-        if (!PyTuple_Check(new_base)) {
-            Py_INCREF(new_base);
-            PyTuple_SET_ITEM(new_bases, ind, new_base);
+        base = args[i];
+        new_base = PyTuple_GET_ITEM(replacements, i - 2);
+        if (!new_base) {
+            Py_INCREF(base);
+            PyTuple_SET_ITEM(new_bases, ind, base);
             ind++;
         }
         else {
@@ -112,9 +117,14 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
                 PyTuple_SET_ITEM(new_bases, ind, new_sub_base);
                 ind++;
             }
+            Py_DECREF(new_base);
         }
     }
+    Py_DECREF(replacements);
     return new_bases;
+error:
+    Py_XDECREF(replacements);
+    return NULL;
 }
 
 /* AC: cannot convert yet, waiting for *args support */
@@ -252,7 +262,9 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
         if (modified_bases) {
-            PyMapping_SetItemString(ns, "__orig_bases__", old_bases);
+            if (PyMapping_SetItemString(ns, "__orig_bases__", old_bases) < 0) {
+                goto error;
+            }
         }
         PyObject *margs[3] = {name, bases, ns};
         cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
