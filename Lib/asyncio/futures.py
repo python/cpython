@@ -6,7 +6,6 @@ __all__ = ['CancelledError', 'TimeoutError', 'InvalidStateError',
 import concurrent.futures
 import logging
 import sys
-import traceback
 
 from . import base_futures
 from . import events
@@ -82,7 +81,8 @@ class Future:
     _repr_info = base_futures._future_repr_info
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, ' '.join(self._repr_info()))
+        return '<{} {}>'.format(self.__class__.__name__,
+                                ' '.join(self._repr_info()))
 
     def __del__(self):
         if not self._log_traceback:
@@ -91,8 +91,8 @@ class Future:
             return
         exc = self._exception
         context = {
-            'message': ('%s exception was never retrieved'
-                        % self.__class__.__name__),
+            'message':
+                f'{self.__class__.__name__} exception was never retrieved',
             'exception': exc,
             'future': self,
         }
@@ -237,7 +237,7 @@ class Future:
         assert self.done(), "yield from wasn't used with future"
         return self.result()  # May raise too.
 
-    __await__ = __iter__ # make compatible with 'await' expression
+    __await__ = __iter__  # make compatible with 'await' expression
 
 
 # Needed for testing purposes.
@@ -330,7 +330,7 @@ def wrap_future(future, *, loop=None):
     if isfuture(future):
         return future
     assert isinstance(future, concurrent.futures.Future), \
-        'concurrent.futures.Future is expected, got {!r}'.format(future)
+        f'concurrent.futures.Future is expected, got {future!r}'
     if loop is None:
         loop = events.get_event_loop()
     new_future = loop.create_future()

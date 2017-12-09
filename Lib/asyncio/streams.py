@@ -29,8 +29,8 @@ class IncompleteReadError(EOFError):
     - expected: total number of expected bytes (or None if unknown)
     """
     def __init__(self, partial, expected):
-        super().__init__("%d bytes read on a total of %r expected bytes"
-                         % (len(partial), expected))
+        super().__init__(f'{len(partial)} bytes read on a total of '
+                         f'{expected!r} expected bytes')
         self.partial = partial
         self.expected = expected
 
@@ -281,10 +281,10 @@ class StreamWriter:
         self._loop = loop
 
     def __repr__(self):
-        info = [self.__class__.__name__, 'transport=%r' % self._transport]
+        info = [self.__class__.__name__, f'transport={self._transport!r}']
         if self._reader is not None:
-            info.append('reader=%r' % self._reader)
-        return '<%s>' % ' '.join(info)
+            info.append(f'reader={self._reader!r}')
+        return '<{}>'.format(' '.join(info))
 
     @property
     def transport(self):
@@ -356,20 +356,20 @@ class StreamReader:
     def __repr__(self):
         info = ['StreamReader']
         if self._buffer:
-            info.append('%d bytes' % len(self._buffer))
+            info.append(f'{len(self._buffer)} bytes')
         if self._eof:
             info.append('eof')
         if self._limit != _DEFAULT_LIMIT:
-            info.append('l=%d' % self._limit)
+            info.append(f'limit={self._limit}')
         if self._waiter:
-            info.append('w=%r' % self._waiter)
+            info.append(f'waiter={self._waiter!r}')
         if self._exception:
-            info.append('e=%r' % self._exception)
+            info.append(f'exception={self._exception!r}')
         if self._transport:
-            info.append('t=%r' % self._transport)
+            info.append(f'transport={self._transport!r}')
         if self._paused:
             info.append('paused')
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def exception(self):
         return self._exception
@@ -440,8 +440,9 @@ class StreamReader:
         # would have an unexpected behaviour. It would not possible to know
         # which coroutine would get the next data.
         if self._waiter is not None:
-            raise RuntimeError('%s() called while another coroutine is '
-                               'already waiting for incoming data' % func_name)
+            raise RuntimeError(
+                f'{func_name}() called while another coroutine is '
+                f'already waiting for incoming data')
 
         assert not self._eof, '_wait_for_data after EOF'
 
