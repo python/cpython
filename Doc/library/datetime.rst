@@ -838,7 +838,7 @@ Other constructors, all class methods:
 
   Return a :class:`datetime` corresponding to a *date_string* in one of the
   ISO 8601 formats emitted by :meth:`datetime.isoformat`. Specifically, this function
-  supports strings in the format(s) ``YYYY-MM-DD[*[HH[:MM[:SS[.mmm[mmm]]]]][+HH:MM]]``,
+  supports strings in the format(s) ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]]][+HH:MM[:SS[.ffffff]]]``,
   where ``*`` can match any single character.
 
   .. caution::
@@ -1522,7 +1522,7 @@ Other constructor:
 
   Return a :class:`time` corresponding to a *time_string* in one of the ISO 8601
   formats emitted by :meth:`time.isoformat`. Specifically, this function supports
-  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]]][+HH:MM]``.
+  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]]][+HH:MM[:SS[.ffffff]]]``.
 
   .. caution::
 

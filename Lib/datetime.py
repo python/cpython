@@ -272,83 +272,81 @@ def _parse_isoformat_date(dtstr):
 
     return [year, month, day]
 
-def _parse_isoformat_time(tstr):
+def _parse_hh_mm_ss_ff(tstr):
+    # Parses things of the form HH[:MM[:SS[.fff[fff]]]]
     len_str = len(tstr)
-    if len_str < 2:
-        raise ValueError('Isoformat time too short')
 
-    time_comps = [0, 0, 0, 0, None]
+    time_comps = [0, 0, 0, 0]
     pos = 0
-    comp = 0
-    while True:
+    for comp in range(0, 3):
         if (len_str - pos) < 2:
             raise ValueError('Incomplete time component')
 
         time_comps[comp] = int(tstr[pos:pos+2])
 
         pos += 2
-        comp += 1
         next_char = tstr[pos:pos+1]
-        if comp > 2 or next_char in '-+':
+
+        if not next_char or comp >= 2:
             break
 
         if next_char != ':':
-            raise ValueError('Invalid time separator')
+            raise ValueError('Invalid time separator: %c' % next_char)
 
         pos += 1
 
-    # Parse milli/microseconds if it exists
-    if pos < len_str and tstr[pos] == '.':
-        pos += 1
-        len_remainder = len_str - pos
-
-        # Valid isoformat strings at this point can be:
-        # fff (length 3)
-        # ffffff (length 6)
-        # fff+HH:MM (length 9)
-        # fff+HH:MM:SS (length 12)
-        # ffffff+HH:MM (length 12)
-        # ffffff+HH:MM:SS (length 15)
-        if not (15 >= len_remainder > 0) or len_remainder % 3:
-            raise ValueError('Invalid microseconds or offset')
-
-        if len_remainder > 8:
-            if len_remainder == 15 or (len_remainder == 12 and
-                                       tstr[-6] == ':'):
-                len_tz = 9
-            else:
-                len_tz = 6
-        else:
-            len_tz = 0
-
-        len_micro = len_remainder - len_tz
-        units = (1 if len_micro == 6 else 1000)   # Micro- or milli- seconds
-        time_comps[3] = units * int(tstr[pos:pos+len_micro])
-        pos += len_micro
-
-    # Parse tzinfo if it exists
     if pos < len_str:
-        sep_char = tstr[pos]
+        if tstr[pos] != '.':
+            raise ValueError('Invalid microsecond component')
+        else:
+            pos += 1
 
-        tzlen = len_str - pos
-        if (sep_char not in '-+' or
-                tzlen not in (6, 9) or tstr[pos+3] != ':'):
+            len_remainder = len_str - pos
+            if len_remainder not in (3, 6):
+                raise ValueError('Invalid microsecond component')
+
+            time_comps[3] = int(tstr[pos:])
+            if len_remainder == 3:
+                time_comps[3] *= 1000
+
+    return time_comps
+
+def _parse_isoformat_time(tstr):
+    # Format supported is HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]
+    len_str = len(tstr)
+    if len_str < 2:
+        raise ValueError('Isoformat time too short')
+
+    # This is equivalent to re.search('[+-]', tstr), but faster
+    tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1)
+    timestr = tstr[:tz_pos-1] if tz_pos > 0 else tstr
+
+    time_comps = _parse_hh_mm_ss_ff(timestr)
+
+    tzi = None
+    if tz_pos > 0:
+        tzstr = tstr[tz_pos:]
+
+        # Valid time zone strings are:
+        # HH:MM               len: 5
+        # HH:MM:SS            len: 8
+        # HH:MM:SS.ffffff     len: 15
+
+        if len(tzstr) not in (5, 8, 15):
             raise ValueError('Malformed time zone string')
 
-        hh = int(tstr[pos+1:pos+3])
-        mm = int(tstr[pos+4:pos+6])
-
-        if tzlen == 9:
-            ss = int(tstr[pos+7:pos+9])
+        tz_comps = _parse_hh_mm_ss_ff(tzstr)
+        if all(x == 0 for x in tz_comps):
+            tzi = timezone.utc
         else:
-            ss = 0
+            tzsign = -1 if tstr[tz_pos - 1] == '-' else 1
 
-        pos += tzlen
-        td = (-1 if sep_char == '-' else 1) * timedelta(hours=hh,
-                                                        minutes=mm,
-                                                        seconds=ss)
+            td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
+                           seconds=tz_comps[2], microseconds=tz_comps[3])
 
-        time_comps[-1] = timezone(td)
+            tzi = timezone(tzsign * td)
+
+    time_comps.append(tzi)
 
     return time_comps
 
@@ -2421,9 +2419,10 @@ else:
          _check_date_fields, _check_int_field, _check_time_fields,
          _check_tzinfo_arg, _check_tzname, _check_utc_offset, _cmp, _cmperror,
          _date_class, _days_before_month, _days_before_year, _days_in_month,
-         _format_time, _is_leap, _isoweek1monday, _math, _ord2ymd,
-         _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
-         _divide_and_round, _parse_isoformat_date, _parse_isoformat_time)
+         _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
+         _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
+         _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
+         _parse_hh_mm_ss_ff)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and

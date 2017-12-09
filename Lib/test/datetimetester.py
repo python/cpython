@@ -2440,8 +2440,7 @@ class TestDateTime(TestDate):
 
         tzinfos = [None, timezone.utc,
                    timezone(timedelta(hours=-5)),
-                   timezone(timedelta(hours=2)),
-                   timezone(timedelta(hours=6, minutes=27))]
+                   timezone(timedelta(hours=2))]
 
         dts = [self.theclass(*date_tuple, *time_tuple, tzinfo=tzi)
                for date_tuple in base_dates
@@ -2455,6 +2454,31 @@ class TestDateTime(TestDate):
                 with self.subTest(dtstr=dtstr):
                     dt_rt = self.theclass.fromisoformat(dtstr)
                     self.assertEqual(dt, dt_rt)
+
+    def test_fromisoformat_timezone(self):
+        base_dt = self.theclass(2014, 12, 30, 12, 30, 45, 217456)
+
+        tzoffsets = [
+            timedelta(hours=5), timedelta(hours=2),
+            timedelta(hours=6, minutes=27),
+            timedelta(hours=12, minutes=32, seconds=30),
+            timedelta(hours=2, minutes=4, seconds=9, microseconds=123456)
+        ]
+
+        tzoffsets += [-1 * td for td in tzoffsets]
+
+        tzinfos = [None, timezone.utc,
+                   timezone(timedelta(hours=0))]
+
+        tzinfos += [timezone(td) for td in tzoffsets]
+
+        for tzi in tzinfos:
+            dt = base_dt.replace(tzinfo=tzi)
+            dtstr = dt.isoformat()
+
+            with self.subTest(tstr=dtstr):
+                dt_rt = self.theclass.fromisoformat(dtstr)
+                assert dt == dt_rt, dt_rt
 
     def test_fromisoformat_separators(self):
         separators = [
@@ -2529,8 +2553,9 @@ class TestDateTime(TestDate):
         ]
 
         for bad_str in bad_strs:
-            with self.assertRaises(ValueError):
-                self.theclass.fromisoformat(bad_str)
+            with self.subTest(bad_str=bad_str):
+                with self.assertRaises(ValueError):
+                    self.theclass.fromisoformat(bad_str)
 
     def test_fromisoformat_utc(self):
         dt_str = '2014-04-19T13:21:13+00:00'
@@ -3331,12 +3356,19 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
     def test_fromisoformat_timezone(self):
         base_time = self.theclass(12, 30, 45, 217456)
 
+        tzoffsets = [
+            timedelta(hours=5), timedelta(hours=2),
+            timedelta(hours=6, minutes=27),
+            timedelta(hours=12, minutes=32, seconds=30),
+            timedelta(hours=2, minutes=4, seconds=9, microseconds=123456)
+        ]
+
+        tzoffsets += [-1 * td for td in tzoffsets]
+
         tzinfos = [None, timezone.utc,
-                   timezone(timedelta(hours=0)),
-                   timezone(timedelta(hours=-5)),
-                   timezone(timedelta(hours=2)),
-                   timezone(timedelta(hours=6, minutes=27)),
-                   timezone(timedelta(hours=12, minutes=32, seconds=30))]
+                   timezone(timedelta(hours=0))]
+
+        tzinfos += [timezone(td) for td in tzoffsets]
 
         for tzi in tzinfos:
             t = base_time.replace(tzinfo=tzi)
@@ -3344,7 +3376,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
             with self.subTest(tstr=tstr):
                 t_rt = self.theclass.fromisoformat(tstr)
-                assert t == t_rt
+                assert t == t_rt, t_rt
 
     def test_fromisoformat_timespecs(self):
         time_bases = [
@@ -3398,8 +3430,9 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         ]
 
         for bad_str in bad_strs:
-            with self.assertRaises(ValueError):
-                self.theclass.fromisoformat(bad_str)
+            with self.subTest(bad_str=bad_str):
+                with self.assertRaises(ValueError):
+                    self.theclass.fromisoformat(bad_str)
 
     def test_fromisoformat_fails_typeerror(self):
         # Test the fromisoformat fails when passed the wrong type
