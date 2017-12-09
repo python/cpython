@@ -25,6 +25,8 @@ EXPECTED_C_LOCALE_FS_ENCODING = "ascii"
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
     # Linux distros typically alias the POSIX locale directly to the C locale
+    # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
+    #       able to check this case unconditionally
     EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
 elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
