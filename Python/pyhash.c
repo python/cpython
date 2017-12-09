@@ -364,9 +364,7 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
 
 
 static uint64_t
-siphash24(uint64_t key0, uint64_t key1, const void *src, Py_ssize_t src_sz) {
-    uint64_t k0 = _le64toh(key0);
-    uint64_t k1 = _le64toh(key1);
+siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     uint64_t b = (uint64_t)src_sz << 56;
     const uint64_t *in = (uint64_t*)src;
 
