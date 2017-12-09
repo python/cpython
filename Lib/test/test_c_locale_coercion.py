@@ -22,6 +22,9 @@ EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]
 EXPECTED_C_LOCALE_STREAM_ENCODING = "ascii"
 EXPECTED_C_LOCALE_FS_ENCODING = "ascii"
 
+# Set our expectation for the default locale used when none is specified
+EXPECT_COERCION_IN_DEFAULT_LOCALE = True
+
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
     # Linux distros typically alias the POSIX locale directly to the C locale
@@ -35,6 +38,16 @@ elif sys.platform.startswith("aix"):
 elif sys.platform == "darwin":
     # FS encoding is UTF-8 on macOS
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
+elif sys.platform == "cygwin":
+    # Cygwin defaults to using C.UTF-8
+    # TODO: Work out a robust dynamic test for this that doesn't rely on
+    #       CPython's own locale handling machinery
+    EXPECT_COERCION_IN_DEFAULT_LOCALE = False
+elif test.support.is_android:
+    # Android defaults to using UTF-8 for all system interfaces
+    EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
+    EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
+    EXPECT_COERCION_IN_DEFAULT_LOCALE = False
 
 # Note that the above expectations are still wrong in some cases, such as:
 # * Windows when PYTHONLEGACYWINDOWSFSENCODING is set
@@ -310,15 +323,17 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         # Check behaviour for the default locale
         with self.subTest(default_locale=True,
                           PYTHONCOERCECLOCALE=coerce_c_locale):
-            _expected_warnings = expected_warnings
-            if (EXPECTED_C_LOCALE_STREAM_ENCODING == "utf-8"
-                    and coerce_c_locale == "warn"):
+            if EXPECT_COERCION_IN_DEFAULT_LOCALE:
+                _expected_warnings = expected_warnings
+                _coercion_expected = coercion_expected
+            else:
                 _expected_warnings = None
+                _coercion_expected = False
             self._check_child_encoding_details(base_var_dict,
                                                fs_encoding,
                                                stream_encoding,
                                                _expected_warnings,
-                                               coercion_expected)
+                                               _coercion_expected)
 
         # Check behaviour for explicitly configured locales
         for locale_to_set in EXPECTED_C_LOCALE_EQUIVALENTS:
