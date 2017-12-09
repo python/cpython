@@ -85,7 +85,6 @@ STRIP="$toolchain/bin/$ANDROID_HOST-strip --strip-debug --strip-unneeded"
 unset target toolchain machine kernel tool_path
 
 CPPFLAGS="$CPPFLAGS --sysroot=$ANDROID_NDK_ROOT/sysroot -D__ANDROID_API__=$ANDROID_API -isystem $ANDROID_NDK_ROOT/sysroot/usr/include/$ANDROID_HOST"
-CFLAGS="$CFLAGS -Wno-unused-value -Wno-empty-body -Qunused-arguments -Wno-nullability-completeness"
 LDFLAGS="$LDFLAGS --sysroot=$SYSROOT"
 
 ccache -V >/dev/null 2>&1 && { CC="ccache $CC"; GCC="ccache $GCC"; \
