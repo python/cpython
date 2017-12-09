@@ -173,6 +173,24 @@ def _format_time(hh, mm, ss, us, timespec='auto'):
     else:
         return fmt.format(hh, mm, ss, us)
 
+def _format_offset(off):
+    s = ''
+    if off is not None:
+        if off.days < 0:
+            sign = "-"
+            off = -off
+        else:
+            sign = "+"
+        hh, mm = divmod(off, timedelta(hours=1))
+        mm, ss = divmod(mm, timedelta(minutes=1))
+        s += "%s%02d:%02d" % (sign, hh, mm)
+        if ss or ss.microseconds:
+            s += ":%02d" % ss.seconds
+
+            if ss.microseconds:
+                s += '.%06d' % ss.microseconds
+    return s
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -1304,19 +1322,7 @@ class time:
     def _tzstr(self, sep=":"):
         """Return formatted timezone offset (+xx:xx) or None."""
         off = self.utcoffset()
-        if off is not None:
-            if off.days < 0:
-                sign = "-"
-                off = -off
-            else:
-                sign = "+"
-            hh, mm = divmod(off, timedelta(hours=1))
-            mm, ss = divmod(mm, timedelta(minutes=1))
-            assert 0 <= hh < 24
-            off = "%s%02d%s%02d" % (sign, hh, sep, mm)
-            if ss:
-                off += ':%02d' % ss.seconds
-        return off
+        return _format_offset(off)
 
     def __repr__(self):
         """Convert to formal string, for repr()."""
@@ -1821,18 +1827,10 @@ class datetime(date):
                           self._microsecond, timespec))
 
         off = self.utcoffset()
-        if off is not None:
-            if off.days < 0:
-                sign = "-"
-                off = -off
-            else:
-                sign = "+"
-            hh, mm = divmod(off, timedelta(hours=1))
-            mm, ss = divmod(mm, timedelta(minutes=1))
-            s += "%s%02d:%02d" % (sign, hh, mm)
-            if ss:
-                assert not ss.microseconds
-                s += ":%02d" % ss.seconds
+        tz = _format_offset(off)
+        if tz:
+            s += tz
+
         return s
 
     def __repr__(self):
