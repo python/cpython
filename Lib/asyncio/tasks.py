@@ -51,6 +51,10 @@ class Task(futures.Future):
 
         None is returned when called not in the context of a Task.
         """
+        warnings.warn("Task.current_task() is deprecated, "
+                      "use loop.current_task() instead.",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
         try:
@@ -64,6 +68,10 @@ class Task(futures.Future):
 
         By default all tasks for the current event loop are returned.
         """
+        warnings.warn("Task.all_tasks() is deprecated, "
+                      "use loop.all_tasks() instead.",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
         try:
