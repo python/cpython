@@ -42,7 +42,8 @@ class LockTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def acquire_lock():
-            yield from lock
+            with self.assertWarns(DeprecationWarning):
+                yield from lock
 
         self.loop.run_until_complete(acquire_lock())
         self.assertTrue(repr(lock).endswith('[locked]>'))
@@ -53,7 +54,8 @@ class LockTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def acquire_lock():
-            return (yield from lock)
+            with self.assertWarns(DeprecationWarning):
+                return (yield from lock)
 
         res = self.loop.run_until_complete(acquire_lock())
 
@@ -77,12 +79,13 @@ class LockTests(test_utils.TestCase):
         def test(lock):
             yield from asyncio.sleep(0.01, loop=loop)
             self.assertFalse(lock.locked())
-            with (yield from lock) as _lock:
-                self.assertIs(_lock, None)
-                self.assertTrue(lock.locked())
-                yield from asyncio.sleep(0.01, loop=loop)
-                self.assertTrue(lock.locked())
-            self.assertFalse(lock.locked())
+            with self.assertWarns(DeprecationWarning):
+                with (yield from lock) as _lock:
+                    self.assertIs(_lock, None)
+                    self.assertTrue(lock.locked())
+                    yield from asyncio.sleep(0.01, loop=loop)
+                    self.assertTrue(lock.locked())
+                self.assertFalse(lock.locked())
 
         for primitive in primitives:
             loop.run_until_complete(test(primitive))
@@ -237,7 +240,8 @@ class LockTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def acquire_lock():
-            return (yield from lock)
+            with self.assertWarns(DeprecationWarning):
+                return (yield from lock)
 
         with self.loop.run_until_complete(acquire_lock()):
             self.assertTrue(lock.locked())
@@ -249,7 +253,8 @@ class LockTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def acquire_lock():
-            return (yield from lock)
+            with self.assertWarns(DeprecationWarning):
+                return (yield from lock)
 
         # This spells "yield from lock" outside a generator.
         cm = self.loop.run_until_complete(acquire_lock())
@@ -693,7 +698,8 @@ class ConditionTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def acquire_cond():
-            return (yield from cond)
+            with self.assertWarns(DeprecationWarning):
+                return (yield from cond)
 
         with self.loop.run_until_complete(acquire_cond()):
             self.assertTrue(cond.locked())
@@ -776,7 +782,8 @@ class SemaphoreTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def acquire_lock():
-            return (yield from sem)
+            with self.assertWarns(DeprecationWarning):
+                return (yield from sem)
 
         res = self.loop.run_until_complete(acquire_lock())
 
@@ -918,7 +925,8 @@ class SemaphoreTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def acquire_lock():
-            return (yield from sem)
+            with self.assertWarns(DeprecationWarning):
+                return (yield from sem)
 
         with self.loop.run_until_complete(acquire_lock()):
             self.assertFalse(sem.locked())
