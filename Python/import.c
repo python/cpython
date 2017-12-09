@@ -2197,21 +2197,21 @@ static PyObject *
 _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
 /*[clinic end generated code: output=edb292448cf399ea input=9aaad1e590089789]*/
 {
-    uint64_t hash = _Py_KeyedHash((uint64_t)key, source->buf, source->len);
+    union {
+        uint64_t x;
+        char data[sizeof(uint64_t)];
+    } hash;
+    hash.x = _Py_KeyedHash((uint64_t)key, source->buf, source->len);
 #if !PY_LITTLE_ENDIAN
     // Force to little-endian. There really ought to be a succinct standard way
     // to do this.
-    union {
-        uint64_t x;
-        unsigned char data[sizeof(uint64_t)];
-    } pun;
-    pun.x = hash;
-    for (size_t i = 0; i < sizeof(pun.data); i++) {
-        pun.data[sizeof(pun.data) - i - 1] = pun.data[i];
+    for (size_t i = 0; i < sizeof(hash.data)/2; i++) {
+        char tmp = hash.data[i];
+        hash.data[i] = hash.data[sizeof(hash.data) - i - 1];
+        hash.data[sizeof(hash.data) - i - 1] = tmp;
     }
-    hash = pun.x;
 #endif
-    return PyBytes_FromStringAndSize((const char *)&hash, sizeof(hash));
+    return PyBytes_FromStringAndSize(hash.data, sizeof(hash.data));
 }
 
 
