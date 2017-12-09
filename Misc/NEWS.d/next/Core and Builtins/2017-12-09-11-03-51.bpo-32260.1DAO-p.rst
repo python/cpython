@@ -1,0 +1,3 @@
+Don't byte swap the input keys to the SipHash algorithm on big-endian
+platforms. This should ensure siphash gives consistent results across
+platforms.
