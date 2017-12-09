@@ -37,8 +37,9 @@ Lock
    particular coroutine when locked.  A primitive lock is in one of two states,
    'locked' or 'unlocked'.
 
-   It is created in the unlocked state.  It has two basic methods, :meth:`acquire`
-   and :meth:`release`.  When the state is unlocked, acquire() changes the state to
+   The lock is created in the unlocked state.
+   It has two basic methods, :meth:`acquire` and :meth:`release`.
+   When the state is unlocked, acquire() changes the state to
    locked and returns immediately.  When the state is locked, acquire() blocks
    until a call to release() in another coroutine changes it to unlocked, then
    the acquire() call resets it to locked and returns.  The release() method
@@ -51,37 +52,11 @@ Lock
    resets the state to unlocked; first coroutine which is blocked in acquire()
    is being processed.
 
-   :meth:`acquire` is a coroutine and should be called with ``yield from``.
+   :meth:`acquire` is a coroutine and should be called with ``await``.
 
-   Locks also support the context management protocol.  ``(yield from lock)``
-   should be used as the context manager expression.
+   Locks also support the :ref:`context management protocol <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
-
-   Usage::
-
-       lock = Lock()
-       ...
-       yield from lock
-       try:
-           ...
-       finally:
-           lock.release()
-
-   Context manager usage::
-
-       lock = Lock()
-       ...
-       with (yield from lock):
-           ...
-
-   Lock objects can be tested for locking state::
-
-       if not lock.locked():
-           yield from lock
-       else:
-           # lock is acquired
-           ...
 
    .. method:: locked()
 
@@ -165,6 +140,8 @@ Condition
    If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
    object, and it is used as the underlying lock.  Otherwise,
    a new :class:`Lock` object is created and used as the underlying lock.
+
+   Locks also support the :ref:`context management protocol <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
@@ -260,6 +237,8 @@ Semaphore
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
    is raised.
 
+   Locks also support the :ref:`context management protocol <async-with-locks>`.
+
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
    .. coroutinemethod:: acquire()
@@ -293,3 +272,46 @@ BoundedSemaphore
 
    This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
    increase the value above the initial value.
+
+   Locks also support the :ref:`context management protocol <async-with-locks>`.
+
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
+
+.. _async-with-locks:
+
+Using locks, conditions, and semaphores in the :keyword:`async with` statement
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All of the objects provided by this module that have :meth:`acquire`
+and :meth:`release` methods can be used as context managers for a
+:keyword:`async with` statement.  The :meth:`acquire` method will be
+called when the block is entered, and :meth:`release` will be called
+when the block is exited.  Hence, the following snippet::
+
+   async with lock:
+       # do something...
+
+is equivalent to::
+
+   await lock.acquire()
+   try:
+       # do something...
+   finally:
+       lock.release()
+
+Currently, :class:`Lock`, :class:`Condition`,
+:class:`Semaphore`, and :class:`BoundedSemaphore` objects may be used as
+:keyword:`async with` statement context managers.
+
+``async with lock`` is the preferable way for locking asyncio
+synchronization primitives.
+
+Explicit :meth:`acquire` / :meth:`release` calls should be used if
+locking/unlocking is split into different functions.
+
+.. deprecated:: 3.7
+
+   Lock acquiring on ``await lock`` or ``yield from lock`` and
+   :keyword:`with` statement (``with await lock``, ``with (yield from
+   lock)``) are deprecated.
