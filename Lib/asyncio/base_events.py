@@ -315,16 +315,14 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _enter_task(self, task):
         if self._current_task is not None:
-            raise RuntimeError("Entring into task {!r} "
-                               "when other task {!r} is executed. "
-                               "The loop invariants are broken"
+            raise RuntimeError("Entering into task {!r} "
+                               "when other task {!r} is executed."
                                .format(task, self._current_task))
         self._current_task = task
 
     def _leave_task(self, task):
         if self._current_task is not task:
-            raise RuntimeError("Leaving task {!r} is not current {!r}. "
-                               "The loop invariants are broken"
+            raise RuntimeError("Leaving task {!r} is not current {!r}."
                                .format(task, self._current_task))
         self._current_task = None
 
