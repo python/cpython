@@ -139,7 +139,8 @@ Condition
    object, and it is used as the underlying lock.  Otherwise,
    a new :class:`Lock` object is created and used as the underlying lock.
 
-   Locks also support the :ref:`context management protocol <async-with-locks>`.
+   Conditions also support the :ref:`context management protocol
+   <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
@@ -232,7 +233,8 @@ Semaphore
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
    is raised.
 
-   Locks also support the :ref:`context management protocol <async-with-locks>`.
+   Semaphores also support the :ref:`context management protocol
+   <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
@@ -268,7 +270,8 @@ BoundedSemaphore
    This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
    increase the value above the initial value.
 
-   Locks also support the :ref:`context management protocol <async-with-locks>`.
+   Bounded semapthores also support the :ref:`context management
+   protocol <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
