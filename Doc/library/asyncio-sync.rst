@@ -52,7 +52,7 @@ Lock
 
    :meth:`acquire` is a coroutine and should be called with ``await``.
 
-   Locks also support the :ref:`context management protocol <async-with-locks>`.
+   Locks support the :ref:`context management protocol <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
@@ -139,7 +139,7 @@ Condition
    object, and it is used as the underlying lock.  Otherwise,
    a new :class:`Lock` object is created and used as the underlying lock.
 
-   Conditions also support the :ref:`context management protocol
+   Conditions support the :ref:`context management protocol
    <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
@@ -227,13 +227,11 @@ Semaphore
    counter can never go below zero; when :meth:`acquire` finds that it is zero,
    it blocks, waiting until some other coroutine calls :meth:`release`.
 
-   Semaphores also support the context management protocol.
-
    The optional argument gives the initial value for the internal counter; it
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
    is raised.
 
-   Semaphores also support the :ref:`context management protocol
+   Semaphores support the :ref:`context management protocol
    <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
@@ -270,7 +268,7 @@ BoundedSemaphore
    This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
    increase the value above the initial value.
 
-   Bounded semapthores also support the :ref:`context management
+   Bounded semapthores support the :ref:`context management
    protocol <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
@@ -278,8 +276,8 @@ BoundedSemaphore
 
 .. _async-with-locks:
 
-Using locks, conditions, and semaphores in the :keyword:`async with` statement
-------------------------------------------------------------------------------
+Using locks, conditions and semaphores in the :keyword:`async with` statement
+-----------------------------------------------------------------------------
 
 :class:`Lock`, :class:`Condition`, :class:`Semaphore`, and
 :class:`BoundedSemaphore` objects can be used in :keyword:`async with`
