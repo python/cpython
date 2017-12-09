@@ -45,6 +45,120 @@ frame_getlineno(PyFrameObject *f, void *closure)
     return PyLong_FromLong(PyFrame_GetLineNumber(f));
 }
 
+
+/* Given the index of the effective opcode,
+   scan back to construct the oparg with EXTENDED_ARG */
+static unsigned int
+get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
+{
+    _Py_CODEUNIT word;
+    unsigned int oparg = _Py_OPARG(codestr[i]);
+    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
+        oparg |= _Py_OPARG(word) << 8;
+        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {
+            oparg |= _Py_OPARG(word) << 16;
+            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG) {
+                oparg |= _Py_OPARG(word) << 24;
+            }
+        }
+    }
+    return oparg;
+}
+
+/*
+ * Compute and return the setup addresses of the innermost 'finally' blocks
+ * for *first_addr* and *second_addr* (-1 if none).
+ */
+static void
+compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
+                       int first_addr, int second_addr,
+                       int *first_setup_addr, int *second_setup_addr)
+{
+    /* Note this code is inherently delicate as it walks the bytecode
+     * in raw order without building the control flow graph.
+     */
+    int blockstack[CO_MAXBLOCKS];
+    int in_finally[CO_MAXBLOCKS];
+    int blockstack_top = 0;
+    int addr;
+
+    *first_setup_addr = -1;
+    *second_setup_addr = -1;
+    blockstack_top = 0;
+    for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
+        unsigned char op = code[addr];
+        unsigned char setup_op;
+
+        switch (op) {
+        case SETUP_EXCEPT:
+        case SETUP_FINALLY:
+            blockstack[blockstack_top++] = addr;
+            in_finally[blockstack_top-1] = 0;
+            break;
+
+        case POP_BLOCK:
+            assert(blockstack_top > 0);
+            setup_op = code[blockstack[blockstack_top-1]];
+            if (setup_op == SETUP_FINALLY) {
+                /* This is the start of a 'finally' block.
+                 * It will end with RERAISE (if a 'try..finally' block)
+                 * or WITH_CLEANUP_FINISH (if a 'with' block).
+                 */
+                in_finally[blockstack_top-1] = 1;
+            }
+            else {
+                blockstack_top--;
+            }
+            break;
+
+        case RERAISE:
+            if (blockstack_top > 0) {
+                setup_op = code[blockstack[blockstack_top-1]];
+                if (setup_op == SETUP_FINALLY) {
+                    /* This is the end of a 'finally' block. */
+                    blockstack_top--;
+                }
+                /* RERAISE is also used by SETUP_EXCEPT, but we don't care. */
+            }
+            break;
+        case WITH_CLEANUP_FINISH:
+            /* This is the end of a 'finally' block */
+            assert(blockstack_top > 0);
+            assert(code[blockstack[blockstack_top-1]] == SETUP_FINALLY);
+            blockstack_top--;
+            break;
+        }
+
+        /* For the addresses we're interested in, see whether they're
+         * within a 'finally' block and if so, remember the address
+         * of the SETUP_FINALLY. */
+        if (addr == first_addr || addr == second_addr) {
+            int i = 0;
+            int setup_addr = -1;
+            for (i = blockstack_top-1; i >= 0; i--) {
+                if (in_finally[i]) {
+                    setup_addr = blockstack[i];
+                    break;
+                }
+            }
+
+            if (setup_addr != -1) {
+                if (addr == first_addr) {
+                    *first_setup_addr = setup_addr;
+                }
+
+                if (addr == second_addr) {
+                    *second_setup_addr = setup_addr;
+                }
+            }
+        }
+    }
+
+    /* Verify that the blockstack tracking code didn't get lost. */
+    assert(blockstack_top == 0);
+}
+
+
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
  * lines are OK to jump to because they don't make any assumptions about the
@@ -55,9 +169,10 @@ frame_getlineno(PyFrameObject *f, void *closure)
  *  o Lines with an 'except' statement on them can't be jumped to, because
  *    they expect an exception to be on the top of the stack.
  *  o Lines that live in a 'finally' block can't be jumped from or to, since
- *    the END_FINALLY expects to clean up the stack after the 'try' block.
- *  o 'try'/'for'/'while' blocks can't be jumped into because the blockstack
- *    needs to be set up before their code runs, and for 'for' loops the
+ *    the RERAISE expects to clean up the stack after the 'try' block.
+ *  o 'try', 'with' and 'async with' blocks can't be jumped into because
+ *    the blockstack needs to be set up before their code runs.
+ *  o 'for' and 'async for' loops can't be jumped into because the
  *    iterator needs to be on the stack.
  */
 static int
@@ -82,10 +197,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int min_iblock = 0;                 /* (ditto) */
     int f_lasti_setup_addr = 0;         /* Policing no-jump-into-finally */
     int new_lasti_setup_addr = 0;       /* (ditto) */
-    int blockstack[CO_MAXBLOCKS];       /* Walking the 'finally' blocks */
-    int in_finally[CO_MAXBLOCKS];       /* (ditto) */
-    int blockstack_top = 0;             /* (ditto) */
-    unsigned char setup_op = 0;         /* (ditto) */
+    int for_loop_delta = 0;             /* (ditto) */
 
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(p_new_lineno)) {
@@ -179,85 +291,18 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     }
 
     /* You can't jump into or out of a 'finally' block because the 'try'
-     * block leaves something on the stack for the END_FINALLY to clean
-     * up.      So we walk the bytecode, maintaining a simulated blockstack.
+     * block leaves something on the stack for the RERAISE to clean up.
+     * So we walk the bytecode, maintaining a simulated blockstack.
      * When we reach the old or new address and it's in a 'finally' block
      * we note the address of the corresponding SETUP_FINALLY.  The jump
      * is only legal if neither address is in a 'finally' block or
      * they're both in the same one.  'blockstack' is a stack of the
      * bytecode addresses of the SETUP_X opcodes, and 'in_finally' tracks
-     * whether we're in a 'finally' block at each blockstack level. */
-    f_lasti_setup_addr = -1;
-    new_lasti_setup_addr = -1;
-    memset(blockstack, '\0', sizeof(blockstack));
-    memset(in_finally, '\0', sizeof(in_finally));
-    blockstack_top = 0;
-    for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
-        unsigned char op = code[addr];
-        switch (op) {
-        case SETUP_LOOP:
-        case SETUP_EXCEPT:
-        case SETUP_FINALLY:
-        case SETUP_WITH:
-        case SETUP_ASYNC_WITH:
-            blockstack[blockstack_top++] = addr;
-            in_finally[blockstack_top-1] = 0;
-            break;
-
-        case POP_BLOCK:
-            assert(blockstack_top > 0);
-            setup_op = code[blockstack[blockstack_top-1]];
-            if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH
-                                    || setup_op == SETUP_ASYNC_WITH) {
-                in_finally[blockstack_top-1] = 1;
-            }
-            else {
-                blockstack_top--;
-            }
-            break;
-
-        case END_FINALLY:
-            /* Ignore END_FINALLYs for SETUP_EXCEPTs - they exist
-             * in the bytecode but don't correspond to an actual
-             * 'finally' block.  (If blockstack_top is 0, we must
-             * be seeing such an END_FINALLY.) */
-            if (blockstack_top > 0) {
-                setup_op = code[blockstack[blockstack_top-1]];
-                if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH
-                                    || setup_op == SETUP_ASYNC_WITH) {
-                    blockstack_top--;
-                }
-            }
-            break;
-        }
-
-        /* For the addresses we're interested in, see whether they're
-         * within a 'finally' block and if so, remember the address
-         * of the SETUP_FINALLY. */
-        if (addr == new_lasti || addr == f->f_lasti) {
-            int i = 0;
-            int setup_addr = -1;
-            for (i = blockstack_top-1; i >= 0; i--) {
-                if (in_finally[i]) {
-                    setup_addr = blockstack[i];
-                    break;
-                }
-            }
-
-            if (setup_addr != -1) {
-                if (addr == new_lasti) {
-                    new_lasti_setup_addr = setup_addr;
-                }
-
-                if (addr == f->f_lasti) {
-                    f_lasti_setup_addr = setup_addr;
-                }
-            }
-        }
-    }
-
-    /* Verify that the blockstack tracking code didn't get lost. */
-    assert(blockstack_top == 0);
+     * whether we're in a 'finally' block at each blockstack level.
+     */
+    compute_finally_blocks(code, code_len,
+                           f->f_lasti, new_lasti,
+                           &f_lasti_setup_addr, &new_lasti_setup_addr);
 
     /* After all that, are we jumping into / out of a 'finally' block? */
     if (new_lasti_setup_addr != f_lasti_setup_addr) {
@@ -266,6 +311,28 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         return -1;
     }
 
+    /* You can't jump inside a 'for' loop because it expects the iterator
+     * to be on the stack.  Walk the bytecode to look for loop regions.
+     */
+    for (addr = 0; addr < max_addr; addr += sizeof(_Py_CODEUNIT)) {
+        if (code[addr] == FOR_ITER) {
+            unsigned int oparg = get_arg((const _Py_CODEUNIT *)code,
+                                         addr / sizeof(_Py_CODEUNIT));
+            int target_addr = addr + oparg + sizeof(_Py_CODEUNIT);
+            assert(target_addr < code_len);
+            if (target_addr < min_addr) {
+                continue;
+            }
+            int first_in = addr < f->f_lasti && f->f_lasti < target_addr;
+            int second_in = addr < new_lasti && new_lasti < target_addr;
+            if (!first_in && second_in) {
+                PyErr_SetString(PyExc_ValueError,
+                                "can't jump into the middle of a block");
+                return -1;
+            }
+            for_loop_delta += first_in - second_in;  /* non-negative */
+        }
+    }
 
     /* Police block-jumping (you can't jump into the middle of a block)
      * and ensure that the blockstack finishes up in a sensible state (by
@@ -279,14 +346,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     for (addr = min_addr; addr < max_addr; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
-        case SETUP_LOOP:
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
-        case SETUP_WITH:
-        case SETUP_ASYNC_WITH:
             delta_iblock++;
             break;
-
         case POP_BLOCK:
             delta_iblock--;
             break;
@@ -320,6 +383,12 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             PyObject *v = (*--f->f_stacktop);
             Py_DECREF(v);
         }
+    }
+    /* Pop the iterators of any 'for' loop we're jumping out of. */
+    while (for_loop_delta > 0) {
+        PyObject *v = (*--f->f_stacktop);
+        Py_DECREF(v);
+        for_loop_delta--;
     }
 
     /* Finally set the new f_lineno and f_lasti and return OK. */
