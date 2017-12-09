@@ -4703,6 +4703,8 @@ static PyMethodDef object_methods[] = {
     {0}
 };
 
+PyDoc_STRVAR(object_doc,
+"object()\n--\n\nThe superclass for all Python classes.");
 
 PyTypeObject PyBaseObject_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -4725,7 +4727,7 @@ PyTypeObject PyBaseObject_Type = {
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    PyDoc_STR("object()\n--\n\nThe most base type"),  /* tp_doc */
+    object_doc,                                 /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     object_richcompare,                         /* tp_richcompare */
