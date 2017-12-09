@@ -278,11 +278,13 @@ BoundedSemaphore
 Using locks, conditions, and semaphores in the :keyword:`async with` statement
 ------------------------------------------------------------------------------
 
-All of the objects provided by this module that have :meth:`acquire`
-and :meth:`release` methods can be used as context managers for a
-:keyword:`async with` statement.  The :meth:`acquire` method will be
-called when the block is entered, and :meth:`release` will be called
-when the block is exited.  Hence, the following snippet::
+:class:`Lock`, :class:`Condition`, :class:`Semaphore`, and
+:class:`BoundedSemaphore` objects can be used in :keyword:`async with`
+statements.
+
+The :meth:`acquire` method will be called when the block is entered,
+and :meth:`release` will be called when the block is exited.  Hence,
+the following snippet::
 
    async with lock:
        # do something...
@@ -302,11 +304,8 @@ Currently, :class:`Lock`, :class:`Condition`,
 ``async with lock`` is the preferable way for locking asyncio
 synchronization primitives.
 
-Explicit :meth:`acquire` / :meth:`release` calls should be used if
-locking/unlocking is split into different functions.
-
 .. deprecated:: 3.7
 
-   Lock acquiring on ``await lock`` or ``yield from lock`` and
+   Lock acquiring using ``await lock`` or ``yield from lock`` and
    :keyword:`with` statement (``with await lock``, ``with (yield from
    lock)``) are deprecated.
