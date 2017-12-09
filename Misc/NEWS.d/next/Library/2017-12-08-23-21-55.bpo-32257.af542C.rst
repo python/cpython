@@ -1,0 +1,2 @@
+ Adding a new method in SSLContext so that we can disable renegotiation
+ easier. This resolves CVE-2009-3555 and attack demonstrated by thc-ssl-dos.

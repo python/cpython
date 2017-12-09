@@ -412,6 +412,9 @@ class SSLContext(_SSLContext):
                 self._load_windows_store_certs(storename, purpose)
         self.set_default_verify_paths()
 
+    def disable_renegotiation(self):
+        self.options |= getattr(_ssl, "FLAGS_NO_RENEGOTIATE_CIPHERS", 0)
+
 
 def create_default_context(purpose=Purpose.SERVER_AUTH, cafile=None,
                            capath=None, cadata=None):
