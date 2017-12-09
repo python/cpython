@@ -5,6 +5,8 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/hash.h"
+#include "internal/import.h"
 #include "internal/pystate.h"
 #include "errcode.h"
 #include "marshal.h"
@@ -2184,6 +2186,34 @@ _imp_exec_builtin_impl(PyObject *module, PyObject *mod)
     return exec_builtin_or_dynamic(mod);
 }
 
+/*[clinic input]
+_imp.source_hash
+
+    key: long
+    source: Py_buffer
+[clinic start generated code]*/
+
+static PyObject *
+_imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
+/*[clinic end generated code: output=edb292448cf399ea input=9aaad1e590089789]*/
+{
+    uint64_t hash = _Py_KeyedHash((uint64_t)key, source->buf, source->len);
+#if !PY_LITTLE_ENDIAN
+    // Force to little-endian. There really ought to be a succinct standard way
+    // to do this.
+    union {
+        uint64_t x;
+        unsigned char data[sizeof(uint64_t)];
+    } pun;
+    pun.x = hash;
+    for (size_t i = 0; i < sizeof(pun.data); i++) {
+        pun.data[sizeof(pun.data) - i - 1] = pun.data[i];
+    }
+    hash = pun.x;
+#endif
+    return PyBytes_FromStringAndSize((const char *)&hash, sizeof(hash));
+}
+
 
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib and imp.");
@@ -2203,6 +2233,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
+    _IMP_SOURCE_HASH_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -2219,6 +2250,8 @@ static struct PyModuleDef impmodule = {
     NULL
 };
 
+const char *_Py_CheckHashBasedPycsMode = "default";
+
 PyMODINIT_FUNC
 PyInit_imp(void)
 {
@@ -2230,6 +2263,15 @@ PyInit_imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
+    PyObject *pyc_mode = PyUnicode_FromString(_Py_CheckHashBasedPycsMode);
+    if (pyc_mode == NULL) {
+        goto failure;
+    }
+    if (PyDict_SetItemString(d, "check_hash_based_pycs", pyc_mode) < 0) {
+        Py_DECREF(pyc_mode);
+        goto failure;
+    }
+    Py_DECREF(pyc_mode);
 
     return m;
   failure:

@@ -48,9 +48,9 @@ class CompileallTests(unittest.TestCase):
 
     def data(self):
         with open(self.bc_path, 'rb') as file:
-            data = file.read(8)
+            data = file.read(12)
         mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack('<4sl', importlib.util.MAGIC_NUMBER, mtime)
+        compare = struct.pack('<4sll', importlib.util.MAGIC_NUMBER, 0, mtime)
         return data, compare
 
     @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
@@ -70,8 +70,8 @@ class CompileallTests(unittest.TestCase):
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
-        self.recreation_check(struct.pack('<4sl', importlib.util.MAGIC_NUMBER,
-                                          1))
+        self.recreation_check(struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
+                                          0, 1))
 
     def test_magic_number(self):
         # Test a change in mtime leads to a new .pyc.
@@ -518,6 +518,19 @@ class CommandLineTests(unittest.TestCase):
     def test_invalid_arg_produces_message(self):
         out = self.assertRunOK('badfilename')
         self.assertRegex(out, b"Can't list 'badfilename'")
+
+    def test_pyc_invalidation_mode(self):
+        script_helper.make_script(self.pkgdir, 'f1', '')
+        pyc = importlib.util.cache_from_source(
+            os.path.join(self.pkgdir, 'f1.py'))
+        self.assertRunOK('--invalidation-mode=checked-hash', self.pkgdir)
+        with open(pyc, 'rb') as fp:
+            data = fp.read()
+        self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b11)
+        self.assertRunOK('--invalidation-mode=unchecked-hash', self.pkgdir)
+        with open(pyc, 'rb') as fp:
+            data = fp.read()
+        self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b01)
 
     @skipUnless(_have_multiprocessing, "requires multiprocessing")
     def test_workers(self):
