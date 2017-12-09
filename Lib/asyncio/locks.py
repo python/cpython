@@ -3,6 +3,7 @@
 __all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
 
 import collections
+import warnings
 
 from . import events
 from . import futures
@@ -63,6 +64,9 @@ class _ContextManagerMixin:
         #         <block>
         #     finally:
         #         lock.release()
+        warnings.warn("'with (yield from lock)' is deprecated "
+                      "use 'async with lock' instead",
+                      DeprecationWarning, stacklevel=2)
         yield from self.acquire()
         return _ContextManager(self)
 
@@ -71,6 +75,9 @@ class _ContextManagerMixin:
         return _ContextManager(self)
 
     def __await__(self):
+        warnings.warn("'with await lock' is deprecated "
+                      "use 'async with lock' instead",
+                      DeprecationWarning, stacklevel=2)
         # To make "with await lock" work.
         return self.__acquire_ctx().__await__()
 
