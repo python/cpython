@@ -16,7 +16,7 @@ void foo()
 EOF
 
 . $PY_SRCDIR/Android/build-config
-if ! $CC $CFLAGS -Werror=implicit-function-declaration -c nl_langinfo.c; then
+if ! $CC $CPPFLAGS -Werror=implicit-function-declaration -c nl_langinfo.c; then
     rc=$?
     echo "langinfo.h is broken as expected." >&2
 else

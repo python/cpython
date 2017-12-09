@@ -84,14 +84,9 @@ READELF="$toolchain/bin/$ANDROID_HOST-readelf"
 STRIP="$toolchain/bin/$ANDROID_HOST-strip --strip-debug --strip-unneeded"
 unset target toolchain machine kernel tool_path
 
-# configure needs to have '--sysroot' set in CPPFLAGS and setup.py ignores
-# entirely CPPFLAGS except for the '-I' options, so we need to set '--sysroot'
-# both in CPPFLAGS and in CFLAGS :(
-ndk_flags="--sysroot=$ANDROID_NDK_ROOT/sysroot -D__ANDROID_API__=$ANDROID_API -isystem $ANDROID_NDK_ROOT/sysroot/usr/include/$ANDROID_HOST"
-CPPFLAGS="$CPPFLAGS $ndk_flags"
-CFLAGS="$CFLAGS $ndk_flags -Wno-unused-value -Wno-empty-body -Qunused-arguments -Wno-nullability-completeness"
+CPPFLAGS="$CPPFLAGS --sysroot=$ANDROID_NDK_ROOT/sysroot -D__ANDROID_API__=$ANDROID_API -isystem $ANDROID_NDK_ROOT/sysroot/usr/include/$ANDROID_HOST"
+CFLAGS="$CFLAGS -Wno-unused-value -Wno-empty-body -Qunused-arguments -Wno-nullability-completeness"
 LDFLAGS="$LDFLAGS --sysroot=$SYSROOT"
-unset ndk_flags
 
 ccache -V >/dev/null 2>&1 && { CC="ccache $CC"; GCC="ccache $GCC"; \
                                CFLAGS="$CFLAGS -Wno-parentheses-equality"; }
