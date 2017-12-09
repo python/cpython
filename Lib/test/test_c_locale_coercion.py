@@ -302,18 +302,17 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             "LC_ALL": "",
         }
         base_var_dict.update(extra_vars)
+        if coerce_c_locale is not None:
+            base_var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
 
         # Check behaviour for the default locale
         with self.subTest(default_locale=True,
                           PYTHONCOERCECLOCALE=coerce_c_locale):
-            var_dict = base_var_dict.copy()
             _expected_warnings = expected_warnings
-            if coerce_c_locale is not None:
-                var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
-                if (EXPECTED_C_LOCALE_STREAM_ENCODING == "utf-8"
-                        and coerce_c_locale == "warn"):
-                    _expected_warnings = None
-            self._check_child_encoding_details(var_dict,
+            if (EXPECTED_C_LOCALE_STREAM_ENCODING == "utf-8"
+                    and coerce_c_locale == "warn"):
+                _expected_warnings = None
+            self._check_child_encoding_details(base_var_dict,
                                                fs_encoding,
                                                stream_encoding,
                                                _expected_warnings,
@@ -327,8 +326,6 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                                   PYTHONCOERCECLOCALE=coerce_c_locale):
                     var_dict = base_var_dict.copy()
                     var_dict[env_var] = locale_to_set
-                    if coerce_c_locale is not None:
-                        var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
                     # Check behaviour on successful coercion
                     self._check_child_encoding_details(var_dict,
                                                        fs_encoding,
