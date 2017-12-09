@@ -415,7 +415,7 @@ siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
 static Py_hash_t
 pysiphash(const void *src, Py_ssize_t src_sz) {
     return (Py_hash_t)siphash24(
-        _Py_HashSecret.siphash.k0, _Py_HashSecret.siphash.k1,
+        _le64toh(_Py_HashSecret.siphash.k0), _le64toh(_Py_HashSecret.siphash.k1),
         src, src_sz);
 }
 
