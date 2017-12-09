@@ -4297,6 +4297,12 @@ init_ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
                             SSL_OP_NO_COMPRESSION);
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifdef SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS
+    PyModule_AddIntConstant(m, "FLAGS_NO_RENEGOTIATE_CIPHERS",
+                            SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS);
+#endif
+#endif
 
 #if HAVE_SNI
     r = Py_True;

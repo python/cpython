@@ -147,3 +147,13 @@ Fix reference leak hunting in regrtest, --huntrleaks: regrtest now warms up
 caches, create explicitly all internal singletons which are created on
 demand to prevent false positives when checking for reference leaks.
 (:issue:`30675`).
+
+..
+
+.. bpo: 32755
+.. date: 2017-12-08-23-11-15
+.. nonce: 8NV5fa
+.. section: Library
+
+Adding a new method in SSLContext so that we can disable renegotiation
+easier. This resolves CVE-2009-3555 and attack demonstrated by thc-ssl-dos.
