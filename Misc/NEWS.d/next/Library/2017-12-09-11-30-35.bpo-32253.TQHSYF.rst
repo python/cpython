@@ -1,0 +1,2 @@
+Deprecate ``yield from lock``, ``await lock``, ``with (yield from lock)``
+and ``with await lock`` for asyncio synchronization primitives.

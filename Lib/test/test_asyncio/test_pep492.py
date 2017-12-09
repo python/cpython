@@ -59,12 +59,13 @@ class LockTests(BaseTest):
         async def test(lock):
             await asyncio.sleep(0.01, loop=self.loop)
             self.assertFalse(lock.locked())
-            with await lock as _lock:
-                self.assertIs(_lock, None)
-                self.assertTrue(lock.locked())
-                await asyncio.sleep(0.01, loop=self.loop)
-                self.assertTrue(lock.locked())
-            self.assertFalse(lock.locked())
+            with self.assertWarns(DeprecationWarning):
+                with await lock as _lock:
+                    self.assertIs(_lock, None)
+                    self.assertTrue(lock.locked())
+                    await asyncio.sleep(0.01, loop=self.loop)
+                    self.assertTrue(lock.locked())
+                self.assertFalse(lock.locked())
 
         for primitive in primitives:
             self.loop.run_until_complete(test(primitive))
