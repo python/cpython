@@ -127,6 +127,10 @@ PyAPI_FUNC(int) PyModule_AddFunctions(PyObject *, PyMethodDef *);
 PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
 #endif
 
+#if !defined(Py_LIMITED_API)
+PyAPI_FUNC(int) PyModule_ExecInModule(PyObject *module, PyModuleDef *def);
+#endif
+
 #define Py_CLEANUP_SUPPORTED 0x20000
 
 #define PYTHON_API_VERSION 1013

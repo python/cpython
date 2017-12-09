@@ -932,6 +932,12 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         _bootstrap._verbose_message('extension module {!r} executed from {!r}',
                          self.name, self.path)
 
+    def exec_in_module(self, spec, module):
+        _bootstrap._call_with_frames_removed(
+            _imp.exec_in_module, spec, module)
+        _bootstrap._verbose_message('extension module {!r} executed from {!r}',
+                         self.name, self.path)
+
     def is_package(self, fullname):
         """Return True if the extension module is a package."""
         file_name = _path_split(self.path)[1]

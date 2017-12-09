@@ -1026,6 +1026,21 @@ find and load modules.
 
       .. versionadded:: 3.5
 
+   .. method:: exec_in_module(spec, module)
+
+      Initializes *module* according to *spec*.
+      Information stored in the given *module* (e.g. its ``__spec__``
+      and ``__name__`` attributes) is ignored, and does not need to match
+      the given *spec*.
+
+      This is used by code that handles Python's :ref:`-m option <m option>`,
+      which initializes the ``__main__`` module according to the requested
+      module's *spec*.
+      (For loaders that do not support ``exec_in_module``, the ``-m`` option
+      uses :meth:`get_code` as fallback.)
+
+      .. versionadded:: 3.7
+
    .. method:: is_package(fullname)
 
       Returns ``True`` if the file path points to a package's ``__init__``

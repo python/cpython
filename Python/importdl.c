@@ -89,6 +89,19 @@ error:
 PyObject *
 _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 {
+    PyObject *m;
+    m = _PyImport_LoadDynamicModuleDef(spec, fp);
+    if (m == NULL)
+        return NULL;
+    if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
+        return PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
+    }
+    return m;
+}
+
+PyObject *
+_PyImport_LoadDynamicModuleDef(PyObject *spec, FILE *fp)
+{
 #ifndef MS_WINDOWS
     PyObject *pathbytes = NULL;
 #endif
@@ -186,13 +199,13 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         m = NULL; /* prevent segfault in DECREF */
         goto error;
     }
+
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
         Py_DECREF(name_unicode);
         Py_DECREF(name);
         Py_DECREF(path);
-        return PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
+        return m;
     }
-
     /* Fall back to single-phase init mechanism */
 
     if (hook_prefix == nonascii_prefix) {

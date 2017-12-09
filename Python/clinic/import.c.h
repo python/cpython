@@ -260,6 +260,37 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp_exec_in_module__doc__,
+"exec_in_module($module, spec, namespace_module, /)\n"
+"--\n"
+"\n"
+"Execute an extension module inside another module namespace.");
+
+#define _IMP_EXEC_IN_MODULE_METHODDEF    \
+    {"exec_in_module", (PyCFunction)_imp_exec_in_module, METH_FASTCALL, _imp_exec_in_module__doc__},
+
+static PyObject *
+_imp_exec_in_module_impl(PyObject *module, PyObject *spec,
+                         PyObject *namespace_module);
+
+static PyObject *
+_imp_exec_in_module(PyObject *module, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *spec;
+    PyObject *namespace_module;
+
+    if (!_PyArg_UnpackStack(args, nargs, "exec_in_module",
+        2, 2,
+        &spec, &namespace_module)) {
+        goto exit;
+    }
+    return_value = _imp_exec_in_module_impl(module, spec, namespace_module);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
@@ -361,4 +392,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=d068dd493e513604 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f86a1c434c5ba0de input=a9049054013a1b77]*/
