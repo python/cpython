@@ -297,13 +297,6 @@ is equivalent to::
    finally:
        lock.release()
 
-Currently, :class:`Lock`, :class:`Condition`,
-:class:`Semaphore`, and :class:`BoundedSemaphore` objects may be used as
-:keyword:`async with` statement context managers.
-
-``async with lock`` is the preferable way for locking asyncio
-synchronization primitives.
-
 .. deprecated:: 3.7
 
    Lock acquiring using ``await lock`` or ``yield from lock`` and
