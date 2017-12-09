@@ -608,7 +608,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 #ifdef SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS
 
-    if (self->s3 && SSL_is_server(self->ssl)) {
+    if (self->ssl->s3 && SSL_is_server(self->ssl)) {
         self->ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
     }
 
