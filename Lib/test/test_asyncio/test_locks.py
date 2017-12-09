@@ -63,6 +63,31 @@ class LockTests(test_utils.TestCase):
         lock.release()
         self.assertFalse(lock.locked())
 
+    def test_lock_by_with_statement(self):
+        loop = asyncio.new_event_loop()  # don't use TestLoop quirks
+        self.set_event_loop(loop)
+        primitives = [
+            asyncio.Lock(loop=loop),
+            asyncio.Condition(loop=loop),
+            asyncio.Semaphore(loop=loop),
+            asyncio.BoundedSemaphore(loop=loop),
+        ]
+
+        @asyncio.coroutine
+        def test(lock):
+            yield from asyncio.sleep(0.01, loop=loop)
+            self.assertFalse(lock.locked())
+            with (yield from lock) as _lock:
+                self.assertIs(_lock, None)
+                self.assertTrue(lock.locked())
+                yield from asyncio.sleep(0.01, loop=loop)
+                self.assertTrue(lock.locked())
+            self.assertFalse(lock.locked())
+
+        for primitive in primitives:
+            loop.run_until_complete(test(primitive))
+            self.assertFalse(primitive.locked())
+
     def test_acquire(self):
         lock = asyncio.Lock(loop=self.loop)
         result = []
