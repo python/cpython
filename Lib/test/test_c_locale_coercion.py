@@ -41,7 +41,7 @@ elif sys.platform == "darwin":
 # * Any Linux distro where the default locale is something other than "C"
 #
 # Options for dealing with this:
-# * Don't set the PYTHON_COERCE_C_LOCALE preprocessor definition on
+# * Don't set the PY_COERCE_C_LOCALE preprocessor definition on
 #   such platforms (e.g. it isn't set on Windows)
 # * Fix the test expectations to match the actual platform behaviour
 
