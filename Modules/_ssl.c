@@ -604,6 +604,17 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
             return NULL;
         }
     }
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifdef SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS
+
+    if (self->s3 && SSL_is_server(self->ssl)) {
+        self->ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
+    }
+
+#endif
+#endif
+
     return self;
 }
 
@@ -4296,12 +4307,6 @@ init_ssl(void)
 #ifdef SSL_OP_NO_COMPRESSION
     PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
                             SSL_OP_NO_COMPRESSION);
-#endif
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#ifdef SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS
-    PyModule_AddIntConstant(m, "FLAGS_NO_RENEGOTIATE_CIPHERS",
-                            SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS);
-#endif
 #endif
 
 #if HAVE_SNI
