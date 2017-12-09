@@ -23,11 +23,9 @@ module (:class:`~threading.Lock`, :class:`~threading.Event`,
 :class:`~threading.BoundedSemaphore`), but it has no *timeout* parameter. The
 :func:`asyncio.wait_for` function can be used to cancel a task after a timeout.
 
-Locks
------
 
 Lock
-^^^^
+----
 
 .. class:: Lock(\*, loop=None)
 
@@ -85,7 +83,7 @@ Lock
 
 
 Event
-^^^^^
+-----
 
 .. class:: Event(\*, loop=None)
 
@@ -126,7 +124,7 @@ Event
 
 
 Condition
-^^^^^^^^^
+---------
 
 .. class:: Condition(lock=None, \*, loop=None)
 
@@ -216,11 +214,8 @@ Condition
       This method is a :ref:`coroutine <coroutine>`.
 
 
-Semaphores
-----------
-
 Semaphore
-^^^^^^^^^
+---------
 
 .. class:: Semaphore(value=1, \*, loop=None)
 
@@ -264,7 +259,7 @@ Semaphore
 
 
 BoundedSemaphore
-^^^^^^^^^^^^^^^^
+----------------
 
 .. class:: BoundedSemaphore(value=1, \*, loop=None)
 
@@ -281,7 +276,7 @@ BoundedSemaphore
 .. _async-with-locks:
 
 Using locks, conditions, and semaphores in the :keyword:`async with` statement
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------------------------------------
 
 All of the objects provided by this module that have :meth:`acquire`
 and :meth:`release` methods can be used as context managers for a
