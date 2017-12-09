@@ -105,7 +105,7 @@ static const char usage_3[] = "\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option\n\
 --check-hash-based-pycs always|default|never:\n\
-    control how Python invalidates hash-based .pcy files\n\
+    control how Python invalidates hash-based .pyc files\n\
 ";
 static const char usage_4[] = "\
 file   : program read from script file\n\
