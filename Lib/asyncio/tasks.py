@@ -60,6 +60,9 @@ class Task(futures.Future):
         try:
             return loop.current_task()
         except (AttributeError, NotImplementedError):
+            # This code is needed to thrird-party event loops that don't
+            # support loop introspection API yet.
+            # The fallback will be removed in 3.8.
             return cls._current_tasks.get(loop)
 
     @classmethod
@@ -77,6 +80,9 @@ class Task(futures.Future):
         try:
             return loop.all_tasks()
         except (AttributeError, NotImplementedError):
+            # This code is needed to thrird-party event loops that don't
+            # support loop introspection API yet.
+            # The fallback will be removed in 3.8.
             return {t for t in cls._all_tasks if t._loop is loop}
 
     def __init__(self, coro, *, loop=None):
