@@ -53,7 +53,10 @@ class Task(futures.Future):
         """
         if loop is None:
             loop = events.get_event_loop()
-        return cls._current_tasks.get(loop)
+        try:
+            return loop.current_task()
+        except (AttributeError, NotImplementedError):
+            return cls._current_tasks.get(loop)
 
     @classmethod
     def all_tasks(cls, loop=None):
@@ -63,7 +66,10 @@ class Task(futures.Future):
         """
         if loop is None:
             loop = events.get_event_loop()
-        return {t for t in cls._all_tasks if t._loop is loop}
+        try:
+            return loop.all_tasks()
+        except (AttributeError, NotImplementedError):
+            return {t for t in cls._all_tasks if t._loop is loop}
 
     def __init__(self, coro, *, loop=None):
         assert coroutines.iscoroutine(coro), repr(coro)
@@ -74,7 +80,10 @@ class Task(futures.Future):
         self._fut_waiter = None
         self._must_cancel = False
         self._loop.call_soon(self._step)
-        self.__class__._all_tasks.add(self)
+        try:
+            self._loop._register_task(self)
+        except (AttributeError, NotImplementedError):
+            self.__class__._all_tasks.add(self)
 
     def __del__(self):
         if self._state == futures._PENDING and self._log_destroy_pending:
@@ -167,7 +176,10 @@ class Task(futures.Future):
         coro = self._coro
         self._fut_waiter = None
 
-        self.__class__._current_tasks[self._loop] = self
+        try:
+            self._loop._enter_task(self)
+        except (AttributeError, NotImplementedError):
+            self.__class__._current_tasks[self._loop] = self
         # Call either coro.throw(exc) or coro.send(None).
         try:
             if exc is None:
@@ -238,7 +250,10 @@ class Task(futures.Future):
                     RuntimeError(
                         'Task got bad yield: {!r}'.format(result)))
         finally:
-            self.__class__._current_tasks.pop(self._loop)
+            try:
+                self._loop._leave_task(self)
+            except (AttributeError, NotImplementedError):
+                self.__class__._current_tasks.pop(self._loop)
             self = None  # Needed to break cycles when an exception occurs.
 
     def _wakeup(self, future):

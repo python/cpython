@@ -517,6 +517,23 @@ class AbstractEventLoop:
     def get_task_factory(self):
         raise NotImplementedError
 
+    # Tasks introspection
+
+    def current_task(self):
+        raise NotImplementedError
+
+    def all_tasks(self):
+        raise NotImplementedError
+
+    def _register_task(self, task):
+        raise NotImplementedError
+
+    def _enter_task(self, task):
+        raise NotImplementedError
+
+    def _leave_task(self, task):
+        raise NotImplementedError
+
     # Error handlers.
 
     def get_exception_handler(self):

@@ -248,6 +248,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self.slow_callback_duration = 0.1
         self._current_handle = None
         self._task_factory = None
+        self._tasks = weakref.WeakSet()
+        self._current_task = None
         self._coroutine_wrapper_set = False
 
         if hasattr(sys, 'get_asyncgen_hooks'):
@@ -301,6 +303,30 @@ class BaseEventLoop(events.AbstractEventLoop):
     def get_task_factory(self):
         """Return a task factory, or None if the default one is in use."""
         return self._task_factory
+
+    def current_task(self):
+        return self._current_task
+
+    def all_tasks(self):
+        return set(self._tasks)
+
+    def _register_task(self, task):
+        self._tasks.add(task)
+
+    def _enter_task(self, task):
+        if self._current_task is not None:
+            raise RuntimeError("Entring into task {!r} "
+                               "when other task {!r} is executed. "
+                               "The loop invariants are broken"
+                               .format(task, self._current_task))
+        self._current_task = task
+
+    def _leave_task(self, task):
+        if self._current_task is not task:
+            raise RuntimeError("Leaving task {!r} is not current {!r}. "
+                               "The loop invariants are broken"
+                               .format(task, self._current_task))
+        self._current_task = None
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
