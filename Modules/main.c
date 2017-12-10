@@ -446,17 +446,18 @@ pymain_optlist_clear(_Py_OptList *list)
     list->options = NULL;
 }
 
+
+/* Free global variables which cannot be freed in Py_Finalize():
+   configuration options set before Py_Initialize() which should
+   remain valid after Py_Finalize(), since Py_Initialize()/Py_Finalize() can
+   be called multiple times.
+
+   Called with the current memory allocators. */
 static void
-pymain_free_impl(_PyMain *pymain)
+pymain_free_globals(_PyMain *pymain)
 {
-    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
-    pymain_optlist_clear(&cmdline->warning_options);
-    pymain_optlist_clear(&cmdline->xoptions);
-    PyMem_RawFree(cmdline->command);
-
-    pymain_optlist_clear(&pymain->env_warning_options);
-    Py_CLEAR(pymain->main_importer_path);
-
+    _PyPathConfig_Clear(&_Py_path_config);
+    _PyImport_Fini2();
     _PyMainInterpreterConfig_Clear(&pymain->config);
 
 #ifdef __INSURE__
@@ -473,6 +474,20 @@ pymain_free_impl(_PyMain *pymain)
 #endif /* __INSURE__ */
 }
 
+
+static void
+pymain_free_pymain(_PyMain *pymain)
+{
+    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
+    pymain_optlist_clear(&cmdline->warning_options);
+    pymain_optlist_clear(&cmdline->xoptions);
+    PyMem_RawFree(cmdline->command);
+
+    pymain_optlist_clear(&pymain->env_warning_options);
+    Py_CLEAR(pymain->main_importer_path);
+
+}
+
 static void
 pymain_free(_PyMain *pymain)
 {
@@ -480,11 +495,11 @@ pymain_free(_PyMain *pymain)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    pymain_free_impl(pymain);
+    pymain_free_pymain(pymain);
+    pymain_free_globals(pymain);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
-
 
 static int
 pymain_run_main_from_importer(_PyMain *pymain)
@@ -1718,13 +1733,6 @@ pymain_impl(_PyMain *pymain)
            other special meaning */
         pymain->status = 120;
     }
-
-    /* _PyPathConfig_Clear() cannot be called in Py_FinalizeEx().
-       Py_Initialize() and Py_Finalize() can be called multiple times, but it
-       must not "forget" parameters set by Py_SetProgramName(), Py_SetPath() or
-       Py_SetPythonHome(), whereas _PyPathConfig_Clear() clear all these
-       parameters. */
-    _PyPathConfig_Clear(&_Py_path_config);
 
     return 0;
 }

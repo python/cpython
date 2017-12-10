@@ -30,6 +30,7 @@ static PyObject *extensions = NULL;
 extern struct _inittab _PyImport_Inittab[];
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
+static struct _inittab *inittab_copy = NULL;
 
 /*[clinic input]
 module _imp
@@ -283,6 +284,19 @@ _PyImport_Fini(void)
         PyThread_free_lock(import_lock);
         import_lock = NULL;
     }
+}
+
+void
+_PyImport_Fini2(void)
+{
+    /* Use the same memory allocator than PyImport_ExtendInittab(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Free memory allocated by PyImport_ExtendInittab() */
+    PyMem_RawFree(inittab_copy);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 /* Helper for sys */
@@ -2233,9 +2247,9 @@ PyInit_imp(void)
 int
 PyImport_ExtendInittab(struct _inittab *newtab)
 {
-    static struct _inittab *our_copy = NULL;
     struct _inittab *p;
-    int i, n;
+    Py_ssize_t i, n;
+    int res = 0;
 
     /* Count the number of entries in both tables */
     for (n = 0; newtab[n].name != NULL; n++)
@@ -2245,19 +2259,35 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     for (i = 0; PyImport_Inittab[i].name != NULL; i++)
         ;
 
+    /* Force default raw memory allocator to get a known allocator to be able
+       to release the memory in _PyImport_Fini2() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     /* Allocate new memory for the combined table */
-    p = our_copy;
-    PyMem_RESIZE(p, struct _inittab, i+n+1);
-    if (p == NULL)
-        return -1;
+    if ((i + n + 1) <= PY_SSIZE_T_MAX / sizeof(struct _inittab)) {
+        size_t size = sizeof(struct _inittab) * (i + n + 1);
+        p = PyMem_RawRealloc(inittab_copy, size);
+    }
+    else {
+        p = NULL;
+    }
+    if (p == NULL) {
+        res = -1;
+        goto done;
+    }
 
-    /* Copy the tables into the new memory */
-    if (our_copy != PyImport_Inittab)
+    /* Copy the tables into the new memory at the first call
+       to PyImport_ExtendInittab(). */
+    if (inittab_copy != PyImport_Inittab) {
         memcpy(p, PyImport_Inittab, (i+1) * sizeof(struct _inittab));
-    PyImport_Inittab = our_copy = p;
-    memcpy(p+i, newtab, (n+1) * sizeof(struct _inittab));
+    }
+    memcpy(p + i, newtab, (n + 1) * sizeof(struct _inittab));
+    PyImport_Inittab = inittab_copy = p;
 
-    return 0;
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return res;
 }
 
 /* Shorthand to add a single entry given a name and a function */
