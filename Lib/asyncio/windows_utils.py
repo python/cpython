@@ -91,7 +91,7 @@ class PipeHandle:
             handle = f'handle={self._handle!r}'
         else:
             handle = 'closed'
-        return '<{} {}>'.format(self.__class__.__name__, handle)
+        return f'<{self.__class__.__name__} {handle}>'
 
     @property
     def handle(self):
