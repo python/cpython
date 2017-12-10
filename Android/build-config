@@ -84,8 +84,14 @@ READELF="$toolchain/bin/$ANDROID_HOST-readelf"
 STRIP="$toolchain/bin/$ANDROID_HOST-strip --strip-debug --strip-unneeded"
 unset target toolchain machine kernel tool_path
 
-CPPFLAGS="$CPPFLAGS --sysroot=$ANDROID_NDK_ROOT/sysroot -D__ANDROID_API__=$ANDROID_API -isystem $ANDROID_NDK_ROOT/sysroot/usr/include/$ANDROID_HOST"
+# We need to set '--sysroot' both in CFLAGS and CPPFLAGS:
+#   * configure needs to have '--sysroot' set in CPPFLAGS when it runs CPP.
+#   * Extension modules are not compiled by distutils with CPPFLAGS.
+ndk_flags="--sysroot=$ANDROID_NDK_ROOT/sysroot -D__ANDROID_API__=$ANDROID_API -isystem $ANDROID_NDK_ROOT/sysroot/usr/include/$ANDROID_HOST"
+CPPFLAGS="$CPPFLAGS $ndk_flags"
+CFLAGS="$CFLAGS $ndk_flags"
 LDFLAGS="$LDFLAGS --sysroot=$SYSROOT"
+unset ndk_flags
 
 ccache -V >/dev/null 2>&1 && { CC="ccache $CC"; GCC="ccache $GCC"; \
                                CFLAGS="$CFLAGS -Wno-parentheses-equality"; }
