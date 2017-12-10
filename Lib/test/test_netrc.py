@@ -5,24 +5,28 @@ temp_filename = test_support.TESTFN
 
 class NetrcTestCase(unittest.TestCase):
 
-    def make_nrc(self, test_data):
+    def make_nrc(self, test_data, cleanup=True):
         test_data = textwrap.dedent(test_data)
         mode = 'w'
         if sys.platform != 'cygwin':
             mode += 't'
         with open(temp_filename, mode) as fp:
             fp.write(test_data)
-        self.addCleanup(os.unlink, temp_filename)
+        if cleanup:
+            self.addCleanup(os.unlink, temp_filename)
         return netrc.netrc(temp_filename)
 
     def test_default(self):
         nrc = self.make_nrc("""\
             machine host1.domain.com login log1 password pass1 account acct1
             default login log2 password pass2
-            """)
+            """, cleanup=False)
         self.assertEqual(nrc.hosts['host1.domain.com'],
                          ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', None, 'pass2'))
+
+        nrc2 = self.make_nrc(nrc.__repr__(), cleanup=True)
+        self.assertEqual(nrc.hosts, nrc2.hosts)
 
     def test_macros(self):
         nrc = self.make_nrc("""\
