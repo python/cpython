@@ -1,13 +1,14 @@
 """Event loop and event loop policy."""
 
-__all__ = ['AbstractEventLoopPolicy',
-           'AbstractEventLoop', 'AbstractServer',
-           'Handle', 'TimerHandle',
-           'get_event_loop_policy', 'set_event_loop_policy',
-           'get_event_loop', 'set_event_loop', 'new_event_loop',
-           'get_child_watcher', 'set_child_watcher',
-           '_set_running_loop', '_get_running_loop',
-           ]
+__all__ = (
+    'AbstractEventLoopPolicy',
+    'AbstractEventLoop', 'AbstractServer',
+    'Handle', 'TimerHandle',
+    'get_event_loop_policy', 'set_event_loop_policy',
+    'get_event_loop', 'set_event_loop', 'new_event_loop',
+    'get_child_watcher', 'set_child_watcher',
+    '_set_running_loop', '_get_running_loop',
+)
 
 import functools
 import inspect
@@ -44,9 +45,8 @@ def _format_args_and_kwargs(args, kwargs):
     if args:
         items.extend(reprlib.repr(arg) for arg in args)
     if kwargs:
-        items.extend('{}={}'.format(k, reprlib.repr(v))
-                     for k, v in kwargs.items())
-    return '(' + ', '.join(items) + ')'
+        items.extend(f'{k}={reprlib.repr(v)}' for k, v in kwargs.items())
+    return '({})'.format(', '.join(items))
 
 
 def _format_callback(func, args, kwargs, suffix=''):
@@ -66,11 +66,12 @@ def _format_callback(func, args, kwargs, suffix=''):
         func_repr += suffix
     return func_repr
 
+
 def _format_callback_source(func, args):
     func_repr = _format_callback(func, args, None)
     source = _get_function_source(func)
     if source:
-        func_repr += ' at %s:%s' % source
+        func_repr += f' at {source[0]}:{source[1]}'
     return func_repr
 
 
@@ -116,14 +117,14 @@ class Handle:
             info.append(_format_callback_source(self._callback, self._args))
         if self._source_traceback:
             frame = self._source_traceback[-1]
-            info.append('created at %s:%s' % (frame[0], frame[1]))
+            info.append(f'created at {frame[0]}:{frame[1]}')
         return info
 
     def __repr__(self):
         if self._repr is not None:
             return self._repr
         info = self._repr_info()
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def cancel(self):
         if not self._cancelled:
@@ -144,7 +145,7 @@ class Handle:
             self._callback(*self._args)
         except Exception as exc:
             cb = _format_callback_source(self._callback, self._args)
-            msg = 'Exception in callback {}'.format(cb)
+            msg = f'Exception in callback {cb}'
             context = {
                 'message': msg,
                 'exception': exc,
@@ -172,7 +173,7 @@ class TimerHandle(Handle):
     def _repr_info(self):
         info = super()._repr_info()
         pos = 2 if self._cancelled else 1
-        info.insert(pos, 'when=%s' % self._when)
+        info.insert(pos, f'when={self._when}')
         return info
 
     def __hash__(self):
@@ -334,8 +335,8 @@ class AbstractEventLoop:
 
         If host is an empty string or None all interfaces are assumed
         and a list of multiple sockets will be returned (most likely
-        one for IPv4 and another one for IPv6). The host parameter can also be a
-        sequence (e.g. list) of hosts to bind to.
+        one for IPv4 and another one for IPv6). The host parameter can also be
+        a sequence (e.g. list) of hosts to bind to.
 
         family can be set to either AF_INET or AF_INET6 to force the
         socket to use IPv4 or IPv6. If not set it will be determined
@@ -602,12 +603,14 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         This may be None or an instance of EventLoop.
         """
         if (self._local._loop is None and
-            not self._local._set_called and
-            isinstance(threading.current_thread(), threading._MainThread)):
+                not self._local._set_called and
+                isinstance(threading.current_thread(), threading._MainThread)):
             self.set_event_loop(self.new_event_loop())
+
         if self._local._loop is None:
             raise RuntimeError('There is no current event loop in thread %r.'
                                % threading.current_thread().name)
+
         return self._local._loop
 
     def set_event_loop(self, loop):
