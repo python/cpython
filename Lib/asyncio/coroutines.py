@@ -58,7 +58,7 @@ class CoroWrapper:
             frame = self._source_traceback[-1]
             coro_repr += f', created at {frame[0]}:{frame[1]}'
 
-        return '<{} {}>'.format(self.__class__.__name__, coro_repr)
+        return f'<{self.__class__.__name__} {coro_repr}>'
 
     def __iter__(self):
         return self
