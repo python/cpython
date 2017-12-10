@@ -261,9 +261,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._asyncgens_shutdown_called = False
 
     def __repr__(self):
-        return ('<%s running=%s closed=%s debug=%s>'
-                % (self.__class__.__name__, self.is_running(),
-                   self.is_closed(), self.get_debug()))
+        return (
+            f'<{self.__class__.__name__} running={self.is_running()} '
+            f'closed={self.is_closed()} debug={self.get_debug()}>'
+        )
 
     def create_future(self):
         """Create a Future object attached to the loop."""
@@ -1162,14 +1163,14 @@ class BaseEventLoop(events.AbstractEventLoop):
         popen_args = (program,) + args
         for arg in popen_args:
             if not isinstance(arg, (str, bytes)):
-                raise TypeError("program arguments must be "
-                                "a bytes or text string, not %s"
-                                % type(arg).__name__)
+                raise TypeError(
+                    f"program arguments must be a bytes or text string, "
+                    f"not {type(arg).__name__}")
         protocol = protocol_factory()
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
-            debug_log = 'execute program %r' % program
+            debug_log = f'execute program {program!r}'
             self._log_subprocess(debug_log, stdin, stdout, stderr)
         transport = await self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
@@ -1434,18 +1435,19 @@ class BaseEventLoop(events.AbstractEventLoop):
         if enabled:
             if current_wrapper not in (None, wrapper):
                 warnings.warn(
-                    "loop.set_debug(True): cannot set debug coroutine "
-                    "wrapper; another wrapper is already set %r" %
-                    current_wrapper, RuntimeWarning)
+                    f"loop.set_debug(True): cannot set debug coroutine "
+                    f"wrapper; another wrapper is already set "
+                    f"{current_wrapper!r}",
+                    RuntimeWarning)
             else:
                 set_wrapper(wrapper)
                 self._coroutine_wrapper_set = True
         else:
             if current_wrapper not in (None, wrapper):
                 warnings.warn(
-                    "loop.set_debug(False): cannot unset debug coroutine "
-                    "wrapper; another wrapper was set %r" %
-                    current_wrapper, RuntimeWarning)
+                    f"loop.set_debug(False): cannot unset debug coroutine "
+                    f"wrapper; another wrapper was set {current_wrapper!r}",
+                    RuntimeWarning)
             else:
                 set_wrapper(None)
                 self._coroutine_wrapper_set = False

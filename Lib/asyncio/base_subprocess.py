@@ -207,8 +207,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         assert returncode is not None, returncode
         assert self._returncode is None, self._returncode
         if self._loop.get_debug():
-            logger.info('%r exited with return code %r',
-                        self, returncode)
+            logger.info('%r exited with return code %r', self, returncode)
         self._returncode = returncode
         if self._proc.returncode is None:
             # asyncio uses a child watcher: copy the status into the Popen
@@ -264,8 +263,7 @@ class WriteSubprocessPipeProto(protocols.BaseProtocol):
         self.pipe = transport
 
     def __repr__(self):
-        return ('<%s fd=%s pipe=%r>'
-                % (self.__class__.__name__, self.fd, self.pipe))
+        return f'<{self.__class__.__name__} fd={self.fd} pipe={self.pipe!r}>'
 
     def connection_lost(self, exc):
         self.disconnected = True

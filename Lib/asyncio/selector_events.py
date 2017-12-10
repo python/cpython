@@ -214,8 +214,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         except Exception as exc:
             if self._debug:
                 context = {
-                    'message': ('Error on transport creation '
-                                'for incoming connection'),
+                    'message':
+                        'Error on transport creation for incoming connection',
                     'exception': exc,
                 }
                 if protocol is not None:
@@ -891,8 +891,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 self._protocol.error_received(exc)
                 return
             except Exception as exc:
-                self._fatal_error(exc,
-                                  'Fatal write error on datagram transport')
+                self._fatal_error(
+                    exc, 'Fatal write error on datagram transport')
                 return
 
         # Ensure that what we buffer is immutable.
@@ -914,8 +914,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 self._protocol.error_received(exc)
                 return
             except Exception as exc:
-                self._fatal_error(exc,
-                                  'Fatal write error on datagram transport')
+                self._fatal_error(
+                    exc, 'Fatal write error on datagram transport')
                 return
 
         self._maybe_resume_protocol()  # May append to buffer.
