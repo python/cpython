@@ -1515,6 +1515,11 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 Customizing module attribute access
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. index::
+   single: __getattr__ (module attribute)
+   single: __dir__ (module attribute)
+   single: __class__ (module attribute)
+
 Special names ``__getattr__`` and ``__dir__`` can be also used to customize
 access to module attributes. The ``__getattr__`` function at the module level
 should accept one argument which is the name of an attribute and return the
