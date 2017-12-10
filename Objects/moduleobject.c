@@ -680,7 +680,6 @@ static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
     PyObject *attr, *mod_name, *getattr;
-    PyObject* stack[1] = {name};
     attr = PyObject_GenericGetAttr((PyObject *)m, name);
     if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return attr;
@@ -690,11 +689,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
-            if (!PyCallable_Check(getattr)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "module __getattr__ must be callable");
-                return NULL;
-            }
+            PyObject* stack[1] = {name};
             return _PyObject_FastCall(getattr, stack, 1);
         }
         _Py_IDENTIFIER(__name__);
