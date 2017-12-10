@@ -313,7 +313,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
 
     def __del__(self):
         if not self._closed:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self.close()
 
@@ -365,8 +365,8 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         to be sent out asynchronously.
         """
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError("data: expecting a bytes-like instance, got {!r}"
-                                .format(type(data).__name__))
+            raise TypeError(f"data: expecting a bytes-like instance, "
+                            f"got {type(data).__name__}")
         if not data:
             return
         self._ssl_protocol._write_appdata(data)
@@ -399,7 +399,8 @@ class SSLProtocol(protocols.Protocol):
             raise RuntimeError('stdlib ssl module not available')
 
         if not sslcontext:
-            sslcontext = _create_transport_context(server_side, server_hostname)
+            sslcontext = _create_transport_context(
+                server_side, server_hostname)
 
         self._server_side = server_side
         if server_hostname and not server_side:
@@ -567,8 +568,8 @@ class SSLProtocol(protocols.Protocol):
             if not hasattr(self._sslcontext, 'check_hostname'):
                 # Verify hostname if requested, Python 3.4+ uses check_hostname
                 # and checks the hostname in do_handshake()
-                if (self._server_hostname
-                and self._sslcontext.verify_mode != ssl.CERT_NONE):
+                if (self._server_hostname and
+                        self._sslcontext.verify_mode != ssl.CERT_NONE):
                     ssl.match_hostname(peercert, self._server_hostname)
         except BaseException as exc:
             if self._loop.get_debug():
