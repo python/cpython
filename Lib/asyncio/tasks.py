@@ -1,10 +1,11 @@
 """Support for tasks, coroutines and the scheduler."""
 
-__all__ = ['Task',
-           'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
-           'wait', 'wait_for', 'as_completed', 'sleep', 'async',
-           'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
-           ]
+__all__ = (
+    'Task',
+    'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
+    'wait', 'wait_for', 'as_completed', 'sleep', 'async',
+    'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
+)
 
 import concurrent.futures
 import functools
@@ -158,8 +159,7 @@ class Task(futures.Future):
         return True
 
     def _step(self, exc=None):
-        assert not self.done(), \
-            '_step(): already done: {!r}, {!r}'.format(self, exc)
+        assert not self.done(), f'_step(): already done: {self!r}, {exc!r}'
         if self._must_cancel:
             if not isinstance(exc, futures.CancelledError):
                 exc = futures.CancelledError()
@@ -195,18 +195,15 @@ class Task(futures.Future):
             if blocking is not None:
                 # Yielded Future must come from Future.__iter__().
                 if result._loop is not self._loop:
-                    self._loop.call_soon(
-                        self._step,
-                        RuntimeError(
-                            'Task {!r} got Future {!r} attached to a '
-                            'different loop'.format(self, result)))
+                    new_exc = RuntimeError(
+                        f'Task {self!r} got Future '
+                        f'{result!r} attached to a different loop')
+                    self._loop.call_soon(self._step, new_exc)
                 elif blocking:
                     if result is self:
-                        self._loop.call_soon(
-                            self._step,
-                            RuntimeError(
-                                'Task cannot await on itself: {!r}'.format(
-                                    self)))
+                        new_exc = RuntimeError(
+                            f'Task cannot await on itself: {self!r}')
+                        self._loop.call_soon(self._step, new_exc)
                     else:
                         result._asyncio_future_blocking = False
                         result.add_done_callback(self._wakeup)
@@ -215,28 +212,24 @@ class Task(futures.Future):
                             if self._fut_waiter.cancel():
                                 self._must_cancel = False
                 else:
-                    self._loop.call_soon(
-                        self._step,
-                        RuntimeError(
-                            'yield was used instead of yield from '
-                            'in task {!r} with {!r}'.format(self, result)))
+                    new_exc = RuntimeError(
+                        f'yield was used instead of yield from '
+                        f'in task {self!r} with {result!r}')
+                    self._loop.call_soon(self._step, new_exc)
+
             elif result is None:
                 # Bare yield relinquishes control for one event loop iteration.
                 self._loop.call_soon(self._step)
             elif inspect.isgenerator(result):
                 # Yielding a generator is just wrong.
-                self._loop.call_soon(
-                    self._step,
-                    RuntimeError(
-                        'yield was used instead of yield from for '
-                        'generator in task {!r} with {}'.format(
-                            self, result)))
+                new_exc = RuntimeError(
+                    f'yield was used instead of yield from for '
+                    f'generator in task {self!r} with {result}')
+                self._loop.call_soon(self._step, new_exc)
             else:
                 # Yielding something else is an error.
-                self._loop.call_soon(
-                    self._step,
-                    RuntimeError(
-                        'Task got bad yield: {!r}'.format(result)))
+                new_exc = RuntimeError(f'Task got bad yield: {result!r}')
+                self._loop.call_soon(self._step, new_exc)
         finally:
             self.__class__._current_tasks.pop(self._loop)
             self = None  # Needed to break cycles when an exception occurs.
@@ -294,11 +287,11 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     when the timeout occurs are returned in the second set.
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
+        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
         raise ValueError('Set of coroutines/Futures is empty.')
     if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
-        raise ValueError('Invalid return_when value: {}'.format(return_when))
+        raise ValueError(f'Invalid return_when value: {return_when}')
 
     if loop is None:
         loop = events.get_event_loop()
@@ -430,7 +423,7 @@ def as_completed(fs, *, loop=None, timeout=None):
     Note: The futures 'f' are not necessarily members of fs.
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
+        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     loop = loop if loop is not None else events.get_event_loop()
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
     from .queues import Queue  # Import here to avoid circular import problem.

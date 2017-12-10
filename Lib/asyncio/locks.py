@@ -1,6 +1,6 @@
 """Synchronization primitives."""
 
-__all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
 import warnings
@@ -157,8 +157,8 @@ class Lock(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self._locked else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def locked(self):
         """Return True if lock is acquired."""
@@ -233,8 +233,8 @@ class Event:
         res = super().__repr__()
         extra = 'set' if self._value else 'unset'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def is_set(self):
         """Return True if and only if the internal flag is true."""
@@ -310,8 +310,8 @@ class Condition(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self.locked() else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     async def wait(self):
         """Wait until notified.
@@ -419,11 +419,10 @@ class Semaphore(_ContextManagerMixin):
 
     def __repr__(self):
         res = super().__repr__()
-        extra = 'locked' if self.locked() else 'unlocked,value:{}'.format(
-            self._value)
+        extra = 'locked' if self.locked() else f'unlocked, value:{self._value}'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def _wake_up_next(self):
         while self._waiters:

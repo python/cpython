@@ -806,7 +806,7 @@ os.close(fd)
 
     def test___repr__nondefault_limit(self):
         stream = asyncio.StreamReader(loop=self.loop, limit=123)
-        self.assertEqual("<StreamReader l=123>", repr(stream))
+        self.assertEqual("<StreamReader limit=123>", repr(stream))
 
     def test___repr__eof(self):
         stream = asyncio.StreamReader(loop=self.loop)
@@ -822,14 +822,15 @@ os.close(fd)
         stream = asyncio.StreamReader(loop=self.loop)
         exc = RuntimeError()
         stream.set_exception(exc)
-        self.assertEqual("<StreamReader e=RuntimeError()>", repr(stream))
+        self.assertEqual("<StreamReader exception=RuntimeError()>",
+                         repr(stream))
 
     def test___repr__waiter(self):
         stream = asyncio.StreamReader(loop=self.loop)
         stream._waiter = asyncio.Future(loop=self.loop)
         self.assertRegex(
             repr(stream),
-            r"<StreamReader w=<Future pending[\S ]*>>")
+            r"<StreamReader waiter=<Future pending[\S ]*>>")
         stream._waiter.set_result(None)
         self.loop.run_until_complete(stream._waiter)
         stream._waiter = None
@@ -840,7 +841,7 @@ os.close(fd)
         stream._transport = mock.Mock()
         stream._transport.__repr__ = mock.Mock()
         stream._transport.__repr__.return_value = "<Transport>"
-        self.assertEqual("<StreamReader t=<Transport>>", repr(stream))
+        self.assertEqual("<StreamReader transport=<Transport>>", repr(stream))
 
     def test_IncompleteReadError_pickleable(self):
         e = asyncio.IncompleteReadError(b'abc', 10)

@@ -1,4 +1,4 @@
-__all__ = ['create_subprocess_exec', 'create_subprocess_shell']
+__all__ = 'create_subprocess_exec', 'create_subprocess_shell'
 
 import subprocess
 
@@ -29,12 +29,12 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
     def __repr__(self):
         info = [self.__class__.__name__]
         if self.stdin is not None:
-            info.append('stdin=%r' % self.stdin)
+            info.append(f'stdin={self.stdin!r}')
         if self.stdout is not None:
-            info.append('stdout=%r' % self.stdout)
+            info.append(f'stdout={self.stdout!r}')
         if self.stderr is not None:
-            info.append('stderr=%r' % self.stderr)
-        return '<%s>' % ' '.join(info)
+            info.append(f'stderr={self.stderr!r}')
+        return '<{}>'.format(' '.join(info))
 
     def connection_made(self, transport):
         self._transport = transport
@@ -83,7 +83,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             reader = self.stderr
         else:
             reader = None
-        if reader != None:
+        if reader is not None:
             if exc is None:
                 reader.feed_eof()
             else:
@@ -114,7 +114,7 @@ class Process:
         self.pid = transport.get_pid()
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.pid)
+        return f'<{self.__class__.__name__} {self.pid}>'
 
     @property
     def returncode(self):
@@ -137,8 +137,8 @@ class Process:
         debug = self._loop.get_debug()
         self.stdin.write(input)
         if debug:
-            logger.debug('%r communicate: feed stdin (%s bytes)',
-                        self, len(input))
+            logger.debug(
+                '%r communicate: feed stdin (%s bytes)', self, len(input))
         try:
             await self.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as exc:
