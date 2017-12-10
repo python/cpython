@@ -1,5 +1,5 @@
 """
-Test the implementation of the PEP 540: the UTF-8 mode.
+Test the implementation of the PEP 540: the UTF-8 Mode.
 """
 
 import locale
