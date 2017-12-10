@@ -84,7 +84,7 @@ bpo-31421: Document how IDLE runs tkinter programs.
 IDLE calls tcl/tk update in the background in order to make live
 interaction and experimentatin with tkinter applications much easier.
 
-bpo-bpo-31414: Fix tk entry box tests by deleting first.
+bpo-31414: Fix tk entry box tests by deleting first.
 Adding to an int entry is not the same as deleting and inserting
 because int('') will fail.  Patch by Terry Jan Reedy.
 
