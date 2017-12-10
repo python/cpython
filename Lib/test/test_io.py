@@ -807,7 +807,7 @@ class IOTest(unittest.TestCase):
         self.assertRaises(ValueError, f.flush)
 
     def test_RawIOBase_read(self):
-        # Exercise the default limited RawIOBase.read() implementation (which
+        # Exercise the default limited RawIOBase.read(n) implementation (which
         # calls readinto() internally).
         rawio = self.MockRawIOWithoutRead((b"abc", b"d", None, b"efg", None))
         self.assertEqual(rawio.read(2), b"ab")
@@ -928,6 +928,8 @@ class IOTest(unittest.TestCase):
         # Exercise the default BufferedIOBase.readinto() and readinto1()
         # implementations (which call read() or read1() internally).
         class Reader(self.BufferedIOBase):
+            def __init__(self, avail):
+                self.avail = avail
             def read(self, size):
                 result = self.avail[:size]
                 self.avail = self.avail[size:]
@@ -949,17 +951,17 @@ class IOTest(unittest.TestCase):
             ("readinto1", 6, 7, 5),
             ("readinto1", 10, 0, 0),  # Empty buffer
         )
+        UNUSED_BYTE = 0x81
         for test in tests:
             with self.subTest(test):
                 method, avail, request, result = test
-                reader = Reader()
-                reader.avail = bytes(range(avail))
-                buffer = bytearray((0x81,) * request)
+                reader = Reader(bytes(range(avail)))
+                buffer = bytearray((UNUSED_BYTE,) * request)
                 method = getattr(reader, method)
                 self.assertEqual(method(buffer), result)
                 self.assertEqual(len(buffer), request)
                 self.assertSequenceEqual(buffer[:result], range(result))
-                unused = (0x81,) * (request - result)
+                unused = (UNUSED_BYTE,) * (request - result)
                 self.assertSequenceEqual(buffer[result:], unused)
                 self.assertEqual(len(reader.avail), avail - result)
 
