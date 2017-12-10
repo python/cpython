@@ -1,7 +1,9 @@
 """A Future class similar to the one in PEP 3148."""
 
-__all__ = ['CancelledError', 'TimeoutError', 'InvalidStateError',
-           'Future', 'wrap_future', 'isfuture']
+__all__ = (
+    'CancelledError', 'TimeoutError', 'InvalidStateError',
+    'Future', 'wrap_future', 'isfuture',
+)
 
 import concurrent.futures
 import logging

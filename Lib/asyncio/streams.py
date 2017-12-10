@@ -1,15 +1,13 @@
-"""Stream-related things."""
-
-__all__ = ['StreamReader', 'StreamWriter', 'StreamReaderProtocol',
-           'open_connection', 'start_server',
-           'IncompleteReadError',
-           'LimitOverrunError',
-           ]
+__all__ = (
+    'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
+    'open_connection', 'start_server',
+    'IncompleteReadError', 'LimitOverrunError',
+)
 
 import socket
 
 if hasattr(socket, 'AF_UNIX'):
-    __all__.extend(['open_unix_connection', 'start_unix_server'])
+    __all__ += ('open_unix_connection', 'start_unix_server')
 
 from . import coroutines
 from . import events

@@ -18,9 +18,10 @@ from . import windows_utils
 from .log import logger
 
 
-__all__ = ['SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-           'DefaultEventLoopPolicy',
-           ]
+__all__ = (
+    'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
+    'DefaultEventLoopPolicy',
+)
 
 
 NULL = 0

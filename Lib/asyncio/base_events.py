@@ -36,7 +36,7 @@ from . import tasks
 from .log import logger
 
 
-__all__ = ['BaseEventLoop']
+__all__ = 'BaseEventLoop',
 
 
 # Minimum number of _scheduled timer handles before cleanup of

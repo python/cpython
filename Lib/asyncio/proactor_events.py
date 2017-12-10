@@ -4,7 +4,7 @@ A proactor is a "notify-on-completion" multiplexer.  Currently a
 proactor is only implemented on Windows with IOCP.
 """
 
-__all__ = ['BaseProactorEventLoop']
+__all__ = 'BaseProactorEventLoop',
 
 import socket
 import warnings

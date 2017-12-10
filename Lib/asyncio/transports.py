@@ -1,8 +1,9 @@
 """Abstract Transport class."""
 
-__all__ = ['BaseTransport', 'ReadTransport', 'WriteTransport',
-           'Transport', 'DatagramTransport', 'SubprocessTransport',
-           ]
+__all__ = (
+    'BaseTransport', 'ReadTransport', 'WriteTransport',
+    'Transport', 'DatagramTransport', 'SubprocessTransport',
+)
 
 
 class BaseTransport:

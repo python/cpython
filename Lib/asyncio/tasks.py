@@ -1,10 +1,11 @@
 """Support for tasks, coroutines and the scheduler."""
 
-__all__ = ['Task',
-           'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
-           'wait', 'wait_for', 'as_completed', 'sleep', 'async',
-           'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
-           ]
+__all__ = (
+    'Task',
+    'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
+    'wait', 'wait_for', 'as_completed', 'sleep', 'async',
+    'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
+)
 
 import concurrent.futures
 import functools

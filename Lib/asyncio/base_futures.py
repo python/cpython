@@ -1,4 +1,4 @@
-__all__ = []
+__all__ = ()
 
 import concurrent.futures._base
 import reprlib

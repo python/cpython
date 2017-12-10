@@ -23,10 +23,12 @@ from . import transports
 from .log import logger
 
 
-__all__ = ['SelectorEventLoop',
-           'AbstractChildWatcher', 'SafeChildWatcher',
-           'FastChildWatcher', 'DefaultEventLoopPolicy',
-           ]
+__all__ = (
+    'SelectorEventLoop',
+    'AbstractChildWatcher', 'SafeChildWatcher',
+    'FastChildWatcher', 'DefaultEventLoopPolicy',
+)
+
 
 if sys.platform == 'win32':  # pragma: no cover
     raise ImportError('Signals are not really supported on Windows')

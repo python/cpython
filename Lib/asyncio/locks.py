@@ -1,6 +1,6 @@
 """Synchronization primitives."""
 
-__all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
 import warnings

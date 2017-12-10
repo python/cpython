@@ -1,13 +1,14 @@
 """Event loop and event loop policy."""
 
-__all__ = ['AbstractEventLoopPolicy',
-           'AbstractEventLoop', 'AbstractServer',
-           'Handle', 'TimerHandle',
-           'get_event_loop_policy', 'set_event_loop_policy',
-           'get_event_loop', 'set_event_loop', 'new_event_loop',
-           'get_child_watcher', 'set_child_watcher',
-           '_set_running_loop', '_get_running_loop',
-           ]
+__all__ = (
+    'AbstractEventLoopPolicy',
+    'AbstractEventLoop', 'AbstractServer',
+    'Handle', 'TimerHandle',
+    'get_event_loop_policy', 'set_event_loop_policy',
+    'get_event_loop', 'set_event_loop', 'new_event_loop',
+    'get_child_watcher', 'set_child_watcher',
+    '_set_running_loop', '_get_running_loop',
+)
 
 import functools
 import inspect

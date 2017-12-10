@@ -1,5 +1,4 @@
-__all__ = ['coroutine',
-           'iscoroutinefunction', 'iscoroutine']
+__all__ = 'coroutine', 'iscoroutinefunction', 'iscoroutine'
 
 import functools
 import inspect
