@@ -4,7 +4,6 @@ import warnings
 
 from . import protocols
 from . import transports
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -154,26 +153,25 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._check_proc()
         self._proc.kill()
 
-    @coroutine
-    def _connect_pipes(self, waiter):
+    async def _connect_pipes(self, waiter):
         try:
             proc = self._proc
             loop = self._loop
 
             if proc.stdin is not None:
-                _, pipe = yield from loop.connect_write_pipe(
+                _, pipe = await loop.connect_write_pipe(
                     lambda: WriteSubprocessPipeProto(self, 0),
                     proc.stdin)
                 self._pipes[0] = pipe
 
             if proc.stdout is not None:
-                _, pipe = yield from loop.connect_read_pipe(
+                _, pipe = await loop.connect_read_pipe(
                     lambda: ReadSubprocessPipeProto(self, 1),
                     proc.stdout)
                 self._pipes[1] = pipe
 
             if proc.stderr is not None:
-                _, pipe = yield from loop.connect_read_pipe(
+                _, pipe = await loop.connect_read_pipe(
                     lambda: ReadSubprocessPipeProto(self, 2),
                     proc.stderr)
                 self._pipes[2] = pipe
@@ -224,8 +222,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
                 waiter.set_result(returncode)
         self._exit_waiters = None
 
-    @coroutine
-    def _wait(self):
+    async def _wait(self):
         """Wait until the process exit and return the process return code.
 
         This method is a coroutine."""
@@ -234,7 +231,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
         waiter = self._loop.create_future()
         self._exit_waiters.append(waiter)
-        return (yield from waiter)
+        return await waiter
 
     def _try_finish(self):
         assert not self._finished

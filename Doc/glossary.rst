@@ -458,6 +458,12 @@ Glossary
       is believed that overcoming this performance issue would make the
       implementation much more complicated and therefore costlier to maintain.
 
+
+   hash-based pyc
+      A bytecode cache file that uses the the hash rather than the last-modified
+      time of the corresponding source file to determine its validity. See
+      :ref:`pyc-invalidation`.
+
    hashable
       An object is *hashable* if it has a hash value which never changes during
       its lifetime (it needs a :meth:`__hash__` method), and can be compared to

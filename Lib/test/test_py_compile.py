@@ -122,6 +122,24 @@ class PyCompileTests(unittest.TestCase):
         # Specifying optimized bytecode should lead to a path reflecting that.
         self.assertIn('opt-2', py_compile.compile(self.source_path, optimize=2))
 
+    def test_invalidation_mode(self):
+        py_compile.compile(
+            self.source_path,
+            invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+        )
+        with open(self.cache_path, 'rb') as fp:
+            flags = importlib._bootstrap_external._classify_pyc(
+                fp.read(), 'test', {})
+        self.assertEqual(flags, 0b11)
+        py_compile.compile(
+            self.source_path,
+            invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
+        )
+        with open(self.cache_path, 'rb') as fp:
+            flags = importlib._bootstrap_external._classify_pyc(
+                fp.read(), 'test', {})
+        self.assertEqual(flags, 0b1)
+
 
 if __name__ == "__main__":
     unittest.main()

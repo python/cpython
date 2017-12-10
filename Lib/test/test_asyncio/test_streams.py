@@ -571,11 +571,10 @@ class StreamReaderTests(test_utils.TestCase):
                 self.server = None
                 self.loop = loop
 
-            @asyncio.coroutine
-            def handle_client(self, client_reader, client_writer):
-                data = yield from client_reader.readline()
+            async def handle_client(self, client_reader, client_writer):
+                data = await client_reader.readline()
                 client_writer.write(data)
-                yield from client_writer.drain()
+                await client_writer.drain()
                 client_writer.close()
 
             def start(self):
@@ -608,14 +607,13 @@ class StreamReaderTests(test_utils.TestCase):
                     self.loop.run_until_complete(self.server.wait_closed())
                     self.server = None
 
-        @asyncio.coroutine
-        def client(addr):
-            reader, writer = yield from asyncio.open_connection(
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(
                 *addr, loop=self.loop)
             # send a line
             writer.write(b"hello world!\n")
             # read it back
-            msgback = yield from reader.readline()
+            msgback = await reader.readline()
             writer.close()
             return msgback
 
@@ -645,11 +643,10 @@ class StreamReaderTests(test_utils.TestCase):
                 self.loop = loop
                 self.path = path
 
-            @asyncio.coroutine
-            def handle_client(self, client_reader, client_writer):
-                data = yield from client_reader.readline()
+            async def handle_client(self, client_reader, client_writer):
+                data = await client_reader.readline()
                 client_writer.write(data)
-                yield from client_writer.drain()
+                await client_writer.drain()
                 client_writer.close()
 
             def start(self):
@@ -674,14 +671,13 @@ class StreamReaderTests(test_utils.TestCase):
                     self.loop.run_until_complete(self.server.wait_closed())
                     self.server = None
 
-        @asyncio.coroutine
-        def client(path):
-            reader, writer = yield from asyncio.open_unix_connection(
+        async def client(path):
+            reader, writer = await asyncio.open_unix_connection(
                 path, loop=self.loop)
             # send a line
             writer.write(b"hello world!\n")
             # read it back
-            msgback = yield from reader.readline()
+            msgback = await reader.readline()
             writer.close()
             return msgback
 
@@ -782,14 +778,13 @@ os.close(fd)
                 clt, _ = sock.accept()
                 clt.close()
 
-        @asyncio.coroutine
-        def client(host, port):
-            reader, writer = yield from asyncio.open_connection(
+        async def client(host, port):
+            reader, writer = await asyncio.open_connection(
                 host, port, loop=self.loop)
 
             while True:
                 writer.write(b"foo\n")
-                yield from writer.drain()
+                await writer.drain()
 
         # Start the server thread and wait for it to be listening.
         thread = threading.Thread(target=server)
