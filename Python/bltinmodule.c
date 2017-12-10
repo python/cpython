@@ -70,12 +70,6 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
             PyErr_Clear();
             continue;
         }
-        if (!PyCallable_Check(meth)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "__mro_entries__ must be callable");
-            Py_DECREF(meth);
-            goto error;
-        }
         new_base = _PyObject_FastCall(meth, stack, 1);
         Py_DECREF(meth);
         if (!new_base) {
