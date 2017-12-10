@@ -6,13 +6,12 @@ import subprocess
 import tempfile
 from os.path import join
 
-from android_utils import (run_subprocess, adb_shell, adb_push_to_dir,
-                           AndroidError)
+from android_utils import run_subprocess, adb_push_to_dir, AndroidError
 
 def adb_push_from_zip(zippath, dirname, destination):
     with tempfile.TemporaryDirectory() as tmpdir:
         run_subprocess('unzip', '-q', zippath, '-d', tmpdir)
-        src= join(tmpdir, dirname)
+        src = join(tmpdir, dirname)
         adb_push_to_dir(src, destination)
 
 def install():

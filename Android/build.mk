@@ -105,9 +105,8 @@ endif
 
 $(config_status): $(makefile) $(py_srcdir)/configure
 	mkdir -p $(py_host_dir)
-	@echo "---> Ensure that nl_langinfo is broken."
-	@cd $(py_host_dir); \
-	    PY_SRCDIR=$(py_srcdir) $(py_srcdir)/Android/tools/nl_langinfo.sh
+	@#echo "---> Ensure that nl_langinfo is broken."
+	@#cd $(py_host_dir); PY_SRCDIR=$(py_srcdir) $(py_srcdir)/Android/tools/nl_langinfo.sh
 	@echo "---> Run configure for $(BUILD_TYPE)."
 	cd $(py_host_dir); \
 	    PKG_CONFIG_PATH=$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib/pkgconfig \
