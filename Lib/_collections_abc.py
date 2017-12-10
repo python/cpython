@@ -900,8 +900,8 @@ class Sequence(Reversible, Collection):
         '''S.index(value, [start, [stop]]) -> integer -- return first index of value.
            Raises ValueError if the value is not present.
 
-           It is not required that all concrete implementations of
-           the Sequence class support start and stop attributes.
+           Supporting start and stop arguments is optional, but
+           recommended.
 
         '''
         if start is not None and start < 0:
