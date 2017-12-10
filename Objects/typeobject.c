@@ -3592,11 +3592,11 @@ object_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyTypeObject *type = Py_TYPE(self);
     if (excess_args(args, kwds)) {
         if (type->tp_init != object_init) {
-            PyErr_SetString(PyExc_TypeError, "object() takes no arguments");
+            PyErr_SetString(PyExc_TypeError, "object.__init__() takes no arguments");
             return -1;
         }
         if (type->tp_new == object_new) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no arguments",
+            PyErr_Format(PyExc_TypeError, "%.200s().__init__() takes no arguments",
                          type->tp_name);
             return -1;
         }
@@ -3609,7 +3609,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     if (excess_args(args, kwds)) {
         if (type->tp_new != object_new) {
-            PyErr_SetString(PyExc_TypeError, "object() takes no arguments");
+            PyErr_SetString(PyExc_TypeError, "object.__new__() takes no arguments");
             return NULL;
         }
         if (type->tp_init == object_init) {
