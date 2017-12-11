@@ -25,6 +25,13 @@ the execution of the process.
 
    Equivalent to calling ``get_event_loop_policy().new_event_loop()``.
 
+.. function:: get_running_loop()
+
+   Return the running event loop in the current OS thread.  If there
+   is no running event loop a :exc:`RuntimeError` is raised.
+
+   .. versionadded:: 3.7
+
 
 .. _asyncio-event-loops:
 
