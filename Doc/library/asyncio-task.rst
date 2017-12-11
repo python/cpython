@@ -515,7 +515,7 @@ Task functions
    Example::
 
        for f in as_completed(fs):
-           result = yield from f  # The 'yield from' may raise
+           result = await f  # The 'await' may raise
            # Use result
 
    .. note::
@@ -630,11 +630,11 @@ Task functions
 
    The statement::
 
-       res = yield from shield(something())
+       res = await shield(something())
 
    is exactly equivalent to the statement::
 
-       res = yield from something()
+       res = await something()
 
    *except* that if the coroutine containing it is cancelled, the task running
    in ``something()`` is not cancelled.  From the point of view of
@@ -647,7 +647,7 @@ Task functions
    combine ``shield()`` with a try/except clause, as follows::
 
        try:
-           res = yield from shield(something())
+           res = await shield(something())
        except CancelledError:
            res = None
 
@@ -690,7 +690,7 @@ Task functions
 
    Usage::
 
-        done, pending = yield from asyncio.wait(fs)
+        done, pending = await asyncio.wait(fs)
 
    .. note::
 
@@ -714,7 +714,7 @@ Task functions
 
    This function is a :ref:`coroutine <coroutine>`, usage::
 
-       result = yield from asyncio.wait_for(fut, 60.0)
+       result = await asyncio.wait_for(fut, 60.0)
 
    .. versionchanged:: 3.4.3
       If the wait is cancelled, the future *fut* is now also cancelled.
