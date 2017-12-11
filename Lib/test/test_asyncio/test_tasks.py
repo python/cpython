@@ -17,18 +17,9 @@ import asyncio
 from asyncio import coroutines
 from asyncio import futures
 from asyncio import tasks
-from asyncio import test_utils
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
-try:
-    from test.support.script_helper import assert_python_ok
-except ImportError:
-    try:
-        from test.script_helper import assert_python_ok
-    except ImportError:
-        from asyncio.test_support import assert_python_ok
+from test.test_asyncio import utils as test_utils
+from test import support
+from test.support.script_helper import assert_python_ok
 
 
 @asyncio.coroutine

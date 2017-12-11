@@ -11,11 +11,11 @@ except ImportError:
     ssl = None
 
 import asyncio
-from asyncio import test_utils
 from asyncio.selector_events import BaseSelectorEventLoop
 from asyncio.selector_events import _SelectorTransport
 from asyncio.selector_events import _SelectorSocketTransport
 from asyncio.selector_events import _SelectorDatagramTransport
+from test.test_asyncio import utils as test_utils
 
 
 MOCK_ANY = mock.ANY

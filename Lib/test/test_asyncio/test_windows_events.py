@@ -11,8 +11,8 @@ import _overlapped
 import _winapi
 
 import asyncio
-from asyncio import test_utils
 from asyncio import windows_events
+from test.test_asyncio import utils as test_utils
 
 
 class UpperProto(asyncio.Protocol):

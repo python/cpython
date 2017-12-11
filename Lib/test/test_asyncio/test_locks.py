@@ -5,7 +5,7 @@ from unittest import mock
 import re
 
 import asyncio
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 STR_RGX_REPR = (
     r'^<(?P<class>.*?) object at (?P<address>.*?)'
