@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 
 import asyncio
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
 class _QueueTestBase(test_utils.TestCase):
