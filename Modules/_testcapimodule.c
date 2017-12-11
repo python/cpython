@@ -4104,6 +4104,19 @@ pymem_malloc_without_gil(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+
+static PyObject*
+test_pymem_getallocatorsname(PyObject *self, PyObject *args)
+{
+    const char *name = _PyMem_GetAllocatorsName();
+    if (name == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
+        return NULL;
+    }
+    return PyUnicode_FromString(name);
+}
+
+
 static PyObject*
 pyobject_malloc_without_gil(PyObject *self, PyObject *args)
 {
@@ -4624,6 +4637,7 @@ static PyMethodDef TestMethods[] = {
     {"pymem_buffer_overflow", pymem_buffer_overflow, METH_NOARGS},
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
+    {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
@@ -5115,6 +5129,11 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+#ifdef WITH_PYMALLOC
+    PyModule_AddObject(m, "WITH_PYMALLOC", Py_True);
+#else
+    PyModule_AddObject(m, "WITH_PYMALLOC", Py_False);
+#endif
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);

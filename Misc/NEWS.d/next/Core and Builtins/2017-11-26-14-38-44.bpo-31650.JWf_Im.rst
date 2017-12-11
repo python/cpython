@@ -1,0 +1,3 @@
+Implement PEP 552 (Deterministic pycs). Python now supports invalidating
+bytecode cache files bashed on a source content hash rather than source
+last-modified time.

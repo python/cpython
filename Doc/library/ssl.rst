@@ -429,6 +429,10 @@ Certificate handling
       Matching of IP addresses, when present in the subjectAltName field
       of the certificate, is now supported.
 
+   .. versionchanged:: 3.7
+      Allow wildcard when it is the leftmost and the only character
+      in that segment.
+
 .. function:: cert_time_to_seconds(cert_time)
 
    Return the time in seconds since the Epoch, given the ``cert_time``
@@ -1586,7 +1590,7 @@ to speed up repeated connections from the same clients.
    .. versionadded:: 3.3
 
    .. seealso::
-      `SSL/TLS & Perfect Forward Secrecy <http://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy.html>`_
+      `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy>`_
          Vincent Bernat.
 
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \

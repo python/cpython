@@ -21,9 +21,8 @@ PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
    allocators. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
 
-#ifdef WITH_PYMALLOC
-PyAPI_FUNC(int) _PyMem_PymallocEnabled(void);
-#endif
+/* Try to get the allocators name set by _PyMem_SetupAllocators(). */
+PyAPI_FUNC(const char*) _PyMem_GetAllocatorsName(void);
 
 /* Track an allocated memory block in the tracemalloc module.
    Return 0 on success, return -1 on error (failed to allocate memory to store
@@ -105,8 +104,14 @@ PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
 #ifndef Py_LIMITED_API
+/* strdup() using PyMem_RawMalloc() */
 PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
+
+/* strdup() using PyMem_Malloc() */
 PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
+
+/* wcsdup() using PyMem_RawMalloc() */
+PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const wchar_t *str);
 #endif
 
 /* Macros. */
@@ -224,7 +229,12 @@ PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
 #endif
 
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(void) _PyMem_GetDefaultRawAllocator(PyMemAllocatorEx *alloc);
+/* Set the memory allocator of the specified domain to the default.
+   Save the old allocator into *old_alloc if it's non-NULL.
+   Return on success, or return -1 if the domain is unknown. */
+PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
+    PyMemAllocatorDomain domain,
+    PyMemAllocatorEx *old_alloc);
 #endif
 
 #ifdef __cplusplus

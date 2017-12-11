@@ -210,9 +210,23 @@ Miscellaneous options
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
 
 
+.. cmdoption:: --check-hash-based-pycs default|always|never
+
+   Control the validation behavior of hash-based ``.pyc`` files. See
+   :ref:`pyc-invalidation`. When set to ``default``, checked and unchecked
+   hash-based bytecode cache files are validated according to their default
+   semantics. When set to ``always``, all hash-based ``.pyc`` files, whether
+   checked or unchecked, are validated against their corresponding source
+   file. When set to ``never``, hash-based ``.pyc`` files are not validated
+   against their corresponding source files.
+
+   The semantics of timestamp-based ``.pyc`` files are unaffected by this
+   option.
+
+
 .. cmdoption:: -d
 
-   Turn on parser debugging output (for wizards only, depending on compilation
+   Turn on parser debugging output (for expert only, depending on compilation
    options).  See also :envvar:`PYTHONDEBUG`.
 
 
@@ -388,8 +402,6 @@ Miscellaneous options
    Skip the first line of the source, allowing use of non-Unix forms of
    ``#!cmd``.  This is intended for a DOS specific hack only.
 
-   .. note:: The line numbers in error messages will be off by one.
-
 
 .. cmdoption:: -X
 
@@ -413,17 +425,23 @@ Miscellaneous options
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
-   * ``-X dev`` enables the "developer mode": enable debug checks at runtime.
-     In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3
-     -W default -X faulthandler ...``, except that the :envvar:`PYTHONMALLOC`
-     environment variable is not set in practice. Developer mode:
+   * ``-X dev``: enable CPython's "development mode", introducing additional
+     runtime checks which are too expensive to be enabled by default. It should
+     not be more verbose than the default if the code is correct: new warnings
+     are only emitted when an issue is detected. Effect of the developer mode:
 
-     * Add ``default`` warnings option. For example, display
-       :exc:`DeprecationWarning` and :exc:`ResourceWarning` warnings.
-     * Install debug hooks on memory allocators as if :envvar:`PYTHONMALLOC`
-       is set to ``debug``.
+     * Warning filters: add a filter to display all warnings (``"default"``
+       action), except of :exc:`BytesWarning` which still depends on the
+       :option:`-b` option, and use ``"always"`` action for
+       :exc:`ResourceWarning` warnings. For example, display
+       :exc:`DeprecationWarning` warnings.
+     * Install debug hooks on memory allocators: see the
+       :c:func:`PyMem_SetupDebugHooks` C function.
      * Enable the :mod:`faulthandler` module to dump the Python traceback
        on a crash.
+     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
+     * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
+       ``True``
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -441,8 +459,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importtime``, ``-X dev`` and :envvar:`PYTHONPROFILEIMPORTTIME`
-      options.
+      The ``-X importtime`` and ``-X dev`` options.
 
 
 Options you shouldn't use
@@ -686,6 +703,8 @@ conflict.
 
    Set the family of memory allocators used by Python:
 
+   * ``default``: use the :ref:`default memory allocators
+     <default-memory-allocators>`.
    * ``malloc``: use the :c:func:`malloc` function of the C library
      for all domains (:c:data:`PYMEM_DOMAIN_RAW`, :c:data:`PYMEM_DOMAIN_MEM`,
      :c:data:`PYMEM_DOMAIN_OBJ`).
@@ -695,20 +714,17 @@ conflict.
 
    Install debug hooks:
 
-   * ``debug``: install debug hooks on top of the default memory allocator
+   * ``debug``: install debug hooks on top of the :ref:`default memory
+     allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks
 
-   When Python is compiled in release mode, the default is ``pymalloc``. When
-   compiled in debug mode, the default is ``pymalloc_debug`` and the debug hooks
-   are used automatically.
+   See the :ref:`default memory allocators <default-memory-allocators>` and the
+   :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
+   memory allocators).
 
-   If Python is configured without ``pymalloc`` support, ``pymalloc`` and
-   ``pymalloc_debug`` are not available, the default is ``malloc`` in release
-   mode and ``malloc_debug`` in debug mode.
-
-   See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
-   memory allocators.
+   .. versionchanged:: 3.7
+      Added the ``"default"`` allocator.
 
    .. versionadded:: 3.6
 
@@ -795,6 +811,14 @@ conflict.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.
+
+
+.. envvar:: PYTHONDEVMODE
+
+   If this environment variable is set to a non-empty string, enable the
+   CPython "development mode". See the :option:`-X` ``dev`` option.
+
+   .. versionadded:: 3.7
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

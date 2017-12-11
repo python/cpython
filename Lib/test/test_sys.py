@@ -526,10 +526,12 @@ class SysModuleTest(unittest.TestCase):
         attrs = ("debug",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
                  "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated")
+                 "bytes_warning", "quiet", "hash_randomization", "isolated",
+                 "dev_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
+            attr_type = bool if attr == "dev_mode" else int
+            self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
 
@@ -753,8 +755,15 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
+        try:
+            import _testcapi
+        except ImportError:
+            with_pymalloc = support.with_pymalloc()
+        else:
+            alloc_name = _testcapi.pymem_getallocatorsname()
+            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+
         # Some sanity checks
-        with_pymalloc = sysconfig.get_config_var('WITH_PYMALLOC')
         a = sys.getallocatedblocks()
         self.assertIs(type(a), int)
         if with_pymalloc:

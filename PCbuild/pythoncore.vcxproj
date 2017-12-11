@@ -116,7 +116,6 @@
     <ClInclude Include="..\Include\internal\condvar.h" />
     <ClInclude Include="..\Include\internal\gil.h" />
     <ClInclude Include="..\Include\internal\mem.h" />
-    <ClInclude Include="..\Include\internal\pymalloc.h" />
     <ClInclude Include="..\Include\internal\pystate.h" />
     <ClInclude Include="..\Include\internal\warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
@@ -382,6 +381,7 @@
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\peephole.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />

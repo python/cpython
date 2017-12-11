@@ -25,25 +25,23 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 
 typedef struct {
-    int ignore_environment;
-    int use_hash_seed;
+    int ignore_environment; /* -E */
+    int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
-    char *allocator;
-    int faulthandler;
-    int tracemalloc;        /* Number of saved frames, 0=don't trace */
-    int importtime;         /* -X importtime */
+    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
+    int dev_mode;           /* -X dev */
+    int faulthandler;       /* -X faulthandler */
+    int tracemalloc;        /* -X tracemalloc=N */
+    int import_time;        /* -X importtime */
+    int show_ref_count;     /* -X showrefcount */
+    int show_alloc_count;   /* -X showalloccount */
+    int dump_refs;          /* PYTHONDUMPREFS */
+    int malloc_stats;       /* PYTHONMALLOCSTATS */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT \
-    {.ignore_environment = 0, \
-     .use_hash_seed = -1, \
-     .hash_seed = 0, \
-     ._disable_importlib = 0, \
-     .allocator = NULL, \
-     .faulthandler = 0, \
-     .tracemalloc = 0, \
-     .importtime = 0}
+#define _PyCoreConfig_INIT (_PyCoreConfig){.use_hash_seed = -1}
+/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
  *
@@ -53,9 +51,17 @@ typedef struct {
  */
 typedef struct {
     int install_signal_handlers;
+    /* PYTHONPATH environment variable */
+    wchar_t *module_search_path_env;
+    /* PYTHONHOME environment variable, see also Py_SetPythonHome(). */
+    wchar_t *home;
+    /* Program name, see also Py_GetProgramName() */
+    wchar_t *program_name;
 } _PyMainInterpreterConfig;
 
-#define _PyMainInterpreterConfig_INIT {-1}
+#define _PyMainInterpreterConfig_INIT \
+    (_PyMainInterpreterConfig){.install_signal_handlers = -1}
+/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
 typedef struct _is {
 
@@ -107,7 +113,7 @@ typedef struct _is {
     PyObject *after_forkers_child;
 #endif
 } PyInterpreterState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* State unique per thread */
@@ -129,7 +135,7 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
-#endif
+#endif   /* Py_LIMITED_API */
 
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
@@ -234,7 +240,7 @@ typedef struct _ts {
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
@@ -359,7 +365,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
    is called. */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
