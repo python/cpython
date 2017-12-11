@@ -101,10 +101,7 @@ static volatile struct {
 static volatile struct {
     SOCKET_T fd;
     int use_send;
-    int send_err_set;
-    int send_errno;
-    int send_win_error;
-} wakeup = {INVALID_FD, 0, 0, 0, 0};
+} wakeup = {INVALID_FD, 0};
 #else
 #define INVALID_FD (-1)
 static volatile struct {
@@ -212,28 +209,15 @@ report_wakeup_write_error(void *data)
 
 #ifdef MS_WINDOWS
 static int
-report_wakeup_send_error(void* Py_UNUSED(data))
+report_wakeup_send_error(void* data)
 {
-    PyObject *res;
-
-    if (wakeup.send_win_error) {
-        /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
-           recognizes the error codes used by both GetLastError() and
-           WSAGetLastError */
-        res = PyErr_SetExcFromWindowsErr(PyExc_OSError, wakeup.send_win_error);
-    }
-    else {
-        errno = wakeup.send_errno;
-        res = PyErr_SetFromErrno(PyExc_OSError);
-    }
-
-    assert(res == NULL);
-    wakeup.send_err_set = 0;
-
+    /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
+       recognizes the error codes used by both GetLastError() and
+       WSAGetLastError */
+    res = PyErr_SetExcFromWindowsErr(PyExc_OSError, (int) (intptr_t) data);
     PySys_WriteStderr("Exception ignored when trying to send to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
-
     return 0;
 }
 #endif   /* MS_WINDOWS */
@@ -283,18 +267,14 @@ trip_signal(int sig_num)
         byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
         if (wakeup.use_send) {
-            do {
-                rc = send(fd, &byte, 1, 0);
-            } while (rc < 0 && errno == EINTR);
+            rc = send(fd, &byte, 1, 0);
 
-            /* we only have a storage for one error in the wakeup structure */
-            if (rc < 0 && !wakeup.send_err_set) {
-                wakeup.send_err_set = 1;
-                wakeup.send_errno = errno;
-                wakeup.send_win_error = GetLastError();
+            if (rc < 0) {
+                int last_error = GetLastError();
                 /* Py_AddPendingCall() isn't signal-safe, but we
                    still use it for this exceptional case. */
-                Py_AddPendingCall(report_wakeup_send_error, NULL);
+                Py_AddPendingCall(report_wakeup_send_error,
+                                  (void *)(intptr_t) last_error);
             }
         }
         else
