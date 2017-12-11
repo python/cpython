@@ -1,9 +1,10 @@
 import linecache
 import traceback
+import weakref
 
 from . import base_futures
 from . import coroutines
-from .events import get_running_loop
+from . import events
 
 
 def _task_repr_info(task):
@@ -77,8 +78,8 @@ def _task_print_stack(task, limit, file):
             print(line, file=file, end='')
 
 
-# dict of {EventLoop: Set[tasks]} containing all tasks alive.
-_all_tasks = {}
+# WeakKeyDictionary of {Task: EventLoop} containing all tasks alive.
+_all_tasks = weakref.WeakKeyDictionary()
 
 # Dictionary containing tasks that are currently active in
 # all running event loops.  {EventLoop: Task}
@@ -87,7 +88,7 @@ _current_tasks = {}
 
 def current_task(loop=None):
     if loop is None:
-        loop = get_running_loop()
+        loop = events.get_event_loop()
     task = _current_tasks.get(loop)
     if task is None:
         raise RuntimeError("no current task")
@@ -96,7 +97,7 @@ def current_task(loop=None):
 
 def all_tasks(loop=None):
     if loop is None:
-        loop = get_running_loop()
+        loop = events.get_event_loop()
     task = _current_tasks.get(loop)
     if task is None:
         raise RuntimeError("no current task")
@@ -104,10 +105,7 @@ def all_tasks(loop=None):
 
 
 def _register_task(loop, task):
-    tasks = _all_tasks.get(loop)
-    if tasks is None:
-        tasks = _all_tasks[loop] = set()
-    tasks.add(task)
+    _all_tasks[task] = loop
 
 
 def _enter_task(loop, task):
@@ -127,11 +125,4 @@ def _leave_task(loop, task):
 
 
 def _unregister_task(loop, task):
-    tasks = _all_tasks.get(loop)
-    if tasks is None:
-        # loop is not registered
-        # raise RuntimeWarning?
-        return
-    tasks.remove(task)
-    if not tasks:
-        del _all_tasks[loop]
+    _all_tasks.pop(task, None)

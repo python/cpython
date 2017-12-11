@@ -243,7 +243,7 @@ class Task(futures.Future):
                 new_exc = RuntimeError(f'Task got bad yield: {result!r}')
                 self._loop.call_soon(self._step, new_exc)
         finally:
-            _leave_task(self._loop, task)
+            _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
     def _wakeup(self, future):
