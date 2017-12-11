@@ -631,7 +631,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
         msg = [f"{host}:{port!r}"]
         if family:
-            msg.append(f'family={family!r}' % family)
+            msg.append(f'family={family!r}')
         if type:
             msg.append(f'type={type!r}')
         if proto:
