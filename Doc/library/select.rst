@@ -264,6 +264,18 @@ object.
 Edge and Level Trigger Polling (epoll) Objects
 ----------------------------------------------
 
+.. method:: epoll.poll(timeout=-1, maxevents=-1)
+
+   Wait for events. *timeout* in seconds (float)  Return a list of
+   ``(fd, eventmask)`` tuples if there's any event.  Otherwise, an empty list
+   is returned.
+
+   .. versionchanged:: 3.5
+      The function is now retried with a recomputed timeout when interrupted by
+      a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale), instead of raising
+      :exc:`InterruptedError`.
+
 .. method:: epoll.close()
 
    Close the control file descriptor of the epoll object.
@@ -271,7 +283,7 @@ Edge and Level Trigger Polling (epoll) Objects
 
 .. attribute:: epoll.closed
 
-   ``True`` if the epoll object is closed.
+   Return ``True`` if the epoll object is closed.
 
 
 .. method:: epoll.fileno()
@@ -284,56 +296,12 @@ Edge and Level Trigger Polling (epoll) Objects
    Create an epoll object from a given file descriptor.
 
 
-.. method:: epoll.register(fd[, eventmask])
+.. method:: epoll.register(fd, eventmask=EPOLLIN | EPOLLOUT | EPOLLPRI)
 
-   Register a fd descriptor with the epoll object.
+   Register a *fd* descriptor with the epoll object.
 
    *eventmask* is an optional bitmask describing the type of events you want
-   to check for.  The following constants can be used with
-   :meth:`~epoll.register` and :meth:`~epoll.modify` methods.  See
-   :manpage:`epoll(4)` for more information.
-
-   +-------------------------+-----------------------------------------------+
-   | Constant                | Meaning                                       |
-   +=========================+===============================================+
-   | :const:`EPOLLIN`        | Available for read                            |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLOUT`       | Available for write                           |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLPRI`       | Urgent data for read                          |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLERR`       | Error condition happened on the assoc. fd     |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLHUP`       | Hang up happened on the assoc. fd             |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLET`        | Set Edge Trigger behavior, the default is     |
-   |                         | Level Trigger behavior                        |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLONESHOT`   | Set one-shot behavior. After one event is     |
-   |                         | pulled out, the fd is internally disabled     |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLEXCLUSIVE` | Wake only one epoll object when the           |
-   |                         | associated fd has an event. The default (if   |
-   |                         | this flag is not set) is to wake all epoll    |
-   |                         | objects polling on a fd.                      |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLRDHUP`     | Stream socket peer closed connection or shut  |
-   |                         | down writing half of connection.              |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLRDNORM`    | Equivalent to :const:`EPOLLIN`                |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLRDBAND`    | Priority data band can be read.               |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLWRNORM`    | Equivalent to :const:`EPOLLOUT`               |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLWRBAND`    | Priority data may be written.                 |
-   +-------------------------+-----------------------------------------------+
-   | :const:`EPOLLMSG`       | Ignored.                                      |
-   +-------------------------+-----------------------------------------------+
-
-.. method:: epoll.modify(fd, eventmask)
-
-   Modify a registered file descriptor.
+   to check for.
 
 
 .. method:: epoll.unregister(fd)
@@ -341,17 +309,52 @@ Edge and Level Trigger Polling (epoll) Objects
    Remove a registered file descriptor from the epoll object.
 
 
-.. method:: epoll.poll(timeout=-1, maxevents=-1)
+.. method:: epoll.modify(fd, eventmask)
 
-   Wait for events. *timeout* in seconds (float)  Return a list of
-   ``(fd, eventmask)`` tuples if there's any event.  Otherwise, an empty list
-   is returned.
+   Modify a registered file descriptor.
 
-   .. versionchanged:: 3.5
-      The function is now retried with a recomputed timeout when interrupted by
-      a signal, except if the signal handler raises an exception (see
-      :pep:`475` for the rationale), instead of raising
-      :exc:`InterruptedError`.
+
+The following constants can be used with
+:meth:`~epoll.register` and :meth:`~epoll.modify` methods.  See
+:manpage:`epoll(4)` for more information.
+
++-------------------------+-----------------------------------------------+
+| Constant                | Meaning                                       |
++=========================+===============================================+
+| :const:`EPOLLIN`        | Available for read                            |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLOUT`       | Available for write                           |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLPRI`       | Urgent data for read                          |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLERR`       | Error condition happened on the assoc. fd     |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLHUP`       | Hang up happened on the assoc. fd             |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLET`        | Set Edge Trigger behavior, the default is     |
+|                         | Level Trigger behavior                        |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLONESHOT`   | Set one-shot behavior. After one event is     |
+|                         | pulled out, the fd is internally disabled     |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLEXCLUSIVE` | Wake only one epoll object when the           |
+|                         | associated fd has an event. The default (if   |
+|                         | this flag is not set) is to wake all epoll    |
+|                         | objects polling on a fd.                      |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLRDHUP`     | Stream socket peer closed connection or shut  |
+|                         | down writing half of connection.              |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLRDNORM`    | Equivalent to :const:`EPOLLIN`                |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLRDBAND`    | Priority data band can be read.               |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLWRNORM`    | Equivalent to :const:`EPOLLOUT`               |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLWRBAND`    | Priority data may be written.                 |
++-------------------------+-----------------------------------------------+
+| :const:`EPOLLMSG`       | Ignored.                                      |
++-------------------------+-----------------------------------------------+
 
 
 .. _poll-objects:
