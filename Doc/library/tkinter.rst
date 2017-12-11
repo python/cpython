@@ -67,13 +67,33 @@ Or, more often::
    from tkinter import *
 
 
-.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1)
+.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1, sync=0, use=None)
 
-   The :class:`Tk` class is instantiated without arguments. This creates a toplevel
-   widget of Tk which usually is the main window of an application. Each instance
-   has its own associated Tcl interpreter.
+   Return a toplevel Tk widget, which is usually the main window of an
+   application.  Each instance has its own associated Tcl interpreter.
 
-   .. FIXME: The following keyword arguments are currently recognized:
+   The :class:`Tk` class is typically instantiated using all default values.
+   However, the following keyword arguments are currently recognized:
+
+   *screenName*
+      Sets the DISPLAY environmental variable. (X11 only)
+   *baseName*
+      Reads the profile file :file:`baseName.tcl` into the Tcl interpreter and
+      calls ``exec`` on the contents of :file:`baseName.py`.
+   *className*
+      Name of the widget class.  Used as a profile file name
+      (:file:`className.tcl` and :file:`className.py` load before the
+      *baseName* files), and also used as the name with which Tcl is
+      invoked (*argv0* in *interp*).
+   *useTk*
+      If True, initialize the Tk subsystem.  :func:`Tcl` sets this to False.
+   *sync*
+      If True, execute all X server commands synchronously, so that errors are
+      reported immediately.
+   *use*
+      Specifies that the main window for the application is to be embedded in
+      the window whose identifier is given, instead of being created as an
+      independent toplevel window.
 
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
