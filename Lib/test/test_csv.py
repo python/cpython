@@ -207,26 +207,26 @@ class Test_Csv(unittest.TestCase):
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
             self.assertRaises(TypeError, writer.writerows, None)
-            writer.writerows([['a','b'],['c','d']])
+            writer.writerows([['a', 'b'], ['c', 'd']])
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), "a,b\r\nc,d\r\n")
 
     def test_writerows_with_none(self):
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
-            writer.writerows([['a',None],[None,'d']])
+            writer.writerows([['a', None], [None, 'd']])
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), "a,\r\n,d\r\n")
 
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
-            writer.writerows([[None],['a']])
+            writer.writerows([[None], ['a']])
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), '""\r\na\r\n')
 
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
-            writer.writerows([['a'],[None]])
+            writer.writerows([['a'], [None]])
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), 'a\r\n""\r\n')
 
