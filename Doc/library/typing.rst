@@ -803,6 +803,7 @@ The module defines the following classes, functions and decorators:
    Usage::
 
        class Employee(NamedTuple):
+           __slots__ = ()
            name: str
            id: int
 
@@ -820,6 +821,8 @@ The module defines the following classes, functions and decorators:
       assert employee.id == 3
 
    Fields with a default value must come after any fields without a default.
+   Note that default values are incompatible with ``__slots__`` which are
+   needed to save the space take by instance dictionaries.
 
    The resulting class has two extra attributes: ``_field_types``,
    giving a dict mapping field names to types, and ``_field_defaults``, a dict
