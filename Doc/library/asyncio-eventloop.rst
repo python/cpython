@@ -235,9 +235,6 @@ Tasks
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
-   This method was added in Python 3.4.2. Use the :func:`async` function to
-   support also older Python versions.
-
    .. versionadded:: 3.4.2
 
 .. method:: AbstractEventLoop.set_task_factory(factory)
