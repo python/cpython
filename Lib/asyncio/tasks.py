@@ -5,7 +5,8 @@ __all__ = (
     'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
     'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
-    'current_task', 'all_tasks',
+    'current_task', 'all_tasks', '_register_task', '_enter_task',
+    '_leave_task', '_unregister_task'
 )
 
 import concurrent.futures
@@ -20,68 +21,8 @@ from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
-from .events import get_running_loop
-
-
-# dict of {EventLoop: Set[tasks]} containing all tasks alive.
-_all_tasks = {}
-
-# Dictionary containing tasks that are currently active in
-# all running event loops.  {EventLoop: Task}
-_current_tasks = {}
-
-
-
-def current_task(loop=None):
-    if loop is None:
-        loop = get_running_loop()
-    task = _current_tasks.get(loop)
-    if task is None:
-        raise RuntimeError("no current task")
-    return task
-
-
-def all_tasks(loop=None):
-    if loop is None:
-        loop = get_running_loop()
-    task = _current_tasks.get(loop)
-    if task is None:
-        raise RuntimeError("no current task")
-    return task
-
-
-def _register_task(loop, task):
-    tasks = _all_tasks.get(loop)
-    if tasks is None:
-        tasks = _all_tasks[loop] = set()
-    tasks.add(task)
-
-
-def _enter_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not None:
-        raise RuntimeError(f"Entering into task {task!r} "
-                           f"when other task {current_task!r} is executed.")
-    _current_tasks[loop] = task
-
-
-def _leave_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not task:
-        raise RuntimeError(f"Leaving task {task!r} "
-                           f"is not current {current_task!r}.")
-    del _current_tasks[loop]
-
-
-def _unregister_task(loop, task):
-    tasks = _all_tasks.get(loop)
-    if tasks is None:
-        # loop is not registered
-        # raise RuntimeWarning?
-        return
-    tasks.remove(task)
-    if not tasks:
-        del _all_tasks[loop]
+from .base_tasks import (current_task, all_tasks, _register_task,
+                         _enter_task, _leave_task, _unregister_task)
 
 
 class Task(futures.Future):
