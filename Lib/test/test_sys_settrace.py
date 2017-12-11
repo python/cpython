@@ -16,7 +16,7 @@ basic.events = [(0, 'call'),
 
 # Many of the tests below are tricky because they involve pass statements.
 # If there is implicit control flow around a pass statement (in an except
-# clause or else caluse) under what conditions do you set a line number
+# clause or else clause) under what conditions do you set a line number
 # following that clause?
 
 

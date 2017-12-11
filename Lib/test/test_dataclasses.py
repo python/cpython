@@ -998,7 +998,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C().x, 0)
         self.assertEqual(C(2).x, 4)
 
-        # Make sure that if we'r frozen, post-init can't set
+        # Make sure that if we're frozen, post-init can't set
         #  attributes.
         @dataclass(frozen=True)
         class C:
