@@ -3,14 +3,11 @@
 import types
 import unittest
 
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
+from test import support
 from unittest import mock
 
 import asyncio
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
 class BaseTest(test_utils.TestCase):
