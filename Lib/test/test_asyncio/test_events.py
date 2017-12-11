@@ -3,7 +3,6 @@
 import collections.abc
 import concurrent.futures
 import functools
-import gc
 import io
 import os
 import platform
@@ -30,8 +29,7 @@ import asyncio
 from asyncio import coroutines
 from asyncio import proactor_events
 from asyncio import selector_events
-from asyncio import sslproto
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 try:
     from test import support
 except ImportError:

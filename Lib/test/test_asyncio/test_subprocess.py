@@ -7,11 +7,9 @@ from unittest import mock
 import asyncio
 from asyncio import base_subprocess
 from asyncio import subprocess
-from asyncio import test_utils
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
+from test.test_asyncio import utils as test_utils
+from test import support
+
 if sys.platform != 'win32':
     from asyncio import unix_events
 
