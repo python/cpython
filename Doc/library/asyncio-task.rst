@@ -538,12 +538,6 @@ Task functions
 
       The :meth:`AbstractEventLoop.create_task` method.
 
-.. function:: async(coro_or_future, \*, loop=None)
-
-   A deprecated alias to :func:`ensure_future`.
-
-   .. deprecated:: 3.4.4
-
 .. function:: wrap_future(future, \*, loop=None)
 
    Wrap a :class:`concurrent.futures.Future` object in a :class:`Future`
