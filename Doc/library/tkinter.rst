@@ -67,28 +67,29 @@ Or, more often::
    from tkinter import *
 
 
-.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1, sync=0, use=None)
+.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
 
-   Return a toplevel Tk widget, which is usually the main window of an
-   application.  Each instance has its own associated Tcl interpreter.
+   Toplevel Tk widget, which is usually the main window of an application.
+   Each instance has its own associated Tcl interpreter.
 
    The :class:`Tk` class is typically instantiated using all default values.
    However, the following keyword arguments are currently recognized:
 
    *screenName*
-      Sets the DISPLAY environmental variable. (X11 only)
+      Sets the :envvar:`DISPLAY` environmental variable. (X11 only)
    *baseName*
-      Reads the profile file :file:`baseName.tcl` into the Tcl interpreter and
-      calls ``exec`` on the contents of :file:`baseName.py`.
+      Reads the profile file :file:`{baseName}.tcl` into the Tcl interpreter
+      and calls :func:`exec` on the contents of :file:`{baseName}.py`.
    *className*
       Name of the widget class.  Used as a profile file name
-      (:file:`className.tcl` and :file:`className.py` load before the
+      (:file:`{className}.tcl` and :file:`{className}.py` load before the
       *baseName* files), and also used as the name with which Tcl is
       invoked (*argv0* in *interp*).
    *useTk*
-      If True, initialize the Tk subsystem.  :func:`Tcl` sets this to False.
+      If ``True``, initialize the Tk subsystem.  :func:`Tcl` sets this to
+      ``False``.
    *sync*
-      If True, execute all X server commands synchronously, so that errors are
+      If ``True``, execute all X server commands synchronously, so that errors are
       reported immediately.
    *use*
       Specifies that the main window for the application is to be embedded in
@@ -96,7 +97,7 @@ Or, more often::
       independent toplevel window.
 
 
-.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
+.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
 
    The :func:`Tcl` function is a factory function which creates an object much like
    that created by the :class:`Tk` class, except that it does not initialize the Tk
