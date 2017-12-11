@@ -91,6 +91,13 @@ class WindowsSignalTests(unittest.TestCase):
 
 class WakeupFDTests(unittest.TestCase):
 
+    def test_invalid_call(self):
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signum=signal.SIGINT)
+
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signal.SIGINT, False)
+
     def test_invalid_fd(self):
         fd = support.make_bad_fd()
         self.assertRaises((ValueError, OSError),
@@ -441,6 +448,8 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
         signum = signal.SIGINT
 
+        # This handler will be called, but we intentionally won't read from
+        # the wakeup fd.
         def handler(signum, frame):
             pass
 
@@ -453,7 +462,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         # Fill the send buffer
         try:
             while True:
-                write.send(b"x" * 1024)
+                write.send(b"x")
         except BlockingIOError:
             pass
 
@@ -488,6 +497,19 @@ class WakeupSocketSignalTests(unittest.TestCase):
         err = err.getvalue()
         if err != "":
             raise AssertionError("got unexpected output %r" % (err,))
+
+        # And then check the default again, to make sure warn_on_full_buffer
+        # settings don't leak across calls.
+        signal.set_wakeup_fd(write.fileno())
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+            not in err):
+            raise AssertionError(err)
+
         """.format(action=action)
         assert_python_ok('-c', code)
 

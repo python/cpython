@@ -102,13 +102,13 @@ static volatile struct {
     SOCKET_T fd;
     int warn_on_full_buffer;
     int use_send;
-} wakeup = {INVALID_FD, 1, 0};
+} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1, .use_send = 0};
 #else
 #define INVALID_FD (-1)
 static volatile struct {
     sig_atomic_t fd;
     int warn_on_full_buffer;
-} wakeup = {INVALID_FD, 1};
+} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1};
 #endif
 
 /* Speed up sigcheck() when none tripped */
@@ -274,7 +274,8 @@ trip_signal(int sig_num)
             if (rc < 0) {
                 int last_error = GetLastError();
                 if (wakeup.warn_on_full_buffer ||
-                    last_error != WSAEWOULDBLOCK) {
+                    last_error != WSAEWOULDBLOCK)
+                {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
                     Py_AddPendingCall(report_wakeup_send_error,
@@ -291,7 +292,8 @@ trip_signal(int sig_num)
 
             if (rc < 0) {
                 if (wakeup.warn_on_full_buffer ||
-                    (errno != EWOULDBLOCK && errno != EAGAIN)) {
+                    (errno != EWOULDBLOCK && errno != EAGAIN))
+                {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
                     Py_AddPendingCall(report_wakeup_write_error,

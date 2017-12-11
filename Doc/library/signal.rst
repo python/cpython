@@ -322,13 +322,13 @@ The :mod:`signal` module defines the following functions:
    arrived.
 
    In the first approach, we read the data out of the fd's buffer, and
-   the byte values give you the signal numbers. This is simple, but it
-   can run into a problem: generally the fd will have a limited amount
-   of buffer space, and if too many signals arrive too quickly, the
-   buffer may become full, and some signals may be lost. If you use
-   this approach, then you should set ``warn_on_full_buffer=True``,
-   which will at least cause a warning to be printed to stderr when
-   signals are lost.
+   the byte values give you the signal numbers. This is simple, but in
+   rare cases it can run into a problem: generally the fd will have a
+   limited amount of buffer space, and if too many signals arrive too
+   quickly, then the buffer may become full, and some signals may be
+   lost. If you use this approach, then you should set
+   ``warn_on_full_buffer=True``, which will at least cause a warning
+   to be printed to stderr when signals are lost.
 
    In the second approach, we use the wakeup fd *only* for wakeups,
    and ignore the actual byte values. In this case, all we care about
