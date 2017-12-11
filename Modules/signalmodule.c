@@ -104,10 +104,12 @@ static volatile struct {
     int send_err_set;
     int send_errno;
     int send_win_error;
-} wakeup = {INVALID_FD, 0, 0};
+} wakeup = {INVALID_FD, 0, 0, 0, 0};
 #else
 #define INVALID_FD (-1)
-static volatile sig_atomic_t wakeup_fd = -1;
+static volatile struct {
+    sig_atomic_t fd;
+} wakeup = {INVALID_FD};
 #endif
 
 /* Speed up sigcheck() when none tripped */
@@ -257,7 +259,7 @@ trip_signal(int sig_num)
        and then set the flag, but this allowed the following sequence of events
        (especially on windows, where trip_signal may run in a new thread):
 
-       - main thread blocks on select([wakeup_fd], ...)
+       - main thread blocks on select([wakeup.fd], ...)
        - signal arrives
        - trip_signal writes to the wakeup fd
        - the main thread wakes up
@@ -274,7 +276,7 @@ trip_signal(int sig_num)
 #ifdef MS_WINDOWS
     fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
 #else
-    fd = wakeup_fd;
+    fd = wakeup.fd;
 #endif
 
     if (fd != INVALID_FD) {
@@ -644,8 +646,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         }
     }
 
-    old_fd = wakeup_fd;
-    wakeup_fd = fd;
+    old_fd = wakeup.fd;
+    wakeup.fd = fd;
 
     return PyLong_FromLong(old_fd);
 #endif
@@ -670,11 +672,10 @@ PySignal_SetWakeupFd(int fd)
 
 #ifdef MS_WINDOWS
     old_fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
-    wakeup.fd = fd;
 #else
-    old_fd = wakeup_fd;
-    wakeup_fd = fd;
+    old_fd = wakeup.fd;
 #endif
+    wakeup.fd = fd;
     return old_fd;
 }
 
