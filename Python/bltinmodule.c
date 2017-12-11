@@ -48,9 +48,9 @@ _Py_IDENTIFIER(stderr);
 #include "clinic/bltinmodule.c.h"
 
 static PyObject*
-update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
+update_bases(PyObject* bases, PyObject** args, int nargs)
 {
-    int i, j, ind, tot_extra = 0;
+    int i, j, ind, modified_bases = 0, tot_extra = 0;
     PyObject *base, *meth, *new_base, *new_sub_base, *new_bases, *replacements;
     PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
@@ -89,9 +89,9 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         }
         Py_INCREF(new_base);
         PyTuple_SET_ITEM(replacements, i - 2, new_base);
-        *modified_bases = 1;
+        modified_bases = 1;
     }
-    if (!*modified_bases) {
+    if (!modified_bases) {
         return bases;
     }
     new_bases = PyTuple_New(nargs - 2 + tot_extra);
@@ -130,7 +130,6 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
     PyObject *new_bases, *old_bases = NULL;
     PyObject *cls = NULL, *cell = NULL;
     int isclass = 0;   /* initialize to prevent gcc warning */
-    int modified_bases = 0;
 
     if (nargs < 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -153,7 +152,7 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
     if (bases == NULL)
         return NULL;
 
-    new_bases = update_bases(bases, args, nargs, &modified_bases);
+    new_bases = update_bases(bases, args, nargs);
     if (new_bases == NULL) {
         Py_DECREF(bases);
         return NULL;
@@ -255,7 +254,7 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
-        if (modified_bases) {
+        if (bases != old_bases) {
             if (PyMapping_SetItemString(ns, "__orig_bases__", old_bases) < 0) {
                 goto error;
             }
@@ -298,7 +297,7 @@ error:
     Py_DECREF(meta);
     Py_XDECREF(mkw);
     Py_DECREF(bases);
-    if (modified_bases) {
+    if (bases != old_bases) {
         Py_DECREF(old_bases);
     }
     return cls;
