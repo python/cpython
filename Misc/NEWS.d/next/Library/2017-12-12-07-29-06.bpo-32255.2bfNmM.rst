@@ -1,0 +1,2 @@
+Fix inconsistent ``csv.writer`` behavior when it handles ``None``.
+Patch by Licht Takeuchi.
