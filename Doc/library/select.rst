@@ -264,9 +264,34 @@ object.
 Edge and Level Trigger Polling (epoll) Objects
 ----------------------------------------------
 
-   https://linux.die.net/man/4/epoll
+.. method:: epoll.close()
 
-   *eventmask*
+   Close the control file descriptor of the epoll object.
+
+
+.. attribute:: epoll.closed
+
+   ``True`` if the epoll object is closed.
+
+
+.. method:: epoll.fileno()
+
+   Return the file descriptor number of the control fd.
+
+
+.. method:: epoll.fromfd(fd)
+
+   Create an epoll object from a given file descriptor.
+
+
+.. method:: epoll.register(fd[, eventmask])
+
+   Register a fd descriptor with the epoll object.
+
+   *eventmask* is an optional bitmask describing the type of events you want
+   to check for.  The following constants can be used with
+   :meth:`~epoll.register` and :meth:`~epoll.modify` methods.  See
+   :manpage:`epoll(4)` for more information.
 
    +-------------------------+-----------------------------------------------+
    | Constant                | Meaning                                       |
@@ -306,32 +331,6 @@ Edge and Level Trigger Polling (epoll) Objects
    | :const:`EPOLLMSG`       | Ignored.                                      |
    +-------------------------+-----------------------------------------------+
 
-
-.. method:: epoll.close()
-
-   Close the control file descriptor of the epoll object.
-
-
-.. attribute:: epoll.closed
-
-   ``True`` if the epoll object is closed.
-
-
-.. method:: epoll.fileno()
-
-   Return the file descriptor number of the control fd.
-
-
-.. method:: epoll.fromfd(fd)
-
-   Create an epoll object from a given file descriptor.
-
-
-.. method:: epoll.register(fd[, eventmask])
-
-   Register a fd descriptor with the epoll object.
-
-
 .. method:: epoll.modify(fd, eventmask)
 
    Modify a registered file descriptor.
@@ -344,7 +343,9 @@ Edge and Level Trigger Polling (epoll) Objects
 
 .. method:: epoll.poll(timeout=-1, maxevents=-1)
 
-   Wait for events. timeout in seconds (float)
+   Wait for events. *timeout* in seconds (float)  Return a list of
+   ``(fd, eventmask)`` tuples if there's any event.  Otherwise, an empty list
+   is returned.
 
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by
