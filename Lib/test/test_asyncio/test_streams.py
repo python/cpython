@@ -16,7 +16,7 @@ except ImportError:
     ssl = None
 
 import asyncio
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
 class StreamReaderTests(test_utils.TestCase):
