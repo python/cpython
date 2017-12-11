@@ -81,12 +81,11 @@ is called.
 If you wait for a future, you should check early if the future was cancelled to
 avoid useless operations. Example::
 
-    @coroutine
-    def slow_operation(fut):
+    async def slow_operation(fut):
         if fut.cancelled():
             return
         # ... slow computation ...
-        yield from fut
+        await fut
         # ...
 
 The :func:`shield` function can also be used to ignore cancellation.
@@ -99,7 +98,7 @@ Concurrency and multithreading
 
 An event loop runs in a thread and executes all callbacks and tasks in the same
 thread. While a task is running in the event loop, no other task is running in
-the same thread. But when the task uses ``yield from``, the task is suspended
+the same thread. But when the task uses ``await``, the task is suspended
 and the event loop executes the next task.
 
 To schedule a callback from a different thread, the
@@ -192,8 +191,7 @@ Example with the bug::
 
     import asyncio
 
-    @asyncio.coroutine
-    def test():
+    async def test():
         print("never scheduled")
 
     test()
@@ -270,10 +268,9 @@ traceback where the task was created. Output in debug mode::
 There are different options to fix this issue. The first option is to chain the
 coroutine in another coroutine and use classic try/except::
 
-    @asyncio.coroutine
-    def handle_exception():
+    async def handle_exception():
         try:
-            yield from bug()
+            await bug()
         except Exception:
             print("exception consumed")
 
@@ -300,7 +297,7 @@ Chain coroutines correctly
 --------------------------
 
 When a coroutine function calls other coroutine functions and tasks, they
-should be chained explicitly with ``yield from``. Otherwise, the execution is
+should be chained explicitly with ``await``. Otherwise, the execution is
 not guaranteed to be sequential.
 
 Example with different bugs using :func:`asyncio.sleep` to simulate slow
@@ -308,26 +305,22 @@ operations::
 
     import asyncio
 
-    @asyncio.coroutine
-    def create():
-        yield from asyncio.sleep(3.0)
+    async def create():
+        await asyncio.sleep(3.0)
         print("(1) create file")
 
-    @asyncio.coroutine
-    def write():
-        yield from asyncio.sleep(1.0)
+    async def write():
+        await asyncio.sleep(1.0)
         print("(2) write into file")
 
-    @asyncio.coroutine
-    def close():
+    async def close():
         print("(3) close file")
 
-    @asyncio.coroutine
-    def test():
+    async def test():
         asyncio.ensure_future(create())
         asyncio.ensure_future(write())
         asyncio.ensure_future(close())
-        yield from asyncio.sleep(2.0)
+        await asyncio.sleep(2.0)
         loop.stop()
 
     loop = asyncio.get_event_loop()
@@ -359,24 +352,22 @@ The loop stopped before the ``create()`` finished, ``close()`` has been called
 before ``write()``, whereas coroutine functions were called in this order:
 ``create()``, ``write()``, ``close()``.
 
-To fix the example, tasks must be marked with ``yield from``::
+To fix the example, tasks must be marked with ``await``::
 
-    @asyncio.coroutine
-    def test():
-        yield from asyncio.ensure_future(create())
-        yield from asyncio.ensure_future(write())
-        yield from asyncio.ensure_future(close())
-        yield from asyncio.sleep(2.0)
+    async def test():
+        await asyncio.ensure_future(create())
+        await asyncio.ensure_future(write())
+        await asyncio.ensure_future(close())
+        await asyncio.sleep(2.0)
         loop.stop()
 
 Or without ``asyncio.ensure_future()``::
 
-    @asyncio.coroutine
-    def test():
-        yield from create()
-        yield from write()
-        yield from close()
-        yield from asyncio.sleep(2.0)
+    async def test():
+        await create()
+        await write()
+        await close()
+        await asyncio.sleep(2.0)
         loop.stop()
 
 

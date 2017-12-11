@@ -208,7 +208,7 @@ StreamWriter
       The intended use is to write::
 
           w.write(data)
-          yield from w.drain()
+          await w.drain()
 
       When the size of the transport buffer reaches the high-water limit (the
       protocol is paused), block until the size of the buffer is drained down
@@ -301,15 +301,14 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
     import asyncio
 
-    @asyncio.coroutine
-    def tcp_echo_client(message, loop):
-        reader, writer = yield from asyncio.open_connection('127.0.0.1', 8888,
-                                                            loop=loop)
+    async def tcp_echo_client(message, loop):
+        reader, writer = await asyncio.open_connection('127.0.0.1', 8888,
+                                                       loop=loop)
 
         print('Send: %r' % message)
         writer.write(message.encode())
 
-        data = yield from reader.read(100)
+        data = await reader.read(100)
         print('Received: %r' % data.decode())
 
         print('Close the socket')
@@ -335,16 +334,15 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
     import asyncio
 
-    @asyncio.coroutine
-    def handle_echo(reader, writer):
-        data = yield from reader.read(100)
+    async def handle_echo(reader, writer):
+        data = await reader.read(100)
         message = data.decode()
         addr = writer.get_extra_info('peername')
         print("Received %r from %r" % (message, addr))
 
         print("Send: %r" % message)
         writer.write(data)
-        yield from writer.drain()
+        await writer.drain()
 
         print("Close the client socket")
         writer.close()
@@ -387,13 +385,13 @@ Simple example querying HTTP headers of the URL passed on the command line::
             connect = asyncio.open_connection(url.hostname, 443, ssl=True)
         else:
             connect = asyncio.open_connection(url.hostname, 80)
-        reader, writer = yield from connect
+        reader, writer = await connect
         query = ('HEAD {path} HTTP/1.0\r\n'
                  'Host: {hostname}\r\n'
                  '\r\n').format(path=url.path or '/', hostname=url.hostname)
         writer.write(query.encode('latin-1'))
         while True:
-            line = yield from reader.readline()
+            line = await reader.readline()
             if not line:
                 break
             line = line.decode('latin1').rstrip()
@@ -428,19 +426,18 @@ Coroutine waiting until a socket receives data using the
     import asyncio
     from socket import socketpair
 
-    @asyncio.coroutine
-    def wait_for_data(loop):
+    async def wait_for_data(loop):
         # Create a pair of connected sockets
         rsock, wsock = socketpair()
 
         # Register the open socket to wait for data
-        reader, writer = yield from asyncio.open_connection(sock=rsock, loop=loop)
+        reader, writer = await asyncio.open_connection(sock=rsock, loop=loop)
 
         # Simulate the reception of data from the network
         loop.call_soon(wsock.send, 'abc'.encode())
 
         # Wait for data
-        data = yield from reader.read(100)
+        data = await reader.read(100)
 
         # Got data, we are done: close the socket
         print("Received:", data.decode())

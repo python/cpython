@@ -23,6 +23,10 @@ class _ContextManager:
 
         with lock:
             <block>
+
+    Deprecated, use 'async with' statement:
+        async with lock:
+            <block>
     """
 
     def __init__(self, lock):
@@ -64,6 +68,9 @@ class _ContextManagerMixin:
         #         <block>
         #     finally:
         #         lock.release()
+        # Deprecated, use 'async with' statement:
+        #     async with lock:
+        #         <block>
         warnings.warn("'with (yield from lock)' is deprecated "
                       "use 'async with lock' instead",
                       DeprecationWarning, stacklevel=2)
@@ -113,16 +120,16 @@ class Lock(_ContextManagerMixin):
     release() call resets the state to unlocked; first coroutine which
     is blocked in acquire() is being processed.
 
-    acquire() is a coroutine and should be called with 'yield from'.
+    acquire() is a coroutine and should be called with 'await'.
 
-    Locks also support the context management protocol.  '(yield from lock)'
-    should be used as the context manager expression.
+    Locks also support the asynchronous context management protocol.
+    'async with lock' statement should be used.
 
     Usage:
 
         lock = Lock()
         ...
-        yield from lock
+        await lock.acquire()
         try:
             ...
         finally:
@@ -132,13 +139,13 @@ class Lock(_ContextManagerMixin):
 
         lock = Lock()
         ...
-        with (yield from lock):
+        async with lock:
              ...
 
     Lock objects can be tested for locking state:
 
         if not lock.locked():
-           yield from lock
+           await lock.acquire()
         else:
            # lock is acquired
            ...

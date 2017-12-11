@@ -488,8 +488,9 @@ Coroutines can be scheduled in a protocol method using :func:`ensure_future`,
 but there is no guarantee made about the execution order.  Protocols are not
 aware of coroutines created in protocol methods and so will not wait for them.
 
-To have a reliable execution order, use :ref:`stream objects <asyncio-streams>` in a
-coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
+To have a reliable execution order,
+use :ref:`stream objects <asyncio-streams>` in a
+coroutine with ``await``. For example, the :meth:`StreamWriter.drain`
 coroutine can be used to wait until the write buffer is flushed.
 
 
@@ -589,7 +590,7 @@ received data and close the connection::
 
 :meth:`Transport.close` can be called immediately after
 :meth:`WriteTransport.write` even if data are not sent yet on the socket: both
-methods are asynchronous. ``yield from`` is not needed because these transport
+methods are asynchronous. ``await`` is not needed because these transport
 methods are not coroutines.
 
 .. seealso::

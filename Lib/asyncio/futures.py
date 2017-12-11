@@ -59,7 +59,8 @@ class Future:
     #   The value must also be not-None, to enable a subclass to declare
     #   that it is not compatible by setting this to None.
     # - It is set by __iter__() below so that Task._step() can tell
-    #   the difference between `yield from Future()` (correct) vs.
+    #   the difference between
+    #   `await Future()` or`yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
 
@@ -236,7 +237,7 @@ class Future:
         if not self.done():
             self._asyncio_future_blocking = True
             yield self  # This tells Task to wait for completion.
-        assert self.done(), "yield from wasn't used with future"
+        assert self.done(), "await wasn't used with future"
         return self.result()  # May raise too.
 
     __await__ = __iter__  # make compatible with 'await' expression
