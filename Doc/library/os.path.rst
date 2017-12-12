@@ -308,9 +308,9 @@ the :mod:`glob` module.)
 
    Normalize the case of a pathname.  On Windows, converts all characters in the
    pathname to lowercase, and also converts forward slashes to backward slashes.
-   On other operating systems, return the path unchanged.  Raise a
-   :exc:`TypeError` if the type of *path* is neither ``str`` nor ``bytes``
-   (directly or indirectly through the :class:`os.PathLike` interface).
+   On other operating systems, return the path unchanged.
+   Raise a :exc:`TypeError` if the type of *path* is neither ``str`` nor ``bytes`` (directly
+   or indirectly through the :class:`os.PathLike` interface).
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
