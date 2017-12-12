@@ -1462,7 +1462,6 @@ static PyObject *
 pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *kwds)
 {
     PyObject *target = NULL;
-    const char *filename;
     int pages = -1;
     PyObject *progress = Py_None;
     const char *name = "main";
@@ -1478,9 +1477,27 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         return NULL;
     }
 
-    if (!PyUnicode_Check(target) && !PyObject_TypeCheck(target, &pysqlite_ConnectionType)) {
+    if (!PyObject_TypeCheck(target, &pysqlite_ConnectionType)) {
         PyErr_SetString(PyExc_TypeError,
-                        "target argument must be either a string or a Connection instance");
+                        "target argument must be a Connection instance");
+        return NULL;
+    }
+
+    if ((pysqlite_Connection *)target == self) {
+        PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
+        return NULL;
+    }
+
+#if SQLITE_VERSION_NUMBER < 3008007
+    /* Since 3.8.7 this is already done, per commit
+       https://www.sqlite.org/src/info/169b5505498c0a7e */
+    if (!sqlite3_get_autocommit(((pysqlite_Connection *)target)->db)) {
+        PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
+        return NULL;
+    }
+#endif
+
+    if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
         return NULL;
     }
 
@@ -1493,44 +1510,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         pages = -1;
     }
 
-    if (PyUnicode_Check(target)) {
-        filename = PyUnicode_AsUTF8(target);
-        if (filename == NULL) {
-            return NULL;
-        }
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_open(filename, &bckconn);
-        Py_END_ALLOW_THREADS
-
-        if (rc != SQLITE_OK) {
-            if (bckconn) {
-                _pysqlite_seterror(bckconn, NULL);
-                Py_BEGIN_ALLOW_THREADS
-                SQLITE3_CLOSE(bckconn);
-                Py_END_ALLOW_THREADS
-            } else {
-                (void)PyErr_NoMemory();
-            }
-            return NULL;
-        }
-    }
-    else {
-        if ((pysqlite_Connection *)target == self) {
-            PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
-            return NULL;
-        }
-#if SQLITE_VERSION_NUMBER < 3008007
-        /* Since 3.8.7 this is already done, per commit
-           https://www.sqlite.org/src/info/169b5505498c0a7e */
-        if (!sqlite3_get_autocommit(((pysqlite_Connection *)target)->db)) {
-            PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
-            return NULL;
-        }
-#endif
-        filename = NULL;
-        bckconn = ((pysqlite_Connection *)target)->db;
-    }
+    bckconn = ((pysqlite_Connection *)target)->db;
 
     Py_BEGIN_ALLOW_THREADS
     bckhandle = sqlite3_backup_init(bckconn, "main", self->db, name);
@@ -1585,41 +1565,9 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         }
     }
 
-    if (filename != NULL) {
-        Py_BEGIN_ALLOW_THREADS
-        SQLITE3_CLOSE(bckconn);
-        Py_END_ALLOW_THREADS
-    }
-
     if (cberr == 0 && rc == SQLITE_OK) {
         Py_RETURN_NONE;
     } else {
-        /* Remove the probably incomplete/invalid backup */
-        if (filename != NULL) {
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
-
-#ifndef MS_WINDOWS
-            if (unlink(filename) < 0) {
-              (void) PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, target);
-            }
-#else
-            Py_ssize_t size;
-            wchar_t *wide = PyUnicode_AsWideCharString(target, &size);
-
-            if (wide != NULL) {
-                if (!DeleteFileW(wide)) {
-                    PyMem_Free(wide);
-                    (void) PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
-                                                                        GetLastError(),
-                                                                        target);
-                }
-                else PyMem_Free(wide);
-            }
-#endif
-
-            _PyErr_ChainExceptions(exc, val, tb);
-        }
         return NULL;
     }
 }

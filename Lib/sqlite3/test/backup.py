@@ -1,4 +1,3 @@
-import os
 import sqlite3 as sqlite
 import unittest
 
@@ -12,36 +11,49 @@ class BackupTests(unittest.TestCase):
         cx.execute('CREATE TABLE foo (key INTEGER)')
         cx.executemany('INSERT INTO foo (key) VALUES (?)', [(3,), (4,)])
         cx.commit()
-        os.mkdir(support.TESTFN)
-        self.addCleanup(support.rmtree, support.TESTFN)
-        self.temp_counter = 0
-
-    @property
-    def temp_file_name(self):
-        self.temp_counter += 1
-        return os.path.join(support.TESTFN, 'bcktest_%d' % self.temp_counter)
 
     def tearDown(self):
         self.cx.close()
 
-    def verify_backup(self, bckfn):
-        cx = sqlite.connect(bckfn)
-        result = cx.execute("SELECT key FROM foo ORDER BY key").fetchall()
+    def verify_backup(self, bckcx):
+        result = bckcx.execute("SELECT key FROM foo ORDER BY key").fetchall()
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
-    def test_bad_target(self):
+    def test_bad_target_none(self):
         with self.assertRaises(TypeError):
             self.cx.backup(None)
 
+    def test_bad_target_filename(self):
+        with self.assertRaises(TypeError):
+            self.cx.backup('some_file_name.db')
+
+    def test_bad_target_same_connection(self):
+        with self.assertRaises(ValueError):
+            self.cx.backup(self.cx)
+
+    def test_bad_target_closed_connection(self):
+        bck = sqlite.connect(':memory:')
+        bck.close()
+        with self.assertRaises(sqlite.ProgrammingError):
+            self.cx.backup(bck)
+
+    def test_bad_target_in_transaction(self):
+        bck = sqlite.connect(':memory:')
+        bck.execute('CREATE TABLE bar (key INTEGER)')
+        bck.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
+        with self.assertRaises(sqlite.OperationalError):
+            self.cx.backup(bck)
+
     def test_keyword_only_args(self):
         with self.assertRaises(TypeError):
-            self.cx.backup('foo', 1)
+            with sqlite.connect(':memory:') as bck:
+                self.cx.backup(bck, 1)
 
     def test_simple(self):
-        bckfn = self.temp_file_name
-        self.cx.backup(bckfn)
-        self.verify_backup(bckfn)
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck)
+            self.verify_backup(bck)
 
     def test_progress(self):
         journal = []
@@ -49,9 +61,9 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(status)
 
-        bckfn = self.temp_file_name
-        self.cx.backup(bckfn, pages=1, progress=progress)
-        self.verify_backup(bckfn)
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck, pages=1, progress=progress)
+            self.verify_backup(bck)
 
         self.assertEqual(len(journal), 2)
         self.assertEqual(journal[0], sqlite.SQLITE_OK)
@@ -63,9 +75,9 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(remaining)
 
-        bckfn = self.temp_file_name
-        self.cx.backup(bckfn, progress=progress)
-        self.verify_backup(bckfn)
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck, progress=progress)
+            self.verify_backup(bck)
 
         self.assertEqual(len(journal), 1)
         self.assertEqual(journal[0], 0)
@@ -76,17 +88,17 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(remaining)
 
-        bckfn = self.temp_file_name
-        self.cx.backup(bckfn, pages=-1, progress=progress)
-        self.verify_backup(bckfn)
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck, pages=-1, progress=progress)
+            self.verify_backup(bck)
 
         self.assertEqual(len(journal), 1)
         self.assertEqual(journal[0], 0)
 
     def test_non_callable_progress(self):
-        bckfn = self.temp_file_name
         with self.assertRaises(TypeError) as err:
-            self.cx.backup(bckfn, pages=1, progress='bar')
+            with sqlite.connect(':memory:') as bck:
+                self.cx.backup(bck, pages=1, progress='bar')
         self.assertEqual(str(err.exception), 'progress argument must be a callable')
 
     def test_modifying_progress(self):
@@ -98,15 +110,14 @@ class BackupTests(unittest.TestCase):
                 self.cx.commit()
             journal.append(remaining)
 
-        bckfn = self.temp_file_name
-        self.cx.backup(bckfn, pages=1, progress=progress)
-        self.verify_backup(bckfn)
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck, pages=1, progress=progress)
+            self.verify_backup(bck)
 
-        cx = sqlite.connect(bckfn)
-        result = cx.execute("SELECT key FROM foo"
-                            " WHERE key >= 1000"
-                            " ORDER BY key").fetchall()
-        self.assertEqual(result[0][0], 1001)
+            result = bck.execute("SELECT key FROM foo"
+                                 " WHERE key >= 1000"
+                                 " ORDER BY key").fetchall()
+            self.assertEqual(result[0][0], 1001)
 
         self.assertEqual(len(journal), 3)
         self.assertEqual(journal[0], 1)
@@ -117,43 +128,27 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             raise SystemError('nearly out of space')
 
-        bckfn = self.temp_file_name
         with self.assertRaises(SystemError) as err:
-            self.cx.backup(bckfn, progress=progress)
+            with sqlite.connect(':memory:') as bck:
+                self.cx.backup(bck, progress=progress)
         self.assertEqual(str(err.exception), 'nearly out of space')
-        self.assertFalse(os.path.exists(bckfn))
 
     def test_database_source_name(self):
-        bckfn = self.temp_file_name
-        self.cx.backup(bckfn, name='main')
-        self.cx.backup(bckfn, name='temp')
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck, name='main')
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck, name='temp')
         with self.assertRaises(sqlite.OperationalError):
-            self.cx.backup(bckfn, name='non-existing')
-        self.assertFalse(os.path.exists(bckfn))
+            with sqlite.connect(':memory:') as bck:
+                self.cx.backup(bck, name='non-existing')
+
         self.cx.execute("ATTACH DATABASE ':memory:' AS attached_db")
         self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
         self.cx.executemany('INSERT INTO attached_db.foo (key) VALUES (?)', [(3,), (4,)])
         self.cx.commit()
-        bckfn = self.temp_file_name
-        self.cx.backup(bckfn, name='attached_db')
-        self.verify_backup(bckfn)
-
-    def test_backup_to_other_connection(self):
-        dx = sqlite.connect(':memory:')
-        self.cx.backup(dx)
-        result = dx.execute("SELECT key FROM foo ORDER BY key").fetchall()
-        self.assertEqual(result[0][0], 3)
-        self.assertEqual(result[1][0], 4)
-
-    def test_backup_to_other_connection_in_transaction(self):
-        dx = sqlite.connect(':memory:')
-        dx.execute('CREATE TABLE bar (key INTEGER)')
-        dx.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
-        try:
-            with self.assertRaises(sqlite.OperationalError):
-                self.cx.backup(dx)
-        finally:
-            dx.rollback()
+        with sqlite.connect(':memory:') as bck:
+            self.cx.backup(bck, name='attached_db')
+            self.verify_backup(bck)
 
 # Used by the Lib/test/test_sqlite.py
 def suite():

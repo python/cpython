@@ -523,10 +523,10 @@ Connection Objects
 
    .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
 
-      This method makes a backup of a SQLite database into the mandatory argument
-      *target*, even while it's being accessed by other clients, or concurrently by
-      the same connection. The *target* can be either a string, the path to the file
-      where the backup will be written, or another :class:`Connection` instance.
+      This method makes a backup of a SQLite database even while it's being accessed
+      by other clients, or concurrently by the same connection. The copy will be
+      written into the mandatory argument *target*, that must be another
+      :class:`Connection` instance.
 
       By default, or when *pages* is either ``0`` or a negative integer, the entire
       database is copied in a single step; otherwise the method performs a loop
@@ -546,7 +546,7 @@ Connection Objects
       successive attempts to backup remaining pages, can be specified either as an
       integer or a floating point value.
 
-      Example 1, copy an existing database into another file::
+      Example 1, copy an existing database into another::
 
          import sqlite3
 
@@ -554,7 +554,8 @@ Connection Objects
              print(f"Copied {total-remaining} of {total} pages...")
 
          con = sqlite3.connect('existing_db.db')
-         con.backup('copy_of_existing_db.db', 1, progress)
+         with sqlite3.connect('backup.db') as bck:
+             con.backup(bck, pages=1, progress=progress)
 
       Example 2, copy an existing database into a transient copy::
 
