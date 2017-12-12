@@ -1461,14 +1461,9 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
     sqlite3_backup *bckhandle;
     static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$iOsd:backup", keywords,
-                                     &target, &pages, &progress, &name, &sleep_secs)) {
-        return NULL;
-    }
-
-    if (!PyObject_TypeCheck(target, &pysqlite_ConnectionType)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "target argument must be a Connection instance");
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsd:backup", keywords,
+                                     &pysqlite_ConnectionType, &target,
+                                     &pages, &progress, &name, &sleep_secs)) {
         return NULL;
     }
 
