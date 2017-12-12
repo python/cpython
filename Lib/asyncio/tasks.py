@@ -82,7 +82,7 @@ class Task(futures.Future):
         self._fut_waiter = None
         self._must_cancel = False
         self._loop.call_soon(self._step)
-        self.__class__._all_tasks.add(self)
+        _register_task(self._loop, self)
 
     def __del__(self):
         if self._state == futures._PENDING and self._log_destroy_pending:
@@ -188,19 +188,14 @@ class Task(futures.Future):
                 # Task is cancelled right before coro stops.
                 self._must_cancel = False
                 self.set_exception(futures.CancelledError())
-                _unregister_task(self._loop, self)
             else:
                 self.set_result(exc.value)
-                _unregister_task(self._loop, self)
         except futures.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
-            _unregister_task(self._loop, self)
         except Exception as exc:
             self.set_exception(exc)
-            _unregister_task(self._loop, self)
         except BaseException as exc:
             self.set_exception(exc)
-            _unregister_task(self._loop, self)
             raise
         else:
             blocking = getattr(result, '_asyncio_future_blocking', None)
