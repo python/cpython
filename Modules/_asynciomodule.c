@@ -2413,6 +2413,14 @@ static PyObject *
 _asyncio__enter_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=a22611c858035b73 input=de1b06dca70d8737]*/
 {
+    PyObject *item;
+    item = PyDict_GetItem(asyncio__current_tasks, loop);
+    if (item != NULL) {
+        return PyErr_Format(
+            PyExc_RuntimeError,
+            "Entering into task %R when other task %R is executed.",
+            task, item, NULL);
+    }
     if (PyDict_SetItem(asyncio__current_tasks, loop, task) < 0) {
         return NULL;
     }
@@ -2437,6 +2445,18 @@ static PyObject *
 _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
+    PyObject *item;
+    item = PyDict_GetItem(asyncio__current_tasks, loop);
+    if (item != task) {
+        if (item == NULL) {
+            /* Not entered, replace with None */
+            item = Py_None;
+        }
+        return PyErr_Format(
+            PyExc_RuntimeError,
+            "Leaving task %R is not current %R.",
+            task, item, NULL);
+    }
     if (PyObject_DelItem(asyncio__current_tasks, loop) < 0) {
         return NULL;
     }

@@ -2177,6 +2177,84 @@ class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
     Future = futures._PyFuture
 
 
+
+class BaseTaskIntrospectionTests:
+    _register_task = None
+    _enter_task = None
+    _leave_task = None
+
+    def test__register_task(self):
+        task = mock.Mock()
+        loop = mock.Mock()
+        self.assertEqual(asyncio.all_tasks(loop), set())
+        self._register_task(loop, task)
+        self.assertEqual(asyncio.all_tasks(loop), {task})
+
+    def test__enter_task(self):
+        task = mock.Mock()
+        loop = mock.Mock()
+        self.assertIsNone(asyncio.current_task(loop))
+        self._enter_task(loop, task)
+        self.assertIs(asyncio.current_task(loop), task)
+
+    def test__enter_task_failure(self):
+        task1 = mock.Mock()
+        task2 = mock.Mock()
+        loop = mock.Mock()
+        self._enter_task(loop, task1)
+        with self.assertRaises(RuntimeError):
+            self._enter_task(loop, task2)
+        self.assertIs(asyncio.current_task(loop), task1)
+
+    def test__leave_task(self):
+        task = mock.Mock()
+        loop = mock.Mock()
+        self._enter_task(loop, task)
+        self._leave_task(loop, task)
+        self.assertIsNone(asyncio.current_task(loop))
+
+    def test__leave_task_failure1(self):
+        task1 = mock.Mock()
+        task2 = mock.Mock()
+        loop = mock.Mock()
+        self._enter_task(loop, task1)
+        with self.assertRaises(RuntimeError):
+            self._leave_task(loop, task2)
+        self.assertIs(asyncio.current_task(loop), task1)
+
+    def test__leave_task_failure1(self):
+        task = mock.Mock()
+        loop = mock.Mock()
+        with self.assertRaises(RuntimeError):
+            self._leave_task(loop, task)
+        self.assertIsNone(asyncio.current_task(loop))
+
+    def test__unregister_task(self):
+        task = mock.Mock()
+        loop = mock.Mock()
+        self._register_task(loop, task)
+        asyncio._unregister_task(loop, task)
+        self.assertEqual(asyncio.all_tasks(loop), set())
+
+    def test__unregister_task_not_registered(self):
+        task = mock.Mock()
+        loop = mock.Mock()
+        asyncio._unregister_task(loop, task)
+        self.assertEqual(asyncio.all_tasks(loop), set())
+
+
+class PyTestIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
+    _register_task = staticmethod(tasks._py_register_task)
+    _enter_task = staticmethod(tasks._py_enter_task)
+    _leave_task = staticmethod(tasks._py_leave_task)
+
+
+class CTestIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
+    _register_task = staticmethod(tasks._c_register_task)
+    _enter_task = staticmethod(tasks._c_enter_task)
+    _leave_task = staticmethod(tasks._c_leave_task)
+
+
 class GenericTaskTests(test_utils.TestCase):
 
     def test_future_subclass(self):
