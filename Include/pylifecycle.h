@@ -127,7 +127,7 @@ PyAPI_FUNC(const char *) _Py_gitversion(void);
 PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
 PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
 PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict);
-PyAPI_FUNC(_PyInitError) _PyImport_Init(void);
+PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);
@@ -137,9 +137,18 @@ PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(_PyCoreConfig *core_config);
 #endif
 
 /* Various internal finalizers */
-#ifndef Py_LIMITED_API
+
+#ifdef Py_BUILD_CORE
 PyAPI_FUNC(void) _PyExc_Fini(void);
 PyAPI_FUNC(void) _PyImport_Fini(void);
+PyAPI_FUNC(void) _PyImport_Fini2(void);
+PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
+PyAPI_FUNC(void) _PyGC_Fini(void);
+PyAPI_FUNC(void) _PyType_Fini(void);
+PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
+#endif   /* Py_BUILD_CORE */
+
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyMethod_Fini(void);
 PyAPI_FUNC(void) PyFrame_Fini(void);
 PyAPI_FUNC(void) PyCFunction_Fini(void);
@@ -151,15 +160,11 @@ PyAPI_FUNC(void) PyBytes_Fini(void);
 PyAPI_FUNC(void) PyByteArray_Fini(void);
 PyAPI_FUNC(void) PyFloat_Fini(void);
 PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
-PyAPI_FUNC(void) _PyGC_Fini(void);
 PyAPI_FUNC(void) PySlice_Fini(void);
-PyAPI_FUNC(void) _PyType_Fini(void);
-PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
 PyAPI_FUNC(void) PyAsyncGen_Fini(void);
 
 PyAPI_FUNC(int) _Py_IsFinalizing(void);
-#endif
+#endif   /* !Py_LIMITED_API */
 
 /* Signals */
 typedef void (*PyOS_sighandler_t)(int);

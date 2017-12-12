@@ -9,12 +9,9 @@ import unittest
 from unittest import mock
 
 import asyncio
-from asyncio import test_utils
 from asyncio import futures
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
+from test.test_asyncio import utils as test_utils
+from test import support
 
 
 def _fakefunc(f):

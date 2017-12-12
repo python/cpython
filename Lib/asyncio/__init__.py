@@ -1,5 +1,7 @@
 """The asyncio package, tracking PEP 3156."""
 
+# flake8: noqa
+
 import sys
 
 # This relies on each of the submodules having an __all__ variable.

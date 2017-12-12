@@ -36,6 +36,8 @@ typedef struct {
     int import_time;        /* -X importtime */
     int show_ref_count;     /* -X showrefcount */
     int show_alloc_count;   /* -X showalloccount */
+    int dump_refs;          /* PYTHONDUMPREFS */
+    int malloc_stats;       /* PYTHONMALLOCSTATS */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT (_PyCoreConfig){.use_hash_seed = -1}
@@ -111,7 +113,7 @@ typedef struct _is {
     PyObject *after_forkers_child;
 #endif
 } PyInterpreterState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* State unique per thread */
@@ -133,7 +135,7 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
-#endif
+#endif   /* Py_LIMITED_API */
 
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
@@ -238,7 +240,7 @@ typedef struct _ts {
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
@@ -363,7 +365,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
    is called. */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
