@@ -468,7 +468,8 @@ The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
 Peterson.)
 
 New function :func:`~unicodedata.is_normalized` can be used to verify a string
-is in a specific normal form. (Contributed by Max Belanger in :issue:`32285`.)
+is in a specific normal form. (Contributed by Max Belanger, David Euresti in
+:issue:`32285`.)
 
 urllib.parse
 ------------
