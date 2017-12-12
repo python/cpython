@@ -89,19 +89,13 @@ _current_tasks = {}
 def current_task(loop=None):
     if loop is None:
         loop = events.get_event_loop()
-    task = _current_tasks.get(loop)
-    if task is None:
-        raise RuntimeError("no current task")
-    return task
+    return _current_tasks.get(loop)
 
 
 def all_tasks(loop=None):
     if loop is None:
         loop = events.get_event_loop()
-    task = _current_tasks.get(loop)
-    if task is None:
-        raise RuntimeError("no current task")
-    return task
+    return {t for t, l in _all_tasks.items() if l is loop}
 
 
 def _register_task(loop, task):

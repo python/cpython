@@ -53,10 +53,7 @@ class Task(futures.Future):
                       "use asyncio.current_task() instead",
                       PendingDeprecationWarning,
                       stacklevel=2)
-        try:
-            return current_task(loop)
-        except RuntimeError:
-            return None
+        return current_task(loop)
 
     @classmethod
     def all_tasks(cls, loop=None):
@@ -68,10 +65,7 @@ class Task(futures.Future):
                       "use asyncio.all_tasks() instead",
                       PendingDeprecationWarning,
                       stacklevel=2)
-        try:
-            return all_tasks(loop)
-        except RuntimeError:
-            return set()
+        return all_tasks(loop)
 
     def __init__(self, coro, *, loop=None):
         assert coroutines.iscoroutine(coro), repr(coro)
