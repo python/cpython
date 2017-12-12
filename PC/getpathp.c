@@ -118,8 +118,8 @@
 #endif
 
 typedef struct {
-    wchar_t *path_env;                 /* PATH environment variable */
-    wchar_t *home;                     /* PYTHONHOME environment variable */
+    const wchar_t *path_env;           /* PATH environment variable */
+    const wchar_t *home;               /* PYTHONHOME environment variable */
 
     /* Registry key "Software\Python\PythonCore\PythonPath" */
     wchar_t *machine_path;   /* from HKEY_LOCAL_MACHINE */
@@ -191,7 +191,7 @@ change_ext(wchar_t *dest, const wchar_t *src, const wchar_t *ext)
 
 
 static int
-exists(wchar_t *filename)
+exists(const wchar_t *filename)
 {
     return GetFileAttributesW(filename) != 0xFFFFFFFF;
 }
@@ -286,7 +286,7 @@ gotlandmark(wchar_t *prefix, const wchar_t *landmark)
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path_impl() */
 static int
-search_for_prefix(wchar_t *prefix, wchar_t *argv0_path, const wchar_t *landmark)
+search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path, const wchar_t *landmark)
 {
     /* Search from argv0_path, until landmark is found */
     wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
@@ -523,9 +523,9 @@ get_program_full_path(const _PyMainInterpreterConfig *main_config,
         wcsncpy(program_full_path, main_config->program_name, MAXPATHLEN);
     }
     else if (calculate->path_env) {
-        wchar_t *path = calculate->path_env;
+        const wchar_t *path = calculate->path_env;
         while (1) {
-            wchar_t *delim = wcschr(path, DELIM);
+            const wchar_t *delim = wcschr(path, DELIM);
 
             if (delim) {
                 size_t len = delim - path;
@@ -845,7 +845,7 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
     /* Calculate size of return buffer */
     size_t bufsz = 0;
     if (calculate->home != NULL) {
-        wchar_t *p;
+        const wchar_t *p;
         bufsz = 1;
         for (p = PYTHONPATH; *p; p++) {
             if (*p == DELIM) {
@@ -922,8 +922,8 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
             *buf++ = DELIM;
         }
     } else {
-        wchar_t *p = PYTHONPATH;
-        wchar_t *q;
+        const wchar_t *p = PYTHONPATH;
+        const wchar_t *q;
         size_t n;
         for (;;) {
             q = wcschr(p, DELIM);
@@ -967,10 +967,10 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
     */
     if (prefix[0] == L'\0') {
         wchar_t lookBuf[MAXPATHLEN+1];
-        wchar_t *look = buf - 1; /* 'buf' is at the end of the buffer */
+        const wchar_t *look = buf - 1; /* 'buf' is at the end of the buffer */
         while (1) {
             Py_ssize_t nchars;
-            wchar_t *lookEnd = look;
+            const wchar_t *lookEnd = look;
             /* 'look' will end up one character before the
                start of the path in question - even if this
                is one character before the start of the buffer

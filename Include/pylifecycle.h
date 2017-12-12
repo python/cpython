@@ -37,10 +37,10 @@ typedef struct {
 #endif
 
 
-PyAPI_FUNC(void) Py_SetProgramName(wchar_t *);
+PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 
-PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
+PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
 #ifndef Py_LIMITED_API

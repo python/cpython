@@ -338,7 +338,7 @@ Process-wide parameters
    .. versionadded:: 3.4
 
 
-.. c:function:: void Py_SetProgramName(wchar_t *name)
+.. c:function:: void Py_SetProgramName(const wchar_t *name)
 
    .. index::
       single: Py_Initialize()
@@ -605,7 +605,7 @@ Process-wide parameters
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
 
-.. c:function:: void Py_SetPythonHome(wchar_t *home)
+.. c:function:: void Py_SetPythonHome(const wchar_t *home)
 
    Set the default "home" directory, that is, the location of the standard
    Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the

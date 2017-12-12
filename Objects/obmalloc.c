@@ -1167,7 +1167,7 @@ new_arena(void)
     static int debug_stats = -1;
 
     if (debug_stats == -1) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
+        const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
     if (debug_stats)

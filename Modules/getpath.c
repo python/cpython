@@ -910,7 +910,7 @@ calculate_init(PyCalculatePath *calculate,
                const _PyMainInterpreterConfig *main_config)
 {
     size_t len;
-    char *path = getenv("PATH");
+    const char *path = getenv("PATH");
     if (path) {
         calculate->path_env = Py_DecodeLocale(path, &len);
         if (!calculate->path_env) {
