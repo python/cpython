@@ -533,16 +533,16 @@ _PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
     return pyurandom(buffer, size, 0, 1);
 }
 
-int Py_ReadHashSeed(char *seed_text,
+int Py_ReadHashSeed(const char *seed_text,
                     int *use_hash_seed,
                     unsigned long *hash_seed)
 {
     Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
     /* Convert a text seed to a numeric one */
     if (seed_text && *seed_text != '\0' && strcmp(seed_text, "random") != 0) {
-        char *endptr = seed_text;
+        const char *endptr = seed_text;
         unsigned long seed;
-        seed = strtoul(seed_text, &endptr, 10);
+        seed = strtoul(seed_text, (char **)&endptr, 10);
         if (*endptr != '\0'
             || seed > 4294967295UL
             || (errno == ERANGE && seed == ULONG_MAX))
@@ -604,7 +604,7 @@ init_hash_secret(int use_hash_seed,
 _PyInitError
 _Py_HashRandomization_Init(_PyCoreConfig *core_config)
 {
-    char *seed_text;
+    const char *seed_text;
     int use_hash_seed = core_config->use_hash_seed;
     unsigned long hash_seed = core_config->hash_seed;
 
