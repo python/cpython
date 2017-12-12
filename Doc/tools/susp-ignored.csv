@@ -327,3 +327,6 @@ whatsnew/changelog,,:end,str[start:end]
 library/binascii,,`,'`'
 library/uu,,`,'`'
 whatsnew/3.7,,`,'`'
+whatsnew/3.7,,::,error::BytesWarning
+whatsnew/changelog,,::,error::BytesWarning
+whatsnew/changelog,,::,default::BytesWarning
