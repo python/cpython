@@ -6542,12 +6542,6 @@ PyInit__socket(void)
 #ifdef MS_WINDOWS
     if (support_wsa_no_inherit == -1) {
         support_wsa_no_inherit = IsWindows7SP1OrGreater();
-        DWORD version = GetVersion();
-        DWORD major = (DWORD)LOBYTE(LOWORD(version));
-        DWORD minor = (DWORD)HIBYTE(LOWORD(version));
-        /* need Windows 7 SP1, 2008 R2 SP1 or later */
-        support_wsa_no_inherit = major > 6 || (major == 6 && minor >= 1);
-#endif
     }
 #endif
 
