@@ -774,16 +774,82 @@ pymain_add_warnings_optlist(_Py_OptList *warnings)
     return 0;
 }
 
+
+static int
+pymain_add_warning_dev_mode(_PyCoreConfig *core_config)
+{
+    if (core_config->dev_mode) {
+        PyObject *option = PyUnicode_FromString("default");
+        if (option == NULL) {
+            return -1;
+        }
+        if (_PySys_AddWarnOptionWithError(option)) {
+            Py_DECREF(option);
+            return -1;
+        }
+        Py_DECREF(option);
+    }
+    return 0;
+}
+
+
+static int
+pymain_add_warning_bytes_flag(int bytes_warning_flag)
+{
+    /* If the bytes_warning_flag isn't set, bytesobject.c and bytearrayobject.c
+     * don't even try to emit a warning, so we skip setting the filter in that
+     * case.
+     */
+    if (bytes_warning_flag) {
+        const char *filter = (bytes_warning_flag > 1) ? "error::BytesWarning":
+                                                        "default::BytesWarning";
+        PyObject *option = PyUnicode_FromString(filter);
+        if (option == NULL) {
+            return -1;
+        }
+        if (_PySys_AddWarnOptionWithError(option)) {
+            Py_DECREF(option);
+            return -1;
+        }
+        Py_DECREF(option);
+    }
+    return 0;
+}
+
+
 static int
 pymain_add_warnings_options(_PyMain *pymain)
 {
     PySys_ResetWarnOptions();
 
+    /* The priority order for warnings configuration is (highest precedence
+     * first):
+     *
+     * - the BytesWarning filter, if needed ('-b', '-bb')
+     * - any '-W' command line options; then
+     * - the 'PYTHONWARNINGS' environment variable; then
+     * - the dev mode filter ('-X dev', 'PYTHONDEVMODE'); then
+     * - any implicit filters added by _warnings.c/warnings.py
+     *
+     * All settings except the last are passed to the warnings module via
+     * the `sys.warnoptions` list. Since the warnings module works on the basis
+     * of "the most recently added filter will be checked first", we add
+     * the lowest precedence entries first so that later entries override them.
+     */
+
+    if (pymain_add_warning_dev_mode(&pymain->core_config) < 0) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
+    }
     if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     if (pymain_add_warnings_optlist(&pymain->cmdline.warning_options) < 0) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
+    }
+    if (pymain_add_warning_bytes_flag(pymain->cmdline.bytes_warning) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }

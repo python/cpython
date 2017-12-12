@@ -1,0 +1,3 @@
+`-X dev` now injects a ``'default'`` entry into sys.warnoptions, ensuring
+that it behaves identically to actually passing ``-Wdefault`` at the command
+line.
