@@ -555,6 +555,12 @@ class SSLProtocol(protocols.Protocol):
         # the SSL handshake
         self._write_backlog.append((b'', 1))
         self._loop.call_soon(self._process_write_backlog)
+        self._loop.call_later(10, self._handshake_timeout)
+
+    def _handshake_timeout(self):
+        if self._in_handshake == True:
+            logger.debug("%r stalled during handshake", self)
+            self._abort()
 
     def _on_handshake_complete(self, handshake_exc):
         self._in_handshake = False
