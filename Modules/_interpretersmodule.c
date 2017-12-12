@@ -271,10 +271,10 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     if (main_mod == NULL)
         return -1;
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
-    Py_INCREF(ns);
     Py_DECREF(main_mod);
     if (ns == NULL)
         return -1;
+    Py_INCREF(ns);
 
     // Apply the cross-interpreter data.
     if (shared != NULL) {
