@@ -92,9 +92,11 @@ class WindowsSignalTests(unittest.TestCase):
 class WakeupFDTests(unittest.TestCase):
 
     def test_invalid_call(self):
+        # First parameter is positional-only
         with self.assertRaises(TypeError):
             signal.set_wakeup_fd(signum=signal.SIGINT)
 
+        # warn_on_full_buffer is a keyword-only parameter
         with self.assertRaises(TypeError):
             signal.set_wakeup_fd(signal.SIGINT, False)
 

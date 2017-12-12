@@ -341,7 +341,7 @@ The :mod:`signal` module defines the following functions:
       On Windows, the function now also supports socket handles.
 
    .. versionchanged:: 3.7
-      Added ``warn_on_full_buffer``.
+      Added ``warn_on_full_buffer`` parameter.
 
 .. function:: siginterrupt(signalnum, flag)
 
