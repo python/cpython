@@ -188,14 +188,11 @@ resolution on Linux and Windows.
 New Development Mode: -X dev
 ----------------------------
 
-Add a new "development mode": ``-X dev`` command line option to enable debug
-checks at runtime.
-
-In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
-default -X faulthandler ...``, except that the PYTHONMALLOC environment
-variable is not set in practice.
-
-See :option:`-X` ``dev`` for the details.
+Add a new "development mode": :option:`-X` ``dev`` command line option and
+:envvar:`PYTHONDEVMODE` environment variable to enable CPython's "development
+mode", introducing additional runtime checks which are too expensive to be
+enabled by default. See :option:`-X` ``dev`` documentation for the effects of
+the development mode.
 
 Hash-based pycs
 ---------------
@@ -480,6 +477,29 @@ uu
 Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+warnings
+--------
+
+The initialization of the default warnings filters has changed as follows:
+
+* warnings enabled via command line options (including those for :option:`-b`
+  and the new CPython-specific ``-X dev`` option) are always passed to the
+  warnings machinery via the ``sys.warnoptions`` attribute.
+* warnings filters enabled via the command line or the environment now have the
+  following precedence order:
+
+     * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
+     * any filters specified with :option:`-W`
+     * any filters specified with :envvar:`PYTHONWARNINGS`
+     * any other CPython specific filters (e.g. the ``default`` filter added
+       for the new ``-X dev`` mode)
+     * any implicit filters defined directly by the warnings machinery
+* in CPython debug builds, all warnings are now displayed by default (the
+  implicit filter list is empty)
+
+(Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
+:issue:`32043`, and :issue:`32230`)
 
 xml.etree
 ---------
@@ -854,6 +874,12 @@ Other CPython implementation changes
   either in embedding applications, or in CPython itself.
   (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
 
+* Due to changes in the way the default warnings filters are configured,
+  setting ``Py_BytesWarningFlag`` to a value greater than one is no longer
+  sufficient to both emit ``BytesWarning`` messages and have them converted
+  to exceptions. Instead, the flag must be set (to cause the warnings to be
+  emitted in the first place), and an explicit ``error::BytesWarning``
+  warnings filter added to convert them to exceptions.
 
 Documentation
 =============
