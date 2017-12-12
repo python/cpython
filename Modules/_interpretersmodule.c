@@ -269,11 +269,11 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 {
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
     if (main_mod == NULL)
-        return -1;
+        goto error;
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
     Py_DECREF(main_mod);
     if (ns == NULL)
-        return -1;
+        goto error;
     Py_INCREF(ns);
 
     // Apply the cross-interpreter data.
@@ -281,7 +281,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
         for (struct _shareditem *item=shared; item->name != NULL; item += 1) {
             if (_shareditem_apply(shared, ns) != 0) {
                 Py_DECREF(ns);
-                return -1;
+                goto error;
             }
         }
     }
@@ -290,14 +290,17 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
     Py_DECREF(ns);
     if (result == NULL) {
-        // Get the exception from the subinterpreter.
-        *exc = _get_shared_exception();
-        // XXX Clear the exception?
+        goto error;
     } else {
         Py_DECREF(result);  // We throw away the result.
     }
 
     return 0;
+
+error:
+    *exc = _get_shared_exception();
+    PyErr_Clear();
+    return -1;
 }
 
 static int
@@ -318,9 +321,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Run the script.
     struct _shared_exception *exc = NULL;
-    if (_run_script(interp, codestr, shared, &exc) != 0) {
-        // XXX What to do if the the result isn't 0?
-    }
+    int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
     if (save_tstate != NULL)
@@ -336,7 +337,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
         PyMem_Free(shared);
     }
 
-    return 0;
+    return result;
 }
 
 
