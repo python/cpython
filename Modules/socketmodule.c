@@ -297,9 +297,10 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #  include <fcntl.h>
 # endif
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800
-/* Provides the IsWindows7SP1OrGreater() function */
-#include <VersionHelpers.h>
+/* `VersionHelpers.h` is not necessarily available based on `_MSC_VER`. */
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(_USING_V110_SDK71_)
+  /* Provides the IsWindows7SP1OrGreater() function */
+  #include <VersionHelpers.h>
 #endif
 
 #endif
@@ -6543,7 +6544,7 @@ PyInit__socket(void)
 
 #ifdef MS_WINDOWS
     if (support_wsa_no_inherit == -1) {
-#if defined(_MSC_VER) && _MSC_VER >= 1800
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(_USING_V110_SDK71_)
         support_wsa_no_inherit = IsWindows7SP1OrGreater();
 #else
         DWORD version = GetVersion();
