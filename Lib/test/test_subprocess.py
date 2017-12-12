@@ -1134,10 +1134,9 @@ class ProcessTestCase(BaseTestCase):
         self._test_bufsize_equal_one(line, line, universal_newlines=True)
 
     def test_bufsize_equal_one_binary_mode(self):
-        # line is not flushed in binary mode with bufsize=1.
-        # we should get empty response
-        line = b'line' + os.linesep.encode() # assume ascii-based locale
-        self._test_bufsize_equal_one(line, b'', universal_newlines=False)
+        # bufsize=1 should not be accepted in binary mode.
+        self.assertRaises(ValueError, self._test_bufsize_equal_one,
+            b'', b'', universal_newlines=False)
 
     def test_leaking_fds_on_error(self):
         # see bug #5179: Popen leaks file descriptors to PIPEs if

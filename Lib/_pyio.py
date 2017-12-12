@@ -198,6 +198,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise ValueError("binary mode doesn't take an errors argument")
     if binary and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
+    if binary and buffering == 1:
+        raise ValueError("line buffering is not supported in binary mode")
     raw = FileIO(file,
                  (creating and "x" or "") +
                  (reading and "r" or "") +

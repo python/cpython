@@ -721,12 +721,20 @@ class Popen(object):
 
         self._closed_child_pipe_fds = False
 
+        if self.text_mode:
+            if bufsize == 1:
+                line_buffering = True
+                # line buffering is not supported in binary mode
+                bufsize = -1
+            else:
+                line_buffering = False
+
         try:
             if p2cwrite != -1:
                 self.stdin = io.open(p2cwrite, 'wb', bufsize)
                 if self.text_mode:
                     self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
-                            line_buffering=(bufsize == 1),
+                            line_buffering=line_buffering,
                             encoding=encoding, errors=errors)
             if c2pread != -1:
                 self.stdout = io.open(c2pread, 'rb', bufsize)

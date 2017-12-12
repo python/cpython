@@ -167,7 +167,7 @@ class OtherFileTests:
     def testSetBufferSize(self):
         # make sure that explicitly setting the buffer size doesn't cause
         # misbehaviour especially with repeated close() calls
-        for s in (-1, 0, 1, 512):
+        for s in (-1, 0, 512):
             try:
                 f = self.open(TESTFN, 'wb', s)
                 f.write(str(s).encode("ascii"))
@@ -180,6 +180,10 @@ class OtherFileTests:
             except OSError as msg:
                 self.fail('error setting buffer size %d: %s' % (s, str(msg)))
             self.assertEqual(d, s)
+
+        # test that attempts to use line buffering in binary mode are rejected
+        self.assertRaises(ValueError, self.open, TESTFN, 'wb', 1)
+        self.assertRaises(ValueError, self.open, TESTFN, 'rb', 1)
 
     def testTruncateOnWindows(self):
         # SF bug <http://www.python.org/sf/801631>
