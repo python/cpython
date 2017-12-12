@@ -902,7 +902,6 @@ class Sequence(Reversible, Collection):
 
            Supporting start and stop arguments is optional, but
            recommended.
-
         '''
         if start is not None and start < 0:
             start = max(len(self) + start, 0)
