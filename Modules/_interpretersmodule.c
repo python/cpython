@@ -18,6 +18,8 @@ _get_current(void)
     return tstate->interp;
 }
 
+static PyObject * _interp_failed_error;
+
 /* sharing-specific functions and structs */
 
 static int
@@ -628,12 +630,16 @@ static struct PyModuleDef interpretersmodule = {
 PyMODINIT_FUNC
 PyInit__interpreters(void)
 {
-    PyObject *module;
-
-    module = PyModule_Create(&interpretersmodule);
+    PyObject *module = PyModule_Create(&interpretersmodule);
     if (module == NULL)
         return NULL;
+    PyObject *ns = PyModule_GetDict(module);  // borrowed
 
+    _interp_failed_error = PyErr_NewException("_interpreters.RunFailedError",
+                                              PyExc_RuntimeError, NULL);
+    if (_interp_failed_error == NULL)
+        return NULL;
+    PyDict_SetItemString(ns, "RunFailedError", _interp_failed_error);
 
     return module;
 }
