@@ -173,7 +173,8 @@ static struct _shared_exception *
 _get_shared_exception(void)
 {
     struct _shared_exception *exc = PyMem_NEW(struct _shared_exception, 1);
-    // XXX Fatal if NULL?
+    if (exc == NULL)
+        return NULL;
     PyErr_Fetch(&exc->exc, &exc->value, &exc->tb);
     return exc;
 }
@@ -330,6 +331,11 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     // Propagate any exception out to the caller.
     if (exc != NULL) {
         _apply_shared_exception(exc);
+        PyMem_Free(exc);
+    }
+    else if (result != 0) {
+        // We were unable to allocate a shared exception.
+        PyErr_NoMemory();
     }
 
     if (shared != NULL) {
