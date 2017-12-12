@@ -1550,7 +1550,25 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         if (rc == SQLITE_NOMEM) {
             (void)PyErr_NoMemory();
         } else {
+#if SQLITE_VERSION_NUMBER > 3007015
             PyErr_SetString(pysqlite_OperationalError, sqlite3_errstr(rc));
+#else
+            switch (rc) {
+            case SQLITE_READONLY:
+                PyErr_SetString(pysqlite_OperationalError,
+                                "attempt to write a readonly database");
+                break;
+            case SQLITE_BUSY:
+                PyErr_SetString(pysqlite_OperationalError, "database is locked");
+                break;
+            case SQLITE_LOCKED:
+                PyErr_SetString(pysqlite_OperationalError, "database table is locked");
+                break;
+            default:
+                PyErr_Format(pysqlite_OperationalError, "unrecognized error code: %d", rc);
+                break;
+            }
+#endif
         }
     }
 
