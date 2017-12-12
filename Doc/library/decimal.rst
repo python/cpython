@@ -2115,3 +2115,17 @@ Alternatively, inputs can be rounded upon creation using the
 
    >>> Context(prec=5, rounding=ROUND_DOWN).create_decimal('1.2345678')
    Decimal('1.2345')
+
+Q. Is the CPython implementation fast for large numbers?
+
+A. Yes.  A change was added to the Cpython specific implementation that uses
+better than expected algorithms which can payoff nicely when used with very
+large numbers.  However, to realize this performance gain, the context needs
+to be set for unrounded calculations.
+
+    >>> c = getcontext()
+    >>> c.prec = MAX_PREC
+    >>> c.Emax = MAX_EMAX
+    >>> c.Emin = MIN_EMIN
+
+.. versionadded:: 3.3
