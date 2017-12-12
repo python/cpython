@@ -423,7 +423,7 @@ So does an unrecognized ID.");
 
 
 static PyObject *
-interp_enumerate(PyObject *self)
+interp_list_all(PyObject *self)
 {
     PyObject *ids, *id;
     PyInterpreterState *interp;
@@ -447,8 +447,8 @@ interp_enumerate(PyObject *self)
     return ids;
 }
 
-PyDoc_STRVAR(enumerate_doc,
-"enumerate() -> [ID]\n\
+PyDoc_STRVAR(list_all_doc,
+"list_all() -> [ID]\n\
 \n\
 Return a list containing the ID of every existing interpreter.");
 
@@ -581,8 +581,8 @@ static PyMethodDef module_functions[] = {
     {"destroy",                 (PyCFunction)interp_destroy,
      METH_VARARGS, destroy_doc},
 
-    {"enumerate",               (PyCFunction)interp_enumerate,
-     METH_NOARGS, enumerate_doc},
+    {"list_all",               (PyCFunction)interp_list_all,
+     METH_NOARGS, list_all_doc},
     {"get_current",             (PyCFunction)interp_get_current,
      METH_NOARGS, get_current_doc},
     {"get_main",                (PyCFunction)interp_get_main,
