@@ -802,17 +802,20 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertEqual(stdout.rstrip(), b'False')
 
         sts, stdout, stderr = assert_python_ok('-c', code,
-                                               PYTHONASYNCIODEBUG='')
+                                               PYTHONASYNCIODEBUG='',
+                                               PYTHONDEVMODE='')
         self.assertEqual(stdout.rstrip(), b'False')
 
         sts, stdout, stderr = assert_python_ok('-c', code,
-                                               PYTHONASYNCIODEBUG='1')
+                                               PYTHONASYNCIODEBUG='1',
+                                               PYTHONDEVMODE='')
         self.assertEqual(stdout.rstrip(), b'True')
 
         sts, stdout, stderr = assert_python_ok('-E', '-c', code,
                                                PYTHONASYNCIODEBUG='1')
         self.assertEqual(stdout.rstrip(), b'False')
 
+        # -X dev
         sts, stdout, stderr = assert_python_ok('-E', '-X', 'dev',
                                                '-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
