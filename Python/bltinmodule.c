@@ -48,7 +48,7 @@ _Py_IDENTIFIER(stderr);
 #include "clinic/bltinmodule.c.h"
 
 static PyObject*
-update_bases(PyObject* bases)
+update_bases(PyObject* bases, PyObject** args, int nargs)
 {
     int i, j;
     PyObject *base, *meth, *new_base, *result, *new_bases = NULL;
@@ -57,8 +57,8 @@ update_bases(PyObject* bases)
 
     /* We have a separate cycle to calculate replacements with the idea that in
        most cases we just scroll quickly though it and return original bases */
-    for (i = 0; i < PyTuple_GET_SIZE(bases); i++) {
-        base  = PyTuple_GET_ITEM(bases, i);
+    for (i = 0; i < nargs; i++) {
+        base  = args[i];
         if (PyType_Check(base)) {
             if (new_bases) {
                 if (PyList_Append(new_bases, base) < 0) {
@@ -74,6 +74,7 @@ update_bases(PyObject* bases)
             PyErr_Clear();
             if (new_bases) {
                 if (PyList_Append(new_bases, base) < 0) {
+                    Py_DECREF(meth);
                     goto error;
                 }
             }
@@ -90,7 +91,7 @@ update_bases(PyObject* bases)
                 copy previously encountered bases. */
                 new_bases = PyList_New(i);
                 for (j = 0; j < i; j++) {
-                    base = PyTuple_GET_ITEM(bases, j);
+                    base = args[j];
                     PyList_SET_ITEM(new_bases, j, base);
                     Py_INCREF(base);
                 }
@@ -149,7 +150,7 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
     if (orig_bases == NULL)
         return NULL;
 
-    bases = update_bases(orig_bases);
+    bases = update_bases(orig_bases, args + 2, nargs - 2);
     if (bases == NULL) {
         Py_DECREF(orig_bases);
         return NULL;
