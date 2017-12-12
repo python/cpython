@@ -6,7 +6,7 @@ __all__ = (
     'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
     'current_task', 'all_tasks', '_register_task', '_enter_task',
-    '_leave_task', '_unregister_task'
+    '_leave_task', '_unregister_task',
 )
 
 import concurrent.futures
@@ -21,35 +21,8 @@ from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
-from .base_tasks import _all_tasks, _current_tasks, all_tasks, current_task
-
-
-def _register_task(loop, task):
-    """Register a new task in asyncio as executed by loop.
-
-    Returns None.
-    """
-    _all_tasks[task] = loop
-
-
-def _enter_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not None:
-        raise RuntimeError(f"Entering into task {task!r} "
-                           f"when other task {current_task!r} is executed.")
-    _current_tasks[loop] = task
-
-
-def _leave_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not task:
-        raise RuntimeError(f"Leaving task {task!r} "
-                           f"is not current {current_task!r}.")
-    del _current_tasks[loop]
-
-
-def _unregister_task(loop, task):
-    _all_tasks.pop(task, None)
+from .base_tasks import (all_tasks, current_task, _register_task,
+                         _enter_task, _leave_task, _unregister_task)
 
 
 class Task(futures.Future):

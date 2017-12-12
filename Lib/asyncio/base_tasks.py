@@ -96,3 +96,31 @@ def all_tasks(loop=None):
     if loop is None:
         loop = events.get_event_loop()
     return {t for t, l in _all_tasks.items() if l is loop}
+
+
+def _register_task(loop, task):
+    """Register a new task in asyncio as executed by loop.
+
+    Returns None.
+    """
+    _all_tasks[task] = loop
+
+
+def _enter_task(loop, task):
+    current_task = _current_tasks.get(loop)
+    if current_task is not None:
+        raise RuntimeError(f"Entering into task {task!r} "
+                           f"when other task {current_task!r} is executed.")
+    _current_tasks[loop] = task
+
+
+def _leave_task(loop, task):
+    current_task = _current_tasks.get(loop)
+    if current_task is not task:
+        raise RuntimeError(f"Leaving task {task!r} "
+                           f"is not current {current_task!r}.")
+    del _current_tasks[loop]
+
+
+def _unregister_task(loop, task):
+    _all_tasks.pop(task, None)
