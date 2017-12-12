@@ -21,17 +21,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "Python.h"
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#else
-#ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-#endif
-
 #include "cache.h"
 #include "module.h"
 #include "structmember.h"
