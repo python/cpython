@@ -18,8 +18,6 @@ _get_current(void)
     return tstate->interp;
 }
 
-static PyObject * _interp_failed_error;
-
 /* sharing-specific functions and structs */
 
 static int
@@ -163,33 +161,43 @@ _shareditem_apply(struct _shareditem *item, PyObject *ns)
     return res;
 }
 
-// XXX This cannot use PyObject fields.
+// Ultimately we'd like to preserve enough information about the
+// exception and traceback that we could re-constitute (or at least
+// simulate, a la traceback.TracebackException), and even chain, a copy
+// of the exception in the calling interpreter.
 
 struct _shared_exception {
-    PyObject *exc;
-    PyObject *value;
-    PyObject *tb;
+    char *msg;
 };
 
 static struct _shared_exception *
 _get_shared_exception(void)
 {
-    struct _shared_exception *exc = PyMem_NEW(struct _shared_exception, 1);
-    if (exc == NULL)
+    struct _shared_exception *err = PyMem_NEW(struct _shared_exception, 1);
+    if (err == NULL)
         return NULL;
-    PyErr_Fetch(&exc->exc, &exc->value, &exc->tb);
-    return exc;
+    PyObject *exc;
+    PyObject *value;
+    PyObject *tb;
+    PyErr_Fetch(&exc, &value, &tb);
+    PyObject *msg = PyUnicode_FromFormat("%S: %S", exc, value);
+    if (msg == NULL) {
+        err->msg = "unable to format exception";
+        return NULL;
+    }
+    err->msg = (char *)PyUnicode_AsUTF8(msg);
+    if (err->msg == NULL) {
+        err->msg = "unable to encode exception";
+    }
+    return err;
 }
+
+static PyObject * _interp_failed_error;
 
 static void
 _apply_shared_exception(struct _shared_exception *exc)
 {
-    if (PyErr_Occurred()) {
-        _PyErr_ChainExceptions(exc->exc, exc->value, exc->tb);
-    } else {
-        PyErr_Restore(exc->exc, exc->value, exc->tb);
-    }
-
+    PyErr_SetString(_interp_failed_error, exc->msg);
 }
 
 /* interpreter-specific functions */
