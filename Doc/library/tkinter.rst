@@ -69,32 +69,44 @@ Or, more often::
 
 .. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
 
-   Toplevel Tk widget, which is usually the main window of an application.
-   Each instance has its own associated Tcl interpreter.
+   Construct a toplevel Tk widget, which is usually the main window of an
+   application.  Each instance has its own associated Tcl interpreter.
 
    The :class:`Tk` class is typically instantiated using all default values.
    However, the following keyword arguments are currently recognized:
 
    *screenName*
-      Sets the :envvar:`DISPLAY` environmental variable. (X11 only)
+      When given (as a string), sets the :envvar:`DISPLAY` environmental
+      variable. (X11 only)
    *baseName*
-      Reads the profile file :file:`{baseName}.tcl` into the Tcl interpreter
-      and calls :func:`exec` on the contents of :file:`{baseName}.py`.
+      Name of the profile file used in :meth:`readprofile`.  By default,
+      *baseName* is derived from the program name (``sys.argv[0]``).
    *className*
-      Name of the widget class.  Used as a profile file name
-      (:file:`{className}.tcl` and :file:`{className}.py` load before the
-      *baseName* files), and also used as the name with which Tcl is
-      invoked (*argv0* in *interp*).
+      Name of the widget class.  Used as a profile file in :meth:`readprofile`
+      and used as the name with which Tcl is invoked (*argv0* in *interp*).
    *useTk*
-      If ``True``, initialize the Tk subsystem.  :func:`Tcl` sets this to
-      ``False``.
+      If ``True``, initialize the Tk subsystem.  The :func:`tkinter.Tcl() <Tcl>`
+      function sets this to ``False``.
    *sync*
-      If ``True``, execute all X server commands synchronously, so that errors are
-      reported immediately.
+      If ``True``, execute all X server commands synchronously, so that errors
+      are reported immediately.
    *use*
-      Specifies that the main window for the application is to be embedded in
-      the window whose identifier is given, instead of being created as an
-      independent toplevel window.
+      Specifies the *id* of the main window in which to embed the application,
+      instead of it being created as an independent toplevel window. *id* must
+      be specified in the same way as the value for the -use option for
+      toplevel widgets (that is, it has a form like that returned by
+      :meth:`winfo_id`).
+
+      Note that on some platforms this will only work correctly if *id* refers
+      to a Tk frame or toplevel that has its -container option enabled.
+
+   .. method:: readprofile(self, baseName, className)
+
+      Read the profile files, :file:`.{className}.tcl` and
+      :file:`.{baseName}.tcl`, into the Tcl interpreter and call :func:`exec`
+      on the contents of :file:`.{className}.py` and :file:`.{baseName}.py`.
+      The path for the profile files is the :envvar:`HOME` environmental
+      variable or, if that isn't defined, then :attr:`os.curdir`.
 
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
