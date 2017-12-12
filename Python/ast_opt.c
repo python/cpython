@@ -288,19 +288,13 @@ static int fold_compare(expr_ty node, PyArena *arena)
 static int astfold_mod(mod_ty node_, PyArena* ctx_);
 static int astfold_stmt(stmt_ty node_, PyArena* ctx_);
 static int astfold_expr(expr_ty node_, PyArena* ctx_);
-static int astfold_boolop(boolop_ty node_, PyArena* ctx_);
-static int astfold_operator(operator_ty node_, PyArena* ctx_);
-static int astfold_unaryop(unaryop_ty node_, PyArena* ctx_);
 static int astfold_arguments(arguments_ty node_, PyArena* ctx_);
 static int astfold_comprehension(comprehension_ty node_, PyArena* ctx_);
-static int astfold_cmpop(cmpop_ty node_, PyArena* ctx_);
 static int astfold_keyword(keyword_ty node_, PyArena* ctx_);
-static int astfold_expr_context(expr_context_ty node_, PyArena* ctx_);
 static int astfold_slice(slice_ty node_, PyArena* ctx_);
 static int astfold_arg(arg_ty node_, PyArena* ctx_);
 static int astfold_withitem(withitem_ty node_, PyArena* ctx_);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena* ctx_);
-static int astfold_alias(alias_ty node_, PyArena* ctx_);
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_)) \
         return 0;
@@ -354,17 +348,14 @@ static int astfold_expr(expr_ty node_, PyArena* ctx_)
 {
     switch (node_->kind) {
     case BoolOp_kind:
-        CALL(astfold_boolop, boolop_ty, node_->v.BoolOp.op);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.BoolOp.values);
         break;
     case BinOp_kind:
         CALL(astfold_expr, expr_ty, node_->v.BinOp.left);
-        CALL(astfold_operator, operator_ty, node_->v.BinOp.op);
         CALL(astfold_expr, expr_ty, node_->v.BinOp.right);
         CALL(fold_binop, expr_ty, node_);
         break;
     case UnaryOp_kind:
-        CALL(astfold_unaryop, unaryop_ty, node_->v.UnaryOp.op);
         CALL(astfold_expr, expr_ty, node_->v.UnaryOp.operand);
         CALL(fold_unaryop, expr_ty, node_);
         break;
@@ -412,7 +403,6 @@ static int astfold_expr(expr_ty node_, PyArena* ctx_)
         break;
     case Compare_kind:
         CALL(astfold_expr, expr_ty, node_->v.Compare.left);
-        CALL_INT_SEQ(astfold_cmpop, cmpop_ty, node_->v.Compare.ops);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.Compare.comparators);
         CALL(fold_compare, expr_ty, node_);
         break;
@@ -430,28 +420,20 @@ static int astfold_expr(expr_ty node_, PyArena* ctx_)
         break;
     case Attribute_kind:
         CALL(astfold_expr, expr_ty, node_->v.Attribute.value);
-        CALL(astfold_expr_context, expr_context_ty, node_->v.Attribute.ctx);
         break;
     case Subscript_kind:
         CALL(astfold_expr, expr_ty, node_->v.Subscript.value);
         CALL(astfold_slice, slice_ty, node_->v.Subscript.slice);
-        CALL(astfold_expr_context, expr_context_ty, node_->v.Subscript.ctx);
         CALL(fold_subscr, expr_ty, node_);
         break;
     case Starred_kind:
         CALL(astfold_expr, expr_ty, node_->v.Starred.value);
-        CALL(astfold_expr_context, expr_context_ty, node_->v.Starred.ctx);
-        break;
-    case Name_kind:
-        CALL(astfold_expr_context, expr_context_ty, node_->v.Name.ctx);
         break;
     case List_kind:
         CALL_SEQ(astfold_expr, expr_ty, node_->v.List.elts);
-        CALL(astfold_expr_context, expr_context_ty, node_->v.List.ctx);
         break;
     case Tuple_kind:
         CALL_SEQ(astfold_expr, expr_ty, node_->v.Tuple.elts);
-        CALL(astfold_expr_context, expr_context_ty, node_->v.Tuple.ctx);
         CALL(fold_tuple, expr_ty, node_);
         break;
     default:
@@ -480,27 +462,9 @@ static int astfold_slice(slice_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_expr_context(expr_context_ty node_, PyArena* ctx_)
-{
-    switch (node_) {
-    default:
-        break;
-    }
-    return 1;
-}
-
 static int astfold_keyword(keyword_ty node_, PyArena* ctx_)
 {
     CALL(astfold_expr, expr_ty, node_->value);
-    return 1;
-}
-
-static int astfold_cmpop(cmpop_ty node_, PyArena* ctx_)
-{
-    switch (node_) {
-    default:
-        break;
-    }
     return 1;
 }
 
@@ -526,33 +490,6 @@ static int astfold_arguments(arguments_ty node_, PyArena* ctx_)
 static int astfold_arg(arg_ty node_, PyArena* ctx_)
 {
     CALL_OPT(astfold_expr, expr_ty, node_->annotation);
-    return 1;
-}
-
-static int astfold_unaryop(unaryop_ty node_, PyArena* ctx_)
-{
-    switch (node_) {
-    default:
-        break;
-    }
-    return 1;
-}
-
-static int astfold_operator(operator_ty node_, PyArena* ctx_)
-{
-    switch (node_) {
-    default:
-        break;
-    }
-    return 1;
-}
-
-static int astfold_boolop(boolop_ty node_, PyArena* ctx_)
-{
-    switch (node_) {
-    default:
-        break;
-    }
     return 1;
 }
 
@@ -589,7 +526,6 @@ static int astfold_stmt(stmt_ty node_, PyArena* ctx_)
         break;
     case AugAssign_kind:
         CALL(astfold_expr, expr_ty, node_->v.AugAssign.target);
-        CALL(astfold_operator, operator_ty, node_->v.AugAssign.op);
         CALL(astfold_expr, expr_ty, node_->v.AugAssign.value);
         break;
     case AnnAssign_kind:
@@ -641,23 +577,12 @@ static int astfold_stmt(stmt_ty node_, PyArena* ctx_)
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Assert.msg);
         break;
-    case Import_kind:
-        CALL_SEQ(astfold_alias, alias_ty, node_->v.Import.names);
-        break;
-    case ImportFrom_kind:
-        CALL_SEQ(astfold_alias, alias_ty, node_->v.ImportFrom.names);
-        break;
     case Expr_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expr.value);
         break;
     default:
         break;
     }
-    return 1;
-}
-
-static int astfold_alias(alias_ty node_, PyArena* ctx_)
-{
     return 1;
 }
 
