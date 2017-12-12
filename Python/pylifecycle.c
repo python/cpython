@@ -2098,7 +2098,7 @@ _Py_FatalInitError(_PyInitError err)
 #  include "pythread.h"
 
 /* For the atexit module. */
-void _Py_PyAtExit(PyObject *module, void (*func)(PyObject *))
+void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
     PyThreadState *ts;
     PyInterpreterState *is;

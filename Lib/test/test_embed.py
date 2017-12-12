@@ -208,11 +208,6 @@ class EmbeddingTests(unittest.TestCase):
         self.assertEqual(out, '')
         self.assertEqual(err, '')
 
-    def test_atexit_callbacks(self):
-        out, err = self.run_embedded_interpreter("atexit_callbacks")
-        expected_output = "The test has passed."
-        self.assertEqual(out.strip(), expected_output)
-
 
 if __name__ == "__main__":
     unittest.main()

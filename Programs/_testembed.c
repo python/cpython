@@ -195,88 +195,6 @@ static int test_bpo20891(void)
 }
 
 
-static int test_atexit_callbacks(void) {
-    PyObject *pName = NULL, *pModule = NULL, *pFunc = NULL;
-    PyObject *pArgs = NULL, *pValue = NULL;
-    PyObject *ax_name = NULL, *ax_module = NULL;
-    PyThreadState *subinterpret = NULL;
-    PyThreadState *mainState = NULL;
-
-    _testembed_Py_Initialize();
-    mainState = PyThreadState_Get();
-    if (mainState == NULL) {
-        goto error;
-    }
-    subinterpret = Py_NewInterpreter();
-    if (subinterpret == NULL) {
-        goto error;
-    }
-    PyThreadState_Swap(subinterpret);
-    pName = PyUnicode_FromString("builtins");
-    if (pName == NULL) {
-        goto error;
-    }
-    ax_name = PyUnicode_FromString("atexit");
-    if (ax_name == NULL) {
-        goto error;
-    }
-
-    pModule = PyImport_Import(pName);
-    if (pModule == NULL) {
-        goto error;
-    }
-    ax_module = PyImport_Import(ax_name);
-    if (ax_module == NULL) {
-        goto error;
-    }
-    Py_CLEAR(pName);
-    Py_CLEAR(ax_name);
-
-    pFunc = PyObject_GetAttrString(ax_module, "register");
-    if (pFunc == NULL || !PyCallable_Check(pFunc)) {
-        goto error;
-    }
-
-    pArgs = PyTuple_New(4);
-    if (pArgs == NULL) {
-        goto error;
-    }
-    PyTuple_SetItem(pArgs, 0, PyObject_GetAttrString(pModule, "exec"));
-    PyTuple_SetItem(pArgs, 1, PyUnicode_FromString("import sys;"
-                                                   "print('The test has passed.');"
-                                                   "sys.stdout.flush()"));
-    PyTuple_SetItem(pArgs, 2, PyDict_New());
-    PyTuple_SetItem(pArgs, 3, PyDict_New());
-    pValue = PyObject_CallObject(pFunc, pArgs);
-    if (pValue == NULL) {
-        goto error;
-    }
-    Py_CLEAR(pArgs);
-    Py_CLEAR(pValue);
-    Py_CLEAR(pFunc);
-    Py_CLEAR(pModule);
-    PyErr_Clear();
-    Py_EndInterpreter(subinterpret);
-    PyThreadState_Swap(mainState);
-    if (Py_FinalizeEx() < 0) {
-        return -1;
-    }
-    return 0;
-
-error:
-    Py_XDECREF(pName);
-    Py_XDECREF(pModule);
-    Py_XDECREF(pFunc);
-    Py_XDECREF(pArgs);
-    Py_XDECREF(pValue);
-    Py_XDECREF(ax_name);
-    Py_XDECREF(ax_module);
-    Py_XDECREF(subinterpret);
-    Py_XDECREF(mainState);
-    Py_Finalize();
-    return -1;
-}
-
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -300,7 +218,6 @@ static struct TestCase TestCases[] = {
     { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
     { "pre_initialization_api", test_pre_initialization_api },
     { "bpo20891", test_bpo20891 },
-    { "atexit_callbacks", test_atexit_callbacks },
     { NULL, NULL }
 };
 
