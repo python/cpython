@@ -517,4 +517,108 @@ _asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b92f9cd2b9fb37ef input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_asyncio__register_task__doc__,
+"_register_task($module, /, loop, task)\n"
+"--\n"
+"\n"
+"Register a new task in asyncio as executed by loop.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__REGISTER_TASK_METHODDEF    \
+    {"_register_task", (PyCFunction)_asyncio__register_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__register_task__doc__},
+
+static PyObject *
+_asyncio__register_task_impl(PyObject *module, PyObject *loop,
+                             PyObject *task);
+
+static PyObject *
+_asyncio__register_task(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"loop", "task", NULL};
+    static _PyArg_Parser _parser = {"OO:_register_task", _keywords, 0};
+    PyObject *loop;
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &loop, &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__register_task_impl(module, loop, task);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_asyncio__enter_task__doc__,
+"_enter_task($module, /, loop, task)\n"
+"--\n"
+"\n"
+"Enter into task execution or resume suspended task.\n"
+"\n"
+"Task belongs to loop.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__ENTER_TASK_METHODDEF    \
+    {"_enter_task", (PyCFunction)_asyncio__enter_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__enter_task__doc__},
+
+static PyObject *
+_asyncio__enter_task_impl(PyObject *module, PyObject *loop, PyObject *task);
+
+static PyObject *
+_asyncio__enter_task(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"loop", "task", NULL};
+    static _PyArg_Parser _parser = {"OO:_enter_task", _keywords, 0};
+    PyObject *loop;
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &loop, &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__enter_task_impl(module, loop, task);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_asyncio__leave_task__doc__,
+"_leave_task($module, /, loop, task)\n"
+"--\n"
+"\n"
+"Leave task execution or suspend a task.\n"
+"\n"
+"Task belongs to loop.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__LEAVE_TASK_METHODDEF    \
+    {"_leave_task", (PyCFunction)_asyncio__leave_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__leave_task__doc__},
+
+static PyObject *
+_asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task);
+
+static PyObject *
+_asyncio__leave_task(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"loop", "task", NULL};
+    static _PyArg_Parser _parser = {"OO:_leave_task", _keywords, 0};
+    PyObject *loop;
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &loop, &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__leave_task_impl(module, loop, task);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=632fdda92fb111c7 input=a9049054013a1b77]*/
