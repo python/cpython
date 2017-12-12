@@ -822,10 +822,6 @@ regen-ast:
 		-c $(srcdir)/Python/Python-ast.c.new \
 		$(srcdir)/Parser/Python.asdl
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
-	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_ct.py \
-		$(srcdir)/Parser/Python.asdl \
-		$(srcdir)/Python/ast_opt.ct \
-		$(srcdir)/Python/ast_opt.c
 
 .PHONY: regen-opcode
 regen-opcode:
