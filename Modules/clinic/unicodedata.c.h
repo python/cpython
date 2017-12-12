@@ -284,6 +284,38 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicodedata_UCD_is_normalized__doc__,
+"is_normalized($self, form, unistr, /)\n"
+"--\n"
+"\n"
+"Return whether the Unicode string unistr is in the normal form \'form\'.\n"
+"\n"
+"Valid values for form are \'NFC\', \'NFKC\', \'NFD\', and \'NFKD\'.");
+
+#define UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF    \
+    {"is_normalized", (PyCFunction)unicodedata_UCD_is_normalized, METH_FASTCALL, unicodedata_UCD_is_normalized__doc__},
+
+static PyObject *
+unicodedata_UCD_is_normalized_impl(PyObject *self, const char *form,
+                                   PyObject *input);
+
+static PyObject *
+unicodedata_UCD_is_normalized(PyObject *self, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *form;
+    PyObject *input;
+
+    if (!_PyArg_ParseStack(args, nargs, "sO!:is_normalized",
+        &form, &PyUnicode_Type, &input)) {
+        goto exit;
+    }
+    return_value = unicodedata_UCD_is_normalized_impl(self, form, input);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicodedata_UCD_normalize__doc__,
 "normalize($self, form, unistr, /)\n"
 "--\n"
@@ -379,4 +411,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7ec9a3c8fbfd3c3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=520aad7c72eeedaf input=a9049054013a1b77]*/
