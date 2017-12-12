@@ -11,9 +11,9 @@ MODULE_NAME " provides basic warning filtering support.\n"
 
 _Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
+#ifndef Py_DEBUG
 _Py_IDENTIFIER(ignore);
-_Py_IDENTIFIER(error);
-_Py_static_string(PyId_default, "default");
+#endif
 
 static int
 check_matched(PyObject *obj, PyObject *arg)
@@ -1172,57 +1172,25 @@ create_filter(PyObject *category, _Py_Identifier *id)
 static PyObject *
 init_filters(const _PyCoreConfig *config)
 {
-    int dev_mode = config->dev_mode;
-
-    Py_ssize_t count = 2;
-    if (dev_mode) {
-        count++;
-    }
-#ifndef Py_DEBUG
-    if (!dev_mode) {
-        count += 3;
-    }
-#endif
+#ifdef Py_DEBUG
+    /* Py_DEBUG builds show all warnings by default */
+    return PyList_New(0);
+#else
+    /* Other builds ignore a number of warning categories by default */
+    Py_ssize_t count = 4;
     PyObject *filters = PyList_New(count);
     if (filters == NULL)
         return NULL;
 
     size_t pos = 0;  /* Post-incremented in each use. */
-#ifndef Py_DEBUG
-    if (!dev_mode) {
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_DeprecationWarning, &PyId_ignore));
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_ImportWarning, &PyId_ignore));
-    }
-#endif
-
-    _Py_Identifier *bytes_action;
-    if (Py_BytesWarningFlag > 1)
-        bytes_action = &PyId_error;
-    else if (Py_BytesWarningFlag)
-        bytes_action = &PyId_default;
-    else
-        bytes_action = &PyId_ignore;
-    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
-                    bytes_action));
-
-    _Py_Identifier *resource_action;
-    /* resource usage warnings are enabled by default in pydebug mode */
-#ifdef Py_DEBUG
-    resource_action = &PyId_default;
-#else
-    resource_action = (dev_mode ? &PyId_default: &PyId_ignore);
-#endif
-    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
-                    resource_action));
-
-    if (dev_mode) {
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_Warning, &PyId_default));
-    }
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_DeprecationWarning, &PyId_ignore));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ImportWarning, &PyId_ignore));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ResourceWarning, &PyId_ignore));
 
     for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {
@@ -1232,6 +1200,7 @@ init_filters(const _PyCoreConfig *config)
     }
 
     return filters;
+#endif
 }
 
 static struct PyModuleDef warningsmodule = {
