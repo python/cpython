@@ -2222,7 +2222,7 @@ class BaseTaskIntrospectionTests:
             self._leave_task(loop, task2)
         self.assertIs(asyncio.current_task(loop), task1)
 
-    def test__leave_task_failure1(self):
+    def test__leave_task_failure2(self):
         task = mock.Mock()
         loop = mock.Mock()
         with self.assertRaises(RuntimeError):
