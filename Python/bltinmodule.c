@@ -48,19 +48,23 @@ _Py_IDENTIFIER(stderr);
 #include "clinic/bltinmodule.c.h"
 
 static PyObject*
-update_bases(PyObject* bases, PyObject** args, int nargs)
+update_bases(PyObject* bases)
 {
-    int i, j, ind, modified_bases = 0, tot_extra = 0;
-    PyObject *base, *meth, *new_base, *new_sub_base, *new_bases, *replacements;
+    int i, j;
+    PyObject *base, *meth, *new_base, *result, *new_bases = NULL;
     PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
 
-    replacements = NULL;
     /* We have a separate cycle to calculate replacements with the idea that in
        most cases we just scroll quickly though it and return original bases */
-    for (i = 2; i < nargs; i++){
-        base  = args[i];
+    for (i = 0; i < PyTuple_GET_SIZE(bases); i++) {
+        base  = PyTuple_GET_ITEM(bases, i);
         if (PyType_Check(base)) {
+            if (new_bases) {
+                if (PyList_Append(new_bases, base) < 0) {
+                    goto error;
+                }
+            }
             continue;
         }
         if (!(meth = _PyObject_GetAttrId(base, &PyId___mro_entries__))) {
@@ -68,6 +72,11 @@ update_bases(PyObject* bases, PyObject** args, int nargs)
                 goto error;
             }
             PyErr_Clear();
+            if (new_bases) {
+                if (PyList_Append(new_bases, base) < 0) {
+                    goto error;
+                }
+            }
             continue;
         }
         new_base = _PyObject_FastCall(meth, stack, 1);
@@ -76,7 +85,21 @@ update_bases(PyObject* bases, PyObject** args, int nargs)
             goto error;
         }
         if (PyTuple_Check(new_base)) {
-            tot_extra += PyTuple_GET_SIZE(new_base) - 1;
+            if (!new_bases) {
+                /* If this is a first successful conversion, create new_bases list and
+                copy previously encountered bases. */
+                new_bases = PyList_New(i);
+                for (j = 0; j < i; j++) {
+                    base = PyTuple_GET_ITEM(bases, j);
+                    PyList_SET_ITEM(new_bases, j, base);
+                    Py_INCREF(base);
+                }
+            }
+            if (!_PyList_Extend((PyListObject *)new_bases, new_base)) {
+                goto error;
+            }
+            Py_DECREF(Py_None);
+            Py_DECREF(new_base);
         }
         else {
             PyErr_SetString(PyExc_TypeError,
@@ -84,40 +107,15 @@ update_bases(PyObject* bases, PyObject** args, int nargs)
             Py_DECREF(new_base);
             goto error;
         }
-        if (!replacements) {
-            replacements = PyTuple_New(nargs - 2);
-        }
-        Py_INCREF(new_base);
-        PyTuple_SET_ITEM(replacements, i - 2, new_base);
-        modified_bases = 1;
     }
-    if (!modified_bases) {
+    if (!new_bases) {
         return bases;
     }
-    new_bases = PyTuple_New(nargs - 2 + tot_extra);
-    ind = 0;
-    for (i = 2; i < nargs; i++) {
-        base = args[i];
-        new_base = PyTuple_GET_ITEM(replacements, i - 2);
-        if (!new_base) {
-            Py_INCREF(base);
-            PyTuple_SET_ITEM(new_bases, ind, base);
-            ind++;
-        }
-        else {
-            for (j = 0; j < PyTuple_GET_SIZE(new_base); j++) {
-                new_sub_base = PyTuple_GET_ITEM(new_base, j);
-                Py_INCREF(new_sub_base);
-                PyTuple_SET_ITEM(new_bases, ind, new_sub_base);
-                ind++;
-            }
-            Py_DECREF(new_base);
-        }
-    }
-    Py_DECREF(replacements);
-    return new_bases;
+    result = PyList_AsTuple(new_bases);
+    Py_DECREF(new_bases);
+    return result;
 error:
-    Py_XDECREF(replacements);
+    Py_XDECREF(new_bases);
     return NULL;
 }
 
@@ -126,8 +124,7 @@ static PyObject *
 builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                         PyObject *kwnames)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;
-    PyObject *new_bases, *old_bases = NULL;
+    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *orig_bases;
     PyObject *cls = NULL, *cell = NULL;
     int isclass = 0;   /* initialize to prevent gcc warning */
 
@@ -148,18 +145,14 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                         "__build_class__: name is not a string");
         return NULL;
     }
-    bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
-    if (bases == NULL)
+    orig_bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
+    if (orig_bases == NULL)
         return NULL;
 
-    new_bases = update_bases(bases, args, nargs);
-    if (new_bases == NULL) {
-        Py_DECREF(bases);
+    bases = update_bases(orig_bases);
+    if (bases == NULL) {
+        Py_DECREF(orig_bases);
         return NULL;
-    }
-    else {
-        old_bases = bases;
-        bases = new_bases;
     }
 
     if (kwnames == NULL) {
@@ -254,8 +247,8 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
-        if (bases != old_bases) {
-            if (PyMapping_SetItemString(ns, "__orig_bases__", old_bases) < 0) {
+        if (bases != orig_bases) {
+            if (PyMapping_SetItemString(ns, "__orig_bases__", orig_bases) < 0) {
                 goto error;
             }
         }
@@ -297,8 +290,8 @@ error:
     Py_DECREF(meta);
     Py_XDECREF(mkw);
     Py_DECREF(bases);
-    if (bases != old_bases) {
-        Py_DECREF(old_bases);
+    if (bases != orig_bases) {
+        Py_DECREF(orig_bases);
     }
     return cls;
 }
