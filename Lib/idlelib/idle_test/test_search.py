@@ -1,7 +1,7 @@
 """Test SearchDialog class in idlelib.search.py"""
 
 # Does not currently test the event handler wrappers.
-# A usage test should simulate clicks and check hilighting.
+# A usage test should simulate clicks and check highlighting.
 # Tests need to be coordinated with SearchDialogBase tests
 # to avoid duplication.
 
