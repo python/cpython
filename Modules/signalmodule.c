@@ -216,7 +216,7 @@ report_wakeup_send_error(void* data)
     /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
-    res = PyErr_SetExcFromWindowsErr(PyExc_OSError, (int) (intptr_t) data);
+    PyErr_SetExcFromWindowsErr(PyExc_OSError, (int) (intptr_t) data);
     PySys_WriteStderr("Exception ignored when trying to send to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
