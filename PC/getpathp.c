@@ -791,7 +791,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate)
 
 
 static void
-calculate_home_prefix(PyCalculatePath *calculate, const wchar_t *prefix)
+calculate_home_prefix(PyCalculatePath *calculate, wchar_t *prefix)
 {
     if (calculate->home == NULL || *calculate->home == '\0') {
         if (calculate->zip_path[0] && exists(calculate->zip_path)) {
