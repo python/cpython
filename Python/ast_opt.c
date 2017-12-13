@@ -3,7 +3,7 @@
 #include "Python-ast.h"
 
 
-/* TODO: is_const and get_const_value is copied from Python/compile.c.
+/* TODO: is_const and get_const_value are copied from Python/compile.c.
    It should be deduped in the future.  Maybe, we can include this file
    from compile.c?
 */
@@ -45,7 +45,8 @@ get_const_value(expr_ty e)
     }
 }
 
-static int make_const(expr_ty node, PyObject *val, PyArena *arena)
+static int
+make_const(expr_ty node, PyObject *val, PyArena *arena)
 {
     if (val == NULL) {
         if(!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
@@ -63,7 +64,8 @@ static int make_const(expr_ty node, PyObject *val, PyArena *arena)
 
 #define COPY_NODE(TO, FROM) (memcpy((TO), (FROM), sizeof(struct _expr)))
 
-static PyObject *unary_not(PyObject *v)
+static PyObject*
+unary_not(PyObject *v)
 {
     int r = PyObject_IsTrue(v);
     if (r < 0)
@@ -71,7 +73,8 @@ static PyObject *unary_not(PyObject *v)
     return PyBool_FromLong(!r);
 }
 
-static int fold_unaryop(expr_ty node, PyArena *arena)
+static int
+fold_unaryop(expr_ty node, PyArena *arena)
 {
     expr_ty arg = node->v.UnaryOp.operand;
 
@@ -122,7 +125,8 @@ static int fold_unaryop(expr_ty node, PyArena *arena)
     return make_const(node, newval, arena);
 }
 
-static int fold_binop(expr_ty node, PyArena *arena)
+static int
+fold_binop(expr_ty node, PyArena *arena)
 {
     expr_ty lhs, rhs;
     lhs = node->v.BinOp.left;
@@ -190,7 +194,8 @@ static int fold_binop(expr_ty node, PyArena *arena)
     return make_const(node, newval, arena);
 }
 
-static PyObject *make_const_tuple(asdl_seq *elts, int make_set)
+static PyObject*
+make_const_tuple(asdl_seq *elts, int make_set)
 {
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
@@ -218,7 +223,8 @@ static PyObject *make_const_tuple(asdl_seq *elts, int make_set)
     return newval;
 }
 
-static int fold_tuple(expr_ty node, PyArena *arena)
+static int
+fold_tuple(expr_ty node, PyArena *arena)
 {
     PyObject *newval;
 
@@ -229,7 +235,8 @@ static int fold_tuple(expr_ty node, PyArena *arena)
     return make_const(node, newval, arena);
 }
 
-static int fold_subscr(expr_ty node, PyArena *arena)
+static int
+fold_subscr(expr_ty node, PyArena *arena)
 {
     PyObject *newval;
     expr_ty arg, idx;
@@ -250,7 +257,8 @@ static int fold_subscr(expr_ty node, PyArena *arena)
     return make_const(node, newval, arena);
 }
 
-static int fold_compare(expr_ty node, PyArena *arena)
+static int
+fold_compare(expr_ty node, PyArena *arena)
 {
     asdl_int_seq *ops;
     asdl_seq *args;
@@ -323,7 +331,8 @@ static int astfold_excepthandler(excepthandler_ty node_, PyArena* ctx_);
     } \
 }
 
-static int astfold_mod(mod_ty node_, PyArena* ctx_)
+static int
+astfold_mod(mod_ty node_, PyArena* ctx_)
 {
     switch (node_->kind) {
     case Module_kind:
@@ -344,7 +353,8 @@ static int astfold_mod(mod_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_expr(expr_ty node_, PyArena* ctx_)
+static int
+astfold_expr(expr_ty node_, PyArena* ctx_)
 {
     switch (node_->kind) {
     case BoolOp_kind:
@@ -442,7 +452,8 @@ static int astfold_expr(expr_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_slice(slice_ty node_, PyArena* ctx_)
+static int
+astfold_slice(slice_ty node_, PyArena* ctx_)
 {
     switch (node_->kind) {
     case Slice_kind:
@@ -462,13 +473,15 @@ static int astfold_slice(slice_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_keyword(keyword_ty node_, PyArena* ctx_)
+static int
+astfold_keyword(keyword_ty node_, PyArena* ctx_)
 {
     CALL(astfold_expr, expr_ty, node_->value);
     return 1;
 }
 
-static int astfold_comprehension(comprehension_ty node_, PyArena* ctx_)
+static int
+astfold_comprehension(comprehension_ty node_, PyArena* ctx_)
 {
     CALL(astfold_expr, expr_ty, node_->target);
     CALL(astfold_expr, expr_ty, node_->iter);
@@ -476,7 +489,8 @@ static int astfold_comprehension(comprehension_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_arguments(arguments_ty node_, PyArena* ctx_)
+static int
+astfold_arguments(arguments_ty node_, PyArena* ctx_)
 {
     CALL_SEQ(astfold_arg, arg_ty, node_->args);
     CALL_OPT(astfold_arg, arg_ty, node_->vararg);
@@ -487,13 +501,15 @@ static int astfold_arguments(arguments_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_arg(arg_ty node_, PyArena* ctx_)
+static int
+astfold_arg(arg_ty node_, PyArena* ctx_)
 {
     CALL_OPT(astfold_expr, expr_ty, node_->annotation);
     return 1;
 }
 
-static int astfold_stmt(stmt_ty node_, PyArena* ctx_)
+static int
+astfold_stmt(stmt_ty node_, PyArena* ctx_)
 {
     switch (node_->kind) {
     case FunctionDef_kind:
@@ -586,7 +602,8 @@ static int astfold_stmt(stmt_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_excepthandler(excepthandler_ty node_, PyArena* ctx_)
+static int
+astfold_excepthandler(excepthandler_ty node_, PyArena* ctx_)
 {
     switch (node_->kind) {
     case ExceptHandler_kind:
@@ -599,19 +616,16 @@ static int astfold_excepthandler(excepthandler_ty node_, PyArena* ctx_)
     return 1;
 }
 
-static int astfold_withitem(withitem_ty node_, PyArena* ctx_)
+static int
+astfold_withitem(withitem_ty node_, PyArena* ctx_)
 {
     CALL(astfold_expr, expr_ty, node_->context_expr);
     CALL_OPT(astfold_expr, expr_ty, node_->optional_vars);
     return 1;
 }
 
-
-#undef CALL
-#undef CALL_OPT
-#undef CALL_SEQ
-
-int _PyAST_Optimize(mod_ty mod, PyArena *arena)
+int
+_PyAST_Optimize(mod_ty mod, PyArena *arena)
 {
     int ret = astfold_mod(mod, arena);
     assert(ret || PyErr_Occurred());
