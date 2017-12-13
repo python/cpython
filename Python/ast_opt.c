@@ -258,7 +258,8 @@ fold_subscr(expr_ty node, PyArena *arena)
             !is_const(arg) ||
             /* TODO: handle other types of slices */
             slice->kind != Index_kind ||
-            !is_const(slice->v.Index.value)) {
+            !is_const(slice->v.Index.value))
+    {
         return 1;
     }
 
@@ -633,6 +634,11 @@ astfold_withitem(withitem_ty node_, PyArena* ctx_)
     CALL_OPT(astfold_expr, expr_ty, node_->optional_vars);
     return 1;
 }
+
+#undef CALL
+#undef CALL_OPT
+#undef CALL_SEQ
+#undef CALL_INT_SEQ
 
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena)
