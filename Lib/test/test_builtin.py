@@ -1022,6 +1022,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, open, 'a\x00b')
         self.assertRaises(ValueError, open, b'a\x00b')
 
+    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)
         try:
