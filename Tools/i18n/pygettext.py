@@ -343,16 +343,13 @@ class TokenEater:
                     self.__freshmodule = 0
                 return
             # class or func/method docstring?
-            if ttype == tokenize.NAME:
-                if tstring == 'def':
-                    self.__state = self.__funcseen
-                elif tstring == 'class':
-                    self.__state = self.__class_seen
+            if ttype == tokenize.NAME and tstring in ('def', 'class'):
+                self.__state = self.__suiteseen
                 return
         if ttype == tokenize.NAME and tstring in opts.keywords:
             self.__state = self.__keywordseen
 
-    def __funcseen(self, ttype, tstring, lineno):
+    def __suiteseen(self, ttype, tstring, lineno):
         # skip over any enclosure pairs until we see the colon
         if ttype == tokenize.OP:
             if tstring == ':' and not any(self.__enclosurecount.values()):
@@ -364,11 +361,6 @@ class TokenEater:
             elif tstring in ')]}':
                 enclosure = self.__get_enclosure_name(tstring)
                 self.__enclosurecount[enclosure] -= 1
-
-    def __class_seen(self, ttype, tstring, lineno):
-        # ignore anything until we see the colon
-        if ttype == tokenize.OP and tstring == ':':
-            self.__state = self.__suitedocstring
 
     def __suitedocstring(self, ttype, tstring, lineno):
         # ignore any intervening noise
