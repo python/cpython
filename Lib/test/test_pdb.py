@@ -1212,7 +1212,7 @@ class PdbModuleTestCase(PdbBaseTestCase):
             quit
         """
         stdout, stderr = self.run_pdb(script, commands)
-        self.assertTrue(any(f"/{self.module_name}/__main__.py(4)<module>()"
+        self.assertTrue(any(f"__main__.py(4)<module>()"
                             in l for l in stdout.splitlines()), stdout)
 
     def test_relative_imports(self):
