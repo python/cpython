@@ -69,7 +69,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # completed within 10 seconds, instead of remaining open indefinitely
         ssl_proto = self.ssl_protocol()
         transport = self.connection_made(ssl_proto)
-        
+
         self.loop.run_until_complete(tasks.sleep(12, loop=self.loop))
         self.assertTrue(transport.abort.called)
 
