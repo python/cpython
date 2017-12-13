@@ -2336,143 +2336,41 @@ makeargvobject(int argc, wchar_t **argv)
                 av = NULL;
                 break;
             }
-            PyList_SetItem(av, i, v);
+            PyList_SET_ITEM(av, i, v);
         }
     }
     return av;
 }
 
-#define _HAVE_SCRIPT_ARGUMENT(argc, argv) \
-  (argc > 0 && argv0 != NULL && \
-   wcscmp(argv0, L"-c") != 0 && wcscmp(argv0, L"-m") != 0)
-
-static void
-sys_update_path(int argc, wchar_t **argv)
-{
-    wchar_t *argv0;
-    wchar_t *p = NULL;
-    Py_ssize_t n = 0;
-    PyObject *a;
-    PyObject *path;
-#ifdef HAVE_READLINK
-    wchar_t link[MAXPATHLEN+1];
-    wchar_t argv0copy[2*MAXPATHLEN+1];
-    int nr = 0;
-#endif
-#if defined(HAVE_REALPATH)
-    wchar_t fullpath[MAXPATHLEN];
-#elif defined(MS_WINDOWS)
-    wchar_t fullpath[MAX_PATH];
-#endif
-
-    path = _PySys_GetObjectId(&PyId_path);
-    if (path == NULL)
-        return;
-
-    argv0 = argv[0];
-
-#ifdef HAVE_READLINK
-    if (_HAVE_SCRIPT_ARGUMENT(argc, argv))
-        nr = _Py_wreadlink(argv0, link, MAXPATHLEN);
-    if (nr > 0) {
-        /* It's a symlink */
-        link[nr] = '\0';
-        if (link[0] == SEP)
-            argv0 = link; /* Link to absolute path */
-        else if (wcschr(link, SEP) == NULL)
-            ; /* Link without path */
-        else {
-            /* Must join(dirname(argv0), link) */
-            wchar_t *q = wcsrchr(argv0, SEP);
-            if (q == NULL)
-                argv0 = link; /* argv0 without path */
-            else {
-                /* Must make a copy, argv0copy has room for 2 * MAXPATHLEN */
-                wcsncpy(argv0copy, argv0, MAXPATHLEN);
-                q = wcsrchr(argv0copy, SEP);
-                wcsncpy(q+1, link, MAXPATHLEN);
-                q[MAXPATHLEN + 1] = L'\0';
-                argv0 = argv0copy;
-            }
-        }
-    }
-#endif /* HAVE_READLINK */
-#if SEP == '\\' /* Special case for MS filename syntax */
-    if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
-        wchar_t *q;
-#if defined(MS_WINDOWS)
-        /* Replace the first element in argv with the full path. */
-        wchar_t *ptemp;
-        if (GetFullPathNameW(argv0,
-                           Py_ARRAY_LENGTH(fullpath),
-                           fullpath,
-                           &ptemp)) {
-            argv0 = fullpath;
-        }
-#endif
-        p = wcsrchr(argv0, SEP);
-        /* Test for alternate separator */
-        q = wcsrchr(p ? p : argv0, '/');
-        if (q != NULL)
-            p = q;
-        if (p != NULL) {
-            n = p + 1 - argv0;
-            if (n > 1 && p[-1] != ':')
-                n--; /* Drop trailing separator */
-        }
-    }
-#else /* All other filename syntaxes */
-    if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
-#if defined(HAVE_REALPATH)
-        if (_Py_wrealpath(argv0, fullpath, Py_ARRAY_LENGTH(fullpath))) {
-            argv0 = fullpath;
-        }
-#endif
-        p = wcsrchr(argv0, SEP);
-    }
-    if (p != NULL) {
-        n = p + 1 - argv0;
-#if SEP == '/' /* Special case for Unix filename syntax */
-        if (n > 1)
-            n--; /* Drop trailing separator */
-#endif /* Unix */
-    }
-#endif /* All others */
-    a = PyUnicode_FromWideChar(argv0, n);
-    if (a == NULL)
-        Py_FatalError("no mem for sys.path insertion");
-    if (PyList_Insert(path, 0, a) < 0)
-        Py_FatalError("sys.path.insert(0) failed");
-    Py_DECREF(a);
-}
-
-_PyInitError
-_PySys_SetArgvWithError(int argc, wchar_t **argv, int updatepath)
+void
+PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     PyObject *av = makeargvobject(argc, argv);
     if (av == NULL) {
-        return _Py_INIT_NO_MEMORY();
+        Py_FatalError("no mem for sys.argv");
     }
     if (PySys_SetObject("argv", av) != 0) {
         Py_DECREF(av);
-        return _Py_INIT_ERR("can't assign sys.argv");
+        Py_FatalError("can't assign sys.argv");
     }
     Py_DECREF(av);
 
     if (updatepath) {
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
-        sys_update_path(argc, argv);
-    }
-    return _Py_INIT_OK();
-}
+        PyObject *argv0 = _PyPathConfig_ComputeArgv0(argc, argv);
+        if (argv0 == NULL) {
+            Py_FatalError("can't compute path0 from argv");
+        }
 
-void
-PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
-{
-    _PyInitError err = _PySys_SetArgvWithError(argc, argv, updatepath);
-    if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        PyObject *sys_path = _PySys_GetObjectId(&PyId_path);
+        if (sys_path != NULL) {
+            if (PyList_Insert(sys_path, 0, argv0) < 0) {
+                Py_DECREF(argv0);
+                Py_FatalError("can't prepend path0 to sys.path");
+            }
+        }
+        Py_DECREF(argv0);
     }
 }
 
