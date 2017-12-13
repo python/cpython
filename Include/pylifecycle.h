@@ -77,12 +77,13 @@ PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);
 PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
 
 
-/* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
- * exit functions.
+/* Py_AtExit is for low-level exit functions.  Note that registered
+ * functions are called late in the interpreter shutdown procedure and so
+ * the actions those functions can take are limited.  There is also a
+ * limited number of functions that can be registered, defined by
+ * NEXITFUNCS.  Currently the limit is 32 and a few of those are already
+ * used by the interpreter internals.
  */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
-#endif
 PyAPI_FUNC(int) Py_AtExit(void (*func)(void));
 
 PyAPI_FUNC(void) Py_Exit(int) _Py_NO_RETURN;

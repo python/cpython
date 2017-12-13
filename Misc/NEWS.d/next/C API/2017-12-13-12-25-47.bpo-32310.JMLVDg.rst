@@ -1,0 +1,2 @@
+Remove _Py_PyAtExit from Python.h.  It is only to be used by the atexit
+module and should not be available for other uses.
