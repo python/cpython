@@ -129,7 +129,7 @@ Options:
         The style name is case insensitive.  GNU style is the default.
 
     -v
-    --verbose
+    --verbose 
         Print the names of the files being processed.
 
     -V
@@ -164,6 +164,7 @@ import time
 import getopt
 import token
 import tokenize
+import collections
 
 __version__ = '1.5'
 
@@ -320,7 +321,7 @@ class TokenEater:
         self.__lineno = -1
         self.__freshmodule = 1
         self.__curfile = None
-        self.__parencount = 0
+        self.__enclosurecount = collections.Counter()
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
@@ -346,23 +347,25 @@ class TokenEater:
                 if tstring == 'def':
                     self.__state = self.__funcseen
                 elif tstring == 'class':
-                    self.__state = self.__suiteseen
+                    self.__state = self.__class_seen
                 return
         if ttype == tokenize.NAME and tstring in opts.keywords:
             self.__state = self.__keywordseen
 
     def __funcseen(self, ttype, tstring, lineno):
-        # ignore anything until we see the param list closing parenthesis
+        # skip over any enclosure pairs until we see the colon
         if ttype == tokenize.OP:
-            if tstring == ')':
-                self.__parencount -= 1
-                if self.__parencount == 0:
-                    self.__state = self.__suiteseen
-            elif tstring == '(':
-                # count nested parens
-                self.__parencount += 1
+            if tstring == ':' and not any(self.__enclosurecount.values()):
+                # we see a colon and we're not in an enclosure: end of def
+                self.__state = self.__suitedocstring
+            elif tstring in '([{':
+                enclosure = self.__get_enclosure_name(tstring)
+                self.__enclosurecount[enclosure] += 1
+            elif tstring in ')]}':
+                enclosure = self.__get_enclosure_name(tstring)
+                self.__enclosurecount[enclosure] -= 1
 
-    def __suiteseen(self, ttype, tstring, lineno):
+    def __class_seen(self, ttype, tstring, lineno):
         # ignore anything until we see the colon
         if ttype == tokenize.OP and tstring == ':':
             self.__state = self.__suitedocstring
@@ -414,6 +417,22 @@ class TokenEater:
         if not msg in self.__options.toexclude:
             entry = (self.__curfile, lineno)
             self.__messages.setdefault(msg, {})[entry] = isdocstring
+
+    @staticmethod
+    def __get_enclosure_name(enclosure):
+        """Get a collective name for an enclosure character.
+
+        In this case, enclosures refer to parentheses, square brackets and
+        curly brackets.
+        """
+        enclosure_names = {
+            '()': 'PARENTHESES',
+            '[]': 'SQUAREBRACKETS',
+            '{}': 'CURLYBRACKETS'
+        }
+        for chars, name in enclosure_names.items():
+            if enclosure in chars:
+                return name
 
     def set_filename(self, filename):
         self.__curfile = filename
