@@ -185,6 +185,23 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+PEP 540: Add a new UTF-8 mode
+-----------------------------
+
+Add a new UTF-8 mode to ignore the locale, use the UTF-8 encoding, and change
+:data:`sys.stdin` and :data:`sys.stdout` error handlers to ``surrogateescape``.
+This mode is enabled by default in the POSIX locale, but otherwise disabled by
+default.
+
+The new :option:`-X` ``utf8`` command line option and :envvar:`PYTHONUTF8`
+environment variable are added to control the UTF-8 mode.
+
+.. seealso::
+
+    :pep:`540` -- Add a new UTF-8 mode
+       PEP written and implemented by Victor Stinner
+
+
 New Development Mode: -X dev
 ----------------------------
 
@@ -352,6 +369,10 @@ locale
 Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
+The :func:`locale.getpreferredencoding` function now always returns ``'UTF-8'``
+on Android or in the UTF-8 mode  (:option:`-X` ``utf8`` option), the locale and
+the *do_setlocale* argument are ignored.
 
 math
 ----
