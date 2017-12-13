@@ -736,3 +736,23 @@ def set_child_watcher(watcher):
     """Equivalent to calling
     get_event_loop_policy().set_child_watcher(watcher)."""
     return get_event_loop_policy().set_child_watcher(watcher)
+
+
+#  shortcuts
+
+def create_task(coro):
+    """Schedule the execution of a coroutine object in a spawn task.
+
+    Return a Task object.
+    """
+    loop = get_running_loop()
+    return loop.create_task(coro)
+
+
+def run_in_executor(executor, func, *args):
+    """Arrange for a func to be called in thread/process pool.
+
+    This function is a coroutine: it returns a future instance.
+    """
+    loop = get_running_loop()
+    return loop.run_in_executor(executor, func, *args)
