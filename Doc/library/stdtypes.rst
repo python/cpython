@@ -973,9 +973,9 @@ Notes:
 
 (8)
    ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   When supported, the additional arguments to the index method allow
-   efficient searching of subsections of the sequence. Passing the extra
-   arguments is roughly equivalent to using ``s[i:j].index(x)``, only
+   Not all implementations support passing the additional arguments *i* and *j*.
+   These arguments allow efficient searching of subsections of the sequence. Passing
+   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 

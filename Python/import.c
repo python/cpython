@@ -5,6 +5,8 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/hash.h"
+#include "internal/import.h"
 #include "internal/pystate.h"
 #include "errcode.h"
 #include "marshal.h"
@@ -30,8 +32,7 @@ static PyObject *extensions = NULL;
 extern struct _inittab _PyImport_Inittab[];
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
-
-static PyObject *initstr = NULL;
+static struct _inittab *inittab_copy = NULL;
 
 /*[clinic input]
 module _imp
@@ -43,14 +44,8 @@ module _imp
 /* Initialize things */
 
 _PyInitError
-_PyImport_Init(void)
+_PyImport_Init(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
-    initstr = PyUnicode_InternFromString("__init__");
-    if (initstr == NULL) {
-        return _Py_INIT_ERR("Can't initialize import variables");
-    }
-
     interp->builtins_copy = PyDict_Copy(interp->builtins);
     if (interp->builtins_copy == NULL) {
         return _Py_INIT_ERR("Can't backup builtins dict");
@@ -291,6 +286,19 @@ _PyImport_Fini(void)
         PyThread_free_lock(import_lock);
         import_lock = NULL;
     }
+}
+
+void
+_PyImport_Fini2(void)
+{
+    /* Use the same memory allocator than PyImport_ExtendInittab(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Free memory allocated by PyImport_ExtendInittab() */
+    PyMem_RawFree(inittab_copy);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 /* Helper for sys */
@@ -1729,6 +1737,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
+        Py_XDECREF(mod);
         mod = import_find_and_load(abs_name);
         if (mod == NULL) {
             goto error;
@@ -2177,6 +2186,34 @@ _imp_exec_builtin_impl(PyObject *module, PyObject *mod)
     return exec_builtin_or_dynamic(mod);
 }
 
+/*[clinic input]
+_imp.source_hash
+
+    key: long
+    source: Py_buffer
+[clinic start generated code]*/
+
+static PyObject *
+_imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
+/*[clinic end generated code: output=edb292448cf399ea input=9aaad1e590089789]*/
+{
+    union {
+        uint64_t x;
+        char data[sizeof(uint64_t)];
+    } hash;
+    hash.x = _Py_KeyedHash((uint64_t)key, source->buf, source->len);
+#if !PY_LITTLE_ENDIAN
+    // Force to little-endian. There really ought to be a succinct standard way
+    // to do this.
+    for (size_t i = 0; i < sizeof(hash.data)/2; i++) {
+        char tmp = hash.data[i];
+        hash.data[i] = hash.data[sizeof(hash.data) - i - 1];
+        hash.data[sizeof(hash.data) - i - 1] = tmp;
+    }
+#endif
+    return PyBytes_FromStringAndSize(hash.data, sizeof(hash.data));
+}
+
 
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib and imp.");
@@ -2196,6 +2233,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
+    _IMP_SOURCE_HASH_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -2212,6 +2250,8 @@ static struct PyModuleDef impmodule = {
     NULL
 };
 
+const char *_Py_CheckHashBasedPycsMode = "default";
+
 PyMODINIT_FUNC
 PyInit_imp(void)
 {
@@ -2223,6 +2263,15 @@ PyInit_imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
+    PyObject *pyc_mode = PyUnicode_FromString(_Py_CheckHashBasedPycsMode);
+    if (pyc_mode == NULL) {
+        goto failure;
+    }
+    if (PyDict_SetItemString(d, "check_hash_based_pycs", pyc_mode) < 0) {
+        Py_DECREF(pyc_mode);
+        goto failure;
+    }
+    Py_DECREF(pyc_mode);
 
     return m;
   failure:
@@ -2241,9 +2290,9 @@ PyInit_imp(void)
 int
 PyImport_ExtendInittab(struct _inittab *newtab)
 {
-    static struct _inittab *our_copy = NULL;
     struct _inittab *p;
-    int i, n;
+    Py_ssize_t i, n;
+    int res = 0;
 
     /* Count the number of entries in both tables */
     for (n = 0; newtab[n].name != NULL; n++)
@@ -2253,19 +2302,35 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     for (i = 0; PyImport_Inittab[i].name != NULL; i++)
         ;
 
+    /* Force default raw memory allocator to get a known allocator to be able
+       to release the memory in _PyImport_Fini2() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     /* Allocate new memory for the combined table */
-    p = our_copy;
-    PyMem_RESIZE(p, struct _inittab, i+n+1);
-    if (p == NULL)
-        return -1;
+    if ((i + n + 1) <= PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(struct _inittab)) {
+        size_t size = sizeof(struct _inittab) * (i + n + 1);
+        p = PyMem_RawRealloc(inittab_copy, size);
+    }
+    else {
+        p = NULL;
+    }
+    if (p == NULL) {
+        res = -1;
+        goto done;
+    }
 
-    /* Copy the tables into the new memory */
-    if (our_copy != PyImport_Inittab)
+    /* Copy the tables into the new memory at the first call
+       to PyImport_ExtendInittab(). */
+    if (inittab_copy != PyImport_Inittab) {
         memcpy(p, PyImport_Inittab, (i+1) * sizeof(struct _inittab));
-    PyImport_Inittab = our_copy = p;
-    memcpy(p+i, newtab, (n+1) * sizeof(struct _inittab));
+    }
+    memcpy(p + i, newtab, (n + 1) * sizeof(struct _inittab));
+    PyImport_Inittab = inittab_copy = p;
 
-    return 0;
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return res;
 }
 
 /* Shorthand to add a single entry given a name and a function */

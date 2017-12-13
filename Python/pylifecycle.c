@@ -414,7 +414,7 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
     {NULL}
 };
 
-static char *
+static const char *
 get_default_standard_stream_error_handler(void)
 {
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
@@ -440,7 +440,7 @@ get_default_standard_stream_error_handler(void)
 }
 
 #ifdef PY_COERCE_C_LOCALE
-static const char *_C_LOCALE_COERCION_WARNING =
+static const char _C_LOCALE_COERCION_WARNING[] =
     "Python detected LC_CTYPE=C: LC_CTYPE coerced to %.20s (set another locale "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
@@ -606,10 +606,6 @@ _Py_SetLocaleFromEnv(int category)
  * safe to call without calling Py_Initialize first)
  */
 
-/* TODO: Progressively move functionality from Py_BeginInitialization to
- * Py_ReadConfig and Py_EndInitialization
- */
-
 _PyInitError
 _Py_InitializeCore(const _PyCoreConfig *config)
 {
@@ -755,7 +751,7 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     PySys_SetObject("__stderr__", pstderr);
     Py_DECREF(pstderr);
 
-    err = _PyImport_Init();
+    err = _PyImport_Init(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -804,7 +800,12 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
     }
 
     if (config->program_name == NULL) {
-        config->program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+#ifdef MS_WINDOWS
+        const wchar_t *program_name = L"python";
+#else
+        const wchar_t *program_name = L"python3";
+#endif
+        config->program_name = _PyMem_RawWcsdup(program_name);
         if (config->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -876,10 +877,9 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_OK();
     }
 
-    /* TODO: Report exceptions rather than fatal errors below here */
-
-    if (_PyTime_Init() < 0)
+    if (_PyTime_Init() < 0) {
         return _Py_INIT_ERR("can't initialize time");
+    }
 
     /* GetPath may initialize state that _PySys_EndInit locks
        in, and so has to be called first. */
@@ -1103,6 +1103,10 @@ Py_FinalizeEx(void)
     tstate = PyThreadState_GET();
     interp = tstate->interp;
 
+    /* Copy the core config to be able to use it even
+       after PyInterpreterState_Delete() */
+    _PyCoreConfig core_config = interp->core_config;
+
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
     _PyRuntime.finalizing = tstate;
@@ -1186,7 +1190,7 @@ Py_FinalizeEx(void)
     _PyHash_Fini();
 
 #ifdef Py_REF_DEBUG
-    if (interp->core_config.show_ref_count) {
+    if (core_config.show_ref_count) {
         _PyDebug_PrintTotalRefs();
     }
 #endif
@@ -1197,8 +1201,9 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (core_config.dump_refs) {
         _Py_PrintReferences(stderr);
+    }
 #endif /* Py_TRACE_REFS */
 
     /* Clear interpreter state and all thread states. */
@@ -1260,20 +1265,17 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
-    if (Py_GETENV("PYTHONDUMPREFS"))
+    if (core_config.dump_refs) {
         _Py_PrintReferenceAddresses(stderr);
+    }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
-    if (_PyMem_PymallocEnabled()) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
-        if (opt != NULL && *opt != '\0')
-            _PyObject_DebugMallocStats(stderr);
+    if (core_config.malloc_stats) {
+        _PyObject_DebugMallocStats(stderr);
     }
 #endif
 
     call_ll_exitfuncs();
-
-    _PyPathConfig_Fini();
 
     _PyRuntime_Finalize();
     return status;
@@ -1489,61 +1491,6 @@ Py_EndInterpreter(PyThreadState *tstate)
     PyInterpreterState_Clear(interp);
     PyThreadState_Swap(NULL);
     PyInterpreterState_Delete(interp);
-}
-
-#ifdef MS_WINDOWS
-static wchar_t *progname = L"python";
-#else
-static wchar_t *progname = L"python3";
-#endif
-
-void
-Py_SetProgramName(wchar_t *pn)
-{
-    if (pn && *pn)
-        progname = pn;
-}
-
-wchar_t *
-Py_GetProgramName(void)
-{
-    return progname;
-}
-
-static wchar_t *default_home = NULL;
-
-void
-Py_SetPythonHome(wchar_t *home)
-{
-    default_home = home;
-}
-
-
-wchar_t*
-Py_GetPythonHome(void)
-{
-    /* Use a static buffer to avoid heap memory allocation failure.
-       Py_GetPythonHome() doesn't allow to report error, and the caller
-       doesn't release memory. */
-    static wchar_t buffer[MAXPATHLEN+1];
-
-    if (default_home) {
-        return default_home;
-    }
-
-    char *home = Py_GETENV("PYTHONHOME");
-    if (!home) {
-        return NULL;
-    }
-
-    size_t size = Py_ARRAY_LENGTH(buffer);
-    size_t r = mbstowcs(buffer, home, size);
-    if (r == (size_t)-1 || r >= size) {
-        /* conversion failed or the static buffer is too small */
-        return NULL;
-    }
-
-    return buffer;
 }
 
 /* Add the __main__ module */
@@ -1810,7 +1757,8 @@ init_sys_streams(void)
     PyObject *std = NULL;
     int fd;
     PyObject * encoding_attr;
-    char *pythonioencoding = NULL, *encoding, *errors;
+    char *pythonioencoding = NULL;
+    const char *encoding, *errors;
     _PyInitError res = _Py_INIT_OK();
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
@@ -2138,6 +2086,8 @@ _Py_FatalInitError(_PyInitError err)
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(void))
 {
+    /* Guard against API misuse (see bpo-17852) */
+    assert(_PyRuntime.pyexitfunc == NULL || _PyRuntime.pyexitfunc == func);
     _PyRuntime.pyexitfunc = func;
 }
 

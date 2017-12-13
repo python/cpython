@@ -52,11 +52,11 @@
     </Target>
     
     <Target Name="_Upload" Condition="!$(DryRun)">
-        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)" />
+        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)" ContinueOnError="true" />
         <Exec Command="&quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)" />
-        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*" />
+        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*" ContinueOnError="true" />
     </Target>
-    
+
     <Target Name="_PrintNames" Condition="$(DryRun)">
         <Exec Command="echo &quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)" />
         <Exec Command="echo &quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)" />

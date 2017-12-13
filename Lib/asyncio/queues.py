@@ -1,26 +1,19 @@
-"""Queues"""
-
-__all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty']
+__all__ = ('Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty')
 
 import collections
 import heapq
 
 from . import events
 from . import locks
-from .coroutines import coroutine
 
 
 class QueueEmpty(Exception):
-    """Exception raised when Queue.get_nowait() is called on a Queue object
-    which is empty.
-    """
+    """Raised when Queue.get_nowait() is called on an empty Queue."""
     pass
 
 
 class QueueFull(Exception):
-    """Exception raised when the Queue.put_nowait() method is called on a Queue
-    object which is full.
-    """
+    """Raised when the Queue.put_nowait() method is called on a full Queue."""
     pass
 
 
@@ -28,7 +21,7 @@ class Queue:
     """A queue, useful for coordinating producer and consumer coroutines.
 
     If maxsize is less than or equal to zero, the queue size is infinite. If it
-    is an integer greater than 0, then "yield from put()" will block when the
+    is an integer greater than 0, then "await put()" will block when the
     queue reaches maxsize, until an item is removed by get().
 
     Unlike the standard library Queue, you can reliably know this Queue's size
@@ -74,22 +67,21 @@ class Queue:
                 break
 
     def __repr__(self):
-        return '<{} at {:#x} {}>'.format(
-            type(self).__name__, id(self), self._format())
+        return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'
 
     def __str__(self):
-        return '<{} {}>'.format(type(self).__name__, self._format())
+        return f'<{type(self).__name__} {self._format()}>'
 
     def _format(self):
-        result = 'maxsize={!r}'.format(self._maxsize)
+        result = f'maxsize={self._maxsize!r}'
         if getattr(self, '_queue', None):
-            result += ' _queue={!r}'.format(list(self._queue))
+            result += f' _queue={list(self._queue)!r}'
         if self._getters:
-            result += ' _getters[{}]'.format(len(self._getters))
+            result += f' _getters[{len(self._getters)}]'
         if self._putters:
-            result += ' _putters[{}]'.format(len(self._putters))
+            result += f' _putters[{len(self._putters)}]'
         if self._unfinished_tasks:
-            result += ' tasks={}'.format(self._unfinished_tasks)
+            result += f' tasks={self._unfinished_tasks}'
         return result
 
     def qsize(self):
@@ -116,20 +108,17 @@ class Queue:
         else:
             return self.qsize() >= self._maxsize
 
-    @coroutine
-    def put(self, item):
+    async def put(self, item):
         """Put an item into the queue.
 
         Put an item into the queue. If the queue is full, wait until a free
         slot is available before adding item.
-
-        This method is a coroutine.
         """
         while self.full():
             putter = self._loop.create_future()
             self._putters.append(putter)
             try:
-                yield from putter
+                await putter
             except:
                 putter.cancel()  # Just in case putter is not done yet.
                 if not self.full() and not putter.cancelled():
@@ -151,19 +140,16 @@ class Queue:
         self._finished.clear()
         self._wakeup_next(self._getters)
 
-    @coroutine
-    def get(self):
+    async def get(self):
         """Remove and return an item from the queue.
 
         If queue is empty, wait until an item is available.
-
-        This method is a coroutine.
         """
         while self.empty():
             getter = self._loop.create_future()
             self._getters.append(getter)
             try:
-                yield from getter
+                await getter
             except:
                 getter.cancel()  # Just in case getter is not done yet.
 
@@ -210,8 +196,7 @@ class Queue:
         if self._unfinished_tasks == 0:
             self._finished.set()
 
-    @coroutine
-    def join(self):
+    async def join(self):
         """Block until all items in the queue have been gotten and processed.
 
         The count of unfinished tasks goes up whenever an item is added to the
@@ -220,7 +205,7 @@ class Queue:
         When the count of unfinished tasks drops to zero, join() unblocks.
         """
         if self._unfinished_tasks > 0:
-            yield from self._finished.wait()
+            await self._finished.wait()
 
 
 class PriorityQueue(Queue):

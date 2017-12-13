@@ -48,9 +48,21 @@ typedef struct {
 #endif
     /* Set by Py_SetPath(), or computed by _PyPathConfig_Init() */
     wchar_t *module_search_path;
+    /* Python program name */
+    wchar_t *program_name;
+    /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
+    wchar_t *home;
 } _PyPathConfig;
 
 #define _PyPathConfig_INIT {.module_search_path = NULL}
+/* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
+
+PyAPI_DATA(_PyPathConfig) _Py_path_config;
+
+PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
+    _PyPathConfig *config,
+    const _PyMainInterpreterConfig *main_config);
+PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
 
 /* Full Python runtime state */
@@ -89,6 +101,7 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+/* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);

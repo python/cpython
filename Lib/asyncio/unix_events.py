@@ -20,14 +20,15 @@ from . import events
 from . import futures
 from . import selector_events
 from . import transports
-from .coroutines import coroutine
 from .log import logger
 
 
-__all__ = ['SelectorEventLoop',
-           'AbstractChildWatcher', 'SafeChildWatcher',
-           'FastChildWatcher', 'DefaultEventLoopPolicy',
-           ]
+__all__ = (
+    'SelectorEventLoop',
+    'AbstractChildWatcher', 'SafeChildWatcher',
+    'FastChildWatcher', 'DefaultEventLoopPolicy',
+)
+
 
 if sys.platform == 'win32':  # pragma: no cover
     raise ImportError('Signals are not really supported on Windows')
@@ -66,8 +67,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise ValueError if the signal number is invalid or uncatchable.
         Raise RuntimeError if there is a problem setting up the handler.
         """
-        if (coroutines.iscoroutine(callback)
-                or coroutines.iscoroutinefunction(callback)):
+        if (coroutines.iscoroutine(callback) or
+                coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)
@@ -101,7 +102,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     logger.info('set_wakeup_fd(-1) failed: %s', nexc)
 
             if exc.errno == errno.EINVAL:
-                raise RuntimeError('sig {} cannot be caught'.format(sig))
+                raise RuntimeError(f'sig {sig} cannot be caught')
             else:
                 raise
 
@@ -135,7 +136,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             signal.signal(sig, handler)
         except OSError as exc:
             if exc.errno == errno.EINVAL:
-                raise RuntimeError('sig {} cannot be caught'.format(sig))
+                raise RuntimeError(f'sig {sig} cannot be caught')
             else:
                 raise
 
@@ -154,11 +155,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise RuntimeError if there is a problem setting up the handler.
         """
         if not isinstance(sig, int):
-            raise TypeError('sig must be an int, not {!r}'.format(sig))
+            raise TypeError(f'sig must be an int, not {sig!r}')
 
         if not (1 <= sig < signal.NSIG):
-            raise ValueError(
-                'sig {} out of range(1, {})'.format(sig, signal.NSIG))
+            raise ValueError(f'sig {sig} out of range(1, {signal.NSIG})')
 
     def _make_read_pipe_transport(self, pipe, protocol, waiter=None,
                                   extra=None):
@@ -168,10 +168,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                    extra=None):
         return _UnixWritePipeTransport(self, pipe, protocol, waiter, extra)
 
-    @coroutine
-    def _make_subprocess_transport(self, protocol, args, shell,
-                                   stdin, stdout, stderr, bufsize,
-                                   extra=None, **kwargs):
+    async def _make_subprocess_transport(self, protocol, args, shell,
+                                         stdin, stdout, stderr, bufsize,
+                                         extra=None, **kwargs):
         with events.get_child_watcher() as watcher:
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
@@ -182,29 +181,20 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             watcher.add_child_handler(transp.get_pid(),
                                       self._child_watcher_callback, transp)
             try:
-                yield from waiter
-            except Exception as exc:
-                # Workaround CPython bug #23353: using yield/yield-from in an
-                # except block of a generator doesn't clear properly
-                # sys.exc_info()
-                err = exc
-            else:
-                err = None
-
-            if err is not None:
+                await waiter
+            except Exception:
                 transp.close()
-                yield from transp._wait()
-                raise err
+                await transp._wait()
+                raise
 
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
-    @coroutine
-    def create_unix_connection(self, protocol_factory, path=None, *,
-                               ssl=None, sock=None,
-                               server_hostname=None):
+    async def create_unix_connection(self, protocol_factory, path=None, *,
+                                     ssl=None, sock=None,
+                                     server_hostname=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -223,7 +213,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
             try:
                 sock.setblocking(False)
-                yield from self.sock_connect(sock, path)
+                await self.sock_connect(sock, path)
             except:
                 sock.close()
                 raise
@@ -234,17 +224,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if (sock.family != socket.AF_UNIX or
                     not base_events._is_stream_socket(sock)):
                 raise ValueError(
-                    'A UNIX Domain Stream Socket was expected, got {!r}'
-                    .format(sock))
+                    f'A UNIX Domain Stream Socket was expected, got {sock!r}')
             sock.setblocking(False)
 
-        transport, protocol = yield from self._create_connection_transport(
+        transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
         return transport, protocol
 
-    @coroutine
-    def create_unix_server(self, protocol_factory, path=None, *,
-                           sock=None, backlog=100, ssl=None):
+    async def create_unix_server(self, protocol_factory, path=None, *,
+                                 sock=None, backlog=100, ssl=None):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -275,7 +263,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 if exc.errno == errno.EADDRINUSE:
                     # Let's improve the error message by adding
                     # with what exact address it occurs.
-                    msg = 'Address {!r} is already in use'.format(path)
+                    msg = f'Address {path!r} is already in use'
                     raise OSError(errno.EADDRINUSE, msg) from None
                 else:
                     raise
@@ -290,8 +278,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if (sock.family != socket.AF_UNIX or
                     not base_events._is_stream_socket(sock)):
                 raise ValueError(
-                    'A UNIX Domain Stream Socket was expected, got {!r}'
-                    .format(sock))
+                    f'A UNIX Domain Stream Socket was expected, got {sock!r}')
 
         server = base_events.Server(self, [sock])
         sock.listen(backlog)
@@ -339,12 +326,11 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             info.append('closed')
         elif self._closing:
             info.append('closing')
-        info.append('fd=%s' % self._fileno)
+        info.append(f'fd={self._fileno}')
         selector = getattr(self._loop, '_selector', None)
         if self._pipe is not None and selector is not None:
             polling = selector_events._test_selector_event(
-                          selector,
-                          self._fileno, selectors.EVENT_READ)
+                selector, self._fileno, selectors.EVENT_READ)
             if polling:
                 info.append('polling')
             else:
@@ -353,7 +339,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             info.append('open')
         else:
             info.append('closed')
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def _read_ready(self):
         try:
@@ -394,7 +380,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
     def __del__(self):
         if self._pipe is not None:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self._pipe.close()
 
@@ -473,24 +459,23 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             info.append('closed')
         elif self._closing:
             info.append('closing')
-        info.append('fd=%s' % self._fileno)
+        info.append(f'fd={self._fileno}')
         selector = getattr(self._loop, '_selector', None)
         if self._pipe is not None and selector is not None:
             polling = selector_events._test_selector_event(
-                          selector,
-                          self._fileno, selectors.EVENT_WRITE)
+                selector, self._fileno, selectors.EVENT_WRITE)
             if polling:
                 info.append('polling')
             else:
                 info.append('idle')
 
             bufsize = self.get_write_buffer_size()
-            info.append('bufsize=%s' % bufsize)
+            info.append(f'bufsize={bufsize}')
         elif self._pipe is not None:
             info.append('open')
         else:
             info.append('closed')
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def get_write_buffer_size(self):
         return len(self._buffer)
@@ -591,7 +576,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
     def __del__(self):
         if self._pipe is not None:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self._pipe.close()
 
@@ -1018,6 +1003,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
             self._watcher.close()
 
         self._watcher = watcher
+
 
 SelectorEventLoop = _UnixSelectorEventLoop
 DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy

@@ -401,7 +401,7 @@ def _ifconfig_getnode():
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    mac = _find_mac('ip', 'link list', [b'link/ether'], lambda i: i+1)
+    mac = _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
     return None
@@ -674,14 +674,14 @@ def getnode():
         getters = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
                    _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
-    for getter in getters:
+    for getter in getters + [_random_getnode]:
         try:
             _node = getter()
         except:
             continue
         if _node is not None:
             return _node
-    return _random_getnode()
+    assert False, '_random_getnode() returned None'
 
 
 _last_timestamp = None

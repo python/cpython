@@ -100,7 +100,7 @@ static PyObject *
 sys_breakpointhook(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
-    char *envar = Py_GETENV("PYTHONBREAKPOINT");
+    const char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
         envar = "pdb.set_trace";
@@ -109,8 +109,8 @@ sys_breakpointhook(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *
         /* The breakpoint is explicitly no-op'd. */
         Py_RETURN_NONE;
     }
-    char *last_dot = strrchr(envar, '.');
-    char *attrname = NULL;
+    const char *last_dot = strrchr(envar, '.');
+    const char *attrname = NULL;
     PyObject *modulepath = NULL;
 
     if (last_dot == NULL) {
@@ -1368,8 +1368,7 @@ static PyObject *
 sys_debugmallocstats(PyObject *self, PyObject *args)
 {
 #ifdef WITH_PYMALLOC
-    if (_PyMem_PymallocEnabled()) {
-        _PyObject_DebugMallocStats(stderr);
+    if (_PyObject_DebugMallocStats(stderr)) {
         fputc('\n', stderr);
     }
 #endif

@@ -107,7 +107,7 @@ This example uses the iterator form::
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.
 
-   http://www.w3schools.com/sql/
+   https://www.w3schools.com/sql/
       Tutorial, reference and examples for learning SQL syntax.
 
    :pep:`249` - Database API Specification 2.0

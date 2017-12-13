@@ -320,6 +320,8 @@ class TestPlistlib(unittest.TestCase):
                     'second': [1, 2],
                     'third': [3, 4],
                 })
+                if fmt != plistlib.FMT_BINARY:
+                    self.assertIsNot(pl2['first'], pl2['second'])
 
     def test_list_members(self):
         pl = {

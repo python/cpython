@@ -27,7 +27,7 @@ byte-code cache files in the directory containing the source code.
    Exception raised when an error occurs while attempting to compile the file.
 
 
-.. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1)
+.. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1, invalidation_mode=PycInvalidationMode.TIMESTAMP)
 
    Compile a source file to byte-code and write out the byte-code cache file.
    The source code is loaded from the file named *file*.  The byte-code is
@@ -53,6 +53,10 @@ byte-code cache files in the directory containing the source code.
    :func:`compile` function.  The default of ``-1`` selects the optimization
    level of the current interpreter.
 
+   *invalidation_mode* should be a member of the :class:`PycInvalidationMode`
+   enum and controls how the generated ``.pyc`` files are invalidated at
+   runtime.
+
    .. versionchanged:: 3.2
       Changed default value of *cfile* to be :PEP:`3147`-compliant.  Previous
       default was *file* + ``'c'`` (``'o'`` if optimization was enabled).
@@ -64,6 +68,41 @@ byte-code cache files in the directory containing the source code.
       does, e.g. permissions, write-and-move semantics, etc. Also added the
       caveat that :exc:`FileExistsError` is raised if *cfile* is a symlink or
       non-regular file.
+
+   .. versionchanged:: 3.7
+      The *invalidation_mode* parameter was added as specified in :pep:`552`.
+
+
+.. class:: PycInvalidationMode
+
+   A enumeration of possible methods the interpreter can use to determine
+   whether a bytecode file is up to date with a source file. The ``.pyc`` file
+   indicates the desired invalidation mode in its header. See
+   :ref:`pyc-invalidation` for more information on how Python invalidates
+   ``.pyc`` files at runtime.
+
+   .. versionadded:: 3.7
+
+   .. attribute:: TIMESTAMP
+
+      The ``.pyc`` file includes the timestamp and size of the source file,
+      which Python will compare against the metadata of the source file at
+      runtime to determine if the ``.pyc`` file needs to be regenerated.
+
+   .. attribute:: CHECKED_HASH
+
+      The ``.pyc`` file includes a hash of the source file content, which Python
+      will compare against the source at runtime to determine if the ``.pyc``
+      file needs to be regenerated.
+
+   .. attribute:: UNCHECKED_HASH
+
+      Like :attr:`CHECKED_HASH`, the ``.pyc`` file includes a hash of the source
+      file content. However, Python will at runtime assume the ``.pyc`` file is
+      up to date and not validate the ``.pyc`` against the source file at all.
+
+      This option is useful when the ``.pycs`` are kept up to date by some
+      system external to Python like a build system.
 
 
 .. function:: main(args=None)

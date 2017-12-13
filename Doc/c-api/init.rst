@@ -40,7 +40,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_GetCompiler`
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
-  * :c:func:`Py_GetProgramName`
   * :c:func:`Py_GetVersion`
 
 * Utilities:
@@ -59,8 +58,8 @@ The following functions can be safely called before Python is initialized:
    The following functions **should not be called** before
    :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
    :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
-   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome` and
-   :c:func:`PyEval_InitThreads`.
+   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
+   :c:func:`Py_GetProgramName` and :c:func:`PyEval_InitThreads`.
 
 
 .. _global-conf-vars:
@@ -339,7 +338,7 @@ Process-wide parameters
    .. versionadded:: 3.4
 
 
-.. c:function:: void Py_SetProgramName(wchar_t *name)
+.. c:function:: void Py_SetProgramName(const wchar_t *name)
 
    .. index::
       single: Py_Initialize()
@@ -606,7 +605,7 @@ Process-wide parameters
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
 
-.. c:function:: void Py_SetPythonHome(wchar_t *home)
+.. c:function:: void Py_SetPythonHome(const wchar_t *home)
 
    Set the default "home" directory, that is, the location of the standard
    Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
