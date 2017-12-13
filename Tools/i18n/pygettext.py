@@ -129,7 +129,7 @@ Options:
         The style name is case insensitive.  GNU style is the default.
 
     -v
-    --verbose 
+    --verbose
         Print the names of the files being processed.
 
     -V
