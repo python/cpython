@@ -434,14 +434,11 @@ typedef struct {
 
 /* .cmdline is initialized to zeros */
 #define _PyMain_INIT \
-    {.status = 0, \
-     .cf = {.cf_flags = 0}, \
-     .core_config = _PyCoreConfig_INIT, \
+    {.core_config = _PyCoreConfig_INIT, \
      .config = _PyMainInterpreterConfig_INIT, \
-     .main_importer_path = NULL, \
      .run_code = -1, \
-     .err = _Py_INIT_OK(), \
-     .env_warning_options = {0, NULL}}
+     .err = _Py_INIT_OK()}
+/* Note: _PyMain_INIT sets other fields to 0/NULL */
 
 
 static void
@@ -737,6 +734,9 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
     {
         cmdline->filename = pymain->argv[_PyOS_optind];
     }
+
+    /* -c and -m options are exclusive */
+    assert(!(cmdline->command != NULL && cmdline->module != NULL));
 
     return 0;
 }
@@ -1082,22 +1082,34 @@ pymain_header(_PyMain *pymain)
 }
 
 
-static void
-pymain_set_argv(_PyMain *pymain)
+static int
+pymain_set_sys_argv(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
-    /* TODO: Move this to _Py_InitializeMainInterpreter */
-    if (cmdline->command != NULL) {
-        /* Backup _PyOS_optind and force sys.argv[0] = '-c' */
+    if (cmdline->command != NULL || cmdline->module != NULL) {
+        /* Backup _PyOS_optind */
         _PyOS_optind--;
-        pymain->argv[_PyOS_optind] = L"-c";
     }
 
-    if (cmdline->module != NULL) {
-        /* Backup _PyOS_optind and force sys.argv[0] = '-m'*/
-        _PyOS_optind--;
-        pymain->argv[_PyOS_optind] = L"-m";
+    /* Copy argv to be able to modify it (to force -c/-m) */
+    int argc2 = pymain->argc - _PyOS_optind;
+    size_t size = argc2 * sizeof(pymain->argv[0]);
+    wchar_t **argv2 = PyMem_RawMalloc(size);
+    if (argv2 == NULL) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
+    }
+    memcpy(argv2, &pymain->argv[_PyOS_optind], size);
+
+    /* TODO: Move this to _Py_InitializeMainInterpreter */
+    if (cmdline->command != NULL) {
+        /* Force sys.argv[0] = '-c' */
+        argv2[0] = L"-c";
+    }
+    else if (cmdline->module != NULL) {
+        /* Force sys.argv[0] = '-m'*/
+        argv2[0] = L"-m";
     }
 
     int update_path;
@@ -1108,9 +1120,18 @@ pymain_set_argv(_PyMain *pymain)
         /* Use config settings to decide whether or not to update sys.path[0] */
         update_path = (Py_IsolatedFlag == 0);
     }
-    PySys_SetArgvEx(pymain->argc - _PyOS_optind,
-                    pymain->argv + _PyOS_optind,
-                    update_path);
+
+    /* Set sys.argv. If '-c' and '-m' options are not used in the command line
+       and update_path is non-zero, prepend argv[0] to sys.path. If argv[0] is
+       a symlink, use the real path. */
+    _PyInitError err = _PySys_SetArgvWithError(argc2, argv2, update_path);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
+        return -1;
+    }
+
+    PyMem_RawFree(argv2);
+    return 0;
 }
 
 
@@ -1604,7 +1625,7 @@ pymain_init_utf8_mode(_PyMain *pymain)
     }
 #endif
 
-    wchar_t *xopt = pymain_get_xoption(pymain, L"utf8");
+    const wchar_t *xopt = pymain_get_xoption(pymain, L"utf8");
     if (xopt) {
         wchar_t *sep = wcschr(xopt, L'=');
         if (sep) {
@@ -1626,7 +1647,7 @@ pymain_init_utf8_mode(_PyMain *pymain)
         return 0;
     }
 
-    char *opt = pymain_get_env_var("PYTHONUTF8");
+    const char *opt = pymain_get_env_var("PYTHONUTF8");
     if (opt) {
         if (strcmp(opt, "1") == 0) {
             core_config->utf8_mode = 1;
@@ -1788,6 +1809,22 @@ pymain_init_python(_PyMain *pymain)
     if (pymain_init_main_interpreter(pymain)) {
         return -1;
     }
+
+    if (pymain->cmdline.filename != NULL) {
+        /* If filename is a package (ex: directory or ZIP file) which contains
+           __main__.py, main_importer_path is set to filename and will be
+           prepended to sys.path by pymain_run_main_from_importer(). Otherwise,
+           main_importer_path is set to NULL. */
+        pymain->main_importer_path = pymain_get_importer(pymain->cmdline.filename);
+    }
+
+    /* FIXME: put argv into _PyMainInterpreterConfig.
+       Currently, PySys_SetArgvEx() can still modify sys.path and so must be
+       called after _Py_InitializeMainInterpreter() which calls
+       _PyPathConfig_Init(). */
+    if (pymain_set_sys_argv(pymain) < 0) {
+        return -1;
+    }
     return 0;
 }
 
@@ -1799,12 +1836,6 @@ pymain_run_python(_PyMain *pymain)
 
     pymain_header(pymain);
     pymain_import_readline(pymain);
-
-    if (cmdline->filename != NULL) {
-        pymain->main_importer_path = pymain_get_importer(cmdline->filename);
-    }
-
-    pymain_set_argv(pymain);
 
     if (cmdline->command) {
         pymain->status = pymain_run_command(cmdline->command, &pymain->cf);
@@ -1868,7 +1899,6 @@ pymain_impl(_PyMain *pymain)
            other special meaning */
         pymain->status = 120;
     }
-
     return 0;
 }
 
