@@ -47,7 +47,8 @@ matrix:
               echo "Only docs were updated, stopping build process."
               exit
             fi
-            ./configure
+            # Build in release mode
+            ./configure PYTHON_FOR_REGEN=python3
             make -s -j4
             # Need a venv that can parse covered code.
             ./python -m venv venv
@@ -70,7 +71,8 @@ before_script:
         echo "Only docs were updated, stopping build process."
         exit
       fi
-      ./configure --with-pydebug
+      # Build in debug mode
+      ./configure --with-pydebug PYTHON_FOR_REGEN=python3
       make -j4
       make -j4 regen-all clinic
       changes=`git status --porcelain`
