@@ -1114,50 +1114,32 @@ pymain_set_argv(_PyMain *pymain)
 }
 
 
-static void
-pymain_get_flag(int flag, int *value)
-{
-    if (flag) {
-        *value = flag;
-    }
-}
-
-static void
-pymain_set_flag(int *flag, int value)
-{
-    /* Helper to set flag variables from command line options
-    *   - uses the higher of the two values if they're both set
-    *   - otherwise leaves the flag unset
-    */
-    if (*flag < value) {
-        *flag = value;
-    }
-}
-
-
 /* Get Py_xxx global configuration variables */
 static void
 pymain_get_global_config(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
-    pymain_get_flag(Py_BytesWarningFlag, &cmdline->bytes_warning);
-    pymain_get_flag(Py_DebugFlag, &cmdline->debug);
-    pymain_get_flag(Py_InspectFlag, &cmdline->inspect);
-    pymain_get_flag(Py_InteractiveFlag, &cmdline->interactive);
-    pymain_get_flag(Py_IsolatedFlag, &cmdline->isolated);
-    pymain_get_flag(Py_OptimizeFlag, &cmdline->optimization_level);
-    pymain_get_flag(Py_DontWriteBytecodeFlag, &cmdline->dont_write_bytecode);
-    pymain_get_flag(Py_NoUserSiteDirectory, &cmdline->no_user_site_directory);
-    pymain_get_flag(Py_NoSiteFlag, &cmdline->no_site_import);
-    pymain_get_flag(Py_UnbufferedStdioFlag, &cmdline->use_unbuffered_io);
-    pymain_get_flag(Py_VerboseFlag, &cmdline->verbosity);
-    pymain_get_flag(Py_QuietFlag, &cmdline->quiet_flag);
-#ifdef MS_WINDOWS
-    pymain_get_flag(Py_LegacyWindowsFSEncodingFlag, &cmdline->legacy_windows_fs_encoding);
-    pymain_get_flag(Py_LegacyWindowsStdioFlag, &cmdline->legacy_windows_stdio);
-#endif
 
-    pymain_get_flag(Py_IgnoreEnvironmentFlag, &pymain->core_config.ignore_environment);
+    cmdline->bytes_warning = Py_BytesWarningFlag;
+    cmdline->debug = Py_DebugFlag;
+    cmdline->inspect = Py_InspectFlag;
+    cmdline->interactive = Py_InteractiveFlag;
+    cmdline->isolated = Py_IsolatedFlag;
+    cmdline->optimization_level = Py_OptimizeFlag;
+    cmdline->dont_write_bytecode = Py_DontWriteBytecodeFlag;
+    cmdline->no_user_site_directory = Py_NoUserSiteDirectory;
+    cmdline->no_site_import = Py_NoSiteFlag;
+    cmdline->use_unbuffered_io = Py_UnbufferedStdioFlag;
+    cmdline->verbosity = Py_VerboseFlag;
+    cmdline->quiet_flag = Py_QuietFlag;
+#ifdef MS_WINDOWS
+    cmdline->legacy_windows_fs_encoding = Py_LegacyWindowsFSEncodingFlag;
+    cmdline->legacy_windows_stdio = Py_LegacyWindowsStdioFlag;
+#endif
+    cmdline->check_hash_pycs_mode = _Py_CheckHashBasedPycsMode ;
+
+    pymain->core_config.ignore_environment = Py_IgnoreEnvironmentFlag;
+    pymain->core_config.utf8_mode = Py_UTF8Mode;
 }
 
 
@@ -1166,26 +1148,27 @@ static void
 pymain_set_global_config(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
-    pymain_set_flag(&Py_BytesWarningFlag, cmdline->bytes_warning);
-    pymain_set_flag(&Py_DebugFlag, cmdline->debug);
-    pymain_set_flag(&Py_InspectFlag, cmdline->inspect);
-    pymain_set_flag(&Py_InteractiveFlag, cmdline->interactive);
-    pymain_set_flag(&Py_IsolatedFlag, cmdline->isolated);
-    pymain_set_flag(&Py_OptimizeFlag, cmdline->optimization_level);
-    pymain_set_flag(&Py_DontWriteBytecodeFlag, cmdline->dont_write_bytecode);
-    pymain_set_flag(&Py_NoUserSiteDirectory, cmdline->no_user_site_directory);
-    pymain_set_flag(&Py_NoSiteFlag, cmdline->no_site_import);
-    pymain_set_flag(&Py_UnbufferedStdioFlag, cmdline->use_unbuffered_io);
-    pymain_set_flag(&Py_VerboseFlag, cmdline->verbosity);
-    pymain_set_flag(&Py_QuietFlag, cmdline->quiet_flag);
-    if (cmdline->check_hash_pycs_mode)
-        _Py_CheckHashBasedPycsMode = cmdline->check_hash_pycs_mode;
+
+    Py_BytesWarningFlag = cmdline->bytes_warning;
+    Py_DebugFlag = cmdline->debug;
+    Py_InspectFlag = cmdline->inspect;
+    Py_InteractiveFlag = cmdline->interactive;
+    Py_IsolatedFlag = cmdline->isolated;
+    Py_OptimizeFlag = cmdline->optimization_level;
+    Py_DontWriteBytecodeFlag = cmdline->dont_write_bytecode;
+    Py_NoUserSiteDirectory = cmdline->no_user_site_directory;
+    Py_NoSiteFlag = cmdline->no_site_import;
+    Py_UnbufferedStdioFlag = cmdline->use_unbuffered_io;
+    Py_VerboseFlag = cmdline->verbosity;
+    Py_QuietFlag = cmdline->quiet_flag;
+    _Py_CheckHashBasedPycsMode = cmdline->check_hash_pycs_mode;
 #ifdef MS_WINDOWS
-    pymain_set_flag(&Py_LegacyWindowsFSEncodingFlag, cmdline->legacy_windows_fs_encoding);
-    pymain_set_flag(&Py_LegacyWindowsStdioFlag, cmdline->legacy_windows_stdio);
+    Py_LegacyWindowsFSEncodingFlag = cmdline->legacy_windows_fs_encoding;
+    Py_LegacyWindowsStdioFlag = cmdline->legacy_windows_stdio;
 #endif
 
-    pymain_set_flag(&Py_IgnoreEnvironmentFlag, pymain->core_config.ignore_environment);
+    Py_IgnoreEnvironmentFlag = pymain->core_config.ignore_environment;
+    Py_UTF8Mode = pymain->core_config.utf8_mode;
 }
 
 
@@ -1609,6 +1592,57 @@ _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
 }
 
 
+static int
+pymain_init_utf8_mode(_PyMain *pymain)
+{
+    _PyCoreConfig *core_config = &pymain->core_config;
+
+#ifdef MS_WINDOWS
+    if (pymain->cmdline.legacy_windows_fs_encoding) {
+        core_config->utf8_mode = 0;
+        return 0;
+    }
+#endif
+
+    wchar_t *xopt = pymain_get_xoption(pymain, L"utf8");
+    if (xopt) {
+        wchar_t *sep = wcschr(xopt, L'=');
+        if (sep) {
+            xopt = sep + 1;
+            if (wcscmp(xopt, L"1") == 0) {
+                core_config->utf8_mode = 1;
+            }
+            else if (wcscmp(xopt, L"0") == 0) {
+                core_config->utf8_mode = 0;
+            }
+            else {
+                pymain->err = _Py_INIT_USER_ERR("invalid -X utf8 option value");
+                return -1;
+            }
+        }
+        else {
+            core_config->utf8_mode = 1;
+        }
+        return 0;
+    }
+
+    char *opt = pymain_get_env_var("PYTHONUTF8");
+    if (opt) {
+        if (strcmp(opt, "1") == 0) {
+            core_config->utf8_mode = 1;
+        }
+        else if (strcmp(opt, "0") == 0) {
+            core_config->utf8_mode = 0;
+        }
+        else {
+            pymain->err = _Py_INIT_USER_ERR("invalid PYTHONUTF8 environment "
+                                             "variable value");
+            return -1;
+        }
+        return 0;
+    }
+    return 0;
+}
 
 
 static int
@@ -1674,6 +1708,9 @@ pymain_parse_envvars(_PyMain *pymain)
         pymain->core_config.malloc_stats = 1;
     }
 
+    if (pymain_init_utf8_mode(pymain) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -1702,6 +1739,7 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
     if (pymain_parse_envvars(pymain) < 0) {
         return -1;
     }
+    /* FIXME: if utf8_mode value changed, parse again cmdline */
 
     _PyInitError err = _PyMainInterpreterConfig_Read(&pymain->config);
     if (_Py_INIT_FAILED(err)) {
@@ -1730,6 +1768,7 @@ pymain_parse_cmdline_envvars(_PyMain *pymain)
 static int
 pymain_init_python(_PyMain *pymain)
 {
+
     pymain_set_global_config(pymain);
 
     pymain_init_stdio(pymain);
@@ -1788,6 +1827,7 @@ pymain_init(_PyMain *pymain)
         return -1;
     }
 
+    pymain->core_config.utf8_mode = Py_UTF8Mode;
     pymain->core_config._disable_importlib = 0;
     pymain->config.install_signal_handlers = 1;
 

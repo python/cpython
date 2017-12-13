@@ -17,6 +17,15 @@ wmain(int argc, wchar_t **argv)
 #else
 
 
+static void _Py_NO_RETURN
+fatal_error(const char *msg)
+{
+    fprintf(stderr, "Fatal Python error: %s\n", msg);
+    fflush(stderr);
+    exit(1);
+}
+
+
 int
 main(int argc, char **argv)
 {
@@ -28,9 +37,7 @@ main(int argc, char **argv)
 
     _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
-        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
-        fflush(stderr);
-        exit(1);
+        fatal_error(err.msg);
     }
 
     /* Force default allocator, to be able to release memory above
@@ -40,7 +47,7 @@ main(int argc, char **argv)
     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     if (!argv_copy || !argv_copy2) {
-        fprintf(stderr, "out of memory\n");
+        fatal_error("out of memory");
         return 1;
     }
 
@@ -55,7 +62,7 @@ main(int argc, char **argv)
 
     oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
     if (!oldloc) {
-        fprintf(stderr, "out of memory\n");
+        fatal_error("out of memory");
         return 1;
     }
 
@@ -73,6 +80,7 @@ main(int argc, char **argv)
      * details.
      */
     if (_Py_LegacyLocaleDetected()) {
+        Py_UTF8Mode = 1;
         _Py_CoerceLegacyLocale();
     }
 
@@ -81,10 +89,7 @@ main(int argc, char **argv)
         argv_copy[i] = Py_DecodeLocale(argv[i], NULL);
         if (!argv_copy[i]) {
             PyMem_RawFree(oldloc);
-            fprintf(stderr, "Fatal Python error: "
-                            "unable to decode the command line argument #%i\n",
-                            i + 1);
-            return 1;
+            fatal_error("unable to decode the command line arguments");
         }
         argv_copy2[i] = argv_copy[i];
     }

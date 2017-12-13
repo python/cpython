@@ -2580,6 +2580,7 @@ class TextIOWrapperTest(unittest.TestCase):
         t.reconfigure(line_buffering=None)
         self.assertEqual(t.line_buffering, True)
 
+    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_default_encoding(self):
         old_environ = dict(os.environ)
         try:
@@ -2599,6 +2600,7 @@ class TextIOWrapperTest(unittest.TestCase):
             os.environ.update(old_environ)
 
     @support.cpython_only
+    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_device_encoding(self):
         # Issue 15989
         import _testcapi
