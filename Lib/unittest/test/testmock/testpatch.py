@@ -626,6 +626,13 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(foo.values, original)
 
 
+    def test_patch_dict_as_context_manager(self):
+        foo = {'a': 'b'}
+        with patch.dict(foo, a='c') as patched:
+            self.assertDictEqual(patched, {'a': 'c'})
+        self.assertDictEqual(foo, {'a': 'b'})
+
+
     def test_name_preserved(self):
         foo = {}
 
