@@ -88,9 +88,7 @@ if sys.platform.startswith("aix"):
     # AIX style uses an archive (suffix .a) with members (e.g., shr.o, libssl.so)
     # see issue#26439 and _aix.py for more details
 
-    from ctypes import _aix
-    def find_library(name):
-        return _aix.find_library(name)
+    from ctypes._aix import find_library
 
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
@@ -328,15 +326,14 @@ def test():
         # issue-26439 - fix broken test call for AIX
         elif sys.platform.startswith("aix"):
             from ctypes import CDLL
-            RTLD_MEMBER =  0x00040000
             if sys.maxsize < 2**32:
-                print("Using CDLL(name, RTLD_MEMBER): %s" % CDLL("libc.a(shr.o)", RTLD_MEMBER))
+                print("Using CDLL(name, os.RTLD_MEMBER): %s" % CDLL("libc.a(shr.o)", os.RTLD_MEMBER))
                 print("Using cdll.LoadLibrary(): %s" % cdll.LoadLibrary("libc.a(shr.o)"))
                 # librpm.so is only available as 32-bit shared library
                 print(find_library("rpm"))
                 print(cdll.LoadLibrary("librpm.so"))
             else:
-                print("Using CDLL(name, RTLD_MEMBER): %s" % CDLL("libc.a(shr_64.o)", RTLD_MEMBER))
+                print("Using CDLL(name, os.RTLD_MEMBER): %s" % CDLL("libc.a(shr_64.o)", os.RTLD_MEMBER))
                 print("Using cdll.LoadLibrary(): %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
             print("crypt\t:: %s" % find_library("crypt"))
             print("crypt\t:: %s" % cdll.LoadLibrary(find_library("crypt")))

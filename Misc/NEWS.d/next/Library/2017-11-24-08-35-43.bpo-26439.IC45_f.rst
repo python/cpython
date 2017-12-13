@@ -1,4 +1,5 @@
 Fix ctypes.util.find_library() for AIX
+by implementing ctypes._aix.find_library()
 Patch by: Michael Felt aka aixtools
 
 ctypes.util.find_library has always returned None on a standard AIX.
