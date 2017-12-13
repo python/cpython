@@ -322,7 +322,8 @@ class AbstractEventLoop:
     async def create_connection(self, protocol_factory, host=None, port=None,
                                 *, ssl=None, family=0, proto=0,
                                 flags=0, sock=None, local_addr=None,
-                                server_hostname=None):
+                                server_hostname=None,
+                                ssl_handshake_timeout=10.0):
         raise NotImplementedError
 
     async def create_server(self, protocol_factory, host=None, port=None,
@@ -363,6 +364,11 @@ class AbstractEventLoop:
         the same port as other existing endpoints are bound to, so long as
         they all set this flag when being created. This option is not
         supported on Windows.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for completion of the SSL handshake before aborting the
+        connection. Default is 10s, longer timeouts may increase vulnerability 
+        to DoS attacks (see https://support.f5.com/csp/article/K13834)
         """
         raise NotImplementedError
 
