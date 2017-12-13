@@ -639,6 +639,48 @@ _event_loop_policy = None
 _lock = threading.Lock()
 
 
+# A TLS for the running event loop, used by _get_running_loop.
+class _RunningLoop(threading.local):
+    loop_pid = (None, None)
+
+
+_running_loop = _RunningLoop()
+
+
+def get_running_loop():
+    """Return the running event loop.  Raise a RuntimeError if there is none.
+
+    This function is thread-specific.
+    """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
+    loop = _get_running_loop()
+    if loop is None:
+        raise RuntimeError('no running event loop')
+    return loop
+
+
+def _get_running_loop():
+    """Return the running event loop or None.
+
+    This is a low-level function intended to be used by event loops.
+    This function is thread-specific.
+    """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
+    running_loop, pid = _running_loop.loop_pid
+    if running_loop is not None and pid == os.getpid():
+        return running_loop
+
+
+def _set_running_loop(loop):
+    """Set the running event loop.
+
+    This is a low-level function intended to be used by event loops.
+    This function is thread-specific.
+    """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
+    _running_loop.loop_pid = (loop, os.getpid())
+
+
 def _init_event_loop_policy():
     global _event_loop_policy
     with _lock:
@@ -663,6 +705,22 @@ def set_event_loop_policy(policy):
     _event_loop_policy = policy
 
 
+def get_event_loop():
+    """Return an asyncio event loop.
+
+    When called from a coroutine or a callback (e.g. scheduled with call_soon
+    or similar API), this function will always return the running event loop.
+
+    If there is no running event loop set, the function will return
+    the result of `get_event_loop_policy().get_event_loop()` call.
+    """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
+    current_loop = _get_running_loop()
+    if current_loop is not None:
+        return current_loop
+    return get_event_loop_policy().get_event_loop()
+
+
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
     get_event_loop_policy().set_event_loop(loop)
@@ -684,6 +742,13 @@ def set_child_watcher(watcher):
     return get_event_loop_policy().set_child_watcher(watcher)
 
 
+# Alias pure-Python implementations for testing purposes.
+_py__get_running_loop = _get_running_loop
+_py__set_running_loop = _set_running_loop
+_py_get_running_loop = get_running_loop
+_py_get_event_loop = get_event_loop
+
+
 try:
     # get_event_loop() is one of the most frequently called
     # functions in asyncio.  Pure Python implementation is
@@ -691,51 +756,10 @@ try:
     from _asyncio import (_get_running_loop, _set_running_loop,
                           get_running_loop, get_event_loop)
 except ImportError:
-    # A TLS for the running event loop, used by _get_running_loop.
-    class _RunningLoop(threading.local):
-        loop_pid = (None, None)
-
-    _running_loop = _RunningLoop()
-
-    def _get_running_loop():
-        """Return the running event loop or None.
-
-        This is a low-level function intended to be used by event loops.
-        This function is thread-specific.
-        """
-        running_loop, pid = _running_loop.loop_pid
-        if running_loop is not None and pid == os.getpid():
-            return running_loop
-
-    def _set_running_loop(loop):
-        """Set the running event loop.
-
-        This is a low-level function intended to be used by event loops.
-        This function is thread-specific.
-        """
-        _running_loop.loop_pid = (loop, os.getpid())
-
-    def get_running_loop():
-        """Return the running event loop. Raise a RuntimeError if there is none.
-
-        This function is thread-specific.
-        """
-        loop = _get_running_loop()
-        if loop is None:
-            raise RuntimeError('no running event loop')
-        return loop
-
-    def get_event_loop():
-        """Return an asyncio event loop.
-
-        When called from a coroutine or a callback (e.g. scheduled with
-        call_soon or similar API), this function will always return the
-        running event loop.
-
-        If there is no running event loop set, the function will return
-        the result of `get_event_loop_policy().get_event_loop()` call.
-        """
-        current_loop = _get_running_loop()
-        if current_loop is not None:
-            return current_loop
-        return get_event_loop_policy().get_event_loop()
+    pass
+else:
+    # Alias C implementations for testing purposes.
+    _c__get_running_loop = _get_running_loop
+    _c__set_running_loop = _set_running_loop
+    _c_get_running_loop = get_running_loop
+    _c_get_event_loop = get_event_loop
