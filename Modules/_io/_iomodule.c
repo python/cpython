@@ -609,6 +609,21 @@ iomodule_free(PyObject *mod) {
     iomodule_clear(mod);
 }
 
+/*[clinic input]
+_io._flush_all_buffers
+
+Flushes all buffered io objects.  Called by atexit.
+
+[clinic start generated code]*/
+
+static PyObject *
+_io__flush_all_buffers_impl(PyObject *module)
+/*[clinic end generated code: output=a242f507481504e1 input=8b6276ac61894717]*/
+{
+    _PyIO_atexit_flush();
+    Py_INCREF(Py_None);
+    return Py_None;
+}
 
 /*
  * Module definition
@@ -618,6 +633,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO__FLUSH_ALL_BUFFERS_METHODDEF
     {NULL, NULL}
 };
 

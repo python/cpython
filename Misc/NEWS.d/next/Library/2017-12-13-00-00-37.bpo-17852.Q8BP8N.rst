@@ -1,1 +1,2 @@
-Revert incorrect fix based on misunderstanding of _Py_PyAtExit() semantics.
+Fix PR #3372, flush BufferedWriter objects on exit.  Use atexit.register()
+and not _Py_PyAtExit().
