@@ -2086,6 +2086,8 @@ _Py_FatalInitError(_PyInitError err)
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(void))
 {
+    /* Guard against API misuse (see bpo-17852) */
+    assert(_PyRuntime.pyexitfunc == NULL || _PyRuntime.pyexitfunc == func);
     _PyRuntime.pyexitfunc = func;
 }
 
