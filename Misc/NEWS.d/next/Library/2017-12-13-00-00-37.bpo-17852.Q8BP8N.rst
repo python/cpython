@@ -1,0 +1,1 @@
+Revert incorrect fix based on misunderstanding of _Py_PyAtExit() semantics.
