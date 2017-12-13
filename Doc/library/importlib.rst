@@ -512,11 +512,12 @@ ABC hierarchy::
     .. abstractmethod:: is_resource(path)
 
         Returns ``True`` if the named *path* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *path* does not exist.
 
     .. abstractmethod:: contents()
 
-        Return an :term:`iterator` of strings over the contents of the
-        package. Due note that it is not required that all names
+        Returns an :term:`iterator` of strings over the contents of
+        the package. Due note that it is not required that all names
         returned by the iterator be actual resources, e.g. it is
         acceptable to return names for which :meth:`is_resource` would
         be false.
@@ -527,6 +528,8 @@ ABC hierarchy::
         For instance, returning subdirectory names is allowed so that
         when it is known that the package and resources are stored on
         the file system then those subdirectory names can be used.
+
+        The abstract method returns an empty iterator.
 
 
 .. class:: ResourceLoader

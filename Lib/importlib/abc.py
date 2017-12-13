@@ -377,4 +377,4 @@ class ResourceReader(Loader):
     @abc.abstractmethod
     def contents(self):
         """Return an iterator of strings over the contents of the package."""
-        raise FileNotFoundError
+        return iter([])

@@ -308,16 +308,16 @@ class ExecutionLoaderDefaultsTests(ABCTestHarness):
 class ResourceReader:
 
     def open_resource(self, *args, **kwargs):
-        super().open_resource(*args, **kwargs)
+        return super().open_resource(*args, **kwargs)
 
     def resource_path(self, *args, **kwargs):
-        super().resource_path(*args, **kwargs)
+        return super().resource_path(*args, **kwargs)
 
     def is_resource(self, *args, **kwargs):
-        super().is_resource(*args, **kwargs)
+        return super().is_resource(*args, **kwargs)
 
     def contents(self, *args, **kwargs):
-        super().contents(*args, **kwargs)
+        return super().contents(*args, **kwargs)
 
 
 class ResourceReaderDefaultsTests(ABCTestHarness):
@@ -325,16 +325,19 @@ class ResourceReaderDefaultsTests(ABCTestHarness):
     SPLIT = make_abc_subclasses(ResourceReader)
 
     def test_open_resource(self):
-        pass
+        with self.assertRaises(FileNotFoundError):
+            self.ins.open_resource('dummy_file')
 
     def test_resource_path(self):
-        pass
+        with self.assertRaises(FileNotFoundError):
+            self.ins.resource_path('dummy_file')
 
     def test_is_resource(self):
-        pass
+        with self.assertRaises(FileNotFoundError):
+            self.ins.is_resource('dummy_file')
 
     def test_contents(self):
-        pass
+        self.assertEqual([], list(self.ins.contents()))
 
 (Frozen_RRDefaultTests,
  Source_RRDefaultsTests
