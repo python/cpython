@@ -1351,7 +1351,7 @@ to speed up repeated connections from the same clients.
    The *capath* string, if present, is
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
-   <https://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
+   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_load_verify_locations.html>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
    PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
@@ -1614,7 +1614,7 @@ to speed up repeated connections from the same clients.
 
    Get statistics about the SSL sessions created or managed by this context.
    A dictionary is returned which maps the names of each `piece of information
-   <https://www.openssl.org/docs/ssl/SSL_CTX_sess_number.html>`_ to their
+   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
