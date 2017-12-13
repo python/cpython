@@ -962,7 +962,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                             backlog=100,
                             ssl=None,
                             reuse_address=None,
-                            reuse_port=None):
+                            reuse_port=None,
+                            handshake_timeout=10.0):
         """Create a TCP server.
 
         The host parameter can be a string, in that case the TCP server is
@@ -1051,7 +1052,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         for sock in sockets:
             sock.listen(backlog)
             sock.setblocking(False)
-            self._start_serving(protocol_factory, sock, ssl, server, backlog)
+            self._start_serving(protocol_factory, sock, ssl, server, backlog, handshake_timeout)
         if self._debug:
             logger.info("%r is serving", server)
         return server
