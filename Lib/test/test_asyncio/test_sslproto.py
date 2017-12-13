@@ -11,6 +11,7 @@ except ImportError:
 import asyncio
 from asyncio import log
 from asyncio import sslproto
+from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 
 
@@ -62,6 +63,15 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
         with test_utils.disable_logger():
             self.loop.run_until_complete(handshake_fut)
+
+    def test_handshake_timeout(self):
+        # bpo-29970: Check that a connection is aborted if handshake is not
+        # completed within 10 seconds, instead of remaining open indefinitely
+        ssl_proto = self.ssl_protocol()
+        transport = self.connection_made(ssl_proto)
+        
+        self.loop.run_until_complete(tasks.sleep(12, loop=self.loop))
+        self.assertTrue(transport.abort.called)
 
     def test_eof_received_waiter(self):
         waiter = asyncio.Future(loop=self.loop)
