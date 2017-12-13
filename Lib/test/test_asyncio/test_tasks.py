@@ -2256,16 +2256,54 @@ class BaseTaskIntrospectionTests:
         self.assertEqual(asyncio.all_tasks(loop), set())
 
 
-class PyTestIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
+class PyIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
     _register_task = staticmethod(tasks._py_register_task)
     _enter_task = staticmethod(tasks._py_enter_task)
     _leave_task = staticmethod(tasks._py_leave_task)
 
 
-class CTestIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
+class CIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
     _register_task = staticmethod(tasks._c_register_task)
     _enter_task = staticmethod(tasks._c_enter_task)
     _leave_task = staticmethod(tasks._c_leave_task)
+
+
+class BaseCurrentLoopTests:
+
+    def new_task(self, coro):
+        raise NotImplementedError
+
+    def test_current_task_no_running_loop(self):
+        with self.assertRaises(RuntimeError):
+            asyncio.current_task(loop=self.loop)
+
+    def test_current_task_no_running_loop_implicit(self):
+        with self.assertRaises(RuntimeError):
+            asyncio.current_task()
+
+    def test_current_task_with_implicit_loop(self):
+        async def coro():
+            self.assertIs(asyncio.current_task(loop=self.loop), task)
+
+            self.assertIs(asyncio.current_task(None), task)
+            self.assertIs(asyncio.current_task(), task)
+
+        task = self.new_task(coro())
+        self.loop.run_until_complete(task)
+        with self.assertRaises(RuntimeError):
+            asyncio.current_task(loop=self.loop)
+
+
+class PyCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
+
+    def new_task(self, coro):
+        return _PyTask(coro)
+
+
+class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
+
+    def new_task(self, coro):
+        return _CTask(coro)
 
 
 class GenericTaskTests(test_utils.TestCase):
