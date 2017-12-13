@@ -35,7 +35,7 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 HOST = test_support.HOST
 MSG = b'Michael Gilfix was here\n'
-SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
+SUPPORTS_IPV6 = test_support.IPV6_ENABLED
 
 try:
     import thread
