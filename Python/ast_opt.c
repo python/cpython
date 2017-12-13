@@ -180,9 +180,18 @@ fold_binop(expr_ty node, PyArena *arena)
         return 1;
     }
 
+    if (newval == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return 0;
+        }
+        PyErr_Clear();
+        return 1;
+    }
+
     /* Avoid creating large constants. */
     Py_ssize_t size = PyObject_Size(newval);
     if (size == -1) {
+        Py_DECREF(newval);
         if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
             return 0;
         }
