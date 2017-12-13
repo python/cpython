@@ -154,10 +154,10 @@ pymain_usage(int error, const wchar_t* program)
 }
 
 
-static char*
+static const char*
 pymain_get_env_var(const char *name)
 {
-    char *var = Py_GETENV(name);
+    const char *var = Py_GETENV(name);
     if (var && var[0] != '\0') {
         return var;
     }
@@ -170,7 +170,7 @@ pymain_get_env_var(const char *name)
 static void
 pymain_run_startup(PyCompilerFlags *cf)
 {
-    char *startup = pymain_get_env_var("PYTHONSTARTUP");
+    const char *startup = pymain_get_env_var("PYTHONSTARTUP");
     if (startup == NULL) {
         return;
     }
@@ -542,7 +542,7 @@ error:
 
 
 static wchar_t*
-pymain_wstrdup(_PyMain *pymain, wchar_t *str)
+pymain_wstrdup(_PyMain *pymain, const wchar_t *str)
 {
     wchar_t *str2 = _PyMem_RawWcsdup(str);
     if (str2 == NULL) {
@@ -554,7 +554,7 @@ pymain_wstrdup(_PyMain *pymain, wchar_t *str)
 
 
 static int
-pymain_optlist_append(_PyMain *pymain, _Py_OptList *list, wchar_t *str)
+pymain_optlist_append(_PyMain *pymain, _Py_OptList *list, const wchar_t *str)
 {
     wchar_t *str2 = pymain_wstrdup(pymain, str);
     if (str2 == NULL) {
@@ -774,16 +774,82 @@ pymain_add_warnings_optlist(_Py_OptList *warnings)
     return 0;
 }
 
+
+static int
+pymain_add_warning_dev_mode(_PyCoreConfig *core_config)
+{
+    if (core_config->dev_mode) {
+        PyObject *option = PyUnicode_FromString("default");
+        if (option == NULL) {
+            return -1;
+        }
+        if (_PySys_AddWarnOptionWithError(option)) {
+            Py_DECREF(option);
+            return -1;
+        }
+        Py_DECREF(option);
+    }
+    return 0;
+}
+
+
+static int
+pymain_add_warning_bytes_flag(int bytes_warning_flag)
+{
+    /* If the bytes_warning_flag isn't set, bytesobject.c and bytearrayobject.c
+     * don't even try to emit a warning, so we skip setting the filter in that
+     * case.
+     */
+    if (bytes_warning_flag) {
+        const char *filter = (bytes_warning_flag > 1) ? "error::BytesWarning":
+                                                        "default::BytesWarning";
+        PyObject *option = PyUnicode_FromString(filter);
+        if (option == NULL) {
+            return -1;
+        }
+        if (_PySys_AddWarnOptionWithError(option)) {
+            Py_DECREF(option);
+            return -1;
+        }
+        Py_DECREF(option);
+    }
+    return 0;
+}
+
+
 static int
 pymain_add_warnings_options(_PyMain *pymain)
 {
     PySys_ResetWarnOptions();
 
+    /* The priority order for warnings configuration is (highest precedence
+     * first):
+     *
+     * - the BytesWarning filter, if needed ('-b', '-bb')
+     * - any '-W' command line options; then
+     * - the 'PYTHONWARNINGS' environment variable; then
+     * - the dev mode filter ('-X dev', 'PYTHONDEVMODE'); then
+     * - any implicit filters added by _warnings.c/warnings.py
+     *
+     * All settings except the last are passed to the warnings module via
+     * the `sys.warnoptions` list. Since the warnings module works on the basis
+     * of "the most recently added filter will be checked first", we add
+     * the lowest precedence entries first so that later entries override them.
+     */
+
+    if (pymain_add_warning_dev_mode(&pymain->core_config) < 0) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
+    }
     if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
     if (pymain_add_warnings_optlist(&pymain->cmdline.warning_options) < 0) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
+    }
+    if (pymain_add_warning_bytes_flag(pymain->cmdline.bytes_warning) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
@@ -802,7 +868,7 @@ pymain_warnings_envvar(_PyMain *pymain)
     }
 
 #ifdef MS_WINDOWS
-    wchar_t *wp;
+    const wchar_t *wp;
 
     if ((wp = _wgetenv(L"PYTHONWARNINGS")) && *wp != L'\0') {
         wchar_t *warning, *context = NULL;
@@ -824,7 +890,7 @@ pymain_warnings_envvar(_PyMain *pymain)
         PyMem_RawFree(buf);
     }
 #else
-    char *p = pymain_get_env_var("PYTHONWARNINGS");
+    const char *p = pymain_get_env_var("PYTHONWARNINGS");
     if (p != NULL) {
         char *buf, *oldloc;
 
@@ -909,7 +975,7 @@ config_get_program_name(_PyMainInterpreterConfig *config)
     assert(config->program_name == NULL);
 
     /* If Py_SetProgramName() was called, use its value */
-    wchar_t *program_name = _Py_path_config.program_name;
+    const wchar_t *program_name = _Py_path_config.program_name;
     if (program_name != NULL) {
         config->program_name = _PyMem_RawWcsdup(program_name);
         if (config->program_name == NULL) {
@@ -927,7 +993,7 @@ config_get_program_name(_PyMainInterpreterConfig *config)
        so the actual executable path is passed in an environment variable.
        See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
        script. */
-    char *p = pymain_get_env_var("PYTHONEXECUTABLE");
+    const char *p = pymain_get_env_var("PYTHONEXECUTABLE");
     if (p != NULL) {
         size_t len;
         wchar_t* program_name = Py_DecodeLocale(p, &len);
@@ -939,7 +1005,7 @@ config_get_program_name(_PyMainInterpreterConfig *config)
     }
 #ifdef WITH_NEXT_FRAMEWORK
     else {
-        char* pyvenv_launcher = getenv("__PYVENV_LAUNCHER__");
+        const char* pyvenv_launcher = getenv("__PYVENV_LAUNCHER__");
         if (pyvenv_launcher && *pyvenv_launcher) {
             /* Used by Mac/Tools/pythonw.c to forward
              * the argv0 of the stub executable
@@ -1272,7 +1338,7 @@ pymain_parse_cmdline(_PyMain *pymain)
 }
 
 
-static wchar_t*
+static const wchar_t*
 pymain_get_xoption(_PyMain *pymain, wchar_t *name)
 {
     _Py_OptList *list = &pymain->cmdline.xoptions;
@@ -1295,11 +1361,11 @@ pymain_get_xoption(_PyMain *pymain, wchar_t *name)
 
 
 static int
-pymain_str_to_int(char *str, int *result)
+pymain_str_to_int(const char *str, int *result)
 {
     errno = 0;
-    char *endptr = str;
-    long value = strtol(str, &endptr, 10);
+    const char *endptr = str;
+    long value = strtol(str, (char **)&endptr, 10);
     if (*endptr != '\0' || errno == ERANGE) {
         return -1;
     }
@@ -1313,11 +1379,11 @@ pymain_str_to_int(char *str, int *result)
 
 
 static int
-pymain_wstr_to_int(wchar_t *wstr, int *result)
+pymain_wstr_to_int(const wchar_t *wstr, int *result)
 {
     errno = 0;
-    wchar_t *endptr = wstr;
-    long value = wcstol(wstr, &endptr, 10);
+    const wchar_t *endptr = wstr;
+    long value = wcstol(wstr, (wchar_t **)&endptr, 10);
     if (*endptr != '\0' || errno == ERANGE) {
         return -1;
     }
@@ -1336,7 +1402,7 @@ pymain_init_tracemalloc(_PyMain *pymain)
     int nframe;
     int valid;
 
-    char *env = pymain_get_env_var("PYTHONTRACEMALLOC");
+    const char *env = pymain_get_env_var("PYTHONTRACEMALLOC");
     if (env) {
         if (!pymain_str_to_int(env, &nframe)) {
             valid = (nframe >= 1);
@@ -1352,9 +1418,9 @@ pymain_init_tracemalloc(_PyMain *pymain)
         pymain->core_config.tracemalloc = nframe;
     }
 
-    wchar_t *xoption = pymain_get_xoption(pymain, L"tracemalloc");
+    const wchar_t *xoption = pymain_get_xoption(pymain, L"tracemalloc");
     if (xoption) {
-        wchar_t *sep = wcschr(xoption, L'=');
+        const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
             if (!pymain_wstr_to_int(sep + 1, &nframe)) {
                 valid = (nframe >= 1);
@@ -1381,7 +1447,7 @@ pymain_init_tracemalloc(_PyMain *pymain)
 static void
 pymain_set_flag_from_env(int *flag, const char *name)
 {
-    char *var = pymain_get_env_var(name);
+    const char *var = pymain_get_env_var(name);
     if (!var) {
         return;
     }
@@ -1432,7 +1498,7 @@ config_get_env_var_dup(wchar_t **dest, wchar_t *wname, char *name)
     }
 
 #ifdef MS_WINDOWS
-    wchar_t *var = _wgetenv(wname);
+    const wchar_t *var = _wgetenv(wname);
     if (!var || var[0] == '\0') {
         *dest = NULL;
         return 0;
@@ -1445,7 +1511,7 @@ config_get_env_var_dup(wchar_t **dest, wchar_t *wname, char *name)
 
     *dest = copy;
 #else
-    char *var = getenv(name);
+    const char *var = getenv(name);
     if (!var || var[0] == '\0') {
         *dest = NULL;
         return 0;

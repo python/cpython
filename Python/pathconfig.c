@@ -168,7 +168,7 @@ Py_SetPath(const wchar_t *path)
 
 
 void
-Py_SetPythonHome(wchar_t *home)
+Py_SetPythonHome(const wchar_t *home)
 {
     if (home == NULL) {
         return;
@@ -189,7 +189,7 @@ Py_SetPythonHome(wchar_t *home)
 
 
 void
-Py_SetProgramName(wchar_t *program_name)
+Py_SetProgramName(const wchar_t *program_name)
 {
     if (program_name == NULL || program_name[0] == L'\0') {
         return;

@@ -3,7 +3,6 @@
 import collections.abc
 import concurrent.futures
 import functools
-import gc
 import io
 import os
 import platform
@@ -30,8 +29,7 @@ import asyncio
 from asyncio import coroutines
 from asyncio import proactor_events
 from asyncio import selector_events
-from asyncio import sslproto
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 try:
     from test import support
 except ImportError:
@@ -2735,10 +2733,13 @@ class PolicyTests(unittest.TestCase):
         try:
             asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                self.assertIs(asyncio.get_running_loop(), None)
             self.assertIs(asyncio._get_running_loop(), None)
 
             async def func():
                 self.assertIs(asyncio.get_event_loop(), loop)
+                self.assertIs(asyncio.get_running_loop(), loop)
                 self.assertIs(asyncio._get_running_loop(), loop)
 
             loop.run_until_complete(func())
@@ -2746,6 +2747,9 @@ class PolicyTests(unittest.TestCase):
             asyncio.set_event_loop_policy(old_policy)
             if loop is not None:
                 loop.close()
+
+        with self.assertRaisesRegex(RuntimeError, 'no running'):
+            self.assertIs(asyncio.get_running_loop(), None)
 
         self.assertIs(asyncio._get_running_loop(), None)
 

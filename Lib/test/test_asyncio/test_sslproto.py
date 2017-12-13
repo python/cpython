@@ -11,7 +11,7 @@ except ImportError:
 import asyncio
 from asyncio import log
 from asyncio import sslproto
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')

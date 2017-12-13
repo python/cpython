@@ -1,6 +1,6 @@
 """Synchronization primitives."""
 
-__all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
 import warnings
@@ -22,6 +22,10 @@ class _ContextManager:
     while failing loudly when accidentally using:
 
         with lock:
+            <block>
+
+    Deprecated, use 'async with' statement:
+        async with lock:
             <block>
     """
 
@@ -64,6 +68,9 @@ class _ContextManagerMixin:
         #         <block>
         #     finally:
         #         lock.release()
+        # Deprecated, use 'async with' statement:
+        #     async with lock:
+        #         <block>
         warnings.warn("'with (yield from lock)' is deprecated "
                       "use 'async with lock' instead",
                       DeprecationWarning, stacklevel=2)
@@ -113,16 +120,16 @@ class Lock(_ContextManagerMixin):
     release() call resets the state to unlocked; first coroutine which
     is blocked in acquire() is being processed.
 
-    acquire() is a coroutine and should be called with 'yield from'.
+    acquire() is a coroutine and should be called with 'await'.
 
-    Locks also support the context management protocol.  '(yield from lock)'
-    should be used as the context manager expression.
+    Locks also support the asynchronous context management protocol.
+    'async with lock' statement should be used.
 
     Usage:
 
         lock = Lock()
         ...
-        yield from lock
+        await lock.acquire()
         try:
             ...
         finally:
@@ -132,13 +139,13 @@ class Lock(_ContextManagerMixin):
 
         lock = Lock()
         ...
-        with (yield from lock):
+        async with lock:
              ...
 
     Lock objects can be tested for locking state:
 
         if not lock.locked():
-           yield from lock
+           await lock.acquire()
         else:
            # lock is acquired
            ...
@@ -157,8 +164,8 @@ class Lock(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self._locked else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def locked(self):
         """Return True if lock is acquired."""
@@ -233,8 +240,8 @@ class Event:
         res = super().__repr__()
         extra = 'set' if self._value else 'unset'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def is_set(self):
         """Return True if and only if the internal flag is true."""
@@ -310,8 +317,8 @@ class Condition(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self.locked() else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     async def wait(self):
         """Wait until notified.
@@ -419,11 +426,10 @@ class Semaphore(_ContextManagerMixin):
 
     def __repr__(self):
         res = super().__repr__()
-        extra = 'locked' if self.locked() else 'unlocked,value:{}'.format(
-            self._value)
+        extra = 'locked' if self.locked() else f'unlocked, value:{self._value}'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def _wake_up_next(self):
         while self._waiters:
