@@ -410,6 +410,13 @@ typedef struct {
 #endif
 } _Py_CommandLineDetails;
 
+/* FIXME: temporary structure until sys module configuration can be moved
+   into _PyMainInterpreterConfig */
+typedef struct {
+    PyObject *argv;     /* sys.argv list */
+    PyObject *path0;    /* path0: if set, it is prepended to sys.path */
+} _PySysConfig;
+
 /* Structure used by Py_Main() to pass data to subfunctions */
 typedef struct {
     /* Exit status ("exit code") */
@@ -419,6 +426,7 @@ typedef struct {
     int stdin_is_interactive;
     _PyCoreConfig core_config;
     _PyMainInterpreterConfig config;
+    _PySysConfig sys_config;
     _Py_CommandLineDetails cmdline;
     PyObject *main_importer_path;
     /* non-zero if filename, command (-c) or module (-m) is set
@@ -492,6 +500,8 @@ pymain_free_pymain(_PyMain *pymain)
     pymain_optlist_clear(&pymain->env_warning_options);
     Py_CLEAR(pymain->main_importer_path);
 
+    Py_CLEAR(pymain->sys_config.argv);
+    Py_CLEAR(pymain->sys_config.path0);
 }
 
 static void
@@ -510,26 +520,20 @@ pymain_free(_PyMain *pymain)
 static int
 pymain_run_main_from_importer(_PyMain *pymain)
 {
-    PyObject *sys_path0 = pymain->main_importer_path;
-    PyObject *sys_path;
-    int sts;
-
     /* Assume sys_path0 has already been checked by pymain_get_importer(),
      * so put it in sys.path[0] and import __main__ */
-    sys_path = PySys_GetObject("path");
+    PyObject *sys_path = PySys_GetObject("path");
     if (sys_path == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.path");
         goto error;
     }
 
-    sts = PyList_Insert(sys_path, 0, sys_path0);
-    if (sts) {
-        sys_path0 = NULL;
+    if (PyList_Insert(sys_path, 0, pymain->main_importer_path)) {
         goto error;
     }
 
-    sts = pymain_run_module(L"__main__", 0);
-    return sts != 0;
+    int sts = pymain_run_module(L"__main__", 0);
+    return (sts != 0);
 
 error:
     Py_CLEAR(pymain->main_importer_path);
@@ -1082,8 +1086,36 @@ pymain_header(_PyMain *pymain)
 }
 
 
+static PyObject *
+pymain_create_argv_list(int argc, wchar_t **argv)
+{
+    if (argc <= 0 || argv == NULL) {
+        /* Ensure at least one (empty) argument is seen */
+        static wchar_t *empty_argv[1] = {L""};
+        argv = empty_argv;
+        argc = 1;
+    }
+
+    PyObject *av = PyList_New(argc);
+    if (av == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < argc; i++) {
+        PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
+        if (v == NULL) {
+            Py_DECREF(av);
+            return NULL;
+        }
+        PyList_SET_ITEM(av, i, v);
+    }
+    return av;
+}
+
+
+/* Create sys.argv list and maybe also path0 */
 static int
-pymain_set_sys_argv(_PyMain *pymain)
+pymain_compute_argv(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
@@ -1112,6 +1144,14 @@ pymain_set_sys_argv(_PyMain *pymain)
         argv2[0] = L"-m";
     }
 
+    /* Create sys.argv list */
+    pymain->sys_config.argv = pymain_create_argv_list(argc2, argv2);
+    if (pymain->sys_config.argv == NULL) {
+        pymain->err = _Py_INIT_ERR("failed to create sys.argv");
+        goto error;
+    }
+
+    /* Need to update sys.path[0]? */
     int update_path;
     if (pymain->main_importer_path != NULL) {
         /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
@@ -1121,16 +1161,48 @@ pymain_set_sys_argv(_PyMain *pymain)
         update_path = (Py_IsolatedFlag == 0);
     }
 
-    /* Set sys.argv. If '-c' and '-m' options are not used in the command line
+    /* If '-c' and '-m' options are not used in the command line
        and update_path is non-zero, prepend argv[0] to sys.path. If argv[0] is
        a symlink, use the real path. */
-    _PyInitError err = _PySys_SetArgvWithError(argc2, argv2, update_path);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
+    if (update_path) {
+        pymain->sys_config.path0 = _PyPathConfig_ComputeArgv0(argc2, argv2);
+        if (pymain->sys_config.path0 == NULL) {
+            pymain->err = _Py_INIT_NO_MEMORY();
+            goto error;
+        }
+    }
+    PyMem_RawFree(argv2);
+    return 0;
+
+error:
+    return -1;
+}
+
+static int
+pymain_set_sys_argv(_PyMain *pymain)
+{
+    /* Set sys.argv */
+    if (PySys_SetObject("argv", pymain->sys_config.argv) != 0) {
+        pymain->err = _Py_INIT_ERR("can't assign sys.argv");
         return -1;
     }
+    Py_CLEAR(pymain->sys_config.argv);
 
-    PyMem_RawFree(argv2);
+    if (pymain->sys_config.path0 != NULL) {
+        /* Prepend path0 to sys.path */
+        PyObject *sys_path = PySys_GetObject("path");
+        if (sys_path == NULL) {
+            pymain->err = _Py_INIT_ERR("can't get sys.path");
+            return -1;
+        }
+
+        if (PyList_Insert(sys_path, 0, pymain->sys_config.path0) < 0) {
+            pymain->err = _Py_INIT_ERR("sys.path.insert(0, path0) failed");
+            return -1;
+        }
+        Py_CLEAR(pymain->sys_config.path0);
+    }
+
     return 0;
 }
 
@@ -1822,6 +1894,9 @@ pymain_init_python(_PyMain *pymain)
        Currently, PySys_SetArgvEx() can still modify sys.path and so must be
        called after _Py_InitializeMainInterpreter() which calls
        _PyPathConfig_Init(). */
+    if (pymain_compute_argv(pymain) < 0) {
+        return -1;
+    }
     if (pymain_set_sys_argv(pymain) < 0) {
         return -1;
     }
