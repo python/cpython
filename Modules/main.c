@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "osdefs.h"
 #include "internal/import.h"
+#include "internal/pygetopt.h"
 #include "internal/pystate.h"
 
 #include <locale.h>
@@ -26,8 +27,6 @@
 #else
 #define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
 #endif
-
-#include "pygetopt.h"
 
 #define COPYRIGHT \
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
