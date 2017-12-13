@@ -142,7 +142,7 @@ using the :meth:`sleep` function::
     import asyncio
     import datetime
 
-    async def display_date(loop):
+    async def display_date():
         loop = asyncio.get_running_loop()
         end_time = loop.time() + 5.0
         while True:
