@@ -60,34 +60,6 @@ main(int argc, char **argv)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    /* UTF-8 mode */
-    char *old_ctype = setlocale(LC_CTYPE, NULL);
-    if (old_ctype != NULL) {
-        old_ctype = _PyMem_RawStrdup(old_ctype);
-        if (!old_ctype) {
-            fatal_error("out of memory");
-        }
-
-        char *ctype = setlocale(LC_CTYPE, "");
-        if (ctype != NULL) {
-            if (strcmp(ctype, "C") == 0) {
-                /* The POSIX locale enables the UTF-8 mode */
-                Py_UTF8Mode = 1;
-            }
-        }
-        else {
-            /* No locale or invalid locale: enables the UTF-8 mode */
-            Py_UTF8Mode = 1;
-        }
-        setlocale(LC_CTYPE, old_ctype);
-        PyMem_RawFree(old_ctype);
-    }
-    else {
-        /* No locale or invalid locale: enables the UTF-8 mode */
-        Py_UTF8Mode = 1;
-    }
-
-
     oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
     if (!oldloc) {
         fatal_error("out of memory");
@@ -108,6 +80,7 @@ main(int argc, char **argv)
      * details.
      */
     if (_Py_LegacyLocaleDetected()) {
+        Py_UTF8Mode = 1;
         _Py_CoerceLegacyLocale();
     }
 
