@@ -40,8 +40,7 @@ get_const_value(expr_ty e)
     case NameConstant_kind:
         return e->v.NameConstant.value;
     default:
-        assert(!is_const(e));
-        return NULL;
+        Py_UNREACHABLE();
     }
 }
 
@@ -49,7 +48,7 @@ static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
 {
     if (val == NULL) {
-        if(!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
+        if (!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
             PyErr_Clear();
         return 1;
     }
