@@ -151,6 +151,11 @@ def collect_locale(info_add):
     info_add('locale.encoding', locale.getpreferredencoding(False))
 
 
+def collect_builtins(info_add):
+    info_add('builtins.float.float_format', float.__getformat__("float"))
+    info_add('builtins.float.double_format', float.__getformat__("double"))
+
+
 def collect_os(info_add):
     import os
 
@@ -170,7 +175,7 @@ def collect_os(info_add):
     )
     copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
-    info_add("os.cwd", os.getcwd())
+    call_func(info_add, 'os.cwd', os, 'getcwd')
 
     call_func(info_add, 'os.uid', os, 'getuid')
     call_func(info_add, 'os.gid', os, 'getgid')
@@ -435,6 +440,44 @@ def collect_testcapi(info_add):
     copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
 
 
+def collect_resource(info_add):
+    try:
+        import resource
+    except ImportError:
+        return
+
+    limits = [attr for attr in dir(resource) if attr.startswith('RLIMIT_')]
+    for name in limits:
+        key = getattr(resource, name)
+        value = resource.getrlimit(key)
+        info_add('resource.%s' % name, value)
+
+
+def collect_test_socket(info_add):
+    try:
+        from test import test_socket
+    except ImportError:
+        return
+
+    # all check attributes like HAVE_SOCKET_CAN
+    attributes = [name for name in dir(test_socket)
+                  if name.startswith('HAVE_')]
+    copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
+
+
+def collect_test_support(info_add):
+    try:
+        from test import support
+    except ImportError:
+        return
+
+    attributes = ('IPV6_ENABLED',)
+    copy_attributes(info_add, support, 'test_support.%s', attributes)
+
+    call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
+    call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -443,6 +486,7 @@ def collect_info(info):
         # collect_os() should be the first, to check the getrandom() status
         collect_os,
 
+        collect_builtins,
         collect_gdb,
         collect_locale,
         collect_platform,
@@ -458,6 +502,11 @@ def collect_info(info):
         collect_expat,
         collect_decimal,
         collect_testcapi,
+        collect_resource,
+
+        # Collecting from tests should be last as they have side effects.
+        collect_test_socket,
+        collect_test_support,
     ):
         try:
             collect_func(info_add)
