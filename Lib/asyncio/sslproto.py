@@ -394,7 +394,7 @@ class SSLProtocol(protocols.Protocol):
 
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
-                 call_connection_made=True):
+                 call_connection_made=True, handshake_timeout=10.0):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 
@@ -428,6 +428,7 @@ class SSLProtocol(protocols.Protocol):
         # transport, ex: SelectorSocketTransport
         self._transport = None
         self._call_connection_made = call_connection_made
+        self._handshake_timeout = handshake_timeout
 
     def _wakeup_waiter(self, exc=None):
         if self._waiter is None:
@@ -555,9 +556,9 @@ class SSLProtocol(protocols.Protocol):
         # the SSL handshake
         self._write_backlog.append((b'', 1))
         self._loop.call_soon(self._process_write_backlog)
-        self._loop.call_later(10, self._handshake_timeout)
+        self._loop.call_later(self._handshake_timeout, self._check_handshake_timeout)
 
-    def _handshake_timeout(self):
+    def _check_handshake_timeout(self):
         if self._in_handshake == True:
             logger.debug("%r stalled during handshake", self)
             self._abort()
