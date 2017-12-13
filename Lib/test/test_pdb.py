@@ -1190,19 +1190,6 @@ class PdbModuleTestCase(PdbBaseTestCase):
         stdout, stderr = self._run_pdb(["-m", "pdb"], commands)
         self.assertIn("Debug the Python program given by pyfile.", stdout.splitlines())
 
-    def test_blocks_at_first_code_line(self):
-        script = """
-                #This is a comment, on line 2
-
-                print("SUCCESS")
-        """
-        commands = f"""
-            quit
-        """
-        stdout, stderr = self.run_pdb(script, commands)
-        self.assertTrue(any(f"/{self.module_name}/__main__.py(4)<module>()"
-                            in l for l in stdout.splitlines()), stdout)
-
     def test_module_without_a_main(self):
         module_name = 't_main'
         support.rmtree(module_name)
