@@ -2446,17 +2446,34 @@ sys_update_path(int argc, wchar_t **argv)
     Py_DECREF(a);
 }
 
+_PyInitError
+_PySys_SetArgvWithError(int argc, wchar_t **argv, int updatepath)
+{
+    PyObject *av = makeargvobject(argc, argv);
+    if (av == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    if (PySys_SetObject("argv", av) != 0) {
+        Py_DECREF(av);
+        return _Py_INIT_ERR("can't assign sys.argv");
+    }
+    Py_DECREF(av);
+
+    if (updatepath) {
+        /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
+           If argv[0] is a symlink, use the real path. */
+        sys_update_path(argc, argv);
+    }
+    return _Py_INIT_OK();
+}
+
 void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
-    PyObject *av = makeargvobject(argc, argv);
-    if (av == NULL)
-        Py_FatalError("no mem for sys.argv");
-    if (PySys_SetObject("argv", av) != 0)
-        Py_FatalError("can't assign sys.argv");
-    Py_DECREF(av);
-    if (updatepath)
-        sys_update_path(argc, argv);
+    _PyInitError err = _PySys_SetArgvWithError(argc, argv, updatepath);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
 }
 
 void

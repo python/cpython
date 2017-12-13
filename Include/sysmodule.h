@@ -16,6 +16,12 @@ PyAPI_FUNC(int) _PySys_SetObjectId(_Py_Identifier *key, PyObject *);
 
 PyAPI_FUNC(void) PySys_SetArgv(int, wchar_t **);
 PyAPI_FUNC(void) PySys_SetArgvEx(int, wchar_t **, int);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(_PyInitError) _PySys_SetArgvWithError(
+    int argc,
+    wchar_t **argv,
+    int updatepath);
+#endif
 PyAPI_FUNC(void) PySys_SetPath(const wchar_t *);
 
 PyAPI_FUNC(void) PySys_WriteStdout(const char *format, ...)
