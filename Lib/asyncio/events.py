@@ -763,14 +763,3 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
-
-
-#  shortcuts
-
-def create_task(coro):
-    """Schedule the execution of a coroutine object in a spawn task.
-
-    Return a Task object.
-    """
-    loop = get_running_loop()
-    return loop.create_task(coro)

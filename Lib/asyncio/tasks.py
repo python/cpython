@@ -1,7 +1,7 @@
 """Support for tasks, coroutines and the scheduler."""
 
 __all__ = (
-    'Task',
+    'Task', 'create_task',
     'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
     'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
@@ -261,6 +261,15 @@ except ImportError:
 else:
     # _CTask is needed for tests.
     Task = _CTask = _asyncio.Task
+
+
+def create_task(coro):
+    """Schedule the execution of a coroutine object in a spawn task.
+
+    Return a Task object.
+    """
+    loop = get_running_loop()
+    return loop.create_task(coro)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
