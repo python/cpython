@@ -21,8 +21,6 @@ from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
-from .base_tasks import (all_tasks, current_task, _register_task,
-                         _enter_task, _leave_task, _unregister_task)
 
 
 class Task(futures.Future):
@@ -53,6 +51,8 @@ class Task(futures.Future):
                       "use asyncio.current_task() instead",
                       PendingDeprecationWarning,
                       stacklevel=2)
+        if loop is None:
+            loop = events.get_event_loop()
         return current_task(loop)
 
     @classmethod
@@ -253,9 +253,12 @@ class Task(futures.Future):
 
 
 _PyTask = Task
-_py_register_task = _register_task
-_py_enter_task = _enter_task
-_py_leave_task = _leave_task
+_register_task = _py_register_task = base_tasks._register_task
+_enter_task = _py_enter_task = base_tasks._enter_task
+_leave_task = _py_leave_task = base_tasks._leave_task
+_unregister_task = base_tasks._unregister_task
+all_tasks = base_tasks.all_tasks
+current_task = base_tasks.current_task
 
 
 try:

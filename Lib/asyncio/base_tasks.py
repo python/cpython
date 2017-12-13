@@ -79,6 +79,9 @@ def _task_print_stack(task, limit, file):
 
 
 # WeakKeyDictionary of {Task: EventLoop} containing all tasks alive.
+# Task should be a weak reference to remove entry on task garbage
+# collection, EventLoop is required
+# to not access to private task._loop attribute.
 _all_tasks = weakref.WeakKeyDictionary()
 
 # Dictionary containing tasks that are currently active in
@@ -88,7 +91,7 @@ _current_tasks = {}
 
 def current_task(loop=None):
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
     return _current_tasks.get(loop)
 
 
@@ -109,16 +112,16 @@ def _register_task(loop, task):
 def _enter_task(loop, task):
     current_task = _current_tasks.get(loop)
     if current_task is not None:
-        raise RuntimeError(f"Entering into task {task!r} "
-                           f"when other task {current_task!r} is executed.")
+        raise RuntimeError(f"Cannot enter into task {task!r} while another "
+                           f"task {current_task!r} is being executed.")
     _current_tasks[loop] = task
 
 
 def _leave_task(loop, task):
     current_task = _current_tasks.get(loop)
     if current_task is not task:
-        raise RuntimeError(f"Leaving task {task!r} "
-                           f"is not current {current_task!r}.")
+        raise RuntimeError(f"Leaving task {task!r} does not match "
+                           f"the current task {current_task!r}.")
     del _current_tasks[loop]
 
 

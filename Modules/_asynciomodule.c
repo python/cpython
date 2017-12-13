@@ -1446,13 +1446,28 @@ static PyObject *
 _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
 /*[clinic end generated code: output=99fbe7332c516e03 input=cd14770c5b79c7eb]*/
 {
+    PyObject *ret;
+
     if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
                      "Task.current_task() is deprecated, " \
                      "use asyncio.current_task() instead",
                      1) < 0) {
         return NULL;
     }
-    return PyObject_CallFunctionObjArgs(asyncio_current_task_func, loop, NULL);
+    if (loop == Py_None) {
+        loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+        if (loop == NULL) {
+            return NULL;
+        }
+        ret = PyObject_CallFunctionObjArgs(asyncio_current_task_func,
+                                           loop, NULL);
+        Py_DECREF(loop);
+        return ret;
+    }
+    else {
+        return PyObject_CallFunctionObjArgs(asyncio_current_task_func,
+                                            loop, NULL);
+    }
 }
 
 /*[clinic input]
@@ -2418,7 +2433,8 @@ _asyncio__enter_task_impl(PyObject *module, PyObject *loop, PyObject *task)
     if (item != NULL) {
         return PyErr_Format(
             PyExc_RuntimeError,
-            "Entering into task %R when other task %R is executed.",
+            "Cannot enter into task %R while another " \
+            "task %R is being executed.",
             task, item, NULL);
     }
     if (PyDict_SetItem(asyncio__current_tasks, loop, task) < 0) {
@@ -2454,7 +2470,7 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
         }
         return PyErr_Format(
             PyExc_RuntimeError,
-            "Leaving task %R is not current %R.",
+            "Leaving task %R does not match the current task %R.",
             task, item, NULL);
     }
     if (PyObject_DelItem(asyncio__current_tasks, loop) < 0) {

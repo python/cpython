@@ -1500,20 +1500,33 @@ class BaseTaskTests:
         with self.assertWarns(PendingDeprecationWarning):
             self.assertIsNone(Task.current_task(loop=self.loop))
 
-    def test_current_task(self):
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
-
-        @asyncio.coroutine
-        def coro(loop):
-            self.assertTrue(asyncio.current_task(loop=loop) is task)
+        async def coro(loop):
+            with self.assertWarns(PendingDeprecationWarning):
+                self.assertIs(Task.current_task(loop=loop), task)
 
             # See http://bugs.python.org/issue29271 for details:
             asyncio.set_event_loop(loop)
             try:
-                self.assertIs(asyncio.current_task(None), task)
-                self.assertIs(asyncio.current_task(), task)
+                with self.assertWarns(PendingDeprecationWarning):
+                    self.assertIs(Task.current_task(None), task)
+                with self.assertWarns(PendingDeprecationWarning):
+                    self.assertIs(Task.current_task(), task)
             finally:
                 asyncio.set_event_loop(None)
+
+        task = self.new_task(self.loop, coro(self.loop))
+        self.loop.run_until_complete(task)
+        with self.assertWarns(PendingDeprecationWarning):
+            self.assertIsNone(Task.current_task(loop=self.loop))
+
+    def test_current_task(self):
+        self.assertIsNone(asyncio.current_task(loop=self.loop))
+
+        async def coro(loop):
+            self.assertIs(asyncio.current_task(loop=loop), task)
+
+            self.assertIs(asyncio.current_task(None), task)
+            self.assertIs(asyncio.current_task(), task)
 
         task = self.new_task(self.loop, coro(self.loop))
         self.loop.run_until_complete(task)
