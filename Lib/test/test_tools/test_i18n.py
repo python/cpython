@@ -140,14 +140,13 @@ class Test_pygettext(unittest.TestCase):
         msgids = self.extract_docstrings_from_str(textwrap.dedent('''\
         def foo1(bar: tuple=()) -> str:
             """doc1"""
-        
+
         def foo2(bar: List[1:2]) -> (lambda x: x):
             """doc2"""
-        
+
         def foo3(bar: 'func'=lambda x: x) -> {1: 2}:
             """doc3"""
         '''))
         self.assertIn('doc1', msgids)
         self.assertIn('doc2', msgids)
         self.assertIn('doc3', msgids)
-
