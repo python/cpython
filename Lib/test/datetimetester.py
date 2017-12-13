@@ -1166,6 +1166,19 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(d.month, month)
         self.assertEqual(d.day, day)
 
+    def test_fromisoformat(self):
+        self.assertEqual(self.theclass.fromisoformat('2014-12-31'),
+                         self.theclass(2014, 12, 31))
+        self.assertEqual(self.theclass.fromisoformat('4095-07-31'),
+                         self.theclass(4095, 7, 31))
+
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('2014-12-011')
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('20141211')
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('043-12-01')
+
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
         # and that this test will fail there.  This test should
@@ -1976,6 +1989,18 @@ class TestDateTime(TestDate):
         got = self.theclass.utcfromtimestamp(ts)
         self.verify_field_equality(expected, got)
 
+    def test_fromisoformat(self):
+        self.assertEqual(self.theclass.fromisoformat('2015-12-31T14:27:00'),
+                         self.theclass(2015, 12, 31, 14, 27, 0))
+        self.assertEqual(self.theclass.fromisoformat('2015-12-31 14:27:00'),
+                         self.theclass(2015, 12, 31, 14, 27, 0))
+        # lowercase 'T' date-time separator. Uncommon but tolerated (rfc 3339)
+        self.assertEqual(self.theclass.fromisoformat('2015-12-31t14:27:00'),
+                         self.theclass(2015, 12, 31, 14, 27, 0))
+
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('2015-01-07X00:00:00')
+
     # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
     # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
@@ -2516,6 +2541,42 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.000")
         self.assertEqual(t.isoformat(timespec='microseconds'), "12:34:56.000000")
         self.assertEqual(t.isoformat(timespec='auto'), "12:34:56")
+
+    def test_fromisoformat(self):
+        # basic
+        self.assertEqual(self.theclass.fromisoformat('04:05:01.000123'),
+                         self.theclass(4, 5, 1, 123))
+        self.assertEqual(self.theclass.fromisoformat('00:00:00'),
+                         self.theclass(0, 0, 0))
+        # usec, rounding high
+        self.assertEqual(self.theclass.fromisoformat('10:20:30.40000059'),
+                         self.theclass(10, 20, 30, 400001))
+        # usec, rounding low + long digits we don't care about
+        self.assertEqual(self.theclass.fromisoformat('10:20:30.400003434'),
+                         self.theclass(10, 20, 30, 400003))
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('12:00AM')
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('120000')
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('1:00')
+        with self.assertRaises(ValueError):
+            self.theclass.fromisoformat('17:54:43.')
+
+        def tz(h, m):
+            return timezone(timedelta(hours=h, minutes=m))
+
+        self.assertEqual(self.theclass.fromisoformat('00:00:00Z'),
+                         self.theclass(0, 0, 0, tzinfo=timezone.utc))
+        # lowercase UTC timezone. Uncommon but tolerated (rfc 3339)
+        self.assertEqual(self.theclass.fromisoformat('00:00:00z'),
+                         self.theclass(0, 0, 0, tzinfo=timezone.utc))
+        self.assertEqual(self.theclass.fromisoformat('00:00:00-00:00'),
+                         self.theclass(0, 0, 0, tzinfo=tz(0, 0)))
+        self.assertEqual(self.theclass.fromisoformat('08:30:00.004255+02:30'),
+                         self.theclass(8, 30, 0, 4255, tz(2, 30)))
+        self.assertEqual(self.theclass.fromisoformat('08:30:00.004255-02:30'),
+                         self.theclass(8, 30, 0, 4255, tz(-2, -30)))
 
     def test_1653736(self):
         # verify it doesn't accept extra keyword arguments

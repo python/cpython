@@ -14,7 +14,7 @@ import time
 import locale
 import calendar
 from re import compile as re_compile
-from re import IGNORECASE
+from re import IGNORECASE, ASCII
 from re import escape as re_escape
 from datetime import (date as datetime_date,
                       timedelta as datetime_timedelta,
@@ -26,6 +26,55 @@ __all__ = []
 def _getlang():
     # Figure out what the current language is set to.
     return locale.getlocale(locale.LC_TIME)
+
+
+_date_re = re_compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})$',
+                      ASCII)
+
+_time_re = re_compile(r'(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})'
+                      r'(?P<microsecond>\.\d+)?(?P<tzinfo>Z|[+-]\d{2}:\d{2})?$',
+                      ASCII|IGNORECASE)
+
+_datetime_re = re_compile(_date_re.pattern[:-1] + r'[T ]' + _time_re.pattern,
+                          ASCII|IGNORECASE)
+
+
+def _parse_isodate(cls, isostring):
+    return _parse_isoformat(cls, isostring, _date_re)
+
+
+def _parse_isotime(cls, isostring):
+    return _parse_isoformat(cls, isostring, _time_re)
+
+
+def _parse_isodatetime(cls, isostring):
+    return _parse_isoformat(cls, isostring, _datetime_re)
+
+
+def _parse_isoformat(cls, isostring, iso_re):
+    match = iso_re.match(isostring)
+    if not match:
+        raise ValueError("invalid RFC 3339 %s string: %r"
+                         % (cls.__name__, isostring))
+    kw = match.groupdict()
+    tzinfo = kw.pop('tzinfo', None)
+    if tzinfo == 'Z' or tzinfo == 'z':
+        tzinfo = datetime_timezone.utc
+    elif tzinfo is not None:
+        offset_hours, _, offset_mins = tzinfo[1:].partition(':')
+        offset = datetime_timedelta(hours=int(offset_hours), minutes=int(offset_mins))
+        if tzinfo[0] == '-':
+            offset = -offset
+        tzinfo = datetime_timezone(offset)
+    us = kw.pop('microsecond', None)
+    kw = {k: int(v) for k, v in kw.items()}
+    if us:
+        us = round(float(us), 6)
+        kw['microsecond'] = int(us * 1e6)
+    if tzinfo:
+        kw['tzinfo'] = tzinfo
+    return cls(**kw)
+
 
 class LocaleTime(object):
     """Stores and handles locale-specific information related to time.

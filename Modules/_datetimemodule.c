@@ -2607,6 +2607,25 @@ date_fromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
+/* Return new date from given date string, using _strptime._parse_isodate(). */
+static PyObject *
+date_fromisoformat(PyObject *cls, PyObject *args)
+{
+    static PyObject *module = NULL;
+    PyObject *string;
+
+    if (!PyArg_ParseTuple(args, "U:fromisoformat", &string))
+        return NULL;
+
+    if (module == NULL) {
+        module = PyImport_ImportModule("_strptime");
+        if (module == NULL)
+            return NULL;
+    }
+
+    return PyObject_CallMethod(module, "_parse_isodate", "OO", cls, string);
+}
+
 /* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
  * the ordinal is out of range.
  */
@@ -2919,6 +2938,11 @@ static PyMethodDef date_methods[] = {
                                                        METH_CLASS,
      PyDoc_STR("timestamp -> local date from a POSIX timestamp (like "
                "time.time()).")},
+
+    {"fromisoformat", (PyCFunction)date_fromisoformat,
+     METH_VARARGS | METH_CLASS,
+     PyDoc_STR("Construct a date from an RFC 3339 string, a strict subset of ISO 8601.\n"
+               "Raises ValueError in case of ill-formatted or invalid string.\n")},
 
     {"fromordinal", (PyCFunction)date_fromordinal,      METH_VARARGS |
                                                     METH_CLASS,
@@ -3711,6 +3735,26 @@ time_str(PyDateTime_Time *self)
     return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
 }
 
+/* Return new time from time string, using _strptime._parse_isotime(). */
+static PyObject *
+time_fromisoformat(PyObject *cls, PyObject *args)
+{
+    static PyObject *module = NULL;
+    PyObject *string;
+
+    if (!PyArg_ParseTuple(args, "U:fromisoformat", &string))
+        return NULL;
+
+
+    if (module == NULL) {
+        module = PyImport_ImportModule("_strptime");
+        if (module == NULL)
+            return NULL;
+        }
+
+    return PyObject_CallMethod(module, "_parse_isotime", "OO", cls, string);
+}
+
 static PyObject *
 time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
@@ -4017,6 +4061,13 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 }
 
 static PyMethodDef time_methods[] = {
+
+    {"fromisoformat", (PyCFunction)time_fromisoformat,
+     METH_VARARGS | METH_CLASS,
+     PyDoc_STR("Construct a time from an RFC 3339 string, a strict subset "
+               "of ISO 8601.\n"
+               "Microseconds are rounded to 6 digits.\n"
+               "Raises ValueError in case of ill-formatted or invalid string.\n")},
 
     {"isoformat",   (PyCFunction)time_isoformat,        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
@@ -4724,6 +4775,25 @@ static PyObject *
 datetime_str(PyDateTime_DateTime *self)
 {
     return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, "s", " ");
+}
+
+/* Return new datetime from _strptime._parse_isodatetime(). */
+static PyObject *
+datetime_fromisoformat(PyObject *cls, PyObject *args)
+{
+    static PyObject *module = NULL;
+    PyObject *string;
+
+    if (!PyArg_ParseTuple(args, "U:fromisoformat", &string))
+        return NULL;
+
+    if (module == NULL) {
+        module = PyImport_ImportModule("_strptime");
+        if (module == NULL)
+            return NULL;
+    }
+
+    return PyObject_CallMethod(module, "_parse_isodatetime", "OO", cls, string);
 }
 
 static PyObject *
@@ -5505,6 +5575,12 @@ static PyMethodDef datetime_methods[] = {
     {"fromtimestamp", (PyCFunction)datetime_fromtimestamp,
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("timestamp[, tz] -> tz's local time from POSIX timestamp.")},
+
+    {"fromisoformat", (PyCFunction)datetime_fromisoformat,
+     METH_VARARGS | METH_CLASS,
+     PyDoc_STR("Construct a datetime from an RFC 3339 string, a strict subset of ISO 8601.\n"
+               "Microseconds are rounded to 6 digits.\n"
+               "Raises ValueError in case of ill-formatted or invalid string.\n")},
 
     {"utcfromtimestamp", (PyCFunction)datetime_utcfromtimestamp,
      METH_VARARGS | METH_CLASS,
