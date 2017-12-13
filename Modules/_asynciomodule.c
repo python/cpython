@@ -1315,6 +1315,55 @@ TaskWakeupMethWrapper_new(TaskObj *task)
     return (PyObject*) o;
 }
 
+/* ----- Task introspection helpers */
+
+static int
+register_task(PyObject *loop, PyObject *task)
+{
+    return PyObject_SetItem(asyncio__all_tasks, task, loop);
+}
+
+
+static int
+enter_task(PyObject *loop, PyObject *task)
+{
+    PyObject *item;
+    item = PyDict_GetItem(asyncio__current_tasks, loop);
+    if (item != NULL) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Cannot enter into task %R while another " \
+            "task %R is being executed.",
+            task, item, NULL);
+        return -1;
+    }
+    if (PyDict_SetItem(asyncio__current_tasks, loop, task) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static int
+leave_task(PyObject *loop, PyObject *task)
+/*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
+{
+    PyObject *item;
+    item = PyDict_GetItem(asyncio__current_tasks, loop);
+    if (item != task) {
+        if (item == NULL) {
+            /* Not entered, replace with None */
+            item = Py_None;
+        }
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Leaving task %R does not match the current task %R.",
+            task, item, NULL);
+        return -1;
+    }
+    return PyObject_DelItem(asyncio__current_tasks, loop);
+}
+
 /* ----- Task */
 
 /*[clinic input]
@@ -1331,8 +1380,6 @@ static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
 /*[clinic end generated code: output=9f24774c2287fc2f input=8d132974b049593e]*/
 {
-    PyObject *res;
-
     if (future_init((FutureObj*)self, loop)) {
         return -1;
     }
@@ -1347,13 +1394,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
     if (task_call_step_soon(self, NULL)) {
         return -1;
     }
-    res = _asyncio__register_task_impl(NULL, self->task_loop, (PyObject*)self);
-    if (res == NULL) {
-        return -1;
-    }
-    Py_DECREF(res);
-
-    return 0;
+    return register_task(self->task_loop, (PyObject*)self);
 }
 
 static int
@@ -2226,32 +2267,26 @@ static PyObject *
 task_step(TaskObj *task, PyObject *exc)
 {
     PyObject *res;
-    PyObject *ot;
 
-    res = _asyncio__enter_task_impl(NULL, task->task_loop, (PyObject*)task);
-    if (!res) {
+    if (enter_task(task->task_loop, (PyObject*)task) < 0) {
         return NULL;
     }
-    Py_DECREF(res);
 
     res = task_step_impl(task, exc);
 
     if (res == NULL) {
         PyObject *et, *ev, *tb;
         PyErr_Fetch(&et, &ev, &tb);
-        ot = _asyncio__leave_task_impl(NULL, task->task_loop, (PyObject*)task);
-        Py_XDECREF(ot);
+        leave_task(task->task_loop, (PyObject*)task);
         _PyErr_ChainExceptions(et, ev, tb);
         return NULL;
     }
     else {
-        ot = _asyncio__leave_task_impl(NULL, task->task_loop, (PyObject*)task);
-        if (ot == NULL) {
+        if(leave_task(task->task_loop, (PyObject*)task) < 0) {
             Py_DECREF(res);
             return NULL;
         }
         else {
-            Py_DECREF(ot);
             return res;
         }
     }
@@ -2404,7 +2439,7 @@ _asyncio__register_task_impl(PyObject *module, PyObject *loop,
                              PyObject *task)
 /*[clinic end generated code: output=54c5cb733dbe0f38 input=9b5fee38fcb2c288]*/
 {
-    if (PyObject_SetItem(asyncio__all_tasks, task, loop) < 0) {
+    if (register_task(loop, task) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2428,16 +2463,7 @@ static PyObject *
 _asyncio__enter_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=a22611c858035b73 input=de1b06dca70d8737]*/
 {
-    PyObject *item;
-    item = PyDict_GetItem(asyncio__current_tasks, loop);
-    if (item != NULL) {
-        return PyErr_Format(
-            PyExc_RuntimeError,
-            "Cannot enter into task %R while another " \
-            "task %R is being executed.",
-            task, item, NULL);
-    }
-    if (PyDict_SetItem(asyncio__current_tasks, loop, task) < 0) {
+    if (enter_task(loop, task) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2461,19 +2487,7 @@ static PyObject *
 _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
-    PyObject *item;
-    item = PyDict_GetItem(asyncio__current_tasks, loop);
-    if (item != task) {
-        if (item == NULL) {
-            /* Not entered, replace with None */
-            item = Py_None;
-        }
-        return PyErr_Format(
-            PyExc_RuntimeError,
-            "Leaving task %R does not match the current task %R.",
-            task, item, NULL);
-    }
-    if (PyObject_DelItem(asyncio__current_tasks, loop) < 0) {
+    if (leave_task(loop, task) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
