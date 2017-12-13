@@ -3,6 +3,7 @@ import unittest
 import io
 import atexit
 from test import support
+from test.support import script_helper
 
 ### helpers
 def h1():
@@ -151,6 +152,21 @@ class GeneralTest(unittest.TestCase):
         atexit.unregister(l.append)
         atexit._run_exitfuncs()
         self.assertEqual(l, [5])
+
+    def test_shutdown(self):
+        # Actually test the shutdown mechanism in a subprocess
+        code = """if 1:
+            import atexit
+
+            def f(msg):
+                print(msg)
+
+            atexit.register(f, "one")
+            atexit.register(f, "two")
+            """
+        res = script_helper.assert_python_ok("-c", code)
+        self.assertEqual(res.out.decode().splitlines(), ["two", "one"])
+        self.assertFalse(res.err)
 
 
 @support.cpython_only
