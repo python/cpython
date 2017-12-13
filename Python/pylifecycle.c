@@ -54,7 +54,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static _PyInitError add_main_module(PyInterpreterState *interp);
 static _PyInitError initfsencoding(PyInterpreterState *interp);
 static _PyInitError initsite(void);
-static _PyInitError init_sys_streams(void);
+static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(void);
 static void wait_for_thread_shutdown(void);
@@ -925,7 +925,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return err;
     }
 
-    err = init_sys_streams();
+    err = init_sys_streams(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1410,7 +1410,7 @@ new_interpreter(PyThreadState **tstate_p)
             return err;
         }
 
-        err = init_sys_streams();
+        err = init_sys_streams(interp);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1558,7 +1558,13 @@ initfsencoding(PyInterpreterState *interp)
         Py_FileSystemDefaultEncodeErrors = "surrogatepass";
     }
 #else
-    if (Py_FileSystemDefaultEncoding == NULL) {
+    if (Py_FileSystemDefaultEncoding == NULL &&
+        interp->core_config.utf8_mode)
+    {
+        Py_FileSystemDefaultEncoding = "utf-8";
+        Py_HasFileSystemDefaultEncoding = 1;
+    }
+    else if (Py_FileSystemDefaultEncoding == NULL) {
         Py_FileSystemDefaultEncoding = get_locale_encoding();
         if (Py_FileSystemDefaultEncoding == NULL) {
             return _Py_INIT_ERR("Unable to get the locale encoding");
@@ -1749,7 +1755,7 @@ error:
 
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
 static _PyInitError
-init_sys_streams(void)
+init_sys_streams(PyInterpreterState *interp)
 {
     PyObject *iomod = NULL, *wrapper;
     PyObject *bimod = NULL;
@@ -1794,10 +1800,10 @@ init_sys_streams(void)
     encoding = _Py_StandardStreamEncoding;
     errors = _Py_StandardStreamErrors;
     if (!encoding || !errors) {
-        pythonioencoding = Py_GETENV("PYTHONIOENCODING");
-        if (pythonioencoding) {
+        char *opt = Py_GETENV("PYTHONIOENCODING");
+        if (opt && opt[0] != '\0') {
             char *err;
-            pythonioencoding = _PyMem_Strdup(pythonioencoding);
+            pythonioencoding = _PyMem_Strdup(opt);
             if (pythonioencoding == NULL) {
                 PyErr_NoMemory();
                 goto error;
@@ -1814,7 +1820,12 @@ init_sys_streams(void)
                 encoding = pythonioencoding;
             }
         }
-        if (!errors && !(pythonioencoding && *pythonioencoding)) {
+        else if (interp->core_config.utf8_mode) {
+            encoding = "utf-8";
+            errors = "surrogateescape";
+        }
+
+        if (!errors && !pythonioencoding) {
             /* Choose the default error handler based on the current locale */
             errors = get_default_standard_stream_error_handler();
         }

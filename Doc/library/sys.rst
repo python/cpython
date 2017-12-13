@@ -313,6 +313,9 @@ always available.
       has caught :exc:`SystemExit` (such as an error flushing buffered data
       in the standard streams), the exit status is changed to 120.
 
+   .. versionchanged:: 3.7
+      Added ``utf8_mode`` attribute for the new :option:`-X` ``utf8`` flag.
+
 
 .. data:: flags
 
@@ -335,6 +338,7 @@ always available.
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
    :const:`dev_mode`             :option:`-X` ``dev``
+   :const:`utf8_mode`            :option:`-X` ``utf8``
    ============================= =============================
 
    .. versionchanged:: 3.2
@@ -347,7 +351,8 @@ always available.
       Removed obsolete ``division_warning`` attribute.
 
    .. versionchanged:: 3.7
-      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag.
+      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
+      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
 
 
 .. data:: float_info
@@ -492,6 +497,8 @@ always available.
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
+   * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
+
    * On Mac OS X, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the locale encoding.
@@ -505,6 +512,10 @@ always available.
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
       and :func:`_enablelegacywindowsfsencoding` for more information.
+
+   .. versionchanged:: 3.7
+      Return 'utf-8' in the UTF-8 mode.
+
 
 .. function:: getfilesystemencodeerrors()
 
