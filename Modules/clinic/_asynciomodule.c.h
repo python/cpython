@@ -517,4 +517,82 @@ _asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b92f9cd2b9fb37ef input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
+"_get_running_loop($module, /)\n"
+"--\n"
+"\n"
+"Return the running event loop or None.\n"
+"\n"
+"This is a low-level function intended to be used by event loops.\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO__GET_RUNNING_LOOP_METHODDEF    \
+    {"_get_running_loop", (PyCFunction)_asyncio__get_running_loop, METH_NOARGS, _asyncio__get_running_loop__doc__},
+
+static PyObject *
+_asyncio__get_running_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio__get_running_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio__get_running_loop_impl(module);
+}
+
+PyDoc_STRVAR(_asyncio__set_running_loop__doc__,
+"_set_running_loop($module, loop, /)\n"
+"--\n"
+"\n"
+"Set the running event loop.\n"
+"\n"
+"This is a low-level function intended to be used by event loops.\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO__SET_RUNNING_LOOP_METHODDEF    \
+    {"_set_running_loop", (PyCFunction)_asyncio__set_running_loop, METH_O, _asyncio__set_running_loop__doc__},
+
+PyDoc_STRVAR(_asyncio_get_event_loop__doc__,
+"get_event_loop($module, /)\n"
+"--\n"
+"\n"
+"Return an asyncio event loop.\n"
+"\n"
+"When called from a coroutine or a callback (e.g. scheduled with\n"
+"call_soon or similar API), this function will always return the\n"
+"running event loop.\n"
+"\n"
+"If there is no running event loop set, the function will return\n"
+"the result of `get_event_loop_policy().get_event_loop()` call.");
+
+#define _ASYNCIO_GET_EVENT_LOOP_METHODDEF    \
+    {"get_event_loop", (PyCFunction)_asyncio_get_event_loop, METH_NOARGS, _asyncio_get_event_loop__doc__},
+
+static PyObject *
+_asyncio_get_event_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio_get_event_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_get_event_loop_impl(module);
+}
+
+PyDoc_STRVAR(_asyncio_get_running_loop__doc__,
+"get_running_loop($module, /)\n"
+"--\n"
+"\n"
+"Return the running event loop.  Raise a RuntimeError if there is none.\n"
+"\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO_GET_RUNNING_LOOP_METHODDEF    \
+    {"get_running_loop", (PyCFunction)_asyncio_get_running_loop, METH_NOARGS, _asyncio_get_running_loop__doc__},
+
+static PyObject *
+_asyncio_get_running_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio_get_running_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_get_running_loop_impl(module);
+}
+/*[clinic end generated code: output=d40b94e629571d48 input=a9049054013a1b77]*/

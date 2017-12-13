@@ -27,6 +27,7 @@ if sys.platform != 'win32':
 
 import asyncio
 from asyncio import coroutines
+from asyncio import events
 from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
@@ -2145,23 +2146,6 @@ else:
             asyncio.set_child_watcher(None)
             super().tearDown()
 
-        def test_get_event_loop_new_process(self):
-            # Issue bpo-32126: The multiprocessing module used by
-            # ProcessPoolExecutor is not functional when the
-            # multiprocessing.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
-            async def main():
-                pool = concurrent.futures.ProcessPoolExecutor()
-                result = await self.loop.run_in_executor(
-                    pool, _test_get_event_loop_new_process__sub_proc)
-                pool.shutdown()
-                return result
-
-            self.unpatch_get_running_loop()
-
-            self.assertEqual(
-                self.loop.run_until_complete(main()),
-                'hello')
 
     if hasattr(selectors, 'KqueueSelector'):
         class KqueueEventLoopTests(UnixEventLoopTestsMixin,
@@ -2722,17 +2706,95 @@ class PolicyTests(unittest.TestCase):
         self.assertIs(policy, asyncio.get_event_loop_policy())
         self.assertIsNot(policy, old_policy)
 
+
+class GetEventLoopTestsMixin:
+
+    _get_running_loop_impl = None
+    _set_running_loop_impl = None
+    get_running_loop_impl = None
+    get_event_loop_impl = None
+
+    def setUp(self):
+        self._get_running_loop_saved = events._get_running_loop
+        self._set_running_loop_saved = events._set_running_loop
+        self.get_running_loop_saved = events.get_running_loop
+        self.get_event_loop_saved = events.get_event_loop
+
+        events._get_running_loop = type(self)._get_running_loop_impl
+        events._set_running_loop = type(self)._set_running_loop_impl
+        events.get_running_loop = type(self).get_running_loop_impl
+        events.get_event_loop = type(self).get_event_loop_impl
+
+        asyncio._get_running_loop = type(self)._get_running_loop_impl
+        asyncio._set_running_loop = type(self)._set_running_loop_impl
+        asyncio.get_running_loop = type(self).get_running_loop_impl
+        asyncio.get_event_loop = type(self).get_event_loop_impl
+
+        super().setUp()
+
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+        watcher = asyncio.SafeChildWatcher()
+        watcher.attach_loop(self.loop)
+        asyncio.set_child_watcher(watcher)
+
+    def tearDown(self):
+        try:
+            asyncio.set_child_watcher(None)
+            super().tearDown()
+        finally:
+            self.loop.close()
+            asyncio.set_event_loop(None)
+
+            events._get_running_loop = self._get_running_loop_saved
+            events._set_running_loop = self._set_running_loop_saved
+            events.get_running_loop = self.get_running_loop_saved
+            events.get_event_loop = self.get_event_loop_saved
+
+            asyncio._get_running_loop = self._get_running_loop_saved
+            asyncio._set_running_loop = self._set_running_loop_saved
+            asyncio.get_running_loop = self.get_running_loop_saved
+            asyncio.get_event_loop = self.get_event_loop_saved
+
+    if sys.platform != 'win32':
+
+        def test_get_event_loop_new_process(self):
+            # Issue bpo-32126: The multiprocessing module used by
+            # ProcessPoolExecutor is not functional when the
+            # multiprocessing.synchronize module cannot be imported.
+            support.import_module('multiprocessing.synchronize')
+
+            async def main():
+                pool = concurrent.futures.ProcessPoolExecutor()
+                result = await self.loop.run_in_executor(
+                    pool, _test_get_event_loop_new_process__sub_proc)
+                pool.shutdown()
+                return result
+
+            self.assertEqual(
+                self.loop.run_until_complete(main()),
+                'hello')
+
     def test_get_event_loop_returns_running_loop(self):
+        class TestError(Exception):
+            pass
+
         class Policy(asyncio.DefaultEventLoopPolicy):
             def get_event_loop(self):
-                raise NotImplementedError
-
-        loop = None
+                raise TestError
 
         old_policy = asyncio.get_event_loop_policy()
         try:
             asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
+
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+            asyncio.set_event_loop(None)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 self.assertIs(asyncio.get_running_loop(), None)
             self.assertIs(asyncio._get_running_loop(), None)
@@ -2743,6 +2805,15 @@ class PolicyTests(unittest.TestCase):
                 self.assertIs(asyncio._get_running_loop(), loop)
 
             loop.run_until_complete(func())
+
+            asyncio.set_event_loop(loop)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
+            asyncio.set_event_loop(None)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
         finally:
             asyncio.set_event_loop_policy(old_policy)
             if loop is not None:
@@ -2752,6 +2823,28 @@ class PolicyTests(unittest.TestCase):
             self.assertIs(asyncio.get_running_loop(), None)
 
         self.assertIs(asyncio._get_running_loop(), None)
+
+
+class TestPyGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
+
+    _get_running_loop_impl = events._py__get_running_loop
+    _set_running_loop_impl = events._py__set_running_loop
+    get_running_loop_impl = events._py_get_running_loop
+    get_event_loop_impl = events._py_get_event_loop
+
+
+try:
+    import _asyncio  # NoQA
+except ImportError:
+    pass
+else:
+
+    class TestCGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
+
+        _get_running_loop_impl = events._c__get_running_loop
+        _set_running_loop_impl = events._c__set_running_loop
+        get_running_loop_impl = events._c_get_running_loop
+        get_event_loop_impl = events._c_get_event_loop
 
 
 if __name__ == '__main__':

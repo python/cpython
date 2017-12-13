@@ -652,6 +652,7 @@ def get_running_loop():
 
     This function is thread-specific.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     loop = _get_running_loop()
     if loop is None:
         raise RuntimeError('no running event loop')
@@ -664,6 +665,7 @@ def _get_running_loop():
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     running_loop, pid = _running_loop.loop_pid
     if running_loop is not None and pid == os.getpid():
         return running_loop
@@ -675,6 +677,7 @@ def _set_running_loop(loop):
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     _running_loop.loop_pid = (loop, os.getpid())
 
 
@@ -711,6 +714,7 @@ def get_event_loop():
     If there is no running event loop set, the function will return
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
@@ -736,3 +740,26 @@ def set_child_watcher(watcher):
     """Equivalent to calling
     get_event_loop_policy().set_child_watcher(watcher)."""
     return get_event_loop_policy().set_child_watcher(watcher)
+
+
+# Alias pure-Python implementations for testing purposes.
+_py__get_running_loop = _get_running_loop
+_py__set_running_loop = _set_running_loop
+_py_get_running_loop = get_running_loop
+_py_get_event_loop = get_event_loop
+
+
+try:
+    # get_event_loop() is one of the most frequently called
+    # functions in asyncio.  Pure Python implementation is
+    # about 4 times slower than C-accelerated.
+    from _asyncio import (_get_running_loop, _set_running_loop,
+                          get_running_loop, get_event_loop)
+except ImportError:
+    pass
+else:
+    # Alias C implementations for testing purposes.
+    _c__get_running_loop = _get_running_loop
+    _c__set_running_loop = _set_running_loop
+    _c_get_running_loop = get_running_loop
+    _c_get_event_loop = get_event_loop
