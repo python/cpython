@@ -774,12 +774,3 @@ def create_task(coro):
     """
     loop = get_running_loop()
     return loop.create_task(coro)
-
-
-def run_in_executor(executor, func, *args):
-    """Arrange for a func to be called in thread/process pool.
-
-    This function is a coroutine: it returns a future instance.
-    """
-    loop = get_running_loop()
-    return loop.run_in_executor(executor, func, *args)
