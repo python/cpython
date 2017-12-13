@@ -48,8 +48,10 @@ static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
 {
     if (val == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
-            PyErr_Clear();
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return 0;
+        }
+        PyErr_Clear();
         return 1;
     }
     if (PyArena_AddPyObject(arena, val) < 0) {
@@ -182,8 +184,9 @@ fold_binop(expr_ty node, PyArena *arena)
     /* Avoid creating large constants. */
     Py_ssize_t size = PyObject_Size(newval);
     if (size == -1) {
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
-            return 1;
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return 0;
+        }
         PyErr_Clear();
     }
     else if (size > 20) {
