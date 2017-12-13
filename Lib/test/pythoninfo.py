@@ -435,6 +435,24 @@ def collect_testcapi(info_add):
     copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
 
 
+def collect_test_socket(info_add):
+    from test import test_socket
+
+    # all check attributes like HAVE_SOCKET_CAN
+    attributes = list(
+        name for name in dir(test_socket) if name.startswith('HAVE_')
+    )
+
+    copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
+
+
+def collect_testsupport(info_add):
+    from test import support
+
+    attributes = ('IPV6_ENABLED',)
+    copy_attributes(info_add, support, 'test.support.%s', attributes)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -457,7 +475,10 @@ def collect_info(info):
         collect_zlib,
         collect_expat,
         collect_decimal,
+        # collects from test should be last as they might have side effects.
         collect_testcapi,
+        collect_test_socket,
+        collect_testsupport,
     ):
         try:
             collect_func(info_add)
