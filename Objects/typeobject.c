@@ -2377,6 +2377,27 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         nbases = 1;
     }
     else {
+        _Py_IDENTIFIER(__mro_entries__);
+        for (i = 0; i < nbases; i++) {
+            tmp = PyTuple_GET_ITEM(bases, i);
+            if (PyType_Check(tmp)) {
+                continue;
+            }
+            tmp = _PyObject_GetAttrId(tmp, &PyId___mro_entries__);
+            if (tmp != NULL) {
+                PyErr_SetString(PyExc_TypeError,
+                                "type() doesn't support MRO entry resolution; "
+                                "use types.new_class()");
+                Py_DECREF(tmp);
+                return NULL;
+            }
+            else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                return NULL;
+            }
+        }
         /* Search the bases for the proper metatype to deal with this: */
         winner = _PyType_CalculateMetaclass(metatype, bases);
         if (winner == NULL) {
