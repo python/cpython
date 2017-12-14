@@ -8,7 +8,6 @@ import sys
 from .base_events import *
 from .coroutines import *
 from .events import *
-from .format_helpers import *
 from .futures import *
 from .locks import *
 from .protocols import *
@@ -21,7 +20,6 @@ from .transports import *
 __all__ = (base_events.__all__ +
            coroutines.__all__ +
            events.__all__ +
-           format_helpers.__all__ +
            futures.__all__ +
            locks.__all__ +
            protocols.__all__ +

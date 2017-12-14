@@ -6,9 +6,6 @@ import traceback
 from . import constants
 
 
-__all__ = ('extract_stack',)
-
-
 def _get_function_source(func):
     func = inspect.unwrap(func)
     if inspect.isfunction(func):
