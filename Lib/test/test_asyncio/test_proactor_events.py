@@ -483,27 +483,6 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop.close()
         self.assertFalse(self.loop._close_self_pipe.called)
 
-    def test_sock_recv(self):
-        self.loop.sock_recv(self.sock, 1024)
-        self.proactor.recv.assert_called_with(self.sock, 1024)
-
-    def test_sock_recv_into(self):
-        buf = bytearray(10)
-        self.loop.sock_recv_into(self.sock, buf)
-        self.proactor.recv_into.assert_called_with(self.sock, buf)
-
-    def test_sock_sendall(self):
-        self.loop.sock_sendall(self.sock, b'data')
-        self.proactor.send.assert_called_with(self.sock, b'data')
-
-    def test_sock_connect(self):
-        self.loop.sock_connect(self.sock, ('1.2.3.4', 123))
-        self.proactor.connect.assert_called_with(self.sock, ('1.2.3.4', 123))
-
-    def test_sock_accept(self):
-        self.loop.sock_accept(self.sock)
-        self.proactor.accept.assert_called_with(self.sock)
-
     def test_make_socket_transport(self):
         tr = self.loop._make_socket_transport(self.sock, asyncio.Protocol())
         self.assertIsInstance(tr, _ProactorSocketTransport)
