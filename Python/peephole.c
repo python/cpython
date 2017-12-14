@@ -173,8 +173,6 @@ copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
    new constant (c1, c2, ... cn) can be appended.
    Called with codestr pointing to the first LOAD_CONST.
    Bails out with no change if one or more of the LOAD_CONSTs is missing.
-   Also works for BUILD_LIST and BUILT_SET when followed by an "in" or "not in"
-   test; for BUILD_SET it assembles a frozenset rather than a tuple.
 */
 static Py_ssize_t
 fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
@@ -196,15 +194,6 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
         constant = objs[i];
         Py_INCREF(constant);
         PyTuple_SET_ITEM(newconst, i, constant);
-    }
-
-    /* If it's a BUILD_SET, use the PyTuple we just built to create a
-       PyFrozenSet, and use that as the constant instead: */
-    if (opcode == BUILD_SET) {
-        Py_SETREF(newconst, PyFrozenSet_New(newconst));
-        if (newconst == NULL) {
-            return -1;
-        }
     }
 
     /* Append folded constant onto consts */
@@ -358,24 +347,15 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 CONST_STACK_POP(1);
                 break;
 
-                /* Try to fold tuples of constants (includes a case for lists
-                   and sets which are only used for "in" and "not in" tests).
+                /* Try to fold tuples of constants.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
                    Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
             case BUILD_TUPLE:
-            case BUILD_LIST:
-            case BUILD_SET:
                 j = get_arg(codestr, i);
                 if (j > 0 && CONST_STACK_LEN() >= j) {
                     h = lastn_const_start(codestr, op_start, j);
-                    if ((opcode == BUILD_TUPLE &&
-                          ISBASICBLOCK(blocks, h, op_start)) ||
-                         ((opcode == BUILD_LIST || opcode == BUILD_SET) &&
-                          ((nextop==COMPARE_OP &&
-                          (_Py_OPARG(codestr[nexti]) == PyCmp_IN ||
-                           _Py_OPARG(codestr[nexti]) == PyCmp_NOT_IN)) ||
-                          nextop == GET_ITER) && ISBASICBLOCK(blocks, h, i + 1))) {
+                    if (ISBASICBLOCK(blocks, h, op_start)) {
                         h = fold_tuple_on_constants(codestr, h, i + 1, opcode,
                                                     consts, CONST_STACK_LASTN(j), j);
                         if (h >= 0) {
@@ -387,8 +367,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 }
                 if (nextop != UNPACK_SEQUENCE  ||
                     !ISBASICBLOCK(blocks, op_start, i + 1) ||
-                    j != get_arg(codestr, nexti) ||
-                    opcode == BUILD_SET)
+                    j != get_arg(codestr, nexti))
                     break;
                 if (j < 2) {
                     fill_nops(codestr, op_start, nexti + 1);
