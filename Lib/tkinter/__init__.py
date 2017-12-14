@@ -2059,9 +2059,9 @@ class Tk(Misc, Wm):
         if _support_default_root and _default_root is self:
             _default_root = None
     def readprofile(self, baseName, className):
-        """Internal function. It reads BASENAME.tcl and CLASSNAME.tcl into
-        the Tcl Interpreter and calls exec on the contents of BASENAME.py and
-        CLASSNAME.py if such a file exists in the home directory."""
+        """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
+        the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
+        .CLASSNAME.py if such a file exists in the home directory."""
         import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
