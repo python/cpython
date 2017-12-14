@@ -159,7 +159,7 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
 #define MAX_INT_SIZE           128  /* bits */
 #define MAX_COLLECTION_SIZE    256  /* items */
 #define MAX_STR_SIZE          4096  /* characters */
-#define MAX_TOTAL_ITEMS    1000000  /* including nested collections */
+#define MAX_TOTAL_ITEMS       1024  /* including nested collections */
 
 static PyObject *
 safe_multiply(PyObject *v, PyObject *w)
