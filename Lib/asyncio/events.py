@@ -329,7 +329,8 @@ class AbstractEventLoop:
     async def create_server(self, protocol_factory, host=None, port=None,
                             *, family=socket.AF_UNSPEC,
                             flags=socket.AI_PASSIVE, sock=None, backlog=100,
-                            ssl=None, reuse_address=None, reuse_port=None):
+                            ssl=None, reuse_address=None, reuse_port=None,
+                            ssl_handshake_timeout=10.0):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -374,11 +375,13 @@ class AbstractEventLoop:
 
     async def create_unix_connection(self, protocol_factory, path=None, *,
                                      ssl=None, sock=None,
-                                     server_hostname=None):
+                                     server_hostname=None,
+                                     ssl_handshake_timeout=10.0):
         raise NotImplementedError
 
     async def create_unix_server(self, protocol_factory, path=None, *,
-                                 sock=None, backlog=100, ssl=None):
+                                 sock=None, backlog=100, ssl=None,
+                                 ssl_handshake_timeout=10.0):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop
@@ -395,6 +398,9 @@ class AbstractEventLoop:
 
         ssl can be set to an SSLContext to enable SSL over the
         accepted connections.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for the SSL handshake to complete (defaults to 10s).
         """
         raise NotImplementedError
 

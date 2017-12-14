@@ -1337,7 +1337,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
-            server_hostname='python.org')
+            server_hostname='python.org',
+            ssl_handshake_timeout=ANY)
         # Next try an explicit server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True,
@@ -1347,7 +1348,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
-            server_hostname='perl.com')
+            server_hostname='perl.com',
+            ssl_handshake_timeout=ANY)
         # Finally try an explicit empty server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True,
@@ -1356,7 +1358,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(ANY, ANY, ANY, ANY,
                                                          server_side=False,
-                                                         server_hostname='')
+                                                         server_hostname='',
+                                                         ssl_handshake_timeout=ANY)
 
     def test_create_connection_no_ssl_server_hostname_errors(self):
         # When not using ssl, server_hostname must be None.
@@ -1714,7 +1717,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.call_later.assert_called_with(constants.ACCEPT_RETRY_DELAY,
                                                 # self.loop._start_serving
                                                 mock.ANY,
-                                                MyProto, sock, None, None, mock.ANY)
+                                                MyProto, sock, None, None, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
         @asyncio.coroutine
