@@ -394,7 +394,6 @@ Py_Main(int argc, wchar_t **argv)
         exit(1);
     }
 
-    Py_HashRandomizationFlag = 1;
     _PyRandom_Init();
 
     PySys_ResetWarnOptions();
