@@ -1,5 +1,5 @@
 import asyncio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, AbstractAsyncContextManager
 import functools
 from test import support
 import unittest
@@ -18,6 +18,53 @@ def _async_test(func):
             loop.close()
             asyncio.set_event_loop(None)
     return wrapper
+
+
+class TestAbstractAsyncContextManager(unittest.TestCase):
+
+    @_async_test
+    async def test_enter(self):
+        class DefaultEnter(AbstractAsyncContextManager):
+            async def __aexit__(self, *args):
+                await super().__aexit__(*args)
+
+        manager = DefaultEnter()
+        self.assertIs(await manager.__aenter__(), manager)
+
+        async with manager as context:
+            self.assertIs(manager, context)
+
+    def test_exit_is_abstract(self):
+        class MissingAexit(AbstractAsyncContextManager):
+            pass
+
+        with self.assertRaises(TypeError):
+            MissingAexit()
+
+    def test_structural_subclassing(self):
+        class ManagerFromScratch:
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, exc_type, exc_value, traceback):
+                return None
+
+        self.assertTrue(issubclass(ManagerFromScratch, AbstractAsyncContextManager))
+
+        class DefaultEnter(AbstractAsyncContextManager):
+            async def __aexit__(self, *args):
+                await super().__aexit__(*args)
+
+        self.assertTrue(issubclass(DefaultEnter, AbstractAsyncContextManager))
+
+        class NoneAenter(ManagerFromScratch):
+            __aenter__ = None
+
+        self.assertFalse(issubclass(NoneAenter, AbstractAsyncContextManager))
+
+        class NoneAexit(ManagerFromScratch):
+            __aexit__ = None
+
+        self.assertFalse(issubclass(NoneAexit, AbstractAsyncContextManager))
 
 
 class AsyncContextManagerTestCase(unittest.TestCase):

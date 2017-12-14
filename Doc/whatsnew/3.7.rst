@@ -306,8 +306,9 @@ is a list of strings, not bytes.
 contextlib
 ----------
 
-:func:`contextlib.asynccontextmanager` has been added. (Contributed by
-Jelle Zijlstra in :issue:`29679`.)
+:func:`~contextlib.asynccontextmanager` and
+:class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
+by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
 
 cProfile
 --------
