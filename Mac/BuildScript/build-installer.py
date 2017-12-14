@@ -1081,7 +1081,7 @@ def buildLibraries():
 
 def buildPythonDocs():
     # This stores the documentation as Resources/English.lproj/Documentation
-    # inside the framwork. pydoc and IDLE will pick it up there.
+    # inside the framework. pydoc and IDLE will pick it up there.
     print("Install python documentation")
     rootDir = os.path.join(WORKDIR, '_root')
     buildDir = os.path.join('../../Doc')
