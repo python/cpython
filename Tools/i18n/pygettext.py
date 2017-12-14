@@ -164,7 +164,6 @@ import time
 import getopt
 import token
 import tokenize
-import collections
 
 __version__ = '1.5'
 
@@ -321,7 +320,7 @@ class TokenEater:
         self.__lineno = -1
         self.__freshmodule = 1
         self.__curfile = None
-        self.__enclosurecount = collections.Counter()
+        self.__enclosurecount = 0
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
@@ -343,7 +342,7 @@ class TokenEater:
                     self.__freshmodule = 0
                 return
             # class or func/method docstring?
-            if ttype == tokenize.NAME and tstring in ('def', 'class'):
+            if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
                 return
         if ttype == tokenize.NAME and tstring in opts.keywords:
@@ -352,15 +351,13 @@ class TokenEater:
     def __suiteseen(self, ttype, tstring, lineno):
         # skip over any enclosure pairs until we see the colon
         if ttype == tokenize.OP:
-            if tstring == ':' and not any(self.__enclosurecount.values()):
+            if tstring == ':' and self.__enclosurecount == 0:
                 # we see a colon and we're not in an enclosure: end of def
                 self.__state = self.__suitedocstring
             elif tstring in '([{':
-                enclosure = self.__get_enclosure_name(tstring)
-                self.__enclosurecount[enclosure] += 1
+                self.__enclosurecount += 1
             elif tstring in ')]}':
-                enclosure = self.__get_enclosure_name(tstring)
-                self.__enclosurecount[enclosure] -= 1
+                self.__enclosurecount -= 1
 
     def __suitedocstring(self, ttype, tstring, lineno):
         # ignore any intervening noise
@@ -409,22 +406,6 @@ class TokenEater:
         if not msg in self.__options.toexclude:
             entry = (self.__curfile, lineno)
             self.__messages.setdefault(msg, {})[entry] = isdocstring
-
-    @staticmethod
-    def __get_enclosure_name(enclosure):
-        """Get a collective name for an enclosure character.
-
-        In this case, enclosures refer to parentheses, square brackets and
-        curly brackets.
-        """
-        enclosure_names = {
-            '()': 'PARENTHESES',
-            '[]': 'SQUAREBRACKETS',
-            '{}': 'CURLYBRACKETS'
-        }
-        for chars, name in enclosure_names.items():
-            if enclosure in chars:
-                return name
 
     def set_filename(self, filename):
         self.__curfile = filename
