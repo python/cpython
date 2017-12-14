@@ -932,7 +932,7 @@ faulthandler_suppress_crash_report(void)
     struct rlimit rl;
 
     /* Disable creation of core dump */
-    if (getrlimit(RLIMIT_CORE, &rl) != 0) {
+    if (getrlimit(RLIMIT_CORE, &rl) == 0) {
         rl.rlim_cur = 0;
         setrlimit(RLIMIT_CORE, &rl);
     }

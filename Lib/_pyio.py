@@ -1182,7 +1182,6 @@ class BufferedWriter(_BufferedIOMixin):
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
-        _register_writer(self)
 
     def writable(self):
         return self.raw.writable()
@@ -2587,26 +2586,3 @@ class StringIO(TextIOWrapper):
     def detach(self):
         # This doesn't make sense on StringIO.
         self._unsupported("detach")
-
-
-# ____________________________________________________________
-
-import atexit, weakref
-
-_all_writers = weakref.WeakSet()
-
-def _register_writer(w):
-    # keep weak-ref to buffered writer
-    _all_writers.add(w)
-
-def _flush_all_writers():
-    # Ensure all buffered writers are flushed before proceeding with
-    # normal shutdown.  Otherwise, if the underlying file objects get
-    # finalized before the buffered writer wrapping it then any buffered
-    # data will be lost.
-    for w in _all_writers:
-        try:
-            w.flush()
-        except:
-            pass
-atexit.register(_flush_all_writers)

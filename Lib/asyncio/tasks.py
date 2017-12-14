@@ -3,7 +3,7 @@
 __all__ = (
     'Task',
     'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
-    'wait', 'wait_for', 'as_completed', 'sleep', 'async',
+    'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
 )
 
@@ -487,26 +487,6 @@ async def sleep(delay, result=None, *, loop=None):
         return await future
     finally:
         h.cancel()
-
-
-def async_(coro_or_future, *, loop=None):
-    """Wrap a coroutine in a future.
-
-    If the argument is a Future, it is returned directly.
-
-    This function is deprecated in 3.5. Use asyncio.ensure_future() instead.
-    """
-
-    warnings.warn("asyncio.async() function is deprecated, use ensure_future()",
-                  DeprecationWarning,
-                  stacklevel=2)
-
-    return ensure_future(coro_or_future, loop=loop)
-
-# Silence DeprecationWarning:
-globals()['async'] = async_
-async_.__name__ = 'async'
-del async_
 
 
 def ensure_future(coro_or_future, *, loop=None):

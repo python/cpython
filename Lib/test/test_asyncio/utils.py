@@ -26,11 +26,11 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import base_events
-from . import events
-from . import futures
-from . import tasks
-from .log import logger
+from asyncio import base_events
+from asyncio import events
+from asyncio import futures
+from asyncio import tasks
+from asyncio.log import logger
 from test import support
 
 

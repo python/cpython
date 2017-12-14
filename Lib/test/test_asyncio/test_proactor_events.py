@@ -9,7 +9,7 @@ from asyncio.proactor_events import BaseProactorEventLoop
 from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
 def close_transport(transport):
@@ -423,7 +423,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
     def test_dont_pause_writing(self):
         tr = self.pause_writing_transport(high=4)
 
-        # write a large chunk which completes immedialty,
+        # write a large chunk which completes immediately,
         # it should not pause writing
         fut = asyncio.Future(loop=self.loop)
         fut.set_result(None)

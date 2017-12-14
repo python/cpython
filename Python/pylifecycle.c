@@ -54,7 +54,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static _PyInitError add_main_module(PyInterpreterState *interp);
 static _PyInitError initfsencoding(PyInterpreterState *interp);
 static _PyInitError initsite(void);
-static _PyInitError init_sys_streams(void);
+static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(void);
 static void wait_for_thread_shutdown(void);
@@ -414,7 +414,7 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
     {NULL}
 };
 
-static char *
+static const char *
 get_default_standard_stream_error_handler(void)
 {
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
@@ -440,7 +440,7 @@ get_default_standard_stream_error_handler(void)
 }
 
 #ifdef PY_COERCE_C_LOCALE
-static const char *_C_LOCALE_COERCION_WARNING =
+static const char _C_LOCALE_COERCION_WARNING[] =
     "Python detected LC_CTYPE=C: LC_CTYPE coerced to %.20s (set another locale "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
@@ -792,13 +792,8 @@ _Py_InitializeCore(const _PyCoreConfig *config)
  */
 
 _PyInitError
-_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
+_PyCoreConfig_Read(_PyCoreConfig *config)
 {
-    /* Signal handlers are installed by default */
-    if (config->install_signal_handlers < 0) {
-        config->install_signal_handlers = 1;
-    }
-
     if (config->program_name == NULL) {
 #ifdef MS_WINDOWS
         const wchar_t *program_name = L"python";
@@ -814,9 +809,8 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
     return _Py_INIT_OK();
 }
 
-
 void
-_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+_PyCoreConfig_Clear(_PyCoreConfig *config)
 {
 #define CLEAR(ATTR) \
     do { \
@@ -828,6 +822,14 @@ _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
     CLEAR(config->home);
     CLEAR(config->program_name);
 #undef CLEAR
+}
+
+
+void
+_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+{
+    Py_CLEAR(config->argv);
+    Py_CLEAR(config->module_search_path);
 }
 
 
@@ -881,16 +883,11 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_ERR("can't initialize time");
     }
 
-    /* GetPath may initialize state that _PySys_EndInit locks
-       in, and so has to be called first. */
-    err = _PyPathConfig_Init(&interp->config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    assert(interp->config.module_search_path != NULL);
+    if (PySys_SetObject("path", interp->config.module_search_path) != 0) {
+        return _Py_INIT_ERR("can't assign sys.path");
     }
-    wchar_t *sys_path = Py_GetPath();
 
-    /* Finish setting up the sys module and import system */
-    PySys_SetPath(sys_path);
     if (_PySys_EndInit(interp->sysdict) < 0)
         return _Py_INIT_ERR("can't finish initializing sys");
 
@@ -925,7 +922,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return err;
     }
 
-    err = init_sys_streams();
+    err = init_sys_streams(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -946,6 +943,12 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         err = initsite(); /* Module site */
         if (_Py_INIT_FAILED(err)) {
             return err;
+        }
+    }
+
+    if (interp->config.argv != NULL) {
+        if (PySys_SetObject("argv", interp->config.argv) != 0) {
+            return _Py_INIT_ERR("can't assign sys.argv");
         }
     }
 
@@ -970,12 +973,12 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         goto done;
     }
 
-    err = _PyMainInterpreterConfig_ReadEnv(&config);
+    err = _PyCoreConfig_ReadEnv(&core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyMainInterpreterConfig_Read(&config);
+    err = _PyMainInterpreterConfig_Read(&config, &core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -988,6 +991,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     err = _Py_INIT_OK();
 
 done:
+    _PyCoreConfig_Clear(&core_config);
     _PyMainInterpreterConfig_Clear(&config);
     return err;
 }
@@ -1342,7 +1346,7 @@ new_interpreter(PyThreadState **tstate_p)
         interp->config = main_interp->config;
     }
 
-    err = _PyPathConfig_Init(&interp->config);
+    err = _PyPathConfig_Init(&interp->core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1410,7 +1414,7 @@ new_interpreter(PyThreadState **tstate_p)
             return err;
         }
 
-        err = init_sys_streams();
+        err = init_sys_streams(interp);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1558,7 +1562,13 @@ initfsencoding(PyInterpreterState *interp)
         Py_FileSystemDefaultEncodeErrors = "surrogatepass";
     }
 #else
-    if (Py_FileSystemDefaultEncoding == NULL) {
+    if (Py_FileSystemDefaultEncoding == NULL &&
+        interp->core_config.utf8_mode)
+    {
+        Py_FileSystemDefaultEncoding = "utf-8";
+        Py_HasFileSystemDefaultEncoding = 1;
+    }
+    else if (Py_FileSystemDefaultEncoding == NULL) {
         Py_FileSystemDefaultEncoding = get_locale_encoding();
         if (Py_FileSystemDefaultEncoding == NULL) {
             return _Py_INIT_ERR("Unable to get the locale encoding");
@@ -1749,7 +1759,7 @@ error:
 
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
 static _PyInitError
-init_sys_streams(void)
+init_sys_streams(PyInterpreterState *interp)
 {
     PyObject *iomod = NULL, *wrapper;
     PyObject *bimod = NULL;
@@ -1757,7 +1767,8 @@ init_sys_streams(void)
     PyObject *std = NULL;
     int fd;
     PyObject * encoding_attr;
-    char *pythonioencoding = NULL, *encoding, *errors;
+    char *pythonioencoding = NULL;
+    const char *encoding, *errors;
     _PyInitError res = _Py_INIT_OK();
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
@@ -1793,10 +1804,10 @@ init_sys_streams(void)
     encoding = _Py_StandardStreamEncoding;
     errors = _Py_StandardStreamErrors;
     if (!encoding || !errors) {
-        pythonioencoding = Py_GETENV("PYTHONIOENCODING");
-        if (pythonioencoding) {
+        char *opt = Py_GETENV("PYTHONIOENCODING");
+        if (opt && opt[0] != '\0') {
             char *err;
-            pythonioencoding = _PyMem_Strdup(pythonioencoding);
+            pythonioencoding = _PyMem_Strdup(opt);
             if (pythonioencoding == NULL) {
                 PyErr_NoMemory();
                 goto error;
@@ -1813,7 +1824,12 @@ init_sys_streams(void)
                 encoding = pythonioencoding;
             }
         }
-        if (!errors && !(pythonioencoding && *pythonioencoding)) {
+        else if (interp->core_config.utf8_mode) {
+            encoding = "utf-8";
+            errors = "surrogateescape";
+        }
+
+        if (!errors && !pythonioencoding) {
             /* Choose the default error handler based on the current locale */
             errors = get_default_standard_stream_error_handler();
         }
@@ -2085,6 +2101,8 @@ _Py_FatalInitError(_PyInitError err)
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(void))
 {
+    /* Guard against API misuse (see bpo-17852) */
+    assert(_PyRuntime.pyexitfunc == NULL || _PyRuntime.pyexitfunc == func);
     _PyRuntime.pyexitfunc = func;
 }
 

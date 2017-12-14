@@ -1110,20 +1110,23 @@ class EnvironmentVariableTests(BaseTest):
     def test_single_warning(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout, b"['ignore::DeprecationWarning']")
 
     def test_comma_separated_warnings(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
     def test_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
@@ -1131,7 +1134,8 @@ class EnvironmentVariableTests(BaseTest):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
             "warnings.warn('Message', DeprecationWarning)",
-            PYTHONWARNINGS="default::DeprecationWarning")
+            PYTHONWARNINGS="default::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['default::DeprecationWarning', 'error::DeprecationWarning']")
         self.assertEqual(stderr.splitlines(),
@@ -1145,7 +1149,8 @@ class EnvironmentVariableTests(BaseTest):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS="ignore:DeprecaciónWarning")
+            PYTHONWARNINGS="ignore:DeprecaciónWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             "['ignore:DeprecaciónWarning']".encode('utf-8'))
 

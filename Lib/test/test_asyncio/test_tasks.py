@@ -17,18 +17,9 @@ import asyncio
 from asyncio import coroutines
 from asyncio import futures
 from asyncio import tasks
-from asyncio import test_utils
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
-try:
-    from test.support.script_helper import assert_python_ok
-except ImportError:
-    try:
-        from test.script_helper import assert_python_ok
-    except ImportError:
-        from asyncio.test_support import assert_python_ok
+from test.test_asyncio import utils as test_utils
+from test import support
+from test.support.script_helper import assert_python_ok
 
 
 @asyncio.coroutine
@@ -2266,33 +2257,31 @@ class GatherTestsBase:
         self.assertEqual(fut.result(), [3, 1, exc, exc2])
 
     def test_env_var_debug(self):
-        aio_path = os.path.dirname(os.path.dirname(asyncio.__file__))
-
         code = '\n'.join((
             'import asyncio.coroutines',
             'print(asyncio.coroutines._DEBUG)'))
 
         # Test with -E to not fail if the unit test was run with
         # PYTHONASYNCIODEBUG set to a non-empty string
-        sts, stdout, stderr = assert_python_ok('-E', '-c', code,
-                                               PYTHONPATH=aio_path)
+        sts, stdout, stderr = assert_python_ok('-E', '-c', code)
         self.assertEqual(stdout.rstrip(), b'False')
 
         sts, stdout, stderr = assert_python_ok('-c', code,
                                                PYTHONASYNCIODEBUG='',
-                                               PYTHONPATH=aio_path)
+                                               PYTHONDEVMODE='')
         self.assertEqual(stdout.rstrip(), b'False')
 
         sts, stdout, stderr = assert_python_ok('-c', code,
                                                PYTHONASYNCIODEBUG='1',
-                                               PYTHONPATH=aio_path)
+                                               PYTHONDEVMODE='')
         self.assertEqual(stdout.rstrip(), b'True')
 
         sts, stdout, stderr = assert_python_ok('-E', '-c', code,
                                                PYTHONASYNCIODEBUG='1',
-                                               PYTHONPATH=aio_path)
+                                               PYTHONDEVMODE='')
         self.assertEqual(stdout.rstrip(), b'False')
 
+        # -X dev
         sts, stdout, stderr = assert_python_ok('-E', '-X', 'dev',
                                                '-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
