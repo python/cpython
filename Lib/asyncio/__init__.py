@@ -11,6 +11,7 @@ from .events import *
 from .futures import *
 from .locks import *
 from .protocols import *
+from .runners import *
 from .queues import *
 from .streams import *
 from .subprocess import *
@@ -23,6 +24,7 @@ __all__ = (base_events.__all__ +
            futures.__all__ +
            locks.__all__ +
            protocols.__all__ +
+           runners.__all__ +
            queues.__all__ +
            streams.__all__ +
            subprocess.__all__ +
