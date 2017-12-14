@@ -830,6 +830,8 @@ _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
 {
     Py_CLEAR(config->argv);
     Py_CLEAR(config->module_search_path);
+    Py_CLEAR(config->warnoptions);
+    Py_CLEAR(config->xoptions);
 }
 
 
@@ -883,9 +885,25 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_ERR("can't initialize time");
     }
 
+    /* Set sys attributes */
     assert(interp->config.module_search_path != NULL);
     if (PySys_SetObject("path", interp->config.module_search_path) != 0) {
         return _Py_INIT_ERR("can't assign sys.path");
+    }
+    if (interp->config.argv != NULL) {
+        if (PySys_SetObject("argv", interp->config.argv) != 0) {
+            return _Py_INIT_ERR("can't assign sys.argv");
+        }
+    }
+    if (interp->config.warnoptions != NULL) {
+        if (PySys_SetObject("warnoptions", interp->config.warnoptions)) {
+            return _Py_INIT_ERR("can't assign sys.warnoptions");
+        }
+    }
+    if (interp->config.xoptions != NULL) {
+        if (PySys_SetObject("_xoptions", interp->config.xoptions)) {
+            return _Py_INIT_ERR("can't assign sys._xoptions");
+        }
     }
 
     if (_PySys_EndInit(interp->sysdict) < 0)
@@ -945,13 +963,6 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
             return err;
         }
     }
-
-    if (interp->config.argv != NULL) {
-        if (PySys_SetObject("argv", interp->config.argv) != 0) {
-            return _Py_INIT_ERR("can't assign sys.argv");
-        }
-    }
-
     return _Py_INIT_OK();
 }
 
