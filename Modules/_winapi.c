@@ -1490,6 +1490,20 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
 }
 
 
+/*[clinic input]
+_winapi.GetACP
+
+Get the current Windows ANSI code page identifier.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetACP_impl(PyObject *module)
+/*[clinic end generated code: output=f7ee24bf705dbb88 input=1433c96d03a05229]*/
+{
+    return PyLong_FromUnsignedLong(GetACP());
+}
+
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -1515,6 +1529,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_WAITFORMULTIPLEOBJECTS_METHODDEF
     _WINAPI_WAITFORSINGLEOBJECT_METHODDEF
     _WINAPI_WRITEFILE_METHODDEF
+    _WINAPI_GETACP_METHODDEF
     {NULL, NULL}
 };
 
@@ -1595,14 +1610,14 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, WAIT_OBJECT_0);
     WINAPI_CONSTANT(F_DWORD, WAIT_ABANDONED_0);
     WINAPI_CONSTANT(F_DWORD, WAIT_TIMEOUT);
-    
+
     WINAPI_CONSTANT(F_DWORD, ABOVE_NORMAL_PRIORITY_CLASS);
     WINAPI_CONSTANT(F_DWORD, BELOW_NORMAL_PRIORITY_CLASS);
     WINAPI_CONSTANT(F_DWORD, HIGH_PRIORITY_CLASS);
     WINAPI_CONSTANT(F_DWORD, IDLE_PRIORITY_CLASS);
     WINAPI_CONSTANT(F_DWORD, NORMAL_PRIORITY_CLASS);
     WINAPI_CONSTANT(F_DWORD, REALTIME_PRIORITY_CLASS);
-    
+
     WINAPI_CONSTANT(F_DWORD, CREATE_NO_WINDOW);
     WINAPI_CONSTANT(F_DWORD, DETACHED_PROCESS);
     WINAPI_CONSTANT(F_DWORD, CREATE_DEFAULT_ERROR_MODE);

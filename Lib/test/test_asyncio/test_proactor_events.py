@@ -423,7 +423,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
     def test_dont_pause_writing(self):
         tr = self.pause_writing_transport(high=4)
 
-        # write a large chunk which completes immedialty,
+        # write a large chunk which completes immediately,
         # it should not pause writing
         fut = asyncio.Future(loop=self.loop)
         fut.set_result(None)

@@ -430,11 +430,7 @@ Miscellaneous options
      not be more verbose than the default if the code is correct: new warnings
      are only emitted when an issue is detected. Effect of the developer mode:
 
-     * Warning filters: add a filter to display all warnings (``"default"``
-       action), except of :exc:`BytesWarning` which still depends on the
-       :option:`-b` option, and use ``"always"`` action for
-       :exc:`ResourceWarning` warnings. For example, display
-       :exc:`DeprecationWarning` warnings.
+     * Add ``default`` warning filter, as :option:`-W` ``default``.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
      * Enable the :mod:`faulthandler` module to dump the Python traceback
@@ -442,6 +438,9 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+
+   * ``-X utf8`` enables the UTF-8 mode, whereas ``-X utf8=0`` disables the
+     UTF-8 mode.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -459,7 +458,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importtime`` and ``-X dev`` options.
+      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
 
 Options you shouldn't use
@@ -819,6 +818,14 @@ conflict.
    CPython "development mode". See the :option:`-X` ``dev`` option.
 
    .. versionadded:: 3.7
+
+.. envvar:: PYTHONUTF8
+
+   If set to ``1``, enable the UTF-8 mode. If set to ``0``, disable the UTF-8
+   mode. Any other non-empty string cause an error.
+
+   .. versionadded:: 3.7
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

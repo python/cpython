@@ -5,6 +5,7 @@ import locale
 import sys
 import unittest
 import encodings
+from unittest import mock
 
 from test import support
 
@@ -3180,16 +3181,9 @@ class CodePageTest(unittest.TestCase):
     def test_mbcs_alias(self):
         # Check that looking up our 'default' codepage will return
         # mbcs when we don't have a more specific one available
-        import _bootlocale
-        def _get_fake_codepage(*a):
-            return 'cp123'
-        old_getpreferredencoding = _bootlocale.getpreferredencoding
-        _bootlocale.getpreferredencoding = _get_fake_codepage
-        try:
+        with mock.patch('_winapi.GetACP', return_value=123):
             codec = codecs.lookup('cp123')
             self.assertEqual(codec.name, 'mbcs')
-        finally:
-            _bootlocale.getpreferredencoding = old_getpreferredencoding
 
 
 class ASCIITest(unittest.TestCase):

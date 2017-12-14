@@ -5079,16 +5079,17 @@ onError:
     return NULL;
 }
 
-#if defined(__APPLE__) || defined(__ANDROID__)
 
-/* Simplified UTF-8 decoder using surrogateescape error handler,
-   used to decode the command line arguments on Mac OS X and Android.
+/* UTF-8 decoder using the surrogateescape error handler .
 
-   Return a pointer to a newly allocated wide character string (use
-   PyMem_RawFree() to free the memory), or NULL on memory allocation error. */
+   On success, return a pointer to a newly allocated wide character string (use
+   PyMem_RawFree() to free the memory) and write the output length (in number
+   of wchar_t units) into *p_wlen (if p_wlen is set).
 
+   On memory allocation failure, return -1 and write (size_t)-1 into *p_wlen
+   (if p_wlen is set). */
 wchar_t*
-_Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
+_Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size, size_t *p_wlen)
 {
     const char *e;
     wchar_t *unicode;
@@ -5096,11 +5097,20 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
-    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < (size + 1))
+    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < (size + 1)) {
+        if (p_wlen) {
+            *p_wlen = (size_t)-1;
+        }
         return NULL;
+    }
+
     unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
-    if (!unicode)
+    if (!unicode) {
+        if (p_wlen) {
+            *p_wlen = (size_t)-1;
+        }
         return NULL;
+    }
 
     /* Unpack UTF-8 encoded data */
     e = s + size;
@@ -5130,10 +5140,12 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
         }
     }
     unicode[outpos] = L'\0';
+    if (p_wlen) {
+        *p_wlen = outpos;
+    }
     return unicode;
 }
 
-#endif /* __APPLE__ or __ANDROID__ */
 
 /* Primary internal function which creates utf8 encoded bytes objects.
 

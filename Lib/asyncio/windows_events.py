@@ -711,7 +711,7 @@ class IocpProactor:
                     f.set_result(value)
                     self._results.append(f)
 
-        # Remove unregisted futures
+        # Remove unregistered futures
         for ov in self._unregistered:
             self._cache.pop(ov.address, None)
         self._unregistered.clear()
