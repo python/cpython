@@ -522,31 +522,6 @@ pymain_free(_PyMain *pymain)
 }
 
 
-static int
-pymain_run_main_from_importer(_PyMain *pymain)
-{
-    /* Assume sys_path0 has already been checked by pymain_get_importer(),
-     * so put it in sys.path[0] and import __main__ */
-    PyObject *sys_path = PySys_GetObject("path");
-    if (sys_path == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.path");
-        goto error;
-    }
-
-    if (PyList_Insert(sys_path, 0, pymain->main_importer_path)) {
-        goto error;
-    }
-
-    int sts = pymain_run_module(L"__main__", 0);
-    return (sts != 0);
-
-error:
-    Py_CLEAR(pymain->main_importer_path);
-    PyErr_Print();
-    return 1;
-}
-
-
 static wchar_t*
 pymain_wstrdup(_PyMain *pymain, const wchar_t *str)
 {
@@ -1203,30 +1178,36 @@ pymain_init_sys_argv(_PyMain *pymain)
 static int
 pymain_update_sys_path(_PyMain *pymain)
 {
+    PyObject *path0;
+
     if (pymain->main_importer_path != NULL) {
-        /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
+        /* Assume path0 has already been checked by pymain_get_importer(),
+           so put it in sys.path[0] */
+        path0 = pymain->main_importer_path;
+        Py_INCREF(path0);
+    }
+    else if (Py_IsolatedFlag) {
+        /* Don't modify sys.path in isolated mode */
         return 0;
     }
-
-    if (Py_IsolatedFlag) {
-        return 0;
+    else {
+        /* Prepend argv[0] to sys.path.
+           If argv[0] is a symlink, use the real path. */
+        path0 = _PyPathConfig_ComputeArgv0(pymain->sys_argc, pymain->sys_argv);
+        if (path0 == NULL) {
+            pymain->err = _Py_INIT_NO_MEMORY();
+            return -1;
+        }
     }
 
-    /* Prepend argv[0] to sys.path.
-       If argv[0] is a symlink, use the real path. */
+    /* Prepend path0 to sys.path */
     PyObject *sys_path = PySys_GetObject("path");
     if (sys_path == NULL) {
+        Py_DECREF(path0);
         pymain->err = _Py_INIT_ERR("can't get sys.path");
         return -1;
     }
 
-    PyObject *path0 = _PyPathConfig_ComputeArgv0(pymain->sys_argc, pymain->sys_argv);
-    if (path0 == NULL) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
-    }
-
-    /* Prepend path0 to sys.path */
     if (PyList_Insert(sys_path, 0, path0) < 0) {
         Py_DECREF(path0);
         pymain->err = _Py_INIT_ERR("sys.path.insert(0, path0) failed");
@@ -1381,7 +1362,10 @@ pymain_run_filename(_PyMain *pymain)
     }
 
     if (pymain->main_importer_path != NULL) {
-        pymain->status = pymain_run_main_from_importer(pymain);
+        /* Import __main__.
+           Note: sys_path0 was put in sys.path[0] by pymain_update_sys_path(). */
+        int sts = pymain_run_module(L"__main__", 0);
+        pymain->status = (sts != 0);
         return;
     }
 
@@ -2012,7 +1996,7 @@ pymain_init_python_main(_PyMain *pymain)
     if (pymain->cmdline.filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
            __main__.py, main_importer_path is set to filename and will be
-           prepended to sys.path by pymain_run_main_from_importer(). Otherwise,
+           prepended to sys.path by pymain_update_sys_path(). Otherwise,
            main_importer_path is set to NULL. */
         pymain->main_importer_path = pymain_get_importer(pymain->cmdline.filename);
     }
