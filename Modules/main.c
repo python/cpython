@@ -752,29 +752,67 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
 
 
 static int
-pymain_add_xoptions(_PyMain *pymain)
+pymain_add_xoption(PyObject *opts, const wchar_t *s)
+{
+    PyObject *name, *value;
+
+    const wchar_t *name_end = wcschr(s, L'=');
+    if (!name_end) {
+        name = PyUnicode_FromWideChar(s, -1);
+        value = Py_True;
+        Py_INCREF(value);
+    }
+    else {
+        name = PyUnicode_FromWideChar(s, name_end - s);
+        value = PyUnicode_FromWideChar(name_end + 1, -1);
+    }
+    if (name == NULL || value == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItem(opts, name, value) < 0) {
+        goto error;
+    }
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return 0;
+
+error:
+    Py_XDECREF(name);
+    Py_XDECREF(value);
+    return -1;
+}
+
+static int
+pymain_init_xoptions_dict(_PyMain *pymain)
 {
     _Py_OptList *options = &pymain->cmdline.xoptions;
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return -1;
+    }
+
     for (size_t i=0; i < options->len; i++) {
         wchar_t *option = options->options[i];
-        if (_PySys_AddXOptionWithError(option) < 0) {
-            pymain->err = _Py_INIT_NO_MEMORY();
+        if (pymain_add_xoption(dict, option) < 0) {
+            Py_DECREF(dict);
             return -1;
         }
     }
+
+    pymain->config.xoptions = dict;
     return 0;
 }
 
 
 static int
-pymain_add_warnings_optlist(_Py_OptList *warnings)
+pymain_add_warnings_optlist(PyObject *warnoptions, _Py_OptList *warnings)
 {
     for (size_t i = 0; i < warnings->len; i++) {
         PyObject *option = PyUnicode_FromWideChar(warnings->options[i], -1);
         if (option == NULL) {
             return -1;
         }
-        if (_PySys_AddWarnOptionWithError(option)) {
+        if (PyList_Append(warnoptions, option)) {
             Py_DECREF(option);
             return -1;
         }
@@ -785,14 +823,14 @@ pymain_add_warnings_optlist(_Py_OptList *warnings)
 
 
 static int
-pymain_add_warning_dev_mode(_PyCoreConfig *core_config)
+pymain_add_warning_dev_mode(PyObject *warnoptions, _PyCoreConfig *core_config)
 {
     if (core_config->dev_mode) {
         PyObject *option = PyUnicode_FromString("default");
         if (option == NULL) {
             return -1;
         }
-        if (_PySys_AddWarnOptionWithError(option)) {
+        if (PyList_Append(warnoptions, option)) {
             Py_DECREF(option);
             return -1;
         }
@@ -803,33 +841,38 @@ pymain_add_warning_dev_mode(_PyCoreConfig *core_config)
 
 
 static int
-pymain_add_warning_bytes_flag(int bytes_warning_flag)
+pymain_add_warning_bytes_flag(PyObject *warnoptions, int bytes_warning_flag)
 {
     /* If the bytes_warning_flag isn't set, bytesobject.c and bytearrayobject.c
      * don't even try to emit a warning, so we skip setting the filter in that
      * case.
      */
-    if (bytes_warning_flag) {
-        const char *filter = (bytes_warning_flag > 1) ? "error::BytesWarning":
-                                                        "default::BytesWarning";
-        PyObject *option = PyUnicode_FromString(filter);
-        if (option == NULL) {
-            return -1;
-        }
-        if (_PySys_AddWarnOptionWithError(option)) {
-            Py_DECREF(option);
-            return -1;
-        }
-        Py_DECREF(option);
+    if (!bytes_warning_flag) {
+        return 0;
     }
+
+    const char *filter = (bytes_warning_flag > 1) ? "error::BytesWarning":
+                                                    "default::BytesWarning";
+    PyObject *option = PyUnicode_FromString(filter);
+    if (option == NULL) {
+        return -1;
+    }
+    if (PyList_Append(warnoptions, option)) {
+        Py_DECREF(option);
+        return -1;
+    }
+    Py_DECREF(option);
     return 0;
 }
 
 
 static int
-pymain_add_warnings_options(_PyMain *pymain)
+pymain_init_warnoptions(_PyMain *pymain)
 {
-    PySys_ResetWarnOptions();
+    PyObject *warnoptions = PyList_New(0);
+    if (warnoptions == NULL) {
+        return -1;
+    }
 
     /* The priority order for warnings configuration is (highest precedence
      * first):
@@ -846,23 +889,25 @@ pymain_add_warnings_options(_PyMain *pymain)
      * the lowest precedence entries first so that later entries override them.
      */
 
-    if (pymain_add_warning_dev_mode(&pymain->core_config) < 0) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
+    if (pymain_add_warning_dev_mode(warnoptions, &pymain->core_config) < 0) {
+        goto error;
     }
-    if (pymain_add_warnings_optlist(&pymain->env_warning_options) < 0) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
+    if (pymain_add_warnings_optlist(warnoptions, &pymain->env_warning_options) < 0) {
+        goto error;
     }
-    if (pymain_add_warnings_optlist(&pymain->cmdline.warning_options) < 0) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
+    if (pymain_add_warnings_optlist(warnoptions, &pymain->cmdline.warning_options) < 0) {
+        goto error;
     }
-    if (pymain_add_warning_bytes_flag(pymain->cmdline.bytes_warning) < 0) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
+    if (pymain_add_warning_bytes_flag(warnoptions, pymain->cmdline.bytes_warning) < 0) {
+        goto error;
     }
+
+    pymain->config.warnoptions = warnoptions;
     return 0;
+
+error:
+    Py_DECREF(warnoptions);
+    return -1;
 }
 
 
@@ -1092,7 +1137,7 @@ pymain_header(_PyMain *pymain)
 
 
 static int
-pymain_create_argv_list(_PyMain *pymain)
+pymain_init_argv(_PyMain *pymain)
 {
     int argc = pymain->sys_argc;
     wchar_t** argv = pymain->sys_argv;
@@ -1918,7 +1963,6 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *c
             return err;
         }
     }
-
     return _Py_INIT_OK();
 }
 
@@ -1941,15 +1985,15 @@ pymain_init_python_core(_PyMain *pymain)
 static int
 pymain_init_python_main(_PyMain *pymain)
 {
-    if (pymain_add_xoptions(pymain)) {
+    if (pymain_init_xoptions_dict(pymain)) {
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
-    if (pymain_add_warnings_options(pymain)) {
+    if (pymain_init_warnoptions(pymain)) {
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
-
-    /* Create sys.argv list */
-    if (pymain_create_argv_list(pymain) < 0) {
+    if (pymain_init_argv(pymain) < 0) {
         pymain->err = _Py_INIT_ERR("failed to create sys.argv");
         return -1;
     }
