@@ -259,6 +259,7 @@ MODULE_OBJS=	\
 		Modules/config.o \
 		Modules/getpath.o \
 		Modules/main.o \
+		Modules/atexitmodule.o \
 		Modules/gcmodule.o
 
 IO_H=		Modules/_io/_iomodule.h

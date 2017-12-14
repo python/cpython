@@ -677,8 +677,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_heapq", ["_heapqmodule.c"]) )
         # C-optimized pickle replacement
         exts.append( Extension("_pickle", ["_pickle.c"]) )
-        # atexit
-        exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # _json speedups
         exts.append( Extension("_json", ["_json.c"]) )
         # Python C API test module
