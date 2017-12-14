@@ -824,6 +824,9 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\ast_opt.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Python</Filter>
     </ClCompile>

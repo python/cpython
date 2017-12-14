@@ -331,6 +331,10 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
     c.c_nestlevel = 0;
 
+    if (!_PyAST_Optimize(mod, arena)) {
+        goto finally;
+    }
+
     c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
     if (c.c_st == NULL) {
         if (!PyErr_Occurred())
