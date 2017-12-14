@@ -249,10 +249,10 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
     return copy_op_arg(codestr, c_start, LOAD_CONST, len_consts, opcode_end);
 }
 
-#define MAX_INT_SIZE 128
-#define MAX_COLLECTION_SIZE 20
-#define MAX_STR_SIZE 20
-#define MAX_TOTAL_ITEMS 1000000
+#define MAX_INT_SIZE           128  /* bits */
+#define MAX_COLLECTION_SIZE     20  /* items */
+#define MAX_STR_SIZE            20  /* characters */
+#define MAX_TOTAL_ITEMS       1024  /* including nested collections */
 
 static PyObject *
 safe_multiply(PyObject *v, PyObject *w)
@@ -306,10 +306,12 @@ safe_power(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w) > 0) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1)
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
             return NULL;
-        if (vbits > MAX_INT_SIZE / wbits)
+        }
+        if (vbits > MAX_INT_SIZE / wbits) {
             return NULL;
+        }
     }
 
     return PyNumber_Power(v, w, Py_None);
@@ -321,10 +323,12 @@ safe_lshift(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1)
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
             return NULL;
-        if (vbits + wbits > MAX_INT_SIZE)
+        }
+        if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
             return NULL;
+        }
     }
 
     return PyNumber_Lshift(v, w);
