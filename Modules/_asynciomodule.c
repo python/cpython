@@ -26,6 +26,7 @@ static PyObject *all_tasks;
 static PyObject *current_tasks;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
+static PyObject *asyncio_iscoroutine_func;
 static PyObject *asyncio_future_repr_info_func;
 static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_task_get_stack_func;
@@ -1461,8 +1462,26 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
 /*[clinic end generated code: output=9f24774c2287fc2f input=8d132974b049593e]*/
 {
     PyObject *res;
+    int tmp;
     _Py_IDENTIFIER(add);
 
+    if (!PyCoro_CheckExact(coro)) {
+        // fastpath failed, perfom slow check
+        res = PyObject_CallFunctionObjArgs(asyncio_iscoroutine_func,
+                                           coro, NULL);
+        if (res == NULL) {
+            return -1;
+        }
+        tmp = PyObject_Not(res);
+        Py_DECREF(res);
+        if (tmp < 0) {
+            return -1;
+        }
+        if (tmp) {
+            PyErr_Format(PyExc_TypeError, "%R is not a coroutine", coro, NULL);
+            return -1;
+        }
+    }
     if (future_init((FutureObj*)self, loop)) {
         return -1;
     }
@@ -2604,6 +2623,7 @@ module_free(void *m)
     Py_CLEAR(traceback_extract_stack);
     Py_CLEAR(asyncio_get_event_loop_policy);
     Py_CLEAR(asyncio_future_repr_info_func);
+    Py_CLEAR(asyncio_iscoroutine_func);
     Py_CLEAR(asyncio_task_repr_info_func);
     Py_CLEAR(asyncio_task_get_stack_func);
     Py_CLEAR(asyncio_task_print_stack_func);
@@ -2644,6 +2664,9 @@ module_init(void)
     GET_MOD_ATTR(asyncio_task_repr_info_func, "_task_repr_info")
     GET_MOD_ATTR(asyncio_task_get_stack_func, "_task_get_stack")
     GET_MOD_ATTR(asyncio_task_print_stack_func, "_task_print_stack")
+
+    WITH_MOD("asyncio.coroutines")
+    GET_MOD_ATTR(asyncio_iscoroutine_func, "iscoroutine")
 
     WITH_MOD("inspect")
     GET_MOD_ATTR(inspect_isgenerator, "isgenerator")
