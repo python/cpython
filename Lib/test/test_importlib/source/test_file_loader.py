@@ -267,7 +267,7 @@ class SimpleTest(abc.LoaderTests):
             )
 
     @util.writes_bytecode_files
-    def test_overriden_checked_hash_based_pyc(self):
+    def test_overridden_checked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping, \
              unittest.mock.patch('_imp.check_hash_based_pycs', 'never'):
             source = mapping['_temp']

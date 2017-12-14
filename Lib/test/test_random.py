@@ -24,7 +24,7 @@ class TestBasicOps:
         self.gen.seed()
         state1 = self.gen.getstate()
         time.sleep(0.1)
-        self.gen.seed()      # diffent seeds at different times
+        self.gen.seed()      # different seeds at different times
         state2 = self.gen.getstate()
         self.assertNotEqual(state1, state2)
 

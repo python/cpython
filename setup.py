@@ -1399,7 +1399,7 @@ class PyBuildExt(build_ext):
             if host_platform == 'darwin':
                 # On OS X, there is no separate /usr/lib/libncursesw nor
                 # libpanelw.  If we are here, we found a locally-supplied
-                # version of libncursesw.  There should be also be a
+                # version of libncursesw.  There should also be a
                 # libpanelw.  _XOPEN_SOURCE defines are usually excluded
                 # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
                 # ncurses wide char support

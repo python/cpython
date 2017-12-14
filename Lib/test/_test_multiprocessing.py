@@ -4115,7 +4115,7 @@ class TestNoForkBomb(unittest.TestCase):
 #
 
 class TestForkAwareThreadLock(unittest.TestCase):
-    # We recurisvely start processes.  Issue #17555 meant that the
+    # We recursively start processes.  Issue #17555 meant that the
     # after fork registry would get duplicate entries for the same
     # lock.  The size of the registry at generation n was ~2**n.
 

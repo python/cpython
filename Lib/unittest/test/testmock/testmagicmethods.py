@@ -450,7 +450,7 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertIsInstance(bar_direct, MagicMock)
 
     # http://bugs.python.org/issue23310
-    # Check if you can change behaviour of magic methds in MagicMock init
+    # Check if you can change behaviour of magic methods in MagicMock init
     def test_magic_in_initialization(self):
         m = MagicMock(**{'__str__.return_value': "12"})
         self.assertEqual(str(m), "12")
