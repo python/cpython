@@ -46,7 +46,7 @@ _PyPathConfig_Clear(_PyPathConfig *config)
 /* Initialize paths for Py_GetPath(), Py_GetPrefix(), Py_GetExecPrefix()
    and Py_GetProgramFullPath() */
 _PyInitError
-_PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
+_PyPathConfig_Init(const _PyCoreConfig *core_config)
 {
     if (_Py_path_config.module_search_path) {
         /* Already initialized */
@@ -61,15 +61,15 @@ _PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
 
     /* Calculate program_full_path, prefix, exec_prefix (Unix)
        or dll_path (Windows), and module_search_path */
-    err = _PyPathConfig_Calculate(&new_config, main_config);
+    err = _PyPathConfig_Calculate(&new_config, core_config);
     if (_Py_INIT_FAILED(err)) {
         _PyPathConfig_Clear(&new_config);
         goto done;
     }
 
-    /* Copy home and program_name from main_config */
-    if (main_config->home != NULL) {
-        new_config.home = _PyMem_RawWcsdup(main_config->home);
+    /* Copy home and program_name from core_config */
+    if (core_config->home != NULL) {
+        new_config.home = _PyMem_RawWcsdup(core_config->home);
         if (new_config.home == NULL) {
             err = _Py_INIT_NO_MEMORY();
             goto done;
@@ -79,7 +79,7 @@ _PyPathConfig_Init(const _PyMainInterpreterConfig *main_config)
         new_config.home = NULL;
     }
 
-    new_config.program_name = _PyMem_RawWcsdup(main_config->program_name);
+    new_config.program_name = _PyMem_RawWcsdup(core_config->program_name);
     if (new_config.program_name == NULL) {
         err = _Py_INIT_NO_MEMORY();
         goto done;
@@ -105,14 +105,14 @@ pathconfig_global_init(void)
     }
 
     _PyInitError err;
-    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    err = _PyMainInterpreterConfig_ReadEnv(&config);
+    err = _PyCoreConfig_ReadEnv(&config);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
 
-    err = _PyMainInterpreterConfig_Read(&config);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
@@ -122,11 +122,11 @@ pathconfig_global_init(void)
         goto error;
     }
 
-    _PyMainInterpreterConfig_Clear(&config);
+    _PyCoreConfig_Clear(&config);
     return;
 
 error:
-    _PyMainInterpreterConfig_Clear(&config);
+    _PyCoreConfig_Clear(&config);
     _Py_FatalInitError(err);
 }
 

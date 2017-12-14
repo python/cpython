@@ -61,7 +61,7 @@ PyAPI_DATA(_PyPathConfig) _Py_path_config;
 
 PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
     _PyPathConfig *config,
-    const _PyMainInterpreterConfig *main_config);
+    const _PyCoreConfig *core_config);
 PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
 

@@ -410,13 +410,6 @@ typedef struct {
 #endif
 } _Py_CommandLineDetails;
 
-/* FIXME: temporary structure until sys module configuration can be moved
-   into _PyMainInterpreterConfig */
-typedef struct {
-    PyObject *argv;     /* sys.argv list */
-    PyObject *path0;    /* path0: if set, it is prepended to sys.path */
-} _PySysConfig;
-
 /* Structure used by Py_Main() to pass data to subfunctions */
 typedef struct {
     /* Exit status ("exit code") */
@@ -426,7 +419,6 @@ typedef struct {
     int stdin_is_interactive;
     _PyCoreConfig core_config;
     _PyMainInterpreterConfig config;
-    _PySysConfig sys_config;
     _Py_CommandLineDetails cmdline;
     PyObject *main_importer_path;
     /* non-zero if filename, command (-c) or module (-m) is set
@@ -438,6 +430,9 @@ typedef struct {
     _Py_OptList env_warning_options;
     int argc;
     wchar_t **argv;
+
+    int sys_argc;
+    wchar_t **sys_argv;
 } _PyMain;
 
 /* .cmdline is initialized to zeros */
@@ -472,7 +467,7 @@ pymain_free_globals(_PyMain *pymain)
 {
     _PyPathConfig_Clear(&_Py_path_config);
     _PyImport_Fini2();
-    _PyMainInterpreterConfig_Clear(&pymain->config);
+    _PyCoreConfig_Clear(&pymain->core_config);
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
@@ -497,12 +492,20 @@ pymain_free_pymain(_PyMain *pymain)
     pymain_optlist_clear(&cmdline->xoptions);
     PyMem_RawFree(cmdline->command);
 
+    PyMem_RawFree(pymain->sys_argv);
     pymain_optlist_clear(&pymain->env_warning_options);
+}
+
+
+/* Clear Python ojects */
+static void
+pymain_free_python(_PyMain *pymain)
+{
     Py_CLEAR(pymain->main_importer_path);
 
-    Py_CLEAR(pymain->sys_config.argv);
-    Py_CLEAR(pymain->sys_config.path0);
+    _PyMainInterpreterConfig_Clear(&pymain->config);
 }
+
 
 static void
 pymain_free(_PyMain *pymain)
@@ -511,11 +514,13 @@ pymain_free(_PyMain *pymain)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    pymain_free_python(pymain);
     pymain_free_pymain(pymain);
     pymain_free_globals(pymain);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
+
 
 static int
 pymain_run_main_from_importer(_PyMain *pymain)
@@ -974,7 +979,7 @@ pymain_init_stdio(_PyMain *pymain)
 /* Get the program name: use PYTHONEXECUTABLE and __PYVENV_LAUNCHER__
    environment variables on macOS if available. */
 static _PyInitError
-config_get_program_name(_PyMainInterpreterConfig *config)
+config_get_program_name(_PyCoreConfig *config)
 {
     assert(config->program_name == NULL);
 
@@ -1035,10 +1040,10 @@ config_get_program_name(_PyMainInterpreterConfig *config)
 static int
 pymain_get_program_name(_PyMain *pymain)
 {
-    if (pymain->config.program_name == NULL) {
+    if (pymain->core_config.program_name == NULL) {
         /* Use argv[0] by default */
-        pymain->config.program_name = pymain_wstrdup(pymain, pymain->argv[0]);
-        if (pymain->config.program_name == NULL) {
+        pymain->core_config.program_name = pymain_wstrdup(pymain, pymain->argv[0]);
+        if (pymain->core_config.program_name == NULL) {
             return -1;
         }
     }
@@ -1086,36 +1091,40 @@ pymain_header(_PyMain *pymain)
 }
 
 
-static PyObject *
-pymain_create_argv_list(int argc, wchar_t **argv)
+static int
+pymain_create_argv_list(_PyMain *pymain)
 {
-    if (argc <= 0 || argv == NULL) {
+    int argc = pymain->sys_argc;
+    wchar_t** argv = pymain->sys_argv;
+
+    if (argc <= 0 || pymain->sys_argv == NULL) {
         /* Ensure at least one (empty) argument is seen */
         static wchar_t *empty_argv[1] = {L""};
         argv = empty_argv;
         argc = 1;
     }
 
-    PyObject *av = PyList_New(argc);
-    if (av == NULL) {
-        return NULL;
+    PyObject *list = PyList_New(argc);
+    if (list == NULL) {
+        return -1;
     }
 
     for (int i = 0; i < argc; i++) {
         PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
         if (v == NULL) {
-            Py_DECREF(av);
-            return NULL;
+            Py_DECREF(list);
+            return -1;
         }
-        PyList_SET_ITEM(av, i, v);
+        PyList_SET_ITEM(list, i, v);
     }
-    return av;
+
+    pymain->config.argv = list;
+    return 0;
 }
 
 
-/* Create sys.argv list and maybe also path0 */
 static int
-pymain_compute_argv(_PyMain *pymain)
+pymain_init_sys_argv(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
@@ -1125,83 +1134,60 @@ pymain_compute_argv(_PyMain *pymain)
     }
 
     /* Copy argv to be able to modify it (to force -c/-m) */
-    int argc2 = pymain->argc - _PyOS_optind;
-    size_t size = argc2 * sizeof(pymain->argv[0]);
-    wchar_t **argv2 = PyMem_RawMalloc(size);
-    if (argv2 == NULL) {
+    pymain->sys_argc = pymain->argc - _PyOS_optind;
+    size_t size = pymain->sys_argc * sizeof(pymain->argv[0]);
+    pymain->sys_argv = PyMem_RawMalloc(size);
+    if (pymain->sys_argv == NULL) {
         pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
-    memcpy(argv2, &pymain->argv[_PyOS_optind], size);
+    memcpy(pymain->sys_argv, &pymain->argv[_PyOS_optind], size);
 
-    /* TODO: Move this to _Py_InitializeMainInterpreter */
     if (cmdline->command != NULL) {
         /* Force sys.argv[0] = '-c' */
-        argv2[0] = L"-c";
+        pymain->sys_argv[0] = L"-c";
     }
     else if (cmdline->module != NULL) {
         /* Force sys.argv[0] = '-m'*/
-        argv2[0] = L"-m";
+        pymain->sys_argv[0] = L"-m";
     }
-
-    /* Create sys.argv list */
-    pymain->sys_config.argv = pymain_create_argv_list(argc2, argv2);
-    if (pymain->sys_config.argv == NULL) {
-        pymain->err = _Py_INIT_ERR("failed to create sys.argv");
-        goto error;
-    }
-
-    /* Need to update sys.path[0]? */
-    int update_path;
-    if (pymain->main_importer_path != NULL) {
-        /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
-        update_path = 0;
-    } else {
-        /* Use config settings to decide whether or not to update sys.path[0] */
-        update_path = (Py_IsolatedFlag == 0);
-    }
-
-    /* If '-c' and '-m' options are not used in the command line
-       and update_path is non-zero, prepend argv[0] to sys.path. If argv[0] is
-       a symlink, use the real path. */
-    if (update_path) {
-        pymain->sys_config.path0 = _PyPathConfig_ComputeArgv0(argc2, argv2);
-        if (pymain->sys_config.path0 == NULL) {
-            pymain->err = _Py_INIT_NO_MEMORY();
-            goto error;
-        }
-    }
-    PyMem_RawFree(argv2);
     return 0;
-
-error:
-    return -1;
 }
 
+
 static int
-pymain_set_sys_argv(_PyMain *pymain)
+pymain_update_sys_path(_PyMain *pymain)
 {
-    /* Set sys.argv */
-    if (PySys_SetObject("argv", pymain->sys_config.argv) != 0) {
-        pymain->err = _Py_INIT_ERR("can't assign sys.argv");
+    if (pymain->main_importer_path != NULL) {
+        /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
+        return 0;
+    }
+
+    if (Py_IsolatedFlag) {
+        return 0;
+    }
+
+    /* Prepend argv[0] to sys.path.
+       If argv[0] is a symlink, use the real path. */
+    PyObject *sys_path = PySys_GetObject("path");
+    if (sys_path == NULL) {
+        pymain->err = _Py_INIT_ERR("can't get sys.path");
         return -1;
     }
-    Py_CLEAR(pymain->sys_config.argv);
 
-    if (pymain->sys_config.path0 != NULL) {
-        /* Prepend path0 to sys.path */
-        PyObject *sys_path = PySys_GetObject("path");
-        if (sys_path == NULL) {
-            pymain->err = _Py_INIT_ERR("can't get sys.path");
-            return -1;
-        }
-
-        if (PyList_Insert(sys_path, 0, pymain->sys_config.path0) < 0) {
-            pymain->err = _Py_INIT_ERR("sys.path.insert(0, path0) failed");
-            return -1;
-        }
-        Py_CLEAR(pymain->sys_config.path0);
+    PyObject *path0 = _PyPathConfig_ComputeArgv0(pymain->sys_argc, pymain->sys_argv);
+    if (path0 == NULL) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
     }
+
+    /* Prepend path0 to sys.path */
+    if (PyList_Insert(sys_path, 0, path0) < 0) {
+        Py_DECREF(path0);
+        pymain->err = _Py_INIT_ERR("sys.path.insert(0, path0) failed");
+        return -1;
+    }
+    Py_DECREF(path0);
 
     return 0;
 }
@@ -1627,7 +1613,7 @@ config_get_env_var_dup(wchar_t **dest, wchar_t *wname, char *name)
 
 
 static _PyInitError
-config_init_pythonpath(_PyMainInterpreterConfig *config)
+config_init_pythonpath(_PyCoreConfig *config)
 {
     wchar_t *path;
     int res = config_get_env_var_dup(&path, L"PYTHONPATH", "PYTHONPATH");
@@ -1640,7 +1626,7 @@ config_init_pythonpath(_PyMainInterpreterConfig *config)
 
 
 static _PyInitError
-config_init_home(_PyMainInterpreterConfig *config)
+config_init_home(_PyCoreConfig *config)
 {
     wchar_t *home;
 
@@ -1664,7 +1650,7 @@ config_init_home(_PyMainInterpreterConfig *config)
 
 
 _PyInitError
-_PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *config)
+_PyCoreConfig_ReadEnv(_PyCoreConfig *config)
 {
     _PyInitError err = config_init_home(config);
     if (_Py_INIT_FAILED(err)) {
@@ -1756,7 +1742,7 @@ pymain_parse_envvars(_PyMain *pymain)
         return -1;
     }
 
-    _PyInitError err = _PyMainInterpreterConfig_ReadEnv(&pymain->config);
+    _PyInitError err = _PyCoreConfig_ReadEnv(&pymain->core_config);
     if (_Py_INIT_FAILED(pymain->err)) {
         pymain->err = err;
         return -1;
@@ -1834,12 +1820,15 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
     }
     /* FIXME: if utf8_mode value changed, parse again cmdline */
 
-    _PyInitError err = _PyMainInterpreterConfig_Read(&pymain->config);
+    if (pymain_init_sys_argv(pymain) < 0) {
+        return -1;
+    }
+
+    _PyInitError err = _PyCoreConfig_Read(&pymain->core_config);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
     }
-
     return 0;
 }
 
@@ -1858,10 +1847,85 @@ pymain_parse_cmdline_envvars(_PyMain *pymain)
     return res;
 }
 
-static int
-pymain_init_python(_PyMain *pymain)
-{
 
+static PyObject *
+config_create_path_list(const wchar_t *path, wchar_t delim)
+{
+    int i, n;
+    const wchar_t *p;
+    PyObject *v;
+
+    n = 1;
+    p = path;
+    while ((p = wcschr(p, delim)) != NULL) {
+        n++;
+        p++;
+    }
+    v = PyList_New(n);
+    if (v == NULL) {
+        return NULL;
+    }
+    for (i = 0; ; i++) {
+        p = wcschr(path, delim);
+        if (p == NULL) {
+            p = path + wcslen(path); /* End of string */
+        }
+        PyObject *w = PyUnicode_FromWideChar(path, (Py_ssize_t)(p - path));
+        if (w == NULL) {
+            Py_DECREF(v);
+            return NULL;
+        }
+        PyList_SET_ITEM(v, i, w);
+        if (*p == '\0') {
+            break;
+        }
+        path = p+1;
+    }
+    return v;
+}
+
+
+static _PyInitError
+config_init_module_search_path(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
+{
+    _PyInitError err = _PyPathConfig_Init(core_config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    wchar_t *sys_path = Py_GetPath();
+
+    config->module_search_path = config_create_path_list(sys_path, DELIM);
+    if (config->module_search_path == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    return _Py_INIT_OK();
+}
+
+
+_PyInitError
+_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
+{
+    /* Signal handlers are installed by default */
+    if (config->install_signal_handlers < 0) {
+        config->install_signal_handlers = 1;
+    }
+
+    if (config->module_search_path == NULL &&
+        !core_config->_disable_importlib)
+    {
+        _PyInitError err = config_init_module_search_path(config, core_config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    return _Py_INIT_OK();
+}
+
+
+static int
+pymain_init_python_core(_PyMain *pymain)
+{
     pymain_set_global_config(pymain);
 
     pymain_init_stdio(pymain);
@@ -1870,11 +1934,30 @@ pymain_init_python(_PyMain *pymain)
     if (_Py_INIT_FAILED(pymain->err)) {
         return -1;
     }
+    return 0;
+}
 
+
+static int
+pymain_init_python_main(_PyMain *pymain)
+{
     if (pymain_add_xoptions(pymain)) {
         return -1;
     }
     if (pymain_add_warnings_options(pymain)) {
+        return -1;
+    }
+
+    /* Create sys.argv list */
+    if (pymain_create_argv_list(pymain) < 0) {
+        pymain->err = _Py_INIT_ERR("failed to create sys.argv");
+        return -1;
+    }
+
+    _PyInitError err = _PyMainInterpreterConfig_Read(&pymain->config,
+                                                     &pymain->core_config);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
         return -1;
     }
 
@@ -1890,14 +1973,7 @@ pymain_init_python(_PyMain *pymain)
         pymain->main_importer_path = pymain_get_importer(pymain->cmdline.filename);
     }
 
-    /* FIXME: put argv into _PyMainInterpreterConfig.
-       Currently, PySys_SetArgvEx() can still modify sys.path and so must be
-       called after _Py_InitializeMainInterpreter() which calls
-       _PyPathConfig_Init(). */
-    if (pymain_compute_argv(pymain) < 0) {
-        return -1;
-    }
-    if (pymain_set_sys_argv(pymain) < 0) {
+    if (pymain_update_sys_path(pymain) < 0) {
         return -1;
     }
     return 0;
@@ -1962,12 +2038,19 @@ pymain_impl(_PyMain *pymain)
         return 0;
     }
 
-    res = pymain_init_python(pymain);
+    res = pymain_init_python_core(pymain);
+    if (res < 0) {
+        return -1;
+    }
+
+    res = pymain_init_python_main(pymain);
     if (res < 0) {
         return -1;
     }
 
     pymain_run_python(pymain);
+
+    pymain_free_python(pymain);
 
     if (Py_FinalizeEx() < 0) {
         /* Value unlikely to be confused with a non-error exit status or
