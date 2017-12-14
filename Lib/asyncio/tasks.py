@@ -274,7 +274,7 @@ def create_task(coro):
 
     Return a Task object.
     """
-    loop = get_running_loop()
+    loop = events.get_running_loop()
     return loop.create_task(coro)
 
 
