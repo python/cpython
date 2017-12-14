@@ -205,7 +205,7 @@ fold_binop(expr_ty node, PyArena *arena)
 }
 
 static PyObject*
-make_const_tuple(asdl_seq *elts, int make_set)
+make_const_tuple(asdl_seq *elts)
 {
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
@@ -225,11 +225,6 @@ make_const_tuple(asdl_seq *elts, int make_set)
         Py_INCREF(v);
         PyTuple_SET_ITEM(newval, i, v);
     }
-
-    /* Need to create frozen_set instead. */
-    if (make_set) {
-        Py_SETREF(newval, PyFrozenSet_New(newval));
-    }
     return newval;
 }
 
@@ -241,7 +236,7 @@ fold_tuple(expr_ty node, PyArena *arena)
     if (node->v.Tuple.ctx != Load)
         return 1;
 
-    newval = make_const_tuple(node->v.Tuple.elts, 0);
+    newval = make_const_tuple(node->v.Tuple.elts);
     return make_const(node, newval, arena);
 }
 
@@ -268,38 +263,48 @@ fold_subscr(expr_ty node, PyArena *arena)
     return make_const(node, newval, arena);
 }
 
+/* Change literal list or set of constants into constant
+   tuple or frozenset respectively.
+   Used for right operand of "in" and "not in" tests and for iterable
+   in "for" loop and comprehensions.
+*/
+static int
+fold_iter(expr_ty arg, PyArena *arena)
+{
+    PyObject *newval;
+    if (arg->kind == List_kind) {
+        newval = make_const_tuple(arg->v.List.elts);
+    }
+    else if (arg->kind == Set_kind) {
+        newval = make_const_tuple(arg->v.Set.elts);
+        if (newval) {
+            Py_SETREF(newval, PyFrozenSet_New(newval));
+        }
+    }
+    else {
+        return 1;
+    }
+    return make_const(arg, newval, arena);
+}
+
 static int
 fold_compare(expr_ty node, PyArena *arena)
 {
     asdl_int_seq *ops;
     asdl_seq *args;
-    PyObject *newval;
     int i;
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
     /* TODO: optimize cases with literal arguments. */
-    for (i = 0; i < asdl_seq_LEN(ops); i++) {
-        int op;
-        expr_ty arg;
-        asdl_seq *elts;
-
-        op = asdl_seq_GET(ops, i);
-        arg = (expr_ty)asdl_seq_GET(args, i);
-        /* Change literal list or set in 'in' or 'not in' into
-           tuple or frozenset respectively. */
-        /* TODO: do the same when list or set is used as iterable
-           in for loop and comprehensions? */
-        if (op != In && op != NotIn)
-            continue;
-        if (arg->kind == List_kind)
-            elts = arg->v.List.elts;
-        else if (arg->kind == Set_kind)
-            elts = arg->v.Set.elts;
-        else continue;
-
-        newval = make_const_tuple(elts, arg->kind == Set_kind);
-        make_const(arg, newval, arena);
+    /* Change literal list or set in 'in' or 'not in' into
+       tuple or frozenset respectively. */
+    i = asdl_seq_LEN(ops) - 1;
+    int op = asdl_seq_GET(ops, i);
+    if (op == In || op == NotIn) {
+        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena)) {
+            return 0;
+        }
     }
     return 1;
 }
@@ -497,6 +502,8 @@ astfold_comprehension(comprehension_ty node_, PyArena* ctx_)
     CALL(astfold_expr, expr_ty, node_->target);
     CALL(astfold_expr, expr_ty, node_->iter);
     CALL_SEQ(astfold_expr, expr_ty, node_->ifs);
+
+    CALL(fold_iter, expr_ty, node_->iter);
     return 1;
 }
 
@@ -565,6 +572,8 @@ astfold_stmt(stmt_ty node_, PyArena* ctx_)
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
         CALL_SEQ(astfold_stmt, stmt_ty, node_->v.For.body);
         CALL_SEQ(astfold_stmt, stmt_ty, node_->v.For.orelse);
+
+        CALL(fold_iter, expr_ty, node_->v.For.iter);
         break;
     case AsyncFor_kind:
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
