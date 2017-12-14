@@ -54,6 +54,8 @@ class IsShareableTests(unittest.TestCase):
 
     def test_default_shareables(self):
         shareables = [
+                # singletons
+                None,
                 # builtin objects
                 b'spam',
                 ]
@@ -74,7 +76,6 @@ class IsShareableTests(unittest.TestCase):
 
         not_shareables = [
                 # singletons
-                None,
                 True,
                 False,
                 NotImplemented,
@@ -560,6 +561,7 @@ class RunStringTests(TestBase):
         shared = {
                 'spam': b'ham',
                 'eggs': b'-1',
+                'cheddar': None,
                 }
         script = dedent(f"""
             eggs = int(eggs)
@@ -579,6 +581,7 @@ class RunStringTests(TestBase):
         self.assertEqual(ns['spam'], 42)
         self.assertEqual(ns['eggs'], -1)
         self.assertEqual(ns['result'], 41)
+        self.assertIsNone(ns['cheddar'])
 
     def test_shared_overwrites(self):
         interpreters.run_string(self.id, dedent("""

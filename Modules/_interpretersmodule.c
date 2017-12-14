@@ -18,12 +18,14 @@ _get_current(void)
     return tstate->interp;
 }
 
-/* sharing-specific functions and structs */
+/* cross-interpreter data */
 
 static int
 _PyObject_CheckShareable(PyObject *obj)
 {
     if (PyBytes_CheckExact(obj))
+        return 0;
+    if (obj == Py_None)
         return 0;
     PyErr_SetString(PyExc_ValueError,
                     "obj is not a cross-interpreter shareable type");
@@ -45,6 +47,23 @@ _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
+static PyObject *
+_new_none_object(_PyCrossInterpreterData *data)
+{
+    // XXX Singleton refcounts are problematic across interpreters...
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static int
+_none_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    data->data = NULL;
+    data->new_object = _new_none_object;
+    data->free = NULL;
+    return 0;
+}
+
 static int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
@@ -60,6 +79,11 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 
     if (PyBytes_CheckExact(obj)) {
         if (_bytes_shared(obj, data) != 0) {
+            Py_DECREF(obj);
+            return 1;
+        }
+    } else if (obj == Py_None) {
+        if (_none_shared(obj, data) != 0) {
             Py_DECREF(obj);
             return 1;
         }
@@ -93,6 +117,8 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 {
     return data->new_object(data);
 }
+
+/* other sharing-specific functions and structs */
 
 struct _shareditem {
     Py_UNICODE *name;
