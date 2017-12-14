@@ -1,13 +1,8 @@
 import linecache
 import traceback
-import weakref
 
 from . import base_futures
 from . import coroutines
-from . import events
-
-
-__all__ = ('current_task', 'all_tasks', '_unregister_task')
 
 
 def _task_repr_info(task):
@@ -79,54 +74,3 @@ def _task_print_stack(task, limit, file):
     if exc is not None:
         for line in traceback.format_exception_only(exc.__class__, exc):
             print(line, file=file, end='')
-
-
-# WeakKeyDictionary of {Task: EventLoop} containing all tasks alive.
-# Task should be a weak reference to remove entry on task garbage
-# collection, EventLoop is required
-# to not access to private task._loop attribute.
-_all_tasks = weakref.WeakKeyDictionary()
-
-# Dictionary containing tasks that are currently active in
-# all running event loops.  {EventLoop: Task}
-_current_tasks = {}
-
-
-def current_task(loop=None):
-    if loop is None:
-        loop = events.get_running_loop()
-    return _current_tasks.get(loop)
-
-
-def all_tasks(loop=None):
-    if loop is None:
-        loop = events.get_event_loop()
-    return {t for t, l in _all_tasks.items() if l is loop}
-
-
-def _register_task(loop, task):
-    """Register a new task in asyncio as executed by loop.
-
-    Returns None.
-    """
-    _all_tasks[task] = loop
-
-
-def _enter_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not None:
-        raise RuntimeError(f"Cannot enter into task {task!r} while another "
-                           f"task {current_task!r} is being executed.")
-    _current_tasks[loop] = task
-
-
-def _leave_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not task:
-        raise RuntimeError(f"Leaving task {task!r} does not match "
-                           f"the current task {current_task!r}.")
-    del _current_tasks[loop]
-
-
-def _unregister_task(loop, task):
-    _all_tasks.pop(task, None)

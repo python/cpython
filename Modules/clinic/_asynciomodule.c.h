@@ -630,6 +630,40 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_asyncio__unregister_task__doc__,
+"_unregister_task($module, /, loop, task)\n"
+"--\n"
+"\n"
+"Unregister a task.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__UNREGISTER_TASK_METHODDEF    \
+    {"_unregister_task", (PyCFunction)_asyncio__unregister_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__unregister_task__doc__},
+
+static PyObject *
+_asyncio__unregister_task_impl(PyObject *module, PyObject *loop,
+                               PyObject *task);
+
+static PyObject *
+_asyncio__unregister_task(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"loop", "task", NULL};
+    static _PyArg_Parser _parser = {"OO:_unregister_task", _keywords, 0};
+    PyObject *loop;
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &loop, &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__unregister_task_impl(module, loop, task);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_asyncio__enter_task__doc__,
 "_enter_task($module, /, loop, task)\n"
 "--\n"
@@ -699,4 +733,4 @@ _asyncio__leave_task(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1adc920ab25fdde1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=862e6aa65f0f9ffe input=a9049054013a1b77]*/

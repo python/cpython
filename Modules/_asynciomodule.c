@@ -11,9 +11,12 @@ module _asyncio
 /* identifiers used from some functions */
 _Py_IDENTIFIER(__asyncio_running_event_loop__);
 _Py_IDENTIFIER(add_done_callback);
+_Py_IDENTIFIER(all_tasks);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
+_Py_IDENTIFIER(current_task);
 _Py_IDENTIFIER(get_event_loop);
+_Py_IDENTIFIER(pop);
 _Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
 _Py_IDENTIFIER(_step);
@@ -22,20 +25,28 @@ _Py_IDENTIFIER(_wakeup);
 
 
 /* State of the _asyncio module */
-static PyObject *asyncio__all_tasks;
-static PyObject *asyncio__current_tasks;
+static PyObject *asyncio_mod;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
 static PyObject *asyncio_future_repr_info_func;
 static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_task_get_stack_func;
 static PyObject *asyncio_task_print_stack_func;
-static PyObject *asyncio_current_task_func;
-static PyObject *asyncio_all_tasks_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *inspect_isgenerator;
 static PyObject *os_getpid;
+
+
+/* WeakKeyDictionary of {Task: EventLoop} containing all tasks alive.
+   Task should be a weak reference to remove entry on task garbage
+   collection, EventLoop is required
+   to not access to private task._loop attribute. */
+static PyObject *current_tasks;
+
+/* Dictionary containing tasks that are currently active in
+   all running event loops.  {EventLoop: Task} */
+static PyObject *all_tasks;
 
 
 typedef enum {
@@ -1451,7 +1462,22 @@ TaskWakeupMethWrapper_new(TaskObj *task)
 static int
 register_task(PyObject *loop, PyObject *task)
 {
-    return PyObject_SetItem(asyncio__all_tasks, task, loop);
+    return PyObject_SetItem(all_tasks, task, loop);
+}
+
+
+static int
+unregister_task(PyObject *loop, PyObject *task)
+{
+    PyObject *res;
+
+    res = _PyObject_CallMethodIdObjArgs(all_tasks, &PyId_pop,
+                                        task, Py_None, NULL);
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
 }
 
 
@@ -1459,7 +1485,7 @@ static int
 enter_task(PyObject *loop, PyObject *task)
 {
     PyObject *item;
-    item = PyDict_GetItem(asyncio__current_tasks, loop);
+    item = PyDict_GetItem(current_tasks, loop);
     if (item != NULL) {
         PyErr_Format(
             PyExc_RuntimeError,
@@ -1468,7 +1494,7 @@ enter_task(PyObject *loop, PyObject *task)
             task, item, NULL);
         return -1;
     }
-    if (PyDict_SetItem(asyncio__current_tasks, loop, task) < 0) {
+    if (PyDict_SetItem(current_tasks, loop, task) < 0) {
         return -1;
     }
     return 0;
@@ -1480,7 +1506,7 @@ leave_task(PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
     PyObject *item;
-    item = PyDict_GetItem(asyncio__current_tasks, loop);
+    item = PyDict_GetItem(current_tasks, loop);
     if (item != task) {
         if (item == NULL) {
             /* Not entered, replace with None */
@@ -1492,7 +1518,7 @@ leave_task(PyObject *loop, PyObject *task)
             task, item, NULL);
         return -1;
     }
-    return PyObject_DelItem(asyncio__current_tasks, loop);
+    return PyObject_DelItem(current_tasks, loop);
 }
 
 /* ----- Task */
@@ -1619,6 +1645,7 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
 /*[clinic end generated code: output=99fbe7332c516e03 input=cd14770c5b79c7eb]*/
 {
     PyObject *ret;
+    PyObject *current_task_func;
 
     if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
                      "Task.current_task() is deprecated, " \
@@ -1626,19 +1653,26 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
                      1) < 0) {
         return NULL;
     }
+
+    current_task_func = _PyObject_GetAttrId(asyncio_mod, &PyId_current_task);
+    if (current_task_func == NULL) {
+        return NULL;
+    }
+
     if (loop == Py_None) {
         loop = get_event_loop();
         if (loop == NULL) {
             return NULL;
         }
-        ret = PyObject_CallFunctionObjArgs(asyncio_current_task_func,
-                                           loop, NULL);
+        ret = PyObject_CallFunctionObjArgs(current_task_func, loop, NULL);
+        Py_DECREF(current_task_func);
         Py_DECREF(loop);
         return ret;
     }
     else {
-        return PyObject_CallFunctionObjArgs(asyncio_current_task_func,
-                                            loop, NULL);
+        ret = PyObject_CallFunctionObjArgs(current_task_func, loop, NULL);
+        Py_DECREF(current_task_func);
+        return ret;
     }
 }
 
@@ -1657,13 +1691,24 @@ static PyObject *
 _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
 /*[clinic end generated code: output=11f9b20749ccca5d input=497f80bc9ce726b5]*/
 {
+    PyObject *res;
+    PyObject *all_tasks_func;
+
+    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId_all_tasks);
+    if (all_tasks_func == NULL) {
+        return NULL;
+    }
+
     if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
                      "Task.all_tasks() is deprecated, " \
                      "use asyncio.all_tasks() instead",
                      1) < 0) {
         return NULL;
     }
-    return PyObject_CallFunctionObjArgs(asyncio_all_tasks_func, loop, NULL);
+
+    res = PyObject_CallFunctionObjArgs(all_tasks_func, loop, NULL);
+    Py_DECREF(all_tasks_func);
+    return res;
 }
 
 /*[clinic input]
@@ -2594,6 +2639,29 @@ _asyncio__register_task_impl(PyObject *module, PyObject *loop,
 
 
 /*[clinic input]
+_asyncio._unregister_task
+
+    loop: object
+    task: object
+
+Unregister a task.
+
+Returns None.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__unregister_task_impl(PyObject *module, PyObject *loop,
+                               PyObject *task)
+/*[clinic end generated code: output=f634743a76b84ebc input=51fa1820634ef331]*/
+{
+    if (unregister_task(loop, task) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 _asyncio._enter_task
 
     loop: object
@@ -2647,26 +2715,36 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 static void
 module_free(void *m)
 {
-    Py_CLEAR(asyncio__current_tasks);
-    Py_CLEAR(asyncio__all_tasks);
     Py_CLEAR(traceback_extract_stack);
     Py_CLEAR(asyncio_get_event_loop_policy);
     Py_CLEAR(asyncio_future_repr_info_func);
     Py_CLEAR(asyncio_task_repr_info_func);
     Py_CLEAR(asyncio_task_get_stack_func);
     Py_CLEAR(asyncio_task_print_stack_func);
-    Py_CLEAR(asyncio_current_task_func);
-    Py_CLEAR(asyncio_all_tasks_func);
     Py_CLEAR(asyncio_InvalidStateError);
     Py_CLEAR(asyncio_CancelledError);
+    Py_CLEAR(asyncio_mod);
     Py_CLEAR(inspect_isgenerator);
     Py_CLEAR(os_getpid);
+
+    Py_CLEAR(current_tasks);
+    Py_CLEAR(all_tasks);
 }
 
 static int
 module_init(void)
 {
     PyObject *module = NULL;
+
+    asyncio_mod = PyImport_ImportModule("asyncio");
+    if (asyncio_mod == NULL) {
+        goto fail;
+    }
+
+    current_tasks = PyDict_New();
+    if (current_tasks == NULL) {
+        goto fail;
+    }
 
 #define WITH_MOD(NAME) \
     Py_CLEAR(module); \
@@ -2690,13 +2768,9 @@ module_init(void)
     GET_MOD_ATTR(asyncio_CancelledError, "CancelledError")
 
     WITH_MOD("asyncio.base_tasks")
-    GET_MOD_ATTR(asyncio__current_tasks, "_current_tasks")
-    GET_MOD_ATTR(asyncio__all_tasks, "_all_tasks")
     GET_MOD_ATTR(asyncio_task_repr_info_func, "_task_repr_info")
     GET_MOD_ATTR(asyncio_task_get_stack_func, "_task_get_stack")
     GET_MOD_ATTR(asyncio_task_print_stack_func, "_task_print_stack")
-    GET_MOD_ATTR(asyncio_current_task_func, "current_task")
-    GET_MOD_ATTR(asyncio_all_tasks_func, "all_tasks")
 
     WITH_MOD("inspect")
     GET_MOD_ATTR(inspect_isgenerator, "isgenerator")
@@ -2706,6 +2780,15 @@ module_init(void)
 
     WITH_MOD("traceback")
     GET_MOD_ATTR(traceback_extract_stack, "extract_stack")
+
+    PyObject *weak_key_dict;
+    WITH_MOD("weakref")
+    GET_MOD_ATTR(weak_key_dict, "WeakKeyDictionary");
+    all_tasks = _PyObject_CallNoArg(weak_key_dict);
+    Py_CLEAR(weak_key_dict);
+    if (all_tasks == NULL) {
+        goto fail;
+    }
 
     Py_DECREF(module);
     return 0;
@@ -2727,6 +2810,7 @@ static PyMethodDef asyncio_methods[] = {
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__SET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__REGISTER_TASK_METHODDEF
+    _ASYNCIO__UNREGISTER_TASK_METHODDEF
     _ASYNCIO__ENTER_TASK_METHODDEF
     _ASYNCIO__LEAVE_TASK_METHODDEF
     {NULL, NULL}
@@ -2781,6 +2865,18 @@ PyInit__asyncio(void)
     Py_INCREF(&TaskType);
     if (PyModule_AddObject(m, "Task", (PyObject *)&TaskType) < 0) {
         Py_DECREF(&TaskType);
+        return NULL;
+    }
+
+    Py_INCREF(all_tasks);
+    if (PyModule_AddObject(m, "_all_tasks", all_tasks) < 0) {
+        Py_DECREF(all_tasks);
+        return NULL;
+    }
+
+    Py_INCREF(current_tasks);
+    if (PyModule_AddObject(m, "_current_tasks", current_tasks) < 0) {
+        Py_DECREF(current_tasks);
         return NULL;
     }
 

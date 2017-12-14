@@ -2190,9 +2190,9 @@ class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
     Future = futures._PyFuture
 
 
-
 class BaseTaskIntrospectionTests:
     _register_task = None
+    _unregister_task = None
     _enter_task = None
     _leave_task = None
 
@@ -2246,18 +2246,19 @@ class BaseTaskIntrospectionTests:
         task = mock.Mock()
         loop = mock.Mock()
         self._register_task(loop, task)
-        asyncio._unregister_task(loop, task)
+        self._unregister_task(loop, task)
         self.assertEqual(asyncio.all_tasks(loop), set())
 
     def test__unregister_task_not_registered(self):
         task = mock.Mock()
         loop = mock.Mock()
-        asyncio._unregister_task(loop, task)
+        self._unregister_task(loop, task)
         self.assertEqual(asyncio.all_tasks(loop), set())
 
 
 class PyIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
     _register_task = staticmethod(tasks._py_register_task)
+    _unregister_task = staticmethod(tasks._py_unregister_task)
     _enter_task = staticmethod(tasks._py_enter_task)
     _leave_task = staticmethod(tasks._py_leave_task)
 
@@ -2266,6 +2267,7 @@ class PyIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
                      'requires the C _asyncio module')
 class CIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
     _register_task = staticmethod(tasks._c_register_task)
+    _unregister_task = staticmethod(tasks._c_unregister_task)
     _enter_task = staticmethod(tasks._c_enter_task)
     _leave_task = staticmethod(tasks._c_leave_task)
 
