@@ -2607,6 +2607,6 @@ def _flush_all_writers():
     for w in _all_writers:
         try:
             w.flush()
-        except:
+        except Exception:
             pass
 atexit.register(_flush_all_writers)
