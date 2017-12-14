@@ -3,7 +3,7 @@ __all__ = ()
 import concurrent.futures._base
 import reprlib
 
-from . import utils
+from . import format_helpers
 
 Error = concurrent.futures._base.Error
 CancelledError = concurrent.futures.CancelledError
@@ -38,7 +38,7 @@ def _format_callbacks(cb):
         cb = ''
 
     def format_cb(callback):
-        return utils._format_callback_source(callback, ())
+        return format_helpers._format_callback_source(callback, ())
 
     if size == 1:
         cb = format_cb(cb[0])

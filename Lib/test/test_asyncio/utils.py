@@ -28,9 +28,9 @@ except ImportError:  # pragma: no cover
 
 from asyncio import base_events
 from asyncio import events
+from asyncio import format_helpers
 from asyncio import futures
 from asyncio import tasks
-from asyncio import utils
 from asyncio.log import logger
 from test import support
 
@@ -430,7 +430,7 @@ class MockPattern(str):
 
 
 def get_function_source(func):
-    source = utils._get_function_source(func)
+    source = format_helpers._get_function_source(func)
     if source is None:
         raise ValueError("unable to get the source of %r" % (func,))
     return source

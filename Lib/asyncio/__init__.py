@@ -8,6 +8,7 @@ import sys
 from .base_events import *
 from .coroutines import *
 from .events import *
+from .format_helpers import *
 from .futures import *
 from .locks import *
 from .protocols import *
@@ -16,11 +17,11 @@ from .streams import *
 from .subprocess import *
 from .tasks import *
 from .transports import *
-from .utils import *
 
 __all__ = (base_events.__all__ +
            coroutines.__all__ +
            events.__all__ +
+           format_helpers.__all__ +
            futures.__all__ +
            locks.__all__ +
            protocols.__all__ +
@@ -28,8 +29,7 @@ __all__ = (base_events.__all__ +
            streams.__all__ +
            subprocess.__all__ +
            tasks.__all__ +
-           transports.__all__ +
-           utils.__all__)
+           transports.__all__)
 
 if sys.platform == 'win32':  # pragma: no cover
     from .windows_events import *

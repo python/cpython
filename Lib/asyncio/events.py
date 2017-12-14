@@ -18,7 +18,7 @@ import sys
 import threading
 
 from . import constants
-from . import utils
+from . import format_helpers
 
 
 class Handle:
@@ -34,7 +34,8 @@ class Handle:
         self._cancelled = False
         self._repr = None
         if self._loop.get_debug():
-            self._source_traceback = utils.extract_stack(sys._getframe(1))
+            self._source_traceback = format_helpers.extract_stack(
+                sys._getframe(1))
         else:
             self._source_traceback = None
 
@@ -43,8 +44,8 @@ class Handle:
         if self._cancelled:
             info.append('cancelled')
         if self._callback is not None:
-            info.append(utils._format_callback_source(self._callback,
-                                                      self._args))
+            info.append(format_helpers._format_callback_source(
+                self._callback, self._args))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append(f'created at {frame[0]}:{frame[1]}')
@@ -74,7 +75,8 @@ class Handle:
         try:
             self._callback(*self._args)
         except Exception as exc:
-            cb = utils._format_callback_source(self._callback, self._args)
+            cb = format_helpers._format_callback_source(
+                self._callback, self._args)
             msg = f'Exception in callback {cb}'
             context = {
                 'message': msg,
