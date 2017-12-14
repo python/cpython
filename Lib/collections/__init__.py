@@ -303,7 +303,7 @@ except ImportError:
 
 _nt_itemgetters = {}
 
-def namedtuple(typename, field_names, *, rename=False, module=None, defaults=None):
+def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = namedtuple('Point', ['x', 'y'])
@@ -333,6 +333,7 @@ def namedtuple(typename, field_names, *, rename=False, module=None, defaults=Non
         field_names = field_names.replace(',', ' ').split()
     field_names = list(map(str, field_names))
     typename = _sys.intern(str(typename))
+
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
@@ -342,6 +343,7 @@ def namedtuple(typename, field_names, *, rename=False, module=None, defaults=Non
                 or name in seen):
                 field_names[index] = f'_{index}'
             seen.add(name)
+
     for name in [typename] + field_names:
         if type(name) is not str:
             raise TypeError('Type names and field names must be strings')
@@ -351,6 +353,7 @@ def namedtuple(typename, field_names, *, rename=False, module=None, defaults=Non
         if _iskeyword(name):
             raise ValueError('Type names and field names cannot be a '
                              f'keyword: {name!r}')
+
     seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
@@ -359,10 +362,14 @@ def namedtuple(typename, field_names, *, rename=False, module=None, defaults=Non
         if name in seen:
             raise ValueError(f'Encountered duplicate field name: {name!r}')
         seen.add(name)
+
+    field_defaults = {}
     if defaults is not None:
         defaults = tuple(defaults)
         if len(defaults) > len(field_names):
             raise TypeError('Got more default values than field names')
+        field_defaults = dict(reversed(list(zip(reversed(field_names),
+                                                reversed(defaults)))))
 
     # Variables used in the methods and docstrings
     field_names = tuple(map(_sys.intern, field_names))
@@ -426,6 +433,7 @@ def namedtuple(typename, field_names, *, rename=False, module=None, defaults=Non
         '__doc__': f'{typename}({arg_list})',
         '__slots__': (),
         '_fields': field_names,
+        '_fields_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
         '_replace': _replace,
