@@ -159,6 +159,24 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 562: Customization of access to module attributes
+-----------------------------------------------------
+
+It is sometimes convenient to customize or otherwise have control over access
+to module attributes. A typical example is managing deprecation warnings.
+Typical workarounds are assigning ``__class__`` of a module object to
+a custom subclass of :class:`types.ModuleType` or replacing the ``sys.modules``
+item with a custom wrapper instance. This procedure is now simplified by
+recognizing ``__getattr__`` defined directly in a module that would act like
+a normal ``__getattr__`` method, except that it will be defined on module
+*instances*.
+
+.. seealso::
+
+    :pep:`562` -- Module ``__getattr__`` and ``__dir__``
+       PEP written and implemented by Ivan Levkivskyi
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
