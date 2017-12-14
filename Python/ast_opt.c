@@ -156,10 +156,10 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
     return limit;
 }
 
-#define MAX_INT_SIZE 128
-#define MAX_COLLECTION_SIZE 256
-#define MAX_STR_SIZE 4096
-#define MAX_TOTAL_ITEMS 1000000
+#define MAX_INT_SIZE           128  /* bits */
+#define MAX_COLLECTION_SIZE    256  /* items */
+#define MAX_STR_SIZE          4096  /* characters */
+#define MAX_TOTAL_ITEMS    1000000  /* including nested collections */
 
 static PyObject *
 safe_multiply(PyObject *v, PyObject *w)
@@ -233,7 +233,7 @@ safe_lshift(PyObject *v, PyObject *w)
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
             return NULL;
         }
-        if (vbits + wbits > MAX_INT_SIZE) {
+        if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
             return NULL;
         }
     }
