@@ -59,6 +59,8 @@ typedef struct {
     int install_signal_handlers;
     PyObject *argv;                 /* sys.argv list, can be NULL */
     PyObject *module_search_path;   /* sys.path list */
+    PyObject *warnoptions;          /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;             /* sys._xoptions dict, can be NULL */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \
