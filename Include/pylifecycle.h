@@ -136,7 +136,13 @@ PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(int) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
-PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(_PyCoreConfig *core_config);
+PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);
+#endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_ReadHashSeed(
+    const char *seed_text,
+    int *use_hash_seed,
+    unsigned long *hash_seed);
 #endif
 
 /* Various internal finalizers */

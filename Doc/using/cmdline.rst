@@ -277,8 +277,9 @@ Miscellaneous options
 
 .. cmdoption:: -R
 
-   Kept for compatibility.  On Python 3.3 and greater, hash randomization is
-   turned on by default.
+   Turn on hash randomization. This option only has an effect if the
+   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
+   randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`__hash__` values of str, bytes and datetime

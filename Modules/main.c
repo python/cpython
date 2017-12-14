@@ -726,7 +726,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
             break;
 
         case 'R':
-            /* Ignored */
+            pymain->core_config.use_hash_seed = 0;
             break;
 
         /* This space reserved for other options */
@@ -1293,6 +1293,10 @@ pymain_set_global_config(_PyMain *pymain)
 
     Py_IgnoreEnvironmentFlag = pymain->core_config.ignore_environment;
     Py_UTF8Mode = pymain->core_config.utf8_mode;
+
+    /* Random or non-zero hash seed */
+    Py_HashRandomizationFlag = (pymain->core_config.use_hash_seed == 0 ||
+                                pymain->core_config.hash_seed != 0);
 }
 
 
@@ -1694,6 +1698,24 @@ config_init_home(_PyCoreConfig *config)
 }
 
 
+static _PyInitError
+config_init_hash_seed(_PyCoreConfig *config)
+{
+    if (config->use_hash_seed < 0) {
+        const char *seed_text = pymain_get_env_var("PYTHONHASHSEED");
+        int use_hash_seed;
+        unsigned long hash_seed;
+        if (_Py_ReadHashSeed(seed_text, &use_hash_seed, &hash_seed) < 0) {
+            return _Py_INIT_USER_ERR("PYTHONHASHSEED must be \"random\" "
+                                     "or an integer in range [0; 4294967295]");
+        }
+        config->use_hash_seed = use_hash_seed;
+        config->hash_seed = hash_seed;
+    }
+    return _Py_INIT_OK();
+}
+
+
 _PyInitError
 _PyCoreConfig_ReadEnv(_PyCoreConfig *config)
 {
@@ -1708,6 +1730,11 @@ _PyCoreConfig_ReadEnv(_PyCoreConfig *config)
     }
 
     err = config_get_program_name(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = config_init_hash_seed(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1776,12 +1803,6 @@ pymain_parse_envvars(_PyMain *pymain)
 
     /* Get environment variables */
     pymain_set_flags_from_env(pymain);
-
-    /* The variable is only tested for existence here;
-       _Py_HashRandomization_Init will check its value further. */
-    if (pymain_get_env_var("PYTHONHASHSEED")) {
-        Py_HashRandomizationFlag = 1;
-    }
 
     if (pymain_warnings_envvar(pymain) < 0) {
         return -1;
