@@ -792,13 +792,8 @@ _Py_InitializeCore(const _PyCoreConfig *config)
  */
 
 _PyInitError
-_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
+_PyCoreConfig_Read(_PyCoreConfig *config)
 {
-    /* Signal handlers are installed by default */
-    if (config->install_signal_handlers < 0) {
-        config->install_signal_handlers = 1;
-    }
-
     if (config->program_name == NULL) {
 #ifdef MS_WINDOWS
         const wchar_t *program_name = L"python";
@@ -814,9 +809,8 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config)
     return _Py_INIT_OK();
 }
 
-
 void
-_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+_PyCoreConfig_Clear(_PyCoreConfig *config)
 {
 #define CLEAR(ATTR) \
     do { \
@@ -828,6 +822,16 @@ _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
     CLEAR(config->home);
     CLEAR(config->program_name);
 #undef CLEAR
+}
+
+
+void
+_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+{
+    Py_CLEAR(config->argv);
+    Py_CLEAR(config->module_search_path);
+    Py_CLEAR(config->warnoptions);
+    Py_CLEAR(config->xoptions);
 }
 
 
@@ -881,16 +885,27 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_ERR("can't initialize time");
     }
 
-    /* GetPath may initialize state that _PySys_EndInit locks
-       in, and so has to be called first. */
-    err = _PyPathConfig_Init(&interp->config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    /* Set sys attributes */
+    assert(interp->config.module_search_path != NULL);
+    if (PySys_SetObject("path", interp->config.module_search_path) != 0) {
+        return _Py_INIT_ERR("can't assign sys.path");
     }
-    wchar_t *sys_path = Py_GetPath();
+    if (interp->config.argv != NULL) {
+        if (PySys_SetObject("argv", interp->config.argv) != 0) {
+            return _Py_INIT_ERR("can't assign sys.argv");
+        }
+    }
+    if (interp->config.warnoptions != NULL) {
+        if (PySys_SetObject("warnoptions", interp->config.warnoptions)) {
+            return _Py_INIT_ERR("can't assign sys.warnoptions");
+        }
+    }
+    if (interp->config.xoptions != NULL) {
+        if (PySys_SetObject("_xoptions", interp->config.xoptions)) {
+            return _Py_INIT_ERR("can't assign sys._xoptions");
+        }
+    }
 
-    /* Finish setting up the sys module and import system */
-    PySys_SetPath(sys_path);
     if (_PySys_EndInit(interp->sysdict) < 0)
         return _Py_INIT_ERR("can't finish initializing sys");
 
@@ -948,7 +963,6 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
             return err;
         }
     }
-
     return _Py_INIT_OK();
 }
 
@@ -970,12 +984,12 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         goto done;
     }
 
-    err = _PyMainInterpreterConfig_ReadEnv(&config);
+    err = _PyCoreConfig_ReadEnv(&core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyMainInterpreterConfig_Read(&config);
+    err = _PyMainInterpreterConfig_Read(&config, &core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -988,6 +1002,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     err = _Py_INIT_OK();
 
 done:
+    _PyCoreConfig_Clear(&core_config);
     _PyMainInterpreterConfig_Clear(&config);
     return err;
 }
@@ -1342,7 +1357,7 @@ new_interpreter(PyThreadState **tstate_p)
         interp->config = main_interp->config;
     }
 
-    err = _PyPathConfig_Init(&interp->config);
+    err = _PyPathConfig_Init(&interp->core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }

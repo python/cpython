@@ -2735,13 +2735,16 @@ class GetEventLoopTestsMixin:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        watcher = asyncio.SafeChildWatcher()
-        watcher.attach_loop(self.loop)
-        asyncio.set_child_watcher(watcher)
+        if sys.platform != 'win32':
+            watcher = asyncio.SafeChildWatcher()
+            watcher.attach_loop(self.loop)
+            asyncio.set_child_watcher(watcher)
 
     def tearDown(self):
         try:
-            asyncio.set_child_watcher(None)
+            if sys.platform != 'win32':
+                asyncio.set_child_watcher(None)
+
             super().tearDown()
         finally:
             self.loop.close()
