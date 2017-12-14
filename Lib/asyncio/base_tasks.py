@@ -7,6 +7,9 @@ from . import coroutines
 from . import events
 
 
+__all__ = ('current_task', 'all_tasks', '_unregister_task')
+
+
 def _task_repr_info(task):
     info = base_futures._future_repr_info(task)
 

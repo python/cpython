@@ -5,8 +5,7 @@ __all__ = (
     'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
     'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
-    'current_task', 'all_tasks', '_register_task', '_enter_task',
-    '_leave_task', '_unregister_task',
+    '_register_task', '_enter_task', '_leave_task',
 )
 
 import concurrent.futures
@@ -53,7 +52,7 @@ class Task(futures.Future):
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
-        return current_task(loop)
+        return base_tasks.current_task(loop)
 
     @classmethod
     def all_tasks(cls, loop=None):
@@ -65,7 +64,7 @@ class Task(futures.Future):
                       "use asyncio.all_tasks() instead",
                       PendingDeprecationWarning,
                       stacklevel=2)
-        return all_tasks(loop)
+        return base_tasks.all_tasks(loop)
 
     def __init__(self, coro, *, loop=None):
         assert coroutines.iscoroutine(coro), repr(coro)
@@ -256,9 +255,6 @@ _PyTask = Task
 _register_task = _py_register_task = base_tasks._register_task
 _enter_task = _py_enter_task = base_tasks._enter_task
 _leave_task = _py_leave_task = base_tasks._leave_task
-_unregister_task = base_tasks._unregister_task
-all_tasks = base_tasks.all_tasks
-current_task = base_tasks.current_task
 
 
 try:

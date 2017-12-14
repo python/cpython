@@ -6,6 +6,7 @@ import sys
 
 # This relies on each of the submodules having an __all__ variable.
 from .base_events import *
+from .base_tasks import *
 from .coroutines import *
 from .events import *
 from .futures import *
@@ -18,6 +19,7 @@ from .tasks import *
 from .transports import *
 
 __all__ = (base_events.__all__ +
+           base_tasks.__all__ +
            coroutines.__all__ +
            events.__all__ +
            futures.__all__ +
