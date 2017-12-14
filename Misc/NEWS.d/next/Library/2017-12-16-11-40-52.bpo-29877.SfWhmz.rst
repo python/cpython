@@ -1,0 +1,2 @@
+compileall: import ProcessPoolExecutor only when needed, preventing hangs on
+low resource platforms
