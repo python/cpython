@@ -235,6 +235,123 @@ class SimpleTest(abc.LoaderTests):
                 warnings.simplefilter('ignore', DeprecationWarning)
                 loader.load_module('bad name')
 
+    @util.writes_bytecode_files
+    def test_checked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping:
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Write a new source with the same mtime and size as before.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            os.utime(source, (50, 50))
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'new')
+            with open(pyc, 'rb') as fp:
+                data = fp.read()
+            self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b11)
+            self.assertEqual(
+                self.util.source_hash(b'state = "new"'),
+                data[8:16],
+            )
+
+    @util.writes_bytecode_files
+    def test_overridden_checked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping, \
+             unittest.mock.patch('_imp.check_hash_based_pycs', 'never'):
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Write a new source with the same mtime and size as before.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            os.utime(source, (50, 50))
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+
+    @util.writes_bytecode_files
+    def test_unchecked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping:
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Update the source file, which should be ignored.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            with open(pyc, 'rb') as fp:
+                data = fp.read()
+            self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b1)
+            self.assertEqual(
+                self.util.source_hash(b'state = "old"'),
+                data[8:16],
+            )
+
+    @util.writes_bytecode_files
+    def test_overiden_unchecked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping, \
+             unittest.mock.patch('_imp.check_hash_based_pycs', 'always'):
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Update the source file, which should be ignored.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'new')
+            with open(pyc, 'rb') as fp:
+                data = fp.read()
+            self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b1)
+            self.assertEqual(
+                self.util.source_hash(b'state = "new"'),
+                data[8:16],
+            )
+
 
 (Frozen_SimpleTest,
  Source_SimpleTest
