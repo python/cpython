@@ -2262,6 +2262,8 @@ class PyIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
     _leave_task = staticmethod(tasks._py_leave_task)
 
 
+@unittest.skipUnless(hasattr(tasks, '_c_register_task'),
+                     'requires the C _asyncio module')
 class CIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
     _register_task = staticmethod(tasks._c_register_task)
     _enter_task = staticmethod(tasks._c_enter_task)
@@ -2270,12 +2272,21 @@ class CIntrospectionTests(unittest.TestCase, BaseTaskIntrospectionTests):
 
 class BaseCurrentLoopTests:
 
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+        asyncio.set_event_loop(None)
+        super().tearDown()
+
     def new_task(self, coro):
         raise NotImplementedError
 
     def test_current_task_no_running_loop(self):
-        with self.assertRaises(RuntimeError):
-            asyncio.current_task(loop=self.loop)
+        self.assertIsNone(asyncio.current_task(loop=self.loop))
 
     def test_current_task_no_running_loop_implicit(self):
         with self.assertRaises(RuntimeError):
@@ -2290,20 +2301,21 @@ class BaseCurrentLoopTests:
 
         task = self.new_task(coro())
         self.loop.run_until_complete(task)
-        with self.assertRaises(RuntimeError):
-            asyncio.current_task(loop=self.loop)
+        self.assertIsNone(asyncio.current_task(loop=self.loop))
 
 
-class PyCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
-
-    def new_task(self, coro):
-        return _PyTask(coro)
-
-
-class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
+class PyCurrentLoopTests(BaseCurrentLoopTests, unittest.TestCase):
 
     def new_task(self, coro):
-        return _CTask(coro)
+        return _PyTask(coro, loop=self.loop)
+
+
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class CCurrentLoopTests(BaseCurrentLoopTests, unittest.TestCase):
+
+    def new_task(self, coro):
+        return getattr(tasks, '_CTask')(coro, loop=self.loop)
 
 
 class GenericTaskTests(test_utils.TestCase):
