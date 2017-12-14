@@ -595,5 +595,6 @@ class ClassTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type.__setattr__(A, b'x', None)
 
+
 if __name__ == '__main__':
     unittest.main()
