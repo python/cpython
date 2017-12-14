@@ -27,10 +27,16 @@ EXPECT_COERCION_IN_DEFAULT_LOCALE = True
 
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
-    # Linux distros typically alias the POSIX locale directly to the C locale
-    # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
-    #       able to check this case unconditionally
-    EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
+    if test.support.is_android:
+        # Android defaults to using UTF-8 for all system interfaces
+        EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
+        EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
+    else:
+        # Linux distros typically alias the POSIX locale directly to the C
+        # locale.
+        # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
+        #       able to check this case unconditionally
+        EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
 elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
@@ -42,11 +48,6 @@ elif sys.platform == "cygwin":
     # Cygwin defaults to using C.UTF-8
     # TODO: Work out a robust dynamic test for this that doesn't rely on
     #       CPython's own locale handling machinery
-    EXPECT_COERCION_IN_DEFAULT_LOCALE = False
-elif test.support.is_android:
-    # Android defaults to using UTF-8 for all system interfaces
-    EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
-    EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
     EXPECT_COERCION_IN_DEFAULT_LOCALE = False
 
 # Note that the above expectations are still wrong in some cases, such as:
@@ -329,6 +330,13 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             else:
                 _expected_warnings = None
                 _coercion_expected = False
+            # On Android CLI_COERCION_WARNING is not printed when all the
+            # locale environment variables are undefined or empty. When
+            # this code path is run with environ['LC_ALL'] == 'C', then
+            # LEGACY_LOCALE_WARNING is printed.
+            if (test.support.is_android and
+                    _expected_warnings == [CLI_COERCION_WARNING]):
+                _expected_warnings = None
             self._check_child_encoding_details(base_var_dict,
                                                fs_encoding,
                                                stream_encoding,
