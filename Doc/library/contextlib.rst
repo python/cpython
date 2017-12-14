@@ -31,10 +31,12 @@ Functions and classes provided:
 
 .. class:: AbstractAsyncContextManager
 
-   An :term:`abstract base class` similar to
-   :class:`~contextlib.AbstractContextManager`, but for
-   :ref:`asynchronous context managers <async-context-managers>`, which
-   implement :meth:`object.__aenter__` and :meth:`object.__aexit__`.
+   An :term:`abstract base class` for classes that implement
+   :meth:`object.__aenter__` and :meth:`object.__aexit__`. A default
+   implementation for :meth:`object.__aenter__` is provided which returns
+   ``self`` while :meth:`object.__aexit__` is an abstract method which by default
+   returns ``None``. See also the definition of
+   :ref:`async-context-managers`.
 
    .. versionadded:: 3.7
 
