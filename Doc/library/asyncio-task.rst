@@ -360,8 +360,8 @@ Task
 
 .. function:: create_task(coro)
 
-   Schedule the execution of a :ref:`coroutine <coroutine>` object
-   *coro* in a spawn task.
+   Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
+   its execution.
 
    The task is executed in :func:`get_running_loop` context,
    :exc:`RuntimeError` is raised if there is no running loop in
