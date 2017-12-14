@@ -263,6 +263,11 @@ fold_subscr(expr_ty node, PyArena *arena)
     return make_const(node, newval, arena);
 }
 
+/* Change literal list or set of constants into constant
+   tuple or frozenset respectively.
+   Used for right operand of "in" and "not in" tests and for iterable
+   in "for" loop and comprehensions.
+*/
 static int
 fold_iter(expr_ty arg, PyArena *arena)
 {
@@ -292,14 +297,13 @@ fold_compare(expr_ty node, PyArena *arena)
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
     /* TODO: optimize cases with literal arguments. */
-    for (i = 0; i < asdl_seq_LEN(ops); i++) {
-        int op = asdl_seq_GET(ops, i);
-        /* Change literal list or set in 'in' or 'not in' into
-           tuple or frozenset respectively. */
-        if (op == In || op == NotIn) {
-            if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena)) {
-                return 0;
-            }
+    /* Change literal list or set in 'in' or 'not in' into
+       tuple or frozenset respectively. */
+    i = asdl_seq_LEN(ops) - 1;
+    int op = asdl_seq_GET(ops, i);
+    if (op == In || op == NotIn) {
+        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena)) {
+            return 0;
         }
     }
     return 1;
