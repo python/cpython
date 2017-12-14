@@ -1698,7 +1698,7 @@ config_init_home(_PyCoreConfig *config)
 }
 
 
-_PyInitError
+static _PyInitError
 config_init_hash_seed(_PyCoreConfig *config)
 {
     if (config->use_hash_seed < 0) {
