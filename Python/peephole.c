@@ -345,21 +345,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         in_consts = 0;
 
         switch (opcode) {
-                /* not a is b -->  a is not b
-                   not a in b -->  a not in b
-                   not a is not b -->  a is b
-                   not a not in b -->  a in b
-                */
-            case COMPARE_OP:
-                j = get_arg(codestr, i);
-                if (j < 6 || j > 9 ||
-                    nextop != UNARY_NOT ||
-                    !ISBASICBLOCK(blocks, op_start, i + 1))
-                    break;
-                codestr[i] = PACKOPARG(opcode, j^1);
-                fill_nops(codestr, i + 1, nexti + 1);
-                break;
-
                 /* Skip over LOAD_CONST trueconst
                    POP_JUMP_IF_FALSE xx.  This improves
                    "while 1" performance.  */
