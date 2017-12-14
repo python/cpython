@@ -1465,8 +1465,13 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
     int tmp;
     _Py_IDENTIFIER(add);
 
+    if (future_init((FutureObj*)self, loop)) {
+        return -1;
+    }
+
     if (!PyCoro_CheckExact(coro)) {
         // fastpath failed, perfom slow check
+        // raise after Future.__init__(), attrs are required for __del__
         res = PyObject_CallFunctionObjArgs(asyncio_iscoroutine_func,
                                            coro, NULL);
         if (res == NULL) {
@@ -1478,18 +1483,15 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
             return -1;
         }
         if (tmp) {
+            self->task_log_destroy_pending = 0;
             PyErr_Format(PyExc_TypeError, "%R is not a coroutine", coro, NULL);
             return -1;
         }
-    }
-    if (future_init((FutureObj*)self, loop)) {
-        return -1;
     }
 
     self->task_fut_waiter = NULL;
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
-
     Py_INCREF(coro);
     self->task_coro = coro;
 

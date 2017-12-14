@@ -67,14 +67,19 @@ class Task(futures.Future):
         return {t for t in cls._all_tasks if t._loop is loop}
 
     def __init__(self, coro, *, loop=None):
-        if not coroutines.iscoroutine(coro):
-            raise TypeError(f"{coro!r} is not a coroutine")
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
-        self._coro = coro
-        self._fut_waiter = None
+        if not coroutines.iscoroutine(coro):
+            # raise after Future.__init__(), attrs are required for __del__
+            # prevent logging for pending task in __del__
+            self._log_destroy_pending = False
+            raise TypeError(f"{coro!r} is not a coroutine")
+
         self._must_cancel = False
+        self._fut_waiter = None
+        self._coro = coro
+
         self._loop.call_soon(self._step)
         self.__class__._all_tasks.add(self)
 
