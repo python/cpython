@@ -2436,7 +2436,7 @@ features:
    correspond to the members of the :c:type:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
-   :attr:`f_flag`, :attr:`f_namemax`.
+   :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
 
    Two module-level constants are defined for the :attr:`f_flag` attribute's
    bit-flags: if :const:`ST_RDONLY` is set, the filesystem is mounted
@@ -2470,6 +2470,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionadded:: 3.7
+      Added :attr:`f_fsid`.
 
 
 .. data:: supports_dir_fd
