@@ -60,6 +60,8 @@ EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
+_SOCK_NONBLOCK = getattr(_socket, 'SOCK_NONBLOCK', 0)
+
 __all__ = ["fromfd", "getfqdn", "create_connection",
         "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
@@ -203,10 +205,12 @@ class socket(_socket.socket):
         For IP sockets, the address info is a pair (hostaddr, port).
         """
         fd, addr = self._accept()
-        # If our type has the SOCK_NONBLOCK flag, we shouldn't pass it onto the
-        # new socket. We do not currently allow passing SOCK_NONBLOCK to
-        # accept4, so the returned socket is always blocking.
-        type = self.type & ~globals().get("SOCK_NONBLOCK", 0)
+        type = self.type
+        if _SOCK_NONBLOCK:
+            # If our type has the SOCK_NONBLOCK flag, we shouldn't pass it onto
+            # the new socket. We do not currently allow passing SOCK_NONBLOCK
+            # to accept4, so the returned socket is always blocking.
+            type = type & ~_SOCK_NONBLOCK
         sock = socket(self.family, type, self.proto, fileno=fd)
         # Issue #7995: if no default timeout is set and the listening
         # socket had a (non-zero) timeout, force the new socket in blocking
