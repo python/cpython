@@ -1,15 +1,15 @@
 """A Future class similar to the one in PEP 3148."""
 
-__all__ = ['CancelledError', 'TimeoutError', 'InvalidStateError',
-           'Future', 'wrap_future', 'isfuture']
+__all__ = (
+    'CancelledError', 'TimeoutError', 'InvalidStateError',
+    'Future', 'wrap_future', 'isfuture',
+)
 
 import concurrent.futures
 import logging
 import sys
-import traceback
 
 from . import base_futures
-from . import compat
 from . import events
 
 
@@ -32,11 +32,13 @@ class Future:
 
     Differences:
 
+    - This class is not thread-safe.
+
     - result() and exception() do not take a timeout argument and
       raise an exception when the future isn't done yet.
 
     - Callbacks registered with add_done_callback() are always called
-      via the event loop's call_soon_threadsafe().
+      via the event loop's call_soon().
 
     - This class is not compatible with the wait() and as_completed()
       methods in the concurrent.futures package.
@@ -57,12 +59,12 @@ class Future:
     #   The value must also be not-None, to enable a subclass to declare
     #   that it is not compatible by setting this to None.
     # - It is set by __iter__() below so that Task._step() can tell
-    #   the difference between `yield from Future()` (correct) vs.
+    #   the difference between
+    #   `await Future()` or`yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
 
-    _log_traceback = False   # Used for Python 3.4 and later
-    _tb_logger = None        # Used for Python 3.3 only
+    _log_traceback = False
 
     def __init__(self, *, loop=None):
         """Initialize the future.
@@ -77,12 +79,13 @@ class Future:
             self._loop = loop
         self._callbacks = []
         if self._loop.get_debug():
-            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+            self._source_traceback = events.extract_stack(sys._getframe(1))
 
     _repr_info = base_futures._future_repr_info
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, ' '.join(self._repr_info()))
+        return '<{} {}>'.format(self.__class__.__name__,
+                                ' '.join(self._repr_info()))
 
     def __del__(self):
         if not self._log_traceback:
@@ -91,8 +94,8 @@ class Future:
             return
         exc = self._exception
         context = {
-            'message': ('%s exception was never retrieved'
-                        % self.__class__.__name__),
+            'message':
+                f'{self.__class__.__name__} exception was never retrieved',
             'exception': exc,
             'future': self,
         }
@@ -107,6 +110,7 @@ class Future:
         change the future's state to cancelled, schedule the callbacks and
         return True.
         """
+        self._log_traceback = False
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
@@ -153,9 +157,6 @@ class Future:
         if self._state != _FINISHED:
             raise InvalidStateError('Result is not ready.')
         self._log_traceback = False
-        if self._tb_logger is not None:
-            self._tb_logger.clear()
-            self._tb_logger = None
         if self._exception is not None:
             raise self._exception
         return self._result
@@ -173,9 +174,6 @@ class Future:
         if self._state != _FINISHED:
             raise InvalidStateError('Exception is not set.')
         self._log_traceback = False
-        if self._tb_logger is not None:
-            self._tb_logger.clear()
-            self._tb_logger = None
         return self._exception
 
     def add_done_callback(self, fn):
@@ -239,11 +237,10 @@ class Future:
         if not self.done():
             self._asyncio_future_blocking = True
             yield self  # This tells Task to wait for completion.
-        assert self.done(), "yield from wasn't used with future"
+        assert self.done(), "await wasn't used with future"
         return self.result()  # May raise too.
 
-    if compat.PY35:
-        __await__ = __iter__ # make compatible with 'await' expression
+    __await__ = __iter__  # make compatible with 'await' expression
 
 
 # Needed for testing purposes.
@@ -336,7 +333,7 @@ def wrap_future(future, *, loop=None):
     if isfuture(future):
         return future
     assert isinstance(future, concurrent.futures.Future), \
-        'concurrent.futures.Future is expected, got {!r}'.format(future)
+        f'concurrent.futures.Future is expected, got {future!r}'
     if loop is None:
         loop = events.get_event_loop()
     new_future = loop.create_future()

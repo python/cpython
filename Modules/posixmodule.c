@@ -25,6 +25,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
@@ -53,6 +54,11 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
+#endif
+
+#ifdef HAVE_SYS_SYSMACROS_H
+/* GNU C Library: major(), minor(), makedev() */
+#include <sys/sysmacros.h>
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
@@ -204,14 +210,10 @@ extern char        *ctermid_r(char *);
 #endif
 
 #ifndef HAVE_UNISTD_H
-#if defined(PYCC_VACPP)
-extern int mkdir(char *);
-#else
 #if ( defined(__WATCOMC__) || defined(_MSC_VER) ) && !defined(__QNX__)
 extern int mkdir(const char *);
 #else
 extern int mkdir(const char *, mode_t);
-#endif
 #endif
 #if defined(__IBMC__) || defined(__IBMCPP__)
 extern int chdir(char *);
@@ -353,7 +355,7 @@ static int win32_can_symlink = 0;
 
 /* Don't use the "_r" form if we don't need it (also, won't have a
    prototype for it, at least on Solaris -- maybe others as well?). */
-#if defined(HAVE_CTERMID_R) && defined(WITH_THREAD)
+#if defined(HAVE_CTERMID_R)
 #define USE_CTERMID_R
 #endif
 
@@ -384,8 +386,6 @@ static int win32_can_symlink = 0;
 #endif
 #endif
 
-#define DWORD_MAX 4294967295U
-
 #ifdef MS_WINDOWS
 #define INITFUNC PyInit_nt
 #define MODNAME "nt"
@@ -393,6 +393,92 @@ static int win32_can_symlink = 0;
 #define INITFUNC PyInit_posix
 #define MODNAME "posix"
 #endif
+
+
+#ifdef HAVE_FORK
+static void
+run_at_forkers(PyObject *lst, int reverse)
+{
+    Py_ssize_t i;
+    PyObject *cpy;
+
+    if (lst != NULL) {
+        assert(PyList_CheckExact(lst));
+
+        /* Use a list copy in case register_at_fork() is called from
+         * one of the callbacks.
+         */
+        cpy = PyList_GetSlice(lst, 0, PyList_GET_SIZE(lst));
+        if (cpy == NULL)
+            PyErr_WriteUnraisable(lst);
+        else {
+            if (reverse)
+                PyList_Reverse(cpy);
+            for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
+                PyObject *func, *res;
+                func = PyList_GET_ITEM(cpy, i);
+                res = PyObject_CallObject(func, NULL);
+                if (res == NULL)
+                    PyErr_WriteUnraisable(func);
+                else
+                    Py_DECREF(res);
+            }
+            Py_DECREF(cpy);
+        }
+    }
+}
+
+void
+PyOS_BeforeFork(void)
+{
+    run_at_forkers(PyThreadState_Get()->interp->before_forkers, 1);
+
+    _PyImport_AcquireLock();
+}
+
+void
+PyOS_AfterFork_Parent(void)
+{
+    if (_PyImport_ReleaseLock() <= 0)
+        Py_FatalError("failed releasing import lock after fork");
+
+    run_at_forkers(PyThreadState_Get()->interp->after_forkers_parent, 0);
+}
+
+void
+PyOS_AfterFork_Child(void)
+{
+    _PyGILState_Reinit();
+    PyEval_ReInitThreads();
+    _PyImport_ReInitLock();
+    _PySignal_AfterFork();
+
+    run_at_forkers(PyThreadState_Get()->interp->after_forkers_child, 0);
+}
+
+static int
+register_at_forker(PyObject **lst, PyObject *func)
+{
+    if (func == NULL)  /* nothing to register? do nothing. */
+        return 0;
+    if (*lst == NULL) {
+        *lst = PyList_New(0);
+        if (*lst == NULL)
+            return -1;
+    }
+    return PyList_Append(*lst, func);
+}
+#endif
+
+/* Legacy wrapper */
+void
+PyOS_AfterFork(void)
+{
+#ifdef HAVE_FORK
+    PyOS_AfterFork_Child();
+#endif
+}
+
 
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
@@ -945,6 +1031,8 @@ path_converter(PyObject *o, void *p)
         Py_INCREF(bytes);
     }
     else if (is_buffer) {
+        /* XXX Replace PyObject_CheckBuffer with PyBytes_Check in other code
+           after removing support of non-bytes buffer objects. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
             "%s%s%s should be %s, not %.200s",
             path->function_name ? path->function_name : "",
@@ -1840,36 +1928,6 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 
-
-/* If true, st_?time is float. */
-static int _stat_float_times = 1;
-
-PyDoc_STRVAR(stat_float_times__doc__,
-"stat_float_times([newval]) -> oldval\n\n\
-Determine whether os.[lf]stat represents time stamps as float objects.\n\
-\n\
-If value is True, future calls to stat() return floats; if it is False,\n\
-future calls return ints.\n\
-If value is omitted, return the current setting.\n");
-
-/* AC 3.5: the public default value should be None, not ready for that yet */
-static PyObject*
-stat_float_times(PyObject* self, PyObject *args)
-{
-    int newval = -1;
-    if (!PyArg_ParseTuple(args, "|i:stat_float_times", &newval))
-        return NULL;
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "stat_float_times() is deprecated",
-                     1))
-        return NULL;
-    if (newval == -1)
-        /* Return old value */
-        return PyBool_FromLong(_stat_float_times);
-    _stat_float_times = newval;
-    Py_RETURN_NONE;
-}
-
 static PyObject *billion = NULL;
 
 static void
@@ -1892,14 +1950,9 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
     if (!ns_total)
         goto exit;
 
-    if (_stat_float_times) {
-        float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
-        if (!float_s)
-            goto exit;
-    }
-    else {
-        float_s = s;
-        Py_INCREF(float_s);
+    float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
+    if (!float_s) {
+        goto exit;
     }
 
     PyStructSequence_SET_ITEM(v, index, s);
@@ -1927,14 +1980,8 @@ _pystat_fromstructstat(STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
-#if defined(HAVE_LARGEFILE_SUPPORT) || defined(MS_WINDOWS)
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
-    PyStructSequence_SET_ITEM(v, 1,
-                              PyLong_FromUnsignedLongLong(st->st_ino));
-#else
-    Py_BUILD_ASSERT(sizeof(unsigned long) >= sizeof(st->st_ino));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLong(st->st_ino));
-#endif
+    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLongLong(st->st_ino));
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
 #else
@@ -1948,12 +1995,8 @@ _pystat_fromstructstat(STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->st_uid));
     PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->st_gid));
 #endif
-#ifdef HAVE_LARGEFILE_SUPPORT
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long)st->st_size));
-#else
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong(st->st_size));
-#endif
+    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(st->st_size));
+    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLongLong(st->st_size));
 
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
@@ -2000,11 +2043,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #else
       bnsec = 0;
 #endif
-      if (_stat_float_times) {
-        val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      } else {
-        val = PyLong_FromLong((long)bsec);
-      }
+      val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
       PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
                                 val);
     }
@@ -3506,8 +3545,8 @@ _posix_listdir(path_t *path, PyObject *list)
         const char *name;
         if (path->narrow) {
             name = path->narrow;
-            /* only return bytes if they specified a bytes object */
-            return_str = !(PyBytes_Check(path->object));
+            /* only return bytes if they specified a bytes-like object */
+            return_str = !PyObject_CheckBuffer(path->object);
         }
         else {
             name = ".";
@@ -3675,7 +3714,7 @@ os__getfinalpathname_impl(PyObject *module, PyObject *path)
     PyObject *result;
     const wchar_t *path_wchar;
 
-    path_wchar = PyUnicode_AsUnicode(path);
+    path_wchar = _PyUnicode_AsUnicode(path);
     if (path_wchar == NULL)
         return NULL;
 
@@ -3772,7 +3811,7 @@ os__getvolumepathname_impl(PyObject *module, PyObject *path)
     /* Volume path should be shorter than entire path */
     buflen = Py_MAX(buflen, MAX_PATH);
 
-    if (buflen > DWORD_MAX) {
+    if (buflen > PY_DWORD_MAX) {
         PyErr_SetString(PyExc_OverflowError, "path too long");
         return NULL;
     }
@@ -3843,7 +3882,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
         result = mkdirat(dir_fd, path->narrow, mode);
     else
 #endif
-#if ( defined(__WATCOMC__) || defined(PYCC_VACPP) ) && !defined(__QNX__)
+#if defined(__WATCOMC__) && !defined(__QNX__)
         result = mkdir(path->narrow);
 #else
         result = mkdir(path->narrow, mode);
@@ -3880,7 +3919,7 @@ os_nice_impl(PyObject *module, int increment)
 
     /* There are two flavours of 'nice': one that returns the new
        priority (as required by almost all standards out there) and the
-       Linux/FreeBSD/BSDI one, which returns '0' on success and advices
+       Linux/FreeBSD one, which returns '0' on success and advices
        the use of getpriority() to get the new priority.
 
        If we are of the nice family that returns the new priority, we
@@ -4812,12 +4851,30 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             Py_DECREF(key2);
             goto error;
         }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key2) == 0 ||
+            PyUnicode_FindChar(key2, '=', 1, PyUnicode_GET_LENGTH(key2), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_DECREF(key2);
+            Py_DECREF(val2);
+            goto error;
+        }
         keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
 #else
         if (!PyUnicode_FSConverter(key, &key2))
             goto error;
         if (!PyUnicode_FSConverter(val, &val2)) {
             Py_DECREF(key2);
+            goto error;
+        }
+        if (PyBytes_GET_SIZE(key2) == 0 ||
+            strchr(PyBytes_AS_STRING(key2) + 1, '=') != NULL)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_DECREF(key2);
+            Py_DECREF(val2);
             goto error;
         }
         keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
@@ -5083,7 +5140,7 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
             return NULL;
         }
         if (i == 0 && !argvlist[0][0]) {
-            free_string_array(argvlist, i);
+            free_string_array(argvlist, i + 1);
             PyErr_SetString(
                 PyExc_ValueError,
                 "spawnv() arg 2 first element cannot be empty");
@@ -5184,7 +5241,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             goto fail_1;
         }
         if (i == 0 && !argvlist[0][0]) {
-            lastarg = i;
+            lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
                 "spawnv() arg 2 first element cannot be empty");
@@ -5228,6 +5285,72 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 #endif /* HAVE_SPAWNV */
 
 
+#ifdef HAVE_FORK
+
+/* Helper function to validate arguments.
+   Returns 0 on success.  non-zero on failure with a TypeError raised.
+   If obj is non-NULL it must be callable.  */
+static int
+check_null_or_callable(PyObject *obj, const char* obj_name)
+{
+    if (obj && !PyCallable_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "'%s' must be callable, not %s",
+                     obj_name, Py_TYPE(obj)->tp_name);
+        return -1;
+    }
+    return 0;
+}
+
+/*[clinic input]
+os.register_at_fork
+
+    *
+    before: object=NULL
+        A callable to be called in the parent before the fork() syscall.
+    after_in_child: object=NULL
+        A callable to be called in the child after fork().
+    after_in_parent: object=NULL
+        A callable to be called in the parent after fork().
+
+Register callables to be called when forking a new process.
+
+'before' callbacks are called in reverse order.
+'after_in_child' and 'after_in_parent' callbacks are called in order.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_register_at_fork_impl(PyObject *module, PyObject *before,
+                         PyObject *after_in_child, PyObject *after_in_parent)
+/*[clinic end generated code: output=5398ac75e8e97625 input=cd1187aa85d2312e]*/
+{
+    PyInterpreterState *interp;
+
+    if (!before && !after_in_child && !after_in_parent) {
+        PyErr_SetString(PyExc_TypeError, "At least one argument is required.");
+        return NULL;
+    }
+    if (check_null_or_callable(before, "before") ||
+        check_null_or_callable(after_in_child, "after_in_child") ||
+        check_null_or_callable(after_in_parent, "after_in_parent")) {
+        return NULL;
+    }
+    interp = PyThreadState_Get()->interp;
+
+    if (register_at_forker(&interp->before_forkers, before)) {
+        return NULL;
+    }
+    if (register_at_forker(&interp->after_forkers_child, after_in_child)) {
+        return NULL;
+    }
+    if (register_at_forker(&interp->after_forkers_parent, after_in_parent)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_FORK */
+
+
 #ifdef HAVE_FORK1
 /*[clinic input]
 os.fork1
@@ -5242,24 +5365,18 @@ os_fork1_impl(PyObject *module)
 /*[clinic end generated code: output=0de8e67ce2a310bc input=12db02167893926e]*/
 {
     pid_t pid;
-    int result = 0;
-    _PyImport_AcquireLock();
+
+    PyOS_BeforeFork();
     pid = fork1();
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
-        PyOS_AfterFork();
+        PyOS_AfterFork_Child();
     } else {
         /* parent: release the import lock. */
-        result = _PyImport_ReleaseLock();
+        PyOS_AfterFork_Parent();
     }
     if (pid == -1)
         return posix_error();
-    if (result < 0) {
-        /* Don't clobber the OSError if the fork failed. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        return NULL;
-    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK1 */
@@ -5279,24 +5396,18 @@ os_fork_impl(PyObject *module)
 /*[clinic end generated code: output=3626c81f98985d49 input=13c956413110eeaa]*/
 {
     pid_t pid;
-    int result = 0;
-    _PyImport_AcquireLock();
+
+    PyOS_BeforeFork();
     pid = fork();
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
-        PyOS_AfterFork();
+        PyOS_AfterFork_Child();
     } else {
         /* parent: release the import lock. */
-        result = _PyImport_ReleaseLock();
+        PyOS_AfterFork_Parent();
     }
     if (pid == -1)
         return posix_error();
-    if (result < 0) {
-        /* Don't clobber the OSError if the fork failed. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        return NULL;
-    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK */
@@ -5878,26 +5989,20 @@ static PyObject *
 os_forkpty_impl(PyObject *module)
 /*[clinic end generated code: output=60d0a5c7512e4087 input=f1f7f4bae3966010]*/
 {
-    int master_fd = -1, result = 0;
+    int master_fd = -1;
     pid_t pid;
 
-    _PyImport_AcquireLock();
+    PyOS_BeforeFork();
     pid = forkpty(&master_fd, NULL, NULL, NULL);
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
-        PyOS_AfterFork();
+        PyOS_AfterFork_Child();
     } else {
         /* parent: release the import lock. */
-        result = _PyImport_ReleaseLock();
+        PyOS_AfterFork_Parent();
     }
     if (pid == -1)
         return posix_error();
-    if (result < 0) {
-        /* Don't clobber the OSError if the fork failed. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        return NULL;
-    }
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif /* HAVE_FORKPTY */
@@ -7061,7 +7166,7 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                           ))
         return NULL;
 
-    path = PyUnicode_AsUnicode(po);
+    path = _PyUnicode_AsUnicode(po);
     if (path == NULL)
         return NULL;
 
@@ -8767,11 +8872,16 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG */
 
@@ -8809,11 +8919,16 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
 
@@ -8854,22 +8969,35 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=ba586581c2e6105f]*/
 {
     const wchar_t *env;
+    Py_ssize_t size;
 
-    PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
-    if (unicode == NULL) {
-        PyErr_NoMemory();
+    /* Search from index 1 because on Windows starting '=' is allowed for
+       defining hidden environment variables. */
+    if (PyUnicode_GET_LENGTH(name) == 0 ||
+        PyUnicode_FindChar(name, '=', 1, PyUnicode_GET_LENGTH(name), 1) != -1)
+    {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
         return NULL;
     }
-    if (_MAX_ENV < PyUnicode_GET_LENGTH(unicode)) {
+    PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
+    if (unicode == NULL) {
+        return NULL;
+    }
+
+    env = PyUnicode_AsUnicodeAndSize(unicode, &size);
+    if (env == NULL)
+        goto error;
+    if (size > _MAX_ENV) {
         PyErr_Format(PyExc_ValueError,
                      "the environment variable is longer than %u characters",
                      _MAX_ENV);
         goto error;
     }
-
-    env = PyUnicode_AsUnicode(unicode);
-    if (env == NULL)
+    if (wcslen(env) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto error;
+    }
+
     if (_wputenv(env)) {
         posix_error();
         goto error;
@@ -8899,12 +9027,15 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 {
     PyObject *bytes = NULL;
     char *env;
-    const char *name_string = PyBytes_AsString(name);
-    const char *value_string = PyBytes_AsString(value);
+    const char *name_string = PyBytes_AS_STRING(name);
+    const char *value_string = PyBytes_AS_STRING(value);
 
+    if (strchr(name_string, '=') != NULL) {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+        return NULL;
+    }
     bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
     if (bytes == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
 
@@ -10380,6 +10511,10 @@ check_ShellExecute()
     /* only recheck */
     if (-1 == has_ShellExecute) {
         Py_BEGIN_ALLOW_THREADS
+        /* Security note: this call is not vulnerable to "DLL hijacking".
+           SHELL32 is part of "KnownDLLs" and so Windows always load
+           the system SHELL32.DLL, even if there is another SHELL32.DLL
+           in the DLL search path. */
         hShell32 = LoadLibraryW(L"SHELL32");
         Py_END_ALLOW_THREADS
         if (hShell32) {
@@ -10998,9 +11133,22 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-    SYSTEM_INFO sysinfo;
-    GetSystemInfo(&sysinfo);
-    ncpu = sysinfo.dwNumberOfProcessors;
+    /* Vista is supported and the GetMaximumProcessorCount API is Win7+
+       Need to fallback to Vista behavior if this call isn't present */
+    HINSTANCE hKernel32;
+    hKernel32 = GetModuleHandleW(L"KERNEL32");
+
+    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
+    *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
+        "GetMaximumProcessorCount");
+    if (_GetMaximumProcessorCount != NULL) {
+        ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
+    }
+    else {
+        SYSTEM_INFO sysinfo;
+        GetSystemInfo(&sysinfo);
+        ncpu = sysinfo.dwNumberOfProcessors;
+    }
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
@@ -11451,11 +11599,8 @@ os_DirEntry_inode_impl(DirEntry *self)
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->win32_file_index));
     return PyLong_FromUnsignedLongLong(self->win32_file_index);
 #else /* POSIX */
-#ifdef HAVE_LARGEFILE_SUPPORT
-    return PyLong_FromLongLong((long long)self->d_ino);
-#else
-    return PyLong_FromLong((long)self->d_ino);
-#endif
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->d_ino));
+    return PyLong_FromUnsignedLongLong(self->d_ino);
 #endif
 }
 
@@ -11681,7 +11826,7 @@ DirEntry_from_posix_info(path_t *path, const char *name, Py_ssize_t name_len,
             goto error;
     }
 
-    if (!path->narrow || !PyBytes_Check(path->object)) {
+    if (!path->narrow || !PyObject_CheckBuffer(path->object)) {
         entry->name = PyUnicode_DecodeFSDefaultAndSize(name, name_len);
         if (joined_path)
             entry->path = PyUnicode_DecodeFSDefault(joined_path);
@@ -12262,7 +12407,6 @@ static PyMethodDef posix_methods[] = {
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
-    {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
     OS_SYMLINK_METHODDEF
     OS_SYSTEM_METHODDEF
     OS_UMASK_METHODDEF
@@ -12278,6 +12422,7 @@ static PyMethodDef posix_methods[] = {
     OS_SPAWNVE_METHODDEF
     OS_FORK1_METHODDEF
     OS_FORK_METHODDEF
+    OS_REGISTER_AT_FORK_METHODDEF
     OS_SCHED_GET_PRIORITY_MAX_METHODDEF
     OS_SCHED_GET_PRIORITY_MIN_METHODDEF
     OS_SCHED_GETPARAM_METHODDEF
@@ -12807,7 +12952,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, SCHED_RR)) return -1;
 #endif
 #ifdef SCHED_SPORADIC
-    if (PyModule_AddIntMacro(m, SCHED_SPORADIC) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_SPORADIC)) return -1;
 #endif
 #ifdef SCHED_BATCH
     if (PyModule_AddIntMacro(m, SCHED_BATCH)) return -1;

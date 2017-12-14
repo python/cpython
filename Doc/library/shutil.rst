@@ -550,6 +550,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   .. versionchanged:: 3.7
+      Accepts a :term:`path-like object` for *filename* and *extract_dir*.
+
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 

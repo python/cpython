@@ -4,6 +4,10 @@ import os
 from stat import *
 import genericpath
 from genericpath import *
+import warnings
+
+warnings.warn('the macpath module is deprecated in 3.7 and will be removed '
+              'in 3.8', DeprecationWarning, stacklevel=2)
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",

@@ -3,6 +3,10 @@
 Tasks and coroutines
 ====================
 
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
 .. _coroutine:
 
 Coroutines
@@ -212,7 +216,7 @@ Future
      raise an exception when the future isn't done yet.
 
    - Callbacks registered with :meth:`add_done_callback` are always called
-     via the event loop's :meth:`~AbstractEventLoop.call_soon_threadsafe`.
+     via the event loop's :meth:`~AbstractEventLoop.call_soon`.
 
    - This class is not compatible with the :func:`~concurrent.futures.wait` and
      :func:`~concurrent.futures.as_completed` functions in the
@@ -370,7 +374,7 @@ Task
    running in different threads. While a task waits for the completion of a
    future, the event loop executes a new task.
 
-   The cancellation of a task is different from the cancelation of a
+   The cancellation of a task is different from the cancellation of a
    future. Calling :meth:`cancel` will throw a
    :exc:`~concurrent.futures.CancelledError` to the wrapped
    coroutine. :meth:`~Future.cancelled` only returns ``True`` if the
@@ -511,7 +515,7 @@ Task functions
    Example::
 
        for f in as_completed(fs):
-           result = yield from f  # The 'yield from' may raise
+           result = await f  # The 'await' may raise
            # Use result
 
    .. note::
@@ -534,11 +538,10 @@ Task functions
 
       The :meth:`AbstractEventLoop.create_task` method.
 
-.. function:: async(coro_or_future, \*, loop=None)
+.. function:: wrap_future(future, \*, loop=None)
 
-   A deprecated alias to :func:`ensure_future`.
-
-   .. deprecated:: 3.4.4
+   Wrap a :class:`concurrent.futures.Future` object in a :class:`Future`
+   object.
 
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 
@@ -627,11 +630,11 @@ Task functions
 
    The statement::
 
-       res = yield from shield(something())
+       res = await shield(something())
 
    is exactly equivalent to the statement::
 
-       res = yield from something()
+       res = await something()
 
    *except* that if the coroutine containing it is cancelled, the task running
    in ``something()`` is not cancelled.  From the point of view of
@@ -644,7 +647,7 @@ Task functions
    combine ``shield()`` with a try/except clause, as follows::
 
        try:
-           res = yield from shield(something())
+           res = await shield(something())
        except CancelledError:
            res = None
 
@@ -687,7 +690,7 @@ Task functions
 
    Usage::
 
-        done, pending = yield from asyncio.wait(fs)
+        done, pending = await asyncio.wait(fs)
 
    .. note::
 
@@ -711,7 +714,7 @@ Task functions
 
    This function is a :ref:`coroutine <coroutine>`, usage::
 
-       result = yield from asyncio.wait_for(fut, 60.0)
+       result = await asyncio.wait_for(fut, 60.0)
 
    .. versionchanged:: 3.4.3
       If the wait is cancelled, the future *fut* is now also cancelled.

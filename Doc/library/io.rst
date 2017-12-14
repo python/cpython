@@ -205,8 +205,8 @@ ABC                        Inherits            Stub Methods              Mixin M
                                                                          ``writable``, and ``writelines``
 :class:`RawIOBase`         :class:`IOBase`     ``readinto`` and          Inherited :class:`IOBase` methods, ``read``,
                                                ``write``                 and ``readall``
-:class:`BufferedIOBase`    :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``readinto``
-                                               ``read1``, and ``write``
+:class:`BufferedIOBase`    :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``readinto``,
+                                               ``read1``, and ``write``  and ``readinto1``
 :class:`TextIOBase`        :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``encoding``,
                                                ``readline``, and         ``errors``, and ``newlines``
                                                ``write``
@@ -385,13 +385,16 @@ I/O Base Classes
    .. method:: read(size=-1)
 
       Read up to *size* bytes from the object and return them.  As a convenience,
-      if *size* is unspecified or -1, :meth:`readall` is called.  Otherwise,
-      only one system call is ever made.  Fewer than *size* bytes may be
-      returned if the operating system call returns fewer than *size* bytes.
+      if *size* is unspecified or -1, all bytes until EOF are returned.
+      Otherwise, only one system call is ever made.  Fewer than *size* bytes may
+      be returned if the operating system call returns fewer than *size* bytes.
 
       If 0 bytes are returned, and *size* was not 0, this indicates end of file.
       If the object is in non-blocking mode and no bytes are available,
       ``None`` is returned.
+
+      The default implementation defers to :meth:`readall` and
+      :meth:`readinto`.
 
    .. method:: readall()
 
@@ -907,6 +910,24 @@ Text I/O
    .. attribute:: line_buffering
 
       Whether line buffering is enabled.
+
+   .. attribute:: write_through
+
+      Whether writes are passed immediately to the underlying binary
+      buffer.
+
+      .. versionadded:: 3.7
+
+   .. method:: reconfigure(*, line_buffering=None, write_through=None)
+
+      Reconfigure this text stream using new settings for *line_buffering*
+      and *write_through*.  Passing ``None`` as an argument will retain
+      the current setting for that parameter.
+
+      This method does an implicit stream flush before setting the
+      new parameters.
+
+      .. versionadded:: 3.7
 
 
 .. class:: StringIO(initial_value='', newline='\\n')

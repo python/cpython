@@ -1,6 +1,8 @@
 """
 An auto-completion window for IDLE, used by the autocomplete extension
 """
+import platform
+
 from tkinter import *
 from tkinter.ttk import Scrollbar
 
@@ -8,7 +10,8 @@ from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 from idlelib.multicall import MC_SHIFT
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
-HIDE_SEQUENCES = ("<FocusOut>", "<ButtonPress>")
+HIDE_FOCUS_OUT_SEQUENCE = "<FocusOut>"
+HIDE_SEQUENCES = (HIDE_FOCUS_OUT_SEQUENCE, "<ButtonPress>")
 KEYPRESS_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keypress>>"
 # We need to bind event beyond <Key> so that the function will be called
 # before the default specific IDLE function
@@ -201,10 +204,12 @@ class AutoCompleteWindow:
         self._selection_changed()
 
         # bind events
-        self.hideid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME,
-                                       self.hide_event)
+        self.hideaid = acw.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
+        self.hidewid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
+        acw.event_add(HIDE_VIRTUAL_EVENT_NAME, HIDE_FOCUS_OUT_SEQUENCE)
         for seq in HIDE_SEQUENCES:
             self.widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
+
         self.keypressid = self.widget.bind(KEYPRESS_VIRTUAL_EVENT_NAME,
                                            self.keypress_event)
         for seq in KEYPRESS_SEQUENCES:
@@ -240,9 +245,37 @@ class AutoCompleteWindow:
             new_y -= acw_height
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
-    def hide_event(self, event):
-        if self.is_active():
+        if platform.system().startswith('Windows'):
+            # See issue 15786. When on windows platform, Tk will misbehave
+            # to call winconfig_event multiple times, we need to prevent this,
+            # otherwise mouse button double click will not be able to used.
+            acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
+    def _hide_event_check(self):
+        if not self.autocompletewindow:
+            return
+
+        try:
+            if not self.autocompletewindow.focus_get():
+                self.hide_window()
+        except KeyError:
+            # See issue 734176, when user click on menu, acw.focus_get()
+            # will get KeyError.
             self.hide_window()
+
+    def hide_event(self, event):
+        # Hide autocomplete list if it exists and does not have focus or
+        # mouse click on widget / text area.
+        if self.is_active():
+            if event.type == EventType.FocusOut:
+                # On windows platform, it will need to delay the check for
+                # acw.focus_get() when click on acw, otherwise it will return
+                # None and close the window
+                self.widget.after(1, self._hide_event_check)
+            elif event.type == EventType.ButtonPress:
+                # ButtonPress event only bind to self.widget
+                self.hide_window()
 
     def listselect_event(self, event):
         if self.is_active():
@@ -292,8 +325,9 @@ class AutoCompleteWindow:
             return "break"
 
         elif keysym == "Return":
+            self.complete()
             self.hide_window()
-            return None
+            return 'break'
 
         elif (self.mode == COMPLETE_ATTRIBUTES and keysym in
               ("period", "space", "parenleft", "parenright", "bracketleft",
@@ -391,10 +425,15 @@ class AutoCompleteWindow:
             return
 
         # unbind events
+        self.autocompletewindow.event_delete(HIDE_VIRTUAL_EVENT_NAME,
+                                             HIDE_FOCUS_OUT_SEQUENCE)
         for seq in HIDE_SEQUENCES:
             self.widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
-        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
-        self.hideid = None
+
+        self.autocompletewindow.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideaid)
+        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hidewid)
+        self.hideaid = None
+        self.hidewid = None
         for seq in KEYPRESS_SEQUENCES:
             self.widget.event_delete(KEYPRESS_VIRTUAL_EVENT_NAME, seq)
         self.widget.unbind(KEYPRESS_VIRTUAL_EVENT_NAME, self.keypressid)
@@ -405,8 +444,12 @@ class AutoCompleteWindow:
         self.keyreleaseid = None
         self.listbox.unbind(LISTUPDATE_SEQUENCE, self.listupdateid)
         self.listupdateid = None
-        self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
-        self.winconfigid = None
+        if self.winconfigid:
+            self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
+        # Re-focusOn frame.text (See issue #15786)
+        self.widget.focus_set()
 
         # destroy widgets
         self.scrollbar.destroy()

@@ -1407,8 +1407,8 @@ Let's start with defining some terminology:
 
   ``two-pass``
     A buffer like ``buffer``.  However, a two-pass buffer can only
-    be written once, and it prints out all text sent to it during
-    all of processing, even from Clinic blocks *after* the
+    be dumped once, and it prints out all text sent to it during
+    all processing, even from Clinic blocks *after* the dumping point.
 
   ``suppress``
     The text is suppressed—thrown away.
@@ -1471,7 +1471,7 @@ preset configurations, as follows:
     The default filename is ``"{dirname}/clinic/{basename}.h"``.
 
   ``buffer``
-    Save up all most of the output from Clinic, to be written into
+    Save up most of the output from Clinic, to be written into
     your file near the end.  For Python files implementing modules
     or builtin types, it's recommended that you dump the buffer
     just above the static structures for your module or

@@ -8,11 +8,7 @@ import sys
 import time
 import gc
 import weakref
-
-try:
-    import threading
-except ImportError:
-    threading = None
+import threading
 
 try:
     from _testcapi import with_tp_del
@@ -352,7 +348,6 @@ class GCTests(unittest.TestCase):
                 v = {1: v, 2: Ouch()}
         gc.disable()
 
-    @unittest.skipUnless(threading, "test meaningless on builds without threads")
     def test_trashcan_threads(self):
         # Issue #13992: trashcan mechanism should be thread-safe
         NESTING = 60
@@ -738,6 +733,12 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"] + 1)
+
+    def test_freeze(self):
+        gc.freeze()
+        self.assertGreater(gc.get_freeze_count(), 0)
+        gc.unfreeze()
+        self.assertEqual(gc.get_freeze_count(), 0)
 
 
 class GCCallbackTests(unittest.TestCase):

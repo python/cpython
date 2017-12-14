@@ -18,23 +18,11 @@ def _create_transport_context(server_side, server_hostname):
     # Client side may pass ssl=True to use a default
     # context; in that case the sslcontext passed is None.
     # The default is secure for client connections.
-    if hasattr(ssl, 'create_default_context'):
-        # Python 3.4+: use up-to-date strong settings.
-        sslcontext = ssl.create_default_context()
-        if not server_hostname:
-            sslcontext.check_hostname = False
-    else:
-        # Fallback for Python 3.3.
-        sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        sslcontext.options |= ssl.OP_NO_SSLv2
-        sslcontext.options |= ssl.OP_NO_SSLv3
-        sslcontext.set_default_verify_paths()
-        sslcontext.verify_mode = ssl.CERT_REQUIRED
+    # Python 3.4+: use up-to-date strong settings.
+    sslcontext = ssl.create_default_context()
+    if not server_hostname:
+        sslcontext.check_hostname = False
     return sslcontext
-
-
-def _is_sslproto_available():
-    return hasattr(ssl, "MemoryBIO")
 
 
 # States of an _SSLPipe.
@@ -293,11 +281,10 @@ class _SSLPipe(object):
 class _SSLProtocolTransport(transports._FlowControlMixin,
                             transports.Transport):
 
-    def __init__(self, loop, ssl_protocol, app_protocol):
+    def __init__(self, loop, ssl_protocol):
         self._loop = loop
         # SSLProtocol instance
         self._ssl_protocol = ssl_protocol
-        self._app_protocol = app_protocol
         self._closed = False
 
     def get_extra_info(self, name, default=None):
@@ -305,10 +292,10 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._get_extra_info(name, default)
 
     def set_protocol(self, protocol):
-        self._app_protocol = protocol
+        self._ssl_protocol._app_protocol = protocol
 
     def get_protocol(self):
-        return self._app_protocol
+        return self._ssl_protocol._app_protocol
 
     def is_closing(self):
         return self._closed
@@ -326,7 +313,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
 
     def __del__(self):
         if not self._closed:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self.close()
 
@@ -378,8 +365,8 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         to be sent out asynchronously.
         """
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError("data: expecting a bytes-like instance, got {!r}"
-                                .format(type(data).__name__))
+            raise TypeError(f"data: expecting a bytes-like instance, "
+                            f"got {type(data).__name__}")
         if not data:
             return
         self._ssl_protocol._write_appdata(data)
@@ -412,7 +399,8 @@ class SSLProtocol(protocols.Protocol):
             raise RuntimeError('stdlib ssl module not available')
 
         if not sslcontext:
-            sslcontext = _create_transport_context(server_side, server_hostname)
+            sslcontext = _create_transport_context(
+                server_side, server_hostname)
 
         self._server_side = server_side
         if server_hostname and not server_side:
@@ -431,8 +419,7 @@ class SSLProtocol(protocols.Protocol):
         self._waiter = waiter
         self._loop = loop
         self._app_protocol = app_protocol
-        self._app_transport = _SSLProtocolTransport(self._loop,
-                                                    self, self._app_protocol)
+        self._app_transport = _SSLProtocolTransport(self._loop, self)
         # _SSLPipe instance (None until the connection is made)
         self._sslpipe = None
         self._session_established = False
@@ -546,8 +533,11 @@ class SSLProtocol(protocols.Protocol):
     def _start_shutdown(self):
         if self._in_shutdown:
             return
-        self._in_shutdown = True
-        self._write_appdata(b'')
+        if self._in_handshake:
+            self._abort()
+        else:
+            self._in_shutdown = True
+            self._write_appdata(b'')
 
     def _write_appdata(self, data):
         self._write_backlog.append((data, 0))
@@ -578,8 +568,8 @@ class SSLProtocol(protocols.Protocol):
             if not hasattr(self._sslcontext, 'check_hostname'):
                 # Verify hostname if requested, Python 3.4+ uses check_hostname
                 # and checks the hostname in do_handshake()
-                if (self._server_hostname
-                and self._sslcontext.verify_mode != ssl.CERT_NONE):
+                if (self._server_hostname and
+                        self._sslcontext.verify_mode != ssl.CERT_NONE):
                     ssl.match_hostname(peercert, self._server_hostname)
         except BaseException as exc:
             if self._loop.get_debug():
@@ -678,12 +668,14 @@ class SSLProtocol(protocols.Protocol):
             self._transport._force_close(exc)
 
     def _finalize(self):
+        self._sslpipe = None
+
         if self._transport is not None:
             self._transport.close()
 
     def _abort(self):
-        if self._transport is not None:
-            try:
+        try:
+            if self._transport is not None:
                 self._transport.abort()
-            finally:
-                self._finalize()
+        finally:
+            self._finalize()

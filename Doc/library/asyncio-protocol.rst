@@ -1,8 +1,12 @@
 .. currentmodule:: asyncio
 
-++++++++++++++++++++++++++++++++++++++++++++++
-Transports  and protocols (callback based API)
-++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++
+Transports and protocols (callback based API)
++++++++++++++++++++++++++++++++++++++++++++++
+
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+**Source code:** :source:`Lib/asyncio/protocols.py`
 
 .. _asyncio-transport:
 
@@ -163,10 +167,16 @@ WriteTransport
 
       Set the *high*- and *low*-water limits for write flow control.
 
-      These two values control when call the protocol's
+      These two values (measured in number of
+      bytes) control when the protocol's
       :meth:`pause_writing` and :meth:`resume_writing` methods are called.
       If specified, the low-water limit must be less than or equal to the
       high-water limit.  Neither *high* nor *low* can be negative.
+
+      :meth:`pause_writing` is called when the buffer size becomes greater
+      than or equal to the *high* value. If writing has been paused,
+      :meth:`resume_writing` is called when the buffer size becomes less
+      than or equal to the *low* value.
 
       The defaults are implementation-specific.  If only the
       high-water limit is given, the low-water limit defaults to an
@@ -478,8 +488,9 @@ Coroutines can be scheduled in a protocol method using :func:`ensure_future`,
 but there is no guarantee made about the execution order.  Protocols are not
 aware of coroutines created in protocol methods and so will not wait for them.
 
-To have a reliable execution order, use :ref:`stream objects <asyncio-streams>` in a
-coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
+To have a reliable execution order,
+use :ref:`stream objects <asyncio-streams>` in a
+coroutine with ``await``. For example, the :meth:`StreamWriter.drain`
 coroutine can be used to wait until the write buffer is flushed.
 
 
@@ -579,7 +590,7 @@ received data and close the connection::
 
 :meth:`Transport.close` can be called immediately after
 :meth:`WriteTransport.write` even if data are not sent yet on the socket: both
-methods are asynchronous. ``yield from`` is not needed because these transport
+methods are asynchronous. ``await`` is not needed because these transport
 methods are not coroutines.
 
 .. seealso::
@@ -680,10 +691,7 @@ Wait until a socket receives data using the
 the event loop ::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    from socket import socketpair
 
     # Create a pair of connected sockets
     rsock, wsock = socketpair()

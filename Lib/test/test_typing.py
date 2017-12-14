@@ -3,7 +3,7 @@ import collections
 import pickle
 import re
 import sys
-from unittest import TestCase, main, skipUnless, SkipTest
+from unittest import TestCase, main, skipUnless, SkipTest, expectedFailure
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn
@@ -28,6 +28,16 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
+
+
+try:
+    import mod_generics_cache
+except ImportError:
+    # try to use the builtin one, Python 3.5+
+    from test import mod_generics_cache
+
+
+PY36 = sys.version_info[:2] >= (3, 6)
 
 
 class BaseTestCase(TestCase):
@@ -626,6 +636,27 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Generic[T, S, T]
 
+    @skipUnless(PY36, "__init_subclass__ support required")
+    def test_init_subclass(self):
+        class X(typing.Generic[T]):
+            def __init_subclass__(cls, **kwargs):
+                super().__init_subclass__(**kwargs)
+                cls.attr = 42
+        class Y(X):
+            pass
+        self.assertEqual(Y.attr, 42)
+        with self.assertRaises(AttributeError):
+            X.attr
+        X.attr = 1
+        Y.attr = 2
+        class Z(Y):
+            pass
+        class W(X[int]):
+            pass
+        self.assertEqual(Y.attr, 2)
+        self.assertEqual(Z.attr, 42)
+        self.assertEqual(W.attr, 42)
+
     def test_repr(self):
         self.assertEqual(repr(SimpleMapping),
                          __name__ + '.' + 'SimpleMapping')
@@ -836,10 +867,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Callable[..., GenericMeta].__args__, (Ellipsis, GenericMeta))
 
     def test_generic_hashes(self):
-        try:
-            from test import mod_generics_cache
-        except ImportError:  # for Python 3.4 and previous versions
-            import mod_generics_cache
         class A(Generic[T]):
             ...
 
@@ -1069,6 +1096,37 @@ class GenericTests(BaseTestCase):
         for t in things + [Any]:
             self.assertEqual(t, copy(t))
             self.assertEqual(t, deepcopy(t))
+            if sys.version_info >= (3, 3):
+                # From copy module documentation:
+                # It does "copy" functions and classes (shallow and deeply), by returning
+                # the original object unchanged; this is compatible with the way these
+                # are treated by the pickle module.
+                self.assertTrue(t is copy(t))
+                self.assertTrue(t is deepcopy(t))
+
+    def test_copy_generic_instances(self):
+        T = TypeVar('T')
+        class C(Generic[T]):
+            def __init__(self, attr: T) -> None:
+                self.attr = attr
+
+        c = C(42)
+        self.assertEqual(copy(c).attr, 42)
+        self.assertEqual(deepcopy(c).attr, 42)
+        self.assertIsNot(copy(c), c)
+        self.assertIsNot(deepcopy(c), c)
+        c.attr = 1
+        self.assertEqual(copy(c).attr, 1)
+        self.assertEqual(deepcopy(c).attr, 1)
+        ci = C[int](42)
+        self.assertEqual(copy(ci).attr, 42)
+        self.assertEqual(deepcopy(ci).attr, 42)
+        self.assertIsNot(copy(ci), ci)
+        self.assertIsNot(deepcopy(ci), ci)
+        ci.attr = 1
+        self.assertEqual(copy(ci).attr, 1)
+        self.assertEqual(deepcopy(ci).attr, 1)
+        self.assertEqual(ci.__orig_class__, C[int])
 
     def test_weakref_all(self):
         T = TypeVar('T')
@@ -1461,8 +1519,8 @@ class ForwardRefTests(BaseTestCase):
     def test_meta_no_type_check(self):
 
         @no_type_check_decorator
-        def magic_decorator(deco):
-            return deco
+        def magic_decorator(func):
+            return func
 
         self.assertEqual(magic_decorator.__name__, 'magic_decorator')
 
@@ -1552,6 +1610,12 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
             return data
         else:
             raise StopAsyncIteration
+
+class ACM:
+    async def __aenter__(self) -> int:
+        return 42
+    async def __aexit__(self, etype, eval, tb):
+        return None
 """
 
 if ASYNCIO:
@@ -1562,12 +1626,11 @@ if ASYNCIO:
 else:
     # fake names for the sake of static analysis
     asyncio = None
-    AwaitableWrapper = AsyncIteratorWrapper = object
-
-PY36 = sys.version_info[:2] >= (3, 6)
+    AwaitableWrapper = AsyncIteratorWrapper = ACM = object
 
 PY36_TESTS = """
 from test import ann_module, ann_module2, ann_module3
+from typing import AsyncContextManager
 
 class A:
     y: float
@@ -1604,6 +1667,20 @@ class XRepr(NamedTuple):
         return f'{self.x} -> {self.y}'
     def __add__(self, other):
         return 0
+
+class HasForeignBaseClass(mod_generics_cache.A):
+    some_xrepr: 'XRepr'
+    other_a: 'mod_generics_cache.A'
+
+async def g_with(am: AsyncContextManager[int]):
+    x: int
+    async with am as x:
+        return x
+
+try:
+    g_with(ACM()).send(None)
+except StopIteration as e:
+    assert e.args[0] == 42
 """
 
 if PY36:
@@ -1635,8 +1712,18 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ann_module3), {})
 
     @skipUnless(PY36, 'Python 3.6 required')
+    @expectedFailure
+    def test_get_type_hints_modules_forwardref(self):
+        # FIXME: This currently exposes a bug in typing. Cached forward references
+        # don't account for the case where there are multiple types of the same
+        # name coming from different modules in the same program.
+        mgc_hints = {'default_a': Optional[mod_generics_cache.A],
+                     'default_b': Optional[mod_generics_cache.B]}
+        self.assertEqual(gth(mod_generics_cache), mgc_hints)
+
+    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_classes(self):
-        self.assertEqual(gth(ann_module.C, ann_module.__dict__),
+        self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
         self.assertIsInstance(gth(ann_module.j_class), dict)
         self.assertEqual(gth(ann_module.M), {'123': 123, 'o': type})
@@ -1647,8 +1734,15 @@ class GetTypeHintTests(BaseTestCase):
                          {'y': Optional[ann_module.C]})
         self.assertEqual(gth(ann_module.S), {'x': str, 'y': str})
         self.assertEqual(gth(ann_module.foo), {'x': int})
-        self.assertEqual(gth(NoneAndForward, globals()),
+        self.assertEqual(gth(NoneAndForward),
                          {'parent': NoneAndForward, 'meaning': type(None)})
+        self.assertEqual(gth(HasForeignBaseClass),
+                         {'some_xrepr': XRepr, 'other_a': mod_generics_cache.A,
+                          'some_b': mod_generics_cache.B})
+        self.assertEqual(gth(mod_generics_cache.B),
+                         {'my_inner_a1': mod_generics_cache.B.A,
+                          'my_inner_a2': mod_generics_cache.B.A,
+                          'my_outer_a': mod_generics_cache.A})
 
     @skipUnless(PY36, 'Python 3.6 required')
     def test_respect_no_type_check(self):
@@ -2156,8 +2250,6 @@ class CollectionsAbcTests(BaseTestCase):
 
 class OtherABCTests(BaseTestCase):
 
-    @skipUnless(hasattr(typing, 'ContextManager'),
-                'requires typing.ContextManager')
     def test_contextmanager(self):
         @contextlib.contextmanager
         def manager():
@@ -2166,6 +2258,24 @@ class OtherABCTests(BaseTestCase):
         cm = manager()
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
+
+    @skipUnless(ASYNCIO, 'Python 3.5 required')
+    def test_async_contextmanager(self):
+        class NotACM:
+            pass
+        self.assertIsInstance(ACM(), typing.AsyncContextManager)
+        self.assertNotIsInstance(NotACM(), typing.AsyncContextManager)
+        @contextlib.contextmanager
+        def manager():
+            yield 42
+
+        cm = manager()
+        self.assertNotIsInstance(cm, typing.AsyncContextManager)
+        self.assertEqual(typing.AsyncContextManager[int].__args__, (int,))
+        with self.assertRaises(TypeError):
+            isinstance(42, typing.AsyncContextManager[int])
+        with self.assertRaises(TypeError):
+            typing.AsyncContextManager[int, str]
 
 
 class TypeTests(BaseTestCase):

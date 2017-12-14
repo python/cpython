@@ -2335,8 +2335,6 @@ features:
       * the time of creation on Windows, expressed in nanoseconds as an
         integer.
 
-   See also the :func:`stat_float_times` function.
-
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
@@ -2429,33 +2427,6 @@ features:
 
    .. versionadded:: 3.5
       Added the :attr:`st_file_attributes` member on Windows.
-
-
-.. function:: stat_float_times([newvalue])
-
-   Determine whether :class:`stat_result` represents time stamps as float objects.
-   If *newvalue* is ``True``, future calls to :func:`~os.stat` return floats, if it is
-   ``False``, future calls return ints. If *newvalue* is omitted, return the
-   current setting.
-
-   For compatibility with older Python versions, accessing :class:`stat_result` as
-   a tuple always returns integers.
-
-   Python now returns float values by default. Applications which do not work
-   correctly with floating point time stamps can use this function to restore the
-   old behaviour.
-
-   The resolution of the timestamps (that is the smallest possible fraction)
-   depends on the system. Some systems only support second resolution; on these
-   systems, the fraction will always be zero.
-
-   It is recommended that this setting is only changed at program startup time in
-   the *__main__* module; libraries should never change this setting. If an
-   application uses a library that works incorrectly if floating point time stamps
-   are processed, this application should turn the feature off until the library
-   has been corrected.
-
-   .. deprecated:: 3.3
 
 
 .. function:: statvfs(path)
@@ -3278,6 +3249,39 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+
+.. function:: register_at_fork(*, before=None, after_in_parent=None, \
+                               after_in_child=None)
+
+   Register callables to be executed when a new child process is forked
+   using :func:`os.fork` or similar process cloning APIs.
+   The parameters are optional and keyword-only.
+   Each specifies a different call point.
+
+   * *before* is a function called before forking a child process.
+   * *after_in_parent* is a function called from the parent process
+     after forking a child process.
+   * *after_in_child* is a function called from the child process.
+
+   These calls are only made if control is expected to return to the
+   Python interpreter.  A typical :mod:`subprocess` launch will not
+   trigger them as the child is not going to re-enter the interpreter.
+
+   Functions registered for execution before forking are called in
+   reverse registration order.  Functions registered for execution
+   after forking (either in the parent or in the child) are called
+   in registration order.
+
+   Note that :c:func:`fork` calls made by third-party C code may not
+   call those functions, unless it explicitly calls :c:func:`PyOS_BeforeFork`,
+   :c:func:`PyOS_AfterFork_Parent` and :c:func:`PyOS_AfterFork_Child`.
+
+   There is no way to unregister a function.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
 
 
 .. function:: spawnl(mode, path, ...)

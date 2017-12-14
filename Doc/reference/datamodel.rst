@@ -510,6 +510,9 @@ Callable types
       | :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
       |                         | that contain bindings for the |           |
       |                         | function's free variables.    |           |
+      |                         | See below for information on  |           |
+      |                         | the ``cell_contents``         |           |
+      |                         | attribute.                    |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__annotations__` | A dict containing annotations | Writable  |
       |                         | of parameters.  The keys of   |           |
@@ -529,6 +532,9 @@ Callable types
       dot-notation is used to get and set such attributes. *Note that the current
       implementation only supports function attributes on user-defined functions.
       Function attributes on built-in functions may be supported in the future.*
+
+      A cell object has the attribute ``cell_contents``. This can be used to get
+      the value of the cell, as well as set the value.
 
       Additional information about a function's definition can be retrieved from its
       code object; see the description of internal types below.
@@ -964,10 +970,20 @@ Internal types
 
       .. index::
          single: f_trace (frame attribute)
+         single: f_trace_lines (frame attribute)
+         single: f_trace_opcodes (frame attribute)
          single: f_lineno (frame attribute)
 
       Special writable attributes: :attr:`f_trace`, if not ``None``, is a function
-      called at the start of each source code line (this is used by the debugger);
+      called for various events during code execution (this is used by the debugger).
+      Normally an event is triggered for each new source line - this can be
+      disabled by setting :attr:`f_trace_lines` to :const:`False`.
+
+      Implementations *may* allow per-opcode events to be requested by setting
+      :attr:`f_trace_opcodes` to :const:`True`. Note that this may lead to
+      undefined interpreter behaviour if exceptions raised by the trace
+      function escape to the function being traced.
+
       :attr:`f_lineno` is the current line number of the frame --- writing to this
       from within a trace function jumps to the given line (only for the bottom-most
       frame).  A debugger can implement a Jump command (aka Set Next Statement)
@@ -1119,9 +1135,9 @@ Basic customization
    (usually an instance of *cls*).
 
    Typical implementations create a new instance of the class by invoking the
-   superclass's :meth:`__new__` method using ``super(currentclass,
-   cls).__new__(cls[, ...])`` with appropriate arguments and then modifying the
-   newly-created instance as necessary before returning it.
+   superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
+   with appropriate arguments and then modifying the newly-created instance
+   as necessary before returning it.
 
    If :meth:`__new__` returns an instance of *cls*, then the new instance's
    :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
@@ -1145,7 +1161,7 @@ Basic customization
    class constructor expression.  If a base class has an :meth:`__init__`
    method, the derived class's :meth:`__init__` method, if any, must explicitly
    call it to ensure proper initialization of the base class part of the
-   instance; for example: ``BaseClass.__init__(self, [args...])``.
+   instance; for example: ``super().__init__([args...])``.
 
    Because :meth:`__new__` and :meth:`__init__` work together in constructing
    objects (:meth:`__new__` to create it, and :meth:`__init__` to customize it),
@@ -1281,6 +1297,10 @@ Basic customization
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
       if passed any non-empty string.
+
+   .. versionchanged:: 3.7
+      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
+      than ``format(str(self), '')``.
 
 
 .. _richcmpfuncs:
@@ -1578,8 +1598,8 @@ Class Binding
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
-   If ``a`` is an instance of :class:`super`, then the binding ``super(B,
-   obj).m()`` searches ``obj.__class__.__mro__`` for the base class ``A``
+   If ``a`` is an instance of :class:`super`, then the binding ``super(B, obj).m()``
+   searches ``obj.__class__.__mro__`` for the base class ``A``
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
@@ -1610,15 +1630,11 @@ instances cannot override the behavior of a property.
 __slots__
 ^^^^^^^^^
 
-By default, instances of classes have a dictionary for attribute storage.  This
-wastes space for objects having very few instance variables.  The space
-consumption can become acute when creating large numbers of instances.
+*__slots__* allow us to explicitly declare data members (like
+properties) and deny the creation of *__dict__* and *__weakref__*
+(unless explicitly declared in *__slots__* or available in a parent.)
 
-The default can be overridden by defining *__slots__* in a class definition.
-The *__slots__* declaration takes a sequence of instance variables and reserves
-just enough space in each instance to hold a value for each variable.  Space is
-saved because *__dict__* is not created for each instance.
-
+The space saved over using *__dict__* can be significant.
 
 .. data:: object.__slots__
 
@@ -1631,9 +1647,8 @@ saved because *__dict__* is not created for each instance.
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
-* When inheriting from a class without *__slots__*, the *__dict__* attribute of
-  that class will always be accessible, so a *__slots__* definition in the
-  subclass is meaningless.
+* When inheriting from a class without *__slots__*, the *__dict__* and
+  *__weakref__* attribute of the instances will always be accessible.
 
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
@@ -1652,9 +1667,11 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__* (which must only contain names of any *additional* slots).
+* The action of a *__slots__* declaration is not limited to the class
+  where it is defined.  *__slots__* declared in parents are available in
+  child classes. However, child subclasses will get a *__dict__*  and
+  *__weakref__* unless they also define *__slots__* (which should only
+  contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -1670,6 +1687,10 @@ Notes on using *__slots__*
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
 
+* Multiple inheritance with multiple slotted parent classes can be used,
+  but only one parent is allowed to have attributes created by slots
+  (the other bases must have empty slot layouts) - violations raise
+  :exc:`TypeError`.
 
 .. _class-customization:
 
@@ -1875,8 +1896,8 @@ Metaclass example
 ^^^^^^^^^^^^^^^^^
 
 The potential uses for metaclasses are boundless. Some ideas that have been
-explored include logging, interface checking, automatic delegation, automatic
-property creation, proxies, frameworks, and automatic resource
+explored include enum, logging, interface checking, automatic delegation,
+automatic property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
 Here is an example of a metaclass that uses an :class:`collections.OrderedDict`
@@ -2499,9 +2520,8 @@ generators, coroutines do not directly support iteration.
 Asynchronous Iterators
 ----------------------
 
-An *asynchronous iterable* is able to call asynchronous code in its
-``__aiter__`` implementation, and an *asynchronous iterator* can call
-asynchronous code in its ``__anext__`` method.
+An *asynchronous iterator* can call asynchronous code in
+its ``__anext__`` method.
 
 Asynchronous iterators can be used in an :keyword:`async for` statement.
 
@@ -2531,48 +2551,14 @@ An example of an asynchronous iterable object::
 
 .. versionadded:: 3.5
 
-.. note::
+.. versionchanged:: 3.7
+   Prior to Python 3.7, ``__aiter__`` could return an *awaitable*
+   that would resolve to an
+   :term:`asynchronous iterator <asynchronous iterator>`.
 
-   .. versionchanged:: 3.5.2
-      Starting with CPython 3.5.2, ``__aiter__`` can directly return
-      :term:`asynchronous iterators <asynchronous iterator>`.  Returning
-      an :term:`awaitable` object will result in a
-      :exc:`PendingDeprecationWarning`.
-
-      The recommended way of writing backwards compatible code in
-      CPython 3.5.x is to continue returning awaitables from
-      ``__aiter__``.  If you want to avoid the PendingDeprecationWarning
-      and keep the code backwards compatible, the following decorator
-      can be used::
-
-          import functools
-          import sys
-
-          if sys.version_info < (3, 5, 2):
-              def aiter_compat(func):
-                  @functools.wraps(func)
-                  async def wrapper(self):
-                      return func(self)
-                  return wrapper
-          else:
-              def aiter_compat(func):
-                  return func
-
-      Example::
-
-          class AsyncIterator:
-
-              @aiter_compat
-              def __aiter__(self):
-                  return self
-
-              async def __anext__(self):
-                  ...
-
-      Starting with CPython 3.6, the :exc:`PendingDeprecationWarning`
-      will be replaced with the :exc:`DeprecationWarning`.
-      In CPython 3.7, returning an awaitable from ``__aiter__`` will
-      result in a :exc:`RuntimeError`.
+   Starting with Python 3.7, ``__aiter__`` must return an
+   asynchronous iterator object.  Returning anything else
+   will result in a :exc:`TypeError` error.
 
 
 .. _async-context-managers:

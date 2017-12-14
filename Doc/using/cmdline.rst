@@ -210,9 +210,23 @@ Miscellaneous options
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
 
 
+.. cmdoption:: --check-hash-based-pycs default|always|never
+
+   Control the validation behavior of hash-based ``.pyc`` files. See
+   :ref:`pyc-invalidation`. When set to ``default``, checked and unchecked
+   hash-based bytecode cache files are validated according to their default
+   semantics. When set to ``always``, all hash-based ``.pyc`` files, whether
+   checked or unchecked, are validated against their corresponding source
+   file. When set to ``never``, hash-based ``.pyc`` files are not validated
+   against their corresponding source files.
+
+   The semantics of timestamp-based ``.pyc`` files are unaffected by this
+   option.
+
+
 .. cmdoption:: -d
 
-   Turn on parser debugging output (for wizards only, depending on compilation
+   Turn on parser debugging output (for expert only, depending on compilation
    options).  See also :envvar:`PYTHONDEBUG`.
 
 
@@ -303,12 +317,13 @@ Miscellaneous options
 
 .. cmdoption:: -u
 
-   Force the binary layer of the stdout and stderr streams (which is
-   available as their ``buffer`` attribute) to be unbuffered. The text I/O
-   layer will still be line-buffered if writing to the console, or
-   block-buffered if redirected to a non-interactive file.
+   Force the stdout and stderr streams to be unbuffered.  This option has no
+   effect on the stdin stream.
 
    See also :envvar:`PYTHONUNBUFFERED`.
+
+   .. versionchanged:: 3.7
+      The text layer of the stdout and stderr streams now is unbuffered.
 
 
 .. cmdoption:: -v
@@ -387,8 +402,6 @@ Miscellaneous options
    Skip the first line of the source, allowing use of non-Unix forms of
    ``#!cmd``.  This is intended for a DOS specific hack only.
 
-   .. note:: The line numbers in error messages will be off by one.
-
 
 .. cmdoption:: -X
 
@@ -407,6 +420,27 @@ Miscellaneous options
    * ``-X showalloccount`` to output the total count of allocated objects for
      each type when the program finishes. This only works when Python was built with
      ``COUNT_ALLOCS`` defined.
+   * ``-X importtime`` to show how long each import takes. It shows module
+     name, cumulative time (including nested imports) and self time (excluding
+     nested imports).  Note that its output may be broken in multi-threaded
+     application.  Typical usage is ``python3 -X importtime -c 'import
+     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+   * ``-X dev``: enable CPython's "development mode", introducing additional
+     runtime checks which are too expensive to be enabled by default. It should
+     not be more verbose than the default if the code is correct: new warnings
+     are only emitted when an issue is detected. Effect of the developer mode:
+
+     * Add ``default`` warning filter, as :option:`-W` ``default``.
+     * Install debug hooks on memory allocators: see the
+       :c:func:`PyMem_SetupDebugHooks` C function.
+     * Enable the :mod:`faulthandler` module to dump the Python traceback
+       on a crash.
+     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
+     * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
+       ``True``
+
+   * ``-X utf8`` enables the UTF-8 mode, whereas ``-X utf8=0`` disables the
+     UTF-8 mode.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -422,6 +456,9 @@ Miscellaneous options
 
    .. versionadded:: 3.6
       The ``-X showalloccount`` option.
+
+   .. versionadded:: 3.7
+      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
 
 Options you shouldn't use
@@ -494,6 +531,18 @@ conflict.
    :option:`-O` option.  If set to an integer, it is equivalent to specifying
    :option:`-O` multiple times.
 
+
+.. envvar:: PYTHONBREAKPOINT
+
+   If this is set, it names a callable using dotted-path notation.  The module
+   containing the callable will be imported and then the callable will be run
+   by the default implementation of :func:`sys.breakpointhook` which itself is
+   called by built-in :func:`breakpoint`.  If not set, or set to the empty
+   string, it is equivalent to the value "pdb.set_trace".  Setting this to the
+   string "0" causes the default implementation of :func:`sys.breakpointhook`
+   to do nothing but return immediately.
+
+   .. versionadded:: 3.7
 
 .. envvar:: PYTHONDEBUG
 
@@ -571,7 +620,7 @@ conflict.
 
    .. versionchanged:: 3.6
       On Windows, the encoding specified by this variable is ignored for interactive
-      console buffers unless :envvar:`PYTHONLEGACYWINDOWSIOENCODING` is also specified.
+      console buffers unless :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also specified.
       Files and pipes redirected through the standard streams are not affected.
 
 .. envvar:: PYTHONNOUSERSITE
@@ -630,6 +679,15 @@ conflict.
    .. versionadded:: 3.4
 
 
+.. envvar:: PYTHONPROFILEIMPORTTIME
+
+   If this environment variable is set to a non-empty string, Python will
+   show how long each import takes.  This is exactly equivalent to setting
+   ``-X importtime`` on the command line.
+
+   .. versionadded:: 3.7
+
+
 .. envvar:: PYTHONASYNCIODEBUG
 
    If this environment variable is set to a non-empty string, enable the
@@ -644,6 +702,8 @@ conflict.
 
    Set the family of memory allocators used by Python:
 
+   * ``default``: use the :ref:`default memory allocators
+     <default-memory-allocators>`.
    * ``malloc``: use the :c:func:`malloc` function of the C library
      for all domains (:c:data:`PYMEM_DOMAIN_RAW`, :c:data:`PYMEM_DOMAIN_MEM`,
      :c:data:`PYMEM_DOMAIN_OBJ`).
@@ -653,20 +713,17 @@ conflict.
 
    Install debug hooks:
 
-   * ``debug``: install debug hooks on top of the default memory allocator
+   * ``debug``: install debug hooks on top of the :ref:`default memory
+     allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks
 
-   When Python is compiled in release mode, the default is ``pymalloc``. When
-   compiled in debug mode, the default is ``pymalloc_debug`` and the debug hooks
-   are used automatically.
+   See the :ref:`default memory allocators <default-memory-allocators>` and the
+   :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
+   memory allocators).
 
-   If Python is configured without ``pymalloc`` support, ``pymalloc`` and
-   ``pymalloc_debug`` are not available, the default is ``malloc`` in release
-   mode and ``malloc_debug`` in debug mode.
-
-   See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
-   memory allocators.
+   .. versionchanged:: 3.7
+      Added the ``"default"`` allocator.
 
    .. versionadded:: 3.6
 
@@ -700,7 +757,7 @@ conflict.
    .. versionadded:: 3.6
       See :pep:`529` for more details.
 
-.. envvar:: PYTHONLEGACYWINDOWSIOENCODING
+.. envvar:: PYTHONLEGACYWINDOWSSTDIO
 
    If set to a non-empty string, does not use the new console reader and
    writer. This means that Unicode characters will be encoded according to
@@ -712,6 +769,63 @@ conflict.
    Availability: Windows
 
    .. versionadded:: 3.6
+
+
+.. envvar:: PYTHONCOERCECLOCALE
+
+   If set to the value ``0``, causes the main Python command line application
+   to skip coercing the legacy ASCII-based C locale to a more capable UTF-8
+   based alternative. Note that this setting is checked even when the
+   :option:`-E` or :option:`-I` options are used, as it is handled prior to
+   the processing of command line options.
+
+   If this variable is *not* set, or is set to a value other than ``0``, and
+   the current locale reported for the ``LC_CTYPE`` category is the default
+   ``C`` locale, then the Python CLI will attempt to configure the following
+   locales for the ``LC_CTYPE`` category in the order listed before loading the
+   interpreter runtime:
+
+   * ``C.UTF-8``
+   * ``C.utf8``
+   * ``UTF-8``
+
+   If setting one of these locale categories succeeds, then the ``LC_CTYPE``
+   environment variable will also be set accordingly in the current process
+   environment before the Python runtime is initialized. This ensures the
+   updated setting is seen in subprocesses, as well as in operations that
+   query the environment rather than the current C locale (such as Python's
+   own :func:`locale.getdefaultlocale`).
+
+   Configuring one of these locales (either explicitly or via the above
+   implicit locale coercion) will automatically set the error handler for
+   :data:`sys.stdin` and :data:`sys.stdout` to ``surrogateescape``. This
+   behavior can be overridden using :envvar:`PYTHONIOENCODING` as usual.
+
+   For debugging purposes, setting ``PYTHONCOERCECLOCALE=warn`` will cause
+   Python to emit warning messages on ``stderr`` if either the locale coercion
+   activates, or else if a locale that *would* have triggered coercion is
+   still active when the Python runtime is initialized.
+
+   Availability: \*nix
+
+   .. versionadded:: 3.7
+      See :pep:`538` for more details.
+
+
+.. envvar:: PYTHONDEVMODE
+
+   If this environment variable is set to a non-empty string, enable the
+   CPython "development mode". See the :option:`-X` ``dev`` option.
+
+   .. versionadded:: 3.7
+
+.. envvar:: PYTHONUTF8
+
+   If set to ``1``, enable the UTF-8 mode. If set to ``0``, disable the UTF-8
+   mode. Any other non-empty string cause an error.
+
+   .. versionadded:: 3.7
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

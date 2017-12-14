@@ -9,7 +9,7 @@ PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
 "Create a new ordered dictionary with keys from iterable and values set to value.");
 
 #define ORDEREDDICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)OrderedDict_fromkeys, METH_FASTCALL|METH_CLASS, OrderedDict_fromkeys__doc__},
+    {"fromkeys", (PyCFunction)OrderedDict_fromkeys, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, OrderedDict_fromkeys__doc__},
 
 static PyObject *
 OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
@@ -42,7 +42,7 @@ PyDoc_STRVAR(OrderedDict_setdefault__doc__,
 "Return the value for key if key is in the dictionary, else default.");
 
 #define ORDEREDDICT_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)OrderedDict_setdefault, METH_FASTCALL, OrderedDict_setdefault__doc__},
+    {"setdefault", (PyCFunction)OrderedDict_setdefault, METH_FASTCALL|METH_KEYWORDS, OrderedDict_setdefault__doc__},
 
 static PyObject *
 OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
@@ -76,7 +76,7 @@ PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "Pairs are returned in LIFO order if last is true or FIFO order if false.");
 
 #define ORDEREDDICT_POPITEM_METHODDEF    \
-    {"popitem", (PyCFunction)OrderedDict_popitem, METH_FASTCALL, OrderedDict_popitem__doc__},
+    {"popitem", (PyCFunction)OrderedDict_popitem, METH_FASTCALL|METH_KEYWORDS, OrderedDict_popitem__doc__},
 
 static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last);
@@ -108,7 +108,7 @@ PyDoc_STRVAR(OrderedDict_move_to_end__doc__,
 "Raise KeyError if the element does not exist.");
 
 #define ORDEREDDICT_MOVE_TO_END_METHODDEF    \
-    {"move_to_end", (PyCFunction)OrderedDict_move_to_end, METH_FASTCALL, OrderedDict_move_to_end__doc__},
+    {"move_to_end", (PyCFunction)OrderedDict_move_to_end, METH_FASTCALL|METH_KEYWORDS, OrderedDict_move_to_end__doc__},
 
 static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last);
@@ -131,4 +131,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a19a24ac37b42e5e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b2f82eca6e8c8084 input=a9049054013a1b77]*/

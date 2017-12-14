@@ -157,7 +157,7 @@ Currently the email package provides only one concrete content manager,
        MIME charset name, use the standard charset instead.
 
        If *cte* is set, encode the payload using the specified content transfer
-       encoding, and set the :mailheader:`Content-Transfer-Endcoding` header to
+       encoding, and set the :mailheader:`Content-Transfer-Encoding` header to
        that value.  Possible values for *cte* are ``quoted-printable``,
        ``base64``, ``7bit``, ``8bit``, and ``binary``.  If the input cannot be
        encoded in the specified encoding (for example, specifying a *cte* of
@@ -203,5 +203,5 @@ Currently the email package provides only one concrete content manager,
 
 .. rubric:: Footnotes
 
-.. [1] Oringally added in 3.4 as a :term:`provisional module <provisional
+.. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`

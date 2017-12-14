@@ -3,13 +3,10 @@
 import io
 import sys
 import tempfile
+import threading
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
 
 
 class TestAbstractContextManager(unittest.TestCase):
@@ -43,6 +40,16 @@ class TestAbstractContextManager(unittest.TestCase):
                 super().__exit__(*args)
 
         self.assertTrue(issubclass(DefaultEnter, AbstractContextManager))
+
+        class NoEnter(ManagerFromScratch):
+            __enter__ = None
+
+        self.assertFalse(issubclass(NoEnter, AbstractContextManager))
+
+        class NoExit(ManagerFromScratch):
+            __exit__ = None
+
+        self.assertFalse(issubclass(NoExit, AbstractContextManager))
 
 
 class ContextManagerTestCase(unittest.TestCase):
@@ -245,6 +252,16 @@ class ClosingTestCase(unittest.TestCase):
                 1 / 0
         self.assertEqual(state, [1])
 
+
+class NullcontextTestCase(unittest.TestCase):
+    def test_nullcontext(self):
+        class C:
+            pass
+        c = C()
+        with nullcontext(c) as c_in:
+            self.assertIs(c_in, c)
+
+
 class FileContextTestCase(unittest.TestCase):
 
     def testWithOpen(self):
@@ -265,7 +282,6 @@ class FileContextTestCase(unittest.TestCase):
         finally:
             support.unlink(tfn)
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class LockContextTestCase(unittest.TestCase):
 
     def boilerPlate(self, lock, locked):

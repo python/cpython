@@ -71,6 +71,14 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + sorted(tests)
 
 
+def get_abs_module(ns, test):
+    if test.startswith('test.') or ns.testdir:
+        return test
+    else:
+        # Always import it from the test package
+        return 'test.' + test
+
+
 def runtest(ns, test):
     """Run a single test.
 
@@ -94,7 +102,10 @@ def runtest(ns, test):
     if use_timeout:
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
     try:
-        support.match_tests = ns.match_tests
+        support.set_match_tests(ns.match_tests)
+        # reset the environment_altered flag to detect if a test altered
+        # the environment
+        support.environment_altered = False
         if ns.failfast:
             support.failfast = True
         if output_on_failure:
@@ -135,17 +146,17 @@ def runtest(ns, test):
 runtest.stringio = None
 
 
+def post_test_cleanup():
+    support.reap_children()
+
+
 def runtest_inner(ns, test, display_failure=True):
     support.unload(test)
 
     test_time = 0.0
     refleak = False  # True if the test leaked references.
     try:
-        if test.startswith('test.') or ns.testdir:
-            abstest = test
-        else:
-            # Always import it from the test package
-            abstest = 'test.' + test
+        abstest = get_abs_module(ns, test)
         clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
             start_time = time.time()
@@ -166,6 +177,7 @@ def runtest_inner(ns, test, display_failure=True):
             if ns.huntrleaks:
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
             test_time = time.time() - start_time
+        post_test_cleanup()
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
             print(test, "skipped --", msg, flush=True)

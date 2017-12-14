@@ -34,8 +34,8 @@ handling common situations - like basic authentication, cookies, proxies and so
 on. These are provided by objects called handlers and openers.
 
 urllib.request supports fetching URLs for many "URL schemes" (identified by the string
-before the ":" in URL - for example "ftp" is the URL scheme of
-"ftp://python.org/") using their associated network protocols (e.g. FTP, HTTP).
+before the ``":"`` in URL - for example ``"ftp"`` is the URL scheme of
+``"ftp://python.org/"``) using their associated network protocols (e.g. FTP, HTTP).
 This tutorial focuses on the most common case, HTTP.
 
 For straightforward situations *urlopen* is very easy to use. But as soon as you
@@ -511,10 +511,10 @@ than the URL you pass to .add_password() will also match. ::
 
 ``top_level_url`` is in fact *either* a full URL (including the 'http:' scheme
 component and the hostname and optionally the port number)
-e.g. "http://example.com/" *or* an "authority" (i.e. the hostname,
-optionally including the port number) e.g. "example.com" or "example.com:8080"
+e.g. ``"http://example.com/"`` *or* an "authority" (i.e. the hostname,
+optionally including the port number) e.g. ``"example.com"`` or ``"example.com:8080"``
 (the latter example includes a port number).  The authority, if present, must
-NOT contain the "userinfo" component - for example "joe:password@example.com" is
+NOT contain the "userinfo" component - for example ``"joe:password@example.com"`` is
 not correct.
 
 

@@ -76,7 +76,7 @@ The typical usage to inspect a crashed program is::
    >>> import mymodule
    >>> mymodule.test()
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "./mymodule.py", line 4, in test
        test2()
      File "./mymodule.py", line 3, in test2
@@ -118,11 +118,15 @@ slightly different way:
    is entered.
 
 
-.. function:: set_trace()
+.. function:: set_trace(*, header=None)
 
-   Enter the debugger at the calling stack frame.  This is useful to hard-code a
-   breakpoint at a given point in a program, even if the code is not otherwise
-   being debugged (e.g. when an assertion fails).
+   Enter the debugger at the calling stack frame.  This is useful to hard-code
+   a breakpoint at a given point in a program, even if the code is not
+   otherwise being debugged (e.g. when an assertion fails).  If given,
+   *header* is printed to the console just before debugging begins.
+
+   .. versionchanged:: 3.7
+      The keyword-only argument *header*.
 
 
 .. function:: post_mortem(traceback=None)

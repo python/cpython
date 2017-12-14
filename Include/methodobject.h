@@ -16,10 +16,12 @@ PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 #define PyCFunction_Check(op) (Py_TYPE(op) == &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
-typedef PyObject *(*_PyCFunctionFast) (PyObject *self, PyObject **args,
-                                       Py_ssize_t nargs, PyObject *kwnames);
+typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject **, Py_ssize_t);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
+typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
+                                                   PyObject **, Py_ssize_t,
+                                                   PyObject *);
 typedef PyObject *(*PyNoArgsFunction)(PyObject *);
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
@@ -87,7 +89,16 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 #ifndef Py_LIMITED_API
 #define METH_FASTCALL  0x0080
+#endif
 
+/* This bit is preserved for Stackless Python */
+#ifdef STACKLESS
+#define METH_STACKLESS 0x0100
+#else
+#define METH_STACKLESS 0x0000
+#endif
+
+#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_HEAD
     PyMethodDef *m_ml; /* Description of the C function to call */

@@ -761,6 +761,18 @@ call fails (for example because the path doesn't exist):
    other errors (such as permission errors) are propagated.
 
 
+.. method:: Path.is_mount()
+
+   Return ``True`` if the path is a :dfn:`mount point`: a point in a
+   file system where a different file system has been mounted.  On POSIX, the
+   function checks whether *path*'s parent, :file:`path/..`, is on a different
+   device than *path*, or whether :file:`path/..` and *path* point to the same
+   i-node on the same device --- this should detect mount points for all Unix
+   and POSIX variants.  Not implemented on Windows.
+
+   .. versionadded:: 3.7
+
+
 .. method:: Path.is_symlink()
 
    Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
@@ -1055,3 +1067,36 @@ call fails (for example because the path doesn't exist):
       'Text file contents'
 
    .. versionadded:: 3.5
+
+Correspondence to tools in the :mod:`os` module
+-----------------------------------------------
+
+Below is a table mapping various :mod:`os` functions to their corresponding
+:class:`PurePath`/:class:`Path` equivalent.
+
+.. note::
+
+   Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
+   overlapping use-cases, their semantics differ enough to warrant not
+   considering them equivalent.
+
+============================   ==============================
+os and os.path                 pathlib
+============================   ==============================
+:func:`os.path.abspath`        :meth:`Path.resolve`
+:func:`os.getcwd`              :func:`Path.cwd`
+:func:`os.path.exists`         :meth:`Path.exists`
+:func:`os.path.expanduser`     :meth:`Path.expanduser` and
+                               :meth:`Path.home`
+:func:`os.path.isdir`          :meth:`Path.is_dir`
+:func:`os.path.isfile`         :meth:`Path.is_file`
+:func:`os.path.islink`         :meth:`Path.is_symlink`
+:func:`os.stat`                :meth:`Path.stat`,
+                               :meth:`Path.owner`,
+                               :meth:`Path.group`
+:func:`os.path.isabs`          :meth:`PurePath.is_absolute`
+:func:`os.path.join`           :func:`PurePath.joinpath`
+:func:`os.path.basename`       :data:`PurePath.name`
+:func:`os.path.dirname`        :data:`PurePath.parent`
+:func:`os.path.splitext`       :data:`PurePath.suffix`
+============================   ==============================

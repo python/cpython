@@ -170,7 +170,7 @@ PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
    format to a Python dictionary ("kwargs" dict).
 
    The type of kwnames keys is not checked. The final function getting
-   arguments is reponsible to check if all keys are strings, for example using
+   arguments is responsible to check if all keys are strings, for example using
    PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
 
    Duplicate keys are merged using the last value. If duplicate keys must raise

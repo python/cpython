@@ -1,6 +1,7 @@
 /* Minimal main program -- everything is loaded from the library */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include <locale.h>
 
 #ifdef __FreeBSD__
@@ -15,22 +16,38 @@ wmain(int argc, wchar_t **argv)
 }
 #else
 
+
+static void _Py_NO_RETURN
+fatal_error(const char *msg)
+{
+    fprintf(stderr, "Fatal Python error: %s\n", msg);
+    fflush(stderr);
+    exit(1);
+}
+
+
 int
 main(int argc, char **argv)
 {
     wchar_t **argv_copy;
     /* We need a second copy, as Python might modify the first one. */
     wchar_t **argv_copy2;
-    int i, res;
+    int i, status;
     char *oldloc;
 
-    /* Force malloc() allocator to bootstrap Python */
-    (void)_PyMem_SetupAllocators("malloc");
+    _PyInitError err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        fatal_error(err.msg);
+    }
+
+    /* Force default allocator, to be able to release memory above
+       with a known allocator. */
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, NULL);
 
     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     if (!argv_copy || !argv_copy2) {
-        fprintf(stderr, "out of memory\n");
+        fatal_error("out of memory");
         return 1;
     }
 
@@ -45,19 +62,34 @@ main(int argc, char **argv)
 
     oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
     if (!oldloc) {
-        fprintf(stderr, "out of memory\n");
+        fatal_error("out of memory");
         return 1;
     }
 
-    setlocale(LC_ALL, "");
+    /* Reconfigure the locale to the default for this process */
+    _Py_SetLocaleFromEnv(LC_ALL);
+
+    /* The legacy C locale assumes ASCII as the default text encoding, which
+     * causes problems not only for the CPython runtime, but also other
+     * components like GNU readline.
+     *
+     * Accordingly, when the CLI detects it, it attempts to coerce it to a
+     * more capable UTF-8 based alternative.
+     *
+     * See the documentation of the PYTHONCOERCECLOCALE setting for more
+     * details.
+     */
+    if (_Py_LegacyLocaleDetected()) {
+        Py_UTF8Mode = 1;
+        _Py_CoerceLegacyLocale();
+    }
+
+    /* Convert from char to wchar_t based on the locale settings */
     for (i = 0; i < argc; i++) {
         argv_copy[i] = Py_DecodeLocale(argv[i], NULL);
         if (!argv_copy[i]) {
             PyMem_RawFree(oldloc);
-            fprintf(stderr, "Fatal Python error: "
-                            "unable to decode the command line argument #%i\n",
-                            i + 1);
-            return 1;
+            fatal_error("unable to decode the command line arguments");
         }
         argv_copy2[i] = argv_copy[i];
     }
@@ -66,17 +98,17 @@ main(int argc, char **argv)
     setlocale(LC_ALL, oldloc);
     PyMem_RawFree(oldloc);
 
-    res = Py_Main(argc, argv_copy);
+    status = Py_Main(argc, argv_copy);
 
-    /* Force again malloc() allocator to release memory blocks allocated
-       before Py_Main() */
-    (void)_PyMem_SetupAllocators("malloc");
+    /* Py_Main() can change PyMem_RawMalloc() allocator, so restore the default
+       to release memory blocks allocated before Py_Main() */
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, NULL);
 
     for (i = 0; i < argc; i++) {
         PyMem_RawFree(argv_copy2[i]);
     }
     PyMem_RawFree(argv_copy);
     PyMem_RawFree(argv_copy2);
-    return res;
+    return status;
 }
 #endif

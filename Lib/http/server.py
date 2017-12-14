@@ -87,7 +87,6 @@ __all__ = [
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
-import argparse
 import copy
 import datetime
 import email.utils
@@ -104,6 +103,7 @@ import socketserver
 import sys
 import time
 import urllib.parse
+from functools import partial
 
 from http import HTTPStatus
 
@@ -635,6 +635,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
 
+    def __init__(self, *args, directory=None, **kwargs):
+        if directory is None:
+            directory = os.getcwd()
+        self.directory = directory
+        super().__init__(*args, **kwargs)
+
     def do_GET(self):
         """Serve a GET request."""
         f = self.send_head()
@@ -711,7 +717,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             fs.st_mtime, datetime.timezone.utc)
                         # remove microseconds, like in If-Modified-Since
                         last_modif = last_modif.replace(microsecond=0)
-                        
+
                         if last_modif <= ims:
                             self.send_response(HTTPStatus.NOT_MODIFIED)
                             self.end_headers()
@@ -721,7 +727,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
             self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified", 
+            self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
             self.end_headers()
             return f
@@ -807,7 +813,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = posixpath.normpath(path)
         words = path.split('/')
         words = filter(None, words)
-        path = os.getcwd()
+        path = self.directory
         for word in words:
             if os.path.dirname(word) or word in (os.curdir, os.pardir):
                 # Ignore components that are not a simple file/directory name
@@ -1227,12 +1233,17 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             sys.exit(0)
 
 if __name__ == '__main__':
+    import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                        help='Run as CGI Server')
     parser.add_argument('--bind', '-b', default='', metavar='ADDRESS',
                         help='Specify alternate bind address '
                              '[default: all interfaces]')
+    parser.add_argument('--directory', '-d', default=os.getcwd(),
+                        help='Specify alternative directory '
+                        '[default:current directory]')
     parser.add_argument('port', action='store',
                         default=8000, type=int,
                         nargs='?',
@@ -1241,5 +1252,6 @@ if __name__ == '__main__':
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
     else:
-        handler_class = SimpleHTTPRequestHandler
+        handler_class = partial(SimpleHTTPRequestHandler,
+                                directory=args.directory)
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)

@@ -11,7 +11,7 @@ except ImportError:
 import asyncio
 from asyncio import log
 from asyncio import sslproto
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
@@ -42,6 +42,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             sslpipe.do_handshake.side_effect = mock_handshake
         with mock.patch('asyncio.sslproto._SSLPipe', return_value=sslpipe):
             ssl_proto.connection_made(transport)
+        return transport
 
     def test_cancel_handshake(self):
         # Python issue #23197: cancelling a handshake must not raise an
@@ -95,6 +96,20 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
 
+    def test_close_during_handshake(self):
+        # bpo-29743 Closing transport during handshake process leaks socket
+        waiter = asyncio.Future(loop=self.loop)
+        ssl_proto = self.ssl_protocol(waiter)
+
+        def do_handshake(callback):
+            return []
+
+        transport = self.connection_made(ssl_proto)
+        test_utils.run_briefly(self.loop)
+
+        ssl_proto._app_transport.close()
+        self.assertTrue(transport.abort.called)
+
     def test_get_extra_info_on_closed_connection(self):
         waiter = asyncio.Future(loop=self.loop)
         ssl_proto = self.ssl_protocol(waiter)
@@ -105,6 +120,14 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         self.assertIsNotNone(ssl_proto._get_extra_info('socket'))
         ssl_proto.connection_lost(None)
         self.assertIsNone(ssl_proto._get_extra_info('socket'))
+
+    def test_set_new_app_protocol(self):
+        waiter = asyncio.Future(loop=self.loop)
+        ssl_proto = self.ssl_protocol(waiter)
+        new_app_proto = asyncio.Protocol()
+        ssl_proto._app_transport.set_protocol(new_app_proto)
+        self.assertIs(ssl_proto._app_transport.get_protocol(), new_app_proto)
+        self.assertIs(ssl_proto._app_protocol, new_app_proto)
 
 
 if __name__ == '__main__':
