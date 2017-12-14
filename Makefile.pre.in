@@ -319,6 +319,7 @@ PYTHON_OBJS=	\
 		Python/Python-ast.o \
 		Python/asdl.o \
 		Python/ast.o \
+		Python/ast_opt.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
 		Python/compile.o \
