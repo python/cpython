@@ -2055,7 +2055,8 @@ class BaseTaskTests:
         self.assertEqual(self.Task.all_tasks(self.loop), set())
 
     def test_create_task_with_noncoroutine(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError,
+                                    "a coroutine was expected, got 123"):
             self.new_task(self.loop, 123)
 
     def test_create_task_with_oldstyle_coroutine(self):

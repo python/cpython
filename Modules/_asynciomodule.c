@@ -1484,7 +1484,9 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
         }
         if (tmp) {
             self->task_log_destroy_pending = 0;
-            PyErr_Format(PyExc_TypeError, "%R is not a coroutine", coro, NULL);
+            PyErr_Format(PyExc_TypeError,
+                         "a coroutine was expected, got %R",
+                         coro, NULL);
             return -1;
         }
     }

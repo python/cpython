@@ -74,7 +74,7 @@ class Task(futures.Future):
             # raise after Future.__init__(), attrs are required for __del__
             # prevent logging for pending task in __del__
             self._log_destroy_pending = False
-            raise TypeError(f"{coro!r} is not a coroutine")
+            raise TypeError(f"a coroutine was expected, got {coro!r}")
 
         self._must_cancel = False
         self._fut_waiter = None
