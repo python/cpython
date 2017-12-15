@@ -82,7 +82,7 @@ _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
                            PyObject *path);
 
 static PyObject *
-_imp__fix_co_filename(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyCodeObject *code;
@@ -275,7 +275,7 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file);
 
 static PyObject *
-_imp_create_dynamic(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_imp_create_dynamic(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *spec;
@@ -366,7 +366,7 @@ static PyObject *
 _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source);
 
 static PyObject *
-_imp_source_hash(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "source", NULL};
@@ -396,4 +396,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=e8b2c0b0d0a75da8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0660cd1de6b3a73 input=a9049054013a1b77]*/

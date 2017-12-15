@@ -273,7 +273,7 @@ static PyObject *
 _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_current_task(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_current_task(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -305,7 +305,7 @@ static PyObject *
 _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_all_tasks(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_all_tasks(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -405,7 +405,7 @@ static PyObject *
 _asyncio_Task_get_stack_impl(TaskObj *self, PyObject *limit);
 
 static PyObject *
-_asyncio_Task_get_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_get_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", NULL};
@@ -442,7 +442,7 @@ _asyncio_Task_print_stack_impl(TaskObj *self, PyObject *limit,
                                PyObject *file);
 
 static PyObject *
-_asyncio_Task_print_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_print_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", "file", NULL};
@@ -472,7 +472,7 @@ static PyObject *
 _asyncio_Task__step_impl(TaskObj *self, PyObject *exc);
 
 static PyObject *
-_asyncio_Task__step(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__step(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc", NULL};
@@ -501,7 +501,7 @@ static PyObject *
 _asyncio_Task__wakeup_impl(TaskObj *self, PyObject *fut);
 
 static PyObject *
-_asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__wakeup(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fut", NULL};
@@ -595,4 +595,4 @@ _asyncio_get_running_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _asyncio_get_running_loop_impl(module);
 }
-/*[clinic end generated code: output=d40b94e629571d48 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21e5424c3a5572b0 input=a9049054013a1b77]*/
