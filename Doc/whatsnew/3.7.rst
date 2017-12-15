@@ -159,6 +159,24 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 562: Customization of access to module attributes
+-----------------------------------------------------
+
+It is sometimes convenient to customize or otherwise have control over access
+to module attributes. A typical example is managing deprecation warnings.
+Typical workarounds are assigning ``__class__`` of a module object to
+a custom subclass of :class:`types.ModuleType` or replacing the ``sys.modules``
+item with a custom wrapper instance. This procedure is now simplified by
+recognizing ``__getattr__`` defined directly in a module that would act like
+a normal ``__getattr__`` method, except that it will be defined on module
+*instances*.
+
+.. seealso::
+
+    :pep:`562` -- Module ``__getattr__`` and ``__dir__``
+       PEP written and implemented by Ivan Levkivskyi
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
@@ -182,6 +200,23 @@ resolution on Linux and Windows.
 .. seealso::
 
     :pep:`564` -- Add new time functions with nanosecond resolution
+       PEP written and implemented by Victor Stinner
+
+
+PEP 540: Add a new UTF-8 mode
+-----------------------------
+
+Add a new UTF-8 mode to ignore the locale, use the UTF-8 encoding, and change
+:data:`sys.stdin` and :data:`sys.stdout` error handlers to ``surrogateescape``.
+This mode is enabled by default in the POSIX locale, but otherwise disabled by
+default.
+
+The new :option:`-X` ``utf8`` command line option and :envvar:`PYTHONUTF8`
+environment variable are added to control the UTF-8 mode.
+
+.. seealso::
+
+    :pep:`540` -- Add a new UTF-8 mode
        PEP written and implemented by Victor Stinner
 
 
@@ -289,8 +324,9 @@ is a list of strings, not bytes.
 contextlib
 ----------
 
-:func:`contextlib.asynccontextmanager` has been added. (Contributed by
-Jelle Zijlstra in :issue:`29679`.)
+:func:`~contextlib.asynccontextmanager` and
+:class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
+by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
 
 cProfile
 --------
@@ -352,6 +388,10 @@ locale
 Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
+The :func:`locale.getpreferredencoding` function now always returns ``'UTF-8'``
+on Android or in the UTF-8 mode  (:option:`-X` ``utf8`` option), the locale and
+the *do_setlocale* argument are ignored.
 
 math
 ----
@@ -558,6 +598,9 @@ Optimizations
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
   and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
   heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
+
+* Constant folding is moved from peephole optimizer to new AST optimizer.
+  (Contributed by Eugene Toder and INADA Naoki in :issue:`29469`)
 
 Build and C API Changes
 =======================

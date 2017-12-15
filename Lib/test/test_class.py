@@ -617,7 +617,7 @@ class ClassTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
             object.__init__(C(), 42)
 
-        # Class with both `__init__` & `__new__` method overriden
+        # Class with both `__init__` & `__new__` method overridden
         class D:
             def __new__(cls, *args, **kwargs):
                 super().__new__(cls, *args, **kwargs)

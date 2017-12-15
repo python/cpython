@@ -92,6 +92,24 @@ Coroutines (and tasks) can only run when the event loop is running.
     used in a callback-style code, wrap its result with :func:`ensure_future`.
 
 
+.. function:: asyncio.run(coro, \*, debug=False)
+
+    This function runs the passed coroutine, taking care of
+    managing the asyncio event loop and finalizing asynchronous
+    generators.
+
+    This function cannot be called when another asyncio event loop is
+    running in the same thread.
+
+    If debug is True, the event loop will be run in debug mode.
+
+    This function always creates a new event loop and closes it at
+    the end.  It should be used as a main entry point for asyncio
+    programs, and should ideally only be called once.
+
+    .. versionadded:: 3.7
+
+
 .. _asyncio-hello-world-coroutine:
 
 Example: Hello World coroutine
@@ -104,10 +122,7 @@ Example of coroutine displaying ``"Hello World"``::
     async def hello_world():
         print("Hello World!")
 
-    loop = asyncio.get_event_loop()
-    # Blocking call which returns when the hello_world() coroutine is done
-    loop.run_until_complete(hello_world())
-    loop.close()
+    asyncio.run(hello_world())
 
 .. seealso::
 
@@ -127,7 +142,8 @@ using the :meth:`sleep` function::
     import asyncio
     import datetime
 
-    async def display_date(loop):
+    async def display_date():
+        loop = asyncio.get_running_loop()
         end_time = loop.time() + 5.0
         while True:
             print(datetime.datetime.now())
@@ -135,10 +151,7 @@ using the :meth:`sleep` function::
                 break
             await asyncio.sleep(1)
 
-    loop = asyncio.get_event_loop()
-    # Blocking call which returns when the display_date() coroutine is done
-    loop.run_until_complete(display_date(loop))
-    loop.close()
+    asyncio.run(display_date())
 
 .. seealso::
 
@@ -358,10 +371,21 @@ with the result.
 Task
 ----
 
+.. function:: create_task(coro)
+
+   Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
+   its execution.  Return the task object.
+
+   The task is executed in :func:`get_running_loop` context,
+   :exc:`RuntimeError` is raised if there is no running loop in
+   current thread.
+
+   .. versionadded:: 3.7
+
 .. class:: Task(coro, \*, loop=None)
 
-   Schedule the execution of a :ref:`coroutine <coroutine>`: wrap it in a
-   future. A task is a subclass of :class:`Future`.
+   A unit for concurrent running of :ref:`coroutines <coroutine>`,
+   subclass of :class:`Future`.
 
    A task is responsible for executing a coroutine object in an event loop.  If
    the wrapped coroutine yields from a future, the task suspends the execution
@@ -386,7 +410,7 @@ Task
    <coroutine>` did not complete. It is probably a bug and a warning is
    logged: see :ref:`Pending task destroyed <asyncio-pending-task-destroyed>`.
 
-   Don't directly create :class:`Task` instances: use the :func:`ensure_future`
+   Don't directly create :class:`Task` instances: use the :func:`create_task`
    function or the :meth:`AbstractEventLoop.create_task` method.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
@@ -534,9 +558,15 @@ Task functions
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 
+   .. note::
+
+      :func:`create_task` (added in Python 3.7) is the preferable way
+      for spawning new tasks.
+
    .. seealso::
 
-      The :meth:`AbstractEventLoop.create_task` method.
+      The :func:`create_task` function and
+      :meth:`AbstractEventLoop.create_task` method.
 
 .. function:: wrap_future(future, \*, loop=None)
 

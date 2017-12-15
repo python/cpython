@@ -150,7 +150,7 @@
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
     <ClInclude Include="..\Include\pyfpe.h" />
-    <ClInclude Include="..\Include\pygetopt.h" />
+    <ClInclude Include="..\Include\internal\pygetopt.h" />
     <ClInclude Include="..\Include\pylifecycle.h" />
     <ClInclude Include="..\Include\pymath.h" />
     <ClInclude Include="..\Include\pytime.h" />
@@ -356,6 +356,7 @@
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\ast.c" />
+    <ClCompile Include="..\Python\ast_opt.c" />
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\bootstrap_hash.c" />
     <ClCompile Include="..\Python\ceval.c" />

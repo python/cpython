@@ -1512,6 +1512,51 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    returned. :func:`dir` converts the returned sequence to a list and sorts it.
 
 
+Customizing module attribute access
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __getattr__ (module attribute)
+   single: __dir__ (module attribute)
+   single: __class__ (module attribute)
+
+Special names ``__getattr__`` and ``__dir__`` can be also used to customize
+access to module attributes. The ``__getattr__`` function at the module level
+should accept one argument which is the name of an attribute and return the
+computed value or raise an :exc:`AttributeError`. If an attribute is
+not found on a module object through the normal lookup, i.e.
+:meth:`object.__getattribute__`, then ``__getattr__`` is searched in
+the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
+it is called with the attribute name and the result is returned.
+
+The ``__dir__`` function should accept no arguments, and return a list of
+strings that represents the names accessible on module. If present, this
+function overrides the standard :func:`dir` search on a module.
+
+For a more fine grained customization of the module behavior (setting
+attributes, properties, etc.), one can set the ``__class__`` attribute of
+a module object to a subclass of :class:`types.ModuleType`. For example::
+
+   import sys
+   from types import ModuleType
+
+   class VerboseModule(ModuleType):
+       def __repr__(self):
+           return f'Verbose {self.__name__}'
+
+       def __setattr__(self, attr, value):
+           print(f'Setting {attr}...')
+           setattr(self, attr, value)
+
+   sys.modules[__name__].__class__ = VerboseModule
+
+.. note::
+   Defining module ``__getattr__`` and setting module ``__class__`` only
+   affect lookups made using the attribute access syntax -- directly accessing
+   the module globals (whether by code within the module, or via a reference
+   to the module's globals dictionary) is unaffected.
+
+
 .. _descriptors:
 
 Implementing Descriptors
