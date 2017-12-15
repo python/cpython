@@ -3477,6 +3477,7 @@ class TextIOWrapperTest(unittest.TestCase):
 
         txt.reconfigure(errors='ignore')
         self.assertEqual(txt.encoding, 'ascii')
+        self.assertEqual(txt.errors, 'ignore')
         txt.write('CRLF\n')
 
         txt.reconfigure(encoding='utf-8', newline=None)
