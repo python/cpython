@@ -52,9 +52,19 @@ class Task(futures.Future):
 
         None is returned when called not in the context of a Task.
         """
+        warnings.warn("Task.current_task() is deprecated, "
+                      "use loop.current_task() instead.",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
-        return cls._current_tasks.get(loop)
+        try:
+            return loop.current_task()
+        except (AttributeError, NotImplementedError):
+            # This code is needed to thrird-party event loops that don't
+            # support loop introspection API yet.
+            # The fallback will be removed in 3.8.
+            return cls._current_tasks.get(loop)
 
     @classmethod
     def all_tasks(cls, loop=None):
@@ -62,9 +72,19 @@ class Task(futures.Future):
 
         By default all tasks for the current event loop are returned.
         """
+        warnings.warn("Task.all_tasks() is deprecated, "
+                      "use loop.all_tasks() instead.",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
-        return {t for t in cls._all_tasks if t._loop is loop}
+        try:
+            return loop.all_tasks()
+        except (AttributeError, NotImplementedError):
+            # This code is needed to thrird-party event loops that don't
+            # support loop introspection API yet.
+            # The fallback will be removed in 3.8.
+            return {t for t in cls._all_tasks if t._loop is loop}
 
     def __init__(self, coro, *, loop=None):
         super().__init__(loop=loop)
@@ -81,7 +101,10 @@ class Task(futures.Future):
         self._coro = coro
 
         self._loop.call_soon(self._step)
-        self.__class__._all_tasks.add(self)
+        try:
+            self._loop._register_task(self)
+        except (AttributeError, NotImplementedError):
+            self.__class__._all_tasks.add(self)
 
     def __del__(self):
         if self._state == futures._PENDING and self._log_destroy_pending:
@@ -173,7 +196,10 @@ class Task(futures.Future):
         coro = self._coro
         self._fut_waiter = None
 
-        self.__class__._current_tasks[self._loop] = self
+        try:
+            self._loop._enter_task(self)
+        except (AttributeError, NotImplementedError):
+            self.__class__._current_tasks[self._loop] = self
         # Call either coro.throw(exc) or coro.send(None).
         try:
             if exc is None:
@@ -237,7 +263,10 @@ class Task(futures.Future):
                 new_exc = RuntimeError(f'Task got bad yield: {result!r}')
                 self._loop.call_soon(self._step, new_exc)
         finally:
-            self.__class__._current_tasks.pop(self._loop)
+            try:
+                self._loop._leave_task(self)
+            except (AttributeError, NotImplementedError):
+                self.__class__._current_tasks.pop(self._loop)
             self = None  # Needed to break cycles when an exception occurs.
 
     def _wakeup(self, future):
