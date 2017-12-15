@@ -468,18 +468,17 @@ ABC hierarchy::
 
 .. class:: ResourceReader
 
-    An :term:`abstract base class` for :term:`loaders <loader>`
-    representing a :term:`package` to provide the ability to read
+    An :term:`abstract base class` for :term:`package`
+    :term:`loaders <loader>` to provide the ability to read
     *resources*.
 
-    From the perspective of this class, a *resource* is a binary
-    artifact that is shipped within the package that this loader
-    represents. Typically this is something like a data file that
-    lives next to the ``__init__.py`` file of the package. The
-    purpose of this class is to help abstract out the accessing of
-    such data files so that it does not matter if the package and
-    its data file(s) are stored in a e.g. zip file versus on the
-    file system.
+    From the perspective of this ABC, a *resource* is a binary
+    artifact that is shipped within a package. Typically this is
+    something like a data file that lives next to the ``__init__.py``
+    file of the package. The purpose of this class is to help abstract
+    out the accessing of such data files so that it does not matter if
+    the package and its data file(s) are stored in a e.g. zip file
+    versus on the file system.
 
     For any of methods of this class, a *resource* argument is
     expected to be a :term:`file-like object` which represents
@@ -511,13 +510,13 @@ ABC hierarchy::
 
     .. abstractmethod:: is_resource(name)
 
-        Returns ``True`` if the named *path* is considered a resource.
-        :exc:`FileNotFoundError` is raised if *path* does not exist.
+        Returns ``True`` if the named *name* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *name* does not exist.
 
     .. abstractmethod:: contents()
 
         Returns an :term:`iterator` of strings over the contents of
-        the package. Due note that it is not required that all names
+        the package. Do note that it is not required that all names
         returned by the iterator be actual resources, e.g. it is
         acceptable to return names for which :meth:`is_resource` would
         be false.
