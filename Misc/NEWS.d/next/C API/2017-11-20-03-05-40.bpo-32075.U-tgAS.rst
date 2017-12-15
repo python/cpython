@@ -1,0 +1,3 @@
+Exposes ZipImporter Type Object in the include header files. This now fixes
+the issue where nobody can subclass the ZipImporter type in the C API like
+they can on Pure Python.

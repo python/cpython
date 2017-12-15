@@ -120,6 +120,7 @@
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
+#include "zipimport.h"
 
 #include "abstract.h"
 #include "bltinmodule.h"

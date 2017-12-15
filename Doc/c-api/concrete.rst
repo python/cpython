@@ -114,4 +114,5 @@ Other Objects
    gen.rst
    coro.rst
    datetime.rst
+   zipimporter.rst
 

@@ -35,8 +35,6 @@ static struct st_zip_searchorder zip_searchorder[] = {
 
 /* zipimporter object definition and support */
 
-typedef struct _zipimporter ZipImporter;
-
 struct _zipimporter {
     PyObject_HEAD
     PyObject *archive;  /* pathname of the Zip archive,
@@ -45,6 +43,8 @@ struct _zipimporter {
                            encoded to the filesystem encoding */
     PyObject *files;    /* dict with file info {path: toc_entry} */
 };
+
+typedef struct _zipimporter ZipImporter;
 
 static PyObject *ZipImportError;
 /* read_directory() cache */
@@ -56,15 +56,11 @@ static PyObject *get_data(PyObject *archive, PyObject *toc_entry);
 static PyObject *get_module_code(ZipImporter *self, PyObject *fullname,
                                  int *p_ispackage, PyObject **p_modpath);
 
-static PyTypeObject ZipImporter_Type;
-
-#define ZipImporter_Check(op) PyObject_TypeCheck(op, &ZipImporter_Type)
-
 /*[clinic input]
 module zipimport
-class zipimport.zipimporter "ZipImporter *" "&ZipImporter_Type"
+class zipimport.zipimporter "ZipImporter *" "&PyZipImporter_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9db8b61557d911e7]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=618e0df7e36f8749]*/
 #include "clinic/zipimport.c.h"
 
 
@@ -806,7 +802,7 @@ static PyMemberDef zipimporter_members[] = {
 
 #define DEFERRED_ADDRESS(ADDR) 0
 
-static PyTypeObject ZipImporter_Type = {
+PyTypeObject PyZipImporter_Type = {
     PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
     "zipimport.zipimporter",
     sizeof(ZipImporter),
@@ -1597,7 +1593,7 @@ PyInit_zipimport(void)
 {
     PyObject *mod;
 
-    if (PyType_Ready(&ZipImporter_Type) < 0)
+    if (PyType_Ready(&PyZipImporter_Type) < 0)
         return NULL;
 
     /* Correct directory separator */
@@ -1618,9 +1614,9 @@ PyInit_zipimport(void)
                            ZipImportError) < 0)
         return NULL;
 
-    Py_INCREF(&ZipImporter_Type);
+    Py_INCREF(&PyZipImporter_Type);
     if (PyModule_AddObject(mod, "zipimporter",
-                           (PyObject *)&ZipImporter_Type) < 0)
+                           (PyObject *)&PyZipImporter_Type) < 0)
         return NULL;
 
     zip_directory_cache = PyDict_New();
