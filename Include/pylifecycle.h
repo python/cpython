@@ -57,9 +57,15 @@ PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadEnv(_PyCoreConfig *);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
+PyAPI_FUNC(int) _PyCoreConfig_Copy(
+    _PyCoreConfig *config,
+    const _PyCoreConfig *config2);
 
 PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *, _PyCoreConfig *);
 PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
+PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
+    _PyMainInterpreterConfig *config,
+    const _PyMainInterpreterConfig *config2);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
 #endif
@@ -129,14 +135,20 @@ PyAPI_FUNC(const char *) _Py_gitversion(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
 PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
-PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict);
+PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config);
 PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(int) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
-PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(_PyCoreConfig *core_config);
+PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);
+#endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_ReadHashSeed(
+    const char *seed_text,
+    int *use_hash_seed,
+    unsigned long *hash_seed);
 #endif
 
 /* Various internal finalizers */

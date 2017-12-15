@@ -2080,6 +2080,43 @@ class BaseTaskTests:
 
         self.assertEqual(asyncio.all_tasks(self.loop), set())
 
+    def test_create_task_with_noncoroutine(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "a coroutine was expected, got 123"):
+            self.new_task(self.loop, 123)
+
+    def test_create_task_with_oldstyle_coroutine(self):
+
+        @asyncio.coroutine
+        def coro():
+            pass
+
+        task = self.new_task(self.loop, coro())
+        self.assertIsInstance(task, self.Task)
+        self.loop.run_until_complete(task)
+
+    def test_create_task_with_async_function(self):
+
+        async def coro():
+            pass
+
+        task = self.new_task(self.loop, coro())
+        self.assertIsInstance(task, self.Task)
+        self.loop.run_until_complete(task)
+
+    def test_bare_create_task(self):
+
+        async def inner():
+            return 1
+
+        async def coro():
+            task = asyncio.create_task(inner())
+            self.assertIsInstance(task, self.Task)
+            ret = await task
+            self.assertEqual(1, ret)
+
+        self.loop.run_until_complete(coro())
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -2202,6 +2239,7 @@ class BaseTaskIntrospectionTests:
         self.assertEqual(asyncio.all_tasks(loop), set())
         self._register_task(loop, task)
         self.assertEqual(asyncio.all_tasks(loop), {task})
+        self._unregister_task(loop, task)
 
     def test__enter_task(self):
         task = mock.Mock()
@@ -2209,6 +2247,7 @@ class BaseTaskIntrospectionTests:
         self.assertIsNone(asyncio.current_task(loop))
         self._enter_task(loop, task)
         self.assertIs(asyncio.current_task(loop), task)
+        self._leave_task(loop, task)
 
     def test__enter_task_failure(self):
         task1 = mock.Mock()
@@ -2218,6 +2257,7 @@ class BaseTaskIntrospectionTests:
         with self.assertRaises(RuntimeError):
             self._enter_task(loop, task2)
         self.assertIs(asyncio.current_task(loop), task1)
+        self._leave_task(loop, task1)
 
     def test__leave_task(self):
         task = mock.Mock()
@@ -2234,6 +2274,7 @@ class BaseTaskIntrospectionTests:
         with self.assertRaises(RuntimeError):
             self._leave_task(loop, task2)
         self.assertIs(asyncio.current_task(loop), task1)
+        self._leave_task(loop, task1)
 
     def test__leave_task_failure2(self):
         task = mock.Mock()
@@ -2701,19 +2742,26 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
     def test_run_coroutine_threadsafe_task_factory_exception(self):
         """Test coroutine submission from a tread to an event loop
         when the task factory raise an exception."""
-        # Schedule the target
-        future = self.loop.run_in_executor(
-            None, lambda: self.target(advance_coro=True))
-        # Set corrupted task factory
-        self.loop.set_task_factory(lambda loop, coro: wrong_name)
+
+        def task_factory(loop, coro):
+            raise NameError
+
+        run = self.loop.create_task(
+            self.loop.run_in_executor(
+                None, lambda: self.target(advance_coro=True)))
+
         # Set exception handler
         callback = test_utils.MockCallback()
         self.loop.set_exception_handler(callback)
+
+        # Set corrupted task factory
+        self.loop.set_task_factory(task_factory)
+
         # Run event loop
         with self.assertRaises(NameError) as exc_context:
-            self.loop.run_until_complete(future)
+            self.loop.run_until_complete(run)
+
         # Check exceptions
-        self.assertIn('wrong_name', exc_context.exception.args[0])
         self.assertEqual(len(callback.call_args_list), 1)
         (loop, context), kwargs = callback.call_args
         self.assertEqual(context['exception'], exc_context.exception)

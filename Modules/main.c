@@ -726,7 +726,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
             break;
 
         case 'R':
-            /* Ignored */
+            pymain->core_config.use_hash_seed = 0;
             break;
 
         /* This space reserved for other options */
@@ -1293,6 +1293,10 @@ pymain_set_global_config(_PyMain *pymain)
 
     Py_IgnoreEnvironmentFlag = pymain->core_config.ignore_environment;
     Py_UTF8Mode = pymain->core_config.utf8_mode;
+
+    /* Random or non-zero hash seed */
+    Py_HashRandomizationFlag = (pymain->core_config.use_hash_seed == 0 ||
+                                pymain->core_config.hash_seed != 0);
 }
 
 
@@ -1694,6 +1698,24 @@ config_init_home(_PyCoreConfig *config)
 }
 
 
+static _PyInitError
+config_init_hash_seed(_PyCoreConfig *config)
+{
+    if (config->use_hash_seed < 0) {
+        const char *seed_text = pymain_get_env_var("PYTHONHASHSEED");
+        int use_hash_seed;
+        unsigned long hash_seed;
+        if (_Py_ReadHashSeed(seed_text, &use_hash_seed, &hash_seed) < 0) {
+            return _Py_INIT_USER_ERR("PYTHONHASHSEED must be \"random\" "
+                                     "or an integer in range [0; 4294967295]");
+        }
+        config->use_hash_seed = use_hash_seed;
+        config->hash_seed = hash_seed;
+    }
+    return _Py_INIT_OK();
+}
+
+
 _PyInitError
 _PyCoreConfig_ReadEnv(_PyCoreConfig *config)
 {
@@ -1708,6 +1730,11 @@ _PyCoreConfig_ReadEnv(_PyCoreConfig *config)
     }
 
     err = config_get_program_name(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = config_init_hash_seed(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1776,12 +1803,6 @@ pymain_parse_envvars(_PyMain *pymain)
 
     /* Get environment variables */
     pymain_set_flags_from_env(pymain);
-
-    /* The variable is only tested for existence here;
-       _Py_HashRandomization_Init will check its value further. */
-    if (pymain_get_env_var("PYTHONHASHSEED")) {
-        Py_HashRandomizationFlag = 1;
-    }
 
     if (pymain_warnings_envvar(pymain) < 0) {
         return -1;
@@ -1893,6 +1914,164 @@ pymain_parse_cmdline_envvars(_PyMain *pymain)
 }
 
 
+/* Read configuration settings from standard locations
+ *
+ * This function doesn't make any changes to the interpreter state - it
+ * merely populates any missing configuration settings. This allows an
+ * embedding application to completely override a config option by
+ * setting it before calling this function, or else modify the default
+ * setting before passing the fully populated config to Py_EndInitialization.
+ *
+ * More advanced selective initialization tricks are possible by calling
+ * this function multiple times with various preconfigured settings.
+ */
+
+_PyInitError
+_PyCoreConfig_Read(_PyCoreConfig *config)
+{
+    if (config->program_name == NULL) {
+#ifdef MS_WINDOWS
+        const wchar_t *program_name = L"python";
+#else
+        const wchar_t *program_name = L"python3";
+#endif
+        config->program_name = _PyMem_RawWcsdup(program_name);
+        if (config->program_name == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    return _Py_INIT_OK();
+}
+
+
+void
+_PyCoreConfig_Clear(_PyCoreConfig *config)
+{
+#define CLEAR(ATTR) \
+    do { \
+        PyMem_RawFree(ATTR); \
+        ATTR = NULL; \
+    } while (0)
+
+    CLEAR(config->module_search_path_env);
+    CLEAR(config->home);
+    CLEAR(config->program_name);
+#undef CLEAR
+}
+
+
+int
+_PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
+{
+    _PyCoreConfig_Clear(config);
+
+#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+    COPY_ATTR(ignore_environment);
+    COPY_ATTR(use_hash_seed);
+    COPY_ATTR(hash_seed);
+    COPY_ATTR(_disable_importlib);
+    COPY_ATTR(allocator);
+    COPY_ATTR(dev_mode);
+    COPY_ATTR(faulthandler);
+    COPY_ATTR(tracemalloc);
+    COPY_ATTR(import_time);
+    COPY_ATTR(show_ref_count);
+    COPY_ATTR(show_alloc_count);
+    COPY_ATTR(dump_refs);
+    COPY_ATTR(malloc_stats);
+    COPY_ATTR(utf8_mode);
+#undef COPY_ATTR
+
+#define COPY_STR_ATTR(ATTR) \
+    do { \
+        if (config2->ATTR != NULL) { \
+            config->ATTR = _PyMem_RawWcsdup(config2->ATTR); \
+            if (config->ATTR == NULL) { \
+                return -1; \
+            } \
+        } \
+    } while (0)
+
+    COPY_STR_ATTR(module_search_path_env);
+    COPY_STR_ATTR(home);
+    COPY_STR_ATTR(program_name);
+#undef COPY_STR_ATTR
+    return 0;
+}
+
+
+void
+_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
+{
+    Py_CLEAR(config->argv);
+    Py_CLEAR(config->executable);
+    Py_CLEAR(config->prefix);
+    Py_CLEAR(config->base_prefix);
+    Py_CLEAR(config->exec_prefix);
+    Py_CLEAR(config->base_exec_prefix);
+    Py_CLEAR(config->warnoptions);
+    Py_CLEAR(config->xoptions);
+    Py_CLEAR(config->module_search_path);
+}
+
+
+static PyObject*
+config_copy_attr(PyObject *obj)
+{
+    if (PyUnicode_Check(obj)) {
+        Py_INCREF(obj);
+        return obj;
+    }
+    else if (PyList_Check(obj)) {
+        return PyList_GetSlice(obj, 0, Py_SIZE(obj));
+    }
+    else if (PyDict_Check(obj)) {
+        /* The dict type is used for xoptions. Make the assumption that keys
+           and values are immutables */
+        return PyDict_Copy(obj);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot copy config attribute of type %.200s",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
+}
+
+
+int
+_PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
+                              const _PyMainInterpreterConfig *config2)
+{
+    _PyMainInterpreterConfig_Clear(config);
+
+#define COPY_ATTR(ATTR) \
+    do { \
+        if (config2->ATTR != NULL) { \
+            config->ATTR = config_copy_attr(config2->ATTR); \
+            if (config->ATTR == NULL) { \
+                return -1; \
+            } \
+        } \
+    } while (0)
+
+    COPY_ATTR(argv);
+    COPY_ATTR(executable);
+    COPY_ATTR(prefix);
+    COPY_ATTR(base_prefix);
+    COPY_ATTR(exec_prefix);
+    COPY_ATTR(base_exec_prefix);
+    COPY_ATTR(warnoptions);
+    COPY_ATTR(xoptions);
+    COPY_ATTR(module_search_path);
+#undef COPY_ATTR
+    return 0;
+}
+
+
+
+
 static PyObject *
 config_create_path_list(const wchar_t *path, wchar_t delim)
 {
@@ -1930,26 +2109,14 @@ config_create_path_list(const wchar_t *path, wchar_t delim)
 }
 
 
-static _PyInitError
-config_init_module_search_path(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
+_PyInitError
+_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
 {
     _PyInitError err = _PyPathConfig_Init(core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
-    wchar_t *sys_path = Py_GetPath();
 
-    config->module_search_path = config_create_path_list(sys_path, DELIM);
-    if (config->module_search_path == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
-}
-
-
-_PyInitError
-_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
-{
     /* Signal handlers are installed by default */
     if (config->install_signal_handlers < 0) {
         config->install_signal_handlers = 1;
@@ -1957,11 +2124,44 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *c
 
     if (config->module_search_path == NULL &&
         !core_config->_disable_importlib)
+
     {
-        _PyInitError err = config_init_module_search_path(config, core_config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
+        wchar_t *sys_path = Py_GetPath();
+        config->module_search_path = config_create_path_list(sys_path, DELIM);
+        if (config->module_search_path == NULL) {
+            return _Py_INIT_NO_MEMORY();
         }
+    }
+
+    if (config->executable == NULL) {
+        config->executable = PyUnicode_FromWideChar(Py_GetProgramFullPath(), -1);
+        if (config->executable == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->prefix == NULL) {
+        config->prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
+        if (config->prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->exec_prefix == NULL) {
+        config->exec_prefix = PyUnicode_FromWideChar(Py_GetExecPrefix(), -1);
+        if (config->exec_prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->base_prefix == NULL) {
+        Py_INCREF(config->prefix);
+        config->base_prefix = config->prefix;
+    }
+
+    if (config->base_exec_prefix == NULL) {
+        Py_INCREF(config->exec_prefix);
+        config->base_exec_prefix = config->exec_prefix;
     }
     return _Py_INIT_OK();
 }
