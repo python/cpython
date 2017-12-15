@@ -1,7 +1,6 @@
 import sys
 import types
 from copy import deepcopy
-import collections
 import inspect
 
 __all__ = ['dataclass',
@@ -446,11 +445,10 @@ def _set_attribute(cls, name, value):
 
 
 def _process_class(cls, repr, eq, order, hash, init, frozen):
-    # Use an OrderedDict because:
-    #  - Order matters!
+    # Note that order matters here.
     #  - Derived class fields overwrite base class fields, but the
     #    order is defined by the base class, which is found first.
-    fields = collections.OrderedDict()
+    fields = {}
 
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
@@ -621,9 +619,6 @@ def _isdataclass(obj):
     return not isinstance(obj, type) and hasattr(obj, _MARKER)
 
 
-# Shouldn't the default factor be collections.OrderedDict()?
-# The class itself is ordered and instances may or may not be
-# intrinsically ordered depending on the "ordered" keyword.
 def asdict(obj, *, dict_factory=dict):
     """Return the fields of a dataclass instance as a new dictionary mapping
     field names to field values.
@@ -727,7 +722,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, **kwargs):
         # Copy namespace since we're going to mutate it.
         namespace = namespace.copy()
 
-    anns = collections.OrderedDict((name, tp) for name, tp, *_ in fields)
+    anns = {name : tp for name, tp, *_ in fields}
     namespace['__annotations__'] = anns
     for item in fields:
         if len(item) == 3:
