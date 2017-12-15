@@ -983,7 +983,7 @@ e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
    the same using underscores instead of dashes. Using alternative
    aliases for these encodings may result in slower execution.
 
-   .. versionadded:: 3.6
+   .. versionchanged:: 3.6
       Optimization opportunity recognized for us-ascii.
 
 Many of the character sets support the same languages. They vary in individual
