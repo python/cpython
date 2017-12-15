@@ -889,4 +889,22 @@ _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f6d7e4fab80455bb input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_GetACP__doc__,
+"GetACP($module, /)\n"
+"--\n"
+"\n"
+"Get the current Windows ANSI code page identifier.");
+
+#define _WINAPI_GETACP_METHODDEF    \
+    {"GetACP", (PyCFunction)_winapi_GetACP, METH_NOARGS, _winapi_GetACP__doc__},
+
+static PyObject *
+_winapi_GetACP_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetACP_impl(module);
+}
+/*[clinic end generated code: output=b9c00c323c9f4944 input=a9049054013a1b77]*/

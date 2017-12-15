@@ -4,7 +4,7 @@ A selector is a "notify-when-ready" multiplexer.  For a subclass which
 also includes support for signal handling, see the unix_events sub-module.
 """
 
-__all__ = ['BaseSelectorEventLoop']
+__all__ = 'BaseSelectorEventLoop',
 
 import collections
 import errno
@@ -24,7 +24,6 @@ from . import events
 from . import futures
 from . import transports
 from . import sslproto
-from .coroutines import coroutine
 from .log import logger
 
 
@@ -185,13 +184,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     raise  # The event loop will catch, log and ignore it.
             else:
                 extra = {'peername': addr}
-                accept = self._accept_connection2(protocol_factory, conn, extra,
-                                                  sslcontext, server)
+                accept = self._accept_connection2(
+                    protocol_factory, conn, extra, sslcontext, server)
                 self.create_task(accept)
 
-    @coroutine
-    def _accept_connection2(self, protocol_factory, conn, extra,
-                            sslcontext=None, server=None):
+    async def _accept_connection2(self, protocol_factory, conn, extra,
+                                  sslcontext=None, server=None):
         protocol = None
         transport = None
         try:
@@ -207,7 +205,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     server=server)
 
             try:
-                yield from waiter
+                await waiter
             except:
                 transport.close()
                 raise
@@ -216,8 +214,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         except Exception as exc:
             if self._debug:
                 context = {
-                    'message': ('Error on transport creation '
-                                'for incoming connection'),
+                    'message':
+                        'Error on transport creation for incoming connection',
                     'exception': exc,
                 }
                 if protocol is not None:
@@ -233,8 +231,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 fileno = int(fileno.fileno())
             except (AttributeError, TypeError, ValueError):
                 # This code matches selectors._fileobj_to_fd function.
-                raise ValueError("Invalid file object: "
-                                 "{!r}".format(fd)) from None
+                raise ValueError(f"Invalid file object: {fd!r}") from None
         try:
             transport = self._transports[fileno]
         except KeyError:
@@ -242,8 +239,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             if not transport.is_closing():
                 raise RuntimeError(
-                    'File descriptor {!r} is used by transport {!r}'.format(
-                        fd, transport))
+                    f'File descriptor {fd!r} is used by transport '
+                    f'{transport!r}')
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
@@ -339,20 +336,18 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         return self._remove_writer(fd)
 
-    def sock_recv(self, sock, n):
+    async def sock_recv(self, sock, n):
         """Receive data from the socket.
 
         The return value is a bytes object representing the data received.
         The maximum amount of data to be received at once is specified by
         nbytes.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_recv(fut, None, sock, n)
-        return fut
+        return await fut
 
     def _sock_recv(self, fut, registered_fd, sock, n):
         # _sock_recv() can add itself as an I/O callback if the operation can't
@@ -375,26 +370,25 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(data)
 
-    def sock_recv_into(self, sock, buf):
+    async def sock_recv_into(self, sock, buf):
         """Receive data from the socket.
 
         The received data is written into *buf* (a writable buffer).
         The return value is the number of bytes written.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_recv_into(fut, None, sock, buf)
-        return fut
+        return await fut
 
     def _sock_recv_into(self, fut, registered_fd, sock, buf):
         # _sock_recv_into() can add itself as an I/O callback if the operation
-        # can't be done immediately. Don't use it directly, call sock_recv_into().
+        # can't be done immediately. Don't use it directly, call
+        # sock_recv_into().
         if registered_fd is not None:
             # Remove the callback early.  It should be rare that the
-            # selector says the fd is ready but the call still returns
+            # selector says the FD is ready but the call still returns
             # EAGAIN, and I am willing to take a hit in that case in
             # order to simplify the common case.
             self.remove_reader(registered_fd)
@@ -410,7 +404,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(nbytes)
 
-    def sock_sendall(self, sock, data):
+    async def sock_sendall(self, sock, data):
         """Send data to the socket.
 
         The socket must be connected to a remote socket. This method continues
@@ -418,8 +412,6 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         error occurs. None is returned on success. On error, an exception is
         raised, and there is no way to determine how much data, if any, was
         successfully processed by the receiving end of the connection.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
@@ -428,7 +420,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._sock_sendall(fut, None, sock, data)
         else:
             fut.set_result(None)
-        return fut
+        return await fut
 
     def _sock_sendall(self, fut, registered_fd, sock, data):
         if registered_fd is not None:
@@ -452,8 +444,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             fd = sock.fileno()
             self.add_writer(fd, self._sock_sendall, fut, fd, sock, data)
 
-    @coroutine
-    def sock_connect(self, sock, address):
+    async def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
 
         This method is a coroutine.
@@ -462,15 +453,13 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             raise ValueError("the socket must be non-blocking")
 
         if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
-            resolved = base_events._ensure_resolved(
+            resolved = await self._ensure_resolved(
                 address, family=sock.family, proto=sock.proto, loop=self)
-            if not resolved.done():
-                yield from resolved
-            _, _, _, _, address = resolved.result()[0]
+            _, _, _, _, address = resolved[0]
 
         fut = self.create_future()
         self._sock_connect(fut, sock, address)
-        return (yield from fut)
+        return await fut
 
     def _sock_connect(self, fut, sock, address):
         fd = sock.fileno()
@@ -500,7 +489,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             err = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
             if err != 0:
                 # Jump to any except clause below.
-                raise OSError(err, 'Connect call failed %s' % (address,))
+                raise OSError(err, f'Connect call failed {address}')
         except (BlockingIOError, InterruptedError):
             # socket is still registered, the callback will be retried later
             pass
@@ -509,21 +498,19 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(None)
 
-    def sock_accept(self, sock):
+    async def sock_accept(self, sock):
         """Accept a connection.
 
         The socket must be bound to an address and listening for connections.
         The return value is a pair (conn, address) where conn is a new socket
         object usable to send and receive data on the connection, and address
         is the address bound to the socket on the other end of the connection.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_accept(fut, False, sock)
-        return fut
+        return await fut
 
     def _sock_accept(self, fut, registered, sock):
         fd = sock.fileno()
@@ -599,7 +586,7 @@ class _SelectorTransport(transports._FlowControlMixin,
             info.append('closed')
         elif self._closing:
             info.append('closing')
-        info.append('fd=%s' % self._sock_fd)
+        info.append(f'fd={self._sock_fd}')
         # test if the transport was closed
         if self._loop is not None and not self._loop.is_closed():
             polling = _test_selector_event(self._loop._selector,
@@ -618,8 +605,8 @@ class _SelectorTransport(transports._FlowControlMixin,
                 state = 'idle'
 
             bufsize = self.get_write_buffer_size()
-            info.append('write=<%s, bufsize=%s>' % (state, bufsize))
-        return '<%s>' % ' '.join(info)
+            info.append(f'write=<{state}, bufsize={bufsize}>')
+        return '<{}>'.format(' '.join(info))
 
     def abort(self):
         self._force_close(None)
@@ -645,7 +632,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def __del__(self):
         if self._sock is not None:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self._sock.close()
 
@@ -761,8 +748,8 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be a bytes-like object, '
-                            'not %r' % type(data).__name__)
+            raise TypeError(f'data argument must be a bytes-like object, '
+                            f'not {type(data).__name__!r}')
         if self._eof:
             raise RuntimeError('Cannot call write() after write_eof()')
         if not data:
@@ -865,14 +852,14 @@ class _SelectorDatagramTransport(_SelectorTransport):
 
     def sendto(self, data, addr=None):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be a bytes-like object, '
-                            'not %r' % type(data).__name__)
+            raise TypeError(f'data argument must be a bytes-like object, '
+                            f'not {type(data).__name__!r}')
         if not data:
             return
 
         if self._address and addr not in (None, self._address):
-            raise ValueError('Invalid address: must be None or %s' %
-                             (self._address,))
+            raise ValueError(
+                f'Invalid address: must be None or {self._address}')
 
         if self._conn_lost and self._address:
             if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
@@ -894,8 +881,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 self._protocol.error_received(exc)
                 return
             except Exception as exc:
-                self._fatal_error(exc,
-                                  'Fatal write error on datagram transport')
+                self._fatal_error(
+                    exc, 'Fatal write error on datagram transport')
                 return
 
         # Ensure that what we buffer is immutable.
@@ -917,8 +904,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 self._protocol.error_received(exc)
                 return
             except Exception as exc:
-                self._fatal_error(exc,
-                                  'Fatal write error on datagram transport')
+                self._fatal_error(
+                    exc, 'Fatal write error on datagram transport')
                 return
 
         self._maybe_resume_protocol()  # May append to buffer.

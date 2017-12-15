@@ -210,6 +210,20 @@ Miscellaneous options
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
 
 
+.. cmdoption:: --check-hash-based-pycs default|always|never
+
+   Control the validation behavior of hash-based ``.pyc`` files. See
+   :ref:`pyc-invalidation`. When set to ``default``, checked and unchecked
+   hash-based bytecode cache files are validated according to their default
+   semantics. When set to ``always``, all hash-based ``.pyc`` files, whether
+   checked or unchecked, are validated against their corresponding source
+   file. When set to ``never``, hash-based ``.pyc`` files are not validated
+   against their corresponding source files.
+
+   The semantics of timestamp-based ``.pyc`` files are unaffected by this
+   option.
+
+
 .. cmdoption:: -d
 
    Turn on parser debugging output (for expert only, depending on compilation
@@ -263,8 +277,9 @@ Miscellaneous options
 
 .. cmdoption:: -R
 
-   Kept for compatibility.  On Python 3.3 and greater, hash randomization is
-   turned on by default.
+   Turn on hash randomization. This option only has an effect if the
+   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
+   randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`__hash__` values of str, bytes and datetime
@@ -416,11 +431,7 @@ Miscellaneous options
      not be more verbose than the default if the code is correct: new warnings
      are only emitted when an issue is detected. Effect of the developer mode:
 
-     * Warning filters: add a filter to display all warnings (``"default"``
-       action), except of :exc:`BytesWarning` which still depends on the
-       :option:`-b` option, and use ``"always"`` action for
-       :exc:`ResourceWarning` warnings. For example, display
-       :exc:`DeprecationWarning` warnings.
+     * Add ``default`` warning filter, as :option:`-W` ``default``.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
      * Enable the :mod:`faulthandler` module to dump the Python traceback
@@ -428,6 +439,9 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+
+   * ``-X utf8`` enables the UTF-8 mode, whereas ``-X utf8=0`` disables the
+     UTF-8 mode.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -445,7 +459,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importtime`` and ``-X dev`` options.
+      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
 
 Options you shouldn't use
@@ -805,6 +819,14 @@ conflict.
    CPython "development mode". See the :option:`-X` ``dev`` option.
 
    .. versionadded:: 3.7
+
+.. envvar:: PYTHONUTF8
+
+   If set to ``1``, enable the UTF-8 mode. If set to ``0``, disable the UTF-8
+   mode. Any other non-empty string cause an error.
+
+   .. versionadded:: 3.7
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

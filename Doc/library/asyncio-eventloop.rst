@@ -235,9 +235,6 @@ Tasks
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
-   This method was added in Python 3.4.2. Use the :func:`async` function to
-   support also older Python versions.
-
    .. versionadded:: 3.4.2
 
 .. method:: AbstractEventLoop.set_task_factory(factory)
@@ -272,9 +269,8 @@ Creating connections
    socket type :py:data:`~socket.SOCK_STREAM`.  *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
-   This method is a :ref:`coroutine <coroutine>` which will try to
-   establish the connection in the background.  When successful, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   This method will try to establish the connection in the background.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    The chronological synopsis of the underlying operation is as follows:
 
@@ -347,9 +343,8 @@ Creating connections
    :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
-   This method is a :ref:`coroutine <coroutine>` which will try to
-   establish the connection in the background.  When successful, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   This method will try to establish the connection in the background.
+   When successful, the it returns a ``(transport, protocol)`` pair.
 
    Options changing how the connection is created:
 
@@ -398,9 +393,8 @@ Creating connections
    family is used to communicate between processes on the same machine
    efficiently.
 
-   This method is a :ref:`coroutine <coroutine>` which will try to
-   establish the connection in the background.  When successful, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   This method will try to establish the connection in the background.
+   When successful, the it returns a ``(transport, protocol)`` pair.
 
    *path* is the name of a UNIX domain socket, and is required unless a *sock*
    parameter is specified.  Abstract UNIX sockets, :class:`str`,
@@ -462,8 +456,6 @@ Creating listening connections
      set this flag when being created. This option is not supported on
      Windows.
 
-   This method is a :ref:`coroutine <coroutine>`.
-
    .. versionchanged:: 3.5
 
       On Windows with :class:`ProactorEventLoop`, SSL/TLS is now supported.
@@ -487,8 +479,6 @@ Creating listening connections
    parameter is specified.  Abstract UNIX sockets, :class:`str`,
    :class:`bytes`, and :class:`~pathlib.Path` paths are supported.
 
-   This method is a :ref:`coroutine <coroutine>`.
-
    Availability: UNIX.
 
    .. versionchanged:: 3.7
@@ -510,8 +500,7 @@ Creating listening connections
    * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over the
      accepted connections.
 
-   This method is a :ref:`coroutine <coroutine>`.  When completed, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   When completed it returns a ``(transport, protocol)`` pair.
 
    .. versionadded:: 3.5.3
 
@@ -568,7 +557,10 @@ Low-level socket operations
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   .. versionchanged:: 3.7
+      Even though the method was always documented as a coroutine
+      method, before Python 3.7 it returned a :class:`Future`.
+      Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: AbstractEventLoop.sock_recv_into(sock, buf)
 
@@ -580,8 +572,6 @@ Low-level socket operations
 
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
-
-   This method is a :ref:`coroutine <coroutine>`.
 
    .. versionadded:: 3.7
 
@@ -599,7 +589,10 @@ Low-level socket operations
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   .. versionchanged:: 3.7
+      Even though the method was always documented as a coroutine
+      method, before Python 3.7 it returned an :class:`Future`.
+      Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: AbstractEventLoop.sock_connect(sock, address)
 
@@ -608,8 +601,6 @@ Low-level socket operations
 
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
-
-   This method is a :ref:`coroutine <coroutine>`.
 
    .. versionchanged:: 3.5.2
       ``address`` no longer needs to be resolved.  ``sock_connect``
@@ -637,7 +628,10 @@ Low-level socket operations
 
    The socket *sock* must be non-blocking.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   .. versionchanged:: 3.7
+      Even though the method was always documented as a coroutine
+      method, before Python 3.7 it returned a :class:`Future`.
+      Since Python 3.7, this is an ``async def`` method.
 
    .. seealso::
 
@@ -676,8 +670,6 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
 
-   This method is a :ref:`coroutine <coroutine>`.
-
 .. coroutinemethod:: AbstractEventLoop.connect_write_pipe(protocol_factory, pipe)
 
    Register write pipe in eventloop.
@@ -689,8 +681,6 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
-
-   This method is a :ref:`coroutine <coroutine>`.
 
 .. seealso::
 
@@ -741,14 +731,17 @@ pool of processes). By default, an event loop uses a thread pool executor
    :ref:`Use functools.partial to pass keywords to the *func*
    <asyncio-pass-keywords>`.
 
-   This method is a :ref:`coroutine <coroutine>`.
-
    .. versionchanged:: 3.5.3
       :meth:`BaseEventLoop.run_in_executor` no longer configures the
       ``max_workers`` of the thread pool executor it creates, instead
       leaving it up to the thread pool executor
       (:class:`~concurrent.futures.ThreadPoolExecutor`) to set the
       default.
+
+   .. versionchanged:: 3.7
+      Even though the method was always documented as a coroutine
+      method, before Python 3.7 it returned a :class:`Future`.
+      Since Python 3.7, this is an ``async def`` method.
 
 .. method:: AbstractEventLoop.set_default_executor(executor)
 
@@ -859,8 +852,6 @@ Server
    .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
-
-      This method is a :ref:`coroutine <coroutine>`.
 
    .. attribute:: sockets
 

@@ -338,8 +338,8 @@ class bdist_wininst(Command):
                 bv = '14.0'
             else:
                 bv = '.'.join(CRT_ASSEMBLY_VERSION.split('.', 2)[:2])
-                if bv == '14.11':
-                    # v141 and v140 are binary compatible,
+                if bv in ('14.11', '14.12'):
+                    # v142, v141 and v140 are binary compatible,
                     # so keep using the 14.0 stub.
                     bv = '14.0'
 

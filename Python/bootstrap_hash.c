@@ -533,16 +533,17 @@ _PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
     return pyurandom(buffer, size, 0, 1);
 }
 
-int Py_ReadHashSeed(char *seed_text,
-                    int *use_hash_seed,
-                    unsigned long *hash_seed)
+int
+_Py_ReadHashSeed(const char *seed_text,
+                 int *use_hash_seed,
+                 unsigned long *hash_seed)
 {
     Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
     /* Convert a text seed to a numeric one */
     if (seed_text && *seed_text != '\0' && strcmp(seed_text, "random") != 0) {
-        char *endptr = seed_text;
+        const char *endptr = seed_text;
         unsigned long seed;
-        seed = strtoul(seed_text, &endptr, 10);
+        seed = strtoul(seed_text, (char **)&endptr, 10);
         if (*endptr != '\0'
             || seed > 4294967295UL
             || (errno == ERANGE && seed == ULONG_MAX))
@@ -561,9 +562,9 @@ int Py_ReadHashSeed(char *seed_text,
     return 0;
 }
 
-static _PyInitError
-init_hash_secret(int use_hash_seed,
-                 unsigned long hash_seed)
+
+_PyInitError
+_Py_HashRandomization_Init(const _PyCoreConfig *config)
 {
     void *secret = &_Py_HashSecret;
     Py_ssize_t secret_size = sizeof(_Py_HashSecret_t);
@@ -573,14 +574,14 @@ init_hash_secret(int use_hash_seed,
     }
     _Py_HashSecret_Initialized = 1;
 
-    if (use_hash_seed) {
-        if (hash_seed == 0) {
+    if (config->use_hash_seed) {
+        if (config->hash_seed == 0) {
             /* disable the randomized hash */
             memset(secret, 0, secret_size);
         }
         else {
             /* use the specified hash seed */
-            lcg_urandom(hash_seed, secret, secret_size);
+            lcg_urandom(config->hash_seed, secret, secret_size);
         }
     }
     else {
@@ -601,24 +602,6 @@ init_hash_secret(int use_hash_seed,
     return _Py_INIT_OK();
 }
 
-_PyInitError
-_Py_HashRandomization_Init(_PyCoreConfig *core_config)
-{
-    char *seed_text;
-    int use_hash_seed = core_config->use_hash_seed;
-    unsigned long hash_seed = core_config->hash_seed;
-
-    if (use_hash_seed < 0) {
-        seed_text = Py_GETENV("PYTHONHASHSEED");
-        if (Py_ReadHashSeed(seed_text, &use_hash_seed, &hash_seed) < 0) {
-            return _Py_INIT_USER_ERR("PYTHONHASHSEED must be \"random\" "
-                                     "or an integer in range [0; 4294967295]");
-        }
-        core_config->use_hash_seed = use_hash_seed;
-        core_config->hash_seed = hash_seed;
-    }
-    return init_hash_secret(use_hash_seed, hash_seed);
-}
 
 void
 _Py_HashRandomization_Fini(void)

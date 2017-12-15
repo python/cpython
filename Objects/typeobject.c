@@ -2377,6 +2377,27 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         nbases = 1;
     }
     else {
+        _Py_IDENTIFIER(__mro_entries__);
+        for (i = 0; i < nbases; i++) {
+            tmp = PyTuple_GET_ITEM(bases, i);
+            if (PyType_Check(tmp)) {
+                continue;
+            }
+            tmp = _PyObject_GetAttrId(tmp, &PyId___mro_entries__);
+            if (tmp != NULL) {
+                PyErr_SetString(PyExc_TypeError,
+                                "type() doesn't support MRO entry resolution; "
+                                "use types.new_class()");
+                Py_DECREF(tmp);
+                return NULL;
+            }
+            else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                return NULL;
+            }
+        }
         /* Search the bases for the proper metatype to deal with this: */
         winner = _PyType_CalculateMetaclass(metatype, bases);
         if (winner == NULL) {
@@ -3592,11 +3613,11 @@ object_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyTypeObject *type = Py_TYPE(self);
     if (excess_args(args, kwds)) {
         if (type->tp_init != object_init) {
-            PyErr_SetString(PyExc_TypeError, "object() takes no arguments");
+            PyErr_SetString(PyExc_TypeError, "object.__init__() takes no arguments");
             return -1;
         }
         if (type->tp_new == object_new) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no arguments",
+            PyErr_Format(PyExc_TypeError, "%.200s().__init__() takes no arguments",
                          type->tp_name);
             return -1;
         }
@@ -3609,7 +3630,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     if (excess_args(args, kwds)) {
         if (type->tp_new != object_new) {
-            PyErr_SetString(PyExc_TypeError, "object() takes no arguments");
+            PyErr_SetString(PyExc_TypeError, "object.__new__() takes no arguments");
             return NULL;
         }
         if (type->tp_init == object_init) {

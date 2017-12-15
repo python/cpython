@@ -38,6 +38,12 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
+    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable */
+
+    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
+    wchar_t *home;          /* PYTHONHOME environment variable,
+                               see also Py_SetPythonHome(). */
+    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT (_PyCoreConfig){.use_hash_seed = -1}
@@ -46,17 +52,18 @@ typedef struct {
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
- *
- * For the moment, just handle the args to _Py_InitializeEx
  */
 typedef struct {
     int install_signal_handlers;
-    /* PYTHONPATH environment variable */
-    wchar_t *module_search_path_env;
-    /* PYTHONHOME environment variable, see also Py_SetPythonHome(). */
-    wchar_t *home;
-    /* Program name, see also Py_GetProgramName() */
-    wchar_t *program_name;
+    PyObject *argv;                /* sys.argv list, can be NULL */
+    PyObject *executable;          /* sys.executable str */
+    PyObject *prefix;              /* sys.prefix str */
+    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
+    PyObject *exec_prefix;         /* sys.exec_prefix str */
+    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
+    PyObject *module_search_path;  /* sys.path list */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \

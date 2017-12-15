@@ -33,11 +33,10 @@ from . import coroutines
 from . import events
 from . import futures
 from . import tasks
-from .coroutines import coroutine
 from .log import logger
 
 
-__all__ = ['BaseEventLoop']
+__all__ = 'BaseEventLoop',
 
 
 # Minimum number of _scheduled timer handles before cleanup of
@@ -158,24 +157,9 @@ def _ipaddr_info(host, port, family, type, proto):
     return None
 
 
-def _ensure_resolved(address, *, family=0, type=socket.SOCK_STREAM, proto=0,
-                     flags=0, loop):
-    host, port = address[:2]
-    info = _ipaddr_info(host, port, family, type, proto)
-    if info is not None:
-        # "host" is already a resolved IP.
-        fut = loop.create_future()
-        fut.set_result([info])
-        return fut
-    else:
-        return loop.getaddrinfo(host, port, family=family, type=type,
-                                proto=proto, flags=flags)
-
-
 def _run_until_complete_cb(fut):
     exc = fut._exception
-    if (isinstance(exc, BaseException)
-    and not isinstance(exc, Exception)):
+    if isinstance(exc, BaseException) and not isinstance(exc, Exception):
         # Issue #22429: run_forever() already finished, no need to
         # stop it.
         return
@@ -191,7 +175,7 @@ class Server(events.AbstractServer):
         self._waiters = []
 
     def __repr__(self):
-        return '<%s sockets=%r>' % (self.__class__.__name__, self.sockets)
+        return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
 
     def _attach(self):
         assert self.sockets is not None
@@ -220,13 +204,12 @@ class Server(events.AbstractServer):
             if not waiter.done():
                 waiter.set_result(waiter)
 
-    @coroutine
-    def wait_closed(self):
+    async def wait_closed(self):
         if self.sockets is None or self._waiters is None:
             return
         waiter = self._loop.create_future()
         self._waiters.append(waiter)
-        yield from waiter
+        await waiter
 
 
 class BaseEventLoop(events.AbstractEventLoop):
@@ -264,9 +247,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._asyncgens_shutdown_called = False
 
     def __repr__(self):
-        return ('<%s running=%s closed=%s debug=%s>'
-                % (self.__class__.__name__, self.is_running(),
-                   self.is_closed(), self.get_debug()))
+        return (
+            f'<{self.__class__.__name__} running={self.is_running()} '
+            f'closed={self.is_closed()} debug={self.get_debug()}>'
+        )
 
     def create_future(self):
         """Create a Future object attached to the loop."""
@@ -330,10 +314,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create write pipe transport."""
         raise NotImplementedError
 
-    @coroutine
-    def _make_subprocess_transport(self, protocol, args, shell,
-                                   stdin, stdout, stderr, bufsize,
-                                   extra=None, **kwargs):
+    async def _make_subprocess_transport(self, protocol, args, shell,
+                                         stdin, stdout, stderr, bufsize,
+                                         extra=None, **kwargs):
         """Create subprocess transport."""
         raise NotImplementedError
 
@@ -365,14 +348,13 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _asyncgen_firstiter_hook(self, agen):
         if self._asyncgens_shutdown_called:
             warnings.warn(
-                "asynchronous generator {!r} was scheduled after "
-                "loop.shutdown_asyncgens() call".format(agen),
+                f"asynchronous generator {agen!r} was scheduled after "
+                f"loop.shutdown_asyncgens() call",
                 ResourceWarning, source=self)
 
         self._asyncgens.add(agen)
 
-    @coroutine
-    def shutdown_asyncgens(self):
+    async def shutdown_asyncgens(self):
         """Shutdown all active asynchronous generators."""
         self._asyncgens_shutdown_called = True
 
@@ -384,17 +366,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         closing_agens = list(self._asyncgens)
         self._asyncgens.clear()
 
-        shutdown_coro = tasks.gather(
+        results = await tasks.gather(
             *[ag.aclose() for ag in closing_agens],
             return_exceptions=True,
             loop=self)
 
-        results = yield from shutdown_coro
         for result, agen in zip(results, closing_agens):
             if isinstance(result, Exception):
                 self.call_exception_handler({
-                    'message': 'an error occurred during closing of '
-                               'asynchronous generator {!r}'.format(agen),
+                    'message': f'an error occurred during closing of '
+                               f'asynchronous generator {agen!r}',
                     'exception': result,
                     'asyncgen': agen
                 })
@@ -500,7 +481,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def __del__(self):
         if not self.is_closed():
-            warnings.warn("unclosed event loop %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed event loop {self!r}", ResourceWarning,
                           source=self)
             if not self.is_running():
                 self.close()
@@ -578,12 +559,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         if (coroutines.iscoroutine(callback) or
                 coroutines.iscoroutinefunction(callback)):
             raise TypeError(
-                "coroutines cannot be used with {}()".format(method))
+                f"coroutines cannot be used with {method}()")
         if not callable(callback):
             raise TypeError(
-                'a callable object was expected by {}(), got {!r}'.format(
-                    method, callback))
-
+                f'a callable object was expected by {method}(), '
+                f'got {callback!r}')
 
     def _call_soon(self, callback, args):
         handle = events.Handle(callback, args, self)
@@ -620,7 +600,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._write_to_self()
         return handle
 
-    def run_in_executor(self, executor, func, *args):
+    async def run_in_executor(self, executor, func, *args):
         self._check_closed()
         if self._debug:
             self._check_callback(func, 'run_in_executor')
@@ -629,21 +609,22 @@ class BaseEventLoop(events.AbstractEventLoop):
             if executor is None:
                 executor = concurrent.futures.ThreadPoolExecutor()
                 self._default_executor = executor
-        return futures.wrap_future(executor.submit(func, *args), loop=self)
+        return await futures.wrap_future(
+            executor.submit(func, *args), loop=self)
 
     def set_default_executor(self, executor):
         self._default_executor = executor
 
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
-        msg = ["%s:%r" % (host, port)]
+        msg = [f"{host}:{port!r}"]
         if family:
-            msg.append('family=%r' % family)
+            msg.append(f'family={family!r}')
         if type:
-            msg.append('type=%r' % type)
+            msg.append(f'type={type!r}')
         if proto:
-            msg.append('proto=%r' % proto)
+            msg.append(f'proto={proto!r}')
         if flags:
-            msg.append('flags=%r' % flags)
+            msg.append(f'flags={flags!r}')
         msg = ', '.join(msg)
         logger.debug('Get address info %s', msg)
 
@@ -651,30 +632,31 @@ class BaseEventLoop(events.AbstractEventLoop):
         addrinfo = socket.getaddrinfo(host, port, family, type, proto, flags)
         dt = self.time() - t0
 
-        msg = ('Getting address info %s took %.3f ms: %r'
-               % (msg, dt * 1e3, addrinfo))
+        msg = f'Getting address info {msg} took {dt * 1e3:.3f}ms: {addrinfo!r}'
         if dt >= self.slow_callback_duration:
             logger.info(msg)
         else:
             logger.debug(msg)
         return addrinfo
 
-    def getaddrinfo(self, host, port, *,
-                    family=0, type=0, proto=0, flags=0):
+    async def getaddrinfo(self, host, port, *,
+                          family=0, type=0, proto=0, flags=0):
         if self._debug:
-            return self.run_in_executor(None, self._getaddrinfo_debug,
-                                        host, port, family, type, proto, flags)
+            getaddr_func = self._getaddrinfo_debug
         else:
-            return self.run_in_executor(None, socket.getaddrinfo,
-                                        host, port, family, type, proto, flags)
+            getaddr_func = socket.getaddrinfo
 
-    def getnameinfo(self, sockaddr, flags=0):
-        return self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
+        return await self.run_in_executor(
+            None, getaddr_func, host, port, family, type, proto, flags)
 
-    @coroutine
-    def create_connection(self, protocol_factory, host=None, port=None, *,
-                          ssl=None, family=0, proto=0, flags=0, sock=None,
-                          local_addr=None, server_hostname=None):
+    async def getnameinfo(self, sockaddr, flags=0):
+        return await self.run_in_executor(
+            None, socket.getnameinfo, sockaddr, flags)
+
+    async def create_connection(self, protocol_factory, host=None, port=None,
+                                *, ssl=None, family=0,
+                                proto=0, flags=0, sock=None,
+                                local_addr=None, server_hostname=None):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given Internet host and
@@ -710,25 +692,17 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
-            f1 = _ensure_resolved((host, port), family=family,
-                                  type=socket.SOCK_STREAM, proto=proto,
-                                  flags=flags, loop=self)
-            fs = [f1]
-            if local_addr is not None:
-                f2 = _ensure_resolved(local_addr, family=family,
-                                      type=socket.SOCK_STREAM, proto=proto,
-                                      flags=flags, loop=self)
-                fs.append(f2)
-            else:
-                f2 = None
-
-            yield from tasks.wait(fs, loop=self)
-
-            infos = f1.result()
+            infos = await self._ensure_resolved(
+                (host, port), family=family,
+                type=socket.SOCK_STREAM, proto=proto, flags=flags, loop=self)
             if not infos:
                 raise OSError('getaddrinfo() returned empty list')
-            if f2 is not None:
-                laddr_infos = f2.result()
+
+            if local_addr is not None:
+                laddr_infos = await self._ensure_resolved(
+                    local_addr, family=family,
+                    type=socket.SOCK_STREAM, proto=proto,
+                    flags=flags, loop=self)
                 if not laddr_infos:
                     raise OSError('getaddrinfo() returned empty list')
 
@@ -737,17 +711,18 @@ class BaseEventLoop(events.AbstractEventLoop):
                 try:
                     sock = socket.socket(family=family, type=type, proto=proto)
                     sock.setblocking(False)
-                    if f2 is not None:
+                    if local_addr is not None:
                         for _, _, _, _, laddr in laddr_infos:
                             try:
                                 sock.bind(laddr)
                                 break
                             except OSError as exc:
-                                exc = OSError(
-                                    exc.errno, 'error while '
-                                    'attempting to bind on address '
-                                    '{!r}: {}'.format(
-                                        laddr, exc.strerror.lower()))
+                                msg = (
+                                    f'error while attempting to bind on '
+                                    f'address {laddr!r}: '
+                                    f'{exc.strerror.lower()}'
+                                )
+                                exc = OSError(exc.errno, msg)
                                 exceptions.append(exc)
                         else:
                             sock.close()
@@ -755,7 +730,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                             continue
                     if self._debug:
                         logger.debug("connect %r to %r", sock, address)
-                    yield from self.sock_connect(sock, address)
+                    await self.sock_connect(sock, address)
                 except OSError as exc:
                     if sock is not None:
                         sock.close()
@@ -791,9 +766,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # Disallowing AF_UNIX in this method, breaks backwards
                 # compatibility.
                 raise ValueError(
-                    'A Stream Socket was expected, got {!r}'.format(sock))
+                    f'A Stream Socket was expected, got {sock!r}')
 
-        transport, protocol = yield from self._create_connection_transport(
+        transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
@@ -803,9 +778,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                          sock, host, port, transport, protocol)
         return transport, protocol
 
-    @coroutine
-    def _create_connection_transport(self, sock, protocol_factory, ssl,
-                                     server_hostname, server_side=False):
+    async def _create_connection_transport(self, sock, protocol_factory, ssl,
+                                           server_hostname, server_side=False):
 
         sock.setblocking(False)
 
@@ -820,24 +794,23 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport = self._make_socket_transport(sock, protocol, waiter)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
 
         return transport, protocol
 
-    @coroutine
-    def create_datagram_endpoint(self, protocol_factory,
-                                 local_addr=None, remote_addr=None, *,
-                                 family=0, proto=0, flags=0,
-                                 reuse_address=None, reuse_port=None,
-                                 allow_broadcast=None, sock=None):
+    async def create_datagram_endpoint(self, protocol_factory,
+                                       local_addr=None, remote_addr=None, *,
+                                       family=0, proto=0, flags=0,
+                                       reuse_address=None, reuse_port=None,
+                                       allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
             if not _is_dgram_socket(sock):
                 raise ValueError(
-                    'A UDP Socket was expected, got {!r}'.format(sock))
+                    f'A UDP Socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
                     family or proto or flags or
                     reuse_address or reuse_port or allow_broadcast):
@@ -846,11 +819,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                             family=family, proto=proto, flags=flags,
                             reuse_address=reuse_address, reuse_port=reuse_port,
                             allow_broadcast=allow_broadcast)
-                problems = ', '.join(
-                    '{}={}'.format(k, v) for k, v in opts.items() if v)
+                problems = ', '.join(f'{k}={v}' for k, v in opts.items() if v)
                 raise ValueError(
-                    'socket modifier keyword arguments can not be used '
-                    'when sock is specified. ({})'.format(problems))
+                    f'socket modifier keyword arguments can not be used '
+                    f'when sock is specified. ({problems})')
             sock.setblocking(False)
             r_addr = None
         else:
@@ -872,7 +844,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         assert isinstance(addr, tuple) and len(addr) == 2, (
                             '2-tuple is expected')
 
-                        infos = yield from _ensure_resolved(
+                        infos = await self._ensure_resolved(
                             addr, family=family, type=socket.SOCK_DGRAM,
                             proto=proto, flags=flags, loop=self)
                         if not infos:
@@ -918,7 +890,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if local_addr:
                         sock.bind(local_address)
                     if remote_addr:
-                        yield from self.sock_connect(sock, remote_address)
+                        await self.sock_connect(sock, remote_address)
                         r_addr = remote_address
                 except OSError as exc:
                     if sock is not None:
@@ -948,36 +920,46 @@ class BaseEventLoop(events.AbstractEventLoop):
                              remote_addr, transport, protocol)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
 
         return transport, protocol
 
-    @coroutine
-    def _create_server_getaddrinfo(self, host, port, family, flags):
-        infos = yield from _ensure_resolved((host, port), family=family,
+    async def _ensure_resolved(self, address, *,
+                               family=0, type=socket.SOCK_STREAM,
+                               proto=0, flags=0, loop):
+        host, port = address[:2]
+        info = _ipaddr_info(host, port, family, type, proto)
+        if info is not None:
+            # "host" is already a resolved IP.
+            return [info]
+        else:
+            return await loop.getaddrinfo(host, port, family=family, type=type,
+                                          proto=proto, flags=flags)
+
+    async def _create_server_getaddrinfo(self, host, port, family, flags):
+        infos = await self._ensure_resolved((host, port), family=family,
                                             type=socket.SOCK_STREAM,
                                             flags=flags, loop=self)
         if not infos:
-            raise OSError('getaddrinfo({!r}) returned empty list'.format(host))
+            raise OSError(f'getaddrinfo({host!r}) returned empty list')
         return infos
 
-    @coroutine
-    def create_server(self, protocol_factory, host=None, port=None,
-                      *,
-                      family=socket.AF_UNSPEC,
-                      flags=socket.AI_PASSIVE,
-                      sock=None,
-                      backlog=100,
-                      ssl=None,
-                      reuse_address=None,
-                      reuse_port=None):
+    async def create_server(self, protocol_factory, host=None, port=None,
+                            *,
+                            family=socket.AF_UNSPEC,
+                            flags=socket.AI_PASSIVE,
+                            sock=None,
+                            backlog=100,
+                            ssl=None,
+                            reuse_address=None,
+                            reuse_port=None):
         """Create a TCP server.
 
-        The host parameter can be a string, in that case the TCP server is bound
-        to host and port.
+        The host parameter can be a string, in that case the TCP server is
+        bound to host and port.
 
         The host parameter can also be a sequence of strings and in that case
         the TCP server is bound to all hosts of the sequence. If a host
@@ -1011,7 +993,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             fs = [self._create_server_getaddrinfo(host, port, family=family,
                                                   flags=flags)
                   for host in hosts]
-            infos = yield from tasks.gather(*fs, loop=self)
+            infos = await tasks.gather(*fs, loop=self)
             infos = set(itertools.chain.from_iterable(infos))
 
             completed = False
@@ -1055,8 +1037,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if sock is None:
                 raise ValueError('Neither host/port nor sock were specified')
             if not _is_stream_socket(sock):
-                raise ValueError(
-                    'A Stream Socket was expected, got {!r}'.format(sock))
+                raise ValueError(f'A Stream Socket was expected, got {sock!r}')
             sockets = [sock]
 
         server = Server(self, sockets)
@@ -1068,8 +1049,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             logger.info("%r is serving", server)
         return server
 
-    @coroutine
-    def connect_accepted_socket(self, protocol_factory, sock, *, ssl=None):
+    async def connect_accepted_socket(self, protocol_factory, sock,
+                                      *, ssl=None):
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of
@@ -1079,10 +1060,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         returns a (transport, protocol) pair.
         """
         if not _is_stream_socket(sock):
-            raise ValueError(
-                'A Stream Socket was expected, got {!r}'.format(sock))
+            raise ValueError(f'A Stream Socket was expected, got {sock!r}')
 
-        transport, protocol = yield from self._create_connection_transport(
+        transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
@@ -1091,14 +1071,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             logger.debug("%r handled: (%r, %r)", sock, transport, protocol)
         return transport, protocol
 
-    @coroutine
-    def connect_read_pipe(self, protocol_factory, pipe):
+    async def connect_read_pipe(self, protocol_factory, pipe):
         protocol = protocol_factory()
         waiter = self.create_future()
         transport = self._make_read_pipe_transport(pipe, protocol, waiter)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
@@ -1108,14 +1087,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                          pipe.fileno(), transport, protocol)
         return transport, protocol
 
-    @coroutine
-    def connect_write_pipe(self, protocol_factory, pipe):
+    async def connect_write_pipe(self, protocol_factory, pipe):
         protocol = protocol_factory()
         waiter = self.create_future()
         transport = self._make_write_pipe_transport(pipe, protocol, waiter)
 
         try:
-            yield from waiter
+            await waiter
         except:
             transport.close()
             raise
@@ -1128,21 +1106,23 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _log_subprocess(self, msg, stdin, stdout, stderr):
         info = [msg]
         if stdin is not None:
-            info.append('stdin=%s' % _format_pipe(stdin))
+            info.append(f'stdin={_format_pipe(stdin)}')
         if stdout is not None and stderr == subprocess.STDOUT:
-            info.append('stdout=stderr=%s' % _format_pipe(stdout))
+            info.append(f'stdout=stderr={_format_pipe(stdout)}')
         else:
             if stdout is not None:
-                info.append('stdout=%s' % _format_pipe(stdout))
+                info.append(f'stdout={_format_pipe(stdout)}')
             if stderr is not None:
-                info.append('stderr=%s' % _format_pipe(stderr))
+                info.append(f'stderr={_format_pipe(stderr)}')
         logger.debug(' '.join(info))
 
-    @coroutine
-    def subprocess_shell(self, protocol_factory, cmd, *, stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         universal_newlines=False, shell=True, bufsize=0,
-                         **kwargs):
+    async def subprocess_shell(self, protocol_factory, cmd, *,
+                               stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               universal_newlines=False,
+                               shell=True, bufsize=0,
+                               **kwargs):
         if not isinstance(cmd, (bytes, str)):
             raise ValueError("cmd must be a string")
         if universal_newlines:
@@ -1157,17 +1137,16 @@ class BaseEventLoop(events.AbstractEventLoop):
             # (password) and may be too long
             debug_log = 'run shell command %r' % cmd
             self._log_subprocess(debug_log, stdin, stdout, stderr)
-        transport = yield from self._make_subprocess_transport(
+        transport = await self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
         if self._debug:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
-    @coroutine
-    def subprocess_exec(self, protocol_factory, program, *args,
-                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE, universal_newlines=False,
-                        shell=False, bufsize=0, **kwargs):
+    async def subprocess_exec(self, protocol_factory, program, *args,
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, universal_newlines=False,
+                              shell=False, bufsize=0, **kwargs):
         if universal_newlines:
             raise ValueError("universal_newlines must be False")
         if shell:
@@ -1177,16 +1156,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         popen_args = (program,) + args
         for arg in popen_args:
             if not isinstance(arg, (str, bytes)):
-                raise TypeError("program arguments must be "
-                                "a bytes or text string, not %s"
-                                % type(arg).__name__)
+                raise TypeError(
+                    f"program arguments must be a bytes or text string, "
+                    f"not {type(arg).__name__}")
         protocol = protocol_factory()
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
-            debug_log = 'execute program %r' % program
+            debug_log = f'execute program {program!r}'
             self._log_subprocess(debug_log, stdin, stdout, stderr)
-        transport = yield from self._make_subprocess_transport(
+        transport = await self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
         if self._debug:
@@ -1211,8 +1190,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         documentation for details about context).
         """
         if handler is not None and not callable(handler):
-            raise TypeError('A callable object or None is expected, '
-                            'got {!r}'.format(handler))
+            raise TypeError(f'A callable object or None is expected, '
+                            f'got {handler!r}')
         self._exception_handler = handler
 
     def default_exception_handler(self, context):
@@ -1240,10 +1219,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             exc_info = False
 
-        if ('source_traceback' not in context
-        and self._current_handle is not None
-        and self._current_handle._source_traceback):
-            context['handle_traceback'] = self._current_handle._source_traceback
+        if ('source_traceback' not in context and
+                self._current_handle is not None and
+                self._current_handle._source_traceback):
+            context['handle_traceback'] = \
+                self._current_handle._source_traceback
 
         log_lines = [message]
         for key in sorted(context):
@@ -1260,7 +1240,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 value += tb.rstrip()
             else:
                 value = repr(value)
-            log_lines.append('{}: {}'.format(key, value))
+            log_lines.append(f'{key}: {value}')
 
         logger.error('\n'.join(log_lines), exc_info=exc_info)
 
@@ -1448,18 +1428,19 @@ class BaseEventLoop(events.AbstractEventLoop):
         if enabled:
             if current_wrapper not in (None, wrapper):
                 warnings.warn(
-                    "loop.set_debug(True): cannot set debug coroutine "
-                    "wrapper; another wrapper is already set %r" %
-                    current_wrapper, RuntimeWarning)
+                    f"loop.set_debug(True): cannot set debug coroutine "
+                    f"wrapper; another wrapper is already set "
+                    f"{current_wrapper!r}",
+                    RuntimeWarning)
             else:
                 set_wrapper(wrapper)
                 self._coroutine_wrapper_set = True
         else:
             if current_wrapper not in (None, wrapper):
                 warnings.warn(
-                    "loop.set_debug(False): cannot unset debug coroutine "
-                    "wrapper; another wrapper was set %r" %
-                    current_wrapper, RuntimeWarning)
+                    f"loop.set_debug(False): cannot unset debug coroutine "
+                    f"wrapper; another wrapper was set {current_wrapper!r}",
+                    RuntimeWarning)
             else:
                 set_wrapper(None)
                 self._coroutine_wrapper_set = False

@@ -159,6 +159,24 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 562: Customization of access to module attributes
+-----------------------------------------------------
+
+It is sometimes convenient to customize or otherwise have control over access
+to module attributes. A typical example is managing deprecation warnings.
+Typical workarounds are assigning ``__class__`` of a module object to
+a custom subclass of :class:`types.ModuleType` or replacing the ``sys.modules``
+item with a custom wrapper instance. This procedure is now simplified by
+recognizing ``__getattr__`` defined directly in a module that would act like
+a normal ``__getattr__`` method, except that it will be defined on module
+*instances*.
+
+.. seealso::
+
+    :pep:`562` -- Module ``__getattr__`` and ``__dir__``
+       PEP written and implemented by Ivan Levkivskyi
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
@@ -185,17 +203,58 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+PEP 540: Add a new UTF-8 mode
+-----------------------------
+
+Add a new UTF-8 mode to ignore the locale, use the UTF-8 encoding, and change
+:data:`sys.stdin` and :data:`sys.stdout` error handlers to ``surrogateescape``.
+This mode is enabled by default in the POSIX locale, but otherwise disabled by
+default.
+
+The new :option:`-X` ``utf8`` command line option and :envvar:`PYTHONUTF8`
+environment variable are added to control the UTF-8 mode.
+
+.. seealso::
+
+    :pep:`540` -- Add a new UTF-8 mode
+       PEP written and implemented by Victor Stinner
+
+
 New Development Mode: -X dev
 ----------------------------
 
-Add a new "development mode": ``-X dev`` command line option to enable debug
-checks at runtime.
+Add a new "development mode": :option:`-X` ``dev`` command line option and
+:envvar:`PYTHONDEVMODE` environment variable to enable CPython's "development
+mode", introducing additional runtime checks which are too expensive to be
+enabled by default. See :option:`-X` ``dev`` documentation for the effects of
+the development mode.
 
-In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
-default -X faulthandler ...``, except that the PYTHONMALLOC environment
-variable is not set in practice.
+Hash-based pycs
+---------------
 
-See :option:`-X` ``dev`` for the details.
+Python has traditionally checked the up-to-dateness of bytecode cache files
+(i.e., ``.pyc`` files) by comparing the source metadata (last-modified timestamp
+and size) with source metadata saved in the cache file header when it was
+generated. While effective, this invalidation method has its drawbacks. When
+filesystem timestamps are too coarse, Python can miss source updates, leading to
+user confusion. Additionally, having a timestamp in the cache file is
+problematic for `build reproduciblity <https://reproducible-builds.org/>`_ and
+content-based build systems.
+
+:pep:`552` extends the pyc format to allow the hash of the source file to be
+used for invalidation instead of the source timestamp. Such ``.pyc`` files are
+called "hash-based". By default, Python still uses timestamp-based invalidation
+and does not generate hash-based ``.pyc`` files at runtime. Hash-based ``.pyc``
+files may be generated with :mod:`py_compile` or :mod:`compileall`.
+
+Hash-based ``.pyc`` files come in two variants: checked and unchecked. Python
+validates checked hash-based ``.pyc`` files against the corresponding source
+files at runtime but doesn't do so for unchecked hash-based pycs. Unchecked
+hash-based ``.pyc`` files are a useful performance optimization for environments
+where a system external to Python (e.g., the build system) is responsible for
+keeping ``.pyc`` files up-to-date.
+
+See :ref:`pyc-invalidation` for more information.
 
 
 Other Language Changes
@@ -265,8 +324,9 @@ is a list of strings, not bytes.
 contextlib
 ----------
 
-:func:`contextlib.asynccontextmanager` has been added. (Contributed by
-Jelle Zijlstra in :issue:`29679`.)
+:func:`~contextlib.asynccontextmanager` and
+:class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
+by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
 
 cProfile
 --------
@@ -328,6 +388,10 @@ locale
 Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
+The :func:`locale.getpreferredencoding` function now always returns ``'UTF-8'``
+on Android or in the UTF-8 mode  (:option:`-X` ``utf8`` option), the locale and
+the *do_setlocale* argument are ignored.
 
 math
 ----
@@ -454,6 +518,29 @@ Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
+warnings
+--------
+
+The initialization of the default warnings filters has changed as follows:
+
+* warnings enabled via command line options (including those for :option:`-b`
+  and the new CPython-specific ``-X dev`` option) are always passed to the
+  warnings machinery via the ``sys.warnoptions`` attribute.
+* warnings filters enabled via the command line or the environment now have the
+  following precedence order:
+
+     * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
+     * any filters specified with :option:`-W`
+     * any filters specified with :envvar:`PYTHONWARNINGS`
+     * any other CPython specific filters (e.g. the ``default`` filter added
+       for the new ``-X dev`` mode)
+     * any implicit filters defined directly by the warnings machinery
+* in CPython debug builds, all warnings are now displayed by default (the
+  implicit filter list is empty)
+
+(Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
+:issue:`32043`, and :issue:`32230`)
+
 xml.etree
 ---------
 
@@ -511,6 +598,9 @@ Optimizations
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
   and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
   heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
+
+* Constant folding is moved from peephole optimizer to new AST optimizer.
+  (Contributed by Eugene Toder and INADA Naoki in :issue:`29469`)
 
 Build and C API Changes
 =======================
@@ -827,6 +917,12 @@ Other CPython implementation changes
   either in embedding applications, or in CPython itself.
   (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
 
+* Due to changes in the way the default warnings filters are configured,
+  setting ``Py_BytesWarningFlag`` to a value greater than one is no longer
+  sufficient to both emit ``BytesWarning`` messages and have them converted
+  to exceptions. Instead, the flag must be set (to cause the warnings to be
+  emitted in the first place), and an explicit ``error::BytesWarning``
+  warnings filter added to convert them to exceptions.
 
 Documentation
 =============

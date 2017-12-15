@@ -4,7 +4,7 @@ A proactor is a "notify-on-completion" multiplexer.  Currently a
 proactor is only implemented on Windows with IOCP.
 """
 
-__all__ = ['BaseProactorEventLoop']
+__all__ = 'BaseProactorEventLoop',
 
 import socket
 import warnings
@@ -50,17 +50,16 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         elif self._closing:
             info.append('closing')
         if self._sock is not None:
-            info.append('fd=%s' % self._sock.fileno())
+            info.append(f'fd={self._sock.fileno()}')
         if self._read_fut is not None:
-            info.append('read=%s' % self._read_fut)
+            info.append(f'read={self._read_fut!r}')
         if self._write_fut is not None:
-            info.append("write=%r" % self._write_fut)
+            info.append(f'write={self._write_fut!r}')
         if self._buffer:
-            bufsize = len(self._buffer)
-            info.append('write_bufsize=%s' % bufsize)
+            info.append(f'write_bufsize={len(self._buffer)}')
         if self._eof_written:
             info.append('EOF written')
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def _set_extra(self, sock):
         self._extra['pipe'] = sock
@@ -87,7 +86,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def __del__(self):
         if self._sock is not None:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self.close()
 
@@ -227,9 +226,9 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            msg = ("data argument must be a bytes-like object, not '%s'" %
-                   type(data).__name__)
-            raise TypeError(msg)
+            raise TypeError(
+                f"data argument must be a bytes-like object, "
+                f"not {type(data).__name__}")
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
 
@@ -347,12 +346,14 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
 
     def _set_extra(self, sock):
         self._extra['socket'] = sock
+
         try:
             self._extra['sockname'] = sock.getsockname()
         except (socket.error, AttributeError):
             if self._loop.get_debug():
-                logger.warning("getsockname() failed on %r",
-                             sock, exc_info=True)
+                logger.warning(
+                    "getsockname() failed on %r", sock, exc_info=True)
+
         if 'peername' not in self._extra:
             try:
                 self._extra['peername'] = sock.getpeername()
@@ -431,20 +432,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         # Close the event loop
         super().close()
 
-    def sock_recv(self, sock, n):
-        return self._proactor.recv(sock, n)
+    async def sock_recv(self, sock, n):
+        return await self._proactor.recv(sock, n)
 
-    def sock_recv_into(self, sock, buf):
-        return self._proactor.recv_into(sock, buf)
+    async def sock_recv_into(self, sock, buf):
+        return await self._proactor.recv_into(sock, buf)
 
-    def sock_sendall(self, sock, data):
-        return self._proactor.send(sock, data)
+    async def sock_sendall(self, sock, data):
+        return await self._proactor.send(sock, data)
 
-    def sock_connect(self, sock, address):
-        return self._proactor.connect(sock, address)
+    async def sock_connect(self, sock, address):
+        return await self._proactor.connect(sock, address)
 
-    def sock_accept(self, sock):
-        return self._proactor.accept(sock)
+    async def sock_accept(self, sock):
+        return await self._proactor.accept(sock)
 
     def _close_self_pipe(self):
         if self._self_reading_future is not None:

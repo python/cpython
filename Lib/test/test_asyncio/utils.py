@@ -26,12 +26,12 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import base_events
-from . import events
-from . import futures
-from . import tasks
-from .coroutines import coroutine
-from .log import logger
+from asyncio import base_events
+from asyncio import events
+from asyncio import format_helpers
+from asyncio import futures
+from asyncio import tasks
+from asyncio.log import logger
 from test import support
 
 
@@ -43,8 +43,7 @@ def dummy_ssl_context():
 
 
 def run_briefly(loop):
-    @coroutine
-    def once():
+    async def once():
         pass
     gen = once()
     t = loop.create_task(gen)
@@ -431,7 +430,7 @@ class MockPattern(str):
 
 
 def get_function_source(func):
-    source = events._get_function_source(func)
+    source = format_helpers._get_function_source(func)
     if source is None:
         raise ValueError("unable to get the source of %r" % (func,))
     return source

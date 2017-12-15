@@ -173,8 +173,6 @@ copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
    new constant (c1, c2, ... cn) can be appended.
    Called with codestr pointing to the first LOAD_CONST.
    Bails out with no change if one or more of the LOAD_CONSTs is missing.
-   Also works for BUILD_LIST and BUILT_SET when followed by an "in" or "not in"
-   test; for BUILD_SET it assembles a frozenset rather than a tuple.
 */
 static Py_ssize_t
 fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
@@ -198,166 +196,10 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
         PyTuple_SET_ITEM(newconst, i, constant);
     }
 
-    /* If it's a BUILD_SET, use the PyTuple we just built to create a
-       PyFrozenSet, and use that as the constant instead: */
-    if (opcode == BUILD_SET) {
-        Py_SETREF(newconst, PyFrozenSet_New(newconst));
-        if (newconst == NULL) {
-            return -1;
-        }
-    }
-
     /* Append folded constant onto consts */
     len_consts = PyList_GET_SIZE(consts);
     if (PyList_Append(consts, newconst)) {
         Py_DECREF(newconst);
-        return -1;
-    }
-    Py_DECREF(newconst);
-
-    return copy_op_arg(codestr, c_start, LOAD_CONST, len_consts, opcode_end);
-}
-
-/* Replace LOAD_CONST c1, LOAD_CONST c2, BINOP
-   with    LOAD_CONST binop(c1,c2)
-   The consts table must still be in list form so that the
-   new constant can be appended.
-   Called with codestr pointing to the BINOP.
-   Abandons the transformation if the folding fails (i.e.  1+'a').
-   If the new constant is a sequence, only folds when the size
-   is below a threshold value.  That keeps pyc files from
-   becoming large in the presence of code like:  (None,)*1000.
-*/
-static Py_ssize_t
-fold_binops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
-                         Py_ssize_t opcode_end, unsigned char opcode,
-                         PyObject *consts, PyObject **objs)
-{
-    PyObject *newconst, *v, *w;
-    Py_ssize_t len_consts, size;
-
-    /* Pre-conditions */
-    assert(PyList_CheckExact(consts));
-    len_consts = PyList_GET_SIZE(consts);
-
-    /* Create new constant */
-    v = objs[0];
-    w = objs[1];
-    switch (opcode) {
-        case BINARY_POWER:
-            newconst = PyNumber_Power(v, w, Py_None);
-            break;
-        case BINARY_MULTIPLY:
-            newconst = PyNumber_Multiply(v, w);
-            break;
-        case BINARY_TRUE_DIVIDE:
-            newconst = PyNumber_TrueDivide(v, w);
-            break;
-        case BINARY_FLOOR_DIVIDE:
-            newconst = PyNumber_FloorDivide(v, w);
-            break;
-        case BINARY_MODULO:
-            newconst = PyNumber_Remainder(v, w);
-            break;
-        case BINARY_ADD:
-            newconst = PyNumber_Add(v, w);
-            break;
-        case BINARY_SUBTRACT:
-            newconst = PyNumber_Subtract(v, w);
-            break;
-        case BINARY_SUBSCR:
-            newconst = PyObject_GetItem(v, w);
-            break;
-        case BINARY_LSHIFT:
-            newconst = PyNumber_Lshift(v, w);
-            break;
-        case BINARY_RSHIFT:
-            newconst = PyNumber_Rshift(v, w);
-            break;
-        case BINARY_AND:
-            newconst = PyNumber_And(v, w);
-            break;
-        case BINARY_XOR:
-            newconst = PyNumber_Xor(v, w);
-            break;
-        case BINARY_OR:
-            newconst = PyNumber_Or(v, w);
-            break;
-        default:
-            /* Called with an unknown opcode */
-            PyErr_Format(PyExc_SystemError,
-                 "unexpected binary operation %d on a constant",
-                     opcode);
-            return -1;
-    }
-    if (newconst == NULL) {
-        if(!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            PyErr_Clear();
-        }
-        return -1;
-    }
-    size = PyObject_Size(newconst);
-    if (size == -1) {
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            return -1;
-        }
-        PyErr_Clear();
-    } else if (size > 20) {
-        Py_DECREF(newconst);
-        return -1;
-    }
-
-    /* Append folded constant into consts table */
-    if (PyList_Append(consts, newconst)) {
-        Py_DECREF(newconst);
-        return -1;
-    }
-    Py_DECREF(newconst);
-
-    return copy_op_arg(codestr, c_start, LOAD_CONST, len_consts, opcode_end);
-}
-
-static Py_ssize_t
-fold_unaryops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
-                           Py_ssize_t opcode_end, unsigned char opcode,
-                           PyObject *consts, PyObject *v)
-{
-    PyObject *newconst;
-    Py_ssize_t len_consts;
-
-    /* Pre-conditions */
-    assert(PyList_CheckExact(consts));
-    len_consts = PyList_GET_SIZE(consts);
-
-    /* Create new constant */
-    switch (opcode) {
-        case UNARY_NEGATIVE:
-            newconst = PyNumber_Negative(v);
-            break;
-        case UNARY_INVERT:
-            newconst = PyNumber_Invert(v);
-            break;
-        case UNARY_POSITIVE:
-            newconst = PyNumber_Positive(v);
-            break;
-        default:
-            /* Called with an unknown opcode */
-            PyErr_Format(PyExc_SystemError,
-                 "unexpected unary operation %d on a constant",
-                     opcode);
-            return -1;
-    }
-    if (newconst == NULL) {
-        if(!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            PyErr_Clear();
-        }
-        return -1;
-    }
-
-    /* Append folded constant into consts table */
-    if (PyList_Append(consts, newconst)) {
-        Py_DECREF(newconst);
-        PyErr_Clear();
         return -1;
     }
     Py_DECREF(newconst);
@@ -492,21 +334,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         in_consts = 0;
 
         switch (opcode) {
-                /* not a is b -->  a is not b
-                   not a in b -->  a not in b
-                   not a is not b -->  a is b
-                   not a not in b -->  a in b
-                */
-            case COMPARE_OP:
-                j = get_arg(codestr, i);
-                if (j < 6 || j > 9 ||
-                    nextop != UNARY_NOT ||
-                    !ISBASICBLOCK(blocks, op_start, i + 1))
-                    break;
-                codestr[i] = PACKOPARG(opcode, j^1);
-                fill_nops(codestr, i + 1, nexti + 1);
-                break;
-
                 /* Skip over LOAD_CONST trueconst
                    POP_JUMP_IF_FALSE xx.  This improves
                    "while 1" performance.  */
@@ -520,24 +347,15 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 CONST_STACK_POP(1);
                 break;
 
-                /* Try to fold tuples of constants (includes a case for lists
-                   and sets which are only used for "in" and "not in" tests).
+                /* Try to fold tuples of constants.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
                    Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
             case BUILD_TUPLE:
-            case BUILD_LIST:
-            case BUILD_SET:
                 j = get_arg(codestr, i);
                 if (j > 0 && CONST_STACK_LEN() >= j) {
                     h = lastn_const_start(codestr, op_start, j);
-                    if ((opcode == BUILD_TUPLE &&
-                          ISBASICBLOCK(blocks, h, op_start)) ||
-                         ((opcode == BUILD_LIST || opcode == BUILD_SET) &&
-                          ((nextop==COMPARE_OP &&
-                          (_Py_OPARG(codestr[nexti]) == PyCmp_IN ||
-                           _Py_OPARG(codestr[nexti]) == PyCmp_NOT_IN)) ||
-                          nextop == GET_ITER) && ISBASICBLOCK(blocks, h, i + 1))) {
+                    if (ISBASICBLOCK(blocks, h, op_start)) {
                         h = fold_tuple_on_constants(codestr, h, i + 1, opcode,
                                                     consts, CONST_STACK_LASTN(j), j);
                         if (h >= 0) {
@@ -549,8 +367,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 }
                 if (nextop != UNPACK_SEQUENCE  ||
                     !ISBASICBLOCK(blocks, op_start, i + 1) ||
-                    j != get_arg(codestr, nexti) ||
-                    opcode == BUILD_SET)
+                    j != get_arg(codestr, nexti))
                     break;
                 if (j < 2) {
                     fill_nops(codestr, op_start, nexti + 1);
@@ -563,52 +380,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                     codestr[op_start + 1] = PACKOPARG(ROT_TWO, 0);
                     fill_nops(codestr, op_start + 2, nexti + 1);
                     CONST_STACK_RESET();
-                }
-                break;
-
-                /* Fold binary ops on constants.
-                   LOAD_CONST c1 LOAD_CONST c2 BINOP --> LOAD_CONST binop(c1,c2) */
-            case BINARY_POWER:
-            case BINARY_MULTIPLY:
-            case BINARY_TRUE_DIVIDE:
-            case BINARY_FLOOR_DIVIDE:
-            case BINARY_MODULO:
-            case BINARY_ADD:
-            case BINARY_SUBTRACT:
-            case BINARY_SUBSCR:
-            case BINARY_LSHIFT:
-            case BINARY_RSHIFT:
-            case BINARY_AND:
-            case BINARY_XOR:
-            case BINARY_OR:
-                if (CONST_STACK_LEN() < 2)
-                    break;
-                h = lastn_const_start(codestr, op_start, 2);
-                if (ISBASICBLOCK(blocks, h, op_start)) {
-                    h = fold_binops_on_constants(codestr, h, i + 1, opcode,
-                                                 consts, CONST_STACK_LASTN(2));
-                    if (h >= 0) {
-                        CONST_STACK_POP(2);
-                        CONST_STACK_PUSH_OP(h);
-                    }
-                }
-                break;
-
-                /* Fold unary ops on constants.
-                   LOAD_CONST c1  UNARY_OP --> LOAD_CONST unary_op(c) */
-            case UNARY_NEGATIVE:
-            case UNARY_INVERT:
-            case UNARY_POSITIVE:
-                if (CONST_STACK_LEN() < 1)
-                    break;
-                h = lastn_const_start(codestr, op_start, 1);
-                if (ISBASICBLOCK(blocks, h, op_start)) {
-                    h = fold_unaryops_on_constants(codestr, h, i + 1, opcode,
-                                                   consts, *CONST_STACK_LASTN(1));
-                    if (h >= 0) {
-                        CONST_STACK_POP(1);
-                        CONST_STACK_PUSH_OP(h);
-                    }
                 }
                 break;
 
