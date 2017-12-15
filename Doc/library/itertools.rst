@@ -32,7 +32,7 @@ operator can be mapped across two vectors to form an efficient dot-product:
 ``sum(map(operator.mul, vector1, vector2))``.
 
 
-**Infinite Iterators:**
+**Infinite iterators:**
 
 ==================  =================       =================================================               =========================================
 Iterator            Arguments               Results                                                         Example
@@ -61,7 +61,7 @@ Iterator                        Arguments                       Results         
 :func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
 ============================    ============================    =================================================   =============================================================
 
-**Combinatoric generators:**
+**Combinatoric iterators:**
 
 ==============================================   ====================       =============================================================
 Iterator                                         Arguments                  Results
