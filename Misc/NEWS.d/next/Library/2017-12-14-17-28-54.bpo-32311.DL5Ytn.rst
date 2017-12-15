@@ -1,0 +1,1 @@
+Implement asyncio.create_task(coro) shortcut

@@ -9,9 +9,9 @@ import types
 
 from collections.abc import Awaitable, Coroutine
 
-from . import constants
-from . import events
 from . import base_futures
+from . import constants
+from . import format_helpers
 from .log import logger
 
 
@@ -48,7 +48,7 @@ class CoroWrapper:
         assert inspect.isgenerator(gen) or inspect.iscoroutine(gen), gen
         self.gen = gen
         self.func = func  # Used to unwrap @coroutine decorator
-        self._source_traceback = events.extract_stack(sys._getframe(1))
+        self._source_traceback = format_helpers.extract_stack(sys._getframe(1))
         self.__name__ = getattr(gen, '__name__', None)
         self.__qualname__ = getattr(gen, '__qualname__', None)
 
@@ -243,7 +243,7 @@ def _format_coroutine(coro):
         func = coro
 
     if coro_name is None:
-        coro_name = events._format_callback(func, (), {})
+        coro_name = format_helpers._format_callback(func, (), {})
 
     try:
         coro_code = coro.gi_code
@@ -260,7 +260,7 @@ def _format_coroutine(coro):
     if (isinstance(coro, CoroWrapper) and
             not inspect.isgeneratorfunction(coro.func) and
             coro.func is not None):
-        source = events._get_function_source(coro.func)
+        source = format_helpers._get_function_source(coro.func)
         if source is not None:
             filename, lineno = source
         if coro_frame is None:
