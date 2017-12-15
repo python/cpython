@@ -594,6 +594,10 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(''.join, types.BuiltinMethodType)
         self.assertIsInstance([].append, types.BuiltinMethodType)
 
+        self.assertIsInstance(int.__dict__['from_bytes'], types.ClassMethodDescriptorType)
+        self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
+        self.assertIsInstance(int.__new__, types.BuiltinMethodType)
+
 
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
