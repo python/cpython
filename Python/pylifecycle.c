@@ -607,13 +607,13 @@ _Py_SetLocaleFromEnv(int category)
  */
 
 _PyInitError
-_Py_InitializeCore(const _PyCoreConfig *config)
+_Py_InitializeCore(const _PyCoreConfig *core_config)
 {
+    assert(core_config != NULL);
+
     PyInterpreterState *interp;
     PyThreadState *tstate;
     PyObject *bimod, *sysmod, *pstderr;
-    _PyCoreConfig core_config = _PyCoreConfig_INIT;
-    _PyMainInterpreterConfig preinit_config = _PyMainInterpreterConfig_INIT;
     _PyInitError err;
 
     err = _PyRuntime_Initialize();
@@ -621,11 +621,7 @@ _Py_InitializeCore(const _PyCoreConfig *config)
         return err;
     }
 
-    if (config != NULL) {
-        core_config = *config;
-    }
-
-    if (_PyMem_SetupAllocators(core_config.allocator) < 0) {
+    if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
         return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
     }
 
@@ -655,12 +651,12 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     _emit_stderr_warning_for_legacy_locale();
 #endif
 
-    err = _Py_HashRandomization_Init(&core_config);
+    err = _Py_HashRandomization_Init(core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    if (!core_config.use_hash_seed || core_config.hash_seed) {
+    if (!core_config->use_hash_seed || core_config->hash_seed) {
         /* Random or non-zero hash seed */
         Py_HashRandomizationFlag = 1;
     }
@@ -671,10 +667,13 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     }
 
     interp = PyInterpreterState_New();
-    if (interp == NULL)
+    if (interp == NULL) {
         return _Py_INIT_ERR("can't make main interpreter");
-    interp->core_config = core_config;
-    interp->config = preinit_config;
+    }
+
+    if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
+        return _Py_INIT_ERR("failed to copy core config");
+    }
 
     tstate = PyThreadState_New(interp);
     if (tstate == NULL)
@@ -779,62 +778,6 @@ _Py_InitializeCore(const _PyCoreConfig *config)
     return _Py_INIT_OK();
 }
 
-/* Read configuration settings from standard locations
- *
- * This function doesn't make any changes to the interpreter state - it
- * merely populates any missing configuration settings. This allows an
- * embedding application to completely override a config option by
- * setting it before calling this function, or else modify the default
- * setting before passing the fully populated config to Py_EndInitialization.
- *
- * More advanced selective initialization tricks are possible by calling
- * this function multiple times with various preconfigured settings.
- */
-
-_PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config)
-{
-    if (config->program_name == NULL) {
-#ifdef MS_WINDOWS
-        const wchar_t *program_name = L"python";
-#else
-        const wchar_t *program_name = L"python3";
-#endif
-        config->program_name = _PyMem_RawWcsdup(program_name);
-        if (config->program_name == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    return _Py_INIT_OK();
-}
-
-void
-_PyCoreConfig_Clear(_PyCoreConfig *config)
-{
-#define CLEAR(ATTR) \
-    do { \
-        PyMem_RawFree(ATTR); \
-        ATTR = NULL; \
-    } while (0)
-
-    CLEAR(config->module_search_path_env);
-    CLEAR(config->home);
-    CLEAR(config->program_name);
-#undef CLEAR
-}
-
-
-void
-_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
-{
-    Py_CLEAR(config->argv);
-    Py_CLEAR(config->module_search_path);
-    Py_CLEAR(config->warnoptions);
-    Py_CLEAR(config->xoptions);
-}
-
-
 /* Update interpreter state based on supplied configuration settings
  *
  * After calling this function, most of the restrictions on the interpreter
@@ -869,7 +812,9 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_ERR("failed to get interpreter");
 
     /* Now finish configuring the main interpreter */
-    interp->config = *config;
+    if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
+        return _Py_INIT_ERR("failed to copy main interpreter config");
+    }
 
     if (interp->core_config._disable_importlib) {
         /* Special mode for freeze_importlib: run with no import system
@@ -906,8 +851,9 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         }
     }
 
-    if (_PySys_EndInit(interp->sysdict) < 0)
+    if (_PySys_EndInit(interp->sysdict) < 0) {
         return _Py_INIT_ERR("can't finish initializing sys");
+    }
 
     err = initexternalimport(interp);
     if (_Py_INIT_FAILED(err)) {
@@ -979,12 +925,12 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     core_config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _Py_InitializeCore(&core_config);
+    err = _PyCoreConfig_ReadEnv(&core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyCoreConfig_ReadEnv(&core_config);
+    err = _Py_InitializeCore(&core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -1118,9 +1064,11 @@ Py_FinalizeEx(void)
     tstate = PyThreadState_GET();
     interp = tstate->interp;
 
-    /* Copy the core config to be able to use it even
-       after PyInterpreterState_Delete() */
-    _PyCoreConfig core_config = interp->core_config;
+    /* Copy the core config, PyInterpreterState_Delete() free
+       the core config memory */
+    int show_ref_count = interp->core_config.show_ref_count;
+    int dump_refs = interp->core_config.dump_refs;
+    int malloc_stats = interp->core_config.malloc_stats;
 
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
@@ -1205,7 +1153,7 @@ Py_FinalizeEx(void)
     _PyHash_Fini();
 
 #ifdef Py_REF_DEBUG
-    if (core_config.show_ref_count) {
+    if (show_ref_count) {
         _PyDebug_PrintTotalRefs();
     }
 #endif
@@ -1216,7 +1164,7 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
-    if (core_config.dump_refs) {
+    if (dump_refs) {
         _Py_PrintReferences(stderr);
     }
 #endif /* Py_TRACE_REFS */
@@ -1280,12 +1228,12 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
-    if (core_config.dump_refs) {
+    if (dump_refs) {
         _Py_PrintReferenceAddresses(stderr);
     }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
-    if (core_config.malloc_stats) {
+    if (malloc_stats) {
         _PyObject_DebugMallocStats(stderr);
     }
 #endif
@@ -1347,14 +1295,23 @@ new_interpreter(PyThreadState **tstate_p)
     save_tstate = PyThreadState_Swap(tstate);
 
     /* Copy the current interpreter config into the new interpreter */
+    _PyCoreConfig *core_config;
+    _PyMainInterpreterConfig *config;
     if (save_tstate != NULL) {
-        interp->core_config = save_tstate->interp->core_config;
-        interp->config = save_tstate->interp->config;
+        core_config = &save_tstate->interp->core_config;
+        config = &save_tstate->interp->config;
     } else {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = PyInterpreterState_Main();
-        interp->core_config = main_interp->core_config;
-        interp->config = main_interp->config;
+        core_config = &main_interp->core_config;
+        config = &main_interp->config;
+    }
+
+    if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
+        return _Py_INIT_ERR("failed to copy core config");
+    }
+    if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
+        return _Py_INIT_ERR("failed to copy main interpreter config");
     }
 
     err = _PyPathConfig_Init(&interp->core_config);

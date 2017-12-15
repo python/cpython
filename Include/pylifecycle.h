@@ -57,9 +57,15 @@ PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadEnv(_PyCoreConfig *);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
+PyAPI_FUNC(int) _PyCoreConfig_Copy(
+    _PyCoreConfig *config,
+    const _PyCoreConfig *config2);
 
 PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *, _PyCoreConfig *);
 PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
+PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
+    _PyMainInterpreterConfig *config,
+    const _PyMainInterpreterConfig *config2);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
 #endif
