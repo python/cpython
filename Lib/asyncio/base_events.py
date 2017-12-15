@@ -157,20 +157,6 @@ def _ipaddr_info(host, port, family, type, proto):
     return None
 
 
-def _ensure_resolved(address, *, family=0, type=socket.SOCK_STREAM, proto=0,
-                     flags=0, loop):
-    host, port = address[:2]
-    info = _ipaddr_info(host, port, family, type, proto)
-    if info is not None:
-        # "host" is already a resolved IP.
-        fut = loop.create_future()
-        fut.set_result([info])
-        return fut
-    else:
-        return loop.getaddrinfo(host, port, family=family, type=type,
-                                proto=proto, flags=flags)
-
-
 def _run_until_complete_cb(fut):
     exc = fut._exception
     if isinstance(exc, BaseException) and not isinstance(exc, Exception):
@@ -614,7 +600,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._write_to_self()
         return handle
 
-    def run_in_executor(self, executor, func, *args):
+    async def run_in_executor(self, executor, func, *args):
         self._check_closed()
         if self._debug:
             self._check_callback(func, 'run_in_executor')
@@ -623,7 +609,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             if executor is None:
                 executor = concurrent.futures.ThreadPoolExecutor()
                 self._default_executor = executor
-        return futures.wrap_future(executor.submit(func, *args), loop=self)
+        return await futures.wrap_future(
+            executor.submit(func, *args), loop=self)
 
     def set_default_executor(self, executor):
         self._default_executor = executor
@@ -652,17 +639,19 @@ class BaseEventLoop(events.AbstractEventLoop):
             logger.debug(msg)
         return addrinfo
 
-    def getaddrinfo(self, host, port, *,
-                    family=0, type=0, proto=0, flags=0):
+    async def getaddrinfo(self, host, port, *,
+                          family=0, type=0, proto=0, flags=0):
         if self._debug:
-            return self.run_in_executor(None, self._getaddrinfo_debug,
-                                        host, port, family, type, proto, flags)
+            getaddr_func = self._getaddrinfo_debug
         else:
-            return self.run_in_executor(None, socket.getaddrinfo,
-                                        host, port, family, type, proto, flags)
+            getaddr_func = socket.getaddrinfo
 
-    def getnameinfo(self, sockaddr, flags=0):
-        return self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
+        return await self.run_in_executor(
+            None, getaddr_func, host, port, family, type, proto, flags)
+
+    async def getnameinfo(self, sockaddr, flags=0):
+        return await self.run_in_executor(
+            None, socket.getnameinfo, sockaddr, flags)
 
     async def create_connection(self, protocol_factory, host=None, port=None,
                                 *, ssl=None, family=0,
@@ -703,25 +692,17 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
-            f1 = _ensure_resolved((host, port), family=family,
-                                  type=socket.SOCK_STREAM, proto=proto,
-                                  flags=flags, loop=self)
-            fs = [f1]
-            if local_addr is not None:
-                f2 = _ensure_resolved(local_addr, family=family,
-                                      type=socket.SOCK_STREAM, proto=proto,
-                                      flags=flags, loop=self)
-                fs.append(f2)
-            else:
-                f2 = None
-
-            await tasks.wait(fs, loop=self)
-
-            infos = f1.result()
+            infos = await self._ensure_resolved(
+                (host, port), family=family,
+                type=socket.SOCK_STREAM, proto=proto, flags=flags, loop=self)
             if not infos:
                 raise OSError('getaddrinfo() returned empty list')
-            if f2 is not None:
-                laddr_infos = f2.result()
+
+            if local_addr is not None:
+                laddr_infos = await self._ensure_resolved(
+                    local_addr, family=family,
+                    type=socket.SOCK_STREAM, proto=proto,
+                    flags=flags, loop=self)
                 if not laddr_infos:
                     raise OSError('getaddrinfo() returned empty list')
 
@@ -730,7 +711,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 try:
                     sock = socket.socket(family=family, type=type, proto=proto)
                     sock.setblocking(False)
-                    if f2 is not None:
+                    if local_addr is not None:
                         for _, _, _, _, laddr in laddr_infos:
                             try:
                                 sock.bind(laddr)
@@ -863,7 +844,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         assert isinstance(addr, tuple) and len(addr) == 2, (
                             '2-tuple is expected')
 
-                        infos = await _ensure_resolved(
+                        infos = await self._ensure_resolved(
                             addr, family=family, type=socket.SOCK_DGRAM,
                             proto=proto, flags=flags, loop=self)
                         if not infos:
@@ -946,10 +927,22 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         return transport, protocol
 
+    async def _ensure_resolved(self, address, *,
+                               family=0, type=socket.SOCK_STREAM,
+                               proto=0, flags=0, loop):
+        host, port = address[:2]
+        info = _ipaddr_info(host, port, family, type, proto)
+        if info is not None:
+            # "host" is already a resolved IP.
+            return [info]
+        else:
+            return await loop.getaddrinfo(host, port, family=family, type=type,
+                                          proto=proto, flags=flags)
+
     async def _create_server_getaddrinfo(self, host, port, family, flags):
-        infos = await _ensure_resolved((host, port), family=family,
-                                       type=socket.SOCK_STREAM,
-                                       flags=flags, loop=self)
+        infos = await self._ensure_resolved((host, port), family=family,
+                                            type=socket.SOCK_STREAM,
+                                            flags=flags, loop=self)
         if not infos:
             raise OSError(f'getaddrinfo({host!r}) returned empty list')
         return infos

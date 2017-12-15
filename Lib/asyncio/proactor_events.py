@@ -432,20 +432,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         # Close the event loop
         super().close()
 
-    def sock_recv(self, sock, n):
-        return self._proactor.recv(sock, n)
+    async def sock_recv(self, sock, n):
+        return await self._proactor.recv(sock, n)
 
-    def sock_recv_into(self, sock, buf):
-        return self._proactor.recv_into(sock, buf)
+    async def sock_recv_into(self, sock, buf):
+        return await self._proactor.recv_into(sock, buf)
 
-    def sock_sendall(self, sock, data):
-        return self._proactor.send(sock, data)
+    async def sock_sendall(self, sock, data):
+        return await self._proactor.send(sock, data)
 
-    def sock_connect(self, sock, address):
-        return self._proactor.connect(sock, address)
+    async def sock_connect(self, sock, address):
+        return await self._proactor.connect(sock, address)
 
-    def sock_accept(self, sock):
-        return self._proactor.accept(sock)
+    async def sock_accept(self, sock):
+        return await self._proactor.accept(sock)
 
     def _close_self_pipe(self):
         if self._self_reading_future is not None:

@@ -1,0 +1,3 @@
+Convert asyncio functions that were documented as coroutines to coroutines.
+Affected functions: loop.sock_sendall, loop.sock_recv, loop.sock_accept,
+loop.run_in_executor, loop.getaddrinfo, loop.getnameinfo.

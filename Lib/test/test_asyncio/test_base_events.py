@@ -217,14 +217,6 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
 
-    def test_getnameinfo(self):
-        sockaddr = mock.Mock()
-        self.loop.run_in_executor = mock.Mock()
-        self.loop.getnameinfo(sockaddr)
-        self.assertEqual(
-            (None, socket.getnameinfo, sockaddr, 0),
-            self.loop.run_in_executor.call_args[0])
-
     def test_call_soon(self):
         def cb():
             pass
@@ -344,26 +336,6 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         # check disabled if debug mode is disabled
         test_thread(self.loop, False, create_loop=True)
-
-    def test_run_once_in_executor_plain(self):
-        def cb():
-            pass
-        f = asyncio.Future(loop=self.loop)
-        executor = mock.Mock()
-        executor.submit.return_value = f
-
-        self.loop.set_default_executor(executor)
-
-        res = self.loop.run_in_executor(None, cb)
-        self.assertIs(f, res)
-
-        executor = mock.Mock()
-        executor.submit.return_value = f
-        res = self.loop.run_in_executor(executor, cb)
-        self.assertIs(f, res)
-        self.assertTrue(executor.submit.called)
-
-        f.cancel()  # Don't complain about abandoned Future.
 
     def test__run_once(self):
         h1 = asyncio.TimerHandle(time.monotonic() + 5.0, lambda: True, (),
@@ -1007,6 +979,12 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop)
 
+    @mock.patch('socket.getnameinfo')
+    def test_getnameinfo(self, m_gai):
+        m_gai.side_effect = lambda *args: 42
+        r = self.loop.run_until_complete(self.loop.getnameinfo(('abc', 123)))
+        self.assertEqual(r, 42)
+
     @patch_socket
     def test_create_connection_multiple_errors(self, m_socket):
 
@@ -1119,9 +1097,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             OSError, self.loop.run_until_complete, coro)
 
     def test_create_connection_connect_err(self):
-        @asyncio.coroutine
-        def getaddrinfo(*args, **kw):
-            yield from []
+        async def getaddrinfo(*args, **kw):
             return [(2, 1, 6, '', ('107.6.106.82', 80))]
 
         def getaddrinfo_task(*args, **kwds):
@@ -1714,10 +1690,11 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertTrue(m_log.error.called)
         self.assertFalse(sock.close.called)
         self.loop._remove_reader.assert_called_with(10)
-        self.loop.call_later.assert_called_with(constants.ACCEPT_RETRY_DELAY,
-                                                # self.loop._start_serving
-                                                mock.ANY,
-                                                MyProto, sock, None, None, mock.ANY)
+        self.loop.call_later.assert_called_with(
+            constants.ACCEPT_RETRY_DELAY,
+            # self.loop._start_serving
+            mock.ANY,
+            MyProto, sock, None, None, mock.ANY)
 
     def test_call_coroutine(self):
         @asyncio.coroutine
@@ -1738,7 +1715,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             with self.assertRaises(TypeError):
                 self.loop.call_at(self.loop.time() + 60, func)
             with self.assertRaises(TypeError):
-                self.loop.run_in_executor(None, func)
+                self.loop.run_until_complete(
+                    self.loop.run_in_executor(None, func))
 
     @mock.patch('asyncio.base_events.logger')
     def test_log_slow_callbacks(self, m_logger):
