@@ -253,6 +253,9 @@ PyType_Modified(PyTypeObject *type)
     PyObject *raw, *ref;
     Py_ssize_t i;
 
+    if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_DEFINED_SLOTS))
+        Py_CLEAR(type->tp_defined_slots);
+
     if (!PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
         return;
 
@@ -3251,6 +3254,7 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     Py_XDECREF(type->tp_subclasses);
+    Py_XDECREF(type->tp_defined_slots);
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
      */
@@ -3444,6 +3448,7 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 
     Py_VISIT(type->tp_dict);
     Py_VISIT(type->tp_cache);
+    Py_VISIT(type->tp_defined_slots);
     Py_VISIT(type->tp_mro);
     Py_VISIT(type->tp_bases);
     Py_VISIT(type->tp_base);
@@ -6936,6 +6941,247 @@ static slotdef slotdefs[] = {
     {NULL}
 };
 
+#define N_SLOTDEFS (sizeof(slotdefs) / sizeof(slotdef) - 1)
+
+/* A dict mapping __dunder__ names to their index in slotdefs[] */
+static PyObject *dunder_to_slotdef_index;
+
+/* Fast check for whether *nameobj* is a __dunder__ string */
+static inline int
+is_dunder(PyObject *nameobj)
+{
+    if (!PyUnicode_IS_ASCII(nameobj))
+        return 0;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(nameobj);
+    Py_UCS1 *name = PyUnicode_1BYTE_DATA(nameobj);
+    return (len >= 5 && name[0] == '_' && name[1] == '_' &&
+            name[len - 2] == '_' && name[len - 1] == '_');
+}
+
+static int slotdefs_initialized = 0;
+
+static void
+init_slotdefs(void)
+{
+    slotdef *p;
+
+    if (slotdefs_initialized == 2)
+        return;
+
+    /* First slotdefs initialization */
+    if (slotdefs_initialized == 0) {
+        /* Add interned string objects for the names in slotdefs[]. */
+        for (p = slotdefs; p->name; p++) {
+            /* Slots must be ordered by their offset in the PyHeapTypeObject. */
+            assert(!p[1].name || p->offset <= p[1].offset);
+
+            p->name_strobj = PyUnicode_InternFromString(p->name);
+            if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
+                Py_FatalError("Out of memory interning slotdef names");
+        }
+        slotdefs_initialized = 1;
+    }
+
+    /* Second slotdefs initialization: only if core runtime is available */
+    if (_PyRuntime.core_initialized == 1) {
+        /* Build mapping of __dunder__ names to slotdef[] incides. */
+        assert(dunder_to_slotdef_index == NULL);
+        dunder_to_slotdef_index = PyDict_New();
+        if (dunder_to_slotdef_index == NULL)
+            goto error_indexing;
+
+        for (p = slotdefs; p->name; p++) {
+            /* Slot name must be dunder, index it */
+            assert(is_dunder(p->name_strobj));
+
+            PyObject *index = PyLong_FromSsize_t(p - slotdefs);
+            if (index == NULL)
+                goto error_indexing;
+            PyObject *lst = PyDict_GetItemWithError(dunder_to_slotdef_index,
+                                                    p->name_strobj);
+            if (lst == NULL) {
+                if (PyErr_Occurred())
+                    goto error_indexing;
+                lst = PyList_New(0);
+                if (lst == NULL)
+                    goto error_indexing;
+                if (PyDict_SetItem(dunder_to_slotdef_index, p->name_strobj, lst))
+                    goto error_indexing;
+                Py_DECREF(lst);
+            }
+            if (PyList_Append(lst, index))
+                goto error_indexing;
+            Py_DECREF(index);
+        }
+        slotdefs_initialized = 2;
+    }
+    return;
+
+error_indexing:
+    Py_FatalError("Out of memory indexing slotdef names");
+}
+
+/* Undo init_slotdefs, releasing the interned strings. */
+static void clear_slotdefs(void)
+{
+    slotdef *p;
+    for (p = slotdefs; p->name; p++) {
+        Py_CLEAR(p->name_strobj);
+    }
+    Py_CLEAR(dunder_to_slotdef_index);
+    slotdefs_initialized = 0;
+}
+
+/* Return a tuple of slots present in *type*'s dict.
+ * Each tuple element is a (value, indices) tuple where *indices*
+ * is a list of slot indices in *slotdefs* that should be initialized
+ * with the *value*.
+ */
+static PyObject *
+get_tp_defined_slots(PyTypeObject *type)
+{
+    PyObject *lst, *res;
+
+    if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_DEFINED_SLOTS)
+            && type->tp_defined_slots != NULL) {
+        res = type->tp_defined_slots;
+        assert(PyTuple_CheckExact(res));
+        Py_INCREF(res);
+        return type->tp_defined_slots;
+    }
+
+    lst = PyList_New(0);
+    if (lst == NULL) {
+        return NULL;
+    }
+
+    PyObject *dict, *key, *value;
+    Py_ssize_t pos = 0;
+    dict = type->tp_dict;
+    assert(dict && PyDict_Check(dict));
+
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        if (!PyUnicode_Check(key) || !is_dunder(key)) {
+            /* Not a __dunder__ */
+            continue;
+        }
+        PyObject *indices = PyDict_GetItem(dunder_to_slotdef_index, key);
+        if (indices == NULL) {
+            /* Not a slot method */
+            continue;
+        }
+        PyObject *tup = PyTuple_Pack(2, value, indices);
+        if (PyList_Append(lst, tup)) {
+            Py_DECREF(tup);
+            goto error;
+        }
+        Py_DECREF(tup);
+    }
+    res = PyList_AsTuple(lst);
+    Py_DECREF(lst);
+    if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_DEFINED_SLOTS)) {
+        Py_INCREF(res);
+        type->tp_defined_slots = res;
+    }
+    return res;
+
+error:
+    Py_DECREF(lst);
+    return NULL;
+}
+
+
+/* Look up all possible slots in type's MRO.  This aggressively caches
+ * the list of slot methods on each MRO class, so that other subclasses
+ * can then simply iterate over the cached values.
+ *
+ * The `out` array (N_SLOTDEFS elements) is populated with a borrowed
+ * descriptor value for each slotdef, if found.
+ *
+ * Returns 0 if ok, -1 if either an error occurred or not enough of
+ * the runtime is initialized to use this optimization.
+ */
+static int
+lookup_slotdefs_in_mro(PyTypeObject *type, PyObject **out)
+{
+    PyObject *mro, *tuples = NULL;
+    Py_ssize_t i, n;
+    int res = 0;
+
+    init_slotdefs();
+
+    if (dunder_to_slotdef_index == NULL) {
+        /* Not fully initialized yet */
+        return -1;
+    }
+    mro = type->tp_mro;
+    if (mro == NULL) {
+        /* Don't bother with non-ready type (XXX: can happen?) */
+        return -1;
+    }
+    assert(PyTuple_Check(mro));
+    /* Keep a strong reference to mro because type->tp_mro can be replaced
+       during dict lookup, e.g. when comparing to non-string keys. */
+    Py_INCREF(mro);
+
+    memset(out, 0, sizeof(PyObject *) * N_SLOTDEFS);
+
+    n = PyTuple_GET_SIZE(mro);
+    for (i = 0; i < n; i++) {
+        PyObject *base, *tuples;
+
+        base = PyTuple_GET_ITEM(mro, i);
+        assert(PyType_Check(base));
+        tuples = get_tp_defined_slots((PyTypeObject *) base);
+        if (tuples == NULL) {
+            res = (PyErr_Occurred() != NULL);
+            goto done;
+        }
+
+        /* Examine all slot descriptors defined in this base's dict */
+        Py_ssize_t ti, tn;
+        tn = PyTuple_GET_SIZE(tuples);
+        for (ti = 0; ti < tn; ti++) {
+            PyObject *tup = PyTuple_GET_ITEM(tuples, ti);
+            assert(PyTuple_CheckExact(tup));
+            assert(PyTuple_GET_SIZE(tup) == 2);
+
+            /* `value` is the descriptor value, `indices` is a list of
+             * indices into slotdefs[].
+             */
+            PyObject *value = PyTuple_GET_ITEM(tup, 0);
+            PyObject *indices = PyTuple_GET_ITEM(tup, 1);
+            assert(PyList_CheckExact(indices));
+            /* Walk list of indices and populate `out` */
+            Py_ssize_t li, ln;
+            ln = PyList_GET_SIZE(indices);
+            for (li = 0; li < ln; li++) {
+                PyObject *indexobj = PyList_GET_ITEM(indices, li);
+                assert(PyLong_CheckExact(indexobj));
+                Py_ssize_t index = PyLong_AsSsize_t(indexobj);
+                if (index == -1 && PyErr_Occurred())  /* theoretically impossible? */
+                    goto error;
+                assert(index >= 0 && index < (Py_ssize_t) N_SLOTDEFS);
+                /* Set slot if not encountered earlier in the MRO */
+                if (out[index] == NULL) {
+                    out[index] = value;
+                }
+            }
+        }
+        Py_CLEAR(tuples);
+    }
+    res = 0;
+    goto done;
+
+error:
+    res = -1;
+
+done:
+    Py_CLEAR(tuples);
+    Py_DECREF(mro);
+    return res;
+}
+
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the
@@ -7022,30 +7268,39 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
    does some incredibly complex thinking and then sticks something into the
    slot.  (It sees if the adjacent slotdefs for the same slot have conflicting
    interests, and then stores a generic wrapper or a specific function into
-   the slot.)  Return a pointer to the next slotdef with a different offset,
-   because that's convenient  for fixup_slot_dispatchers(). */
-static slotdef *
-update_one_slot(PyTypeObject *type, slotdef *p)
+   the slot.)  Return an index to the next slotdef with a different offset,
+   because that's convenient for fixup_slot_dispatchers(). */
+static Py_ssize_t
+update_one_slot(PyTypeObject *type, Py_ssize_t i, slotdef *pp, PyObject **descrs)
 {
+    slotdef *p;
     PyObject *descr;
     PyWrapperDescrObject *d;
     void *generic = NULL, *specific = NULL;
     int use_generic = 0;
-    int offset = p->offset;
+    int offset = pp[i].offset;
     int error;
     void **ptr = slotptr(type, offset);
 
     if (ptr == NULL) {
         do {
-            ++p;
-        } while (p->offset == offset);
-        return p;
+            ++i;
+        } while (pp[i].offset == offset);
     }
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
     do {
-        /* Use faster uncached lookup as we won't get any cache hits during type setup. */
-        descr = find_name_in_mro(type, p->name_strobj, &error);
+        assert(i >= 0 && i < (Py_ssize_t) N_SLOTDEFS);
+        p = &pp[i];
+        if (descrs != NULL) {
+            /* Fastest method: use the descriptors array filled by lookup_slotdefs_in_mro() */
+            error = 0;
+            descr = descrs[i];
+        }
+        else {
+            /* Use uncached lookup as we won't get any cache hits during type setup. */
+            descr = find_name_in_mro(type, p->name_strobj, &error);
+        }
         if (descr == NULL) {
             if (error == -1) {
                 /* It is unlikely by not impossible that there has been an exception
@@ -7107,12 +7362,12 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             use_generic = 1;
             generic = p->function;
         }
-    } while ((++p)->offset == offset);
+    } while (pp[++i].offset == offset);
     if (specific && !use_generic)
         *ptr = specific;
     else
         *ptr = generic;
-    return p;
+    return i;
 }
 
 /* In the type, update the slots whose slotdefs are gathered in the pp array.
@@ -7123,38 +7378,8 @@ update_slots_callback(PyTypeObject *type, void *data)
     slotdef **pp = (slotdef **)data;
 
     for (; *pp; pp++)
-        update_one_slot(type, *pp);
+        update_one_slot(type, 0, *pp, NULL);
     return 0;
-}
-
-static int slotdefs_initialized = 0;
-/* Initialize the slotdefs table by adding interned string objects for the
-   names. */
-static void
-init_slotdefs(void)
-{
-    slotdef *p;
-
-    if (slotdefs_initialized)
-        return;
-    for (p = slotdefs; p->name; p++) {
-        /* Slots must be ordered by their offset in the PyHeapTypeObject. */
-        assert(!p[1].name || p->offset <= p[1].offset);
-        p->name_strobj = PyUnicode_InternFromString(p->name);
-        if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
-            Py_FatalError("Out of memory interning slotdef names");
-    }
-    slotdefs_initialized = 1;
-}
-
-/* Undo init_slotdefs, releasing the interned strings. */
-static void clear_slotdefs(void)
-{
-    slotdef *p;
-    for (p = slotdefs; p->name; p++) {
-        Py_CLEAR(p->name_strobj);
-    }
-    slotdefs_initialized = 0;
 }
 
 /* Update the slots after assignment to a class (type) attribute. */
@@ -7202,11 +7427,27 @@ update_slot(PyTypeObject *type, PyObject *name)
 static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
-    slotdef *p;
+    slotdef *p = slotdefs;
+    Py_ssize_t i;
+    PyObject *stack_descrs[N_SLOTDEFS];
+    PyObject **descrs = NULL;
 
     init_slotdefs();
-    for (p = slotdefs; p->name; )
-        p = update_one_slot(type, p);
+
+    /* Try fast descriptor lookup to speed up update_one_slot() */
+    if (lookup_slotdefs_in_mro(type, stack_descrs)) {
+        if (PyErr_Occurred()) {
+            /* XXX none of the functions here are able to return an error */
+            PyErr_WriteUnraisable((PyObject *) type);
+        }
+        descrs = NULL;
+    }
+    else {
+        descrs = stack_descrs;
+    }
+
+    for (i = 0; p[i].name; )
+        i = update_one_slot(type, i, p, descrs);
 }
 
 static void

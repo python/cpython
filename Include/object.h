@@ -424,6 +424,8 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
 
+    PyObject *tp_defined_slots;
+
 #ifdef COUNT_ALLOCS
     /* these must be last and never explicitly initialized */
     Py_ssize_t tp_allocs;
@@ -656,16 +658,20 @@ given type object has a specified feature.
 #define Py_TPFLAGS_BASE_EXC_SUBCLASS    (1UL << 30)
 #define Py_TPFLAGS_TYPE_SUBCLASS        (1UL << 31)
 
-#define Py_TPFLAGS_DEFAULT  ( \
-                 Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
-                 Py_TPFLAGS_HAVE_VERSION_TAG | \
-                0)
-
 /* NOTE: The following flags reuse lower bits (removed as part of the
  * Python 3.0 transition). */
 
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
+
+/* Type structure has tp_defined_slots member (3.7) */
+#define Py_TPFLAGS_HAVE_DEFINED_SLOTS (1UL << 1)
+
+#define Py_TPFLAGS_DEFAULT  ( \
+                 Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
+                 Py_TPFLAGS_HAVE_VERSION_TAG | \
+                 Py_TPFLAGS_HAVE_DEFINED_SLOTS | \
+                0)
 
 #ifdef Py_LIMITED_API
 #define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)
