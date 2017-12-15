@@ -11,6 +11,7 @@ import sys
 
 from . import base_futures
 from . import events
+from . import format_helpers
 
 
 CancelledError = base_futures.CancelledError
@@ -79,7 +80,8 @@ class Future:
             self._loop = loop
         self._callbacks = []
         if self._loop.get_debug():
-            self._source_traceback = events.extract_stack(sys._getframe(1))
+            self._source_traceback = format_helpers.extract_stack(
+                sys._getframe(1))
 
     _repr_info = base_futures._future_repr_info
 

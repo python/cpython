@@ -2054,6 +2054,43 @@ class BaseTaskTests:
 
         self.assertEqual(self.Task.all_tasks(self.loop), set())
 
+    def test_create_task_with_noncoroutine(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "a coroutine was expected, got 123"):
+            self.new_task(self.loop, 123)
+
+    def test_create_task_with_oldstyle_coroutine(self):
+
+        @asyncio.coroutine
+        def coro():
+            pass
+
+        task = self.new_task(self.loop, coro())
+        self.assertIsInstance(task, self.Task)
+        self.loop.run_until_complete(task)
+
+    def test_create_task_with_async_function(self):
+
+        async def coro():
+            pass
+
+        task = self.new_task(self.loop, coro())
+        self.assertIsInstance(task, self.Task)
+        self.loop.run_until_complete(task)
+
+    def test_bare_create_task(self):
+
+        async def inner():
+            return 1
+
+        async def coro():
+            task = asyncio.create_task(inner())
+            self.assertIsInstance(task, self.Task)
+            ret = await task
+            self.assertEqual(1, ret)
+
+        self.loop.run_until_complete(coro())
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
