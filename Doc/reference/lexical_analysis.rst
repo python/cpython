@@ -656,7 +656,8 @@ the final value of the whole string.
 
 Top-level format specifiers may include nested replacement fields.
 These nested fields may include their own conversion fields and
-format specifiers, but may not include more deeply-nested replacement fields.
+:ref:`format specifiers <formatspec>`, but may not include more
+deeply-nested replacement fields.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.
