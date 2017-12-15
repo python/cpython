@@ -97,3 +97,6 @@ except ImportError:
     pass
 else:
     RawIOBase.register(_WindowsConsoleIO)
+
+import atexit
+atexit.register(_io._flush_all_buffers)

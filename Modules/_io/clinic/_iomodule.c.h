@@ -158,4 +158,22 @@ _io_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7e0ab289d8465580 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_io__flush_all_buffers__doc__,
+"_flush_all_buffers($module, /)\n"
+"--\n"
+"\n"
+"Flushes all buffered io objects.  Called by atexit.");
+
+#define _IO__FLUSH_ALL_BUFFERS_METHODDEF    \
+    {"_flush_all_buffers", (PyCFunction)_io__flush_all_buffers, METH_NOARGS, _io__flush_all_buffers__doc__},
+
+static PyObject *
+_io__flush_all_buffers_impl(PyObject *module);
+
+static PyObject *
+_io__flush_all_buffers(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _io__flush_all_buffers_impl(module);
+}
+/*[clinic end generated code: output=c4901164cf35b7a2 input=a9049054013a1b77]*/
