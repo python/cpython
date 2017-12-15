@@ -253,11 +253,11 @@ class TestClassGetitem(unittest.TestCase):
 class CAPITest(unittest.TestCase):
 
     def test_c_class(self):
-        from _testcapi import Generic
-        self.assertIsInstance(Generic.__class_getitem__(Generic, int), Generic)
+        from _testcapi import Generic, GenericAlias
+        self.assertIsInstance(Generic.__class_getitem__(Generic, int), GenericAlias)
 
         IntGeneric = Generic[int]
-        self.assertIs(type(IntGeneric), Generic)
+        self.assertIs(type(IntGeneric), GenericAlias)
         self.assertEqual(IntGeneric.__mro_entries__(()), (int,))
         class C(IntGeneric):
             pass

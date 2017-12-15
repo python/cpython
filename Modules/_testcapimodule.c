@@ -5058,21 +5058,50 @@ recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
 typedef struct {
     PyObject_HEAD
     PyObject *item;
-} PyGenericObject;
-
-static PyObject * generic_new(PyObject *item);
+} PyGenericAliasObject;
 
 static void
-generic_dealloc(PyGenericObject *self)
+generic_alias_dealloc(PyGenericAliasObject *self)
 {
     Py_CLEAR(self->item);
 }
 
 static PyObject *
-generic_mro_entries(PyGenericObject *self, PyObject *bases)
+generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
 {
     return PyTuple_Pack(1, self->item);
 }
+
+static PyMethodDef generic_alias_methods[] = {
+    {"__mro_entries__", (PyCFunction) generic_alias_mro_entries, METH_O, NULL},
+    {NULL}  /* sentinel */
+};
+
+PyTypeObject GenericAlias_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "GenericAlias",
+    sizeof(PyGenericAliasObject),
+    0,
+    .tp_dealloc = (destructor)generic_alias_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_methods = generic_alias_methods,
+};
+
+static PyObject *
+generic_alias_new(PyObject *item)
+{
+    PyGenericAliasObject *o = PyObject_New(PyGenericAliasObject, &GenericAlias_Type);
+    if (o == NULL) {
+        return NULL;
+    }
+    Py_INCREF(item);
+    o->item = item;
+    return (PyObject*) o;
+}
+
+typedef struct {
+    PyObject_HEAD
+} PyGenericObject;
 
 static PyObject *
 generic_class_getitem(PyObject *self, PyObject *args)
@@ -5081,12 +5110,11 @@ generic_class_getitem(PyObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "__class_getitem__", 2, 2, &type, &item)) {
         return NULL;
     }
-    return generic_new(item);
+    return generic_alias_new(item);
 }
 
 static PyMethodDef generic_methods[] = {
     {"__class_getitem__", generic_class_getitem, METH_VARARGS|METH_STATIC, NULL},
-    {"__mro_entries__", (PyCFunction) generic_mro_entries, METH_O, NULL},
     {NULL}  /* sentinel */
 };
 
@@ -5095,22 +5123,9 @@ PyTypeObject Generic_Type = {
     "Generic",
     sizeof(PyGenericObject),
     0,
-    .tp_dealloc = (destructor)generic_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_methods = generic_methods,
 };
-
-static PyObject *
-generic_new(PyObject *item)
-{
-    PyGenericObject *o = PyObject_New(PyGenericObject, &Generic_Type);
-    if (o == NULL) {
-        return NULL;
-    }
-    Py_INCREF(item);
-    o->item = item;
-    return (PyObject*) o;
-}
 
 
 static struct PyModuleDef _testcapimodule = {
@@ -5153,6 +5168,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    if (PyType_Ready(&GenericAlias_Type) < 0)
+        return NULL;
+    Py_INCREF(&GenericAlias_Type);
+    PyModule_AddObject(m, "GenericAlias", (PyObject *)&GenericAlias_Type);
 
     if (PyType_Ready(&Generic_Type) < 0)
         return NULL;
