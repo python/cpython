@@ -826,6 +826,7 @@ set_newline(textio *self, const char *newline)
     self->readtranslate = (newline == NULL);
     self->writetranslate = (newline == NULL || newline[0] != '\0');
     if (!self->readuniversal && self->readnl != NULL) {
+        // validate_newline() accepts only ASCII newlines.
         assert(PyUnicode_KIND(self->readnl) == PyUnicode_1BYTE_KIND);
         self->writenl = (const char *)PyUnicode_1BYTE_DATA(self->readnl);
         if (strcmp(self->writenl, "\n") == 0) {
@@ -1038,7 +1039,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         errors = _PyUnicode_FromId(&PyId_strict); /* borrowed */
     }
     else if (!PyUnicode_Check(errors)) {
-        // Check 'errors' argument here because AC doesn't support
+        // Check 'errors' argument here because Argument Clinic doesn't support
         // 'str(accept={str, NoneType})' converter.
         PyErr_Format(
             PyExc_TypeError,
@@ -1306,7 +1307,7 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     if (encoding != Py_None || errors != Py_None) {
         if (self->decoded_chars != NULL) {
             _unsupported("It is not possible to set the encoding "
-                         "of a non seekable file after the first read");
+                         "of stream after the first read");
             return NULL;
         }
     }
