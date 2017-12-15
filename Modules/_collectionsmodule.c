@@ -912,7 +912,7 @@ done:
 }
 
 static PyObject *
-deque_rotate(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
+deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t n=1;
 
@@ -1045,7 +1045,7 @@ deque_len(dequeobject *deque)
 }
 
 static PyObject *
-deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
+deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t i, n, start=0, stop=Py_SIZE(deque);
     PyObject *v, *item;
@@ -1122,7 +1122,7 @@ PyDoc_STRVAR(index_doc,
 */
 
 static PyObject *
-deque_insert(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
+deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t index;
     Py_ssize_t n = Py_SIZE(deque);
