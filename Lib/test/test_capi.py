@@ -665,22 +665,5 @@ class PyMemDefaultTests(PyMemDebugTests):
     PYTHONMALLOC = ''
 
 
-class PEP560Tests(unittest.TestCase):
-
-    def test_capi_pep560(self):
-        from _testcapi import Generic
-        self.assertIsInstance(Generic.__class_getitem__(Generic, int), Generic)
-        IntGeneric = Generic[int]
-        self.assertIs(type(IntGeneric), _testcapi.Generic)
-        self.assertEqual(IntGeneric.__mro_entries__(()), (int,))
-
-        class Foo(IntGeneric):
-            pass
-
-        self.assertEqual(Foo.__mro__, (Foo, int, object))
-        self.assertEqual(Foo.__orig_bases__, (IntGeneric,))
-        self.assertEqual(Foo.__bases__, (int,))
-
-
 if __name__ == "__main__":
     unittest.main()

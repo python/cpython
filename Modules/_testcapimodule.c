@@ -5053,31 +5053,14 @@ recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
+/* Test PEP 560 */
+
 typedef struct {
     PyObject_HEAD
     PyObject *item;
 } PyGenericObject;
 
-
-/* Test PEP 560 slots */
-
-
 static PyObject * generic_new(PyObject *item);
-
-
-static int
-generic_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyGenericObject *o = (PyGenericObject*) self;
-
-    PyObject *item;
-    if (!PyArg_UnpackTuple(args, "Generic", 1, 1, &item)) {
-        return -1;
-    }
-
-    o->item = item;
-    return 0;
-}
 
 static void
 generic_dealloc(PyGenericObject *self)
@@ -5085,20 +5068,11 @@ generic_dealloc(PyGenericObject *self)
     Py_CLEAR(self->item);
 }
 
-
 static PyObject *
 generic_mro_entries(PyGenericObject *self, PyObject *bases)
 {
-    PyObject *tup;
-    tup = PyTuple_New(1);
-    if (tup == NULL) {
-        return NULL;
-    }
-    Py_INCREF(self->item);
-    PyTuple_SET_ITEM(tup, 0, self->item);
-    return tup;
+    return PyTuple_Pack(1, self->item);
 }
-
 
 static PyObject *
 generic_class_getitem(PyObject *self, PyObject *args)
@@ -5110,13 +5084,11 @@ generic_class_getitem(PyObject *self, PyObject *args)
     return generic_new(item);
 }
 
-
 static PyMethodDef generic_methods[] = {
-    {"__class_getitem__", (PyCFunction) generic_class_getitem, METH_VARARGS|METH_STATIC, NULL},
+    {"__class_getitem__", generic_class_getitem, METH_VARARGS|METH_STATIC, NULL},
     {"__mro_entries__", (PyCFunction) generic_mro_entries, METH_O, NULL},
-    {NULL,              NULL}           /* sentinel */
+    {NULL}  /* sentinel */
 };
-
 
 PyTypeObject Generic_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -5125,10 +5097,8 @@ PyTypeObject Generic_Type = {
     0,
     .tp_dealloc = (destructor)generic_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_init = (initproc)generic_init,
     .tp_methods = generic_methods,
 };
-
 
 static PyObject *
 generic_new(PyObject *item)
