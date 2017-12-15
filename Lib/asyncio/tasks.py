@@ -24,12 +24,14 @@ from .coroutines import coroutine
 
 
 def current_task(loop=None):
+    """Return a currently executed task."""
     if loop is None:
         loop = events.get_running_loop()
     return _current_tasks.get(loop)
 
 
 def all_tasks(loop=None):
+    """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_event_loop()
     return {t for t, l in _all_tasks.items() if l is loop}

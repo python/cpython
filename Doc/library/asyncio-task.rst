@@ -528,6 +528,28 @@ Task functions
    the event loop object used by the underlying task or coroutine.  If it's
    not provided, the default event loop is used.
 
+
+.. function:: current_task(loop=None):
+
+   Return a currently executed task or ``None`` if no task is running.
+
+   If *loop* is ``None`` :func:`get_running_loop` is used for gettung
+   current loop.
+
+   .. versionadded:: 3.7
+
+
+.. function:: all_tasks(loop=None):
+
+   Return a set of tasks created for the *loop* (the set can be empty
+   if there is no task exists).
+
+   If *loop* is ``None`` :func:`get_event_loop` is used for getting
+   current loop.
+
+   .. versionadded:: 3.7
+
+
 .. function:: as_completed(fs, \*, loop=None, timeout=None)
 
    Return an iterator whose values, when waited for, are :class:`Future`
