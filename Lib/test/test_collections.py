@@ -558,7 +558,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
         c = new_coro()
         self.assertIsInstance(c, Awaitable)
-        c.close() # awoid RuntimeWarning that coro() was not awaited
+        c.close() # avoid RuntimeWarning that coro() was not awaited
 
         class CoroLike: pass
         Coroutine.register(CoroLike)
@@ -608,7 +608,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
         c = new_coro()
         self.assertIsInstance(c, Coroutine)
-        c.close() # awoid RuntimeWarning that coro() was not awaited
+        c.close() # avoid RuntimeWarning that coro() was not awaited
 
         class CoroLike:
             def send(self, value):
@@ -660,7 +660,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_AsyncIterable(self):
         class AI:
-            async def __aiter__(self):
+            def __aiter__(self):
                 return self
         self.assertTrue(isinstance(AI(), AsyncIterable))
         self.assertTrue(issubclass(AI, AsyncIterable))
@@ -674,7 +674,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_AsyncIterator(self):
         class AI:
-            async def __aiter__(self):
+            def __aiter__(self):
                 return self
             async def __anext__(self):
                 raise StopAsyncIteration
@@ -1615,7 +1615,7 @@ class TestCollectionABCs(ABCTestCase):
             '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')
 
     def test_MutableSequence_mixins(self):
-        # Test the mixins of MutableSequence by creating a miminal concrete
+        # Test the mixins of MutableSequence by creating a minimal concrete
         # class inherited from it.
         class MutableSequenceSubclass(MutableSequence):
             def __init__(self):

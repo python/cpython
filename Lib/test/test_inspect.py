@@ -463,6 +463,14 @@ class TestRetrievingSourceCode(GetSourceBase):
         with self.assertRaises(TypeError):
             inspect.getfile(C)
 
+    def test_getfile_broken_repr(self):
+        class ErrorRepr:
+            def __repr__(self):
+                raise Exception('xyz')
+        er = ErrorRepr()
+        with self.assertRaises(TypeError):
+            inspect.getfile(er)
+
     def test_getmodule_recursion(self):
         from types import ModuleType
         name = '__inspect_dummy'
@@ -1561,7 +1569,7 @@ class TestGetattrStatic(unittest.TestCase):
         foo.__dict__['d'] = 1
         self.assertEqual(inspect.getattr_static(foo, 'd'), 1)
 
-        # if the descriptor is a data-desciptor we should return the
+        # if the descriptor is a data-descriptor we should return the
         # descriptor
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
@@ -2867,12 +2875,12 @@ class TestSignatureObject(unittest.TestCase):
         def foo(a:int=1, *, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
-                         '(a:int=1, *, b, c=None, **kwargs) -> 42')
+                         '(a: int = 1, *, b, c=None, **kwargs) -> 42')
 
         def foo(a:int=1, *args, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
-                         '(a:int=1, *args, b, c=None, **kwargs) -> 42')
+                         '(a: int = 1, *args, b, c=None, **kwargs) -> 42')
 
         def foo():
             pass
@@ -3523,7 +3531,8 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_semantic_update = {"round"}
         no_signature |= needs_semantic_update
         # These need *args support in Argument Clinic
-        needs_varargs = {"min", "max", "print", "__build_class__"}
+        needs_varargs = {"breakpoint", "min", "max", "print",
+                         "__build_class__"}
         no_signature |= needs_varargs
         # These simply weren't covered in the initial AC conversion
         # for builtin callables

@@ -623,6 +623,22 @@ type objects) *must* have the :attr:`ob_size` field.
    | :const:`Py_GE` | ``>=``     |
    +----------------+------------+
 
+   The following macro is defined to ease writing rich comparison functions:
+
+   .. c:function:: PyObject *Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
+
+      Return ``Py_True`` or ``Py_False`` from the function, depending on the
+      result of a comparison.
+      VAL_A and VAL_B must be orderable by C comparison operators (for example,
+      they may be C ints or floats). The third argument specifies the requested
+      operation, as for :c:func:`PyObject_RichCompare`.
+
+      The return value's reference count is properly incremented.
+
+      On error, sets an exception and returns NULL from the function.
+
+      .. versionadded:: 3.7
+
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_weaklistoffset
 

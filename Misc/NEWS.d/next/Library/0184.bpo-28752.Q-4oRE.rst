@@ -1,1 +1,0 @@
-Restored the __reduce__() methods of datetime objects.

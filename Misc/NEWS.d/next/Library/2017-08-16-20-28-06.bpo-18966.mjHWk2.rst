@@ -1,2 +1,0 @@
-Non-daemonic threads created by a multiprocessing.Process are now joined on
-child exit.

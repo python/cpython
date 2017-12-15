@@ -1444,7 +1444,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.gethostbyname(domain)
         socket.gethostbyname_ex(domain)
         socket.getaddrinfo(domain,0,socket.AF_UNSPEC,socket.SOCK_STREAM)
-        # this may not work if the forward lookup choses the IPv6 address, as that doesn't
+        # this may not work if the forward lookup chooses the IPv6 address, as that doesn't
         # have a reverse entry yet
         # socket.gethostbyaddr('испытание.python.org')
 
@@ -3854,7 +3854,6 @@ class InterruptedTimeoutBase(unittest.TestCase):
         orig_alrm_handler = signal.signal(signal.SIGALRM,
                                           lambda signum, frame: 1 / 0)
         self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
-        self.addCleanup(self.setAlarm, 0)
 
     # Timeout for socket operations
     timeout = 4.0
@@ -3891,9 +3890,12 @@ class InterruptedRecvTimeoutTest(InterruptedTimeoutBase, UDPTestBase):
     def checkInterruptedRecv(self, func, *args, **kwargs):
         # Check that func(*args, **kwargs) raises
         # errno of EINTR when interrupted by a signal.
-        self.setAlarm(self.alarm_time)
-        with self.assertRaises(ZeroDivisionError) as cm:
-            func(*args, **kwargs)
+        try:
+            self.setAlarm(self.alarm_time)
+            with self.assertRaises(ZeroDivisionError) as cm:
+                func(*args, **kwargs)
+        finally:
+            self.setAlarm(0)
 
     def testInterruptedRecvTimeout(self):
         self.checkInterruptedRecv(self.serv.recv, 1024)
@@ -3948,10 +3950,13 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
         # Check that func(*args, **kwargs), run in a loop, raises
         # OSError with an errno of EINTR when interrupted by a
         # signal.
-        with self.assertRaises(ZeroDivisionError) as cm:
-            while True:
-                self.setAlarm(self.alarm_time)
-                func(*args, **kwargs)
+        try:
+            with self.assertRaises(ZeroDivisionError) as cm:
+                while True:
+                    self.setAlarm(self.alarm_time)
+                    func(*args, **kwargs)
+        finally:
+            self.setAlarm(0)
 
     # Issue #12958: The following tests have problems on OS X prior to 10.7
     @support.requires_mac_ver(10, 7)
@@ -4394,7 +4399,7 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.write_file.write(self.write_msg)
         self.write_file.flush()
         self.evt2.set()
-        # Avoid cloding the socket before the server test has finished,
+        # Avoid closing the socket before the server test has finished,
         # otherwise system recv() will return 0 instead of EWOULDBLOCK.
         self.serv_finished.wait(5.0)
 
@@ -4528,6 +4533,10 @@ class NetworkConnectionNoServer(unittest.TestCase):
         expected_errnos = [ errno.ECONNREFUSED, ]
         if hasattr(errno, 'ENETUNREACH'):
             expected_errnos.append(errno.ENETUNREACH)
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # bpo-31910: socket.create_connection() fails randomly
+            # with EADDRNOTAVAIL on Travis CI
+            expected_errnos.append(errno.EADDRNOTAVAIL)
 
         self.assertIn(cm.exception.errno, expected_errnos)
 
@@ -4666,7 +4675,7 @@ class TCPTimeoutTest(SocketTCPTest):
                          'test needs signal.alarm()')
     def testInterruptedTimeout(self):
         # XXX I don't know how to do this test on MSWindows or any other
-        # plaform that doesn't support signal.alarm() or os.kill(), though
+        # platform that doesn't support signal.alarm() or os.kill(), though
         # the bug should have existed on all platforms.
         self.serv.settimeout(5.0)   # must be longer than alarm
         class Alarm(Exception):
@@ -4675,8 +4684,8 @@ class TCPTimeoutTest(SocketTCPTest):
             raise Alarm
         old_alarm = signal.signal(signal.SIGALRM, alarm_handler)
         try:
-            signal.alarm(2)    # POSIX allows alarm to be up to 1 second early
             try:
+                signal.alarm(2)    # POSIX allows alarm to be up to 1 second early
                 foo = self.serv.accept()
             except socket.timeout:
                 self.fail("caught timeout instead of Alarm")
@@ -5127,8 +5136,6 @@ class InheritanceTest(unittest.TestCase):
                              0)
 
 
-    @unittest.skipUnless(hasattr(socket, "socketpair"),
-                         "need socket.socketpair()")
     def test_socketpair(self):
         s1, s2 = socket.socketpair()
         self.addCleanup(s1.close)
@@ -5290,7 +5297,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     Test the send() implementation of socket.sendfile().
     """
 
-    FILESIZE = (10 * 1024 * 1024)  # 10MB
+    FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
     TIMEOUT = 2
@@ -5566,6 +5573,9 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
         else:
             return sock
 
+    # bpo-31705: On kernel older than 4.5, sendto() failed with ENOKEY,
+    # at least on ppc64le architecture
+    @support.requires_linux_version(4, 5)
     def test_sha256(self):
         expected = bytes.fromhex("ba7816bf8f01cfea414140de5dae2223b00361a396"
                                  "177a9cb410ff61f20015ad")

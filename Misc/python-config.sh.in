@@ -24,17 +24,18 @@ installed_prefix ()
     echo $RESULT
 }
 
-prefix_build="@prefix@"
 prefix_real=$(installed_prefix "$0")
 
 # Use sed to fix paths from their built-to locations to their installed-to
-# locations.
-prefix=$(echo "$prefix_build" | sed "s#$prefix_build#$prefix_real#")
-exec_prefix_build="@exec_prefix@"
-exec_prefix=$(echo "$exec_prefix_build" | sed "s#$exec_prefix_build#$prefix_real#")
-includedir=$(echo "@includedir@" | sed "s#$prefix_build#$prefix_real#")
-libdir=$(echo "@libdir@" | sed "s#$prefix_build#$prefix_real#")
-CFLAGS=$(echo "@CFLAGS@" | sed "s#$prefix_build#$prefix_real#")
+# locations. Keep prefix & exec_prefix using their original values in case
+# they are referenced in other configure variables, to prevent double
+# substitution, issue #22140.
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+exec_prefix_real=${prefix_real}
+includedir=$(echo "@includedir@" | sed "s#$prefix#$prefix_real#")
+libdir=$(echo "@libdir@" | sed "s#$prefix#$prefix_real#")
+CFLAGS=$(echo "@CFLAGS@" | sed "s#$prefix#$prefix_real#")
 VERSION="@VERSION@"
 LIBM="@LIBM@"
 LIBC="@LIBC@"
@@ -47,8 +48,8 @@ LINKFORSHARED="@LINKFORSHARED@"
 OPT="@OPT@"
 PY_ENABLE_SHARED="@PY_ENABLE_SHARED@"
 LDVERSION="@LDVERSION@"
-LIBDEST=${prefix}/lib/python${VERSION}
-LIBPL=$(echo "@LIBPL@" | sed "s#$prefix_build#$prefix_real#")
+LIBDEST=${prefix_real}/lib/python${VERSION}
+LIBPL=$(echo "@LIBPL@" | sed "s#$prefix#$prefix_real#")
 SO="@EXT_SUFFIX@"
 PYTHONFRAMEWORK="@PYTHONFRAMEWORK@"
 INCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
@@ -73,10 +74,10 @@ for ARG in "$@"
 do
     case "$ARG" in
         --prefix)
-            echo "$prefix"
+            echo "$prefix_real"
         ;;
         --exec-prefix)
-            echo "$exec_prefix"
+            echo "$exec_prefix_real"
         ;;
         --includes)
             echo "$INCDIR $PLATINCDIR"

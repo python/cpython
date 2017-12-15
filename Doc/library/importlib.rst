@@ -67,6 +67,9 @@ generically as an :term:`importer`) to participate in the import process.
     :pep:`489`
         Multi-phase extension module initialization
 
+    :pep:`552`
+        Deterministic pycs
+
     :pep:`3120`
         Using UTF-8 as the Default Source Encoding
 
@@ -1048,7 +1051,15 @@ find and load modules.
 
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
-   A specification for a module's import-system-related state.
+   A specification for a module's import-system-related state.  This is
+   typically exposed as the module's ``__spec__`` attribute.  In the
+   descriptions below, the names in parentheses give the corresponding
+   attribute available directly on the module object.
+   E.g. ``module.__spec__.origin == module.__file__``.  Note however that
+   while the *values* are usually equivalent, they can differ since there is
+   no synchronization between the two objects.  Thus it is possible to update
+   the module's ``__path__`` at runtime, and this will not be automatically
+   reflected in ``__spec__.submodule_search_locations``.
 
    .. versionadded:: 3.4
 
@@ -1318,6 +1329,14 @@ an :term:`importer`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+.. function:: source_hash(source_bytes)
+
+   Return the hash of *source_bytes* as bytes. A hash-based ``.pyc`` file embeds
+   the :func:`source_hash` of the corresponding source file's contents in its
+   header.
+
+   .. versionadded:: 3.7
 
 .. class:: LazyLoader(loader)
 

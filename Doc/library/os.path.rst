@@ -192,22 +192,16 @@ the :mod:`glob` module.)
 
 .. function:: getatime(path)
 
-   Return the time of last access of *path*.  The return value is a number giving
+   Return the time of last access of *path*.  The return value is a floating point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
-
-   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
-   number.
 
 
 .. function:: getmtime(path)
 
-   Return the time of last modification of *path*.  The return value is a number
+   Return the time of last modification of *path*.  The return value is a floating point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
-
-   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
-   number.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.

@@ -9,9 +9,11 @@ module _asyncio
 
 
 /* identifiers used from some functions */
+_Py_IDENTIFIER(__asyncio_running_event_loop__);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
+_Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
 _Py_IDENTIFIER(_step);
@@ -23,7 +25,8 @@ _Py_IDENTIFIER(_wakeup);
 static PyObject *all_tasks;
 static PyObject *current_tasks;
 static PyObject *traceback_extract_stack;
-static PyObject *asyncio_get_event_loop;
+static PyObject *asyncio_get_event_loop_policy;
+static PyObject *asyncio_iscoroutine_func;
 static PyObject *asyncio_future_repr_info_func;
 static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_task_get_stack_func;
@@ -31,6 +34,7 @@ static PyObject *asyncio_task_print_stack_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *inspect_isgenerator;
+static PyObject *os_getpid;
 
 
 typedef enum {
@@ -88,6 +92,134 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 static PyObject* future_new_iter(PyObject *);
 static inline int future_call_schedule_callbacks(FutureObj *);
 
+
+static int
+get_running_loop(PyObject **loop)
+{
+    PyObject *ts_dict;
+    PyObject *running_tuple;
+    PyObject *running_loop;
+    PyObject *running_loop_pid;
+    PyObject *current_pid;
+    int same_pid;
+
+    ts_dict = PyThreadState_GetDict();  // borrowed
+    if (ts_dict == NULL) {
+        PyErr_SetString(
+            PyExc_RuntimeError, "thread-local storage is not available");
+        goto error;
+    }
+
+    running_tuple = _PyDict_GetItemId(
+        ts_dict, &PyId___asyncio_running_event_loop__);  // borrowed
+    if (running_tuple == NULL) {
+        /* _PyDict_GetItemId doesn't set an error if key is not found */
+        goto not_found;
+    }
+
+    assert(PyTuple_CheckExact(running_tuple));
+    assert(PyTuple_Size(running_tuple) == 2);
+    running_loop = PyTuple_GET_ITEM(running_tuple, 0);  // borrowed
+    running_loop_pid = PyTuple_GET_ITEM(running_tuple, 1);  // borrowed
+
+    if (running_loop == Py_None) {
+        goto not_found;
+    }
+
+    current_pid = _PyObject_CallNoArg(os_getpid);
+    if (current_pid == NULL) {
+        goto error;
+    }
+    same_pid = PyObject_RichCompareBool(current_pid, running_loop_pid, Py_EQ);
+    Py_DECREF(current_pid);
+    if (same_pid == -1) {
+        goto error;
+    }
+
+    if (same_pid) {
+        // current_pid == running_loop_pid
+        goto found;
+    }
+
+not_found:
+    *loop = NULL;
+    return 0;
+
+found:
+    Py_INCREF(running_loop);
+    *loop = running_loop;
+    return 0;
+
+error:
+    *loop = NULL;
+    return -1;
+}
+
+
+static int
+set_running_loop(PyObject *loop)
+{
+    PyObject *ts_dict;
+    PyObject *running_tuple;
+    PyObject *current_pid;
+
+    ts_dict = PyThreadState_GetDict();  // borrowed
+    if (ts_dict == NULL) {
+        PyErr_SetString(
+            PyExc_RuntimeError, "thread-local storage is not available");
+        return -1;
+    }
+
+    current_pid = _PyObject_CallNoArg(os_getpid);
+    if (current_pid == NULL) {
+        return -1;
+    }
+
+    running_tuple = PyTuple_New(2);
+    if (running_tuple == NULL) {
+        Py_DECREF(current_pid);
+        return -1;
+    }
+
+    Py_INCREF(loop);
+    PyTuple_SET_ITEM(running_tuple, 0, loop);
+    PyTuple_SET_ITEM(running_tuple, 1, current_pid);  // borrowed
+
+    if (_PyDict_SetItemId(
+            ts_dict, &PyId___asyncio_running_event_loop__, running_tuple)) {
+        Py_DECREF(running_tuple);  // will cleanup loop & current_pid
+        return -1;
+    }
+    Py_DECREF(running_tuple);
+
+    return 0;
+}
+
+
+static PyObject *
+get_event_loop(void)
+{
+    PyObject *loop;
+    PyObject *policy;
+
+    if (get_running_loop(&loop)) {
+        return NULL;
+    }
+    if (loop != NULL) {
+        return loop;
+    }
+
+    policy = _PyObject_CallNoArg(asyncio_get_event_loop_policy);
+    if (policy == NULL) {
+        return NULL;
+    }
+
+    loop = _PyObject_CallMethodId(policy, &PyId_get_event_loop, NULL);
+    Py_DECREF(policy);
+    return loop;
+}
+
+
 static int
 future_schedule_callbacks(FutureObj *fut)
 {
@@ -140,7 +272,7 @@ future_init(FutureObj *fut, PyObject *loop)
     _Py_IDENTIFIER(get_debug);
 
     if (loop == Py_None) {
-        loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+        loop = get_event_loop();
         if (loop == NULL) {
             return -1;
         }
@@ -1330,16 +1462,38 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
 /*[clinic end generated code: output=9f24774c2287fc2f input=8d132974b049593e]*/
 {
     PyObject *res;
+    int tmp;
     _Py_IDENTIFIER(add);
 
     if (future_init((FutureObj*)self, loop)) {
         return -1;
     }
 
+    if (!PyCoro_CheckExact(coro)) {
+        // fastpath failed, perfom slow check
+        // raise after Future.__init__(), attrs are required for __del__
+        res = PyObject_CallFunctionObjArgs(asyncio_iscoroutine_func,
+                                           coro, NULL);
+        if (res == NULL) {
+            return -1;
+        }
+        tmp = PyObject_Not(res);
+        Py_DECREF(res);
+        if (tmp < 0) {
+            return -1;
+        }
+        if (tmp) {
+            self->task_log_destroy_pending = 0;
+            PyErr_Format(PyExc_TypeError,
+                         "a coroutine was expected, got %R",
+                         coro, NULL);
+            return -1;
+        }
+    }
+
     self->task_fut_waiter = NULL;
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
-
     Py_INCREF(coro);
     self->task_coro = coro;
 
@@ -1449,7 +1603,7 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
     PyObject *res;
 
     if (loop == Py_None) {
-        loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+        loop = get_event_loop();
         if (loop == NULL) {
             return NULL;
         }
@@ -1536,7 +1690,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
     PyObject *res;
 
     if (loop == Py_None) {
-        loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+        loop = get_event_loop();
         if (loop == NULL) {
             return NULL;
         }
@@ -2368,6 +2522,100 @@ task_wakeup(TaskObj *task, PyObject *o)
 }
 
 
+/*********************** Functions **************************/
+
+
+/*[clinic input]
+_asyncio._get_running_loop
+
+Return the running event loop or None.
+
+This is a low-level function intended to be used by event loops.
+This function is thread-specific.
+
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__get_running_loop_impl(PyObject *module)
+/*[clinic end generated code: output=b4390af721411a0a input=0a21627e25a4bd43]*/
+{
+    PyObject *loop;
+    if (get_running_loop(&loop)) {
+        return NULL;
+    }
+    if (loop == NULL) {
+        /* There's no currently running event loop */
+        Py_RETURN_NONE;
+    }
+    return loop;
+}
+
+/*[clinic input]
+_asyncio._set_running_loop
+    loop: 'O'
+    /
+
+Set the running event loop.
+
+This is a low-level function intended to be used by event loops.
+This function is thread-specific.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__set_running_loop(PyObject *module, PyObject *loop)
+/*[clinic end generated code: output=ae56bf7a28ca189a input=4c9720233d606604]*/
+{
+    if (set_running_loop(loop)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_asyncio.get_event_loop
+
+Return an asyncio event loop.
+
+When called from a coroutine or a callback (e.g. scheduled with
+call_soon or similar API), this function will always return the
+running event loop.
+
+If there is no running event loop set, the function will return
+the result of `get_event_loop_policy().get_event_loop()` call.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_get_event_loop_impl(PyObject *module)
+/*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
+{
+    return get_event_loop();
+}
+
+/*[clinic input]
+_asyncio.get_running_loop
+
+Return the running event loop.  Raise a RuntimeError if there is none.
+
+This function is thread-specific.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_get_running_loop_impl(PyObject *module)
+/*[clinic end generated code: output=c247b5f9e529530e input=2a3bf02ba39f173d]*/
+{
+    PyObject *loop;
+    if (get_running_loop(&loop)) {
+        return NULL;
+    }
+    if (loop == NULL) {
+        /* There's no currently running event loop */
+        PyErr_SetString(
+            PyExc_RuntimeError, "no running event loop");
+    }
+    return loop;
+}
+
+
 /*********************** Module **************************/
 
 
@@ -2377,14 +2625,16 @@ module_free(void *m)
     Py_CLEAR(current_tasks);
     Py_CLEAR(all_tasks);
     Py_CLEAR(traceback_extract_stack);
-    Py_CLEAR(asyncio_get_event_loop);
+    Py_CLEAR(asyncio_get_event_loop_policy);
     Py_CLEAR(asyncio_future_repr_info_func);
+    Py_CLEAR(asyncio_iscoroutine_func);
     Py_CLEAR(asyncio_task_repr_info_func);
     Py_CLEAR(asyncio_task_get_stack_func);
     Py_CLEAR(asyncio_task_print_stack_func);
     Py_CLEAR(asyncio_InvalidStateError);
     Py_CLEAR(asyncio_CancelledError);
     Py_CLEAR(inspect_isgenerator);
+    Py_CLEAR(os_getpid);
 }
 
 static int
@@ -2407,7 +2657,7 @@ module_init(void)
     }
 
     WITH_MOD("asyncio.events")
-    GET_MOD_ATTR(asyncio_get_event_loop, "get_event_loop")
+    GET_MOD_ATTR(asyncio_get_event_loop_policy, "get_event_loop_policy")
 
     WITH_MOD("asyncio.base_futures")
     GET_MOD_ATTR(asyncio_future_repr_info_func, "_future_repr_info")
@@ -2419,8 +2669,14 @@ module_init(void)
     GET_MOD_ATTR(asyncio_task_get_stack_func, "_task_get_stack")
     GET_MOD_ATTR(asyncio_task_print_stack_func, "_task_print_stack")
 
+    WITH_MOD("asyncio.coroutines")
+    GET_MOD_ATTR(asyncio_iscoroutine_func, "iscoroutine")
+
     WITH_MOD("inspect")
     GET_MOD_ATTR(inspect_isgenerator, "isgenerator")
+
+    WITH_MOD("os")
+    GET_MOD_ATTR(os_getpid, "getpid")
 
     WITH_MOD("traceback")
     GET_MOD_ATTR(traceback_extract_stack, "extract_stack")
@@ -2452,12 +2708,20 @@ fail:
 
 PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
+static PyMethodDef asyncio_methods[] = {
+    _ASYNCIO_GET_EVENT_LOOP_METHODDEF
+    _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
+    _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
+    _ASYNCIO__SET_RUNNING_LOOP_METHODDEF
+    {NULL, NULL}
+};
+
 static struct PyModuleDef _asynciomodule = {
     PyModuleDef_HEAD_INIT,      /* m_base */
     "_asyncio",                 /* m_name */
     module_doc,                 /* m_doc */
     -1,                         /* m_size */
-    NULL,                       /* m_methods */
+    asyncio_methods,            /* m_methods */
     NULL,                       /* m_slots */
     NULL,                       /* m_traverse */
     NULL,                       /* m_clear */

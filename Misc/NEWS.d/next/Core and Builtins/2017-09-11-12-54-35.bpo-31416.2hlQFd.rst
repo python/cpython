@@ -1,2 +1,0 @@
-Fix assertion failures in case of a bad warnings.filters or
-warnings.defaultaction. Patch by Oren Milman.

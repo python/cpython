@@ -256,7 +256,7 @@ static PyThreadState *tcl_tstate = NULL;
     if (((TkappObject *)self)->threaded && \
         ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
         PyErr_SetString(PyExc_RuntimeError, \
-                        "Calling Tcl from different appartment"); \
+                        "Calling Tcl from different apartment"); \
         return 0; \
     }
 
@@ -864,13 +864,10 @@ PyTclObject_repr(PyTclObject *self)
     return repr;
 }
 
-#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
-
 static PyObject *
 PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 {
     int result;
-    PyObject *v;
 
     /* neither argument should be NULL, unless something's gone wrong */
     if (self == NULL || other == NULL) {
@@ -880,8 +877,7 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 
     /* both arguments should be instances of PyTclObject */
     if (!PyTclObject_Check(self) || !PyTclObject_Check(other)) {
-        v = Py_NotImplemented;
-        goto finished;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if (self == other)
@@ -890,33 +886,7 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
     else
         result = strcmp(Tcl_GetString(((PyTclObject *)self)->value),
                         Tcl_GetString(((PyTclObject *)other)->value));
-    /* Convert return value to a Boolean */
-    switch (op) {
-    case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-    case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-    case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-    case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-    case Py_LT:
-        v = TEST_COND(result < 0);
-        break;
-    case Py_GT:
-        v = TEST_COND(result > 0);
-        break;
-    default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-  finished:
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
@@ -1640,7 +1610,7 @@ _tkinter_tkapp_record_impl(TkappObject *self, const char *script)
 }
 
 /*[clinic input]
-_tkinter.tkapp.adderrinfo
+_tkinter.tkapp.adderrorinfo
 
     msg: str
     /
@@ -1648,8 +1618,8 @@ _tkinter.tkapp.adderrinfo
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_adderrinfo_impl(TkappObject *self, const char *msg)
-/*[clinic end generated code: output=0e222ee2050eb357 input=4971399317d4c136]*/
+_tkinter_tkapp_adderrorinfo_impl(TkappObject *self, const char *msg)
+/*[clinic end generated code: output=52162eaca2ee53cb input=f4b37aec7c7e8c77]*/
 {
     CHECK_STRING_LENGTH(msg);
     CHECK_TCL_APPARTMENT;
@@ -2257,7 +2227,11 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     if (!PyArg_Parse(arg, "et:splitlist", "utf-8", &list))
         return NULL;
 
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     if (Tcl_SplitList(Tkapp_Interp(self), list,
                       &argc, &argv) == TCL_ERROR)  {
         PyMem_Free(list);
@@ -2328,7 +2302,11 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
 
     if (!PyArg_Parse(arg, "et:split", "utf-8", &list))
         return NULL;
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     v = Split(list);
     PyMem_Free(list);
     return v;
@@ -3253,7 +3231,7 @@ static PyMethodDef Tkapp_methods[] =
     _TKINTER_TKAPP_EVAL_METHODDEF
     _TKINTER_TKAPP_EVALFILE_METHODDEF
     _TKINTER_TKAPP_RECORD_METHODDEF
-    _TKINTER_TKAPP_ADDERRINFO_METHODDEF
+    _TKINTER_TKAPP_ADDERRORINFO_METHODDEF
     {"setvar",                 Tkapp_SetVar, METH_VARARGS},
     {"globalsetvar",       Tkapp_GlobalSetVar, METH_VARARGS},
     {"getvar",       Tkapp_GetVar, METH_VARARGS},

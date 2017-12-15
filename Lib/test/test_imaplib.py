@@ -479,9 +479,9 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
     server_class = SecureTCPServer
 
     def test_ssl_raises(self):
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-        ssl_context.check_hostname = True
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertEqual(ssl_context.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ssl_context.check_hostname, True)
         ssl_context.load_verify_locations(CAFILE)
 
         with self.assertRaisesRegex(ssl.CertificateError,
@@ -492,9 +492,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
             client.shutdown()
 
     def test_ssl_verified(self):
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-        ssl_context.check_hostname = True
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
 
         _, server = self._setup(SimpleIMAPHandler)
@@ -871,9 +869,7 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
 
     @reap_threads
     def test_ssl_verified(self):
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-        ssl_context.check_hostname = True
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
 
         with self.assertRaisesRegex(
@@ -953,7 +949,9 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
         pass
 
     def create_ssl_context(self):
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
         ssl_context.load_cert_chain(CERTFILE)
         return ssl_context
 

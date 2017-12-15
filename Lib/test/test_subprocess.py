@@ -845,41 +845,44 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, b"bananasplit")
         self.assertStderrEqual(stderr, b"")
 
-    def test_universal_newlines(self):
-        p = subprocess.Popen([sys.executable, "-c",
-                              'import sys,os;' + SETBINARY +
-                              'buf = sys.stdout.buffer;'
-                              'buf.write(sys.stdin.readline().encode());'
-                              'buf.flush();'
-                              'buf.write(b"line2\\n");'
-                              'buf.flush();'
-                              'buf.write(sys.stdin.read().encode());'
-                              'buf.flush();'
-                              'buf.write(b"line4\\n");'
-                              'buf.flush();'
-                              'buf.write(b"line5\\r\\n");'
-                              'buf.flush();'
-                              'buf.write(b"line6\\r");'
-                              'buf.flush();'
-                              'buf.write(b"\\nline7");'
-                              'buf.flush();'
-                              'buf.write(b"\\nline8");'],
-                             stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             universal_newlines=1)
-        with p:
-            p.stdin.write("line1\n")
-            p.stdin.flush()
-            self.assertEqual(p.stdout.readline(), "line1\n")
-            p.stdin.write("line3\n")
-            p.stdin.close()
-            self.addCleanup(p.stdout.close)
-            self.assertEqual(p.stdout.readline(),
-                             "line2\n")
-            self.assertEqual(p.stdout.read(6),
-                             "line3\n")
-            self.assertEqual(p.stdout.read(),
-                             "line4\nline5\nline6\nline7\nline8")
+    def test_universal_newlines_and_text(self):
+        args = [
+            sys.executable, "-c",
+            'import sys,os;' + SETBINARY +
+            'buf = sys.stdout.buffer;'
+            'buf.write(sys.stdin.readline().encode());'
+            'buf.flush();'
+            'buf.write(b"line2\\n");'
+            'buf.flush();'
+            'buf.write(sys.stdin.read().encode());'
+            'buf.flush();'
+            'buf.write(b"line4\\n");'
+            'buf.flush();'
+            'buf.write(b"line5\\r\\n");'
+            'buf.flush();'
+            'buf.write(b"line6\\r");'
+            'buf.flush();'
+            'buf.write(b"\\nline7");'
+            'buf.flush();'
+            'buf.write(b"\\nline8");']
+
+        for extra_kwarg in ('universal_newlines', 'text'):
+            p = subprocess.Popen(args, **{'stdin': subprocess.PIPE,
+                                          'stdout': subprocess.PIPE,
+                                          extra_kwarg: True})
+            with p:
+                p.stdin.write("line1\n")
+                p.stdin.flush()
+                self.assertEqual(p.stdout.readline(), "line1\n")
+                p.stdin.write("line3\n")
+                p.stdin.close()
+                self.addCleanup(p.stdout.close)
+                self.assertEqual(p.stdout.readline(),
+                                 "line2\n")
+                self.assertEqual(p.stdout.read(6),
+                                 "line3\n")
+                self.assertEqual(p.stdout.read(),
+                                 "line4\nline5\nline6\nline7\nline8")
 
     def test_universal_newlines_communicate(self):
         # universal newlines through communicate()
@@ -1559,8 +1562,10 @@ class POSIXProcessTestCase(BaseTestCase):
 
         fork_exec.side_effect = proper_error
 
-        with self.assertRaises(IsADirectoryError):
-            self.PopenNoDestructor(["non_existent_command"])
+        with mock.patch("subprocess.os.waitpid",
+                        side_effect=ChildProcessError):
+            with self.assertRaises(IsADirectoryError):
+                self.PopenNoDestructor(["non_existent_command"])
 
     @mock.patch("subprocess._posixsubprocess.fork_exec")
     def test_exception_errpipe_bad_data(self, fork_exec):
@@ -1577,8 +1582,10 @@ class POSIXProcessTestCase(BaseTestCase):
 
         fork_exec.side_effect = bad_error
 
-        with self.assertRaises(subprocess.SubprocessError) as e:
-            self.PopenNoDestructor(["non_existent_command"])
+        with mock.patch("subprocess.os.waitpid",
+                        side_effect=ChildProcessError):
+            with self.assertRaises(subprocess.SubprocessError) as e:
+                self.PopenNoDestructor(["non_existent_command"])
 
         self.assertIn(repr(error_data), str(e.exception))
 
