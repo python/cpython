@@ -26,17 +26,17 @@ _Py_IDENTIFIER(_wakeup);
 
 /* State of the _asyncio module */
 static PyObject *asyncio_mod;
-static PyObject *traceback_extract_stack;
-static PyObject *asyncio_get_event_loop_policy;
-static PyObject *asyncio_iscoroutine_func;
-static PyObject *asyncio_future_repr_info_func;
-static PyObject *asyncio_task_repr_info_func;
-static PyObject *asyncio_task_get_stack_func;
-static PyObject *asyncio_task_print_stack_func;
-static PyObject *asyncio_InvalidStateError;
-static PyObject *asyncio_CancelledError;
 static PyObject *inspect_isgenerator;
 static PyObject *os_getpid;
+static PyObject *traceback_extract_stack;
+static PyObject *asyncio_get_event_loop_policy;
+static PyObject *asyncio_future_repr_info_func;
+static PyObject *asyncio_iscoroutine_func;
+static PyObject *asyncio_task_get_stack_func;
+static PyObject *asyncio_task_print_stack_func;
+static PyObject *asyncio_task_repr_info_func;
+static PyObject *asyncio_InvalidStateError;
+static PyObject *asyncio_CancelledError;
 
 
 /* WeakKeyDictionary of {Task: EventLoop} containing all tasks alive.
@@ -2739,18 +2739,18 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 static void
 module_free(void *m)
 {
-    Py_CLEAR(traceback_extract_stack);
-    Py_CLEAR(asyncio_get_event_loop_policy);
-    Py_CLEAR(asyncio_future_repr_info_func);
-    Py_CLEAR(asyncio_iscoroutine_func);
-    Py_CLEAR(asyncio_task_repr_info_func);
-    Py_CLEAR(asyncio_task_get_stack_func);
-    Py_CLEAR(asyncio_task_print_stack_func);
-    Py_CLEAR(asyncio_InvalidStateError);
-    Py_CLEAR(asyncio_CancelledError);
     Py_CLEAR(asyncio_mod);
     Py_CLEAR(inspect_isgenerator);
     Py_CLEAR(os_getpid);
+    Py_CLEAR(traceback_extract_stack);
+    Py_CLEAR(asyncio_future_repr_info_func);
+    Py_CLEAR(asyncio_get_event_loop_policy);
+    Py_CLEAR(asyncio_iscoroutine_func);
+    Py_CLEAR(asyncio_task_get_stack_func);
+    Py_CLEAR(asyncio_task_print_stack_func);
+    Py_CLEAR(asyncio_task_repr_info_func);
+    Py_CLEAR(asyncio_InvalidStateError);
+    Py_CLEAR(asyncio_CancelledError);
 
     Py_CLEAR(current_tasks);
     Py_CLEAR(all_tasks);
