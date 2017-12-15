@@ -14,9 +14,11 @@ MS_WINDOWS = (sys.platform == 'win32')
 
 
 class UTF8ModeTests(unittest.TestCase):
-    # Override PYTHONUTF8 and PYTHONLEGACYWINDOWSFSENCODING environment
-    # variables by default
-    DEFAULT_ENV = {'PYTHONUTF8': '', 'PYTHONLEGACYWINDOWSFSENCODING': ''}
+    DEFAULT_ENV = {
+        'PYTHONUTF8': '',
+        'PYTHONLEGACYWINDOWSFSENCODING': '',
+        'PYTHONCOERCECLOCALE': '0',
+    }
 
     def posix_locale(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
@@ -200,6 +202,19 @@ class UTF8ModeTests(unittest.TestCase):
 
         out = self.get_output('-X', 'utf8', '-c', code, LC_ALL='C')
         self.assertEqual(out, 'UTF-8 UTF-8')
+
+    def test_cmd_line(self):
+        arg = 'h\xe9\u20ac'.encode('utf-8')
+        code = 'import locale, sys; print("%s:%s" % (locale.getpreferredencoding(), ascii(sys.argv[1:])))'
+
+        def check(utf8_opt, expected, **kw):
+            out = self.get_output('-X', utf8_opt, '-c', code, arg, **kw)
+            args = out.partition(':')[2].rstrip()
+            self.assertEqual(args, ascii(expected), out)
+
+        check('utf8', [arg.decode('utf-8')])
+        check('utf8=0', [arg.decode('ascii', 'surrogateescape')],
+              LC_ALL='C')
 
 
 if __name__ == "__main__":
