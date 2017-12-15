@@ -15,7 +15,7 @@ static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs)
+dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -54,7 +54,7 @@ static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value);
 
 static PyObject *
-dict_get(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
+dict_get(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -87,7 +87,7 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
+dict_setdefault(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -103,4 +103,4 @@ dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8d09902e60b7ab02 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7508c5091609a23 input=a9049054013a1b77]*/

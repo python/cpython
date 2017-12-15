@@ -20,7 +20,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      long maxmem, long dklen);
 
 static PyObject *
-_hashlib_scrypt(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"password", "salt", "n", "r", "p", "maxmem", "dklen", NULL};
@@ -57,4 +57,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=eda2a998d5b29030 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ea7d0397f38e2c2 input=a9049054013a1b77]*/

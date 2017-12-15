@@ -1979,7 +1979,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Join(
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyUnicode_JoinArray(
     PyObject *separator,
-    PyObject **items,
+    PyObject *const *items,
     Py_ssize_t seqlen
     );
 #endif /* Py_LIMITED_API */

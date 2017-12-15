@@ -43,7 +43,7 @@ static PyObject *
 msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes);
 
 static PyObject *
-msvcrt_locking(PyObject *module, PyObject **args, Py_ssize_t nargs)
+msvcrt_locking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -78,7 +78,7 @@ static long
 msvcrt_setmode_impl(PyObject *module, int fd, int flags);
 
 static PyObject *
-msvcrt_setmode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+msvcrt_setmode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -116,7 +116,7 @@ static long
 msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags);
 
 static PyObject *
-msvcrt_open_osfhandle(PyObject *module, PyObject **args, Py_ssize_t nargs)
+msvcrt_open_osfhandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     void *handle;
@@ -430,7 +430,7 @@ static void *
 msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file);
 
 static PyObject *
-msvcrt_CrtSetReportFile(PyObject *module, PyObject **args, Py_ssize_t nargs)
+msvcrt_CrtSetReportFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int type;
@@ -470,7 +470,7 @@ static long
 msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode);
 
 static PyObject *
-msvcrt_CrtSetReportMode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+msvcrt_CrtSetReportMode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int type;
@@ -569,4 +569,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=66787cb934b8a3c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3dd4cf62afb9771a input=a9049054013a1b77]*/

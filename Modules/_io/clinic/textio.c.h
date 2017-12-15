@@ -53,7 +53,7 @@ _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final);
 
 static PyObject *
-_io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "final", NULL};
@@ -193,7 +193,7 @@ _io_TextIOWrapper_reconfigure_impl(textio *self,
                                    PyObject *write_through_obj);
 
 static PyObject *
-_io_TextIOWrapper_reconfigure(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_TextIOWrapper_reconfigure(textio *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"line_buffering", "write_through", NULL};
@@ -266,7 +266,7 @@ static PyObject *
 _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n);
 
 static PyObject *
-_io_TextIOWrapper_read(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_read(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
@@ -293,7 +293,7 @@ static PyObject *
 _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size);
 
 static PyObject *
-_io_TextIOWrapper_readline(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_readline(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -320,7 +320,7 @@ static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence);
 
 static PyObject *
-_io_TextIOWrapper_seek(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_seek(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *cookieObj;
@@ -365,7 +365,7 @@ static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos);
 
 static PyObject *
-_io_TextIOWrapper_truncate(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_truncate(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
@@ -499,4 +499,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=937989df0a8abfc3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=679b3ac5284df4e0 input=a9049054013a1b77]*/

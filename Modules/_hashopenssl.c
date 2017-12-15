@@ -915,7 +915,7 @@ generate_hash_name_list(void)
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs) \
+    EVP_new_ ## NAME (PyObject *self, PyObject *const *args, Py_ssize_t nargs) \
     { \
         PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \

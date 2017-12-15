@@ -34,7 +34,7 @@ static PyObject *
 os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks);
 
 static PyObject *
-os_stat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
@@ -72,7 +72,7 @@ static PyObject *
 os_lstat_impl(PyObject *module, path_t *path, int dir_fd);
 
 static PyObject *
-os_lstat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
@@ -133,7 +133,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                int effective_ids, int follow_symlinks);
 
 static PyObject *
-os_access(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
@@ -240,7 +240,7 @@ static PyObject *
 os_chdir_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os_chdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_chdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -278,7 +278,7 @@ static PyObject *
 os_fchdir_impl(PyObject *module, int fd);
 
 static PyObject *
-os_fchdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -331,7 +331,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks);
 
 static PyObject *
-os_chmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "follow_symlinks", NULL};
@@ -371,7 +371,7 @@ static PyObject *
 os_fchmod_impl(PyObject *module, int fd, int mode);
 
 static PyObject *
-os_fchmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_fchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "mode", NULL};
@@ -409,7 +409,7 @@ static PyObject *
 os_lchmod_impl(PyObject *module, path_t *path, int mode);
 
 static PyObject *
-os_lchmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_lchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", NULL};
@@ -454,7 +454,7 @@ os_chflags_impl(PyObject *module, path_t *path, unsigned long flags,
                 int follow_symlinks);
 
 static PyObject *
-os_chflags(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "follow_symlinks", NULL};
@@ -496,7 +496,7 @@ static PyObject *
 os_lchflags_impl(PyObject *module, path_t *path, unsigned long flags);
 
 static PyObject *
-os_lchflags(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", NULL};
@@ -534,7 +534,7 @@ static PyObject *
 os_chroot_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os_chroot(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_chroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -571,7 +571,7 @@ static PyObject *
 os_fsync_impl(PyObject *module, int fd);
 
 static PyObject *
-os_fsync(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -627,7 +627,7 @@ static PyObject *
 os_fdatasync_impl(PyObject *module, int fd);
 
 static PyObject *
-os_fdatasync(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -686,7 +686,7 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
               int dir_fd, int follow_symlinks);
 
 static PyObject *
-os_chown(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_chown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "uid", "gid", "dir_fd", "follow_symlinks", NULL};
@@ -729,7 +729,7 @@ static PyObject *
 os_fchown_impl(PyObject *module, int fd, uid_t uid, gid_t gid);
 
 static PyObject *
-os_fchown(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_fchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "uid", "gid", NULL};
@@ -768,7 +768,7 @@ static PyObject *
 os_lchown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid);
 
 static PyObject *
-os_lchown(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_lchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "uid", "gid", NULL};
@@ -855,7 +855,7 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks);
 
 static PyObject *
-os_link(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", "follow_symlinks", NULL};
@@ -907,7 +907,7 @@ static PyObject *
 os_listdir_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os_listdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_listdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -1040,7 +1040,7 @@ static PyObject *
 os__getvolumepathname_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-os__getvolumepathname(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -1079,7 +1079,7 @@ static PyObject *
 os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd);
 
 static PyObject *
-os_mkdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_mkdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
@@ -1147,7 +1147,7 @@ static PyObject *
 os_getpriority_impl(PyObject *module, int which, int who);
 
 static PyObject *
-os_getpriority(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_getpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"which", "who", NULL};
@@ -1182,7 +1182,7 @@ static PyObject *
 os_setpriority_impl(PyObject *module, int which, int who, int priority);
 
 static PyObject *
-os_setpriority(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_setpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"which", "who", "priority", NULL};
@@ -1223,7 +1223,7 @@ os_rename_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                int dst_dir_fd);
 
 static PyObject *
-os_rename(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
@@ -1268,7 +1268,7 @@ os_replace_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                 int dst_dir_fd);
 
 static PyObject *
-os_replace(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_replace(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
@@ -1311,7 +1311,7 @@ static PyObject *
 os_rmdir_impl(PyObject *module, path_t *path, int dir_fd);
 
 static PyObject *
-os_rmdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_rmdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
@@ -1347,7 +1347,7 @@ static long
 os_system_impl(PyObject *module, Py_UNICODE *command);
 
 static PyObject *
-os_system(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
@@ -1386,7 +1386,7 @@ static long
 os_system_impl(PyObject *module, PyObject *command);
 
 static PyObject *
-os_system(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
@@ -1458,7 +1458,7 @@ static PyObject *
 os_unlink_impl(PyObject *module, path_t *path, int dir_fd);
 
 static PyObject *
-os_unlink(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
@@ -1497,7 +1497,7 @@ static PyObject *
 os_remove_impl(PyObject *module, path_t *path, int dir_fd);
 
 static PyObject *
-os_remove(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_remove(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
@@ -1580,7 +1580,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
               int dir_fd, int follow_symlinks);
 
 static PyObject *
-os_utime(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "times", "ns", "dir_fd", "follow_symlinks", NULL};
@@ -1617,7 +1617,7 @@ static PyObject *
 os__exit_impl(PyObject *module, int status);
 
 static PyObject *
-os__exit(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os__exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -1654,7 +1654,7 @@ static PyObject *
 os_execv_impl(PyObject *module, path_t *path, PyObject *argv);
 
 static PyObject *
-os_execv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_execv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     path_t path = PATH_T_INITIALIZE("execv", "path", 0, 0);
@@ -1697,7 +1697,7 @@ static PyObject *
 os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env);
 
 static PyObject *
-os_execve(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_execve(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "argv", "env", NULL};
@@ -1743,7 +1743,7 @@ static PyObject *
 os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv);
 
 static PyObject *
-os_spawnv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_spawnv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int mode;
@@ -1790,7 +1790,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
                 PyObject *env);
 
 static PyObject *
-os_spawnve(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_spawnve(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int mode;
@@ -1840,7 +1840,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
                          PyObject *after_in_child, PyObject *after_in_parent);
 
 static PyObject *
-os_register_at_fork(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_register_at_fork(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"before", "after_in_child", "after_in_parent", NULL};
@@ -1924,7 +1924,7 @@ static PyObject *
 os_sched_get_priority_max_impl(PyObject *module, int policy);
 
 static PyObject *
-os_sched_get_priority_max(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_sched_get_priority_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"policy", NULL};
@@ -1958,7 +1958,7 @@ static PyObject *
 os_sched_get_priority_min_impl(PyObject *module, int policy);
 
 static PyObject *
-os_sched_get_priority_min(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_sched_get_priority_min(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"policy", NULL};
@@ -2063,7 +2063,7 @@ os_sched_setscheduler_impl(PyObject *module, pid_t pid, int policy,
                            struct sched_param *param);
 
 static PyObject *
-os_sched_setscheduler(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
@@ -2135,7 +2135,7 @@ os_sched_setparam_impl(PyObject *module, pid_t pid,
                        struct sched_param *param);
 
 static PyObject *
-os_sched_setparam(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_sched_setparam(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
@@ -2230,7 +2230,7 @@ static PyObject *
 os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask);
 
 static PyObject *
-os_sched_setaffinity(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_sched_setaffinity(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
@@ -2458,7 +2458,7 @@ static PyObject *
 os_getpgid_impl(PyObject *module, pid_t pid);
 
 static PyObject *
-os_getpgid(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_getpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", NULL};
@@ -2605,7 +2605,7 @@ static PyObject *
 os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal);
 
 static PyObject *
-os_kill(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
@@ -2638,7 +2638,7 @@ static PyObject *
 os_killpg_impl(PyObject *module, pid_t pgid, int signal);
 
 static PyObject *
-os_killpg(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_killpg(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pgid;
@@ -2795,7 +2795,7 @@ static PyObject *
 os_setreuid_impl(PyObject *module, uid_t ruid, uid_t euid);
 
 static PyObject *
-os_setreuid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_setreuid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     uid_t ruid;
@@ -2828,7 +2828,7 @@ static PyObject *
 os_setregid_impl(PyObject *module, gid_t rgid, gid_t egid);
 
 static PyObject *
-os_setregid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_setregid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     gid_t rgid;
@@ -2908,7 +2908,7 @@ static PyObject *
 os_wait3_impl(PyObject *module, int options);
 
 static PyObject *
-os_wait3(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_wait3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"options", NULL};
@@ -2945,7 +2945,7 @@ static PyObject *
 os_wait4_impl(PyObject *module, pid_t pid, int options);
 
 static PyObject *
-os_wait4(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_wait4(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", "options", NULL};
@@ -2991,7 +2991,7 @@ static PyObject *
 os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options);
 
 static PyObject *
-os_waitid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_waitid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     idtype_t idtype;
@@ -3030,7 +3030,7 @@ static PyObject *
 os_waitpid_impl(PyObject *module, pid_t pid, int options);
 
 static PyObject *
-os_waitpid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_waitpid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
@@ -3068,7 +3068,7 @@ static PyObject *
 os_waitpid_impl(PyObject *module, intptr_t pid, int options);
 
 static PyObject *
-os_waitpid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_waitpid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     intptr_t pid;
@@ -3137,7 +3137,7 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
                 int target_is_directory, int dir_fd);
 
 static PyObject *
-os_symlink(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_symlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "target_is_directory", "dir_fd", NULL};
@@ -3258,7 +3258,7 @@ static PyObject *
 os_setpgid_impl(PyObject *module, pid_t pid, pid_t pgrp);
 
 static PyObject *
-os_setpgid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_setpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
@@ -3322,7 +3322,7 @@ static PyObject *
 os_tcsetpgrp_impl(PyObject *module, int fd, pid_t pgid);
 
 static PyObject *
-os_tcsetpgrp(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_tcsetpgrp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3358,7 +3358,7 @@ static int
 os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd);
 
 static PyObject *
-os_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
@@ -3399,7 +3399,7 @@ static PyObject *
 os_close_impl(PyObject *module, int fd);
 
 static PyObject *
-os_close(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_close(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -3429,7 +3429,7 @@ static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high);
 
 static PyObject *
-os_closerange(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_closerange(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd_low;
@@ -3490,7 +3490,7 @@ static PyObject *
 os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable);
 
 static PyObject *
-os_dup2(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_dup2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "fd2", "inheritable", NULL};
@@ -3531,7 +3531,7 @@ static PyObject *
 os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length);
 
 static PyObject *
-os_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3566,7 +3566,7 @@ static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how);
 
 static PyObject *
-os_lseek(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_lseek(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3601,7 +3601,7 @@ static PyObject *
 os_read_impl(PyObject *module, int fd, Py_ssize_t length);
 
 static PyObject *
-os_read(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3640,7 +3640,7 @@ static Py_ssize_t
 os_readv_impl(PyObject *module, int fd, PyObject *buffers);
 
 static PyObject *
-os_readv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_readv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3681,7 +3681,7 @@ static PyObject *
 os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset);
 
 static PyObject *
-os_pread(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3713,7 +3713,7 @@ static Py_ssize_t
 os_write_impl(PyObject *module, int fd, Py_buffer *data);
 
 static PyObject *
-os_write(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3755,7 +3755,7 @@ static PyObject *
 os_fstat_impl(PyObject *module, int fd);
 
 static PyObject *
-os_fstat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -3887,7 +3887,7 @@ static Py_ssize_t
 os_writev_impl(PyObject *module, int fd, PyObject *buffers);
 
 static PyObject *
-os_writev(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_writev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3929,7 +3929,7 @@ static Py_ssize_t
 os_pwrite_impl(PyObject *module, int fd, Py_buffer *buffer, Py_off_t offset);
 
 static PyObject *
-os_pwrite(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -3978,7 +3978,7 @@ static PyObject *
 os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd);
 
 static PyObject *
-os_mkfifo(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_mkfifo(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
@@ -4030,7 +4030,7 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
               int dir_fd);
 
 static PyObject *
-os_mknod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "device", "dir_fd", NULL};
@@ -4142,7 +4142,7 @@ static dev_t
 os_makedev_impl(PyObject *module, int major, int minor);
 
 static PyObject *
-os_makedev(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_makedev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int major;
@@ -4180,7 +4180,7 @@ static PyObject *
 os_ftruncate_impl(PyObject *module, int fd, Py_off_t length);
 
 static PyObject *
-os_ftruncate(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_ftruncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -4216,7 +4216,7 @@ static PyObject *
 os_truncate_impl(PyObject *module, path_t *path, Py_off_t length);
 
 static PyObject *
-os_truncate(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "length", NULL};
@@ -4258,7 +4258,7 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
                         Py_off_t length);
 
 static PyObject *
-os_posix_fallocate(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_posix_fallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -4301,7 +4301,7 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
                       Py_off_t length, int advice);
 
 static PyObject *
-os_posix_fadvise(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_posix_fadvise(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -4336,7 +4336,7 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value);
 
 static PyObject *
-os_putenv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *name;
@@ -4369,7 +4369,7 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value);
 
 static PyObject *
-os_putenv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *name = NULL;
@@ -4507,7 +4507,7 @@ static int
 os_WIFCONTINUED_impl(PyObject *module, int status);
 
 static PyObject *
-os_WIFCONTINUED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_WIFCONTINUED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -4546,7 +4546,7 @@ static int
 os_WIFSTOPPED_impl(PyObject *module, int status);
 
 static PyObject *
-os_WIFSTOPPED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_WIFSTOPPED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -4585,7 +4585,7 @@ static int
 os_WIFSIGNALED_impl(PyObject *module, int status);
 
 static PyObject *
-os_WIFSIGNALED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_WIFSIGNALED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -4624,7 +4624,7 @@ static int
 os_WIFEXITED_impl(PyObject *module, int status);
 
 static PyObject *
-os_WIFEXITED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_WIFEXITED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -4663,7 +4663,7 @@ static int
 os_WEXITSTATUS_impl(PyObject *module, int status);
 
 static PyObject *
-os_WEXITSTATUS(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_WEXITSTATUS(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -4702,7 +4702,7 @@ static int
 os_WTERMSIG_impl(PyObject *module, int status);
 
 static PyObject *
-os_WTERMSIG(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_WTERMSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -4741,7 +4741,7 @@ static int
 os_WSTOPSIG_impl(PyObject *module, int status);
 
 static PyObject *
-os_WSTOPSIG(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_WSTOPSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
@@ -4817,7 +4817,7 @@ static PyObject *
 os_statvfs_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os_statvfs(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_statvfs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -4854,7 +4854,7 @@ static PyObject *
 os__getdiskusage_impl(PyObject *module, Py_UNICODE *path);
 
 static PyObject *
-os__getdiskusage(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -4890,7 +4890,7 @@ static long
 os_fpathconf_impl(PyObject *module, int fd, int name);
 
 static PyObject *
-os_fpathconf(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -4932,7 +4932,7 @@ static long
 os_pathconf_impl(PyObject *module, path_t *path, int name);
 
 static PyObject *
-os_pathconf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_pathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "name", NULL};
@@ -5080,7 +5080,7 @@ static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath, Py_UNICODE *operation);
 
 static PyObject *
-os_startfile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"filepath", "operation", NULL};
@@ -5145,7 +5145,7 @@ static PyObject *
 os_device_encoding_impl(PyObject *module, int fd);
 
 static PyObject *
-os_device_encoding(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_device_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -5177,7 +5177,7 @@ static PyObject *
 os_setresuid_impl(PyObject *module, uid_t ruid, uid_t euid, uid_t suid);
 
 static PyObject *
-os_setresuid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_setresuid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     uid_t ruid;
@@ -5211,7 +5211,7 @@ static PyObject *
 os_setresgid_impl(PyObject *module, gid_t rgid, gid_t egid, gid_t sgid);
 
 static PyObject *
-os_setresgid(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_setresgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     gid_t rgid;
@@ -5295,7 +5295,7 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  int follow_symlinks);
 
 static PyObject *
-os_getxattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_getxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
@@ -5343,7 +5343,7 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  Py_buffer *value, int flags, int follow_symlinks);
 
 static PyObject *
-os_setxattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "value", "flags", "follow_symlinks", NULL};
@@ -5396,7 +5396,7 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
                     int follow_symlinks);
 
 static PyObject *
-os_removexattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_removexattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
@@ -5443,7 +5443,7 @@ static PyObject *
 os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks);
 
 static PyObject *
-os_listxattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_listxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "follow_symlinks", NULL};
@@ -5560,7 +5560,7 @@ static PyObject *
 os_set_inheritable_impl(PyObject *module, int fd, int inheritable);
 
 static PyObject *
-os_set_inheritable(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_set_inheritable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -5628,7 +5628,7 @@ os_set_handle_inheritable_impl(PyObject *module, intptr_t handle,
                                int inheritable);
 
 static PyObject *
-os_set_handle_inheritable(PyObject *module, PyObject **args, Py_ssize_t nargs)
+os_set_handle_inheritable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     intptr_t handle;
@@ -5687,7 +5687,7 @@ static PyObject *
 os_DirEntry_stat_impl(DirEntry *self, int follow_symlinks);
 
 static PyObject *
-os_DirEntry_stat(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_stat(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
@@ -5717,7 +5717,7 @@ static int
 os_DirEntry_is_dir_impl(DirEntry *self, int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_dir(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_dir(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
@@ -5752,7 +5752,7 @@ static int
 os_DirEntry_is_file_impl(DirEntry *self, int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_file(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_file(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
@@ -5829,7 +5829,7 @@ static PyObject *
 os_scandir_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os_scandir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_scandir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -5866,7 +5866,7 @@ static PyObject *
 os_fspath_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-os_fspath(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_fspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -5898,7 +5898,7 @@ static PyObject *
 os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags);
 
 static PyObject *
-os_getrandom(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"size", "flags", NULL};
@@ -6405,4 +6405,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=949867cb46218339 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6ade5f170d5a431 input=a9049054013a1b77]*/

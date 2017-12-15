@@ -3298,7 +3298,7 @@ type___subclasses___impl(PyTypeObject *self)
 }
 
 static PyObject *
-type_prepare(PyObject *self, PyObject **args, Py_ssize_t nargs,
+type_prepare(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
              PyObject *kwnames)
 {
     return PyDict_New();

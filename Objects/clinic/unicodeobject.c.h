@@ -77,7 +77,7 @@ static PyObject *
 unicode_center_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_center(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
@@ -115,7 +115,7 @@ static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors);
 
 static PyObject *
-unicode_encode(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "errors", NULL};
@@ -148,7 +148,7 @@ static PyObject *
 unicode_expandtabs_impl(PyObject *self, int tabsize);
 
 static PyObject *
-unicode_expandtabs(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tabsize", NULL};
@@ -425,7 +425,7 @@ static PyObject *
 unicode_ljust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_ljust(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
@@ -474,7 +474,7 @@ static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_strip(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_strip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
@@ -505,7 +505,7 @@ static PyObject *
 unicode_lstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_lstrip(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
@@ -536,7 +536,7 @@ static PyObject *
 unicode_rstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_rstrip(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
@@ -573,7 +573,7 @@ unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count);
 
 static PyObject *
-unicode_replace(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *old;
@@ -605,7 +605,7 @@ static PyObject *
 unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_rjust(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
@@ -642,7 +642,7 @@ static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
 
 static PyObject *
-unicode_split(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
@@ -715,7 +715,7 @@ static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
 
 static PyObject *
-unicode_rsplit(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
@@ -749,7 +749,7 @@ static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends);
 
 static PyObject *
-unicode_splitlines(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"keepends", NULL};
@@ -805,7 +805,7 @@ static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(void *null, PyObject **args, Py_ssize_t nargs)
+unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -930,4 +930,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=816292e81a8a732e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ad4e81b68194264 input=a9049054013a1b77]*/

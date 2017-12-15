@@ -88,7 +88,7 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length);
 
 static PyObject *
-_lzma_LZMADecompressor_decompress(Decompressor *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "max_length", NULL};
@@ -236,7 +236,7 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
                                      Py_buffer *encoded_props);
 
 static PyObject *
-_lzma__decode_filter_properties(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_lzma__decode_filter_properties(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     lzma_vli filter_id;
@@ -256,4 +256,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d4e3802d0dea9af3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38c2d52362bf3712 input=a9049054013a1b77]*/

@@ -256,7 +256,7 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 // same to methoddescr_call(), but use FASTCALL convention.
 PyObject *
 _PyMethodDescr_FastCallKeywords(PyObject *descrobj,
-                                PyObject **args, Py_ssize_t nargs,
+                                PyObject *const *args, Py_ssize_t nargs,
                                 PyObject *kwnames)
 {
     assert(Py_TYPE(descrobj) == &PyMethodDescr_Type);
