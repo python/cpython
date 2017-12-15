@@ -23,51 +23,6 @@
     (blocks[start]==blocks[end])
 
 
-#define CONST_STACK_CREATE() { \
-    const_stack_size = 256; \
-    const_stack = PyMem_New(PyObject *, const_stack_size); \
-    if (!const_stack) { \
-        PyErr_NoMemory(); \
-        goto exitError; \
-    } \
-    }
-
-#define CONST_STACK_DELETE() do { \
-    if (const_stack) \
-        PyMem_Free(const_stack); \
-    } while(0)
-
-#define CONST_STACK_LEN() ((unsigned)(const_stack_top + 1))
-
-#define CONST_STACK_PUSH_OP(i) do { \
-    PyObject *_x; \
-    assert(_Py_OPCODE(codestr[i]) == LOAD_CONST); \
-    assert(PyList_GET_SIZE(consts) > (Py_ssize_t)get_arg(codestr, i)); \
-    _x = PyList_GET_ITEM(consts, get_arg(codestr, i)); \
-    if (++const_stack_top >= const_stack_size) { \
-        const_stack_size *= 2; \
-        PyMem_Resize(const_stack, PyObject *, const_stack_size); \
-        if (!const_stack) { \
-            PyErr_NoMemory(); \
-            goto exitError; \
-        } \
-    } \
-    const_stack[const_stack_top] = _x; \
-    in_consts = 1; \
-    } while(0)
-
-#define CONST_STACK_RESET() do { \
-    const_stack_top = -1; \
-    } while(0)
-
-#define CONST_STACK_LASTN(i) \
-    &const_stack[CONST_STACK_LEN() - i]
-
-#define CONST_STACK_POP(i) do { \
-    assert(CONST_STACK_LEN() >= i); \
-    const_stack_top -= i; \
-    } while(0)
-
 /* Scans back N consecutive LOAD_CONST instructions, skipping NOPs,
    returns index of the Nth last's LOAD_CONST's EXTENDED_ARG prefix.
    Callers are responsible to check CONST_STACK_LEN beforehand.
@@ -172,15 +127,12 @@ copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
    The consts table must still be in list form so that the
    new constant (c1, c2, ... cn) can be appended.
    Called with codestr pointing to the first LOAD_CONST.
-   Bails out with no change if one or more of the LOAD_CONSTs is missing.
 */
 static Py_ssize_t
 fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
-                        Py_ssize_t opcode_end, unsigned char opcode,
-                        PyObject *consts, PyObject **objs, int n)
+                        Py_ssize_t opcode_end, PyObject *consts, int n)
 {
     PyObject *newconst, *constant;
-    Py_ssize_t i, len_consts;
 
     /* Pre-conditions */
     assert(PyList_CheckExact(consts));
@@ -190,14 +142,27 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
     if (newconst == NULL) {
         return -1;
     }
-    for (i=0 ; i<n ; i++) {
-        constant = objs[i];
+
+    Py_ssize_t len_consts = PyList_GET_SIZE(consts);
+    Py_ssize_t pos = c_start;
+
+    for (Py_ssize_t i=0; i<n; i++) {
+        while (_Py_OPCODE(codestr[pos]) == NOP) {
+            pos = find_op(codestr, pos+1);
+        }
+        assert(pos < opcode_end);
+        assert(_Py_OPCODE(codestr[pos]) == LOAD_CONST);
+
+        unsigned int arg = get_arg(codestr, pos);
+        constant = PyList_GET_ITEM(consts, arg);
         Py_INCREF(constant);
         PyTuple_SET_ITEM(newconst, i, constant);
+
+        pos = find_op(codestr, pos+1);
     }
+    assert(_Py_OPCODE(codestr[pos]) == BUILD_TUPLE);
 
     /* Append folded constant onto consts */
-    len_consts = PyList_GET_SIZE(consts);
     if (PyList_Append(consts, newconst)) {
         Py_DECREF(newconst);
         return -1;
@@ -274,10 +239,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     unsigned char *lnotab;
     unsigned int cum_orig_offset, last_offset;
     Py_ssize_t tabsiz;
-    PyObject **const_stack = NULL;
-    Py_ssize_t const_stack_top = -1;
-    Py_ssize_t const_stack_size = 0;
-    int in_consts = 0;  /* whether we are in a LOAD_CONST sequence */
+    unsigned int cumlc=0, lastlc=0; // Count runs of consecutive LOAD_CONSTs
     unsigned int *blocks = NULL;
 
     /* Bail out if an exception is set */
@@ -314,8 +276,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         goto exitError;
     assert(PyList_Check(consts));
 
-    CONST_STACK_CREATE();
-
     for (i=find_op(codestr, 0) ; i<codelen ; i=nexti) {
         opcode = _Py_OPCODE(codestr[i]);
         op_start = i;
@@ -328,23 +288,21 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             nexti++;
         nextop = nexti < codelen ? _Py_OPCODE(codestr[nexti]) : 0;
 
-        if (!in_consts) {
-            CONST_STACK_RESET();
-        }
-        in_consts = 0;
+        lastlc = cumlc;
+        cumlc = 0;
 
         switch (opcode) {
                 /* Skip over LOAD_CONST trueconst
                    POP_JUMP_IF_FALSE xx.  This improves
                    "while 1" performance.  */
             case LOAD_CONST:
-                CONST_STACK_PUSH_OP(i);
+                cumlc = lastlc + 1;
                 if (nextop != POP_JUMP_IF_FALSE  ||
                     !ISBASICBLOCK(blocks, op_start, i + 1)  ||
                     !PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i))))
                     break;
                 fill_nops(codestr, op_start, nexti + 1);
-                CONST_STACK_POP(1);
+                cumlc = 0;
                 break;
 
                 /* Try to fold tuples of constants.
@@ -353,15 +311,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                    Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
             case BUILD_TUPLE:
                 j = get_arg(codestr, i);
-                if (j > 0 && CONST_STACK_LEN() >= j) {
+                if (j > 0 && lastlc >= j) {
                     h = lastn_const_start(codestr, op_start, j);
                     if (ISBASICBLOCK(blocks, h, op_start)) {
-                        h = fold_tuple_on_constants(codestr, h, i + 1, opcode,
-                                                    consts, CONST_STACK_LASTN(j), j);
-                        if (h >= 0) {
-                            CONST_STACK_POP(j);
-                            CONST_STACK_PUSH_OP(h);
-                        }
+                        h = fold_tuple_on_constants(codestr, h, i+1, consts, j);
                         break;
                     }
                 }
@@ -374,12 +327,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 } else if (j == 2) {
                     codestr[op_start] = PACKOPARG(ROT_TWO, 0);
                     fill_nops(codestr, op_start + 1, nexti + 1);
-                    CONST_STACK_RESET();
                 } else if (j == 3) {
                     codestr[op_start] = PACKOPARG(ROT_THREE, 0);
                     codestr[op_start + 1] = PACKOPARG(ROT_TWO, 0);
                     fill_nops(codestr, op_start + 2, nexti + 1);
-                    CONST_STACK_RESET();
                 }
                 break;
 
@@ -538,7 +489,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     }
     assert(h + (Py_ssize_t)nops == codelen);
 
-    CONST_STACK_DELETE();
     PyMem_Free(blocks);
     code = PyBytes_FromStringAndSize((char *)codestr, h * sizeof(_Py_CODEUNIT));
     PyMem_Free(codestr);
@@ -549,7 +499,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
  exitUnchanged:
     Py_XINCREF(code);
-    CONST_STACK_DELETE();
     PyMem_Free(blocks);
     PyMem_Free(codestr);
     return code;
