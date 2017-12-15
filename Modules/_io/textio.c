@@ -1304,9 +1304,9 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     const char *newline = NULL;
 
     /* Check if something is in the read buffer */
-    if (encoding != Py_None || errors != Py_None) {
-        if (self->decoded_chars != NULL) {
-            _unsupported("It is not possible to set the encoding "
+    if (self->decoded_chars != NULL) {
+        if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
+            _unsupported("It is not possible to set the encoding or newline"
                          "of stream after the first read");
             return NULL;
         }

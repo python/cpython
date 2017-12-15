@@ -3417,6 +3417,8 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(txt.readline(), 'abc\xe9\n')
         with self.assertRaises(self.UnsupportedOperation):
             txt.reconfigure(encoding='utf-8')
+        with self.assertRaises(self.UnsupportedOperation):
+            txt.reconfigure(newline=None)
 
     def test_reconfigure_write_fromascii(self):
         # ascii has a specific encodefunc in the C implementation,

@@ -2062,6 +2062,13 @@ class TextIOWrapper(TextIOBase):
 
         This also flushes the stream.
         """
+        if (self._decoder is not None
+                and (encoding is not None or errors is not None
+                     or newline is not Ellipsis)):
+            raise UnsupportedOperation(
+                "It is not possible to set the encoding or newline of stream "
+                "after the first read")
+
         if errors is None:
             if encoding is None:
                 errors = self._errors
@@ -2075,12 +2082,6 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(encoding, str):
                 raise TypeError("invalid encoding: %r" % encoding)
-
-        if (self._decoder is not None
-                and (encoding != self._encoding or errors != self._errors)):
-            raise UnsupportedOperation(
-                "It is not possible to set the encoding of stream after "
-                "the first read")
 
         if newline is Ellipsis:
             newline = self._readnl
