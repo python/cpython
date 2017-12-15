@@ -42,10 +42,23 @@ Example_demo(ExampleObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+Example_meth_method(ExampleObject *self, PyTypeObject *cls,
+            PyObject *args, PyObject *kwargs) {
+    PyObject *retval;
+    retval = PyType_GetModule(cls);
+    if (retval == NULL) {
+        return NULL;
+    }
+    Py_INCREF(retval);
+    return retval;
+}
 
 static PyMethodDef Example_methods[] = {
     {"demo",            (PyCFunction)Example_demo,  METH_VARARGS,
         PyDoc_STR("demo() -> None")},
+    {"meth_method",     (PyCFunction)Example_meth_method, METH_METHOD,
+        PyDoc_STR("Test new method call.")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -192,7 +205,7 @@ static int execfunc(PyObject *m)
     Str_Type_slots[0].pfunc = &PyUnicode_Type;
 
     /* Add a custom type */
-    temp = PyType_FromSpec(&Example_Type_spec);
+    temp = PyType_FromModuleAndSpec(m, &Example_Type_spec, NULL);
     if (temp == NULL)
         goto fail;
     if (PyModule_AddObject(m, "Example", temp) != 0)

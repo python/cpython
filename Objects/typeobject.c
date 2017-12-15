@@ -2865,9 +2865,6 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
     PyHeapTypeObject *res;
     PyMemberDef *memb;
-    PyHeapTypeObject *res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
-    PyTypeObject *type, *base;
-
     PyObject *modname;
     PyTypeObject *type, *base;
 
@@ -3423,6 +3420,7 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(et->ht_module);
     if (et->ht_cached_keys) {
         _PyDictKeys_DecRef(et->ht_cached_keys);
+    }
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
@@ -3666,7 +3664,7 @@ type_clear(PyTypeObject *type)
         ((PyHeapTypeObject *)type)->ht_cached_keys = NULL;
         _PyDictKeys_DecRef(cached_keys);
     }
-    if (type->tp_dict)
+    if (type->tp_dict) {
         PyDict_Clear(type->tp_dict);
     }
     Py_CLEAR(((PyHeapTypeObject *)type)->ht_module);
