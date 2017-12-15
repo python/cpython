@@ -234,6 +234,14 @@ type objects) *must* have the :attr:`ob_size` field.
       Formerly known as ``tp_compare`` and ``tp_reserved``.
 
 
+.. c:member:: PyClassMethods* tp_as_class
+
+   Pointer to an additional structure that contains fields to implement
+   ``__class_getitem__`` and ``__mro_entries__`` methods.
+
+   .. versionadded:: 3.7
+
+
 .. c:member:: reprfunc PyTypeObject.tp_repr
 
    .. index:: builtin: repr

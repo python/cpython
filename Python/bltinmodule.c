@@ -37,7 +37,6 @@ _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__prepare__);
 _Py_IDENTIFIER(__round__);
-_Py_IDENTIFIER(__mro_entries__);
 _Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(errors);
 _Py_IDENTIFIER(fileno);
@@ -54,8 +53,7 @@ static PyObject*
 update_bases(PyObject *bases, PyObject *const *args, int nargs)
 {
     int i, j;
-    PyObject *base, *meth, *new_base, *result, *new_bases = NULL;
-    PyObject *stack[1] = {bases};
+    PyObject *base, *new_base, *result, *new_bases = NULL;
     assert(PyTuple_Check(bases));
 
     for (i = 0; i < nargs; i++) {
@@ -70,12 +68,8 @@ update_bases(PyObject *bases, PyObject *const *args, int nargs)
             }
             continue;
         }
-        meth = _PyObject_GetAttrId(base, &PyId___mro_entries__);
-        if (!meth) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                goto error;
-            }
-            PyErr_Clear();
+        PyTypeObject *tb = Py_TYPE(base);
+        if (!tb->tp_as_class || !tb->tp_as_class->cm_mro_entries) {
             if (new_bases) {
                 if (PyList_Append(new_bases, base) < 0) {
                     goto error;
@@ -83,8 +77,8 @@ update_bases(PyObject *bases, PyObject *const *args, int nargs)
             }
             continue;
         }
-        new_base = _PyObject_FastCall(meth, stack, 1);
-        Py_DECREF(meth);
+        binaryfunc slotv = tb->tp_as_class->cm_mro_entries;
+        new_base = slotv(base, bases);
         if (!new_base) {
             goto error;
         }

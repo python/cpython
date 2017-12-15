@@ -5053,6 +5053,93 @@ recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *item;
+} PyGenericObject;
+
+
+/* Test PEP 560 slots */
+
+
+static PyObject * generic_new(PyObject *item);
+
+
+static int
+generic_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyGenericObject *o = (PyGenericObject*) self;
+
+    PyObject *item;
+    if (!PyArg_UnpackTuple(args, "Generic", 1, 1, &item)) {
+        return -1;
+    }
+
+    o->item = item;
+    return 0;
+}
+
+static void
+generic_dealloc(PyGenericObject *self)
+{
+    Py_CLEAR(self->item);
+}
+
+
+static PyObject *
+generic_mro_entries(PyGenericObject *self, PyObject *bases)
+{
+    PyObject *tup;
+    tup = PyTuple_New(1);
+    if (tup == NULL) {
+        return NULL;
+    }
+    Py_INCREF(self->item);
+    PyTuple_SET_ITEM(tup, 0, self->item);
+    return tup;
+}
+
+
+static PyObject *
+generic_class_getitem(PyTypeObject *type, PyObject *item)
+{
+    return generic_new(item);
+}
+
+
+static PyClassMethods Generic_as_class = {
+    (binaryfunc)generic_class_getitem,
+    (binaryfunc)generic_mro_entries,
+};
+
+
+PyTypeObject Generic_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "Generic",
+    sizeof(PyGenericObject),
+    0,
+    .tp_dealloc = (destructor)generic_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_as_class = &Generic_as_class,
+    .tp_init = (initproc)generic_init,
+    .tp_new = PyType_GenericNew,
+};
+
+
+static PyObject *
+generic_new(PyObject *item)
+{
+    PyGenericObject *o = PyObject_New(PyGenericObject, &Generic_Type);
+    if (o == NULL) {
+        return NULL;
+    }
+    Py_INCREF(item);
+    o->item = item;
+    return (PyObject*) o;
+}
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -5093,6 +5180,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    if (PyType_Ready(&Generic_Type) < 0)
+        return NULL;
+    Py_INCREF(&Generic_Type);
+    PyModule_AddObject(m, "Generic", (PyObject *)&Generic_Type);
 
     PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
     if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {

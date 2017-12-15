@@ -2377,24 +2377,16 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         nbases = 1;
     }
     else {
-        _Py_IDENTIFIER(__mro_entries__);
         for (i = 0; i < nbases; i++) {
             tmp = PyTuple_GET_ITEM(bases, i);
             if (PyType_Check(tmp)) {
                 continue;
             }
-            tmp = _PyObject_GetAttrId(tmp, &PyId___mro_entries__);
-            if (tmp != NULL) {
+            PyTypeObject *tt = Py_TYPE(tmp);
+            if (tt->tp_as_class && tt->tp_as_class->cm_mro_entries) {
                 PyErr_SetString(PyExc_TypeError,
                                 "type() doesn't support MRO entry resolution; "
                                 "use types.new_class()");
-                Py_DECREF(tmp);
-                return NULL;
-            }
-            else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
-            }
-            else {
                 return NULL;
             }
         }
@@ -2586,6 +2578,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_as_sequence = &et->as_sequence;
     type->tp_as_mapping = &et->as_mapping;
     type->tp_as_buffer = &et->as_buffer;
+    type->tp_as_class = &et->as_class;
     type->tp_name = PyUnicode_AsUTF8AndSize(name, &name_size);
     if (!type->tp_name)
         goto error;
@@ -2875,6 +2868,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     type->tp_as_sequence = &res->as_sequence;
     type->tp_as_mapping = &res->as_mapping;
     type->tp_as_buffer = &res->as_buffer;
+    type->tp_as_class = &res->as_class;
     /* Set tp_base and tp_bases */
     type->tp_bases = bases;
     bases = NULL;
@@ -4907,6 +4901,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 #undef COPYSEQ
 #undef COPYMAP
 #undef COPYBUF
+#undef COPYCLASS
 
 #define SLOTDEFINED(SLOT) \
     (base->SLOT != 0 && \
@@ -4920,6 +4915,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 #define COPYSEQ(SLOT) COPYSLOT(tp_as_sequence->SLOT)
 #define COPYMAP(SLOT) COPYSLOT(tp_as_mapping->SLOT)
 #define COPYBUF(SLOT) COPYSLOT(tp_as_buffer->SLOT)
+#define COPYCLASS(SLOT) COPYSLOT(tp_as_class->SLOT)
 
     /* This won't inherit indirect slots (from tp_as_number etc.)
        if type doesn't provide the space. */
@@ -5003,6 +4999,14 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
             basebase = NULL;
         COPYBUF(bf_getbuffer);
         COPYBUF(bf_releasebuffer);
+    }
+
+    if (type->tp_as_class != NULL && base->tp_as_class != NULL) {
+        basebase = base->tp_base;
+        if (basebase->tp_as_class == NULL)
+            basebase = NULL;
+        COPYCLASS(cm_getitem);
+        COPYCLASS(cm_mro_entries);
     }
 
     basebase = base->tp_base;
@@ -5259,6 +5263,8 @@ PyType_Ready(PyTypeObject *type)
             type->tp_as_mapping = base->tp_as_mapping;
         if (type->tp_as_buffer == NULL)
             type->tp_as_buffer = base->tp_as_buffer;
+        if (type->tp_as_class == NULL)
+            type->tp_as_class = base->tp_as_class;
     }
 
     /* Link into each base class's list of subclasses */
@@ -6688,6 +6694,44 @@ slot_am_anext(PyObject *self)
     return NULL;
 }
 
+static PyObject *
+slot_cm_getitem(PyTypeObject *type, PyObject *item)
+{
+    PyObject *func;
+    _Py_IDENTIFIER(__class_getitem__);
+
+    func = _PyType_LookupId(type, &PyId___class_getitem__);
+    if (func == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "object %.50s does not have __class_getitem__ method",
+                     type->tp_name);
+        return NULL;
+    }
+
+    PyObject *args[1] = {item};
+    return _PyObject_FastCall_Prepend(func, (PyObject *)type, args, 1);
+}
+
+static PyObject *
+slot_cm_mro_entries(PyObject *self, PyObject *bases)
+{
+    int unbound;
+    PyObject *func, *res;
+    _Py_IDENTIFIER(__mro_entries__);
+
+    func = lookup_maybe_method(self, &PyId___mro_entries__, &unbound);
+    if (func != NULL) {
+        PyObject *args[1] = {bases};
+        res = call_unbound(unbound, func, self, args, 1);
+        Py_DECREF(func);
+        return res;
+    }
+    PyErr_Format(PyExc_AttributeError,
+                 "object %.50s does not have __mro_entries__ method",
+                 Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
 /*
 Table mapping __foo__ names to tp_foo offsets and slot_tp_foo wrapper functions.
 
@@ -6712,6 +6756,7 @@ typedef struct wrapperbase slotdef;
 #undef IBSLOT
 #undef BINSLOT
 #undef RBINSLOT
+#undef CMSLOT
 
 #define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     {NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
@@ -6748,6 +6793,9 @@ typedef struct wrapperbase slotdef;
 #define RBINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
            NAME "($self, value, /)\n--\n\n" DOC)
+#define CMSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+    ETSLOT(NAME, as_class.SLOT, FUNCTION, WRAPPER, DOC)
+
 
 static slotdef slotdefs[] = {
     TPSLOT("__getattribute__", tp_getattr, NULL, NULL, ""),
@@ -6933,6 +6981,11 @@ static slotdef slotdefs[] = {
            wrap_indexargfunc,
            "__imul__($self, value, /)\n--\n\nImplement self*=value."),
 
+    CMSLOT("__class_getitem__", cm_getitem, slot_cm_getitem, wrap_binaryfunc,
+           "__class_getitem__($cls, item, /)\n--\n\nClass-level getitem."),
+    CMSLOT("__mro_entries__", cm_mro_entries, slot_cm_mro_entries, wrap_binaryfunc,
+           "__mro_entries__($self, bases, /)\n--\n\nInjects classes into __mro__."),
+
     {NULL}
 };
 
@@ -6950,7 +7003,11 @@ slotptr(PyTypeObject *type, int ioffset)
     /* Note: this depends on the order of the members of PyHeapTypeObject! */
     assert(offset >= 0);
     assert((size_t)offset < offsetof(PyHeapTypeObject, as_buffer));
-    if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
+    if ((size_t)offset >= offsetof(PyHeapTypeObject, as_class)) {
+        ptr = (char *)type->tp_as_class;
+        offset -= offsetof(PyHeapTypeObject, as_class);
+    }
+    else if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
         ptr = (char *)type->tp_as_sequence;
         offset -= offsetof(PyHeapTypeObject, as_sequence);
     }
