@@ -20,7 +20,7 @@ static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt);
 
 static PyObject *
-crypt_crypt(PyObject *module, PyObject **args, Py_ssize_t nargs)
+crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *word;
@@ -35,4 +35,4 @@ crypt_crypt(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f5a6aff28d43154f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d803e53466b1cd3 input=a9049054013a1b77]*/

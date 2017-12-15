@@ -295,6 +295,9 @@ Miscellaneous options
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
 
+   .. versionchanged:: 3.7
+      The option is no longer ignored.
+
    .. versionadded:: 3.2.3
 
 

@@ -125,6 +125,132 @@ fold_unaryop(expr_ty node, PyArena *arena)
     return make_const(node, newval, arena);
 }
 
+/* Check whether a collection doesn't containing too much items (including
+   subcollections).  This protects from creating a constant that needs
+   too much time for calculating a hash.
+   "limit" is the maximal number of items.
+   Returns the negative number if the total number of items exceeds the
+   limit.  Otherwise returns the limit minus the total number of items.
+*/
+
+static Py_ssize_t
+check_complexity(PyObject *obj, Py_ssize_t limit)
+{
+    if (PyTuple_Check(obj)) {
+        Py_ssize_t i;
+        limit -= PyTuple_GET_SIZE(obj);
+        for (i = 0; limit >= 0 && i < PyTuple_GET_SIZE(obj); i++) {
+            limit = check_complexity(PyTuple_GET_ITEM(obj, i), limit);
+        }
+        return limit;
+    }
+    else if (PyFrozenSet_Check(obj)) {
+        Py_ssize_t i = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        limit -= PySet_GET_SIZE(obj);
+        while (limit >= 0 && _PySet_NextEntry(obj, &i, &item, &hash)) {
+            limit = check_complexity(item, limit);
+        }
+    }
+    return limit;
+}
+
+#define MAX_INT_SIZE           128  /* bits */
+#define MAX_COLLECTION_SIZE    256  /* items */
+#define MAX_STR_SIZE          4096  /* characters */
+#define MAX_TOTAL_ITEMS       1024  /* including nested collections */
+
+static PyObject *
+safe_multiply(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+        size_t vbits = _PyLong_NumBits(v);
+        size_t wbits = _PyLong_NumBits(w);
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (vbits + wbits > MAX_INT_SIZE) {
+            return NULL;
+        }
+    }
+    else if (PyLong_Check(v) && (PyTuple_Check(w) || PyFrozenSet_Check(w))) {
+        Py_ssize_t size = PyTuple_Check(w) ? PyTuple_GET_SIZE(w) :
+                                             PySet_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
+                return NULL;
+            }
+            if (n && check_complexity(w, MAX_TOTAL_ITEMS / n) < 0) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(v) && (PyUnicode_Check(w) || PyBytes_Check(w))) {
+        Py_ssize_t size = PyUnicode_Check(w) ? PyUnicode_GET_LENGTH(w) :
+                                               PyBytes_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_STR_SIZE / size) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(w) &&
+             (PyTuple_Check(v) || PyFrozenSet_Check(v) ||
+              PyUnicode_Check(v) || PyBytes_Check(v)))
+    {
+        return safe_multiply(w, v);
+    }
+
+    return PyNumber_Multiply(v, w);
+}
+
+static PyObject *
+safe_power(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w) > 0) {
+        size_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (vbits > MAX_INT_SIZE / wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Power(v, w, Py_None);
+}
+
+static PyObject *
+safe_lshift(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+        size_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Lshift(v, w);
+}
+
+static PyObject *
+safe_mod(PyObject *v, PyObject *w)
+{
+    if (PyUnicode_Check(v) || PyBytes_Check(v)) {
+        return NULL;
+    }
+
+    return PyNumber_Remainder(v, w);
+}
+
 static int
 fold_binop(expr_ty node, PyArena *arena)
 {
@@ -147,7 +273,7 @@ fold_binop(expr_ty node, PyArena *arena)
         newval = PyNumber_Subtract(lv, rv);
         break;
     case Mult:
-        newval = PyNumber_Multiply(lv, rv);
+        newval = safe_multiply(lv, rv);
         break;
     case Div:
         newval = PyNumber_TrueDivide(lv, rv);
@@ -156,13 +282,13 @@ fold_binop(expr_ty node, PyArena *arena)
         newval = PyNumber_FloorDivide(lv, rv);
         break;
     case Mod:
-        newval = PyNumber_Remainder(lv, rv);
+        newval = safe_mod(lv, rv);
         break;
     case Pow:
-        newval = PyNumber_Power(lv, rv, Py_None);
+        newval = safe_power(lv, rv);
         break;
     case LShift:
-        newval = PyNumber_Lshift(lv, rv);
+        newval = safe_lshift(lv, rv);
         break;
     case RShift:
         newval = PyNumber_Rshift(lv, rv);
@@ -180,27 +306,6 @@ fold_binop(expr_ty node, PyArena *arena)
         return 1;
     }
 
-    if (newval == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            return 0;
-        }
-        PyErr_Clear();
-        return 1;
-    }
-
-    /* Avoid creating large constants. */
-    Py_ssize_t size = PyObject_Size(newval);
-    if (size == -1) {
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            Py_DECREF(newval);
-            return 0;
-        }
-        PyErr_Clear();
-    }
-    else if (size > 20) {
-        Py_DECREF(newval);
-        return 1;
-    }
     return make_const(node, newval, arena);
 }
 
