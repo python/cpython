@@ -39,6 +39,7 @@ class Mailbox:
         self._factory = factory
 
     def __enter__(self):
+        self.lock()
         return self
 
     def __exit__(self, type, value, traceback):
