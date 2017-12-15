@@ -565,9 +565,11 @@ _PyRandom_Init(void)
         if (seed == 0) {
             /* disable the randomized hash */
             memset(secret, 0, secret_size);
+            Py_HashRandomizationFlag = 0;
         }
         else {
             lcg_urandom(seed, secret, secret_size);
+            Py_HashRandomizationFlag = 1;
         }
     }
     else {
@@ -582,6 +584,7 @@ _PyRandom_Init(void)
         if (res < 0) {
             Py_FatalError("failed to get random numbers to initialize Python");
         }
+        Py_HashRandomizationFlag = 1;
     }
 }
 
