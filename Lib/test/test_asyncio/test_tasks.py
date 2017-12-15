@@ -2265,6 +2265,7 @@ class BaseTaskIntrospectionTests:
         self._enter_task(loop, task)
         self._leave_task(loop, task)
         self.assertIsNone(asyncio.current_task(loop))
+        self._leave_task(loop, task)
 
     def test__leave_task_failure1(self):
         task1 = mock.Mock()
