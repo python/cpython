@@ -987,7 +987,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymath.h \
-		$(srcdir)/Include/pygetopt.h \
 		$(srcdir)/Include/pymacro.h \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
@@ -1017,6 +1016,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/ceval.h \
 		$(srcdir)/Include/internal/gil.h \
 		$(srcdir)/Include/internal/mem.h \
+		$(srcdir)/Include/internal/pygetopt.h \
 		$(srcdir)/Include/internal/pystate.h \
 		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)

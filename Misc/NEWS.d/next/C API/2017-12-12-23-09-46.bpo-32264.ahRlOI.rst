@@ -1,0 +1,1 @@
+Moved the pygetopt.h header into internal/, since it has no public APIs.
