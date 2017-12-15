@@ -509,7 +509,7 @@ ABC hierarchy::
         If the resource does not concretely exist on the file system,
         raise :exc:`FileNotFoundError`.
 
-    .. abstractmethod:: is_resource(path)
+    .. abstractmethod:: is_resource(name)
 
         Returns ``True`` if the named *path* is considered a resource.
         :exc:`FileNotFoundError` is raised if *path* does not exist.

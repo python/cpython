@@ -370,8 +370,8 @@ class ResourceReader(Loader):
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def is_resource(self, path):
-        """Return True if the named 'path' is consider a resource."""
+    def is_resource(self, name):
+        """Return True if the named 'name' is consider a resource."""
         raise FileNotFoundError
 
     @abc.abstractmethod
