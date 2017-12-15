@@ -336,20 +336,18 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         return self._remove_writer(fd)
 
-    def sock_recv(self, sock, n):
+    async def sock_recv(self, sock, n):
         """Receive data from the socket.
 
         The return value is a bytes object representing the data received.
         The maximum amount of data to be received at once is specified by
         nbytes.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_recv(fut, None, sock, n)
-        return fut
+        return await fut
 
     def _sock_recv(self, fut, registered_fd, sock, n):
         # _sock_recv() can add itself as an I/O callback if the operation can't
@@ -372,19 +370,17 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(data)
 
-    def sock_recv_into(self, sock, buf):
+    async def sock_recv_into(self, sock, buf):
         """Receive data from the socket.
 
         The received data is written into *buf* (a writable buffer).
         The return value is the number of bytes written.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_recv_into(fut, None, sock, buf)
-        return fut
+        return await fut
 
     def _sock_recv_into(self, fut, registered_fd, sock, buf):
         # _sock_recv_into() can add itself as an I/O callback if the operation
@@ -408,7 +404,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(nbytes)
 
-    def sock_sendall(self, sock, data):
+    async def sock_sendall(self, sock, data):
         """Send data to the socket.
 
         The socket must be connected to a remote socket. This method continues
@@ -416,8 +412,6 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         error occurs. None is returned on success. On error, an exception is
         raised, and there is no way to determine how much data, if any, was
         successfully processed by the receiving end of the connection.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
@@ -426,7 +420,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._sock_sendall(fut, None, sock, data)
         else:
             fut.set_result(None)
-        return fut
+        return await fut
 
     def _sock_sendall(self, fut, registered_fd, sock, data):
         if registered_fd is not None:
@@ -459,11 +453,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             raise ValueError("the socket must be non-blocking")
 
         if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
-            resolved = base_events._ensure_resolved(
+            resolved = await self._ensure_resolved(
                 address, family=sock.family, proto=sock.proto, loop=self)
-            if not resolved.done():
-                await resolved
-            _, _, _, _, address = resolved.result()[0]
+            _, _, _, _, address = resolved[0]
 
         fut = self.create_future()
         self._sock_connect(fut, sock, address)
@@ -506,21 +498,19 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(None)
 
-    def sock_accept(self, sock):
+    async def sock_accept(self, sock):
         """Accept a connection.
 
         The socket must be bound to an address and listening for connections.
         The return value is a pair (conn, address) where conn is a new socket
         object usable to send and receive data on the connection, and address
         is the address bound to the socket on the other end of the connection.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_accept(fut, False, sock)
-        return fut
+        return await fut
 
     def _sock_accept(self, fut, registered, sock):
         fd = sock.fileno()
