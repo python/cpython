@@ -371,10 +371,21 @@ with the result.
 Task
 ----
 
+.. function:: create_task(coro)
+
+   Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
+   its execution.  Return the task object.
+
+   The task is executed in :func:`get_running_loop` context,
+   :exc:`RuntimeError` is raised if there is no running loop in
+   current thread.
+
+   .. versionadded:: 3.7
+
 .. class:: Task(coro, \*, loop=None)
 
-   Schedule the execution of a :ref:`coroutine <coroutine>`: wrap it in a
-   future. A task is a subclass of :class:`Future`.
+   A unit for concurrent running of :ref:`coroutines <coroutine>`,
+   subclass of :class:`Future`.
 
    A task is responsible for executing a coroutine object in an event loop.  If
    the wrapped coroutine yields from a future, the task suspends the execution
@@ -399,7 +410,7 @@ Task
    <coroutine>` did not complete. It is probably a bug and a warning is
    logged: see :ref:`Pending task destroyed <asyncio-pending-task-destroyed>`.
 
-   Don't directly create :class:`Task` instances: use the :func:`ensure_future`
+   Don't directly create :class:`Task` instances: use the :func:`create_task`
    function or the :meth:`AbstractEventLoop.create_task` method.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
@@ -547,9 +558,15 @@ Task functions
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 
+   .. note::
+
+      :func:`create_task` (added in Python 3.7) is the preferable way
+      for spawning new tasks.
+
    .. seealso::
 
-      The :meth:`AbstractEventLoop.create_task` method.
+      The :func:`create_task` function and
+      :meth:`AbstractEventLoop.create_task` method.
 
 .. function:: wrap_future(future, \*, loop=None)
 

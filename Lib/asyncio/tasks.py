@@ -1,7 +1,7 @@
 """Support for tasks, coroutines and the scheduler."""
 
 __all__ = (
-    'Task',
+    'Task', 'create_task',
     'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
     'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
@@ -67,13 +67,19 @@ class Task(futures.Future):
         return {t for t in cls._all_tasks if t._loop is loop}
 
     def __init__(self, coro, *, loop=None):
-        assert coroutines.iscoroutine(coro), repr(coro)
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
-        self._coro = coro
-        self._fut_waiter = None
+        if not coroutines.iscoroutine(coro):
+            # raise after Future.__init__(), attrs are required for __del__
+            # prevent logging for pending task in __del__
+            self._log_destroy_pending = False
+            raise TypeError(f"a coroutine was expected, got {coro!r}")
+
         self._must_cancel = False
+        self._fut_waiter = None
+        self._coro = coro
+
         self._loop.call_soon(self._step)
         self.__class__._all_tasks.add(self)
 
@@ -261,6 +267,15 @@ except ImportError:
 else:
     # _CTask is needed for tests.
     Task = _CTask = _asyncio.Task
+
+
+def create_task(coro):
+    """Schedule the execution of a coroutine object in a spawn task.
+
+    Return a Task object.
+    """
+    loop = events.get_running_loop()
+    return loop.create_task(coro)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
