@@ -830,28 +830,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_ERR("can't initialize time");
     }
 
-    /* Set sys attributes */
-    assert(interp->config.module_search_path != NULL);
-    if (PySys_SetObject("path", interp->config.module_search_path) != 0) {
-        return _Py_INIT_ERR("can't assign sys.path");
-    }
-    if (interp->config.argv != NULL) {
-        if (PySys_SetObject("argv", interp->config.argv) != 0) {
-            return _Py_INIT_ERR("can't assign sys.argv");
-        }
-    }
-    if (interp->config.warnoptions != NULL) {
-        if (PySys_SetObject("warnoptions", interp->config.warnoptions)) {
-            return _Py_INIT_ERR("can't assign sys.warnoptions");
-        }
-    }
-    if (interp->config.xoptions != NULL) {
-        if (PySys_SetObject("_xoptions", interp->config.xoptions)) {
-            return _Py_INIT_ERR("can't assign sys._xoptions");
-        }
-    }
-
-    if (_PySys_EndInit(interp->sysdict) < 0) {
+    if (_PySys_EndInit(interp->sysdict, &interp->config) < 0) {
         return _Py_INIT_ERR("can't finish initializing sys");
     }
 
@@ -1314,12 +1293,6 @@ new_interpreter(PyThreadState **tstate_p)
         return _Py_INIT_ERR("failed to copy main interpreter config");
     }
 
-    err = _PyPathConfig_Init(&interp->core_config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-    wchar_t *sys_path = Py_GetPath();
-
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
@@ -1334,8 +1307,7 @@ new_interpreter(PyThreadState **tstate_p)
             goto handle_error;
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        PySys_SetPath(sys_path);
-        _PySys_EndInit(interp->sysdict);
+        _PySys_EndInit(interp->sysdict, &interp->config);
     }
 
     bimod = _PyImport_FindBuiltin("builtins", modules);

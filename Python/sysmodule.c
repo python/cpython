@@ -2212,7 +2212,6 @@ err_occurred:
 }
 
 #undef SET_SYS_FROM_STRING
-#undef SET_SYS_FROM_STRING_BORROW
 
 /* Updating the sys namespace, returning integer error codes */
 #define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
@@ -2228,9 +2227,34 @@ err_occurred:
     } while (0)
 
 int
-_PySys_EndInit(PyObject *sysdict)
+_PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
 {
     int res;
+
+    /* _PyMainInterpreterConfig_Read() must set all these variables */
+    assert(config->module_search_path != NULL);
+    assert(config->executable != NULL);
+    assert(config->prefix != NULL);
+    assert(config->base_prefix != NULL);
+    assert(config->exec_prefix != NULL);
+    assert(config->base_exec_prefix != NULL);
+
+    SET_SYS_FROM_STRING_BORROW("path", config->module_search_path);
+    SET_SYS_FROM_STRING_BORROW("executable", config->executable);
+    SET_SYS_FROM_STRING_BORROW("prefix", config->prefix);
+    SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
+    SET_SYS_FROM_STRING_BORROW("exec_prefix", config->exec_prefix);
+    SET_SYS_FROM_STRING_BORROW("base_exec_prefix", config->base_exec_prefix);
+
+    if (config->argv != NULL) {
+        SET_SYS_FROM_STRING_BORROW("argv", config->argv);
+    }
+    if (config->warnoptions != NULL) {
+        SET_SYS_FROM_STRING_BORROW("warnoptions", config->warnoptions);
+    }
+    if (config->xoptions != NULL) {
+        SET_SYS_FROM_STRING_BORROW("_xoptions", config->xoptions);
+    }
 
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
@@ -2247,17 +2271,6 @@ _PySys_EndInit(PyObject *sysdict)
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
                          PyBool_FromLong(Py_DontWriteBytecodeFlag));
-    SET_SYS_FROM_STRING_INT_RESULT("executable",
-                        PyUnicode_FromWideChar(
-                               Py_GetProgramFullPath(), -1));
-    SET_SYS_FROM_STRING_INT_RESULT("prefix",
-                        PyUnicode_FromWideChar(Py_GetPrefix(), -1));
-    SET_SYS_FROM_STRING_INT_RESULT("exec_prefix",
-                        PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
-    SET_SYS_FROM_STRING_INT_RESULT("base_prefix",
-                        PyUnicode_FromWideChar(Py_GetPrefix(), -1));
-    SET_SYS_FROM_STRING_INT_RESULT("base_exec_prefix",
-                        PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
 
     if (get_warnoptions() == NULL)
         return -1;
@@ -2268,8 +2281,12 @@ _PySys_EndInit(PyObject *sysdict)
     if (PyErr_Occurred())
         return -1;
     return 0;
+
+err_occurred:
+    return -1;
 }
 
+#undef SET_SYS_FROM_STRING_BORROW
 #undef SET_SYS_FROM_STRING_INT_RESULT
 
 static PyObject *

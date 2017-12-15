@@ -2005,9 +2005,14 @@ void
 _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
 {
     Py_CLEAR(config->argv);
-    Py_CLEAR(config->module_search_path);
+    Py_CLEAR(config->executable);
+    Py_CLEAR(config->prefix);
+    Py_CLEAR(config->base_prefix);
+    Py_CLEAR(config->exec_prefix);
+    Py_CLEAR(config->base_exec_prefix);
     Py_CLEAR(config->warnoptions);
     Py_CLEAR(config->xoptions);
+    Py_CLEAR(config->module_search_path);
 }
 
 
@@ -2052,9 +2057,14 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
     } while (0)
 
     COPY_ATTR(argv);
-    COPY_ATTR(module_search_path);
+    COPY_ATTR(executable);
+    COPY_ATTR(prefix);
+    COPY_ATTR(base_prefix);
+    COPY_ATTR(exec_prefix);
+    COPY_ATTR(base_exec_prefix);
     COPY_ATTR(warnoptions);
     COPY_ATTR(xoptions);
+    COPY_ATTR(module_search_path);
 #undef COPY_ATTR
     return 0;
 }
@@ -2099,26 +2109,14 @@ config_create_path_list(const wchar_t *path, wchar_t delim)
 }
 
 
-static _PyInitError
-config_init_module_search_path(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
+_PyInitError
+_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
 {
     _PyInitError err = _PyPathConfig_Init(core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
-    wchar_t *sys_path = Py_GetPath();
 
-    config->module_search_path = config_create_path_list(sys_path, DELIM);
-    if (config->module_search_path == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
-}
-
-
-_PyInitError
-_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *core_config)
-{
     /* Signal handlers are installed by default */
     if (config->install_signal_handlers < 0) {
         config->install_signal_handlers = 1;
@@ -2126,11 +2124,44 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *config, _PyCoreConfig *c
 
     if (config->module_search_path == NULL &&
         !core_config->_disable_importlib)
+
     {
-        _PyInitError err = config_init_module_search_path(config, core_config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
+        wchar_t *sys_path = Py_GetPath();
+        config->module_search_path = config_create_path_list(sys_path, DELIM);
+        if (config->module_search_path == NULL) {
+            return _Py_INIT_NO_MEMORY();
         }
+    }
+
+    if (config->executable == NULL) {
+        config->executable = PyUnicode_FromWideChar(Py_GetProgramFullPath(), -1);
+        if (config->executable == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->prefix == NULL) {
+        config->prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
+        if (config->prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->exec_prefix == NULL) {
+        config->exec_prefix = PyUnicode_FromWideChar(Py_GetExecPrefix(), -1);
+        if (config->exec_prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->base_prefix == NULL) {
+        Py_INCREF(config->prefix);
+        config->base_prefix = config->prefix;
+    }
+
+    if (config->base_exec_prefix == NULL) {
+        Py_INCREF(config->exec_prefix);
+        config->base_exec_prefix = config->exec_prefix;
     }
     return _Py_INIT_OK();
 }

@@ -52,15 +52,18 @@ typedef struct {
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
- *
- * For the moment, just handle the args to _Py_InitializeEx
  */
 typedef struct {
     int install_signal_handlers;
-    PyObject *argv;                 /* sys.argv list, can be NULL */
-    PyObject *module_search_path;   /* sys.path list */
-    PyObject *warnoptions;          /* sys.warnoptions list, can be NULL */
-    PyObject *xoptions;             /* sys._xoptions dict, can be NULL */
+    PyObject *argv;                /* sys.argv list, can be NULL */
+    PyObject *executable;          /* sys.executable str */
+    PyObject *prefix;              /* sys.prefix str */
+    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
+    PyObject *exec_prefix;         /* sys.exec_prefix str */
+    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
+    PyObject *module_search_path;  /* sys.path list */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \
