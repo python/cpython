@@ -1444,7 +1444,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.gethostbyname(domain)
         socket.gethostbyname_ex(domain)
         socket.getaddrinfo(domain,0,socket.AF_UNSPEC,socket.SOCK_STREAM)
-        # this may not work if the forward lookup choses the IPv6 address, as that doesn't
+        # this may not work if the forward lookup chooses the IPv6 address, as that doesn't
         # have a reverse entry yet
         # socket.gethostbyaddr('испытание.python.org')
 
@@ -4399,7 +4399,7 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.write_file.write(self.write_msg)
         self.write_file.flush()
         self.evt2.set()
-        # Avoid cloding the socket before the server test has finished,
+        # Avoid closing the socket before the server test has finished,
         # otherwise system recv() will return 0 instead of EWOULDBLOCK.
         self.serv_finished.wait(5.0)
 
@@ -5136,8 +5136,6 @@ class InheritanceTest(unittest.TestCase):
                              0)
 
 
-    @unittest.skipUnless(hasattr(socket, "socketpair"),
-                         "need socket.socketpair()")
     def test_socketpair(self):
         s1, s2 = socket.socketpair()
         self.addCleanup(s1.close)
@@ -5575,6 +5573,9 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
         else:
             return sock
 
+    # bpo-31705: On kernel older than 4.5, sendto() failed with ENOKEY,
+    # at least on ppc64le architecture
+    @support.requires_linux_version(4, 5)
     def test_sha256(self):
         expected = bytes.fromhex("ba7816bf8f01cfea414140de5dae2223b00361a396"
                                  "177a9cb410ff61f20015ad")

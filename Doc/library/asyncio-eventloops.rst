@@ -25,6 +25,13 @@ the execution of the process.
 
    Equivalent to calling ``get_event_loop_policy().new_event_loop()``.
 
+.. function:: get_running_loop()
+
+   Return the running event loop in the current OS thread.  If there
+   is no running event loop a :exc:`RuntimeError` is raised.
+
+   .. versionadded:: 3.7
+
 
 .. _asyncio-event-loops:
 
@@ -189,10 +196,15 @@ An event loop policy must implement the following interface:
 
 
 The default policy defines context as the current thread, and manages an event
-loop per thread that interacts with :mod:`asyncio`.  If the current thread
-doesn't already have an event loop associated with it, the default policy's
-:meth:`~AbstractEventLoopPolicy.get_event_loop` method creates one when
-called from the main thread, but raises :exc:`RuntimeError` otherwise.
+loop per thread that interacts with :mod:`asyncio`. An exception to this rule
+happens when :meth:`~AbstractEventLoopPolicy.get_event_loop` is called from a
+running future/coroutine, in which case it will return the current loop
+running that future/coroutine.
+
+If the current thread doesn't already have an event loop associated with it,
+the default policy's :meth:`~AbstractEventLoopPolicy.get_event_loop` method
+creates one when called from the main thread, but raises :exc:`RuntimeError`
+otherwise.
 
 
 Access to the global loop policy
