@@ -1458,7 +1458,7 @@ class Knights:
             # If we create a square with one exit, we must visit it next;
             # else somebody else will have to visit it, and since there's
             # only one adjacent, there won't be a way to leave it again.
-            # Finelly, if we create more than one free square with a
+            # Finally, if we create more than one free square with a
             # single exit, we can only move to one of them next, leaving
             # the other one a dead end.
             ne0 = ne1 = 0
@@ -1830,13 +1830,7 @@ Yield by itself yields None:
 [None]
 
 
-
-An obscene abuse of a yield expression within a generator expression:
-
->>> list((yield 21) for i in range(4))
-[21, None, 21, None, 21, None, 21, None]
-
-And a more sane, but still weird usage:
+Yield is allowed only in the outermost iterable in generator expression:
 
 >>> def f(): list(i for i in [(yield 26)])
 >>> type(f())
@@ -2103,10 +2097,6 @@ enclosing function a generator:
 <class 'generator'>
 
 >>> def f(): lambda x=(yield): 1
->>> type(f())
-<class 'generator'>
-
->>> def f(): x=(i for i in (yield) if (yield))
 >>> type(f())
 <class 'generator'>
 

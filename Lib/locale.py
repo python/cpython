@@ -14,10 +14,9 @@ import sys
 import encodings
 import encodings.aliases
 import re
-import collections.abc
+import _collections_abc
 from builtins import str as _builtin_str
 import functools
-import warnings
 
 # Try importing the _locale module.
 #
@@ -215,7 +214,7 @@ def format_string(f, val, grouping=False, monetary=False):
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
-    if isinstance(val, collections.abc.Mapping):
+    if isinstance(val, _collections_abc.Mapping):
         new_val = []
         for perc in percents:
             if perc.group()[-1]=='%':
@@ -244,6 +243,7 @@ def format_string(f, val, grouping=False, monetary=False):
 
 def format(percent, value, grouping=False, monetary=False, *additional):
     """Deprecated, use format_string instead."""
+    import warnings
     warnings.warn(
         "This method will be removed in a future version of Python. "
         "Use 'locale.format_string()' instead.",
@@ -617,6 +617,8 @@ if sys.platform.startswith("win"):
     # On Win32, this will return the ANSI code page
     def getpreferredencoding(do_setlocale = True):
         """Return the charset that the user is likely using."""
+        if sys.flags.utf8_mode:
+            return 'UTF-8'
         import _bootlocale
         return _bootlocale.getpreferredencoding(False)
 else:
@@ -634,6 +636,8 @@ else:
             def getpreferredencoding(do_setlocale = True):
                 """Return the charset that the user is likely using,
                 by looking at environment variables."""
+                if sys.flags.utf8_mode:
+                    return 'UTF-8'
                 res = getdefaultlocale()[1]
                 if res is None:
                     # LANG not set, default conservatively to ASCII
@@ -643,6 +647,8 @@ else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,
             according to the system configuration."""
+            if sys.flags.utf8_mode:
+                return 'UTF-8'
             import _bootlocale
             if do_setlocale:
                 oldloc = setlocale(LC_CTYPE)

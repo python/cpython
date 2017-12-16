@@ -531,7 +531,15 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
            _PyIO_str_getstate, NULL);
         if (state == NULL)
             return NULL;
-        if (!PyArg_ParseTuple(state, "OK", &buffer, &flag)) {
+        if (!PyTuple_Check(state)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "illegal decoder state");
+            Py_DECREF(state);
+            return NULL;
+        }
+        if (!PyArg_ParseTuple(state, "OK;illegal decoder state",
+                              &buffer, &flag))
+        {
             Py_DECREF(state);
             return NULL;
         }
@@ -562,8 +570,15 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     PyObject *buffer;
     unsigned long long flag;
 
-    if (!PyArg_ParseTuple(state, "OK", &buffer, &flag))
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state argument must be a tuple");
         return NULL;
+    }
+    if (!PyArg_ParseTuple(state, "OK;setstate(): illegal state argument",
+                          &buffer, &flag))
+    {
+        return NULL;
+    }
 
     self->pendingcr = (int) (flag & 1);
     flag >>= 1;
@@ -662,7 +677,7 @@ typedef struct
                                       written, or NULL */
     Py_ssize_t pending_bytes_count;
 
-    /* snapshot is either None, or a tuple (dec_flags, next_input) where
+    /* snapshot is either NULL, or a tuple (dec_flags, next_input) where
      * dec_flags is the second (integer) item of the decoder state and
      * next_input is the chunk of input bytes that comes next after the
      * snapshot point.  We use this to reconstruct decoder states in tell().
@@ -926,6 +941,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     else {
         PyErr_SetString(PyExc_OSError,
                         "could not determine default encoding");
+        goto error;
     }
 
     /* Check we have been asked for a real text encoding */
@@ -1372,6 +1388,13 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     Py_DECREF(text);
     if (b == NULL)
         return NULL;
+    if (!PyBytes_Check(b)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder should return a bytes object, not '%.200s'",
+                     Py_TYPE(b)->tp_name);
+        Py_DECREF(b);
+        return NULL;
+    }
 
     if (self->pending_bytes == NULL) {
         self->pending_bytes = PyList_New(0);
@@ -1491,15 +1514,23 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         /* Given this, we know there was a valid snapshot point
          * len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
          */
-        if (PyArg_ParseTuple(state, "OO", &dec_buffer, &dec_flags) < 0) {
+        if (!PyTuple_Check(state)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "illegal decoder state");
+            Py_DECREF(state);
+            return -1;
+        }
+        if (!PyArg_ParseTuple(state,
+                              "OO;illegal decoder state", &dec_buffer, &dec_flags))
+        {
             Py_DECREF(state);
             return -1;
         }
 
         if (!PyBytes_Check(dec_buffer)) {
             PyErr_Format(PyExc_TypeError,
-                         "decoder getstate() should have returned a bytes "
-                         "object, not '%.200s'",
+                         "illegal decoder state: the first item should be a "
+                         "bytes object, not '%.200s'",
                          Py_TYPE(dec_buffer)->tp_name);
             Py_DECREF(state);
             return -1;
@@ -2344,6 +2375,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
         goto fail;
 
     /* Skip backward to the snapshot point (see _read_chunk). */
+    assert(PyTuple_Check(self->snapshot));
     if (!PyArg_ParseTuple(self->snapshot, "iO", &cookie.dec_flags, &next_input))
         goto fail;
 
@@ -2371,14 +2403,22 @@ _io_TextIOWrapper_tell_impl(textio *self)
             _PyIO_str_getstate, NULL); \
         if (_state == NULL) \
             goto fail; \
-        if (!PyArg_ParseTuple(_state, "Oi", &dec_buffer, &dec_flags)) { \
+        if (!PyTuple_Check(_state)) { \
+            PyErr_SetString(PyExc_TypeError, \
+                            "illegal decoder state"); \
+            Py_DECREF(_state); \
+            goto fail; \
+        } \
+        if (!PyArg_ParseTuple(_state, "Oi;illegal decoder state", \
+                              &dec_buffer, &dec_flags)) \
+        { \
             Py_DECREF(_state); \
             goto fail; \
         } \
         if (!PyBytes_Check(dec_buffer)) { \
             PyErr_Format(PyExc_TypeError, \
-                         "decoder getstate() should have returned a bytes " \
-                         "object, not '%.200s'", \
+                         "illegal decoder state: the first item should be a " \
+                         "bytes object, not '%.200s'", \
                          Py_TYPE(dec_buffer)->tp_name); \
             Py_DECREF(_state); \
             goto fail; \

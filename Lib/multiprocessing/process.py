@@ -17,6 +17,7 @@ import os
 import sys
 import signal
 import itertools
+import threading
 from _weakrefset import WeakSet
 
 #
@@ -311,6 +312,7 @@ class BaseProcess(object):
             sys.stderr.write('Process %s:\n' % self.name)
             traceback.print_exc()
         finally:
+            threading._shutdown()
             util.info('process exiting with exitcode %d' % exitcode)
             sys.stdout.flush()
             sys.stderr.flush()

@@ -970,10 +970,20 @@ Internal types
 
       .. index::
          single: f_trace (frame attribute)
+         single: f_trace_lines (frame attribute)
+         single: f_trace_opcodes (frame attribute)
          single: f_lineno (frame attribute)
 
       Special writable attributes: :attr:`f_trace`, if not ``None``, is a function
-      called at the start of each source code line (this is used by the debugger);
+      called for various events during code execution (this is used by the debugger).
+      Normally an event is triggered for each new source line - this can be
+      disabled by setting :attr:`f_trace_lines` to :const:`False`.
+
+      Implementations *may* allow per-opcode events to be requested by setting
+      :attr:`f_trace_opcodes` to :const:`True`. Note that this may lead to
+      undefined interpreter behaviour if exceptions raised by the trace
+      function escape to the function being traced.
+
       :attr:`f_lineno` is the current line number of the frame --- writing to this
       from within a trace function jumps to the given line (only for the bottom-most
       frame).  A debugger can implement a Jump command (aka Set Next Statement)
@@ -1502,6 +1512,51 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    returned. :func:`dir` converts the returned sequence to a list and sorts it.
 
 
+Customizing module attribute access
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __getattr__ (module attribute)
+   single: __dir__ (module attribute)
+   single: __class__ (module attribute)
+
+Special names ``__getattr__`` and ``__dir__`` can be also used to customize
+access to module attributes. The ``__getattr__`` function at the module level
+should accept one argument which is the name of an attribute and return the
+computed value or raise an :exc:`AttributeError`. If an attribute is
+not found on a module object through the normal lookup, i.e.
+:meth:`object.__getattribute__`, then ``__getattr__`` is searched in
+the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
+it is called with the attribute name and the result is returned.
+
+The ``__dir__`` function should accept no arguments, and return a list of
+strings that represents the names accessible on module. If present, this
+function overrides the standard :func:`dir` search on a module.
+
+For a more fine grained customization of the module behavior (setting
+attributes, properties, etc.), one can set the ``__class__`` attribute of
+a module object to a subclass of :class:`types.ModuleType`. For example::
+
+   import sys
+   from types import ModuleType
+
+   class VerboseModule(ModuleType):
+       def __repr__(self):
+           return f'Verbose {self.__name__}'
+
+       def __setattr__(self, attr, value):
+           print(f'Setting {attr}...')
+           setattr(self, attr, value)
+
+   sys.modules[__name__].__class__ = VerboseModule
+
+.. note::
+   Defining module ``__getattr__`` and setting module ``__class__`` only
+   affect lookups made using the attribute access syntax -- directly accessing
+   the module globals (whether by code within the module, or via a reference
+   to the module's globals dictionary) is unaffected.
+
+
 .. _descriptors:
 
 Implementing Descriptors
@@ -1886,8 +1941,8 @@ Metaclass example
 ^^^^^^^^^^^^^^^^^
 
 The potential uses for metaclasses are boundless. Some ideas that have been
-explored include logging, interface checking, automatic delegation, automatic
-property creation, proxies, frameworks, and automatic resource
+explored include enum, logging, interface checking, automatic delegation,
+automatic property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
 Here is an example of a metaclass that uses an :class:`collections.OrderedDict`
@@ -2510,9 +2565,8 @@ generators, coroutines do not directly support iteration.
 Asynchronous Iterators
 ----------------------
 
-An *asynchronous iterable* is able to call asynchronous code in its
-``__aiter__`` implementation, and an *asynchronous iterator* can call
-asynchronous code in its ``__anext__`` method.
+An *asynchronous iterator* can call asynchronous code in
+its ``__anext__`` method.
 
 Asynchronous iterators can be used in an :keyword:`async for` statement.
 
@@ -2542,48 +2596,14 @@ An example of an asynchronous iterable object::
 
 .. versionadded:: 3.5
 
-.. note::
+.. versionchanged:: 3.7
+   Prior to Python 3.7, ``__aiter__`` could return an *awaitable*
+   that would resolve to an
+   :term:`asynchronous iterator <asynchronous iterator>`.
 
-   .. versionchanged:: 3.5.2
-      Starting with CPython 3.5.2, ``__aiter__`` can directly return
-      :term:`asynchronous iterators <asynchronous iterator>`.  Returning
-      an :term:`awaitable` object will result in a
-      :exc:`PendingDeprecationWarning`.
-
-      The recommended way of writing backwards compatible code in
-      CPython 3.5.x is to continue returning awaitables from
-      ``__aiter__``.  If you want to avoid the PendingDeprecationWarning
-      and keep the code backwards compatible, the following decorator
-      can be used::
-
-          import functools
-          import sys
-
-          if sys.version_info < (3, 5, 2):
-              def aiter_compat(func):
-                  @functools.wraps(func)
-                  async def wrapper(self):
-                      return func(self)
-                  return wrapper
-          else:
-              def aiter_compat(func):
-                  return func
-
-      Example::
-
-          class AsyncIterator:
-
-              @aiter_compat
-              def __aiter__(self):
-                  return self
-
-              async def __anext__(self):
-                  ...
-
-      Starting with CPython 3.6, the :exc:`PendingDeprecationWarning`
-      will be replaced with the :exc:`DeprecationWarning`.
-      In CPython 3.7, returning an awaitable from ``__aiter__`` will
-      result in a :exc:`RuntimeError`.
+   Starting with Python 3.7, ``__aiter__`` must return an
+   asynchronous iterator object.  Returning anything else
+   will result in a :exc:`TypeError` error.
 
 
 .. _async-context-managers:

@@ -46,6 +46,7 @@ Noddy_clear(Noddy *self)
 static void
 Noddy_dealloc(Noddy* self)
 {
+    PyObject_GC_UnTrack(self);
     Noddy_clear(self);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }

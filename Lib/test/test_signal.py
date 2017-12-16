@@ -5,14 +5,11 @@ import socket
 import statistics
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, spawn_python
-try:
-    import threading
-except ImportError:
-    threading = None
 try:
     import _testcapi
 except ImportError:
@@ -21,7 +18,6 @@ except ImportError:
 
 class GenericTests(unittest.TestCase):
 
-    @unittest.skipIf(threading is None, "test needs threading module")
     def test_enums(self):
         for name in dir(signal):
             sig = getattr(signal, name)
@@ -807,7 +803,6 @@ class PendingSignalsTests(unittest.TestCase):
                          'need signal.sigwait()')
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
-    @unittest.skipIf(threading is None, "test needs threading module")
     def test_sigwait_thread(self):
         # Check that calling sigwait() from a thread doesn't suspend the whole
         # process. A new interpreter is spawned to avoid problems when mixing

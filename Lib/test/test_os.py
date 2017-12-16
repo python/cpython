@@ -22,15 +22,13 @@ import stat
 import subprocess
 import sys
 import sysconfig
+import threading
 import time
 import unittest
 import uuid
 import warnings
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
+
 try:
     import resource
 except ImportError:
@@ -81,12 +79,6 @@ else:
 
 # Issue #14110: Some tests fail on FreeBSD if the user is in the wheel group.
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
-
-
-@contextlib.contextmanager
-def ignore_deprecation_warnings(msg_regex, quiet=False):
-    with support.check_warnings((msg_regex, DeprecationWarning), quiet=quiet):
-        yield
 
 
 def requires_os_func(name):
@@ -179,7 +171,7 @@ class FileTests(unittest.TestCase):
         with open(support.TESTFN, "rb") as fp:
             data = os.read(fp.fileno(), size)
 
-        # The test does not try to read more than 2 GB at once because the
+        # The test does not try to read more than 2 GiB at once because the
         # operating system is free to return less bytes than requested.
         self.assertEqual(data, b'test')
 
@@ -349,12 +341,7 @@ class StatAttributeTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
-        try:
-            result = os.statvfs(self.fname)
-        except OSError as e:
-            # On AtheOS, glibc always returns ENOSYS
-            if e.errno == errno.ENOSYS:
-                self.skipTest('os.statvfs() failed with ENOSYS')
+        result = os.statvfs(self.fname)
 
         # Make sure direct access works
         self.assertEqual(result.f_bfree, result[3])
@@ -364,6 +351,11 @@ class StatAttributeTests(unittest.TestCase):
                     'ffree', 'favail', 'flag', 'namemax')
         for value, member in enumerate(members):
             self.assertEqual(getattr(result, 'f_' + member), result[value])
+
+        self.assertTrue(isinstance(result.f_fsid, int))
+
+        # Test that the size of the tuple doesn't change
+        self.assertEqual(len(result), 10)
 
         # Make sure that assignment really fails
         try:
@@ -394,12 +386,7 @@ class StatAttributeTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'statvfs'),
                          "need os.statvfs()")
     def test_statvfs_result_pickle(self):
-        try:
-            result = os.statvfs(self.fname)
-        except OSError as e:
-            # On AtheOS, glibc always returns ENOSYS
-            if e.errno == errno.ENOSYS:
-                self.skipTest('os.statvfs() failed with ENOSYS')
+        result = os.statvfs(self.fname)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             p = pickle.dumps(result, proto)
@@ -489,17 +476,6 @@ class UtimeTests(unittest.TestCase):
         self.addCleanup(support.rmtree, self.dirname)
         os.mkdir(self.dirname)
         create_file(self.fname)
-
-        def restore_float_times(state):
-            with ignore_deprecation_warnings('stat_float_times'):
-                os.stat_float_times(state)
-
-        # ensure that st_atime and st_mtime are float
-        with ignore_deprecation_warnings('stat_float_times'):
-            old_float_times = os.stat_float_times(-1)
-            self.addCleanup(restore_float_times, old_float_times)
-
-            os.stat_float_times(True)
 
     def support_subsecond(self, filename):
         # Heuristic to check if the filesystem supports timestamp with
@@ -621,14 +597,13 @@ class UtimeTests(unittest.TestCase):
 
         if not self.support_subsecond(self.fname):
             delta = 1.0
-        elif os.name == 'nt':
+        else:
             # On Windows, the usual resolution of time.time() is 15.6 ms.
             # bpo-30649: Tolerate 50 ms for slow Windows buildbots.
+            #
+            # x86 Gentoo Refleaks 3.x once failed with dt=20.2 ms. So use
+            # also 50 ms on other platforms.
             delta = 0.050
-        else:
-            # bpo-30649: PPC64 Fedora 3.x buildbot requires
-            # at least a delta of 14 ms
-            delta = 0.020
         st = os.stat(self.fname)
         msg = ("st_time=%r, current=%r, dt=%r"
                % (st.st_mtime, current, st.st_mtime - current))
@@ -1351,7 +1326,7 @@ class URandomTests(unittest.TestCase):
             'sys.stdout.buffer.flush()'))
         out = assert_python_ok('-c', code)
         stdout = out[1]
-        self.assertEqual(len(stdout), 16)
+        self.assertEqual(len(stdout), count)
         return stdout
 
     def test_urandom_subprocess(self):
@@ -1598,19 +1573,19 @@ class ExecTests(unittest.TestCase):
     def test_execve_invalid_env(self):
         args = [sys.executable, '-c', 'pass']
 
-        # null character in the enviroment variable name
+        # null character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
-        # null character in the enviroment variable value
+        # null character in the environment variable value
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
-        # equal character in the enviroment variable name
+        # equal character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         with self.assertRaises(ValueError):
@@ -1766,7 +1741,10 @@ class LinkTests(unittest.TestCase):
     def _test_link(self, file1, file2):
         create_file(file1)
 
-        os.link(file1, file2)
+        try:
+            os.link(file1, file2)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
         with open(file1, "r") as f1, open(file2, "r") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
 
@@ -2430,7 +2408,7 @@ class SpawnTests(unittest.TestCase):
     def _test_invalid_env(self, spawn):
         args = [sys.executable, '-c', 'pass']
 
-        # null character in the enviroment variable name
+        # null character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         try:
@@ -2440,7 +2418,7 @@ class SpawnTests(unittest.TestCase):
         else:
             self.assertEqual(exitcode, 127)
 
-        # null character in the enviroment variable value
+        # null character in the environment variable value
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         try:
@@ -2450,7 +2428,7 @@ class SpawnTests(unittest.TestCase):
         else:
             self.assertEqual(exitcode, 127)
 
-        # equal character in the enviroment variable name
+        # equal character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         try:
@@ -2460,7 +2438,7 @@ class SpawnTests(unittest.TestCase):
         else:
             self.assertEqual(exitcode, 127)
 
-        # equal character in the enviroment variable value
+        # equal character in the environment variable value
         filename = support.TESTFN
         self.addCleanup(support.unlink, filename)
         with open(filename, "w") as fp:
@@ -2516,96 +2494,94 @@ class ProgramPriorityTests(unittest.TestCase):
                     raise
 
 
-if threading is not None:
-    class SendfileTestServer(asyncore.dispatcher, threading.Thread):
+class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 
-        class Handler(asynchat.async_chat):
+    class Handler(asynchat.async_chat):
 
-            def __init__(self, conn):
-                asynchat.async_chat.__init__(self, conn)
-                self.in_buffer = []
-                self.closed = False
-                self.push(b"220 ready\r\n")
+        def __init__(self, conn):
+            asynchat.async_chat.__init__(self, conn)
+            self.in_buffer = []
+            self.closed = False
+            self.push(b"220 ready\r\n")
 
-            def handle_read(self):
-                data = self.recv(4096)
-                self.in_buffer.append(data)
+        def handle_read(self):
+            data = self.recv(4096)
+            self.in_buffer.append(data)
 
-            def get_data(self):
-                return b''.join(self.in_buffer)
+        def get_data(self):
+            return b''.join(self.in_buffer)
 
-            def handle_close(self):
-                self.close()
-                self.closed = True
-
-            def handle_error(self):
-                raise
-
-        def __init__(self, address):
-            threading.Thread.__init__(self)
-            asyncore.dispatcher.__init__(self)
-            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.bind(address)
-            self.listen(5)
-            self.host, self.port = self.socket.getsockname()[:2]
-            self.handler_instance = None
-            self._active = False
-            self._active_lock = threading.Lock()
-
-        # --- public API
-
-        @property
-        def running(self):
-            return self._active
-
-        def start(self):
-            assert not self.running
-            self.__flag = threading.Event()
-            threading.Thread.start(self)
-            self.__flag.wait()
-
-        def stop(self):
-            assert self.running
-            self._active = False
-            self.join()
-
-        def wait(self):
-            # wait for handler connection to be closed, then stop the server
-            while not getattr(self.handler_instance, "closed", False):
-                time.sleep(0.001)
-            self.stop()
-
-        # --- internals
-
-        def run(self):
-            self._active = True
-            self.__flag.set()
-            while self._active and asyncore.socket_map:
-                self._active_lock.acquire()
-                asyncore.loop(timeout=0.001, count=1)
-                self._active_lock.release()
-            asyncore.close_all()
-
-        def handle_accept(self):
-            conn, addr = self.accept()
-            self.handler_instance = self.Handler(conn)
-
-        def handle_connect(self):
+        def handle_close(self):
             self.close()
-        handle_read = handle_connect
-
-        def writable(self):
-            return 0
+            self.closed = True
 
         def handle_error(self):
             raise
 
+    def __init__(self, address):
+        threading.Thread.__init__(self)
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.bind(address)
+        self.listen(5)
+        self.host, self.port = self.socket.getsockname()[:2]
+        self.handler_instance = None
+        self._active = False
+        self._active_lock = threading.Lock()
 
-@unittest.skipUnless(threading is not None, "test needs threading module")
+    # --- public API
+
+    @property
+    def running(self):
+        return self._active
+
+    def start(self):
+        assert not self.running
+        self.__flag = threading.Event()
+        threading.Thread.start(self)
+        self.__flag.wait()
+
+    def stop(self):
+        assert self.running
+        self._active = False
+        self.join()
+
+    def wait(self):
+        # wait for handler connection to be closed, then stop the server
+        while not getattr(self.handler_instance, "closed", False):
+            time.sleep(0.001)
+        self.stop()
+
+    # --- internals
+
+    def run(self):
+        self._active = True
+        self.__flag.set()
+        while self._active and asyncore.socket_map:
+            self._active_lock.acquire()
+            asyncore.loop(timeout=0.001, count=1)
+            self._active_lock.release()
+        asyncore.close_all()
+
+    def handle_accept(self):
+        conn, addr = self.accept()
+        self.handler_instance = self.Handler(conn)
+
+    def handle_connect(self):
+        self.close()
+    handle_read = handle_connect
+
+    def writable(self):
+        return 0
+
+    def handle_error(self):
+        raise
+
+
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
 class TestSendfile(unittest.TestCase):
 
-    DATA = b"12345abcde" * 16 * 1024  # 160 KB
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
     SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
                                not sys.platform.startswith("solaris") and \
                                not sys.platform.startswith("sunos")
@@ -2920,7 +2896,8 @@ class TermsizeTests(unittest.TestCase):
         """
         try:
             size = subprocess.check_output(['stty', 'size']).decode().split()
-        except (FileNotFoundError, subprocess.CalledProcessError):
+        except (FileNotFoundError, subprocess.CalledProcessError,
+                PermissionError):
             self.skipTest("stty invocation failed")
         expected = (int(size[1]), int(size[0])) # reversed order
 
@@ -3274,7 +3251,10 @@ class TestScandir(unittest.TestCase):
         os.mkdir(dirname)
         filename = self.create_file("file.txt")
         if link:
-            os.link(filename, os.path.join(self.path, "link_file.txt"))
+            try:
+                os.link(filename, os.path.join(self.path, "link_file.txt"))
+            except PermissionError as e:
+                self.skipTest('os.link(): %s' % e)
         if symlink:
             os.symlink(dirname, os.path.join(self.path, "symlink_dir"),
                        target_is_directory=True)
@@ -3580,6 +3560,23 @@ class TestPEP519(unittest.TestCase):
         # __fspath__ raises an exception.
         self.assertRaises(ZeroDivisionError, self.fspath,
                           _PathLike(ZeroDivisionError()))
+
+
+class TimesTests(unittest.TestCase):
+    def test_times(self):
+        times = os.times()
+        self.assertIsInstance(times, os.times_result)
+
+        for field in ('user', 'system', 'children_user', 'children_system',
+                      'elapsed'):
+            value = getattr(times, field)
+            self.assertIsInstance(value, float)
+
+        if os.name == 'nt':
+            self.assertEqual(times.children_user, 0)
+            self.assertEqual(times.children_system, 0)
+            self.assertEqual(times.elapsed, 0)
+
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.

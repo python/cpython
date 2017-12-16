@@ -28,7 +28,7 @@ _asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     static const char * const _keywords[] = {"loop", NULL};
     static _PyArg_Parser _parser = {"|$O:Future", _keywords, 0};
-    PyObject *loop = NULL;
+    PyObject *loop = Py_None;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &loop)) {
@@ -244,7 +244,7 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"coro", "loop", NULL};
     static _PyArg_Parser _parser = {"O|$O:Task", _keywords, 0};
     PyObject *coro;
-    PyObject *loop = NULL;
+    PyObject *loop = Py_None;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &coro, &loop)) {
@@ -273,7 +273,7 @@ static PyObject *
 _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_current_task(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_current_task(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -305,7 +305,7 @@ static PyObject *
 _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_all_tasks(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_all_tasks(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -405,7 +405,7 @@ static PyObject *
 _asyncio_Task_get_stack_impl(TaskObj *self, PyObject *limit);
 
 static PyObject *
-_asyncio_Task_get_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_get_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", NULL};
@@ -442,7 +442,7 @@ _asyncio_Task_print_stack_impl(TaskObj *self, PyObject *limit,
                                PyObject *file);
 
 static PyObject *
-_asyncio_Task_print_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_print_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", "file", NULL};
@@ -472,12 +472,12 @@ static PyObject *
 _asyncio_Task__step_impl(TaskObj *self, PyObject *exc);
 
 static PyObject *
-_asyncio_Task__step(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__step(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc", NULL};
     static _PyArg_Parser _parser = {"|O:_step", _keywords, 0};
-    PyObject *exc = NULL;
+    PyObject *exc = Py_None;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &exc)) {
@@ -501,7 +501,7 @@ static PyObject *
 _asyncio_Task__wakeup_impl(TaskObj *self, PyObject *fut);
 
 static PyObject *
-_asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__wakeup(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fut", NULL};
@@ -517,4 +517,82 @@ _asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe651840e0466fa9 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
+"_get_running_loop($module, /)\n"
+"--\n"
+"\n"
+"Return the running event loop or None.\n"
+"\n"
+"This is a low-level function intended to be used by event loops.\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO__GET_RUNNING_LOOP_METHODDEF    \
+    {"_get_running_loop", (PyCFunction)_asyncio__get_running_loop, METH_NOARGS, _asyncio__get_running_loop__doc__},
+
+static PyObject *
+_asyncio__get_running_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio__get_running_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio__get_running_loop_impl(module);
+}
+
+PyDoc_STRVAR(_asyncio__set_running_loop__doc__,
+"_set_running_loop($module, loop, /)\n"
+"--\n"
+"\n"
+"Set the running event loop.\n"
+"\n"
+"This is a low-level function intended to be used by event loops.\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO__SET_RUNNING_LOOP_METHODDEF    \
+    {"_set_running_loop", (PyCFunction)_asyncio__set_running_loop, METH_O, _asyncio__set_running_loop__doc__},
+
+PyDoc_STRVAR(_asyncio_get_event_loop__doc__,
+"get_event_loop($module, /)\n"
+"--\n"
+"\n"
+"Return an asyncio event loop.\n"
+"\n"
+"When called from a coroutine or a callback (e.g. scheduled with\n"
+"call_soon or similar API), this function will always return the\n"
+"running event loop.\n"
+"\n"
+"If there is no running event loop set, the function will return\n"
+"the result of `get_event_loop_policy().get_event_loop()` call.");
+
+#define _ASYNCIO_GET_EVENT_LOOP_METHODDEF    \
+    {"get_event_loop", (PyCFunction)_asyncio_get_event_loop, METH_NOARGS, _asyncio_get_event_loop__doc__},
+
+static PyObject *
+_asyncio_get_event_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio_get_event_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_get_event_loop_impl(module);
+}
+
+PyDoc_STRVAR(_asyncio_get_running_loop__doc__,
+"get_running_loop($module, /)\n"
+"--\n"
+"\n"
+"Return the running event loop.  Raise a RuntimeError if there is none.\n"
+"\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO_GET_RUNNING_LOOP_METHODDEF    \
+    {"get_running_loop", (PyCFunction)_asyncio_get_running_loop, METH_NOARGS, _asyncio_get_running_loop__doc__},
+
+static PyObject *
+_asyncio_get_running_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio_get_running_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_get_running_loop_impl(module);
+}
+/*[clinic end generated code: output=21e5424c3a5572b0 input=a9049054013a1b77]*/

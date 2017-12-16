@@ -331,6 +331,10 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
     c.c_nestlevel = 0;
 
+    if (!_PyAST_Optimize(mod, arena)) {
+        goto finally;
+    }
+
     c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
     if (c.c_st == NULL) {
         if (!PyErr_Occurred())
@@ -1328,13 +1332,15 @@ is_const(expr_ty e)
     case Ellipsis_kind:
     case NameConstant_kind:
         return 1;
+    case Name_kind:
+        return _PyUnicode_EqualToASCIIString(e->v.Name.id, "__debug__");
     default:
         return 0;
     }
 }
 
 static PyObject *
-get_const_value(expr_ty e)
+get_const_value(struct compiler *c, expr_ty e)
 {
     switch (e->kind) {
     case Constant_kind:
@@ -1349,9 +1355,11 @@ get_const_value(expr_ty e)
         return Py_Ellipsis;
     case NameConstant_kind:
         return e->v.NameConstant.value;
+    case Name_kind:
+        assert(_PyUnicode_EqualToASCIIString(e->v.Name.id, "__debug__"));
+        return c->c_optimize ? Py_False : Py_True;
     default:
-        assert(!is_const(e));
-        return NULL;
+        Py_UNREACHABLE();
     }
 }
 
@@ -2299,8 +2307,6 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     VISIT(c, expr, s->v.AsyncFor.iter);
     ADDOP(c, GET_AITER);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
-    ADDOP(c, YIELD_FROM);
 
     compiler_use_next_block(c, try);
 
@@ -2673,28 +2679,34 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
        If there is a dot in name, we need to split it and emit a
        IMPORT_FROM for each name.
     */
-    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
-                                        PyUnicode_GET_LENGTH(name), 1);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(name);
+    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, len, 1);
     if (dot == -2)
         return 0;
     if (dot != -1) {
         /* Consume the base module name to get the first attribute */
-        Py_ssize_t pos = dot + 1;
-        while (dot != -1) {
+        while (1) {
+            Py_ssize_t pos = dot + 1;
             PyObject *attr;
-            dot = PyUnicode_FindChar(name, '.', pos,
-                                     PyUnicode_GET_LENGTH(name), 1);
+            dot = PyUnicode_FindChar(name, '.', pos, len, 1);
             if (dot == -2)
                 return 0;
-            attr = PyUnicode_Substring(name, pos,
-                                       (dot != -1) ? dot :
-                                       PyUnicode_GET_LENGTH(name));
+            attr = PyUnicode_Substring(name, pos, (dot != -1) ? dot : len);
             if (!attr)
                 return 0;
             ADDOP_O(c, IMPORT_FROM, attr, names);
             Py_DECREF(attr);
-            pos = dot + 1;
+            if (dot == -1) {
+                break;
+            }
+            ADDOP(c, ROT_TWO);
+            ADDOP(c, POP_TOP);
         }
+        if (!compiler_nameop(c, asname, Store)) {
+            return 0;
+        }
+        ADDOP(c, POP_TOP);
+        return 1;
     }
     return compiler_nameop(c, asname, Store);
 }
@@ -3090,6 +3102,11 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
+    if (ctx == Load && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        ADDOP_O(c, LOAD_CONST, c->c_optimize ? Py_False : Py_True, consts);
+        return 1;
+    }
+
     op = 0;
     optype = OP_NAME;
     scope = PyST_GetScope(c->u->u_ste, mangled);
@@ -3353,7 +3370,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             return 0;
         }
         for (i = begin; i < end; i++) {
-            key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            key = get_const_value(c, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
@@ -3862,8 +3879,6 @@ compiler_async_comprehension_generator(struct compiler *c,
         /* Sub-iter - calculate on the fly */
         VISIT(c, expr, gen->iter);
         ADDOP(c, GET_AITER);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
-        ADDOP(c, YIELD_FROM);
     }
 
     compiler_use_next_block(c, try);
@@ -3973,7 +3988,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     is_async_generator = c->u->u_ste->ste_coroutine;
 
-    if (is_async_generator && !is_async_function) {
+    if (is_async_generator && !is_async_function && type != COMP_GENEXP) {
         if (e->lineno > c->u->u_lineno) {
             c->u->u_lineno = e->lineno;
             c->u->u_lineno_set = 0;
@@ -4028,8 +4043,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     if (outermost->is_async) {
         ADDOP(c, GET_AITER);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
-        ADDOP(c, YIELD_FROM);
     } else {
         ADDOP(c, GET_ITER);
     }
@@ -4129,34 +4142,10 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 expr_constant(struct compiler *c, expr_ty e)
 {
-    const char *id;
-    switch (e->kind) {
-    case Ellipsis_kind:
-        return 1;
-    case Constant_kind:
-        return PyObject_IsTrue(e->v.Constant.value);
-    case Num_kind:
-        return PyObject_IsTrue(e->v.Num.n);
-    case Str_kind:
-        return PyObject_IsTrue(e->v.Str.s);
-    case Name_kind:
-        /* optimize away names that can't be reassigned */
-        id = PyUnicode_AsUTF8(e->v.Name.id);
-        if (id && strcmp(id, "__debug__") == 0)
-            return !c->c_optimize;
-        return -1;
-    case NameConstant_kind: {
-        PyObject *o = e->v.NameConstant.value;
-        if (o == Py_None)
-            return 0;
-        else if (o == Py_True)
-            return 1;
-        else if (o == Py_False)
-            return 0;
+    if (is_const(e)) {
+        return PyObject_IsTrue(get_const_value(c, e));
     }
-    default:
-        return -1;
-    }
+    return -1;
 }
 
 
@@ -4446,13 +4435,13 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         switch (e->v.Attribute.ctx) {
         case AugLoad:
             ADDOP(c, DUP_TOP);
-            /* Fall through to load */
+            /* Fall through */
         case Load:
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case AugStore:
             ADDOP(c, ROT_TWO);
-            /* Fall through to save */
+            /* Fall through */
         case Store:
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
@@ -4846,7 +4835,7 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 static int
 compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 {
-    char * kindname = NULL;
+    const char * kindname = NULL;
     switch (s->kind) {
     case Index_kind:
         kindname = "index";
@@ -5272,11 +5261,6 @@ compute_code_flags(struct compiler *c)
 
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
-
-    if (!PyDict_GET_SIZE(c->u->u_freevars) &&
-        !PyDict_GET_SIZE(c->u->u_cellvars)) {
-        flags |= CO_NOFREE;
-    }
 
     return flags;
 }

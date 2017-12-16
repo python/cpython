@@ -53,9 +53,7 @@ typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
-#ifdef WITH_THREAD
     PyThread_type_lock   lock;  /* OpenSSL context lock */
-#endif
 } EVPobject;
 
 
@@ -122,9 +120,7 @@ newEVPobject(PyObject *name)
     /* save the name for .name to return */
     Py_INCREF(name);
     retval->name = name;
-#ifdef WITH_THREAD
     retval->lock = NULL;
-#endif
 
     return retval;
 }
@@ -153,10 +149,8 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 static void
 EVP_dealloc(EVPobject *self)
 {
-#ifdef WITH_THREAD
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-#endif
     EVP_MD_CTX_free(self->ctx);
     Py_XDECREF(self->name);
     PyObject_Del(self);
@@ -267,7 +261,6 @@ EVP_update(EVPobject *self, PyObject *args)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
 
-#ifdef WITH_THREAD
     if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
         /* fail? lock = NULL and we fail over to non-threaded code. */
@@ -282,9 +275,6 @@ EVP_update(EVPobject *self, PyObject *args)
     } else {
         EVP_hash(self, view.buf, view.len);
     }
-#else
-    EVP_hash(self, view.buf, view.len);
-#endif
 
     PyBuffer_Release(&view);
     Py_RETURN_NONE;
@@ -811,7 +801,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     }
 
     if (maxmem < 0 || maxmem > INT_MAX) {
-        /* OpenSSL 1.1.0 restricts maxmem to 32MB. It may change in the
+        /* OpenSSL 1.1.0 restricts maxmem to 32 MiB. It may change in the
            future. The maxmem constant is private to OpenSSL. */
         PyErr_Format(PyExc_ValueError,
                      "maxmem must be positive and smaller than %d",
@@ -925,7 +915,7 @@ generate_hash_name_list(void)
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs) \
+    EVP_new_ ## NAME (PyObject *self, PyObject *const *args, Py_ssize_t nargs) \
     { \
         PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \
@@ -1022,8 +1012,11 @@ PyInit__hashlib(void)
 {
     PyObject *m, *openssl_md_meth_names;
 
-    OpenSSL_add_all_digests();
+#ifndef OPENSSL_VERSION_1_1
+    /* Load all digest algorithms and initialize cpuid */
+    OPENSSL_add_all_algorithms_noconf();
     ERR_load_crypto_strings();
+#endif
 
     /* TODO build EVP_functions openssl_* entries dynamically based
      * on what hashes are supported rather than listing many

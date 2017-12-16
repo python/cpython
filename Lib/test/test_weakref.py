@@ -6,6 +6,7 @@ import weakref
 import operator
 import contextlib
 import copy
+import threading
 import time
 
 from test import support
@@ -78,7 +79,6 @@ def collect_in_thread(period=0.0001):
     """
     Ensure GC collections happen in a different thread, at a high frequency.
     """
-    threading = support.import_module('threading')
     please_stop = False
 
     def collect():

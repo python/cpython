@@ -56,6 +56,11 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/uio.h>
 #endif
 
+#ifdef HAVE_SYS_SYSMACROS_H
+/* GNU C Library: major(), minor(), makedev() */
+#include <sys/sysmacros.h>
+#endif
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -205,14 +210,10 @@ extern char        *ctermid_r(char *);
 #endif
 
 #ifndef HAVE_UNISTD_H
-#if defined(PYCC_VACPP)
-extern int mkdir(char *);
-#else
 #if ( defined(__WATCOMC__) || defined(_MSC_VER) ) && !defined(__QNX__)
 extern int mkdir(const char *);
 #else
 extern int mkdir(const char *, mode_t);
-#endif
 #endif
 #if defined(__IBMC__) || defined(__IBMCPP__)
 extern int chdir(char *);
@@ -354,7 +355,7 @@ static int win32_can_symlink = 0;
 
 /* Don't use the "_r" form if we don't need it (also, won't have a
    prototype for it, at least on Solaris -- maybe others as well?). */
-#if defined(HAVE_CTERMID_R) && defined(WITH_THREAD)
+#if defined(HAVE_CTERMID_R)
 #define USE_CTERMID_R
 #endif
 
@@ -384,8 +385,6 @@ static int win32_can_symlink = 0;
 #include <sys/mkdev.h>
 #endif
 #endif
-
-#define DWORD_MAX 4294967295U
 
 #ifdef MS_WINDOWS
 #define INITFUNC PyInit_nt
@@ -449,14 +448,9 @@ PyOS_AfterFork_Parent(void)
 void
 PyOS_AfterFork_Child(void)
 {
-#ifdef WITH_THREAD
-    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
-     * can be called safely. */
-    PyThread_ReInitTLS();
     _PyGILState_Reinit();
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
-#endif
     _PySignal_AfterFork();
 
     run_at_forkers(PyThreadState_Get()->interp->after_forkers_child, 0);
@@ -1038,7 +1032,7 @@ path_converter(PyObject *o, void *p)
     }
     else if (is_buffer) {
         /* XXX Replace PyObject_CheckBuffer with PyBytes_Check in other code
-           after removing suport of non-bytes buffer objects. */
+           after removing support of non-bytes buffer objects. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
             "%s%s%s should be %s, not %.200s",
             path->function_name ? path->function_name : "",
@@ -1866,6 +1860,7 @@ static PyStructSequence_Field statvfs_result_fields[] = {
     {"f_favail", },
     {"f_flag",   },
     {"f_namemax",},
+    {"f_fsid",   },
     {0}
 };
 
@@ -1934,36 +1929,6 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 
-
-/* If true, st_?time is float. */
-static int _stat_float_times = 1;
-
-PyDoc_STRVAR(stat_float_times__doc__,
-"stat_float_times([newval]) -> oldval\n\n\
-Determine whether os.[lf]stat represents time stamps as float objects.\n\
-\n\
-If value is True, future calls to stat() return floats; if it is False,\n\
-future calls return ints.\n\
-If value is omitted, return the current setting.\n");
-
-/* AC 3.5: the public default value should be None, not ready for that yet */
-static PyObject*
-stat_float_times(PyObject* self, PyObject *args)
-{
-    int newval = -1;
-    if (!PyArg_ParseTuple(args, "|i:stat_float_times", &newval))
-        return NULL;
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "stat_float_times() is deprecated",
-                     1))
-        return NULL;
-    if (newval == -1)
-        /* Return old value */
-        return PyBool_FromLong(_stat_float_times);
-    _stat_float_times = newval;
-    Py_RETURN_NONE;
-}
-
 static PyObject *billion = NULL;
 
 static void
@@ -1986,14 +1951,9 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
     if (!ns_total)
         goto exit;
 
-    if (_stat_float_times) {
-        float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
-        if (!float_s)
-            goto exit;
-    }
-    else {
-        float_s = s;
-        Py_INCREF(float_s);
+    float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
+    if (!float_s) {
+        goto exit;
     }
 
     PyStructSequence_SET_ITEM(v, index, s);
@@ -2084,11 +2044,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #else
       bnsec = 0;
 #endif
-      if (_stat_float_times) {
-        val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      } else {
-        val = PyLong_FromLong((long)bsec);
-      }
+      val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
       PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
                                 val);
     }
@@ -2872,6 +2828,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                                                    dir_fd, follow_symlinks);
             else
                 follow_symlinks_specified("chmod", follow_symlinks);
+            return NULL;
         }
         else
 #endif
@@ -3856,7 +3813,7 @@ os__getvolumepathname_impl(PyObject *module, PyObject *path)
     /* Volume path should be shorter than entire path */
     buflen = Py_MAX(buflen, MAX_PATH);
 
-    if (buflen > DWORD_MAX) {
+    if (buflen > PY_DWORD_MAX) {
         PyErr_SetString(PyExc_OverflowError, "path too long");
         return NULL;
     }
@@ -3927,7 +3884,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
         result = mkdirat(dir_fd, path->narrow, mode);
     else
 #endif
-#if ( defined(__WATCOMC__) || defined(PYCC_VACPP) ) && !defined(__QNX__)
+#if defined(__WATCOMC__) && !defined(__QNX__)
         result = mkdir(path->narrow);
 #else
         result = mkdir(path->narrow, mode);
@@ -3964,7 +3921,7 @@ os_nice_impl(PyObject *module, int increment)
 
     /* There are two flavours of 'nice': one that returns the new
        priority (as required by almost all standards out there) and the
-       Linux/FreeBSD/BSDI one, which returns '0' on success and advices
+       Linux/FreeBSD one, which returns '0' on success and advices
        the use of getpriority() to get the new priority.
 
        If we are of the nice family that returns the new priority, we
@@ -8915,11 +8872,16 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG */
 
@@ -8957,11 +8919,16 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
 
@@ -9356,6 +9323,7 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
+    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;
@@ -10544,6 +10512,10 @@ check_ShellExecute()
     /* only recheck */
     if (-1 == has_ShellExecute) {
         Py_BEGIN_ALLOW_THREADS
+        /* Security note: this call is not vulnerable to "DLL hijacking".
+           SHELL32 is part of "KnownDLLs" and so Windows always load
+           the system SHELL32.DLL, even if there is another SHELL32.DLL
+           in the DLL search path. */
         hShell32 = LoadLibraryW(L"SHELL32");
         Py_END_ALLOW_THREADS
         if (hShell32) {
@@ -11162,9 +11134,22 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-    SYSTEM_INFO sysinfo;
-    GetSystemInfo(&sysinfo);
-    ncpu = sysinfo.dwNumberOfProcessors;
+    /* Vista is supported and the GetMaximumProcessorCount API is Win7+
+       Need to fallback to Vista behavior if this call isn't present */
+    HINSTANCE hKernel32;
+    hKernel32 = GetModuleHandleW(L"KERNEL32");
+
+    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
+    *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
+        "GetMaximumProcessorCount");
+    if (_GetMaximumProcessorCount != NULL) {
+        ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
+    }
+    else {
+        SYSTEM_INFO sysinfo;
+        GetSystemInfo(&sysinfo);
+        ncpu = sysinfo.dwNumberOfProcessors;
+    }
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
@@ -12423,7 +12408,6 @@ static PyMethodDef posix_methods[] = {
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
-    {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
     OS_SYMLINK_METHODDEF
     OS_SYSTEM_METHODDEF
     OS_UMASK_METHODDEF

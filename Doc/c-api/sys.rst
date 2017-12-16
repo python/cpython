@@ -127,6 +127,9 @@ Operating System Utilities
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.7
+      The function now uses the UTF-8 encoding in the UTF-8 mode.
+
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 
@@ -138,11 +141,14 @@ Operating System Utilities
    to free the memory. Return ``NULL`` on encoding error or memory allocation
    error
 
-   If error_pos is not ``NULL``, ``*error_pos`` is set to the index of the
-   invalid character on encoding error, or set to ``(size_t)-1`` otherwise.
+   If error_pos is not ``NULL``, ``*error_pos`` is set to ``(size_t)-1`` on
+   success,  or set to the index of the invalid character on encoding error.
 
    Use the :c:func:`Py_DecodeLocale` function to decode the bytes string back
    to a wide character string.
+
+   .. versionchanged:: 3.7
+      The function now uses the UTF-8 encoding in the UTF-8 mode.
 
    .. seealso::
 
@@ -150,6 +156,9 @@ Operating System Utilities
       :c:func:`PyUnicode_EncodeLocale` functions.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.7
+      The function now supports the UTF-8 mode.
 
 
 .. _systemfunctions:
