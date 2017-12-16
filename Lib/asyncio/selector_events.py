@@ -43,7 +43,7 @@ def _test_selector_event(selector, fd, event):
 if hasattr(socket, 'TCP_NODELAY'):
     def _set_nodelay(sock):
         if (sock.family in {socket.AF_INET, socket.AF_INET6} and
-                sock.type == socket.SOCK_STREAM and
+                base_events._is_stream_socket(sock.type) and
                 sock.proto == socket.IPPROTO_TCP):
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 else:
