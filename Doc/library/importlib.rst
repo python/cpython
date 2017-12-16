@@ -233,6 +233,7 @@ ABC hierarchy::
      |    +-- MetaPathFinder
      |    +-- PathEntryFinder
      +-- Loader
+          +-- ResourceReader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
                +-- ExecutionLoader --+
@@ -466,6 +467,71 @@ ABC hierarchy::
 
         .. deprecated:: 3.4
            The import machinery now takes care of this automatically.
+
+
+.. class:: ResourceReader
+
+    An :term:`abstract base class` for :term:`package`
+    :term:`loaders <loader>` to provide the ability to read
+    *resources*.
+
+    From the perspective of this ABC, a *resource* is a binary
+    artifact that is shipped within a package. Typically this is
+    something like a data file that lives next to the ``__init__.py``
+    file of the package. The purpose of this class is to help abstract
+    out the accessing of such data files so that it does not matter if
+    the package and its data file(s) are stored in a e.g. zip file
+    versus on the file system.
+
+    For any of methods of this class, a *resource* argument is
+    expected to be a :term:`file-like object` which represents
+    conceptually just a file name. This means that no subdirectory
+    paths should be included in the *resource* argument. This is
+    because the location of the package that the loader is for acts
+    as the "directory". Hence the metaphor for directories and file
+    names is packages and resources, respectively. This is also why
+    instances of this class are expected to directly correlate to
+    a specific package (instead of potentially representing multiple
+    packages or a module).
+
+    .. versionadded:: 3.7
+
+    .. abstractmethod:: open_resource(resource)
+
+        Returns an opened, :term:`file-like object` for binary reading
+        of the *resource*.
+
+        If the resource cannot be found, :exc:`FileNotFoundError` is
+        raised.
+
+    .. abstractmethod:: resource_path(resource)
+
+        Returns the file system path to the *resource*.
+
+        If the resource does not concretely exist on the file system,
+        raise :exc:`FileNotFoundError`.
+
+    .. abstractmethod:: is_resource(name)
+
+        Returns ``True`` if the named *name* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *name* does not exist.
+
+    .. abstractmethod:: contents()
+
+        Returns an :term:`iterator` of strings over the contents of
+        the package. Do note that it is not required that all names
+        returned by the iterator be actual resources, e.g. it is
+        acceptable to return names for which :meth:`is_resource` would
+        be false.
+
+        Allowing non-resource names to be returned is to allow for
+        situations where how a package and its resources are stored
+        are known a priori and the non-resource names would be useful.
+        For instance, returning subdirectory names is allowed so that
+        when it is known that the package and resources are stored on
+        the file system then those subdirectory names can be used.
+
+        The abstract method returns an empty iterator.
 
 
 .. class:: ResourceLoader
