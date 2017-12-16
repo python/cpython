@@ -1230,8 +1230,8 @@ ValuesView = _GenericAlias(collections.abc.ValuesView, VT_co,
                            name='ValuesView', special=True)
 ContextManager = _GenericAlias(contextlib.AbstractContextManager, T_co,
                                name='ContextManager', special=True)
-#AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, T_co,
-#                                    name='AsyncContextManager')
+AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, T_co,
+                                    name='AsyncContextManager', special=True)
 Dict = _GenericAlias(dict, (KT, VT), name='Dict', inst=False, special=True)
 DefaultDict = _GenericAlias(collections.defaultdict, (KT, VT),
                             name='DefaultDict', special=True)

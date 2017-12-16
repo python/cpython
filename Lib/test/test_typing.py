@@ -1589,7 +1589,7 @@ else:
 
 PY36_TESTS = """
 from test import ann_module, ann_module2, ann_module3
-#from typing import AsyncContextManager
+from typing import AsyncContextManager
 
 class A:
     y: float
@@ -1631,15 +1631,15 @@ class HasForeignBaseClass(mod_generics_cache.A):
     some_xrepr: 'XRepr'
     other_a: 'mod_generics_cache.A'
 
-#async def g_with(am: AsyncContextManager[int]):
-#    x: int
-#    async with am as x:
-#        return x
-#
-#try:
-#    g_with(ACM()).send(None)
-#except StopIteration as e:
-#    assert e.args[0] == 42
+async def g_with(am: AsyncContextManager[int]):
+    x: int
+    async with am as x:
+        return x
+
+try:
+    g_with(ACM()).send(None)
+except StopIteration as e:
+    assert e.args[0] == 42
 """
 
 if PY36:
@@ -2218,7 +2218,7 @@ class OtherABCTests(BaseTestCase):
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
 
-    @skipUnless(False, "Temporary") # (ASYNCIO, 'Python 3.5 required')
+    @skipUnless(ASYNCIO, 'Python 3.5 required')
     def test_async_contextmanager(self):
         class NotACM:
             pass
