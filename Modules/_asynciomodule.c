@@ -1486,9 +1486,9 @@ static int
 enter_task(PyObject *loop, PyObject *task)
 {
     PyObject *item;
-    long hash;
+    Py_hash_t hash;
     hash = PyObject_Hash(loop);
-    if (hash == NULL) {
+    if (hash == -1) {
         return -1;
     }
     item = _PyDict_GetItem_KnownHash(current_tasks, loop, hash);
@@ -1512,9 +1512,9 @@ leave_task(PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
     PyObject *item;
-    long hash;
+    Py_hash_t hash;
     hash = PyObject_Hash(loop);
-    if (hash == NULL) {
+    if (hash == -1) {
         return -1;
     }
     item = _PyDict_GetItem_KnownHash(current_tasks, loop, hash);
