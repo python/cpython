@@ -55,7 +55,7 @@ class UTF8ModeTests(unittest.TestCase):
         self.assertEqual(out, '0')
 
         if MS_WINDOWS:
-            # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8
+            # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 Mode
             # and has the priority over -X utf8
             out = self.get_output('-X', 'utf8', '-c', code,
                                   PYTHONLEGACYWINDOWSFSENCODING='1')
@@ -203,8 +203,11 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8', '-c', code, LC_ALL='C')
         self.assertEqual(out, 'UTF-8 UTF-8')
 
+    @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
     def test_cmd_line(self):
         arg = 'h\xe9\u20ac'.encode('utf-8')
+        arg_utf8 = arg.decode('utf-8')
+        arg_ascii = arg.decode('ascii', 'surrogateescape')
         code = 'import locale, sys; print("%s:%s" % (locale.getpreferredencoding(), ascii(sys.argv[1:])))'
 
         def check(utf8_opt, expected, **kw):
@@ -212,9 +215,12 @@ class UTF8ModeTests(unittest.TestCase):
             args = out.partition(':')[2].rstrip()
             self.assertEqual(args, ascii(expected), out)
 
-        check('utf8', [arg.decode('utf-8')])
-        check('utf8=0', [arg.decode('ascii', 'surrogateescape')],
-              LC_ALL='C')
+        check('utf8', [arg_utf8])
+        if sys.platform == 'darwin' or support.is_android:
+            c_arg = arg_utf8
+        else:
+            c_arg = arg_ascii
+        check('utf8=0', [c_arg], LC_ALL='C')
 
 
 if __name__ == "__main__":
