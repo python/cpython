@@ -1514,7 +1514,7 @@ yes)
 #
 # NOTE: DO NOT USE THIS FUCNTION DIRECTRY.
 #       Please use the below functions instead.
-function _add_flags_helper() {
+function _try_add_warnings_helper() {
     # Remove the '-W' prefix. Substituted for e.g. "ac_cv_extra_warning"
     ac_cv_var="ac_cv_${2:2}_warning"
 
@@ -1529,6 +1529,7 @@ function _add_flags_helper() {
     AC_MSG_CHECKING($3)
      ac_save_cc="$CC"
      CC="$CC $2 -Werror"
+
      AC_CACHE_VAL(!ac_cv_var,
        AC_COMPILE_IFELSE(
          [
@@ -1549,16 +1550,16 @@ function _add_flags_helper() {
 
 # $1 = The warning to add (Including the '-W' prefix)
 # $2 = The message to display for the check
-function add_nodist_flags() {
-	_add_flags_helper "CFLAGS_NODIST" $1 $2
+function try_add_nodist_warnings() {
+    _try_add_warnings_helper "CFLAGS_NODIST" $1 $2
 }
-function add_base_flags() {
-	_add_flags_helper "BASECFLAGS" $1 $2
+function try_add_base_warnings() {
+    _try_add_warnings_helper "BASECFLAGS" $1 $2
 }
 
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
-    add_nodist_flags "-Wextra" "for -Wextra"
+    try_add_nodist_warnings "-Wextra" "for -Wextra"
 
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
@@ -1599,75 +1600,18 @@ function add_base_flags() {
     ## XXX does it emit an unused result warning and can it be disabled?
     case "$CC" in
     *icc*)
-    ac_cv_disable_unused_result_warning=no
     ;;
     *)
-    AC_MSG_CHECKING(if we can turn off $CC unused result warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-result -Werror"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_disable_unused_result_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_disable_unused_result_warning=yes
-	 ],[
-           ac_cv_disable_unused_result_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_unused_result_warning)
+    try_add_base_warnings "-Wno-unused-result" "if we can turn off $CC unused result warning"
+    try_add_nodist_warnings "-Wno-unused-result" "if we can turn off $CC unused result warning"
     ;;
     esac
 
-    if test $ac_cv_disable_unused_result_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wno-unused-result"
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
-    fi
+    try_add_nodist_warnings "-Wno-unused-parameter" "if we can turn off $CC unused parameter warning"
 
-    AC_MSG_CHECKING(if we can turn off $CC unused parameter warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-parameter -Werror"
-     AC_CACHE_VAL(ac_cv_disable_unused_parameter_warning,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_disable_unused_parameter_warning=yes
-         ],[
-           ac_cv_disable_unused_parameter_warning=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_unused_parameter_warning)
+    try_add_nodist_warnings "-Wno-missing-field-initializers" "if we can turn off $CC missing field initializers warning"
 
-    if test $ac_cv_disable_unused_parameter_warning = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"
-    fi
-
-    AC_MSG_CHECKING(if we can turn off $CC missing field initializers warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wmissing-field-initializers -Werror"
-     AC_CACHE_VAL(ac_cv_disable_missing_field_initializers,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_disable_missing_field_initializers=yes
-         ],[
-           ac_cv_disable_missing_field_initializers=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_missing_field_initializers)
-
-    if test $ac_cv_disable_missing_field_initializers = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
-    fi
-
-    add_base_flags "-Wsign-compare" "if we can turn on $CC mixed sign comparison warning"
+    try_add_base_warnings "-Wsign-compare" "if we can turn on $CC mixed sign comparison warning"
 
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
@@ -1679,10 +1623,10 @@ function add_base_flags() {
     if test "$Py_DEBUG" != "true" && \
         test -z "`$CC --version 2>/dev/null | grep 'Free Software Foundation'`"
     then
-        add_base_flags "-Wunreachable-code" "if we can turn on $CC unreachable code warning"
+        try_add_base_warnings "-Wunreachable-code" "if we can turn on $CC unreachable code warning"
     fi
 
-    add_base_flags "-Werror=implicit-function-declaration" "if we can make implicit function declaration an error in $CC"
+    try_add_base_warnings "-Werror=implicit-function-declaration" "if we can make implicit function declaration an error in $CC"
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
