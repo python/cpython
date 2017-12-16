@@ -2474,7 +2474,7 @@ pymain_impl(_PyMain *pymain)
 }
 
 
-int
+static int
 pymain_main(_PyMain *pymain)
 {
     memset(&pymain->cmdline, 0, sizeof(pymain->cmdline));
