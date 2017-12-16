@@ -978,7 +978,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.assertEqual(self.file.tell(), 0)
 
     def datagram_transport(self):
-        self.protocol = make_test_protocol(asyncio.DatagramProtocol)
+        self.protocol = test_utils.make_test_protocol(asyncio.DatagramProtocol)
         return self.loop._make_datagram_transport(self.sock, self.protocol)
 
     def test_make_datagram_transport(self):
@@ -1023,7 +1023,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         tr.close = mock.Mock()
         tr._read_fut = res
         tr._loop_reading(res)
-        self.assertFalse(self.loop._proactor.recvfrom.called)
+        self.assertTrue(self.loop._proactor.recvfrom.called)
         self.assertFalse(self.protocol.error_received.called)
         self.assertFalse(tr.close.called)
 
@@ -1045,9 +1045,9 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         tr = self.datagram_transport()
         tr._fatal_error = mock.Mock()
         tr._protocol.error_received = mock.Mock()
-        tr._protocol.error_received.assert_called_with(err)
         tr._buffer.appendleft((b'Hello', ('127.0.0.1', 12068)))
         tr._loop_writing()
+        tr._protocol.error_received.assert_called_with(err)
         tr._fatal_error.assert_called_with(
                             err,
                             'Fatal error sending UDP datagram')
