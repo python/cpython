@@ -1,0 +1,2 @@
+Make "atexit" a built-in module that is always enabled.  Some other parts
+of Python assume it is enabled.
