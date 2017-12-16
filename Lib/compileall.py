@@ -73,13 +73,11 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     if workers is not None:
         if workers < 0:
             raise ValueError('workers must be greater or equal to 0')
-        elif workers > 1 and ProcessPoolExecutor is None:
+        elif workers != 1 and ProcessPoolExecutor is None:
             try:
-                from concurrent.futures import ProcessPoolExecutor as PPE
+                from concurrent.futures import ProcessPoolExecutor
             except ImportError:
                 ProcessPoolExecutor = False
-            else:
-                ProcessPoolExecutor = PPE
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
                       ddir=ddir)
     success = True
