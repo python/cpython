@@ -531,18 +531,17 @@ Task functions
 
 .. function:: current_task(loop=None):
 
-   Return a currently executed task or ``None`` if no task is running.
+   Return the current running task or ``None``, if no task is running.
 
-   If *loop* is ``None`` :func:`get_running_loop` is used for gettung
-   current loop.
+   If *loop* is ``None`` :func:`get_running_loop` is used to get
+   the current loop.
 
    .. versionadded:: 3.7
 
 
 .. function:: all_tasks(loop=None):
 
-   Return a set of tasks created for the *loop* (the set can be empty
-   if there is no task exists).
+   Return a set of :class:Task objects created for the loop.
 
    If *loop* is ``None`` :func:`get_event_loop` is used for getting
    current loop.

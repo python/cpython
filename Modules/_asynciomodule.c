@@ -1486,7 +1486,12 @@ static int
 enter_task(PyObject *loop, PyObject *task)
 {
     PyObject *item;
-    item = PyDict_GetItem(current_tasks, loop);
+    long hash;
+    hash = PyObject_Hash(loop);
+    if (hash == NULL) {
+        return -1;
+    }
+    item = _PyDict_GetItem_KnownHash(current_tasks, loop, hash);
     if (item != NULL) {
         PyErr_Format(
             PyExc_RuntimeError,
@@ -1495,7 +1500,7 @@ enter_task(PyObject *loop, PyObject *task)
             task, item, NULL);
         return -1;
     }
-    if (PyDict_SetItem(current_tasks, loop, task) < 0) {
+    if (_PyDict_SetItem_KnownHash(current_tasks, loop, task, hash) < 0) {
         return -1;
     }
     return 0;
@@ -1507,7 +1512,12 @@ leave_task(PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
     PyObject *item;
-    item = PyDict_GetItem(current_tasks, loop);
+    long hash;
+    hash = PyObject_Hash(loop);
+    if (hash == NULL) {
+        return -1;
+    }
+    item = _PyDict_GetItem_KnownHash(current_tasks, loop, hash);
     if (item != task) {
         if (item == NULL) {
             /* Not entered, replace with None */
@@ -1519,7 +1529,7 @@ leave_task(PyObject *loop, PyObject *task)
             task, item, NULL);
         return -1;
     }
-    return PyObject_DelItem(current_tasks, loop);
+    return _PyDict_DelItem_KnownHash(current_tasks, loop, hash);
 }
 
 /* ----- Task */
