@@ -1,4 +1,5 @@
 import unittest
+from test import support
 
 
 class TestMROEntry(unittest.TestCase):
@@ -246,6 +247,23 @@ class TestClassGetitem(unittest.TestCase):
             def __class_getitem__(cls, item):
                 return 'from __class_getitem__'
         self.assertEqual(C[int], 'from metaclass')
+
+
+@support.cpython_only
+class CAPITest(unittest.TestCase):
+
+    def test_c_class(self):
+        from _testcapi import Generic, GenericAlias
+        self.assertIsInstance(Generic.__class_getitem__(Generic, int), GenericAlias)
+
+        IntGeneric = Generic[int]
+        self.assertIs(type(IntGeneric), GenericAlias)
+        self.assertEqual(IntGeneric.__mro_entries__(()), (int,))
+        class C(IntGeneric):
+            pass
+        self.assertEqual(C.__bases__, (int,))
+        self.assertEqual(C.__orig_bases__, (IntGeneric,))
+        self.assertEqual(C.__mro__, (C, int, object))
 
 
 if __name__ == "__main__":
