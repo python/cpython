@@ -439,6 +439,26 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
         self._buffer = collections.deque()
         self._loop.call_soon(self._loop_reading)
 
+    def _set_extra(self, sock):
+        super(_ProactorDatagramTransport, self)._set_extra(sock)
+        self._extra['socket'] = sock
+
+        try:
+            self._extra['sockname'] = sock.getsockname()
+        except (socket.error, AttributeError):
+            if self._loop.get_debug():
+                logger.warning(
+                    "getsockname() failed on %r", sock, exc_info=True)
+
+        if 'peername' not in self._extra:
+            try:
+                self._extra['peername'] = sock.getpeername()
+            except (socket.error, AttributeError):
+                if self._loop.get_debug():
+                    logger.warning("getpeername() failed on %r",
+                                   sock, exc_info=True)
+
+
     def abort(self):
         self._force_close(None)
 
