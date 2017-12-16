@@ -4136,9 +4136,16 @@ unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
 
     assert(v != NULL);
 
+    if (v->ob_type->tp_iter == NULL && !PySequence_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot unpack %.200s object",
+                     v->ob_type->tp_name);
+        return 0;
+    }
     it = PyObject_GetIter(v);
-    if (it == NULL)
-        goto Error;
+    if (it == NULL) {
+        return 0;
+    }
 
     for (; i < argcnt; i++) {
         w = PyIter_Next(it);
