@@ -781,7 +781,6 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
 
             Py_INCREF(self->read_from.result);
             return self->read_from.result;
->>>>>>> bpo-29883: Add UDP to Windows Proactor Event Loop
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
     }
@@ -1660,9 +1659,9 @@ static PyMethodDef Overlapped_methods[] = {
      METH_VARARGS, Overlapped_TransmitFile_doc},
     {"ConnectNamedPipe", (PyCFunction) Overlapped_ConnectNamedPipe,
      METH_VARARGS, Overlapped_ConnectNamedPipe_doc},
-     { "WSARecvFrom", Overlapped_WSARecvFrom,
+    {"WSARecvFrom", (PyCFunction) Overlapped_WSARecvFrom,
      METH_VARARGS, Overlapped_WSARecvFrom_doc },
-     { "WSASendTo", Overlapped_WSASendTo,
+    {"WSASendTo", (PyCFunction) Overlapped_WSASendTo,
      METH_VARARGS, Overlapped_WSASendTo_doc },
     {NULL}
 };
