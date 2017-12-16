@@ -133,7 +133,6 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *orig_bases;
     PyObject *cls = NULL, *cell = NULL;
     int isclass = 0;   /* initialize to prevent gcc warning */
-    int modified_bases = 0;
 
     if (nargs < 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -160,16 +159,6 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     if (bases == NULL) {
         Py_DECREF(orig_bases);
         return NULL;
-    }
-
-    new_bases = update_bases(bases, args, nargs, &modified_bases);
-    if (new_bases == NULL) {
-        Py_DECREF(bases);
-        return NULL;
-    }
-    else {
-        old_bases = bases;
-        bases = new_bases;
     }
 
     if (kwnames == NULL) {

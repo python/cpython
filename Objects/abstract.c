@@ -143,7 +143,6 @@ PyObject *
 PyObject_GetItem(PyObject *o, PyObject *key)
 {
     PyMappingMethods *m;
-    PyObject *meth, *result, *stack[2] = {o, key};
 
     if (o == NULL || key == NULL) {
         return null_error();
