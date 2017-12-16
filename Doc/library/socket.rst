@@ -482,6 +482,11 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.7
        The CAN_ISOTP protocol was added.
 
+   .. versionchanged:: 3.7
+      On Linux: when :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC` bit
+      flags are applied to *type* they are cleared, and :attr:`socket.type`
+      will not reflect them.
+
 .. function:: socketpair([family[, type[, proto]]])
 
    Build a pair of connected socket objects using the given address family, socket
@@ -1417,6 +1422,10 @@ to sockets.
 
    * ``sock.setblocking(False)`` is equivalent to ``sock.settimeout(0.0)``
 
+   .. versionchanged:: 3.7
+      The method no longer applies :const:`SOCK_NONBLOCK` flag on
+      :attr:`socket.type` on Linux.
+
 
 .. method:: socket.settimeout(value)
 
@@ -1428,6 +1437,10 @@ to sockets.
    non-blocking mode. If ``None`` is given, the socket is put in blocking mode.
 
    For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
+
+   .. versionchanged:: 3.7
+      The method no longer toggles :const:`SOCK_NONBLOCK` flag on
+      :attr:`socket.type` on Linux.
 
 
 .. method:: socket.setsockopt(level, optname, value: int)

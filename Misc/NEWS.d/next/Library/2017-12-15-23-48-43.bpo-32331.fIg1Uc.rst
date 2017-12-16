@@ -1,0 +1,3 @@
+Fix socket.settimeout() and socket.setblocking() to not change socket.type
+on Linux.  Fix socket.socket() constructor to reset any bit flags applied to
+socket's type.  This change only affects Linux.
