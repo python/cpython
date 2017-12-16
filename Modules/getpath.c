@@ -112,7 +112,7 @@ extern "C" {
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     ((LEN) == (size_t)-2) \
-     ? _Py_INIT_USER_ERR("cannot decode " #NAME) \
+     ? _Py_INIT_USER_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY()
 
 typedef struct {

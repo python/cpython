@@ -38,7 +38,10 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable */
+    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable,
+                               -1 means unknown */
 
     wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
     wchar_t *home;          /* PYTHONHOME environment variable,
@@ -46,7 +49,8 @@ typedef struct {
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT (_PyCoreConfig){.use_hash_seed = -1}
+#define _PyCoreConfig_INIT \
+    (_PyCoreConfig){.use_hash_seed = -1, .coerce_c_locale = -1, .utf8_mode = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API

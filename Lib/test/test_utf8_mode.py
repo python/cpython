@@ -7,6 +7,7 @@ import os
 import sys
 import textwrap
 import unittest
+from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 
@@ -14,9 +15,11 @@ MS_WINDOWS = (sys.platform == 'win32')
 
 
 class UTF8ModeTests(unittest.TestCase):
-    # Override PYTHONUTF8 and PYTHONLEGACYWINDOWSFSENCODING environment
-    # variables by default
-    DEFAULT_ENV = {'PYTHONUTF8': '', 'PYTHONLEGACYWINDOWSFSENCODING': ''}
+    DEFAULT_ENV = {
+        'PYTHONUTF8': '',
+        'PYTHONLEGACYWINDOWSFSENCODING': '',
+        'PYTHONCOERCECLOCALE': '0',
+    }
 
     def posix_locale(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
@@ -53,7 +56,7 @@ class UTF8ModeTests(unittest.TestCase):
         self.assertEqual(out, '0')
 
         if MS_WINDOWS:
-            # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8
+            # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 Mode
             # and has the priority over -X utf8
             out = self.get_output('-X', 'utf8', '-c', code,
                                   PYTHONLEGACYWINDOWSFSENCODING='1')
@@ -200,6 +203,25 @@ class UTF8ModeTests(unittest.TestCase):
 
         out = self.get_output('-X', 'utf8', '-c', code, LC_ALL='C')
         self.assertEqual(out, 'UTF-8 UTF-8')
+
+    @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
+    def test_cmd_line(self):
+        arg = 'h\xe9\u20ac'.encode('utf-8')
+        arg_utf8 = arg.decode('utf-8')
+        arg_ascii = arg.decode('ascii', 'surrogateescape')
+        code = 'import locale, sys; print("%s:%s" % (locale.getpreferredencoding(), ascii(sys.argv[1:])))'
+
+        def check(utf8_opt, expected, **kw):
+            out = self.get_output('-X', utf8_opt, '-c', code, arg, **kw)
+            args = out.partition(':')[2].rstrip()
+            self.assertEqual(args, ascii(expected), out)
+
+        check('utf8', [arg_utf8])
+        if sys.platform == 'darwin' or support.is_android:
+            c_arg = arg_utf8
+        else:
+            c_arg = arg_ascii
+        check('utf8=0', [c_arg], LC_ALL='C')
 
 
 if __name__ == "__main__":

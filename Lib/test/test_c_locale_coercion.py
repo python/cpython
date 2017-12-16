@@ -65,7 +65,7 @@ def _set_locale_in_subprocess(locale_name):
         # If there's no valid CODESET, we expect coercion to be skipped
         cmd_fmt += "; import sys; sys.exit(not locale.nl_langinfo(locale.CODESET))"
     cmd = cmd_fmt.format(locale_name)
-    result, py_cmd = run_python_until_end("-c", cmd, __isolated=True)
+    result, py_cmd = run_python_until_end("-c", cmd, PYTHONCOERCECLOCALE='')
     return result.rc == 0
 
 
@@ -131,7 +131,6 @@ class EncodingDetails(_EncodingDetails):
         """
         result, py_cmd = run_python_until_end(
             "-X", "utf8=0", "-c", cls.CHILD_PROCESS_SCRIPT,
-            __isolated=True,
             **env_vars
         )
         if not result.rc == 0:
@@ -236,6 +235,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
             "LANG": "",
             "LC_CTYPE": "",
             "LC_ALL": "",
+            "PYTHONCOERCECLOCALE": "",
         }
         for env_var in ("LANG", "LC_CTYPE"):
             for locale_to_set in AVAILABLE_TARGETS:
@@ -294,6 +294,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             "LANG": "",
             "LC_CTYPE": "",
             "LC_ALL": "",
+            "PYTHONCOERCECLOCALE": "",
         }
         base_var_dict.update(extra_vars)
         for env_var in ("LANG", "LC_CTYPE"):

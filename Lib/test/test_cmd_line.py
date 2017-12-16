@@ -551,7 +551,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out, "True")
 
         # Warnings
-        code = ("import sys, warnings; "
+        code = ("import warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
         if Py_DEBUG:

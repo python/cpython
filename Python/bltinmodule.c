@@ -29,9 +29,10 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
 #endif
 const char *Py_FileSystemDefaultEncodeErrors = "surrogateescape";
-/* UTF-8 mode (PEP 540): if non-zero, use the UTF-8 encoding, and change stdin
-   and stdout error handler to "surrogateescape". */
-int Py_UTF8Mode = 0;
+/* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
+   stdin and stdout error handler to "surrogateescape". It is equal to
+   -1 by default: unknown, will be set by Py_Main() */
+int Py_UTF8Mode = -1;
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);

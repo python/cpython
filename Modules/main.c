@@ -38,14 +38,14 @@ extern "C" {
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     (((LEN) == -2) \
-     ? _Py_INIT_USER_ERR("cannot decode " #NAME) \
+     ? _Py_INIT_USER_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY())
 
 
 #define SET_DECODE_ERROR(NAME, LEN) \
     do { \
         if ((LEN) == (size_t)-2) { \
-            pymain->err = _Py_INIT_USER_ERR("cannot decode " #NAME); \
+            pymain->err = _Py_INIT_USER_ERR("cannot decode " NAME); \
         } \
         else { \
             pymain->err = _Py_INIT_NO_MEMORY(); \
@@ -53,8 +53,8 @@ extern "C" {
     } while (0)
 
 /* For Py_GetArgcArgv(); set by main() */
-static wchar_t **orig_argv;
-static int orig_argc;
+static wchar_t **orig_argv = NULL;
+static int orig_argc = 0;
 
 /* command line options */
 #define BASE_OPTS L"bBc:dEhiIJm:OqRsStuvVW:xX:?"
@@ -427,8 +427,11 @@ typedef struct {
     _PyInitError err;
     /* PYTHONWARNINGS env var */
     _Py_OptList env_warning_options;
+
     int argc;
     wchar_t **argv;
+    int use_bytes_argv;
+    char **bytes_argv;
 
     int sys_argc;
     wchar_t **sys_argv;
@@ -466,7 +469,6 @@ pymain_free_globals(_PyMain *pymain)
 {
     _PyPathConfig_Clear(&_Py_path_config);
     _PyImport_Fini2();
-    _PyCoreConfig_Clear(&pymain->core_config);
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
@@ -483,22 +485,69 @@ pymain_free_globals(_PyMain *pymain)
 }
 
 
+/* Clear argv allocated by pymain_decode_bytes_argv() */
 static void
-pymain_free_pymain(_PyMain *pymain)
+pymain_clear_bytes_argv(_PyMain *pymain, int argc)
+{
+    if (pymain->use_bytes_argv && pymain->argv != NULL) {
+        for (int i = 0; i < argc; i++) {
+            PyMem_RawFree(pymain->argv[i]);
+        }
+        PyMem_RawFree(pymain->argv);
+        pymain->argv = NULL;
+    }
+}
+
+
+static int
+pymain_decode_bytes_argv(_PyMain *pymain)
+{
+    assert(pymain->argv == NULL);
+
+    /* +1 for a the NULL terminator */
+    size_t size = sizeof(wchar_t*) * (pymain->argc + 1);
+    pymain->argv = (wchar_t **)PyMem_RawMalloc(size);
+    if (pymain->argv == NULL) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
+    }
+
+    for (int i = 0; i < pymain->argc; i++) {
+        size_t len;
+        pymain->argv[i] = Py_DecodeLocale(pymain->bytes_argv[i], &len);
+        if (pymain->argv[i] == NULL) {
+            pymain_clear_bytes_argv(pymain, i);
+            pymain->err = DECODE_LOCALE_ERR("command line arguments",
+                                            (Py_ssize_t)len);
+            return -1;
+        }
+    }
+    pymain->argv[pymain->argc] = NULL;
+    return 0;
+}
+
+
+static void
+pymain_clear_pymain(_PyMain *pymain)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
     pymain_optlist_clear(&cmdline->warning_options);
     pymain_optlist_clear(&cmdline->xoptions);
     PyMem_RawFree(cmdline->command);
+    cmdline->command = NULL;
 
     PyMem_RawFree(pymain->sys_argv);
+    pymain->sys_argv = NULL;
     pymain_optlist_clear(&pymain->env_warning_options);
+    pymain_clear_bytes_argv(pymain, pymain->argc);
+
+    _PyCoreConfig_Clear(&pymain->core_config);
 }
 
 
 /* Clear Python ojects */
 static void
-pymain_free_python(_PyMain *pymain)
+pymain_clear_python(_PyMain *pymain)
 {
     Py_CLEAR(pymain->main_importer_path);
 
@@ -509,12 +558,12 @@ pymain_free_python(_PyMain *pymain)
 static void
 pymain_free(_PyMain *pymain)
 {
-    /* Force the allocator used by pymain_parse_cmdline_envvars() */
+    /* Force the allocator used by pymain_read_conf() */
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    pymain_free_python(pymain);
-    pymain_free_pymain(pymain);
+    pymain_clear_python(pymain);
+    pymain_clear_pymain(pymain);
     pymain_free_globals(pymain);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -742,6 +791,9 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
     {
         cmdline->filename = pymain->argv[_PyOS_optind];
     }
+
+    pymain->run_code = (cmdline->command != NULL || cmdline->filename != NULL
+                        || cmdline->module != NULL);
 
     /* -c and -m options are exclusive */
     assert(!(cmdline->command != NULL && cmdline->module != NULL));
@@ -1434,8 +1486,6 @@ pymain_repl(_PyMain *pymain)
 static int
 pymain_parse_cmdline(_PyMain *pymain)
 {
-    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
-
     int res = pymain_parse_cmdline_impl(pymain);
     if (res < 0) {
         return -1;
@@ -1445,21 +1495,6 @@ pymain_parse_cmdline(_PyMain *pymain)
         pymain->status = 2;
         return 1;
     }
-
-    if (cmdline->print_help) {
-        pymain_usage(0, pymain->argv[0]);
-        pymain->status = 0;
-        return 1;
-    }
-
-    if (cmdline->print_version) {
-        printf("Python %s\n",
-               (cmdline->print_version >= 2) ? Py_GetVersion() : PY_VERSION);
-        return 1;
-    }
-
-    pymain->run_code = (cmdline->command != NULL || cmdline->filename != NULL
-                        || cmdline->module != NULL);
 
     return 0;
 }
@@ -1852,6 +1887,19 @@ pymain_parse_envvars(_PyMain *pymain)
         pymain->core_config.malloc_stats = 1;
     }
 
+    const char* env = pymain_get_env_var("PYTHONCOERCECLOCALE");
+    if (env) {
+        if (strcmp(env, "0") == 0) {
+            pymain->core_config.coerce_c_locale = 0;
+        }
+        else if (strcmp(env, "warn") == 0) {
+            pymain->core_config.coerce_c_locale_warn = 1;
+        }
+        else {
+            pymain->core_config.coerce_c_locale = 1;
+        }
+    }
+
     if (pymain_init_utf8_mode(pymain) < 0) {
         return -1;
     }
@@ -1867,23 +1915,19 @@ pymain_parse_envvars(_PyMain *pymain)
    Return 1 if Python is done and must exit.
    Set pymain->err and return -1 on error. */
 static int
-pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
+pymain_read_conf_impl(_PyMain *pymain)
 {
     int res = pymain_parse_cmdline(pymain);
-    if (res < 0) {
-        return -1;
-    }
-    if (res > 0) {
-        return 1;
+    if (res != 0) {
+        return res;
     }
 
-    /* Set Py_IgnoreEnvironmentFlag needed by Py_GETENV() */
-    pymain_set_global_config(pymain);
+    /* Set Py_IgnoreEnvironmentFlag for Py_GETENV() */
+    Py_IgnoreEnvironmentFlag = pymain->core_config.ignore_environment;
 
     if (pymain_parse_envvars(pymain) < 0) {
         return -1;
     }
-    /* FIXME: if utf8_mode value changed, parse again cmdline */
 
     if (pymain_init_sys_argv(pymain) < 0) {
         return -1;
@@ -1899,14 +1943,101 @@ pymain_parse_cmdline_envvars_impl(_PyMain *pymain)
 
 
 static int
-pymain_parse_cmdline_envvars(_PyMain *pymain)
+pymain_read_conf(_PyMain *pymain)
 {
+    int res = -1;
+
     /* Force default allocator, since pymain_free() must use the same allocator
        than this function. */
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    int res = pymain_parse_cmdline_envvars_impl(pymain);
+    char *oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
+    if (oldloc == NULL) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    /* Reconfigure the locale to the default for this process */
+    _Py_SetLocaleFromEnv(LC_ALL);
+
+    int locale_coerced = 0;
+    int loops = 0;
+    int init_ignore_env = pymain->core_config.ignore_environment;
+
+    while (1) {
+        int utf8_mode = pymain->core_config.utf8_mode;
+        int encoding_changed = 0;
+
+        /* Watchdog to prevent an infinite loop */
+        loops++;
+        if (loops == 3) {
+            pymain->err = _Py_INIT_ERR("Encoding changed twice while "
+                                       "reading the configuration");
+            goto done;
+        }
+
+        if (pymain->use_bytes_argv) {
+            if (pymain_decode_bytes_argv(pymain) < 0) {
+                goto done;
+            }
+        }
+
+        res = pymain_read_conf_impl(pymain);
+        if (res != 0) {
+            goto done;
+        }
+
+        /* The legacy C locale assumes ASCII as the default text encoding, which
+         * causes problems not only for the CPython runtime, but also other
+         * components like GNU readline.
+         *
+         * Accordingly, when the CLI detects it, it attempts to coerce it to a
+         * more capable UTF-8 based alternative.
+         *
+         * See the documentation of the PYTHONCOERCECLOCALE setting for more
+         * details.
+         */
+        if (pymain->core_config.coerce_c_locale == 1 && !locale_coerced) {
+            locale_coerced = 1;
+            _Py_CoerceLegacyLocale(&pymain->core_config);
+            encoding_changed = 1;
+        }
+
+        if (utf8_mode == -1) {
+            if (pymain->core_config.utf8_mode == 1) {
+                /* UTF-8 Mode enabled */
+                encoding_changed = 1;
+            }
+        }
+        else {
+            if (pymain->core_config.utf8_mode != utf8_mode) {
+                encoding_changed = 1;
+            }
+        }
+
+        if (!encoding_changed) {
+            break;
+        }
+
+        /* Reset the configuration, except UTF-8 Mode. Set Py_UTF8Mode for
+           Py_DecodeLocale(). Reset Py_IgnoreEnvironmentFlag, modified by
+           pymain_read_conf_impl(). */
+        Py_UTF8Mode = pymain->core_config.utf8_mode;
+        Py_IgnoreEnvironmentFlag = init_ignore_env;
+        pymain_clear_pymain(pymain);
+        pymain_get_global_config(pymain);
+
+        /* The encoding changed: read again the configuration
+           with the new encoding */
+    }
+    res = 0;
+
+done:
+    if (oldloc != NULL) {
+        setlocale(LC_ALL, oldloc);
+        PyMem_RawFree(oldloc);
+    }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
@@ -1937,6 +2068,24 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         config->program_name = _PyMem_RawWcsdup(program_name);
         if (config->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
+        if (_Py_LegacyLocaleDetected()) {
+            if (config->utf8_mode < 0) {
+                config->utf8_mode = 1;
+            }
+            if (config->coerce_c_locale < 0) {
+                config->coerce_c_locale = 1;
+            }
+        }
+
+        if (config->coerce_c_locale < 0) {
+            config->coerce_c_locale = 0;
+        }
+        if (config->utf8_mode < 0) {
+            config->utf8_mode = 0;
         }
     }
 
@@ -2247,17 +2396,24 @@ pymain_run_python(_PyMain *pymain)
 static int
 pymain_init(_PyMain *pymain)
 {
+    /* 754 requires that FP exceptions run in "no stop" mode by default,
+     * and until C vendors implement C99's ways to control FP exceptions,
+     * Python requires non-stop mode.  Alas, some platforms enable FP
+     * exceptions by default.  Here we disable them.
+     */
+#ifdef __FreeBSD__
+    fedisableexcept(FE_OVERFLOW);
+#endif
+
     pymain->err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(pymain->err)) {
         return -1;
     }
 
-    pymain->core_config.utf8_mode = Py_UTF8Mode;
     pymain->core_config._disable_importlib = 0;
     pymain->config.install_signal_handlers = 1;
 
-    orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
-    orig_argv = pymain->argv;
+    pymain_get_global_config(pymain);
     return 0;
 }
 
@@ -2265,14 +2421,13 @@ pymain_init(_PyMain *pymain)
 static int
 pymain_impl(_PyMain *pymain)
 {
-    int res = pymain_init(pymain);
-    if (res < 0) {
+    if (pymain_init(pymain) < 0) {
         return -1;
     }
 
-    pymain_get_global_config(pymain);
-
-    res = pymain_parse_cmdline_envvars(pymain);
+    /* Read the configuration, but initialize also the LC_CTYPE locale:
+       enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538) */
+    int res = pymain_read_conf(pymain);
     if (res < 0) {
         return -1;
     }
@@ -2280,6 +2435,21 @@ pymain_impl(_PyMain *pymain)
         /* --help or --version command: we are done */
         return 0;
     }
+
+    _Py_CommandLineDetails *cmdline = &pymain->cmdline;
+    if (cmdline->print_help) {
+        pymain_usage(0, pymain->argv[0]);
+        return 0;
+    }
+
+    if (cmdline->print_version) {
+        printf("Python %s\n",
+               (cmdline->print_version >= 2) ? Py_GetVersion() : PY_VERSION);
+        return 0;
+    }
+
+    orig_argc = pymain->argc;           /* For Py_GetArgcArgv() */
+    orig_argv = pymain->argv;
 
     res = pymain_init_python_core(pymain);
     if (res < 0) {
@@ -2293,7 +2463,7 @@ pymain_impl(_PyMain *pymain)
 
     pymain_run_python(pymain);
 
-    pymain_free_python(pymain);
+    pymain_clear_python(pymain);
 
     if (Py_FinalizeEx() < 0) {
         /* Value unlikely to be confused with a non-error exit status or
@@ -2304,21 +2474,45 @@ pymain_impl(_PyMain *pymain)
 }
 
 
+static int
+pymain_main(_PyMain *pymain)
+{
+    memset(&pymain->cmdline, 0, sizeof(pymain->cmdline));
+
+    if (pymain_impl(pymain) < 0) {
+        _Py_FatalInitError(pymain->err);
+    }
+    pymain_free(pymain);
+
+    orig_argc = 0;
+    orig_argv = NULL;
+
+    return pymain->status;
+}
+
+
 int
 Py_Main(int argc, wchar_t **argv)
 {
     _PyMain pymain = _PyMain_INIT;
-    memset(&pymain.cmdline, 0, sizeof(pymain.cmdline));
     pymain.argc = argc;
     pymain.argv = argv;
 
-    if (pymain_impl(&pymain) < 0) {
-        _Py_FatalInitError(pymain.err);
-    }
-    pymain_free(&pymain);
-
-    return pymain.status;
+    return pymain_main(&pymain);
 }
+
+
+int
+_Py_UnixMain(int argc, char **argv)
+{
+    _PyMain pymain = _PyMain_INIT;
+    pymain.argc = argc;
+    pymain.use_bytes_argv = 1;
+    pymain.bytes_argv = argv;
+
+    return pymain_main(&pymain);
+}
+
 
 /* this is gonna seem *real weird*, but if you put some other code between
    Py_Main() and Py_GetArgcArgv() you will need to adjust the test in the

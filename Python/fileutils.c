@@ -393,7 +393,7 @@ Py_DecodeLocale(const char* arg, size_t *size)
 #if defined(__APPLE__) || defined(__ANDROID__)
     return _Py_DecodeUTF8_surrogateescape(arg, strlen(arg), size);
 #else
-    if (Py_UTF8Mode) {
+    if (Py_UTF8Mode == 1) {
         return _Py_DecodeUTF8_surrogateescape(arg, strlen(arg), size);
     }
 
@@ -539,7 +539,7 @@ Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 #if defined(__APPLE__) || defined(__ANDROID__)
     return _Py_EncodeLocaleUTF8(text, error_pos);
 #else   /* __APPLE__ */
-    if (Py_UTF8Mode) {
+    if (Py_UTF8Mode == 1) {
         return _Py_EncodeLocaleUTF8(text, error_pos);
     }
 
