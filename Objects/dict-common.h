@@ -8,12 +8,6 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictKeyEntry;
 
-/* dict_lookup_func() returns index of entry which can be used like DK_ENTRIES(dk)[index].
- * -1 when no entry found, -3 when compare raises error.
- */
-typedef Py_ssize_t (*dict_lookup_func)
-    (PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
-
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
@@ -24,6 +18,12 @@ struct _dictkeysobject {
 
     /* Size of the hash table (dk_indices). It must be a power of 2. */
     Py_ssize_t dk_size;
+
+    /* Number of usable entries in dk_entries. */
+    Py_ssize_t dk_usable;
+
+    /* Number of used entries in dk_entries. */
+    Py_ssize_t dk_nentries;
 
     /* Function to lookup in the hash table (dk_indices):
 
@@ -38,16 +38,10 @@ struct _dictkeysobject {
          specialized for Unicode string keys that cannot be the <dummy> value.
 
        - lookdict_split(): Version of lookdict() for split tables. */
-    dict_lookup_func dk_lookup;
-
-    /* Number of usable entries in dk_entries. */
-    Py_ssize_t dk_usable;
-
-    /* Number of used entries in dk_entries. */
-    Py_ssize_t dk_nentries;
+    unsigned int dk_lookup: 8;
 
     /* Whether OrderedDict's cache is synchronized with dict table */
-    unsigned int dk_clean;
+    unsigned int dk_clean: 1;
 
     /* Actual hash table of dk_size entries. It holds indices in dk_entries,
        or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
