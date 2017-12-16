@@ -1551,10 +1551,10 @@ function _try_add_warnings_helper() {
 # $1 = The warning to add (Including the '-W' prefix)
 # $2 = The message to display for the check
 function try_add_nodist_warnings() {
-    _try_add_warnings_helper "CFLAGS_NODIST" $1 $2
+    _try_add_warnings_helper "CFLAGS_NODIST" "$1" "$2"
 }
 function try_add_base_warnings() {
-    _try_add_warnings_helper "BASECFLAGS" $1 $2
+    _try_add_warnings_helper "BASECFLAGS" "$1" "$2"
 }
 
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
@@ -1564,13 +1564,13 @@ function try_add_base_warnings() {
     ################################
     try_add_nodist_warnings "-Wextra" "for -Wextra"
 
+    try_add_base_warnings "-Wc99-c11-compat" "if we can turn on $CC c99/c11 compatibility warnings"
     try_add_base_warnings "-Wsign-compare" "if we can turn on $CC mixed sign comparison warning"
     try_add_base_warnings "-Wlogical-op" "if we can turn on $CC logical-op warning"
     try_add_base_warnings "-Wformat=2" "if we can turn on $CC format=2 warning"
     try_add_base_warnings "-Wvarargs" "if we can turn on $CC varargs warning"
     try_add_base_warnings "-Wuninitialized" "if we can turn on $CC uninitialized warning"
     try_add_base_warnings "-Wcast-align" "if we can turn on $CC cast-align warning"
-    try_add_base_warnings "-Wstrict-prototypes" "if we can turn on $CC strict-prototypes warning"
 
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
