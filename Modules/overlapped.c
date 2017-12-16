@@ -1751,7 +1751,7 @@ static PyMethodDef overlapped_functions[] = {
     {"ConnectPipe",
      (PyCFunction)ConnectPipe,
      METH_VARARGS, ConnectPipe_doc},
-    {"WSAConnect", Overlapped_WSAConnect,
+    {"WSAConnect", (PyCFunction) Overlapped_WSAConnect,
      METH_VARARGS, Overlapped_WSAConnect_doc},
     {NULL}
 };
