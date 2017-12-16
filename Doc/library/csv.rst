@@ -149,14 +149,14 @@ The :mod:`csv` module defines the following classes:
 .. class:: DictReader(f, fieldnames=None, restkey=None, restval=None, \
                       dialect='excel', *args, **kwds)
 
-   Create an object that operates like a regular reader but maps the
-   information in each row to an :mod:`OrderedDict <collections.OrderedDict>`
-   whose keys are given by the optional *fieldnames* parameter.
+   Create an object which operates like a regular reader but maps the
+   information read into a dict whose keys are given by the optional
+   *fieldnames* parameter.
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
-   fieldnames.  Regardless of how the fieldnames are determined, the ordered
-   dictionary preserves their original ordering.
+   fieldnames.  Regardless of how the fieldnames are determined, the dictionary
+   preserves their original ordering.
 
    If a row has more fields than fieldnames, the remaining data is put in a
    list and stored with the fieldname specified by *restkey* (which defaults
@@ -166,8 +166,9 @@ The :mod:`csv` module defines the following classes:
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
 
-   .. versionchanged:: 3.6
-      Returned rows are now of type :class:`OrderedDict`.
+   .. versionchanged:: 3.7
+      Returned rows are now of type :class:`dict`, which guaranteed to retain
+      insertion order in Python3.7.
 
    A short usage example::
 
@@ -181,7 +182,7 @@ The :mod:`csv` module defines the following classes:
        John Cleese
 
        >>> print(row)
-       OrderedDict([('first_name', 'John'), ('last_name', 'Cleese')])
+       {'first_name': 'John', 'last_name': 'Cleese'}
 
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
