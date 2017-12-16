@@ -1113,7 +1113,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2n15Pl4Pn9Pn11PIP'
+        fmt = 'P2n15Pl4Pn9Pn12PIP'
         if hasattr(sys, 'getcounts'):
             fmt += '3n2P'
         s = vsize(fmt)
@@ -1124,6 +1124,7 @@ class SizeofTest(unittest.TestCase):
                   '36P'                 # PyNumberMethods
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
+                  '2P'                  # PyClassMethods
                   '2P'                  # PyBufferProcs
                   '4P')
         class newstyleclass(object): pass

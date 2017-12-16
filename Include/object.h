@@ -311,6 +311,11 @@ typedef struct {
 } PyAsyncMethods;
 
 typedef struct {
+    binaryfunc cm_getitem;
+    binaryfunc cm_mro_entries;
+} PyClassMethods;
+
+typedef struct {
      getbufferproc bf_getbuffer;
      releasebufferproc bf_releasebuffer;
 } PyBufferProcs;
@@ -424,6 +429,8 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
 
+    PyClassMethods *tp_as_class;
+
 #ifdef COUNT_ALLOCS
     /* these must be last and never explicitly initialized */
     Py_ssize_t tp_allocs;
@@ -470,6 +477,7 @@ typedef struct _heaptypeobject {
                                       the mapping and the sequence define
                                       a given operator (e.g. __getitem__).
                                       see add_operators() in typeobject.c . */
+    PyClassMethods as_class;
     PyBufferProcs as_buffer;
     PyObject *ht_name, *ht_slots, *ht_qualname;
     struct _dictkeysobject *ht_cached_keys;

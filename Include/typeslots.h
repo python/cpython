@@ -83,3 +83,7 @@
 /* New in 3.5 */
 #define Py_tp_finalize 80
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+#define Py_cm_getitem 81
+#define Py_cm_mro_entries 82
+#endif

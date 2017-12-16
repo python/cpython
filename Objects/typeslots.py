@@ -23,6 +23,8 @@ def generate_typeslots(out=sys.stdout):
             member = "as_sequence."+member
         elif member.startswith("bf_"):
             member = "as_buffer."+member
+        elif member.startswith("cm_"):
+            member = "as_class."+member
         res[int(m.group(2))] = member
 
     M = max(res.keys())+1

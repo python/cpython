@@ -77,4 +77,6 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
 
+    PyClassMethods *tp_as_class;
+
 } PyTypeObject;
