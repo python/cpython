@@ -183,7 +183,7 @@ class CompileallTests(unittest.TestCase):
         self.assertFalse(pool_mock.called)
         self.assertTrue(compile_file_mock.called)
 
-    @mock.patch('compileall.ProcessPoolExecutor', new=None)
+    @mock.patch('compileall.ProcessPoolExecutor', new=False)
     @mock.patch('compileall.compile_file')
     def test_compile_missing_multiprocessing(self, compile_file_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
