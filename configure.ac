@@ -1505,27 +1505,60 @@ AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
-    AC_MSG_CHECKING(for -Wextra)
+
+# $1 = [Output] The name of the variable to concat the given flag
+#        (e.g. CFLAGS_NODIST, BASECFLAGS..)
+# $2 = The warning to add (Including the '-W' prefix)
+# $3 = The message to display for the check
+#
+# NOTE: DO NOT USE THIS FUCNTION DIRECTRY.
+#       Please use the below functions instead.
+function _add_flags_helper() {
+    # Remove the '-W' prefix. Substituted for e.g. "ac_cv_extra_warning"
+    ac_cv_var="ac_cv_${2:2}_warning"
+
+    # Handle warnings with multiple words: e.g. "-Wcast-align"
+    # Turn it into "cast_align"
+    ac_cv_var="${ac_cv_var//-/_}"
+
+    # Handle cases where we want to turn specific warnings into errors.
+    # In this case, we get e.g. "-Werror=logical-op".
+    # Turn it into "error_logical_op"
+    ac_cv_var="${ac_cv_var//=/_}"
+    AC_MSG_CHECKING($3)
      ac_save_cc="$CC"
-     CC="$CC -Wextra -Werror"
-     AC_CACHE_VAL(ac_cv_extra_warnings,
+     CC="$CC $2 -Werror"
+     AC_CACHE_VAL(!ac_cv_var,
        AC_COMPILE_IFELSE(
          [
            AC_LANG_PROGRAM([[]], [[]])
          ],[
-           ac_cv_extra_warnings=yes
+           eval ${ac_cv_var}=yes
          ],[
-           ac_cv_extra_warnings=no
+           eval ${ac_cv_var}=no
          ]))
      CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_extra_warnings)
+    AC_MSG_RESULT(${!ac_cv_var})
 
-    if test $ac_cv_extra_warnings = yes
+    if test ${!ac_cv_var} = yes
     then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"
+      eval ${1}="\"${!1} $2\""
     fi
+}
+
+# $1 = The warning to add (Including the '-W' prefix)
+# $2 = The message to display for the check
+function add_nodist_flags() {
+	_add_flags_helper "CFLAGS_NODIST" $1 $2
+}
+function add_base_flags() {
+	_add_flags_helper "BASECFLAGS" $1 $2
+}
+
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+
+    add_nodist_flags "-Wextra" "for -Wextra"
 
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
@@ -1634,43 +1667,7 @@ yes)
       CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
     fi
 
-    AC_MSG_CHECKING(if we can turn on $CC mixed sign comparison warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wsign-compare"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_enable_sign_compare_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_enable_sign_compare_warning=yes
-	 ],[
-           ac_cv_enable_sign_compare_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_sign_compare_warning)
-
-    if test $ac_cv_enable_sign_compare_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wsign-compare"
-    fi
-
-    AC_MSG_CHECKING(if we can turn on $CC unreachable code warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunreachable-code"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_enable_unreachable_code_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_enable_unreachable_code_warning=yes
-	 ],[
-           ac_cv_enable_unreachable_code_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
+    add_base_flags "-Wsign-compare" "if we can turn on $CC mixed sign comparison warning"
 
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
@@ -1679,35 +1676,13 @@ yes)
     # It is supported on clang but on OS X systems gcc may be an alias
     # for clang.  Try to determine if the compiler is not really gcc and,
     # if so, only then enable the warning.
-    if test $ac_cv_enable_unreachable_code_warning = yes && \
-        test "$Py_DEBUG" != "true" && \
+    if test "$Py_DEBUG" != "true" && \
         test -z "`$CC --version 2>/dev/null | grep 'Free Software Foundation'`"
     then
-      BASECFLAGS="$BASECFLAGS -Wunreachable-code"
-    else
-      ac_cv_enable_unreachable_code_warning=no
+        add_base_flags "-Wunreachable-code" "if we can turn on $CC unreachable code warning"
     fi
-    AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
 
-    AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
-     ac_save_cc="$CC"
-     CC="$CC -Werror=implicit-function-declaration"
-     AC_CACHE_VAL(ac_cv_enable_implicit_function_declaration_error,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_enable_implicit_function_declaration_error=yes
-	 ],[
-           ac_cv_enable_implicit_function_declaration_error=no
-	 ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_implicit_function_declaration_error)
-
-    if test $ac_cv_enable_implicit_function_declaration_error = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
-    fi
+    add_base_flags "-Werror=implicit-function-declaration" "if we can make implicit function declaration an error in $CC"
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
