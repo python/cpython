@@ -28,6 +28,9 @@ import weakref
 from test import mod_generics_cache
 
 
+PY36 = sys.version_info[:2] >= (3, 6)
+
+
 class BaseTestCase(TestCase):
 
     def assertIsSubclass(self, cls, class_or_tuple, msg=None):
@@ -626,6 +629,27 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Generic[T, S, T]
 
+    @skipUnless(PY36, "__init_subclass__ support required")
+    def test_init_subclass(self):
+        class X(typing.Generic[T]):
+            def __init_subclass__(cls, **kwargs):
+                super().__init_subclass__(**kwargs)
+                cls.attr = 42
+        class Y(X):
+            pass
+        self.assertEqual(Y.attr, 42)
+        with self.assertRaises(AttributeError):
+            X.attr
+        X.attr = 1
+        Y.attr = 2
+        class Z(Y):
+            pass
+        class W(X[int]):
+            pass
+        self.assertEqual(Y.attr, 2)
+        self.assertEqual(Z.attr, 42)
+        self.assertEqual(W.attr, 42)
+
     def test_repr(self):
         self.assertEqual(repr(SimpleMapping),
                          "<class 'test.test_typing.SimpleMapping'>")
@@ -1050,6 +1074,30 @@ class GenericTests(BaseTestCase):
         for t in things + [Any]:
             self.assertEqual(t, copy(t))
             self.assertEqual(repr(t), repr(deepcopy(t))) # Use repr() because of TypeVars
+
+    def test_copy_generic_instances(self):
+        T = TypeVar('T')
+        class C(Generic[T]):
+            def __init__(self, attr: T) -> None:
+                self.attr = attr
+
+        c = C(42)
+        self.assertEqual(copy(c).attr, 42)
+        self.assertEqual(deepcopy(c).attr, 42)
+        self.assertIsNot(copy(c), c)
+        self.assertIsNot(deepcopy(c), c)
+        c.attr = 1
+        self.assertEqual(copy(c).attr, 1)
+        self.assertEqual(deepcopy(c).attr, 1)
+        ci = C[int](42)
+        self.assertEqual(copy(ci).attr, 42)
+        self.assertEqual(deepcopy(ci).attr, 42)
+        self.assertIsNot(copy(ci), ci)
+        self.assertIsNot(deepcopy(ci), ci)
+        ci.attr = 1
+        self.assertEqual(copy(ci).attr, 1)
+        self.assertEqual(deepcopy(ci).attr, 1)
+        self.assertEqual(ci.__orig_class__, C[int])
 
     def test_weakref_all(self):
         T = TypeVar('T')
@@ -1538,8 +1586,6 @@ else:
     # fake names for the sake of static analysis
     asyncio = None
     AwaitableWrapper = AsyncIteratorWrapper = ACM = object
-
-PY36 = sys.version_info[:2] >= (3, 6)
 
 PY36_TESTS = """
 from test import ann_module, ann_module2, ann_module3

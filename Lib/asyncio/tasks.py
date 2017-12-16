@@ -1,23 +1,40 @@
 """Support for tasks, coroutines and the scheduler."""
 
-__all__ = ['Task',
-           'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
-           'wait', 'wait_for', 'as_completed', 'sleep', 'async',
-           'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
-           ]
+__all__ = (
+    'Task', 'create_task',
+    'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
+    'wait', 'wait_for', 'as_completed', 'sleep',
+    'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
+    'current_task', 'all_tasks',
+    '_register_task', '_unregister_task', '_enter_task', '_leave_task',
+)
 
 import concurrent.futures
 import functools
 import inspect
+import types
 import warnings
 import weakref
 
 from . import base_tasks
-from . import compat
 from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
+
+
+def current_task(loop=None):
+    """Return a currently executed task."""
+    if loop is None:
+        loop = events.get_running_loop()
+    return _current_tasks.get(loop)
+
+
+def all_tasks(loop=None):
+    """Return a set of all tasks for the loop."""
+    if loop is None:
+        loop = events.get_event_loop()
+    return {t for t, l in _all_tasks.items() if l is loop}
 
 
 class Task(futures.Future):
@@ -32,13 +49,6 @@ class Task(futures.Future):
     # _wakeup().  When _fut_waiter is not None, one of its callbacks
     # must be _wakeup().
 
-    # Weak set containing all tasks alive.
-    _all_tasks = weakref.WeakSet()
-
-    # Dictionary containing tasks that are currently active in
-    # all running event loops.  {EventLoop: Task}
-    _current_tasks = {}
-
     # If False, don't log a message if the task is destroyed whereas its
     # status is still pending
     _log_destroy_pending = True
@@ -51,9 +61,13 @@ class Task(futures.Future):
 
         None is returned when called not in the context of a Task.
         """
+        warnings.warn("Task.current_task() is deprecated, "
+                      "use asyncio.current_task() instead",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
-        return cls._current_tasks.get(loop)
+        return current_task(loop)
 
     @classmethod
     def all_tasks(cls, loop=None):
@@ -61,20 +75,28 @@ class Task(futures.Future):
 
         By default all tasks for the current event loop are returned.
         """
-        if loop is None:
-            loop = events.get_event_loop()
-        return {t for t in cls._all_tasks if t._loop is loop}
+        warnings.warn("Task.all_tasks() is deprecated, "
+                      "use asyncio.all_tasks() instead",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
+        return all_tasks(loop)
 
     def __init__(self, coro, *, loop=None):
-        assert coroutines.iscoroutine(coro), repr(coro)
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
-        self._coro = coro
-        self._fut_waiter = None
+        if not coroutines.iscoroutine(coro):
+            # raise after Future.__init__(), attrs are required for __del__
+            # prevent logging for pending task in __del__
+            self._log_destroy_pending = False
+            raise TypeError(f"a coroutine was expected, got {coro!r}")
+
         self._must_cancel = False
+        self._fut_waiter = None
+        self._coro = coro
+
         self._loop.call_soon(self._step)
-        self.__class__._all_tasks.add(self)
+        _register_task(self._loop, self)
 
     def __del__(self):
         if self._state == futures._PENDING and self._log_destroy_pending:
@@ -158,8 +180,7 @@ class Task(futures.Future):
         return True
 
     def _step(self, exc=None):
-        assert not self.done(), \
-            '_step(): already done: {!r}, {!r}'.format(self, exc)
+        assert not self.done(), f'_step(): already done: {self!r}, {exc!r}'
         if self._must_cancel:
             if not isinstance(exc, futures.CancelledError):
                 exc = futures.CancelledError()
@@ -167,7 +188,7 @@ class Task(futures.Future):
         coro = self._coro
         self._fut_waiter = None
 
-        self.__class__._current_tasks[self._loop] = self
+        _enter_task(self._loop, self)
         # Call either coro.throw(exc) or coro.send(None).
         try:
             if exc is None:
@@ -195,18 +216,15 @@ class Task(futures.Future):
             if blocking is not None:
                 # Yielded Future must come from Future.__iter__().
                 if result._loop is not self._loop:
-                    self._loop.call_soon(
-                        self._step,
-                        RuntimeError(
-                            'Task {!r} got Future {!r} attached to a '
-                            'different loop'.format(self, result)))
+                    new_exc = RuntimeError(
+                        f'Task {self!r} got Future '
+                        f'{result!r} attached to a different loop')
+                    self._loop.call_soon(self._step, new_exc)
                 elif blocking:
                     if result is self:
-                        self._loop.call_soon(
-                            self._step,
-                            RuntimeError(
-                                'Task cannot await on itself: {!r}'.format(
-                                    self)))
+                        new_exc = RuntimeError(
+                            f'Task cannot await on itself: {self!r}')
+                        self._loop.call_soon(self._step, new_exc)
                     else:
                         result._asyncio_future_blocking = False
                         result.add_done_callback(self._wakeup)
@@ -215,30 +233,26 @@ class Task(futures.Future):
                             if self._fut_waiter.cancel():
                                 self._must_cancel = False
                 else:
-                    self._loop.call_soon(
-                        self._step,
-                        RuntimeError(
-                            'yield was used instead of yield from '
-                            'in task {!r} with {!r}'.format(self, result)))
+                    new_exc = RuntimeError(
+                        f'yield was used instead of yield from '
+                        f'in task {self!r} with {result!r}')
+                    self._loop.call_soon(self._step, new_exc)
+
             elif result is None:
                 # Bare yield relinquishes control for one event loop iteration.
                 self._loop.call_soon(self._step)
             elif inspect.isgenerator(result):
                 # Yielding a generator is just wrong.
-                self._loop.call_soon(
-                    self._step,
-                    RuntimeError(
-                        'yield was used instead of yield from for '
-                        'generator in task {!r} with {}'.format(
-                            self, result)))
+                new_exc = RuntimeError(
+                    f'yield was used instead of yield from for '
+                    f'generator in task {self!r} with {result}')
+                self._loop.call_soon(self._step, new_exc)
             else:
                 # Yielding something else is an error.
-                self._loop.call_soon(
-                    self._step,
-                    RuntimeError(
-                        'Task got bad yield: {!r}'.format(result)))
+                new_exc = RuntimeError(f'Task got bad yield: {result!r}')
+                self._loop.call_soon(self._step, new_exc)
         finally:
-            self.__class__._current_tasks.pop(self._loop)
+            _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
     def _wakeup(self, future):
@@ -270,6 +284,15 @@ else:
     Task = _CTask = _asyncio.Task
 
 
+def create_task(coro):
+    """Schedule the execution of a coroutine object in a spawn task.
+
+    Return a Task object.
+    """
+    loop = events.get_running_loop()
+    return loop.create_task(coro)
+
+
 # wait() and as_completed() similar to those in PEP 3148.
 
 FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
@@ -277,8 +300,7 @@ FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
 
-@coroutine
-def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
+async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures and coroutines given by fs to complete.
 
     The sequence futures must not be empty.
@@ -289,24 +311,24 @@ def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
 
     Usage:
 
-        done, pending = yield from asyncio.wait(fs)
+        done, pending = await asyncio.wait(fs)
 
     Note: This does not raise TimeoutError! Futures that aren't done
     when the timeout occurs are returned in the second set.
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
+        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
         raise ValueError('Set of coroutines/Futures is empty.')
     if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
-        raise ValueError('Invalid return_when value: {}'.format(return_when))
+        raise ValueError(f'Invalid return_when value: {return_when}')
 
     if loop is None:
         loop = events.get_event_loop()
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
-    return (yield from _wait(fs, timeout, return_when, loop))
+    return await _wait(fs, timeout, return_when, loop)
 
 
 def _release_waiter(waiter, *args):
@@ -314,8 +336,7 @@ def _release_waiter(waiter, *args):
         waiter.set_result(None)
 
 
-@coroutine
-def wait_for(fut, timeout, *, loop=None):
+async def wait_for(fut, timeout, *, loop=None):
     """Wait for the single Future or coroutine to complete, with timeout.
 
     Coroutine will be wrapped in Task.
@@ -332,7 +353,7 @@ def wait_for(fut, timeout, *, loop=None):
         loop = events.get_event_loop()
 
     if timeout is None:
-        return (yield from fut)
+        return await fut
 
     if timeout <= 0:
         fut = ensure_future(fut, loop=loop)
@@ -353,7 +374,7 @@ def wait_for(fut, timeout, *, loop=None):
     try:
         # wait until the future completes or the timeout
         try:
-            yield from waiter
+            await waiter
         except futures.CancelledError:
             fut.remove_done_callback(cb)
             fut.cancel()
@@ -369,8 +390,7 @@ def wait_for(fut, timeout, *, loop=None):
         timeout_handle.cancel()
 
 
-@coroutine
-def _wait(fs, timeout, return_when, loop):
+async def _wait(fs, timeout, return_when, loop):
     """Internal helper for wait() and wait_for().
 
     The fs argument must be a collection of Futures.
@@ -398,7 +418,7 @@ def _wait(fs, timeout, return_when, loop):
         f.add_done_callback(_on_completion)
 
     try:
-        yield from waiter
+        await waiter
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
@@ -424,16 +444,16 @@ def as_completed(fs, *, loop=None, timeout=None):
     This differs from PEP 3148; the proper way to use this is:
 
         for f in as_completed(fs):
-            result = yield from f  # The 'yield from' may raise.
+            result = await f  # The 'await' may raise.
             # Use result.
 
-    If a timeout is specified, the 'yield from' will raise
+    If a timeout is specified, the 'await' will raise
     TimeoutError when the timeout occurs before all Futures are done.
 
     Note: The futures 'f' are not necessarily members of fs.
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
+        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     loop = loop if loop is not None else events.get_event_loop()
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
     from .queues import Queue  # Import here to avoid circular import problem.
@@ -454,9 +474,8 @@ def as_completed(fs, *, loop=None, timeout=None):
         if not todo and timeout_handle is not None:
             timeout_handle.cancel()
 
-    @coroutine
-    def _wait_for_one():
-        f = yield from done.get()
+    async def _wait_for_one():
+        f = await done.get()
         if f is None:
             # Dummy value from _on_timeout().
             raise futures.TimeoutError
@@ -470,11 +489,22 @@ def as_completed(fs, *, loop=None, timeout=None):
         yield _wait_for_one()
 
 
-@coroutine
-def sleep(delay, result=None, *, loop=None):
+@types.coroutine
+def __sleep0():
+    """Skip one event loop run cycle.
+
+    This is a private helper for 'asyncio.sleep()', used
+    when the 'delay' is set to 0.  It uses a bare 'yield'
+    expression (which Task._step knows how to handle)
+    instead of creating a Future object.
+    """
+    yield
+
+
+async def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
     if delay == 0:
-        yield
+        await __sleep0()
         return result
 
     if loop is None:
@@ -484,29 +514,9 @@ def sleep(delay, result=None, *, loop=None):
                                 futures._set_result_unless_cancelled,
                                 future, result)
     try:
-        return (yield from future)
+        return await future
     finally:
         h.cancel()
-
-
-def async_(coro_or_future, *, loop=None):
-    """Wrap a coroutine in a future.
-
-    If the argument is a Future, it is returned directly.
-
-    This function is deprecated in 3.5. Use asyncio.ensure_future() instead.
-    """
-
-    warnings.warn("asyncio.async() function is deprecated, use ensure_future()",
-                  DeprecationWarning,
-                  stacklevel=2)
-
-    return ensure_future(coro_or_future, loop=loop)
-
-# Silence DeprecationWarning:
-globals()['async'] = async_
-async_.__name__ = 'async'
-del async_
 
 
 def ensure_future(coro_or_future, *, loop=None):
@@ -525,7 +535,7 @@ def ensure_future(coro_or_future, *, loop=None):
         if task._source_traceback:
             del task._source_traceback[-1]
         return task
-    elif compat.PY35 and inspect.isawaitable(coro_or_future):
+    elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:
         raise TypeError('An asyncio.Future, a coroutine or an awaitable is '
@@ -653,11 +663,11 @@ def shield(arg, *, loop=None):
 
     The statement
 
-        res = yield from shield(something())
+        res = await shield(something())
 
     is exactly equivalent to the statement
 
-        res = yield from something()
+        res = await something()
 
     *except* that if the coroutine containing it is cancelled, the
     task running in something() is not cancelled.  From the POV of
@@ -670,7 +680,7 @@ def shield(arg, *, loop=None):
     you can combine shield() with a try/except clause, as follows:
 
         try:
-            res = yield from shield(something())
+            res = await shield(something())
         except CancelledError:
             res = None
     """
@@ -720,3 +730,61 @@ def run_coroutine_threadsafe(coro, loop):
 
     loop.call_soon_threadsafe(callback)
     return future
+
+
+# WeakKeyDictionary of {Task: EventLoop} containing all tasks alive.
+# Task should be a weak reference to remove entry on task garbage
+# collection, EventLoop is required
+# to not access to private task._loop attribute.
+_all_tasks = weakref.WeakKeyDictionary()
+
+# Dictionary containing tasks that are currently active in
+# all running event loops.  {EventLoop: Task}
+_current_tasks = {}
+
+
+def _register_task(loop, task):
+    """Register a new task in asyncio as executed by loop.
+
+    Returns None.
+    """
+    _all_tasks[task] = loop
+
+
+def _enter_task(loop, task):
+    current_task = _current_tasks.get(loop)
+    if current_task is not None:
+        raise RuntimeError(f"Cannot enter into task {task!r} while another "
+                           f"task {current_task!r} is being executed.")
+    _current_tasks[loop] = task
+
+
+def _leave_task(loop, task):
+    current_task = _current_tasks.get(loop)
+    if current_task is not task:
+        raise RuntimeError(f"Leaving task {task!r} does not match "
+                           f"the current task {current_task!r}.")
+    del _current_tasks[loop]
+
+
+def _unregister_task(loop, task):
+    _all_tasks.pop(task, None)
+
+
+_py_register_task = _register_task
+_py_unregister_task = _unregister_task
+_py_enter_task = _enter_task
+_py_leave_task = _leave_task
+
+
+try:
+    from _asyncio import (_register_task, _unregister_task,
+                          _enter_task, _leave_task,
+                          _all_tasks, _current_tasks)
+except ImportError:
+    pass
+else:
+    _c_register_task = _register_task
+    _c_unregister_task = _unregister_task
+    _c_enter_task = _enter_task
+    _c_leave_task = _leave_task

@@ -157,11 +157,11 @@ PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable,
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) _PyStack_AsTuple(
-    PyObject **stack,
+    PyObject *const *stack,
     Py_ssize_t nargs);
 
 PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
-    PyObject **stack,
+    PyObject *const *stack,
     Py_ssize_t nargs,
     Py_ssize_t start,
     Py_ssize_t end);
@@ -177,7 +177,7 @@ PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
    an exception, the caller is responsible to implement an explicit keys on
    kwnames. */
 PyAPI_FUNC(PyObject *) _PyStack_AsDict(
-    PyObject **values,
+    PyObject *const *values,
     PyObject *kwnames);
 
 /* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
@@ -192,10 +192,10 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
    The type of keyword keys is not checked, these checks should be done
    later (ex: _PyArg_ParseStackAndKeywords). */
 PyAPI_FUNC(int) _PyStack_UnpackDict(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs,
-    PyObject ***p_stack,
+    PyObject *const **p_stack,
     PyObject **p_kwnames);
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
@@ -224,7 +224,7 @@ PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
    error. */
 PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
     PyObject *callable,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs);
 
@@ -245,7 +245,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
    error. */
 PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords(
     PyObject *callable,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames);
 
@@ -264,7 +264,7 @@ PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
 PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
     PyObject *callable,
     PyObject *obj,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs);
 
 PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
@@ -367,7 +367,7 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
 
 /* Implemented elsewhere:
 
-   long PyObject_Hash(PyObject *o);
+   Py_hash_t PyObject_Hash(PyObject *o);
 
    Compute and return the hash, hash_value, of an object, o.  On
    failure, return -1.

@@ -170,14 +170,10 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     }
 
     if (PyType_Check(o)) {
-        meth = PyObject_GetAttrString(o, "__class_getitem__");
+        PyObject *meth, *result, *stack[2] = {o, key};
+        _Py_IDENTIFIER(__class_getitem__);
+        meth = _PyObject_GetAttrId(o, &PyId___class_getitem__);
         if (meth) {
-            if (!PyCallable_Check(meth)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "__class_getitem__ must be callable");
-                Py_DECREF(meth);
-                return NULL;
-            }
             result = _PyObject_FastCall(meth, stack, 2);
             Py_DECREF(meth);
             return result;

@@ -352,6 +352,11 @@ class StatAttributeTests(unittest.TestCase):
         for value, member in enumerate(members):
             self.assertEqual(getattr(result, 'f_' + member), result[value])
 
+        self.assertTrue(isinstance(result.f_fsid, int))
+
+        # Test that the size of the tuple doesn't change
+        self.assertEqual(len(result), 10)
+
         # Make sure that assignment really fails
         try:
             result.f_bfree = 1
@@ -1321,7 +1326,7 @@ class URandomTests(unittest.TestCase):
             'sys.stdout.buffer.flush()'))
         out = assert_python_ok('-c', code)
         stdout = out[1]
-        self.assertEqual(len(stdout), 16)
+        self.assertEqual(len(stdout), count)
         return stdout
 
     def test_urandom_subprocess(self):
@@ -1736,7 +1741,10 @@ class LinkTests(unittest.TestCase):
     def _test_link(self, file1, file2):
         create_file(file1)
 
-        os.link(file1, file2)
+        try:
+            os.link(file1, file2)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
         with open(file1, "r") as f1, open(file2, "r") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
 
@@ -2888,7 +2896,8 @@ class TermsizeTests(unittest.TestCase):
         """
         try:
             size = subprocess.check_output(['stty', 'size']).decode().split()
-        except (FileNotFoundError, subprocess.CalledProcessError):
+        except (FileNotFoundError, subprocess.CalledProcessError,
+                PermissionError):
             self.skipTest("stty invocation failed")
         expected = (int(size[1]), int(size[0])) # reversed order
 
@@ -3242,7 +3251,10 @@ class TestScandir(unittest.TestCase):
         os.mkdir(dirname)
         filename = self.create_file("file.txt")
         if link:
-            os.link(filename, os.path.join(self.path, "link_file.txt"))
+            try:
+                os.link(filename, os.path.join(self.path, "link_file.txt"))
+            except PermissionError as e:
+                self.skipTest('os.link(): %s' % e)
         if symlink:
             os.symlink(dirname, os.path.join(self.path, "symlink_dir"),
                        target_is_directory=True)

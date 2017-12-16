@@ -594,6 +594,10 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(''.join, types.BuiltinMethodType)
         self.assertIsInstance([].append, types.BuiltinMethodType)
 
+        self.assertIsInstance(int.__dict__['from_bytes'], types.ClassMethodDescriptorType)
+        self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
+        self.assertIsInstance(int.__new__, types.BuiltinMethodType)
+
 
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
@@ -875,6 +879,36 @@ class ClassCreationTests(unittest.TestCase):
         c = C()
         with self.assertRaises(TypeError):
             types.new_class('D', (c,), {})
+
+    def test_new_class_with_mro_entry_multiple(self):
+        class A1: pass
+        class A2: pass
+        class B1: pass
+        class B2: pass
+        class A:
+            def __mro_entries__(self, bases):
+                return (A1, A2)
+        class B:
+            def __mro_entries__(self, bases):
+                return (B1, B2)
+        D = types.new_class('D', (A(), B()), {})
+        self.assertEqual(D.__bases__, (A1, A2, B1, B2))
+
+    def test_new_class_with_mro_entry_multiple_2(self):
+        class A1: pass
+        class A2: pass
+        class A3: pass
+        class B1: pass
+        class B2: pass
+        class A:
+            def __mro_entries__(self, bases):
+                return (A1, A2, A3)
+        class B:
+            def __mro_entries__(self, bases):
+                return (B1, B2)
+        class C: pass
+        D = types.new_class('D', (A(), C, B()), {})
+        self.assertEqual(D.__bases__, (A1, A2, A3, C, B1, B2))
 
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
