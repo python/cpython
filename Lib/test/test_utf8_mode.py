@@ -7,6 +7,7 @@ import os
 import sys
 import textwrap
 import unittest
+from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 
