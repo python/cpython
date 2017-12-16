@@ -367,7 +367,7 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
 
 /* Implemented elsewhere:
 
-   long PyObject_Hash(PyObject *o);
+   Py_hash_t PyObject_Hash(PyObject *o);
 
    Compute and return the hash, hash_value, of an object, o.  On
    failure, return -1.
