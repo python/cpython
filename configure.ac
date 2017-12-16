@@ -1562,16 +1562,17 @@ function try_add_base_warnings() {
     ################################
     ## *!*! ENABLED WARNINGS *!*! ##
     ################################
-    try_add_nodist_warnings "-Wextra" "for -Wextra"
-
-    try_add_base_warnings "-Wc99-c11-compat" "if we can turn on $CC c99/c11 compatibility warnings"
     try_add_base_warnings "-Wsign-compare" "if we can turn on $CC mixed sign comparison warning"
-    try_add_base_warnings "-Wlogical-op" "if we can turn on $CC logical-op warning"
-    try_add_base_warnings "-Wformat=2" "if we can turn on $CC format=2 warning"
-    try_add_base_warnings "-Wvarargs" "if we can turn on $CC varargs warning"
-    try_add_base_warnings "-Wuninitialized" "if we can turn on $CC uninitialized warning"
-    try_add_base_warnings "-Wcast-align" "if we can turn on $CC cast-align warning"
 
+    try_add_nodist_warnings "-Wextra" "for -Wextra"
+    try_add_nodist_warnings "-Wc99-c11-compat" "if we can turn on $CC c99/c11 compatibility warnings"
+    try_add_nodist_warnings "-Wlogical-op" "if we can turn on $CC logical-op warning"
+    try_add_nodist_warnings "-Wformat=2" "if we can turn on $CC format=2 warning"
+    try_add_nodist_warnings "-Wvarargs" "if we can turn on $CC varargs warning"
+    try_add_nodist_warnings "-Wuninitialized" "if we can turn on $CC uninitialized warning"
+    try_add_nodist_warnings "-Wcast-align" "if we can turn on $CC cast-align warning"
+
+    try_add_nodist_warnings "-Werror=implicit-function-declaration" "if we can make implicit function declaration an error in $CC"
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
     # Issue #24324: Unfortunately, the unreachable code warning does not work
@@ -1584,8 +1585,6 @@ function try_add_base_warnings() {
     then
         try_add_base_warnings "-Wunreachable-code" "if we can turn on $CC unreachable code warning"
     fi
-
-    try_add_base_warnings "-Werror=implicit-function-declaration" "if we can make implicit function declaration an error in $CC"
 
     #################################
     ## *!*! DISABLED WARNINGS *!*! ##
