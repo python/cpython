@@ -63,7 +63,7 @@ __all__ = [
     'Coroutine',
     'Collection',
     'AsyncGenerator',
-    # 'AsyncContextManager',
+    'AsyncContextManager',
 
     # Structural checks, a.k.a. protocols.
     'Reversible',
