@@ -1,40 +1,17 @@
 #! /bin/sh
-# Build a Makefile which is to be used to:
-#   * If DEVICE_PREFIXES is not empty, build Python and make a distribution
-#     to be copied to an Android device on an existing Android application.
-#   * Or build Python and run Python on the Android emulator.
+# Build a Makefile that is used to build Python and run Python on the Android
+# emulator.
 
-device_header ()
+print_header ()
 {
 	cat >> $makefile <<-EOF
-	DEVICE_PREFIXES := $DEVICE_PREFIXES
-	export SYS_PREFIX := $SYS_PREFIX
-	export SYS_EXEC_PREFIX := $SYS_EXEC_PREFIX
-
-	EOF
-}
-
-emulator_header ()
-{
-	cat >> $makefile <<-EOF
-	# Variables defining where Python is installed on Android.
-	#   1. Machine-specific binaries are installed in the Android application
-	#      directory on /data. We do not build an Android application (this
-	#      requires java), so we use /data/local/tmp, a writable directory.
-	#   2. The Python standard library is installed on /sdcard.
-	export ZIPBASE_DIR := python
-	export ANDROID_APP_DIR := /data/local/tmp
-	export SYS_EXEC_PREFIX := \$(ANDROID_APP_DIR)/\$(ZIPBASE_DIR)
-	export SDCARD := /sdcard
-	export PACKAGE_NAME := org.python
-	export SYS_PREFIX := \$(SDCARD)/\$(PACKAGE_NAME)
 	EMULATOR_CMD_LINE_OPTIONS := $EMULATOR_CMD_LINE_OPTIONS
 	PYTHON_DEVPT_VERSION := $PYTHON_DEVPT_VERSION
 
 	EOF
 }
 
-footer ()
+print_footer ()
 {
 	cat >> $makefile <<-EOF
 
@@ -44,6 +21,33 @@ footer ()
 	py_version := $py_version
 	include \$(py_srcdir)/Android/build.mk
 	EOF
+}
+
+list_ext_libraries ()
+{
+    # Parse the WITH_LIBRARIES environment variable.
+    libs=""
+    if test -n "$WITH_LIBRARIES"; then
+        save_IFS=$IFS; IFS=','
+        set $WITH_LIBRARIES
+        for opt; do
+            case $opt in
+                libffi) libs="$libs WITH_LIBFFI" ;;
+                ncurses) libs="$libs WITH_NCURSES" ;;
+                openssl) libs="$libs WITH_OPENSSL" ;;
+                readline) libs="$libs WITH_READLINE" ;;
+                sqlite) libs="$libs WITH_SQLITE" ;;
+                *)
+                    echo "Error: '$opt' is an unknown library name."
+                    echo "The available libraries are libffi, ncurses, openssl, readline and sqlite."
+                    exit 2 ;;
+            esac
+        done
+        IFS=$save_IFS
+    else
+        libs="WITH_NCURSES WITH_READLINE"
+    fi
+    echo $libs
 }
 
 # Source the Android variables.
@@ -61,6 +65,9 @@ if test -f Makefile; then
         "Refusing to remove the Makefile, this is not a symlink."
 fi
 rm -f Makefile
+with_libraries=$(list_ext_libraries)
+py_version=$(cat $PY_SRCDIR/configure | \
+    sed -e "s/^PACKAGE_VERSION=['\"]*\([0-9]*\.[0-9]*\)['\"]*$\|^.*$/\1/" -e "/^$/d")
 
 # Build the Makefile.
 cat > $makefile <<EOF
@@ -69,53 +76,7 @@ cat > $makefile <<EOF
 
 EOF
 
-# Parse the DEVICE_PREFIXES environment variable.
-config_args="$@"
-if test -n "$DEVICE_PREFIXES"; then
-    save_IFS=$IFS; IFS=':'
-    set $DEVICE_PREFIXES
-    SYS_PREFIX=$1
-    SYS_EXEC_PREFIX=$2
-    IFS=$save_IFS
-    test -z "$SYS_EXEC_PREFIX" && SYS_EXEC_PREFIX="$SYS_PREFIX"
-    data_data=/data/data/
-    case $SYS_EXEC_PREFIX in
-        $data_data*)
-            ;;
-        *)
-            echo "Error: architecture-dependent files must be installed under $data_data." >&2
-            exit 2
-            ;;
-    esac
-
-    device_header
-else
-    emulator_header
-fi
-
-# Parse the WITH_LIBRARIES environment variable.
-with_libraries=""
-if test -n "$WITH_LIBRARIES"; then
-    save_IFS=$IFS; IFS=','
-    set $WITH_LIBRARIES
-    for opt; do
-        case $opt in
-            libffi) with_libraries="$with_libraries WITH_LIBFFI" ;;
-            ncurses) with_libraries="$with_libraries WITH_NCURSES" ;;
-            openssl) with_libraries="$with_libraries WITH_OPENSSL" ;;
-            readline) with_libraries="$with_libraries WITH_READLINE" ;;
-            sqlite) with_libraries="$with_libraries WITH_SQLITE" ;;
-            *)
-                echo "Error: '$opt' is an unknown library name."
-                echo "The available libraries are libffi, ncurses, openssl, readline and sqlite."
-                exit 2 ;;
-        esac
-    done
-    IFS=$save_IFS
-else
-    with_libraries="WITH_NCURSES WITH_READLINE"
-fi
-
+print_header
 for var in $with_libraries; do
     echo "$var := 1" >> $makefile
 done
@@ -127,14 +88,7 @@ for var in $exported_variables; do
     eval value=\$$var
     echo "export $var := $value" >> $makefile
 done
-
-py_version=$(cat $PY_SRCDIR/configure | \
-    sed -e "s/^PACKAGE_VERSION=['\"]*\([0-9]*\.[0-9]*\)['\"]*$\|^.*$/\1/" -e "/^$/d")
-footer "$config_args"
+print_footer "$@"
 
 ln -s $makefile Makefile
 echo "Makefile and $makefile built successfully."
-if test -n "$DEVICE_PREFIXES"; then
-    echo -n "The distribution directory (DESTDIR) is "
-    echo "build/python$py_version-install-android-$ANDROID_API-$ANDROID_ARCH"
-fi

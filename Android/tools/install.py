@@ -4,27 +4,32 @@ import sys
 import os
 import subprocess
 import tempfile
-from os.path import join
+from os.path import join, commonprefix
 
-from android_utils import run_subprocess, adb_push_to_dir, AndroidError
+from android_utils import (run_subprocess, adb_push_to_dir, AndroidError,
+                           adb_shell)
 
-def adb_push_from_zip(zippath, dirname, destination):
+def adb_push_from_zip(zippath, sys_prefix):
     with tempfile.TemporaryDirectory() as tmpdir:
         run_subprocess('unzip', '-q', zippath, '-d', tmpdir)
-        src = join(tmpdir, dirname)
-        adb_push_to_dir(src, destination)
+
+        # On the first call to adb_push_to_dir() where 'dest' is a directory
+        # on the sdcard, the mkdir command is attempted until /sdcard is
+        # mounted read/write on emulator start up.
+        dest = sys_prefix
+        sdcard = '/sdcard'
+        wait = True if commonprefix([sdcard, dest]) == sdcard else False
+        adb_shell('mkdir -p %s' % dest, wait_for_sdcard=wait)
+
+        src = join(tmpdir, sys_prefix[1:] if
+                           os.path.isabs(sys_prefix) else sys_prefix)
+        adb_push_to_dir(src, os.path.split(dest)[0])
 
 def install():
     stdlib_path = os.environ['STDLIB_DIR']
 
-    adb_push_from_zip(os.environ['PY_STDLIB_ZIP'],
-                   stdlib_path.split('/')[0],
-                   os.environ['SYS_PREFIX'])
-
-    adb_push_from_zip(os.environ['PYTHON_ZIP'],
-                   os.environ['ZIPBASE_DIR'],
-                   os.environ['ANDROID_APP_DIR'])
-
+    adb_push_from_zip(os.environ['PY_STDLIB_ZIP'], os.environ['SYS_PREFIX'])
+    adb_push_from_zip(os.environ['PYTHON_ZIP'], os.environ['SYS_EXEC_PREFIX'])
     srcdir = os.environ.get('PY_SRCDIR')
     if srcdir:
         # Push the script run by buildbottest.

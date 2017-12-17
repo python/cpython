@@ -27,15 +27,9 @@ export PY_STDLIB_ZIP := $(DIST_DIR)/$(py_name)-$(BUILD_TYPE)-stdlib.zip
 
 # Rules.
 build: $(python)
-ifdef DEVICE_PREFIXES
-dist: python_dist
-else
 dist: $(PYTHON_ZIP) $(PY_STDLIB_ZIP)
-endif
 
-ifndef DEVICE_PREFIXES
-    include $(py_srcdir)/Android/emulator.mk
-endif
+include $(py_srcdir)/Android/emulator.mk
 
 $(native_build_dir)/Modules/Setup: $(py_srcdir)/Modules/Setup.dist
 	cp $(py_srcdir)/Modules/Setup.dist $(native_build_dir)/Modules/Setup
@@ -62,8 +56,6 @@ native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Set
 	$(MAKE) -C $(native_build_dir)
 
 # Target-specific exported variables.
-$(config_status):           export CPPFLAGS := -I$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/include
-$(config_status):           export LDFLAGS := -L$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib
 build configure host python_dist: \
                             export PATH := $(native_build_dir):$(PATH)
 external_libraries:         export CC := $(CC)
@@ -110,16 +102,25 @@ $(config_status): $(makefile) $(py_srcdir)/configure
 	@echo "---> Run configure for $(BUILD_TYPE)."
 	cd $(py_host_dir); \
 	    PKG_CONFIG_PATH=$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib/pkgconfig \
+	    CPPFLAGS=-I$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/include \
+	    LDFLAGS=-L$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib \
 	    $(py_srcdir)/configure-android \
 	    --prefix=$(SYS_PREFIX) --exec-prefix=$(SYS_EXEC_PREFIX) \
 	    $(config_args)
 
-$(python): native_python external_libraries openssl $(config_status)
+$(python): native_python prefixes external_libraries openssl $(config_status)
 	$(ROOT_MAKE) host
 
 configure: native_python external_libraries openssl
 	@rm -f $(config_status)
 	$(ROOT_MAKE) $(config_status)
+
+prefixes:
+	$(eval PREFIXES := $(shell cd $(py_srcdir)/Android/tools; $(python_cmd) \
+	    -c 'from android_utils import parse_prefixes; parse_prefixes("$(config_args)")'))
+	$(eval export SYS_PREFIX := $(word 1, $(PREFIXES)))
+	$(eval export SYS_EXEC_PREFIX := $(word 2, $(PREFIXES)))
+	@echo "---> Prefixes are $(SYS_PREFIX), $(SYS_EXEC_PREFIX)."
 
 disabled_modules: setup_tmp := $(py_host_dir)/Modules/_Setup.tmp
 disabled_modules: setup_file := $(py_host_dir)/Modules/Setup
@@ -156,42 +157,39 @@ python_dist: $(python)
 	chmod u+w $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so*
 	tdir=$(SYS_EXEC_PREFIX)/share/terminfo/l; mkdir -p $(PY_DESTDIR)/$$tdir && \
 	    cp $(PY_EXTDIR)/$$tdir/linux $(PY_DESTDIR)/$$tdir
-ifdef DEVICE_PREFIXES
 	# This won't be needed anymore when issue 31046 is fixed.
 	rm -rf $(PY_DESTDIR)/usr
-endif
 
 $(PYTHON_ZIP): python_dist
 	@echo "---> Zip the machine-specific Python library."
 	mkdir -p $(DIST_DIR)
-	rm -f $(BUILD_DIR)/$(ZIPBASE_DIR)
-	ln -s $(PY_DESTDIR)/$(SYS_EXEC_PREFIX) $(BUILD_DIR)/$(ZIPBASE_DIR)
 	rm -f $(PYTHON_ZIP)
 
-	cd $(BUILD_DIR)/$(ZIPBASE_DIR)/bin; \
+	cd $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/bin; \
 	    ln -sf python3 python
 
-	mkdir -p $(BUILD_DIR)/$(ZIPBASE_DIR)/etc; \
-	    ln -sf $(py_srcdir)/Android/resources/inputrc $(BUILD_DIR)/$(ZIPBASE_DIR)/etc
+	mkdir -p $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/etc; \
+	    ln -sf $(py_srcdir)/Android/resources/inputrc $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/etc
 
-	cd $(BUILD_DIR)/$(ZIPBASE_DIR); \
+	cd $(PY_DESTDIR)/$(SYS_EXEC_PREFIX); \
 	    $(STRIP) bin/python$(py_version); \
 	    chmod 755 lib/*.so*; find . -type f -name "*.so*" -print0 | xargs -0 $(STRIP)
 
-	cd $(BUILD_DIR); \
-	    zip -g $(PYTHON_ZIP) $(ZIPBASE_DIR)/bin/python3 \
-	        $(ZIPBASE_DIR)/bin/python $(ZIPBASE_DIR)/bin/python$(py_version); \
+	@# Remove the first '/' to avoid unzip warnings and an exit code of '1'.
+	cd $(PY_DESTDIR); export SYS_EXEC_PREFIX=$${SYS_EXEC_PREFIX#/}; \
+	    zip -g $(PYTHON_ZIP) $$SYS_EXEC_PREFIX/bin/python3 \
+	        $$SYS_EXEC_PREFIX/bin/python $$SYS_EXEC_PREFIX/bin/python$(py_version); \
 	    zip -rg $(PYTHON_ZIP) \
-	        $(ZIPBASE_DIR)/include/$(py_fullname)/pyconfig.h \
-	        $(ZIPBASE_DIR)/$(STDLIB_DIR)/ \
-	        $(ZIPBASE_DIR)/share/terminfo/l/linux \
-	        $(ZIPBASE_DIR)/etc/inputrc \
+	        $$SYS_EXEC_PREFIX/include/$(py_fullname)/pyconfig.h \
+	        $$SYS_EXEC_PREFIX/$(STDLIB_DIR)/ \
+	        $$SYS_EXEC_PREFIX/share/terminfo/l/linux \
+	        $$SYS_EXEC_PREFIX/etc/inputrc \
 	        -x \*failed.so
 
 	# Zip the shared libraries excluding symlinks.
-	cd $(BUILD_DIR); \
+	cd $(PY_DESTDIR); export SYS_EXEC_PREFIX=$${SYS_EXEC_PREFIX#/}; \
 	    libs=""; \
-	    for l in $(ZIPBASE_DIR)/lib/*.so*; do \
+	    for l in $$SYS_EXEC_PREFIX/lib/*.so*; do \
 	        test ! -h $$l && libs="$$libs $$l"; \
 	    done; \
 	    zip -g $(PYTHON_ZIP) $$libs
@@ -200,8 +198,8 @@ $(PY_STDLIB_ZIP): python_dist
 	@echo "---> Zip the Python library."
 	mkdir -p $(DIST_DIR)
 	rm -f $(PY_STDLIB_ZIP)
-	cd $(PY_DESTDIR)/$(SYS_PREFIX); \
-	    zip -Drg $(PY_STDLIB_ZIP) $(STDLIB_DIR)* \
+	cd $(PY_DESTDIR); export SYS_PREFIX=$${SYS_PREFIX#/}; \
+	    zip -Drg $(PY_STDLIB_ZIP) $$SYS_PREFIX/$(STDLIB_DIR)* \
 	        -x \*.so \*.pyo \*opt-\*.pyc
 
 # Make things clean, before making a distribution.
@@ -244,6 +242,6 @@ else
       directory.)
 endif
 
-.PHONY: build configure host native_python \
+.PHONY: build configure prefixes disabled_modules host native_python \
         external_libraries openssl \
         dist python_dist distclean hostclean clean

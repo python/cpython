@@ -60,7 +60,7 @@ def find_project(args):
                 'android-%(ANDROID_API)s-%(ANDROID_ARCH)s' % os.environ)
 
 def get_app_data_dir(args, package_name):
-    return os.environ['ANDROID_APP_DIR']
+    return os.environ['SYS_EXEC_PREFIX']
 
 def get_gdbserver_path(args, package_name, app_data_dir, arch):
     app_gdbserver_path = "{}/lib/gdbserver".format(app_data_dir)
