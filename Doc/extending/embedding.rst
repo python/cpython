@@ -341,7 +341,15 @@ And then in the main() C or C++ function in your embedded interpreter add this l
 
 Now your Embedded python *should* be able to load your frozen modules perfectly fine.
 
-.. note:: This logic was borrowed from Programs/_freeze_importlib.c
+.. note::
+   This logic was borrowed from Programs/_freeze_importlib.c. Also using this method is
+   the only way to use frozen modules in Windows as well. On further note
+   Programs/_freeze_importlib.c in the cpython source tree (with minimal changes) could
+   be changed to act like the normal python freeze tool as the normal freeze tool
+   currently does not work on Windows so it makes it only possible to freeze to an
+   header file, make the frozen module list manually, write the embedded python
+   entry manually and then compile to have an fully featured embedded python interpreter
+   with your own frozen modules.
 
 .. _compiling:
 
