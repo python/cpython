@@ -6,6 +6,7 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
+from . import constants
 from . import protocols
 from . import transports
 from .log import logger
@@ -394,7 +395,8 @@ class SSLProtocol(protocols.Protocol):
 
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
-                 call_connection_made=True, ssl_handshake_timeout=10.0):
+                 call_connection_made=True,
+                 ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 

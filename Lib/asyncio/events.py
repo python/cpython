@@ -254,14 +254,14 @@ class AbstractEventLoop:
                                 *, ssl=None, family=0, proto=0,
                                 flags=0, sock=None, local_addr=None,
                                 server_hostname=None,
-                                ssl_handshake_timeout=10.0):
+                                ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         raise NotImplementedError
 
     async def create_server(self, protocol_factory, host=None, port=None,
                             *, family=socket.AF_UNSPEC,
                             flags=socket.AI_PASSIVE, sock=None, backlog=100,
                             ssl=None, reuse_address=None, reuse_port=None,
-                            ssl_handshake_timeout=10.0):
+                            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -307,12 +307,12 @@ class AbstractEventLoop:
     async def create_unix_connection(self, protocol_factory, path=None, *,
                                      ssl=None, sock=None,
                                      server_hostname=None,
-                                     ssl_handshake_timeout=10.0):
+                                     ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         raise NotImplementedError
 
     async def create_unix_server(self, protocol_factory, path=None, *,
                                  sock=None, backlog=100, ssl=None,
-                                 ssl_handshake_timeout=10.0):
+                                 ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop

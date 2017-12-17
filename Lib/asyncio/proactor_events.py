@@ -392,7 +392,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
                             *, server_side=False, server_hostname=None,
-                            extra=None, server=None, ssl_handshake_timeout=10.0):
+                            extra=None, server=None,
+                            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
                                             server_side, server_hostname,
                                             ssl_handshake_timeout=ssl_handshake_timeout)
@@ -489,7 +490,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
-                       ssl_handshake_timeout=10.0):
+                       ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
 
         def loop(f=None):
             try:

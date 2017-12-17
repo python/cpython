@@ -72,7 +72,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
                             *, server_side=False, server_hostname=None,
-                            extra=None, server=None, ssl_handshake_timeout=10.0):
+                            extra=None, server=None,
+                            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
                                             server_side, server_hostname,
                                             ssl_handshake_timeout=ssl_handshake_timeout)
@@ -145,14 +146,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
-                       ssl_handshake_timeout=10.0):
+                       ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         self._add_reader(sock.fileno(), self._accept_connection,
                          protocol_factory, sock, sslcontext, server, backlog,
                          ssl_handshake_timeout)
 
     def _accept_connection(self, protocol_factory, sock,
                            sslcontext=None, server=None, backlog=100,
-                           ssl_handshake_timeout=10.0):
+                           ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         # This method is only called once for each event loop tick where the
         # listening socket has triggered an EVENT_READ. There may be multiple
         # connections waiting for an .accept() so it is called in a loop.
@@ -194,7 +195,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 self.create_task(accept)
 
     async def _accept_connection2(self, protocol_factory, conn, extra,
-                                  sslcontext=None, server=None, ssl_handshake_timeout=10.0):
+                                  sslcontext=None, server=None,
+                                  ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         protocol = None
         transport = None
         try:
