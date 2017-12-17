@@ -86,10 +86,19 @@ weakref_getweakrefs(PyObject *self, PyObject *object)
 
     if (PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-        Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
+        Py_ssize_t count;
+  again:
+        count = _PyWeakref_GetWeakrefCount(*list);
 
         result = PyList_New(count);
         if (result != NULL) {
+            if (count != _PyWeakref_GetWeakrefCount(*list)) {
+                /* Durnit.  The allocations caused the list to resize.
+                 * Just start over, this shouldn't normally happen.
+                 */
+                Py_DECREF(result);
+                goto again;
+            }
             PyWeakReference *current = *list;
             Py_ssize_t i;
             for (i = 0; i < count; ++i) {

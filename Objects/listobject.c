@@ -17,6 +17,8 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
+static PyObject *list_copy_impl(PyListObject *);
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -423,24 +425,42 @@ list_item(PyListObject *a, Py_ssize_t i)
     return a->ob_item[i];
 }
 
-static PyObject *
-list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
+PyObject *
+PyList_GetSlice(PyObject *o, Py_ssize_t low, Py_ssize_t high)
 {
-    PyListObject *np;
+    PyListObject *a, *np;
     PyObject **src, **dest;
-    Py_ssize_t i, len;
+    Py_ssize_t i, llen, len, ilow, ihigh;
+
+    if (!PyList_Check(o)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    a = (PyListObject *)o;
+
+  again:
+    llen = Py_SIZE(a);
+    ilow = low;
+    ihigh = high;
     if (ilow < 0)
         ilow = 0;
-    else if (ilow > Py_SIZE(a))
-        ilow = Py_SIZE(a);
+    else if (ilow > llen)
+        ilow = llen;
     if (ihigh < ilow)
         ihigh = ilow;
-    else if (ihigh > Py_SIZE(a))
-        ihigh = Py_SIZE(a);
+    else if (ihigh > llen)
+        ihigh = llen;
     len = ihigh - ilow;
     np = (PyListObject *) PyList_New(len);
     if (np == NULL)
         return NULL;
+    if (llen != Py_SIZE(a)) {
+        /* Durnit.  The allocations caused the list to resize.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(np);
+        goto again;
+    }
 
     src = a->ob_item + ilow;
     dest = np->ob_item;
@@ -450,16 +470,6 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
         dest[i] = v;
     }
     return (PyObject *)np;
-}
-
-PyObject *
-PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
-{
-    if (!PyList_Check(a)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    return list_slice((PyListObject *)a, ilow, ihigh);
 }
 
 static PyObject *
@@ -476,12 +486,20 @@ list_concat(PyListObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyListObject *)bb)
+  again:
     if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
         return PyErr_NoMemory();
     size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyListObject *) PyList_New(size);
     if (np == NULL) {
         return NULL;
+    }
+    if (size != Py_SIZE(a) + Py_SIZE(b)) {
+        /* Durnit.  The allocations caused the list to resize.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(np);
+        goto again;
     }
     src = a->ob_item;
     dest = np->ob_item;
@@ -505,20 +523,29 @@ static PyObject *
 list_repeat(PyListObject *a, Py_ssize_t n)
 {
     Py_ssize_t i, j;
-    Py_ssize_t size;
+    Py_ssize_t llen, size;
     PyListObject *np;
     PyObject **p, **items;
     PyObject *elem;
     if (n < 0)
         n = 0;
-    if (n > 0 && Py_SIZE(a) > PY_SSIZE_T_MAX / n)
+  again:
+    llen = Py_SIZE(a);
+    if (n > 0 && llen > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
-    size = Py_SIZE(a) * n;
+    size = llen * n;
     if (size == 0)
         return PyList_New(0);
     np = (PyListObject *) PyList_New(size);
     if (np == NULL)
         return NULL;
+    if (llen != Py_SIZE(a)) {
+        /* Durnit.  The allocations caused the list to resize.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(np);
+        goto again;
+    }
 
     items = np->ob_item;
     if (Py_SIZE(a) == 1) {
@@ -596,7 +623,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     else {
         if (a == b) {
             /* Special case "a[i:j] = a" -- copy b first */
-            v = list_slice(b, 0, Py_SIZE(b));
+            v = list_copy_impl(b);
             if (v == NULL)
                 return result;
             result = list_ass_slice(a, ilow, ihigh, v);
@@ -783,7 +810,37 @@ static PyObject *
 list_copy_impl(PyListObject *self)
 /*[clinic end generated code: output=ec6b72d6209d418e input=6453ab159e84771f]*/
 {
-    return list_slice(self, 0, Py_SIZE(self));
+    PyListObject *np;
+    PyObject **src, **dest;
+    Py_ssize_t i, len;
+
+  again:
+    len = Py_SIZE(self);
+    np = (PyListObject *) PyList_New(len);
+    if (np == NULL)
+        return NULL;
+    if (len != Py_SIZE(self)) {
+        /* Durnit.  The allocations caused the list to resize.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(np);
+        goto again;
+    }
+
+    src = self->ob_item;
+    dest = np->ob_item;
+    for (i = 0; i < len; i++) {
+        PyObject *v = src[i];
+        Py_INCREF(v);
+        dest[i] = v;
+    }
+    return (PyObject *)np;
+}
+
+PyObject *
+_PyList_Copy(PyObject *a)
+{
+    return list_copy_impl((PyListObject *)a);
 }
 
 /*[clinic input]
@@ -2453,26 +2510,32 @@ list_subscript(PyListObject* self, PyObject* item)
         return list_item(self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, llen, cur, i;
         PyObject* result;
         PyObject* it;
         PyObject **src, **dest;
 
+  again:
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
-        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
+        llen = Py_SIZE(self);
+        slicelength = PySlice_AdjustIndices(llen, &start, &stop,
                                             step);
 
         if (slicelength <= 0) {
             return PyList_New(0);
         }
-        else if (step == 1) {
-            return list_slice(self, start, stop);
-        }
         else {
             result = PyList_New(slicelength);
             if (!result) return NULL;
+            if (llen != Py_SIZE(self)) {
+                /* Durnit.  The allocations caused the list to resize.
+                 * Just start over, this shouldn't normally happen.
+                 */
+                Py_DECREF(result);
+                goto again;
+            }
 
             src = self->ob_item;
             dest = ((PyListObject *)result)->ob_item;
@@ -2593,8 +2656,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {
-                seq = list_slice((PyListObject*)value, 0,
-                                   PyList_GET_SIZE(value));
+                seq = list_copy_impl((PyListObject*)value);
             }
             else {
                 seq = PySequence_Fast(value,

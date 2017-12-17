@@ -250,14 +250,16 @@ future_schedule_callbacks(FutureObj *fut)
         return 0;
     }
 
-    callbacks = PyList_GetSlice(fut->fut_callbacks, 0, len);
+    callbacks = _PyList_Copy(fut->fut_callbacks);
     if (callbacks == NULL) {
         return -1;
     }
+    len = PyList_GET_SIZE(fut->fut_callbacks);
     if (PyList_SetSlice(fut->fut_callbacks, 0, len, NULL) < 0) {
         Py_DECREF(callbacks);
         return -1;
     }
+    len = PyList_GET_SIZE(callbacks);
 
     for (i = 0; i < len; i++) {
         PyObject *handle;

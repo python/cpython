@@ -408,7 +408,7 @@ run_at_forkers(PyObject *lst, int reverse)
         /* Use a list copy in case register_at_fork() is called from
          * one of the callbacks.
          */
-        cpy = PyList_GetSlice(lst, 0, PyList_GET_SIZE(lst));
+        cpy = _PyList_Copy(lst);
         if (cpy == NULL)
             PyErr_WriteUnraisable(lst);
         else {
