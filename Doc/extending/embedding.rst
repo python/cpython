@@ -275,6 +275,50 @@ will depend on the details of the C++ system used; in general you will need to
 write the main program in C++, and use the C++ compiler to compile and link your
 program.  There is no need to recompile Python itself using C++.
 
+.. _freezingandembeddingmanually:
+
+Freezing Modules in Manually Embedded Python
+============================================
+
+While it is possible to use frozen modules in embedded python if the main module
+is also frozen. It seems people are bitten when they don't have their main module
+frozen and use ``PyRun_SimpleString`` that contains their main module(s) but
+also depend on an frozen module (like the ``__hello__`` module). However if we
+wanted to add our own module to the frozen list we would normally do this::
+
+    #include <importlib.h>
+    #include <importlib_external.h>
+    #include "mymodule.h"
+
+    static const struct _frozen _PyImport_FrozenModules[] = {
+        /* importlib */
+        {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
+        {"_frozen_importlib_external", _Py_M__importlib_external,
+            (int)sizeof(_Py_M__importlib_external)},
+        /* mymodule */
+       {"mymodule", M_mymodule, (int)sizeof(M_mymodule)},
+       {0, 0, 0} /* sentinel */
+    };
+
+    const struct _frozen * PyImport_FrozenModules = _PyImport_FrozenModules;
+
+As you can see the above code will compile (with an warning on Windows
+which will export ``PyImport_FrozenModules`` on the embedded python program).
+This is not what we want. And if we were to run it with ``myprogram`` We will
+get this traceback on running the string based main module(s).
+
+.. code-block:: py
+
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+    ModuleNotFoundError: No module named 'mymodule'
+
+There is got to be a better way to have what we want but to also make python
+aware of our ``mymodule`` being an frozen module. This module could be
+anything from an import hook or anything else where you want to freeze
+it similar to how ``importlib`` is frozen to support how your code base
+currently is. This seems like an limitiation with using frozen modules in
+embedded python since I have not found the actual fix for this senerio yet.
 
 .. _compiling:
 
