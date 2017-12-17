@@ -775,6 +775,168 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
+:mod:`importlib.resources` -- Resources
+---------------------------------------
+
+.. module:: importlib.resources
+    :synopsis: Package resource reading, opening, and access
+
+**Source code:** :source:`Lib/importlib/resources.py`
+
+--------------
+
+.. versionadded:: 3.7
+
+This module leverages Python's import system to provide access to *resources*
+within *packages*.  If you can import a package, you can access resources
+within that package.  Resources can be opened or read, in either binary or
+text mode.
+
+Resources are roughly akin to files inside directories, though it's important
+to keep in mind that this is just a metaphor.  Resources and packages **do
+not** have to exist as physical files and directories on the file system.
+
+Loaders can support resources by implementing the :class:`ResourceReader`
+abstract base class.
+
+The following types are defined.
+
+.. class:: Package
+
+    ``Package`` types are defined as ``Union[str, ModuleType]``.  This means
+    that where the function describes accepting a ``Package``, you can pass in
+    either a string or a module.  Module objects must have a resolvable
+    ``__spec__.submodule_search_locations`` that is not ``None``.
+
+.. class:: Resource
+
+    This type describes the resource names passed into the various functions
+    in this package.  This is defined as ``Union[str, os.PathLike]``.
+
+
+The following functions are available.
+
+.. function:: importlib.resources.open_binary(package, resource)
+
+    Open for binary reading the *resource* within *package*.
+
+    :param package: A package name or module object.  See above for the API
+                    that such module objects must support.
+    :type package: ``Package``
+    :param resource: The name of the resource to open within *package*.
+                     *resource* may not contain path separators and it may
+                     not have sub-resources (i.e. it cannot be a directory).
+    :type resource: ``Resource``
+    :returns: a binary I/O stream open for reading.
+    :rtype: ``typing.io.BinaryIO``
+
+
+.. function:: importlib.resources.open_text(package, resource, encoding='utf-8', errors='strict')
+
+    Open for text reading the *resource* within *package*.  By default, the
+    resource is opened for reading as UTF-8.
+
+    :param package: A package name or module object.  See above for the API
+                    that such module objects must support.
+    :type package: ``Package``
+    :param resource: The name of the resource to open within *package*.
+                     *resource* may not contain path separators and it may
+                     not have sub-resources (i.e. it cannot be a directory).
+    :type resource: ``Resource``
+    :param encoding: The encoding to open the resource in.  *encoding* has
+                     the same meaning as with :func:`open`.
+    :type encoding: str
+    :param errors: This parameter has the same meaning as with :func:`open`.
+    :type errors: str
+    :returns: an I/O stream open for reading.
+    :rtype: ``typing.TextIO``
+
+.. function:: importlib.resources.read_binary(package, resource)
+
+    Read and return the contents of the *resource* within *package* as
+    ``bytes``.
+
+    :param package: A package name or module object.  See above for the API
+                    that such module objects must support.
+    :type package: ``Package``
+    :param resource: The name of the resource to read within *package*.
+                     *resource* may not contain path separators and it may
+                     not have sub-resources (i.e. it cannot be a directory).
+    :type resource: ``Resource``
+    :returns: the contents of the resource.
+    :rtype: ``bytes``
+
+.. function:: importlib.resources.read_text(package, resource, encoding='utf-8', errors='strict')
+
+    Read and return the contents of *resource* within *package* as a ``str``.
+    By default, the contents are read as strict UTF-8.
+
+    :param package: A package name or module object.  See above for the API
+                    that such module objects must support.
+    :type package: ``Package``
+    :param resource: The name of the resource to read within *package*.
+                     *resource* may not contain path separators and it may
+                     not have sub-resources (i.e. it cannot be a directory).
+    :type resource: ``Resource``
+    :param encoding: The encoding to read the contents of the resource in.
+                     *encoding* has the same meaning as with :func:`open`.
+    :type encoding: str
+    :param errors: This parameter has the same meaning as with :func:`open`.
+    :type errors: str
+    :returns: the contents of the resource.
+    :rtype: ``str``
+
+.. function:: importlib.resources.path(package, resource)
+
+    Return the path to the *resource* as an actual file system path.  This
+    function returns a context manager for use in a :keyword:`with` statement.
+    The context manager provides a :class:`pathlib.Path` object.
+
+    Exiting the context manager cleans up any temporary file created when the
+    resource needs to be extracted from e.g. a zip file.
+
+    :param package: A package name or module object.  See above for the API
+                    that such module objects must support.
+    :type package: ``Package``
+    :param resource: The name of the resource to read within *package*.
+                     *resource* may not contain path separators and it may
+                     not have sub-resources (i.e. it cannot be a directory).
+    :type resource: ``Resource``
+    :returns: A context manager for use in a :keyword`with` statement.
+              Entering the context manager provides a :class:`pathlib.Path`
+              object.
+    :rtype: context manager providing a :class:`pathlib.Path` object
+
+
+.. function:: importlib.resources.is_resource(package, name)
+
+    Return ``True`` if there is a resource named *name* in the package,
+    otherwise ``False``.  Remember that directories are *not* resources!
+
+    :param package: A package name or module object.  See above for the API
+                    that such module objects must support.
+    :type package: ``Package``
+    :param name: The name of the resource to read within *package*.
+                 *resource* may not contain path separators and it may
+                 not have sub-resources (i.e. it cannot be a directory).
+    :type name: ``str``
+    :returns: A flag indicating whether the resource exists or not.
+    :rtype: ``bool``
+
+
+.. function:: importlib.resources.contents(package)
+
+    Return an iterator over the contents of the package.  The iterator can
+    return resources (e.g. files) and non-resources (e.g. directories).  The
+    iterator does not recurse into subdirectories.
+
+    :param package: A package name or module object.  See above for the API
+                    that such module objects must support.
+    :type package: ``Package``
+    :returns: The contents of the package, both resources and non-resources.
+    :rtype: An iterator over ``str``
+
+
 :mod:`importlib.machinery` -- Importers and path hooks
 ------------------------------------------------------
 
