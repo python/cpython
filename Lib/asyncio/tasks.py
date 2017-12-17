@@ -503,7 +503,7 @@ def __sleep0():
 
 async def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
-    if delay == 0:
+    if delay <= 0:
         await __sleep0()
         return result
 
