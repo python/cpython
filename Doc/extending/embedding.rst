@@ -317,8 +317,31 @@ There is got to be a better way to have what we want but to also make python
 aware of our ``mymodule`` being an frozen module. This module could be
 anything from an import hook or anything else where you want to freeze
 it similar to how ``importlib`` is frozen to support how your code base
-currently is. This seems like an limitiation with using frozen modules in
-embedded python since I have not found the actual fix for this senerio yet.
+currently is.
+
+The fix to this is to change the C code above to::
+
+    #include <importlib.h>
+    #include <importlib_external.h>
+    #include "mymodule.h"
+
+    static const struct _frozen _PyImport_FrozenModules[] = {
+        /* importlib */
+        {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
+        {"_frozen_importlib_external", _Py_M__importlib_external,
+            (int)sizeof(_Py_M__importlib_external)},
+        /* mymodule */
+       {"mymodule", M_mymodule, (int)sizeof(M_mymodule)},
+       {0, 0, 0} /* sentinel */
+    };
+    
+And then in the main() C or C++ function in your embedded interpreter add this line::
+
+    PyImport_FrozenModules = _PyImport_FrozenModules;
+
+Now your Embedded python *should* be able to load your frozen modules perfectly fine.
+
+.. note:: This logic was borrowed from Programs/_freeze_importlib.c
 
 .. _compiling:
 
