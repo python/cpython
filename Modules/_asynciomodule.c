@@ -523,9 +523,6 @@ future_add_done_callback(FutureObj *fut, PyObject *arg)
             fut->fut_callback0 = arg;
         }
         else {
-            assert(fut->fut_callback0 != NULL);
-            assert(fut->fut_callbacks == NULL);
-
             fut->fut_callbacks = PyList_New(1);
             if (fut->fut_callbacks == NULL) {
                 return NULL;
@@ -1329,9 +1326,8 @@ typedef struct {
 } futureiterobject;
 
 
-#define FI_FREELIST_MAXLEN 100
-static futureiterobject *fi_freelist_head = NULL;
-static futureiterobject *fi_freelist_tail = NULL;
+#define FI_FREELIST_MAXLEN 255
+static futureiterobject *fi_freelist = NULL;
 static Py_ssize_t fi_freelist_len = 0;
 
 
@@ -1343,14 +1339,8 @@ FutureIter_dealloc(futureiterobject *it)
 
     if (fi_freelist_len < FI_FREELIST_MAXLEN) {
         fi_freelist_len++;
-        if (fi_freelist_head == NULL) {
-            fi_freelist_head = fi_freelist_tail = it;
-            assert(fi_freelist_tail->future == NULL);
-        }
-        else {
-            fi_freelist_tail->future = (FutureObj*)it;
-            fi_freelist_tail = it;
-        }
+        it->future = (FutureObj*) fi_freelist;
+        fi_freelist = it;
     }
     else {
         PyObject_GC_Del(it);
@@ -1503,12 +1493,9 @@ future_new_iter(PyObject *fut)
     ENSURE_FUTURE_ALIVE(fut)
 
     if (fi_freelist_len) {
-        it = fi_freelist_head;
-        fi_freelist_head = (futureiterobject*) fi_freelist_head->future;
-        if (fi_freelist_head == NULL) {
-            fi_freelist_tail = NULL;
-        }
         fi_freelist_len--;
+        it = fi_freelist;
+        fi_freelist = (futureiterobject*) it->future;
         it->future = NULL;
         _Py_NewReference((PyObject*) it);
     }
@@ -2985,7 +2972,7 @@ module_free_freelists()
     PyObject *next;
     PyObject *current;
 
-    next = (PyObject*) fi_freelist_head;
+    next = (PyObject*) fi_freelist;
     while (next != NULL) {
         assert(fi_freelist_len > 0);
         fi_freelist_len--;
@@ -2995,7 +2982,7 @@ module_free_freelists()
         PyObject_GC_Del(current);
     }
     assert(fi_freelist_len == 0);
-    fi_freelist_tail = fi_freelist_head = NULL;
+    fi_freelist = NULL;
 }
 
 
