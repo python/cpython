@@ -816,7 +816,7 @@ The following types are defined.
 
 The following functions are available.
 
-.. function:: importlib.resources.open_binary(package, resource)
+.. function:: open_binary(package, resource)
 
     Open for binary reading the *resource* within *package*.
 
@@ -831,7 +831,7 @@ The following functions are available.
     :rtype: ``typing.io.BinaryIO``
 
 
-.. function:: importlib.resources.open_text(package, resource, encoding='utf-8', errors='strict')
+.. function:: open_text(package, resource, encoding='utf-8', errors='strict')
 
     Open for text reading the *resource* within *package*.  By default, the
     resource is opened for reading as UTF-8.
@@ -851,7 +851,7 @@ The following functions are available.
     :returns: an I/O stream open for reading.
     :rtype: ``typing.TextIO``
 
-.. function:: importlib.resources.read_binary(package, resource)
+.. function:: read_binary(package, resource)
 
     Read and return the contents of the *resource* within *package* as
     ``bytes``.
@@ -866,7 +866,7 @@ The following functions are available.
     :returns: the contents of the resource.
     :rtype: ``bytes``
 
-.. function:: importlib.resources.read_text(package, resource, encoding='utf-8', errors='strict')
+.. function:: read_text(package, resource, encoding='utf-8', errors='strict')
 
     Read and return the contents of *resource* within *package* as a ``str``.
     By default, the contents are read as strict UTF-8.
@@ -886,7 +886,7 @@ The following functions are available.
     :returns: the contents of the resource.
     :rtype: ``str``
 
-.. function:: importlib.resources.path(package, resource)
+.. function:: path(package, resource)
 
     Return the path to the *resource* as an actual file system path.  This
     function returns a context manager for use in a :keyword:`with` statement.
@@ -908,7 +908,7 @@ The following functions are available.
     :rtype: context manager providing a :class:`pathlib.Path` object
 
 
-.. function:: importlib.resources.is_resource(package, name)
+.. function:: is_resource(package, name)
 
     Return ``True`` if there is a resource named *name* in the package,
     otherwise ``False``.  Remember that directories are *not* resources!
@@ -924,7 +924,7 @@ The following functions are available.
     :rtype: ``bool``
 
 
-.. function:: importlib.resources.contents(package)
+.. function:: contents(package)
 
     Return an iterator over the contents of the package.  The iterator can
     return resources (e.g. files) and non-resources (e.g. directories).  The
