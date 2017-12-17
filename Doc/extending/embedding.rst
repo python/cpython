@@ -334,7 +334,7 @@ The fix to this is to change the C code above to::
        {"mymodule", M_mymodule, (int)sizeof(M_mymodule)},
        {0, 0, 0} /* sentinel */
     };
-    
+
 And then in the main() C or C++ function in your embedded interpreter add this line::
 
     PyImport_FrozenModules = _PyImport_FrozenModules;
