@@ -1,0 +1,2 @@
+asyncio.transport.resume_reading() and pause_reading() are now idempotent.
+New transport.is_reading() method is added.
