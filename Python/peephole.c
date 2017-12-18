@@ -159,7 +159,7 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
     Py_DECREF(newconst);
 
     return copy_op_arg(codestr, c_start, LOAD_CONST,
-                       PyList_GET_SIZE(consts), opcode_end);
+                       PyList_GET_SIZE(consts)-1, opcode_end);
 }
 
 static unsigned int *
