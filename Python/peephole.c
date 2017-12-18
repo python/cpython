@@ -131,31 +131,25 @@ static Py_ssize_t
 fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
                         Py_ssize_t opcode_end, PyObject *consts, int n)
 {
-    PyObject *newconst, *constant;
-
     /* Pre-conditions */
     assert(PyList_CheckExact(consts));
 
     /* Buildup new tuple of constants */
-    newconst = PyTuple_New(n);
+    PyObject *newconst = PyTuple_New(n);
     if (newconst == NULL) {
         return -1;
     }
 
-    Py_ssize_t len_consts = PyList_GET_SIZE(consts);
-    Py_ssize_t i, pos;
-
-    for (i=0, pos=c_start; i<n; i++, pos++) {
+    for (Py_ssize_t i = 0, pos = c_start; i < n; i++, pos++) {
         assert(pos < opcode_end);
         pos = find_op(codestr, pos);
         assert(_Py_OPCODE(codestr[pos]) == LOAD_CONST);
 
         unsigned int arg = get_arg(codestr, pos);
-        constant = PyList_GET_ITEM(consts, arg);
+        PyObject *constant = PyList_GET_ITEM(consts, arg);
         Py_INCREF(constant);
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    assert(_Py_OPCODE(codestr[find_op(codestr, pos)]) == BUILD_TUPLE);
 
     /* Append folded constant onto consts */
     if (PyList_Append(consts, newconst)) {
@@ -164,6 +158,7 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
     }
     Py_DECREF(newconst);
 
+    Py_ssize_t len_consts = PyList_GET_SIZE(consts);
     return copy_op_arg(codestr, c_start, LOAD_CONST, len_consts, opcode_end);
 }
 
