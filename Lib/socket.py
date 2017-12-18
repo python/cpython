@@ -80,6 +80,8 @@ IntEnum._convert(
         __name__,
         lambda C: (C.isupper() and
                    C.startswith('SOCK_') and
+                   # SOCK_NONBLOCK and SOCK_CLOEXEC are not socket types,
+                   # they are Linux-specific bit flags.
                    C not in {'SOCK_NONBLOCK', 'SOCK_CLOEXEC'}))
 
 IntFlag._convert(
