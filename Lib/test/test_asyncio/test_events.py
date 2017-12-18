@@ -3,7 +3,6 @@
 import collections.abc
 import concurrent.futures
 import functools
-import gc
 import io
 import os
 import platform
@@ -28,10 +27,10 @@ if sys.platform != 'win32':
 
 import asyncio
 from asyncio import coroutines
+from asyncio import events
 from asyncio import proactor_events
 from asyncio import selector_events
-from asyncio import sslproto
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 try:
     from test import support
 except ImportError:
@@ -285,10 +284,10 @@ class EventLoopTestsMixin:
         self.assertTrue(0.08 <= t1-t0 <= 0.8, t1-t0)
 
     def test_run_until_complete_stopped(self):
-        @asyncio.coroutine
-        def cb():
+
+        async def cb():
             self.loop.stop()
-            yield from asyncio.sleep(0.1, loop=self.loop)
+            await asyncio.sleep(0.1, loop=self.loop)
         task = cb()
         self.assertRaises(RuntimeError,
                           self.loop.run_until_complete, task)
@@ -363,7 +362,7 @@ class EventLoopTestsMixin:
         self.assertNotEqual(thread_id, threading.get_ident())
 
     def test_reader_callback(self):
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         r.setblocking(False)
         bytes_read = bytearray()
 
@@ -391,7 +390,7 @@ class EventLoopTestsMixin:
         self.assertEqual(bytes_read, b'abcdef')
 
     def test_writer_callback(self):
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         w.setblocking(False)
 
         def writer(data):
@@ -470,7 +469,7 @@ class EventLoopTestsMixin:
             sock = socket.socket()
             self._basetest_sock_recv_into(httpd, sock)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_unix_sock_client_ops(self):
         with test_utils.run_test_unix_server() as httpd:
             sock = socket.socket(socket.AF_UNIX)
@@ -606,7 +605,7 @@ class EventLoopTestsMixin:
                 lambda: MyProto(loop=self.loop), *httpd.address)
             self._basetest_create_connection(conn_fut)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_connection(self):
         # Issue #20682: On Mac OS X Tiger, getsockname() returns a
         # zero-length address for UNIX socket.
@@ -736,12 +735,8 @@ class EventLoopTestsMixin:
             self._test_create_ssl_connection(httpd, create_connection,
                                              peername=httpd.address)
 
-    def test_legacy_create_ssl_connection(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_ssl_connection()
-
+    @support.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_ssl_unix_connection(self):
         # Issue #20682: On Mac OS X Tiger, getsockname() returns a
         # zero-length address for UNIX socket.
@@ -756,10 +751,6 @@ class EventLoopTestsMixin:
             self._test_create_ssl_connection(httpd, create_connection,
                                              check_sockname,
                                              peername=httpd.address)
-
-    def test_legacy_create_ssl_unix_connection(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_ssl_unix_connection()
 
     def test_create_connection_local_addr(self):
         with test_utils.run_test_server() as httpd:
@@ -969,7 +960,7 @@ class EventLoopTestsMixin:
 
         return server, path
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_unix_server(lambda: proto)
@@ -1061,12 +1052,8 @@ class EventLoopTestsMixin:
         # stop serving
         server.close()
 
-    def test_legacy_create_server_ssl(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_server_ssl()
-
+    @support.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server_ssl(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
@@ -1095,10 +1082,6 @@ class EventLoopTestsMixin:
 
         # stop serving
         server.close()
-
-    def test_legacy_create_unix_server_ssl(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_unix_server_ssl()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_verify_failed(self):
@@ -1129,12 +1112,8 @@ class EventLoopTestsMixin:
         self.assertIsNone(proto.transport)
         server.close()
 
-    def test_legacy_create_server_ssl_verify_failed(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_server_ssl_verify_failed()
-
+    @support.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
@@ -1162,11 +1141,6 @@ class EventLoopTestsMixin:
         # close connection
         self.assertIsNone(proto.transport)
         server.close()
-
-
-    def test_legacy_create_unix_server_ssl_verify_failed(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_unix_server_ssl_verify_failed()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_match_failed(self):
@@ -1196,12 +1170,8 @@ class EventLoopTestsMixin:
         proto.transport.close()
         server.close()
 
-    def test_legacy_create_server_ssl_match_failed(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_server_ssl_match_failed()
-
+    @support.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
@@ -1225,10 +1195,6 @@ class EventLoopTestsMixin:
         client.close()
         server.close()
         self.loop.run_until_complete(proto.done)
-
-    def test_legacy_create_unix_server_ssl_verified(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_unix_server_ssl_verified()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_verified(self):
@@ -1258,10 +1224,6 @@ class EventLoopTestsMixin:
         client.close()
         server.close()
         self.loop.run_until_complete(proto.done)
-
-    def test_legacy_create_server_ssl_verified(self):
-        with test_utils.force_legacy_ssl_support():
-            self.test_create_server_ssl_verified()
 
     def test_create_server_sock(self):
         proto = asyncio.Future(loop=self.loop)
@@ -1461,9 +1423,8 @@ class EventLoopTestsMixin:
         rpipe, wpipe = os.pipe()
         pipeobj = io.open(rpipe, 'rb', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            t, p = yield from self.loop.connect_read_pipe(
+        async def connect():
+            t, p = await self.loop.connect_read_pipe(
                 lambda: proto, pipeobj)
             self.assertIs(p, proto)
             self.assertIs(t, proto.transport)
@@ -1500,11 +1461,10 @@ class EventLoopTestsMixin:
         rpipeobj = io.open(rpipe, 'rb', 1024)
         wpipeobj = io.open(wpipe, 'w', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            read_transport, _ = yield from loop.connect_read_pipe(
+        async def connect():
+            read_transport, _ = await loop.connect_read_pipe(
                 lambda: read_proto, rpipeobj)
-            write_transport, _ = yield from loop.connect_write_pipe(
+            write_transport, _ = await loop.connect_write_pipe(
                 lambda: write_proto, wpipeobj)
             return read_transport, write_transport
 
@@ -1525,9 +1485,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
-    # select, poll and kqueue don't support character devices (PTY) on Mac OS X
-    # older than 10.6 (Snow Leopard)
-    @support.requires_mac_ver(10, 6)
+    @unittest.skipIf(sys.platform == 'darwin', 'test hangs on MacOS')
     # Issue #20495: The test hangs on FreeBSD 7.2 but pass on FreeBSD 9
     @support.requires_freebsd_version(8)
     def test_read_pty_output(self):
@@ -1536,10 +1494,9 @@ class EventLoopTestsMixin:
         master, slave = os.openpty()
         master_read_obj = io.open(master, 'rb', 0)
 
-        @asyncio.coroutine
-        def connect():
-            t, p = yield from self.loop.connect_read_pipe(lambda: proto,
-                                                          master_read_obj)
+        async def connect():
+            t, p = await self.loop.connect_read_pipe(lambda: proto,
+                                                     master_read_obj)
             self.assertIs(p, proto)
             self.assertIs(t, proto.transport)
             self.assertEqual(['INITIAL', 'CONNECTED'], proto.state)
@@ -1605,7 +1562,7 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     def test_write_pipe_disconnect_on_close(self):
-        rsock, wsock = test_utils.socketpair()
+        rsock, wsock = socket.socketpair()
         rsock.setblocking(False)
         pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
@@ -1743,18 +1700,17 @@ class EventLoopTestsMixin:
         self.assertEqual('CLOSED', write_proto.state)
 
     def test_prompt_cancellation(self):
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         r.setblocking(False)
-        f = self.loop.sock_recv(r, 1)
+        f = self.loop.create_task(self.loop.sock_recv(r, 1))
         ov = getattr(f, 'ov', None)
         if ov is not None:
             self.assertTrue(ov.pending)
 
-        @asyncio.coroutine
-        def main():
+        async def main():
             try:
                 self.loop.call_soon(f.cancel)
-                yield from f
+                await f
             except asyncio.CancelledError:
                 res = 'cancelled'
             else:
@@ -1787,14 +1743,13 @@ class EventLoopTestsMixin:
         self.loop._run_once_counter = 0
         self.loop._run_once = _run_once
 
-        @asyncio.coroutine
-        def wait():
+        async def wait():
             loop = self.loop
-            yield from asyncio.sleep(1e-2, loop=loop)
-            yield from asyncio.sleep(1e-4, loop=loop)
-            yield from asyncio.sleep(1e-6, loop=loop)
-            yield from asyncio.sleep(1e-8, loop=loop)
-            yield from asyncio.sleep(1e-10, loop=loop)
+            await asyncio.sleep(1e-2, loop=loop)
+            await asyncio.sleep(1e-4, loop=loop)
+            await asyncio.sleep(1e-6, loop=loop)
+            await asyncio.sleep(1e-8, loop=loop)
+            await asyncio.sleep(1e-10, loop=loop)
 
         self.loop.run_until_complete(wait())
         # The ideal number of call is 12, but on some platforms, the selector
@@ -1808,7 +1763,7 @@ class EventLoopTestsMixin:
     def test_remove_fds_after_closing(self):
         loop = self.create_event_loop()
         callback = lambda: None
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         self.addCleanup(r.close)
         self.addCleanup(w.close)
         loop.add_reader(r, callback)
@@ -1820,7 +1775,7 @@ class EventLoopTestsMixin:
     def test_add_fds_after_closing(self):
         loop = self.create_event_loop()
         callback = lambda: None
-        r, w = test_utils.socketpair()
+        r, w = socket.socketpair()
         self.addCleanup(r.close)
         self.addCleanup(w.close)
         loop.close()
@@ -1864,7 +1819,8 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.call_at(self.loop.time() + .0, func)
         with self.assertRaises(RuntimeError):
-            self.loop.run_in_executor(None, func)
+            self.loop.run_until_complete(
+                self.loop.run_in_executor(None, func))
         with self.assertRaises(RuntimeError):
             self.loop.create_task(coro)
         with self.assertRaises(RuntimeError):
@@ -2113,9 +2069,9 @@ class SubprocessTestsMixin:
         self.assertEqual(7, proto.returncode)
 
     def test_subprocess_exec_invalid_args(self):
-        @asyncio.coroutine
-        def connect(**kwds):
-            yield from self.loop.subprocess_exec(
+
+        async def connect(**kwds):
+            await self.loop.subprocess_exec(
                 asyncio.SubprocessProtocol,
                 'pwd', **kwds)
 
@@ -2127,11 +2083,11 @@ class SubprocessTestsMixin:
             self.loop.run_until_complete(connect(shell=True))
 
     def test_subprocess_shell_invalid_args(self):
-        @asyncio.coroutine
-        def connect(cmd=None, **kwds):
+
+        async def connect(cmd=None, **kwds):
             if not cmd:
                 cmd = 'pwd'
-            yield from self.loop.subprocess_shell(
+            await self.loop.subprocess_shell(
                 asyncio.SubprocessProtocol,
                 cmd, **kwds)
 
@@ -2159,37 +2115,6 @@ if sys.platform == 'win32':
         def create_event_loop(self):
             return asyncio.ProactorEventLoop()
 
-        if not sslproto._is_sslproto_available():
-            def test_create_ssl_connection(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl_verify_failed(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl_match_failed(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-            def test_create_server_ssl_verified(self):
-                raise unittest.SkipTest("need python 3.5 (ssl.MemoryBIO)")
-
-        def test_legacy_create_ssl_connection(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl_verify_failed(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl_match_failed(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
-        def test_legacy_create_server_ssl_verified(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
-
         def test_reader_callback(self):
             raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
 
@@ -2209,7 +2134,7 @@ if sys.platform == 'win32':
         def test_remove_fds_after_closing(self):
             raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
 else:
-    from asyncio import selectors
+    import selectors
 
     class UnixEventLoopTestsMixin(EventLoopTestsMixin):
         def setUp(self):
@@ -2222,19 +2147,6 @@ else:
             asyncio.set_child_watcher(None)
             super().tearDown()
 
-        def test_get_event_loop_new_process(self):
-            async def main():
-                pool = concurrent.futures.ProcessPoolExecutor()
-                result = await self.loop.run_in_executor(
-                    pool, _test_get_event_loop_new_process__sub_proc)
-                pool.shutdown()
-                return result
-
-            self.unpatch_get_running_loop()
-
-            self.assertEqual(
-                self.loop.run_until_complete(main()),
-                'hello')
 
     if hasattr(selectors, 'KqueueSelector'):
         class KqueueEventLoopTests(UnixEventLoopTestsMixin,
@@ -2305,10 +2217,10 @@ class HandleTests(test_utils.TestCase):
         h = asyncio.Handle(callback, args, self.loop)
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
-        self.assertFalse(h._cancelled)
+        self.assertFalse(h.cancelled())
 
         h.cancel()
-        self.assertTrue(h._cancelled)
+        self.assertTrue(h.cancelled())
 
     def test_callback_with_exception(self):
         def callback():
@@ -2494,11 +2406,11 @@ class TimerTests(unittest.TestCase):
         h = asyncio.TimerHandle(when, callback, args, mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
-        self.assertFalse(h._cancelled)
+        self.assertFalse(h.cancelled())
 
         # cancel
         h.cancel()
-        self.assertTrue(h._cancelled)
+        self.assertTrue(h.cancelled())
         self.assertIsNone(h._callback)
         self.assertIsNone(h._args)
 
@@ -2613,19 +2525,7 @@ class AbstractEventLoopTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, loop.call_soon_threadsafe, None)
         self.assertRaises(
-            NotImplementedError, loop.run_in_executor, f, f)
-        self.assertRaises(
             NotImplementedError, loop.set_default_executor, f)
-        self.assertRaises(
-            NotImplementedError, loop.getaddrinfo, 'localhost', 8080)
-        self.assertRaises(
-            NotImplementedError, loop.getnameinfo, ('localhost', 8080))
-        self.assertRaises(
-            NotImplementedError, loop.create_connection, f)
-        self.assertRaises(
-            NotImplementedError, loop.create_server, f)
-        self.assertRaises(
-            NotImplementedError, loop.create_datagram_endpoint, f)
         self.assertRaises(
             NotImplementedError, loop.add_reader, 1, f)
         self.assertRaises(
@@ -2635,32 +2535,11 @@ class AbstractEventLoopTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, loop.remove_writer, 1)
         self.assertRaises(
-            NotImplementedError, loop.sock_recv, f, 10)
-        self.assertRaises(
-            NotImplementedError, loop.sock_recv_into, f, 10)
-        self.assertRaises(
-            NotImplementedError, loop.sock_sendall, f, 10)
-        self.assertRaises(
-            NotImplementedError, loop.sock_connect, f, f)
-        self.assertRaises(
-            NotImplementedError, loop.sock_accept, f)
-        self.assertRaises(
             NotImplementedError, loop.add_signal_handler, 1, f)
         self.assertRaises(
             NotImplementedError, loop.remove_signal_handler, 1)
         self.assertRaises(
             NotImplementedError, loop.remove_signal_handler, 1)
-        self.assertRaises(
-            NotImplementedError, loop.connect_read_pipe, f,
-            mock.sentinel.pipe)
-        self.assertRaises(
-            NotImplementedError, loop.connect_write_pipe, f,
-            mock.sentinel.pipe)
-        self.assertRaises(
-            NotImplementedError, loop.subprocess_shell, f,
-            mock.sentinel)
-        self.assertRaises(
-            NotImplementedError, loop.subprocess_exec, f)
         self.assertRaises(
             NotImplementedError, loop.set_exception_handler, f)
         self.assertRaises(
@@ -2671,6 +2550,47 @@ class AbstractEventLoopTests(unittest.TestCase):
             NotImplementedError, loop.get_debug)
         self.assertRaises(
             NotImplementedError, loop.set_debug, f)
+
+    def test_not_implemented_async(self):
+
+        async def inner():
+            f = mock.Mock()
+            loop = asyncio.AbstractEventLoop()
+
+            with self.assertRaises(NotImplementedError):
+                await loop.run_in_executor(f, f)
+            with self.assertRaises(NotImplementedError):
+                await loop.getaddrinfo('localhost', 8080)
+            with self.assertRaises(NotImplementedError):
+                await loop.getnameinfo(('localhost', 8080))
+            with self.assertRaises(NotImplementedError):
+                await loop.create_connection(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.create_server(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.create_datagram_endpoint(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_recv(f, 10)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_recv_into(f, 10)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_sendall(f, 10)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_connect(f, f)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_accept(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.connect_read_pipe(f, mock.sentinel.pipe)
+            with self.assertRaises(NotImplementedError):
+                await loop.connect_write_pipe(f, mock.sentinel.pipe)
+            with self.assertRaises(NotImplementedError):
+                await loop.subprocess_shell(f, mock.sentinel)
+            with self.assertRaises(NotImplementedError):
+                await loop.subprocess_exec(f)
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(inner())
+        loop.close()
 
 
 class ProtocolsAbsTests(unittest.TestCase):
@@ -2787,30 +2707,148 @@ class PolicyTests(unittest.TestCase):
         self.assertIs(policy, asyncio.get_event_loop_policy())
         self.assertIsNot(policy, old_policy)
 
+
+class GetEventLoopTestsMixin:
+
+    _get_running_loop_impl = None
+    _set_running_loop_impl = None
+    get_running_loop_impl = None
+    get_event_loop_impl = None
+
+    def setUp(self):
+        self._get_running_loop_saved = events._get_running_loop
+        self._set_running_loop_saved = events._set_running_loop
+        self.get_running_loop_saved = events.get_running_loop
+        self.get_event_loop_saved = events.get_event_loop
+
+        events._get_running_loop = type(self)._get_running_loop_impl
+        events._set_running_loop = type(self)._set_running_loop_impl
+        events.get_running_loop = type(self).get_running_loop_impl
+        events.get_event_loop = type(self).get_event_loop_impl
+
+        asyncio._get_running_loop = type(self)._get_running_loop_impl
+        asyncio._set_running_loop = type(self)._set_running_loop_impl
+        asyncio.get_running_loop = type(self).get_running_loop_impl
+        asyncio.get_event_loop = type(self).get_event_loop_impl
+
+        super().setUp()
+
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+        if sys.platform != 'win32':
+            watcher = asyncio.SafeChildWatcher()
+            watcher.attach_loop(self.loop)
+            asyncio.set_child_watcher(watcher)
+
+    def tearDown(self):
+        try:
+            if sys.platform != 'win32':
+                asyncio.set_child_watcher(None)
+
+            super().tearDown()
+        finally:
+            self.loop.close()
+            asyncio.set_event_loop(None)
+
+            events._get_running_loop = self._get_running_loop_saved
+            events._set_running_loop = self._set_running_loop_saved
+            events.get_running_loop = self.get_running_loop_saved
+            events.get_event_loop = self.get_event_loop_saved
+
+            asyncio._get_running_loop = self._get_running_loop_saved
+            asyncio._set_running_loop = self._set_running_loop_saved
+            asyncio.get_running_loop = self.get_running_loop_saved
+            asyncio.get_event_loop = self.get_event_loop_saved
+
+    if sys.platform != 'win32':
+
+        def test_get_event_loop_new_process(self):
+            # Issue bpo-32126: The multiprocessing module used by
+            # ProcessPoolExecutor is not functional when the
+            # multiprocessing.synchronize module cannot be imported.
+            support.import_module('multiprocessing.synchronize')
+
+            async def main():
+                pool = concurrent.futures.ProcessPoolExecutor()
+                result = await self.loop.run_in_executor(
+                    pool, _test_get_event_loop_new_process__sub_proc)
+                pool.shutdown()
+                return result
+
+            self.assertEqual(
+                self.loop.run_until_complete(main()),
+                'hello')
+
     def test_get_event_loop_returns_running_loop(self):
+        class TestError(Exception):
+            pass
+
         class Policy(asyncio.DefaultEventLoopPolicy):
             def get_event_loop(self):
-                raise NotImplementedError
-
-        loop = None
+                raise TestError
 
         old_policy = asyncio.get_event_loop_policy()
         try:
             asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
+
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+            asyncio.set_event_loop(None)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
+            with self.assertRaisesRegex(RuntimeError, 'no running'):
+                self.assertIs(asyncio.get_running_loop(), None)
             self.assertIs(asyncio._get_running_loop(), None)
 
             async def func():
                 self.assertIs(asyncio.get_event_loop(), loop)
+                self.assertIs(asyncio.get_running_loop(), loop)
                 self.assertIs(asyncio._get_running_loop(), loop)
 
             loop.run_until_complete(func())
+
+            asyncio.set_event_loop(loop)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
+            asyncio.set_event_loop(None)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
         finally:
             asyncio.set_event_loop_policy(old_policy)
             if loop is not None:
                 loop.close()
 
+        with self.assertRaisesRegex(RuntimeError, 'no running'):
+            self.assertIs(asyncio.get_running_loop(), None)
+
         self.assertIs(asyncio._get_running_loop(), None)
+
+
+class TestPyGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
+
+    _get_running_loop_impl = events._py__get_running_loop
+    _set_running_loop_impl = events._py__set_running_loop
+    get_running_loop_impl = events._py_get_running_loop
+    get_event_loop_impl = events._py_get_event_loop
+
+
+try:
+    import _asyncio  # NoQA
+except ImportError:
+    pass
+else:
+
+    class TestCGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
+
+        _get_running_loop_impl = events._c__get_running_loop
+        _set_running_loop_impl = events._c__set_running_loop
+        get_running_loop_impl = events._c_get_running_loop
+        get_event_loop_impl = events._c_get_event_loop
 
 
 if __name__ == '__main__':

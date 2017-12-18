@@ -674,7 +674,10 @@ class _Pickler:
             else:
                 self.write(LONG4 + pack("<i", n) + encoded)
             return
-        self.write(LONG + repr(obj).encode("ascii") + b'L\n')
+        if -0x80000000 <= obj <= 0x7fffffff:
+            self.write(INT + repr(obj).encode("ascii") + b'\n')
+        else:
+            self.write(LONG + repr(obj).encode("ascii") + b'L\n')
     dispatch[int] = save_long
 
     def save_float(self, obj):

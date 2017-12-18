@@ -2374,7 +2374,7 @@ Sealing mocks
     any new attribute on the sealed mock. The sealing process is performed recursively.
 
     If a mock instance is assigned to an attribute instead of being dynamically created
-    it wont be considered in the sealing chain. This allows to prevent seal from fixing
+    it won't be considered in the sealing chain. This allows to prevent seal from fixing
     part of the mock object.
 
         >>> mock = Mock()

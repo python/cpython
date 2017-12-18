@@ -134,13 +134,17 @@ def main(del_exitfunc=False):
                     # exiting but got an extra KBI? Try again!
                     continue
             try:
-                seq, request = rpc.request_queue.get(block=True, timeout=0.05)
+                request = rpc.request_queue.get(block=True, timeout=0.05)
             except queue.Empty:
+                request = None
+                # Issue 32207: calling handle_tk_events here adds spurious
+                # queue.Empty traceback to event handling exceptions.
+            if request:
+                seq, (method, args, kwargs) = request
+                ret = method(*args, **kwargs)
+                rpc.response_queue.put((seq, ret))
+            else:
                 handle_tk_events()
-                continue
-            method, args, kwargs = request
-            ret = method(*args, **kwargs)
-            rpc.response_queue.put((seq, ret))
         except KeyboardInterrupt:
             if quitting:
                 exit_now = True
