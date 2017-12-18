@@ -2496,6 +2496,17 @@ class TestDateTime(TestDate):
                 dt_rt = self.theclass.fromisoformat(dtstr)
                 self.assertEqual(dt, dt_rt)
 
+    def test_fromisoformat_ambiguous(self):
+        # Test strings like 2018-01-31+12:15 (where +12:15 is not a time zone)
+        separators = ['+', '-']
+        for sep in separators:
+            dt = self.theclass(2018, 1, 31, 12, 15)
+            dtstr = dt.isoformat(sep=sep)
+
+            with self.subTest(dtstr=dtstr):
+                dt_rt = self.theclass.fromisoformat(dtstr)
+                self.assertEqual(dt, dt_rt)
+
     def test_fromisoformat_timespecs(self):
         datetime_bases = [
             (2009, 12, 4, 8, 17, 45, 123456),
