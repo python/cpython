@@ -318,7 +318,10 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
             self.close()
 
     def is_reading(self):
-        return self._ssl_protocol._transport.is_reading()
+        tr = self._ssl_protocol._transport
+        if tr is None:
+            raise RuntimeError('SSL transport has not been initialized yet')
+        return tr.is_reading()
 
     def pause_reading(self):
         """Pause the receiving end.

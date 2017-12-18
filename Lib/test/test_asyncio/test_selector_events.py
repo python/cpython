@@ -80,9 +80,22 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         with test_utils.disable_logger():
             transport = self.loop._make_ssl_transport(
                 m, asyncio.Protocol(), m, waiter)
+
+            with self.assertRaisesRegex(RuntimeError,
+                                        r'SSL transport.*not.*initialized'):
+                transport.is_reading()
+
             # execute the handshake while the logger is disabled
             # to ignore SSL handshake failure
             test_utils.run_briefly(self.loop)
+
+        self.assertTrue(transport.is_reading())
+        transport.pause_reading()
+        transport.pause_reading()
+        self.assertFalse(transport.is_reading())
+        transport.resume_reading()
+        transport.resume_reading()
+        self.assertTrue(transport.is_reading())
 
         # Sanity check
         class_name = transport.__class__.__name__
