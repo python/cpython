@@ -703,18 +703,16 @@ class _SelectorSocketTransport(_SelectorTransport):
                                  waiter, None)
 
     def pause_reading(self):
-        if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
+        if self._closing or self._paused:
+            return
         self._paused = True
         self._loop._remove_reader(self._sock_fd)
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
+        if self._closing or not self._paused:
+            return
         self._paused = False
         self._add_reader(self._sock_fd, self._read_ready)
         if self._loop.get_debug():
