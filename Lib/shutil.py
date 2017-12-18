@@ -316,11 +316,10 @@ if sys.platform == 'darwin':
     # As of macOS 10.10, the `copyfile` API changed to not copy certain flags
     mac_ver = tuple(int(x) for x in platform.mac_ver()[0].split('.'))
     if mac_ver >= (10, 10, 0):
-        del _fix_flags
         def _fix_flags(dst, flags, follow_symlinks):
             """Perform any modifications to `flags` before they can be applied
             to `dst` with `chflags()`.
-            
+
             """
 
             # From xnu's bsd/sys/stat.h
