@@ -438,9 +438,9 @@ Other constructors, all class methods:
 
 .. classmethod:: date.fromisoformat(date_string)
 
-  Return a :class:`date` corresponding to a *date_string* in one of the ISO 8601
-  formats emitted by :meth:`date.isoformat`. Specifically, this function supports
-  strings in the format(s) ``YYYY-MM-DD``.
+  Return a :class:`date` corresponding to a *date_string* in the format emitted
+  by :meth:`date.isoformat`. Specifically, this function supports strings in
+  the format(s) ``YYYY-MM-DD``.
 
   .. caution::
 
@@ -837,8 +837,9 @@ Other constructors, all class methods:
 .. classmethod:: datetime.fromisoformat(date_string)
 
   Return a :class:`datetime` corresponding to a *date_string* in one of the
-  ISO 8601 formats emitted by :meth:`datetime.isoformat`. Specifically, this function
-  supports strings in the format(s) ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]]][+HH:MM[:SS[.ffffff]]]``,
+  formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
+  Specifically, this function supports strings in the format(s)
+  ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]]``,
   where ``*`` can match any single character.
 
   .. caution::
@@ -1518,11 +1519,11 @@ In boolean contexts, a :class:`.time` object is always considered to be true.
 
 Other constructor:
 
-.. classmethod:: time.fromisoformat(date_string)
+.. classmethod:: time.fromisoformat(time_string)
 
-  Return a :class:`time` corresponding to a *time_string* in one of the ISO 8601
+  Return a :class:`time` corresponding to a *time_string* in one of the
   formats emitted by :meth:`time.isoformat`. Specifically, this function supports
-  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]]][+HH:MM[:SS[.ffffff]]]``.
+  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]``.
 
   .. caution::
 

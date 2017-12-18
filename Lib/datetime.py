@@ -855,7 +855,7 @@ class date:
         try:
             assert len(date_string) == 10
             return cls(*_parse_isoformat_date(date_string))
-        except:
+        except Exception:
             raise ValueError('Invalid isoformat string: %s' % date_string)
 
 
@@ -1367,7 +1367,7 @@ class time:
 
         try:
             return cls(*_parse_isoformat_time(time_string))
-        except:
+        except Exception:
             raise ValueError('Invalid isoformat string: %s' % time_string)
 
 
