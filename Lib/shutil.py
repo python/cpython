@@ -5,6 +5,7 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 """
 
 import os
+import platform
 import sys
 import stat
 import fnmatch
@@ -311,6 +312,36 @@ else:
     def _copyxattr(*args, **kwargs):
         pass
 
+if sys.platform == 'darwin':
+    # As of macOS 10.10, the `copyfile` API changed to not copy certain flags
+    mac_ver = tuple(int(x) for x in platform.mac_ver()[0].split('.'))
+    if mac_ver >= (10, 10, 0):
+        del _fix_flags
+        def _fix_flags(dst, flags, follow_symlinks):
+            """Perform any modifications to `flags` before they can be applied
+            to `dst` with `chflags()`.
+            
+            """
+
+            # From xnu's bsd/sys/stat.h
+            UF_TRACKED    = 0x00000040
+            SF_RESTRICTED = 0x00080000
+
+            # Based on copyfile's copyfile_stat()
+            omit_flags = (UF_TRACKED | SF_RESTRICTED)
+            add_flags  = 0
+
+            # If the kernel automatically put SF_RESTRICTED on the destination
+            # already, we don't want to clear it
+            st = os.stat(dst, follow_symlinks=follow_symlinks)
+            add_flags |= (st.st_flags & SF_RESTRICTED)
+
+            return (flags & ~omit_flags) | add_flags
+
+if not vars().has_key('_fix_flags'):
+    def _fix_flags(dst, flags, *args, **kwargs):
+        return flags
+
 def copystat(src, dst, *, follow_symlinks=True):
     """Copy all stat info (mode bits, atime, mtime, flags) from src to dst.
 
@@ -356,7 +387,8 @@ def copystat(src, dst, *, follow_symlinks=True):
         pass
     if hasattr(st, 'st_flags'):
         try:
-            lookup("chflags")(dst, st.st_flags, follow_symlinks=follow)
+            flags = _fix_flags(dst, st.st_flags, follow_symlinks=follow)
+            lookup("chflags")(dst, flags, follow_symlinks=follow)
         except OSError as why:
             for err in 'EOPNOTSUPP', 'ENOTSUP':
                 if hasattr(errno, err) and why.errno == getattr(errno, err):
