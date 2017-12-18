@@ -158,8 +158,8 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
     }
     Py_DECREF(newconst);
 
-    Py_ssize_t len_consts = PyList_GET_SIZE(consts);
-    return copy_op_arg(codestr, c_start, LOAD_CONST, len_consts, opcode_end);
+    return copy_op_arg(codestr, c_start, LOAD_CONST,
+                       PyList_GET_SIZE(consts), opcode_end);
 }
 
 static unsigned int *
@@ -229,7 +229,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     unsigned char *lnotab;
     unsigned int cum_orig_offset, last_offset;
     Py_ssize_t tabsiz;
-    unsigned int cumlc=0, lastlc=0; // Count runs of consecutive LOAD_CONSTs
+    // Count runs of consecutive LOAD_CONSTs
+    unsigned int cumlc = 0, lastlc = 0;
     unsigned int *blocks = NULL;
 
     /* Bail out if an exception is set */
