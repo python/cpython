@@ -363,9 +363,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     if (binary && buffering == 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "line buffering is not supported in binary mode");
-        goto error;
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "line buffering is not supported in binary mode",
+                         1) < 0)
+           goto error;
     }
 
     /* Create the Raw file stream */

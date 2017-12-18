@@ -164,26 +164,31 @@ class OtherFileTests:
             f.close()
             self.fail("no error for invalid mode: %s" % bad_mode)
 
+    def _checkBufferSize(self, s):
+        try:
+            f = self.open(TESTFN, 'wb', s)
+            f.write(str(s).encode("ascii"))
+            f.close()
+            f.close()
+            f = self.open(TESTFN, 'rb', s)
+            d = int(f.read().decode("ascii"))
+            f.close()
+            f.close()
+        except OSError as msg:
+            self.fail('error setting buffer size %d: %s' % (s, str(msg)))
+        self.assertEqual(d, s)
+
     def testSetBufferSize(self):
         # make sure that explicitly setting the buffer size doesn't cause
         # misbehaviour especially with repeated close() calls
         for s in (-1, 0, 512):
-            try:
-                f = self.open(TESTFN, 'wb', s)
-                f.write(str(s).encode("ascii"))
-                f.close()
-                f.close()
-                f = self.open(TESTFN, 'rb', s)
-                d = int(f.read().decode("ascii"))
-                f.close()
-                f.close()
-            except OSError as msg:
-                self.fail('error setting buffer size %d: %s' % (s, str(msg)))
-            self.assertEqual(d, s)
+            self._checkBufferSize(s)
 
-        # test that attempts to use line buffering in binary mode are rejected
-        self.assertRaises(ValueError, self.open, TESTFN, 'wb', 1)
-        self.assertRaises(ValueError, self.open, TESTFN, 'rb', 1)
+        # test that attempts to use line buffering in binary mode cause
+        # a warning
+        warn_msg = 'line buffering is not supported in binary mode'
+        with self.assertWarns(RuntimeWarning, msg=warn_msg):
+            self._checkBufferSize(1)
 
     def testTruncateOnWindows(self):
         # SF bug <http://www.python.org/sf/801631>
