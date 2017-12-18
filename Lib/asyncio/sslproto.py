@@ -317,6 +317,9 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
                           source=self)
             self.close()
 
+    def is_reading(self):
+        return self._ssl_protocol._transport.is_reading()
+
     def pause_reading(self):
         """Pause the receiving end.
 

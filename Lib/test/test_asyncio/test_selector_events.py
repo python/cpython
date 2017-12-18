@@ -894,15 +894,24 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         tr = self.socket_transport()
         test_utils.run_briefly(self.loop)
         self.assertFalse(tr._paused)
+        self.assertTrue(tr.is_reading())
         self.loop.assert_reader(7, tr._read_ready)
+
+        tr.pause_reading()
         tr.pause_reading()
         self.assertTrue(tr._paused)
-        self.assertFalse(7 in self.loop.readers)
+        self.assertFalse(tr.is_reading())
+        self.loop.assert_no_reader(7)
+
+        tr.resume_reading()
         tr.resume_reading()
         self.assertFalse(tr._paused)
+        self.assertTrue(tr.is_reading())
         self.loop.assert_reader(7, tr._read_ready)
-        with self.assertRaises(RuntimeError):
-            tr.resume_reading()
+
+        tr.close()
+        self.assertFalse(tr.is_reading())
+        self.loop.assert_no_reader(7)
 
     def test_read_ready(self):
         transport = self.socket_transport()
