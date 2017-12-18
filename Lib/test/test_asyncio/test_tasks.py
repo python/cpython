@@ -2187,22 +2187,50 @@ def add_subclass_tests(cls):
     return cls
 
 
-@unittest.skipUnless(hasattr(futures, '_CFuture'),
+@unittest.skipUnless(hasattr(futures, '_CFuture') and
+                     hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class CTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
 
 
-@unittest.skipUnless(hasattr(futures, '_CFuture'),
+@unittest.skipUnless(hasattr(futures, '_CFuture') and
+                     hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 @add_subclass_tests
 class CTask_CFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
-    Task = getattr(tasks, '_CTask', None)
-    Future = getattr(futures, '_CFuture', None)
+
+    class Task(tasks._CTask):
+        pass
+
+    class Future(futures._CFuture):
+        pass
+
+
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+@add_subclass_tests
+class CTaskSubclass_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
+
+    class Task(tasks._CTask):
+        pass
+
+    Future = futures._PyFuture
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
+                     'requires the C _asyncio module')
+@add_subclass_tests
+class PyTask_CFutureSubclass_Tests(BaseTaskTests, test_utils.TestCase):
+
+    class Future(futures._CFuture):
+        pass
+
+    Task = tasks._PyTask
+
+
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class CTask_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
@@ -2223,8 +2251,11 @@ class PyTask_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
 @add_subclass_tests
 class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
-    Task = tasks._PyTask
-    Future = futures._PyFuture
+    class Task(tasks._PyTask):
+        pass
+
+    class Future(futures._PyFuture):
+        pass
 
 
 class BaseTaskIntrospectionTests:
