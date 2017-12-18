@@ -300,7 +300,7 @@ The :mod:`signal` module defines the following functions:
    Availability: Unix.
 
 
-.. function:: set_wakeup_fd(fd)
+.. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
 
    Set the wakeup file descriptor to *fd*.  When a signal is received, the
    signal number is written as a single byte into the fd.  This can be used by
@@ -312,16 +312,36 @@ The :mod:`signal` module defines the following functions:
    If not -1, *fd* must be non-blocking.  It is up to the library to remove
    any bytes from *fd* before calling poll or select again.
 
-   Use for example ``struct.unpack('%uB' % len(data), data)`` to decode the
-   signal numbers list.
-
    When threads are enabled, this function can only be called from the main thread;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
+   There are two common ways to use this function. In both approaches,
+   you use the fd to wake up when a signal arrives, but then they
+   differ in how they determine *which* signal or signals have
+   arrived.
+
+   In the first approach, we read the data out of the fd's buffer, and
+   the byte values give you the signal numbers. This is simple, but in
+   rare cases it can run into a problem: generally the fd will have a
+   limited amount of buffer space, and if too many signals arrive too
+   quickly, then the buffer may become full, and some signals may be
+   lost. If you use this approach, then you should set
+   ``warn_on_full_buffer=True``, which will at least cause a warning
+   to be printed to stderr when signals are lost.
+
+   In the second approach, we use the wakeup fd *only* for wakeups,
+   and ignore the actual byte values. In this case, all we care about
+   is whether the fd's buffer is empty or non-empty; a full buffer
+   doesn't indicate a problem at all. If you use this approach, then
+   you should set ``warn_on_full_buffer=False``, so that your users
+   are not confused by spurious warning messages.
+
    .. versionchanged:: 3.5
       On Windows, the function now also supports socket handles.
 
+   .. versionchanged:: 3.7
+      Added ``warn_on_full_buffer`` parameter.
 
 .. function:: siginterrupt(signalnum, flag)
 

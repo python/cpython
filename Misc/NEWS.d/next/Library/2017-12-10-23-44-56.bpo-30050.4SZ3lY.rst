@@ -1,0 +1,3 @@
+New argument warn_on_full_buffer to signal.set_wakeup_fd lets you control
+whether Python prints a warning on stderr when the wakeup fd buffer
+overflows.
