@@ -882,9 +882,9 @@ Changes in the Python API
   (Contributed by Jesse Bakker in :issue:`32121`.)
 
 * On Linux, the :attr:`socket.type <socket.socket.type>` attribute no
-  longer has :const:`socket.SOCK_NONBLOCK` flag applied, so checks like
-  ``if sock.type == socket.SOCK_STREAM`` work as expected on all
-  platforms.
+  longer has :const:`socket.SOCK_NONBLOCK` or :const:`socket.SOCK_CLOEXEC`
+  flags applied, so checks like ``if sock.type == socket.SOCK_STREAM``
+  work as expected on all platforms.
   (Contributed by Yury Selivanov in :issue:`32331`.)
 
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
