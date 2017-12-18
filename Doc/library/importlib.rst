@@ -484,7 +484,7 @@ ABC hierarchy::
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is
-    expected to be a :term:`file-like object` which represents
+    expected to be a :term:`path-like object` which represents
     conceptually just a file name. This means that no subdirectory
     paths should be included in the *resource* argument. This is
     because the location of the package that the loader is for acts
