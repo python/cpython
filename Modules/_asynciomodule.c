@@ -142,14 +142,12 @@ _is_coroutine(PyObject *coro)
         return is_res_true;
     }
 
-    if (PyDict_Size(iscoroutine_typecache) < 100) {
+    if (PySet_Size(iscoroutine_typecache) < 100) {
         /* Just in case we don't want to cache more than 100
            positive types.  That shouldn't ever happen, unless
            someone stressing the system on purpose.
         */
-        if (PyDict_SetItem(
-                iscoroutine_typecache, (PyObject*) Py_TYPE(coro), Py_None))
-        {
+        if (PySet_Add(iscoroutine_typecache, (PyObject*) Py_TYPE(coro))) {
             return -1;
         }
     }
@@ -174,7 +172,7 @@ is_coroutine(PyObject *coro)
        This cache allows us to avoid the cost of even calling
        a pure-Python function in 99.9% cases.
     */
-    int has_it = PyDict_Contains(
+    int has_it = PySet_Contains(
         iscoroutine_typecache, (PyObject*) Py_TYPE(coro));
     if (has_it == 0) {
         /* type(coro) is not in iscoroutine_typecache */
@@ -3082,7 +3080,7 @@ module_init(void)
         goto fail;
     }
 
-    iscoroutine_typecache = PyDict_New();
+    iscoroutine_typecache = PySet_New(NULL);
     if (iscoroutine_typecache == NULL) {
         goto fail;
     }

@@ -199,28 +199,23 @@ def iscoroutinefunction(func):
 # asyncio.iscoroutine.
 _COROUTINE_TYPES = (types.CoroutineType, types.GeneratorType,
                     collections.abc.Coroutine, CoroWrapper)
-_iscoroutine_typecache = {}
+_iscoroutine_typecache = set()
 
 
 def iscoroutine(obj):
     """Return True if obj is a coroutine object."""
-    try:
-        # `loop.create_task(cython_coroutine)` is 20% more expensive
-        # than `loop.create_task(python_coroutine)`.
-        # This is because `isinstance(obj, abc.Coroutine)` call is way
-        # more expensive than `isinstance(obj, types.CoroutineType)`.
-        # This cache makes them equally fast.
-        return _iscoroutine_typecache[type(obj)]
-    except KeyError:
-        if isinstance(obj, _COROUTINE_TYPES):
-            # Just in case we don't want to cache more than 100
-            # positive types.  That shouldn't ever happen, unless
-            # someone stressing the system on purpose.
-            if len(_iscoroutine_typecache) < 100:
-                _iscoroutine_typecache[type(obj)] = True
-            return True
-        else:
-            return False
+    if type(obj) in _iscoroutine_typecache:
+        return True
+
+    if isinstance(obj, _COROUTINE_TYPES):
+        # Just in case we don't want to cache more than 100
+        # positive types.  That shouldn't ever happen, unless
+        # someone stressing the system on purpose.
+        if len(_iscoroutine_typecache) < 100:
+            _iscoroutine_typecache.add(type(obj))
+        return True
+    else:
+        return False
 
 
 def _format_coroutine(coro):
