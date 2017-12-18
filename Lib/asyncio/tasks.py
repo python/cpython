@@ -619,9 +619,11 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 exc = futures.CancelledError()
                 outer.set_exception(exc)
                 return
-            elif fut._exception is not None:
-                outer.set_exception(fut._exception)
-                return
+            else:
+                exc = fut.exception()
+                if exc is not None:
+                    outer.set_exception(exc)
+                    return
 
         if nfinished == nfuts:
             # All futures are done; create a list of results
@@ -631,10 +633,10 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
             for fut in children:
                 if fut.cancelled():
                     res = futures.CancelledError()
-                elif fut._exception is not None:
-                    res = fut._exception
                 else:
-                    res = fut._result
+                    res = fut.exception()
+                    if res is None:
+                        res = fut.result()
                 results.append(res)
 
             outer.set_result(results)
