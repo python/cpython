@@ -1317,8 +1317,8 @@ class time:
 
     # Conversion to string
 
-    def _tzstr(self, sep=":"):
-        """Return formatted timezone offset (+xx:xx) or None."""
+    def _tzstr(self):
+        """Return formatted timezone offset (+xx:xx) or an empty string."""
         off = self.utcoffset()
         return _format_offset(off)
 
