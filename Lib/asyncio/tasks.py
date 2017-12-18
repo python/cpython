@@ -616,6 +616,9 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
 
         if not return_exceptions:
             if fut.cancelled():
+                # Check if 'fut' is cancelled first, as
+                # 'fut.exception()' will *raise* a CancelledError
+                # instead of returning it.
                 exc = futures.CancelledError()
                 outer.set_exception(exc)
                 return
@@ -632,6 +635,9 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
 
             for fut in children:
                 if fut.cancelled():
+                    # Check if 'fut' is cancelled first, as
+                    # 'fut.exception()' will *raise* a CancelledError
+                    # instead of returning it.
                     res = futures.CancelledError()
                 else:
                     res = fut.exception()
