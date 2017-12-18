@@ -881,7 +881,7 @@ init_sockobject(PySocketSockObject *s,
        0xF is SOCK_TYPE_MASK in include/linux/net.h which on Linux
        is used to mask off SOCK_NONBLOCK and SOCK_CLOEXEC.
     */
-    s->sock_type = type & 0xF;
+    s->sock_type = type & ~(SOCK_NONBLOCK | SOCK_CLOEXEC);
 #else
     s->sock_type = type;
 #endif
