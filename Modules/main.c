@@ -9,23 +9,27 @@
 #include <locale.h>
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#include <windows.h>
-#ifdef HAVE_IO_H
-#include <io.h>
-#endif
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
+#  include <windows.h>
+#  ifdef HAVE_IO_H
+#    include <io.h>
+#  endif
+#  ifdef HAVE_FCNTL_H
+#    include <fcntl.h>
+#  endif
 #endif
 
 #ifdef _MSC_VER
-#include <crtdbg.h>
+#  include <crtdbg.h>
+#endif
+
+#ifdef __FreeBSD__
+#  include <fenv.h>
 #endif
 
 #if defined(MS_WINDOWS)
-#define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
+#  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
 #else
-#define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
+#  define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
 #endif
 
 #define COPYRIGHT \
