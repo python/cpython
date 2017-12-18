@@ -282,8 +282,8 @@ Other Language Changes
 New Modules
 ===========
 
-importlib.resource
-------------------
+importlib.resources
+-------------------
 
 This module provides several new APIs and one new ABC for access to, opening,
 and reading *resources* inside packages.  Resources are roughly akin to files

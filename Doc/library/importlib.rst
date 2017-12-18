@@ -902,7 +902,7 @@ The following functions are available.
                      *resource* may not contain path separators and it may
                      not have sub-resources (i.e. it cannot be a directory).
     :type resource: ``Resource``
-    :returns: A context manager for use in a :keyword`with` statement.
+    :returns: A context manager for use in a :keyword:`with` statement.
               Entering the context manager provides a :class:`pathlib.Path`
               object.
     :rtype: context manager providing a :class:`pathlib.Path` object
