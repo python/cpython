@@ -1779,20 +1779,25 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
 /*[clinic end generated code: output=9f24774c2287fc2f input=8d132974b049593e]*/
 {
     PyObject *res;
-    int tmp;
+
     if (future_init((FutureObj*)self, loop)) {
         return -1;
     }
 
     if (!PyCoro_CheckExact(coro)) {
-        // fastpath failed, perfom slow check
-        // raise after Future.__init__(), attrs are required for __del__
-        res = PyObject_CallFunctionObjArgs(asyncio_iscoroutine_func,
-                                           coro, NULL);
+        /* 'coro' is not a native coroutine, call asyncio.iscoroutine()
+           to check if it's another coroutine flavour.
+
+           Do this check after 'future_init()'; in case we need to raise
+           an error, __del__ needs a properly initialized object.
+        */
+        res = PyObject_CallFunctionObjArgs(
+            asyncio_iscoroutine_func, coro, NULL);
         if (res == NULL) {
             return -1;
         }
-        tmp = PyObject_Not(res);
+
+        int tmp = PyObject_Not(res);
         Py_DECREF(res);
         if (tmp < 0) {
             return -1;
