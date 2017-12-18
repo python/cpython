@@ -338,7 +338,7 @@ if sys.platform == 'darwin':
 
             return (flags & ~omit_flags) | add_flags
 
-if not vars().has_key('_fix_flags'):
+if '_fix_flags' not in vars():
     def _fix_flags(dst, flags, *args, **kwargs):
         return flags
 
