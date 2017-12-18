@@ -298,8 +298,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, rawsock, protocol, sslcontext, waiter=None,
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT
-            ):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """Create SSL transport."""
         raise NotImplementedError
 
@@ -662,8 +661,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             *, ssl=None, family=0,
             proto=0, flags=0, sock=None,
             local_addr=None, server_hostname=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT
-            ):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given Internet host and
@@ -789,8 +787,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _create_connection_transport(
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT
-            ):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
 
         sock.setblocking(False)
 
@@ -969,8 +966,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl=None,
             reuse_address=None,
             reuse_port=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT
-            ):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """Create a TCP server.
 
         The host parameter can be a string, in that case the TCP server is
@@ -1068,8 +1064,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def connect_accepted_socket(
             self, protocol_factory, sock,
             *, ssl=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT
-            ):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of
