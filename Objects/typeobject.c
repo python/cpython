@@ -7572,6 +7572,35 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *name,
     return 0;
 }
 
+
+/* Add a method descriptor to the type's tp_dict for the given
+ * slot definition and function pointer.
+ * See add_operators() below for more explanation.
+ */
+static int
+add_one_operator(PyTypeObject *type, slotdef *p, void *ptr)
+{
+    PyObject *dict = type->tp_dict;
+    if (ptr == (void *)PyObject_HashNotImplemented) {
+        /* Classes may prevent the inheritance of the tp_hash
+           slot by storing PyObject_HashNotImplemented in it. Make it
+           visible as a None value for the __hash__ attribute. */
+        if (PyDict_SetItem(dict, p->name_strobj, Py_None) < 0)
+            return -1;
+    }
+    else {
+        PyObject *descr = PyDescr_NewWrapper(type, p, ptr);
+        if (descr == NULL)
+            return -1;
+        if (PyDict_SetItem(dict, p->name_strobj, descr) < 0) {
+            Py_DECREF(descr);
+            return -1;
+        }
+        Py_DECREF(descr);
+    }
+    return 0;
+}
+
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or more
@@ -7607,36 +7636,49 @@ add_operators(PyTypeObject *type)
 {
     PyObject *dict = type->tp_dict;
     slotdef *p;
-    PyObject *descr;
     void **ptr;
+    PyObject *stack_descrs[N_SLOTDEFS];
 
     init_slotdefs();
-    for (p = slotdefs; p->name; p++) {
-        if (p->wrapper == NULL)
-            continue;
-        ptr = slotptr(type, p->offset);
-        if (!ptr || !*ptr)
-            continue;
-        if (PyDict_GetItem(dict, p->name_strobj))
-            continue;
-        if (*ptr == (void *)PyObject_HashNotImplemented) {
-            /* Classes may prevent the inheritance of the tp_hash
-               slot by storing PyObject_HashNotImplemented in it. Make it
-               visible as a None value for the __hash__ attribute. */
-            if (PyDict_SetItem(dict, p->name_strobj, Py_None) < 0)
-                return -1;
-        }
-        else {
-            descr = PyDescr_NewWrapper(type, p, *ptr);
-            if (descr == NULL)
-                return -1;
-            if (PyDict_SetItem(dict, p->name_strobj, descr) < 0) {
-                Py_DECREF(descr);
-                return -1;
+
+    if (!lookup_slotdefs_in_mro(type, stack_descrs)) {
+        /* Faster implementation avoiding a dict lookup for every possible
+         * slot wrapper.
+         */
+        Py_ssize_t i;
+        for (i = 0; i < (Py_ssize_t) N_SLOTDEFS; i++) {
+            /* Does entry already exist in tp_dict? */
+            if (stack_descrs[i]) {
+                continue;
             }
-            Py_DECREF(descr);
+            p = &slotdefs[i];
+            ptr = slotptr(type, p->offset);
+            if (!ptr || !*ptr)
+                continue;
+            if (add_one_operator(type, p, *ptr))
+                return -1;
         }
     }
+    else {
+        /* Fallback in case the runtime is not fully initialized. */
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        for (p = slotdefs; p->name; p++) {
+            if (p->wrapper == NULL)
+                continue;
+            ptr = slotptr(type, p->offset);
+            if (!ptr || !*ptr)
+                continue;
+            /* Does entry already exist in tp_dict? */
+            if (PyDict_GetItem(dict, p->name_strobj))
+                continue;
+            /* If not, add method descriptor */
+            if (add_one_operator(type, p, *ptr))
+                return -1;
+        }
+    }
+
     if (type->tp_new != NULL) {
         if (add_tp_new_wrapper(type) < 0)
             return -1;
