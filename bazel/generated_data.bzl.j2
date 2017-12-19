@@ -1,0 +1,75 @@
+MAJOR_VERSION = 3
+MINOR_VERSION = 7
+
+CPYTHON_SOABI = 'cpython-%d%dm-x86_64-linux-gnu' % (MAJOR_VERSION,
+        MINOR_VERSION)
+
+CPYTHON_COPTS = [
+    '-DNDEBUG',
+    '-DPy_BUILD_CORE',
+    '-O3',
+    '-Wall',
+    #'-Werror=implicit-function-declaration'
+    '-Wextra',
+    '-Wno-missing-field-initializers',
+    '-Wno-unused-parameter',
+    '-Wno-unused-result',
+    '-Wno-unused-result',
+    '-Wsign-compare',
+    '-Wstrict-prototypes',
+    '-Wunreachable-code',
+    '-fwrapv',
+    '-g',
+    '-pthread',
+    '-std=c99',
+
+    # Required for compiling Python/dynload_shlib.c:
+    "-DSOABI='\"%s\"'" % CPYTHON_SOABI,
+
+    # Required for compiling Modules/getpath.c:
+    "-DPYTHONPATH='\":\"'",
+    "-DPREFIX='\"/usr/local\"'",
+    "-DEXEC_PREFIX='\"/usr/local\"'",
+    "-DVERSION='\"%d.%d\"'" % (MAJOR_VERSION, MINOR_VERSION),
+    "-DVPATH='\"\"'",
+
+    # Suppress known warnings.
+    '-Wno-sign-compare',
+    '-Wno-unreachable-code',
+    '-Wno-unused-variable',
+]
+
+CPYTHON_MODULE_COPTS = [
+    # The pyextpy module
+    '-DHAVE_EXPAT_CONFIG_H=1',
+    '-DUSE_PYEXPAT_CAPI',
+    '-DXML_POOR_ENTROPY=1',
+
+    # For core modules.
+    '-DPy_BUILD_CORE',
+
+    # Modules/_decimal/libmpdec/difradix2.c
+    '-DCONFIG_64=1',
+    '-DASM=1',
+
+    '-DNDEBUG',
+    '-O3',
+    '-Wall',
+    '-Werror=implicit-function-declaration',
+    '-Wextra',
+    '-Wno-missing-field-initializers',
+    '-Wno-unused-parameter',
+    '-Wno-unused-result',
+    '-Wno-unused-result',
+    '-Wsign-compare',
+    '-Wstrict-prototypes',
+    '-fPIC',
+    '-fwrapv',
+    '-g',
+    '-pthread',
+    '-std=c99',
+]
+
+CPYTHON_SRCS = {{ cpython.srcs | pprint }}
+
+CPYTHON_MODULES_DATA = {{ modules_data | pprint }}
