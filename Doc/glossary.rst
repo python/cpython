@@ -391,7 +391,8 @@ Glossary
    garbage collection
       The process of freeing memory when it is not used anymore.  Python
       performs garbage collection via reference counting and a cyclic garbage
-      collector that is able to detect and break reference cycles.
+      collector that is able to detect and break reference cycles.  The
+      garbage collector can be controlled using the :mod:`gc` module.
 
       .. index:: single: generator
 
