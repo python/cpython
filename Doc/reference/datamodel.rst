@@ -1186,7 +1186,8 @@ Basic customization
    to postpone destruction of the instance by creating a new reference to
    it.  This is called object *resurrection*.  It is implementation-dependent
    whether :meth:`__del__` is called a second time when a resurrected object
-   is about to be destroyed.
+   is about to be destroyed; the current :term:`CPython` implementation
+   only calls it once.
 
    It is not guaranteed that :meth:`__del__` methods are called for objects
    that still exist when the interpreter exits.
