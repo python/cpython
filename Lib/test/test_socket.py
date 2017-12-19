@@ -4123,8 +4123,10 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # Testing whether set blocking works
         self.serv.setblocking(True)
         self.assertIsNone(self.serv.gettimeout())
+        self.assertTrue(self.serv.getblocking())
         self.serv.setblocking(False)
         self.assertEqual(self.serv.gettimeout(), 0.0)
+        self.assertFalse(self.serv.getblocking())
         start = time.time()
         try:
             self.serv.accept()
@@ -5234,11 +5236,13 @@ class NonblockConstantTest(unittest.TestCase):
             self.assertEqual(s.gettimeout(), timeout)
             self.assertTrue(
                 fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            self.assertFalse(s.getblocking())
         else:
             self.assertEqual(s.type, socket.SOCK_STREAM)
             self.assertEqual(s.gettimeout(), None)
             self.assertFalse(
                 fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            self.assertTrue(s.getblocking())
 
     @support.requires_linux_version(2, 6, 28)
     def test_SOCK_NONBLOCK(self):
