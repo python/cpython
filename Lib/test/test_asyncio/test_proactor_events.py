@@ -567,10 +567,21 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.sock.close.called)
 
     def test_stop_serving(self):
-        sock = mock.Mock()
-        self.loop._stop_serving(sock)
-        self.assertTrue(sock.close.called)
-        self.proactor._stop_serving.assert_called_with(sock)
+        sock1 = mock.Mock()
+        future1 = mock.Mock()
+        sock2 = mock.Mock()
+        future2 = mock.Mock()
+        self.loop._accept_futures = {
+            sock1.fileno(): future1,
+            sock2.fileno(): future2
+        }
+
+        self.loop._stop_serving(sock1)
+        self.assertTrue(sock1.close.called)
+        self.assertTrue(future1.cancel.called)
+        self.proactor._stop_serving.assert_called_with(sock1)
+        self.assertFalse(sock2.close.called)
+        self.assertFalse(future2.cancel.called)
 
 
 if __name__ == '__main__':

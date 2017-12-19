@@ -536,6 +536,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._accept_futures.clear()
 
     def _stop_serving(self, sock):
-        self._stop_accept_futures()
+        future = self._accept_futures.pop(sock.fileno(), None)
+        if future:
+            future.cancel()
         self._proactor._stop_serving(sock)
         sock.close()
