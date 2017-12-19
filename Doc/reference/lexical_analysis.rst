@@ -657,7 +657,7 @@ the final value of the whole string.
 Top-level format specifiers may include nested replacement fields. These nested 
 fields may include their own conversion fields and format specifiers, but may 
 not include more deeply-nested replacement fields. The 
-:ref:format specifier mini-language <formatspec> is the same as that used by 
+:ref:`format specifier mini-language <formatspec>` is the same as that used by 
 the string .format() method.
 
 Formatted string literals may be concatenated, but replacement fields
