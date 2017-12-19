@@ -1606,7 +1606,13 @@ class GeneralModuleTests(unittest.TestCase):
         fd, path = tempfile.mkstemp()
         self.addCleanup(os.unlink, path)
         unknown_family = max(socket.AddressFamily.__members__.values()) + 1
-        unknown_type = max(socket.SocketKind.__members__.values()) + 1
+
+        unknown_type = max(
+            kind
+            for name, kind in socket.SocketKind.__members__.items()
+            if name not in {'SOCK_NONBLOCK', 'SOCK_CLOEXEC'}
+        ) + 1
+
         with socket.socket(
                 family=unknown_family, type=unknown_type, fileno=fd) as s:
             self.assertEqual(s.family, unknown_family)
