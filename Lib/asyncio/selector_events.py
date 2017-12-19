@@ -70,11 +70,15 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return _SelectorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
-    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
-                            *, server_side=False, server_hostname=None,
-                            extra=None, server=None):
-        ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
-                                            server_side, server_hostname)
+    def _make_ssl_transport(
+            self, rawsock, protocol, sslcontext, waiter=None,
+            *, server_side=False, server_hostname=None,
+            extra=None, server=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+        ssl_protocol = sslproto.SSLProtocol(
+                self, protocol, sslcontext, waiter,
+                server_side, server_hostname,
+                ssl_handshake_timeout=ssl_handshake_timeout)
         _SelectorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -143,12 +147,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                  exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
-                       sslcontext=None, server=None, backlog=100):
+                       sslcontext=None, server=None, backlog=100,
+                       ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         self._add_reader(sock.fileno(), self._accept_connection,
-                         protocol_factory, sock, sslcontext, server, backlog)
+                         protocol_factory, sock, sslcontext, server, backlog,
+                         ssl_handshake_timeout)
 
-    def _accept_connection(self, protocol_factory, sock,
-                           sslcontext=None, server=None, backlog=100):
+    def _accept_connection(
+            self, protocol_factory, sock,
+            sslcontext=None, server=None, backlog=100,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         # This method is only called once for each event loop tick where the
         # listening socket has triggered an EVENT_READ. There may be multiple
         # connections waiting for an .accept() so it is called in a loop.
@@ -179,17 +187,20 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     self.call_later(constants.ACCEPT_RETRY_DELAY,
                                     self._start_serving,
                                     protocol_factory, sock, sslcontext, server,
-                                    backlog)
+                                    backlog, ssl_handshake_timeout)
                 else:
                     raise  # The event loop will catch, log and ignore it.
             else:
                 extra = {'peername': addr}
                 accept = self._accept_connection2(
-                    protocol_factory, conn, extra, sslcontext, server)
+                    protocol_factory, conn, extra, sslcontext, server,
+                    ssl_handshake_timeout)
                 self.create_task(accept)
 
-    async def _accept_connection2(self, protocol_factory, conn, extra,
-                                  sslcontext=None, server=None):
+    async def _accept_connection2(
+            self, protocol_factory, conn, extra,
+            sslcontext=None, server=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         protocol = None
         transport = None
         try:
@@ -198,7 +209,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             if sslcontext:
                 transport = self._make_ssl_transport(
                     conn, protocol, sslcontext, waiter=waiter,
-                    server_side=True, extra=extra, server=server)
+                    server_side=True, extra=extra, server=server,
+                    ssl_handshake_timeout=ssl_handshake_timeout)
             else:
                 transport = self._make_socket_transport(
                     conn, protocol, waiter=waiter, extra=extra,
@@ -702,22 +714,21 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
 
+    def is_reading(self):
+        return not self._paused and not self._closing
+
     def pause_reading(self):
-        if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
+        if self._closing or self._paused:
+            return
         self._paused = True
         self._loop._remove_reader(self._sock_fd)
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
-        if self._closing:
+        if self._closing or not self._paused:
             return
+        self._paused = False
         self._loop._add_reader(self._sock_fd, self._read_ready)
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)

@@ -452,16 +452,19 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed. (POSIX only).
-   The default varies by platform:  Always true on POSIX.  On Windows it is
-   true when *stdin*/*stdout*/*stderr* are :const:`None`, false otherwise.
+   :const:`2` will be closed before the child process is executed.
    On Windows, if *close_fds* is true then no handles will be inherited by the
-   child process.  Note that on Windows, you cannot set *close_fds* to true and
-   also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
+   child process unless explicitly passed in the ``handle_list`` element of
+   :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
 
    .. versionchanged:: 3.2
       The default for *close_fds* was changed from :const:`False` to
       what is described above.
+
+   .. versionchanged:: 3.7
+      On Windows the default for *close_fds* was changed from :const:`False` to
+      :const:`True` when redirecting the standard handles. It's now possible to
+      set *close_fds* to :const:`True` when redirecting the standard handles.
 
    *pass_fds* is an optional sequence of file descriptors to keep open
    between the parent and child.  Providing any *pass_fds* forces
@@ -764,7 +767,7 @@ The :class:`STARTUPINFO` class and following constants are only available
 on Windows.
 
 .. class:: STARTUPINFO(*, dwFlags=0, hStdInput=None, hStdOutput=None, \
-                       hStdError=None, wShowWindow=0)
+                       hStdError=None, wShowWindow=0, lpAttributeList=None)
 
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
@@ -814,6 +817,33 @@ on Windows.
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
+   .. attribute:: lpAttributeList
+
+      A dictionary of additional attributes for process creation as given in
+      ``STARTUPINFOEX``, see
+      `UpdateProcThreadAttribute <https://msdn.microsoft.com/en-us/library/windows/desktop/ms686880(v=vs.85).aspx>`__.
+
+      Supported attributes:
+
+      **handle_list**
+         Sequence of handles that will be inherited. *close_fds* must be true if
+         non-empty.
+
+         The handles must be temporarily made inheritable by
+         :func:`os.set_handle_inheritable` when passed to the :class:`Popen`
+         constructor, else :class:`OSError` will be raised with Windows error
+         ``ERROR_INVALID_PARAMETER`` (87).
+
+         .. warning::
+
+            In a multithreaded process, use caution to avoid leaking handles
+            that are marked inheritable when combining this feature with
+            concurrent calls to other process creation functions that inherit
+            all handles such as :func:`os.system`.  This also applies to
+            standard handle redirection, which temporarily creates inheritable
+            handles.
+
+      .. versionadded:: 3.7
 
 Windows Constants
 ^^^^^^^^^^^^^^^^^

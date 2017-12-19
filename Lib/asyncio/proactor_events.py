@@ -152,21 +152,20 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         self._paused = False
         self._loop.call_soon(self._loop_reading)
 
+    def is_reading(self):
+        return not self._paused and not self._closing
+
     def pause_reading(self):
-        if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
+        if self._closing or self._paused:
+            return
         self._paused = True
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
-        if self._closing:
+        if self._closing or not self._paused:
             return
+        self._paused = False
         self._loop.call_soon(self._loop_reading, self._read_fut)
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
@@ -390,11 +389,15 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return _ProactorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
-    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
-                            *, server_side=False, server_hostname=None,
-                            extra=None, server=None):
-        ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
-                                            server_side, server_hostname)
+    def _make_ssl_transport(
+            self, rawsock, protocol, sslcontext, waiter=None,
+            *, server_side=False, server_hostname=None,
+            extra=None, server=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+        ssl_protocol = sslproto.SSLProtocol(
+                self, protocol, sslcontext, waiter,
+                server_side, server_hostname,
+                ssl_handshake_timeout=ssl_handshake_timeout)
         _ProactorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -487,7 +490,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._csock.send(b'\0')
 
     def _start_serving(self, protocol_factory, sock,
-                       sslcontext=None, server=None, backlog=100):
+                       sslcontext=None, server=None, backlog=100,
+                       ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
 
         def loop(f=None):
             try:
@@ -500,7 +504,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     if sslcontext is not None:
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
-                            extra={'peername': addr}, server=server)
+                            extra={'peername': addr}, server=server,
+                            ssl_handshake_timeout=ssl_handshake_timeout)
                     else:
                         self._make_socket_transport(
                             conn, protocol,
@@ -537,6 +542,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._accept_futures.clear()
 
     def _stop_serving(self, sock):
-        self._stop_accept_futures()
+        future = self._accept_futures.pop(sock.fileno(), None)
+        if future:
+            future.cancel()
         self._proactor._stop_serving(sock)
         sock.close()

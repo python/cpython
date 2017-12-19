@@ -334,25 +334,35 @@ class ProactorSocketTransportTests(test_utils.TestCase):
             f = asyncio.Future(loop=self.loop)
             f.set_result(msg)
             futures.append(f)
+
         self.loop._proactor.recv.side_effect = futures
         self.loop._run_once()
         self.assertFalse(tr._paused)
+        self.assertTrue(tr.is_reading())
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data1')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data2')
+
+        tr.pause_reading()
         tr.pause_reading()
         self.assertTrue(tr._paused)
+        self.assertFalse(tr.is_reading())
         for i in range(10):
             self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data2')
+
+        tr.resume_reading()
         tr.resume_reading()
         self.assertFalse(tr._paused)
+        self.assertTrue(tr.is_reading())
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data3')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data4')
         tr.close()
+
+        self.assertFalse(tr.is_reading())
 
 
     def pause_writing_transport(self, high):
@@ -557,10 +567,21 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.sock.close.called)
 
     def test_stop_serving(self):
-        sock = mock.Mock()
-        self.loop._stop_serving(sock)
-        self.assertTrue(sock.close.called)
-        self.proactor._stop_serving.assert_called_with(sock)
+        sock1 = mock.Mock()
+        future1 = mock.Mock()
+        sock2 = mock.Mock()
+        future2 = mock.Mock()
+        self.loop._accept_futures = {
+            sock1.fileno(): future1,
+            sock2.fileno(): future2
+        }
+
+        self.loop._stop_serving(sock1)
+        self.assertTrue(sock1.close.called)
+        self.assertTrue(future1.cancel.called)
+        self.proactor._stop_serving.assert_called_with(sock1)
+        self.assertFalse(sock2.close.called)
+        self.assertFalse(future2.cancel.called)
 
 
 if __name__ == '__main__':

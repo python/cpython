@@ -80,6 +80,15 @@ if os.name == "posix" and sys.platform == "darwin":
                 continue
         return None
 
+if sys.platform.startswith("aix"):
+    # AIX has two styles of storing shared libraries
+    # GNU auto_tools refer to these as svr4 and aix
+    # svr4 (System V Release 4) is a regular file, often with .so as suffix
+    # AIX style uses an archive (suffix .a) with members (e.g., shr.o, libssl.so)
+    # see issue#26439 and _aix.py for more details
+
+    from ctypes._aix import find_library
+
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
     import re, tempfile
@@ -324,6 +333,22 @@ def test():
             print(cdll.LoadLibrary("libcrypto.dylib"))
             print(cdll.LoadLibrary("libSystem.dylib"))
             print(cdll.LoadLibrary("System.framework/System"))
+        # issue-26439 - fix broken test call for AIX
+        elif sys.platform.startswith("aix"):
+            from ctypes import CDLL
+            if sys.maxsize < 2**32:
+                print("Using CDLL(name, os.RTLD_MEMBER): %s" % CDLL("libc.a(shr.o)", os.RTLD_MEMBER))
+                print("Using cdll.LoadLibrary(): %s" % cdll.LoadLibrary("libc.a(shr.o)"))
+                # librpm.so is only available as 32-bit shared library
+                print(find_library("rpm"))
+                print(cdll.LoadLibrary("librpm.so"))
+            else:
+                print("Using CDLL(name, os.RTLD_MEMBER): %s" % CDLL("libc.a(shr_64.o)", os.RTLD_MEMBER))
+                print("Using cdll.LoadLibrary(): %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
+            print("crypt\t:: %s" % find_library("crypt"))
+            print("crypt\t:: %s" % cdll.LoadLibrary(find_library("crypt")))
+            print("crypto\t:: %s" % find_library("crypto"))
+            print("crypto\t:: %s" % cdll.LoadLibrary(find_library("crypto")))
         else:
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))

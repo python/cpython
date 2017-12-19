@@ -203,11 +203,7 @@ class socket(_socket.socket):
         For IP sockets, the address info is a pair (hostaddr, port).
         """
         fd, addr = self._accept()
-        # If our type has the SOCK_NONBLOCK flag, we shouldn't pass it onto the
-        # new socket. We do not currently allow passing SOCK_NONBLOCK to
-        # accept4, so the returned socket is always blocking.
-        type = self.type & ~globals().get("SOCK_NONBLOCK", 0)
-        sock = socket(self.family, type, self.proto, fileno=fd)
+        sock = socket(self.family, self.type, self.proto, fileno=fd)
         # Issue #7995: if no default timeout is set and the listening
         # socket had a (non-zero) timeout, force the new socket in blocking
         # mode to override platform-specific socket flags inheritance.
