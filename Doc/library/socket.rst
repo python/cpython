@@ -1101,8 +1101,7 @@ to sockets.
 .. method:: socket.getblocking()
 
    Return ``True`` if socket is in blocking mode, ``False`` if in
-   non-blocking.  This reflects the last call to :meth:`setblocking`
-   or :meth:`settimeout`.
+   non-blocking.
 
    .. versionadded:: 3.7
 

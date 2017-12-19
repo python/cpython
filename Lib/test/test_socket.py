@@ -4159,6 +4159,8 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         self.serv.close()
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
                                                   socket.SOCK_NONBLOCK)
+        self.assertFalse(self.self.getblocking())
+        self.assertEqual(self.self.gettimeout(), 0)
         self.port = support.bind_port(self.serv)
         self.serv.listen()
         # actual testing
