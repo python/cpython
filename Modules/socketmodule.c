@@ -582,12 +582,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     && !((defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)))
     int delay_flag, new_delay_flag;
 #endif
-#ifdef SOCK_NONBLOCK
-    if (block)
-        s->sock_type &= (~SOCK_NONBLOCK);
-    else
-        s->sock_type |= SOCK_NONBLOCK;
-#endif
 
     Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
@@ -876,7 +870,22 @@ init_sockobject(PySocketSockObject *s,
 {
     s->sock_fd = fd;
     s->sock_family = family;
+
     s->sock_type = type;
+
+    /* It's possible to pass SOCK_NONBLOCK and SOCK_CLOEXEC bit flags
+       on some OSes as part of socket.type.  We want to reset them here,
+       to make socket.type be set to the same value on all platforms.
+       Otherwise, simple code like 'if sock.type == SOCK_STREAM' is
+       not portable.
+    */
+#ifdef SOCK_NONBLOCK
+    s->sock_type = s->sock_type & ~SOCK_NONBLOCK;
+#endif
+#ifdef SOCK_CLOEXEC
+    s->sock_type = s->sock_type & ~SOCK_CLOEXEC;
+#endif
+
     s->sock_proto = proto;
 
     s->errorhandler = &set_error;
