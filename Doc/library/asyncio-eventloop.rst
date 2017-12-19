@@ -261,7 +261,7 @@ Tasks
 Creating connections
 --------------------
 
-.. coroutinemethod:: AbstractEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None, ssl_handshake_timeout=10.0)
 
    Create a streaming transport connection to a given Internet *host* and
    *port*: socket family :py:data:`~socket.AF_INET` or
@@ -325,6 +325,13 @@ Creating connections
      to bind the socket to locally.  The *local_host* and *local_port*
      are looked up using getaddrinfo(), similarly to *host* and *port*.
 
+   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds
+     to wait for the SSL handshake to complete before aborting the connection.
+
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
    .. versionchanged:: 3.5
 
       On Windows with :class:`ProactorEventLoop`, SSL/TLS is now supported.
@@ -386,7 +393,7 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None, ssl_handshake_timeout=10.0)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
@@ -404,6 +411,10 @@ Creating connections
 
    Availability: UNIX.
 
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :class:`~pathlib.Path` object.
@@ -412,7 +423,7 @@ Creating connections
 Creating listening connections
 ------------------------------
 
-.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None)
+.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None, ssl_handshake_timeout=10.0)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
    *host* and *port*.
@@ -456,6 +467,13 @@ Creating listening connections
      set this flag when being created. This option is not supported on
      Windows.
 
+   * *ssl_handshake_timeout* is (for an SSL server) the time in seconds to wait
+     for the SSL handshake to complete before aborting the connection.
+
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
    .. versionchanged:: 3.5
 
       On Windows with :class:`ProactorEventLoop`, SSL/TLS is now supported.
@@ -470,7 +488,7 @@ Creating listening connections
       The *host* parameter can now be a sequence of strings.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None, ssl_handshake_timeout=10.0)
 
    Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
@@ -481,11 +499,15 @@ Creating listening connections
 
    Availability: UNIX.
 
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :class:`~pathlib.Path` object.
 
-.. coroutinemethod:: BaseEventLoop.connect_accepted_socket(protocol_factory, sock, \*, ssl=None)
+.. coroutinemethod:: BaseEventLoop.connect_accepted_socket(protocol_factory, sock, \*, ssl=None, ssl_handshake_timeout=10.0)
 
    Handle an accepted connection.
 
@@ -500,7 +522,14 @@ Creating listening connections
    * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over the
      accepted connections.
 
+   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
+     wait for the SSL handshake to complete before aborting the connection.
+
    When completed it returns a ``(transport, protocol)`` pair.
+
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
 
    .. versionadded:: 3.5.3
 

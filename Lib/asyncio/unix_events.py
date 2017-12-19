@@ -192,9 +192,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _child_watcher_callback(self, pid, returncode, transp):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
-    async def create_unix_connection(self, protocol_factory, path=None, *,
-                                     ssl=None, sock=None,
-                                     server_hostname=None):
+    async def create_unix_connection(
+            self, protocol_factory, path=None, *,
+            ssl=None, sock=None,
+            server_hostname=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -228,11 +230,14 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock.setblocking(False)
 
         transport, protocol = await self._create_connection_transport(
-            sock, protocol_factory, ssl, server_hostname)
+            sock, protocol_factory, ssl, server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout)
         return transport, protocol
 
-    async def create_unix_server(self, protocol_factory, path=None, *,
-                                 sock=None, backlog=100, ssl=None):
+    async def create_unix_server(
+            self, protocol_factory, path=None, *,
+            sock=None, backlog=100, ssl=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -283,7 +288,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         server = base_events.Server(self, [sock])
         sock.listen(backlog)
         sock.setblocking(False)
-        self._start_serving(protocol_factory, sock, ssl, server)
+        self._start_serving(protocol_factory, sock, ssl, server,
+                            ssl_handshake_timeout=ssl_handshake_timeout)
         return server
 
 
