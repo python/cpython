@@ -139,11 +139,12 @@ def _ipaddr_info(host, port, family, type, proto):
 
 
 def _run_until_complete_cb(fut):
-    exc = fut._exception
-    if isinstance(exc, BaseException) and not isinstance(exc, Exception):
-        # Issue #22429: run_forever() already finished, no need to
-        # stop it.
-        return
+    if not fut.cancelled():
+        exc = fut.exception()
+        if isinstance(exc, BaseException) and not isinstance(exc, Exception):
+            # Issue #22429: run_forever() already finished, no need to
+            # stop it.
+            return
     fut._loop.stop()
 
 
