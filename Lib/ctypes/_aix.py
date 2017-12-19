@@ -45,22 +45,54 @@ The mode bit RTLD_MEMBER tells initAndLoad() that it needs to use the AIX (SVR3)
 naming style.
 """
 __author__ = "Michael Felt <aixtools@felt.demon.nl>"
-__version__ = "1.0.0"
-
 
 import re
 from os import environ, path
 from sys import executable
 from ctypes import c_void_p, sizeof
-from ctypes._util import _last_version
 from subprocess import Popen, PIPE, DEVNULL
 
-def aix_abi():
-    """
-    Return executable bit size - 32 or 64
-    Used to filter the search in an archive by size, e.g., -X64
-    """
-    return sizeof(c_void_p) * 8
+# Executable bit size - 32 or 64
+# Used to filter the search in an archive by size, e.g., -X64
+AIX_ABI = sizeof(c_void_p) * 8
+
+
+from sys import maxsize
+def _last_version(libnames, sep):
+    def _num_version(libname):
+        # "libxyz.so.MAJOR.MINOR" => [MAJOR, MINOR]
+        parts = libname.split(sep)
+        nums = []
+        try:
+            while parts:
+                nums.insert(0, int(parts.pop()))
+        except ValueError:
+            pass
+        return nums or [maxsize]
+    return max(reversed(libnames), key=_num_version)
+
+def get_ld_header(p):
+    # "nested-function, but placed at module level
+    ld_header = None
+    for line in p.stdout:
+        if line.startswith(('/', './', '../')):
+            ld_header = line
+        elif "INDEX" in line:
+            return ld_header.rstrip('\n')
+    return None
+
+def get_ld_header_info(p):
+    # "nested-function, but placed at module level
+    # as an ld_header was found, return known paths, archives and members
+    # these lines start with a digit
+    info = []
+    for line in p.stdout:
+        if re.match("[0-9]", line):
+            info.append(line)
+        else:
+            # blank line (seperator), consume line and end for loop
+            break
+    return info
 
 def get_ld_headers(file):
     """
@@ -72,38 +104,16 @@ def get_ld_headers(file):
     # 1. Find a line that starts with /, ./, or ../ - set as ld_header
     # 2. If "INDEX" in occurs in a following line - return ld_header
     # 3. get info (lines starting with [0-9])
-
-    def get_ld_header(p):
-        ld_header = None
-        for line in p.stdout:
-            if line.startswith(('/', './', '../')):
-                ld_header = line
-            elif "INDEX" in line:
-                return ld_header.rstrip('\n')
-        return None
-
-    def get_ld_header_info(p):
-        # as an ld_header was found, return known paths, archives and members
-        # these lines start with a digit
-        info = []
-        for line in p.stdout:
-            if re.match("[0-9]", line):
-                info.append(line)
-            else:
-                # blank line (seperator), consume line and end for loop
-                break
-        return info
-
     ldr_headers = []
-    p = Popen(["/usr/bin/dump", "-X%s" % aix_abi(), "-H", file],
+    p = Popen(["/usr/bin/dump", "-X%s" % AIX_ABI, "-H", file],
         universal_newlines=True, stdout=PIPE, stderr=DEVNULL)
     # be sure to read to the end-of-file - getting all entries
     while True:
-            ld_header = get_ld_header(p)
-            if ld_header:
-                ldr_headers.append((ld_header, get_ld_header_info(p)))
-            else:
-                break
+        ld_header = get_ld_header(p)
+        if ld_header:
+            ldr_headers.append((ld_header, get_ld_header_info(p)))
+        else:
+            break
     p.stdout.close()
     p.wait
     return ldr_headers
@@ -145,7 +155,7 @@ def get_legacy(members):
     e.g., in /usr/lib/libc.a the member name shr.o for 32-bit binary and
     shr_64.o for 64-bit binary.
     """
-    if aix_abi() == 64:
+    if AIX_ABI == 64:
         # AIX 64-bit member is one of shr64.o, shr_64.o, or shr4_64.o
         expr = r'shr4?_?64\.o'
         member = get_one_match(expr, members)
@@ -208,18 +218,16 @@ def get_member(name, members):
     Priority is given to generic libXXX.so, then a versioned libXXX.so.a.b.c
     and finally, legacy AIX naming scheme.
     """
-
     # look first for a generic match - prepend lib and append .so
     expr = r'lib%s\.so' % name
     member = get_one_match(expr, members)
     if member:
         return member
-    elif aix_abi() == 64:
+    elif AIX_ABI == 64:
         expr = r'lib%s64\.so' % name
         member = get_one_match(expr, members)
     if member:
         return member
-
     # since an exact match with .so as suffix was not found
     # look for a versioned name
     # If a versioned name is not found, look for AIX legacy member name
@@ -255,6 +263,31 @@ def get_libpaths():
                 libpaths.extend(path.split(":"))
     return libpaths
 
+def find_shared(paths, name):
+    """
+    paths is a list of directories to search for an archive.
+    name is the abbreviated name given to find_library().
+    Process: search "paths" for archive, and if an archive is found
+    return the result of get_member().
+    If an archive is not found then return None
+    """
+    for dir in paths:
+        # /lib is a symbolic link to /usr/lib, skip it
+        if dir == "/lib":
+            continue
+        # "lib" is prefixed to emulate compiler name resolution,
+        # e.g., -lc to libc
+        base = 'lib%s.a' % name
+        archive = path.join(dir, base)
+        if path.exists(archive):
+            members = get_shared(get_ld_headers(archive))
+            member = get_member(re.escape(name), members)
+            if member != None:
+                return (base, member)
+            else:
+                return (None, None)
+    return (None, None)
+
 def find_library(name):
     """AIX implementation of ctypes.util.find_library()
     Find an archive member that will dlopen(). If not available,
@@ -271,31 +304,6 @@ def find_library(name):
     find_library() looks first for an archive (.a) with a suitable member.
     If no archive+member pair is found, look for a .so file.
     """
-
-    def find_shared(paths, name):
-        """
-        paths is a list of directories to search for an archive.
-        name is the abbreviated name given to find_library().
-        Process: search "paths" for archive, and if an archive is found
-        return the result of get_member().
-        If an archive is not found then return None
-        """
-        for dir in paths:
-            # /lib is a symbolic link to /usr/lib, skip it
-            if dir == "/lib":
-                continue
-            # "lib" is prefixed to emulate compiler name resolution,
-            # e.g., -lc to libc
-            base = 'lib%s.a' % name
-            archive = path.join(dir, base)
-            if path.exists(archive):
-                members = get_shared(get_ld_headers(archive))
-                member = get_member(re.escape(name), members)
-                if member != None:
-                    return (base, member)
-                else:
-                    return (None, None)
-        return (None, None)
 
     libpaths = get_libpaths()
     (base, member) = find_shared(libpaths, name)

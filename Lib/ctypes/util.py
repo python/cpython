@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 import sys
-from ctypes._util import _last_version
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -180,6 +179,17 @@ elif os.name == "posix":
 
     if sys.platform.startswith(("freebsd", "openbsd", "dragonfly")):
 
+        def _num_version(libname):
+            # "libxyz.so.MAJOR.MINOR" => [ MAJOR, MINOR ]
+            parts = libname.split(b".")
+            nums = []
+            try:
+                while parts:
+                    nums.insert(0, int(parts.pop()))
+            except ValueError:
+                pass
+            return nums or [sys.maxsize]
+
         def find_library(name):
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
@@ -198,7 +208,7 @@ elif os.name == "posix":
             res = re.findall(expr, data)
             if not res:
                 return _get_soname(_findLib_gcc(name))
-            res.sort(key=_last_version)
+            res.sort(key=_num_version)
             return os.fsdecode(res[-1])
 
     elif sys.platform == "sunos5":
