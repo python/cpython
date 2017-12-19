@@ -49,6 +49,9 @@ static PyObject *current_tasks;
    all running event loops.  {EventLoop: Task} */
 static PyObject *all_tasks;
 
+/* An isinstance type cache for the 'is_coroutine()' function. */
+static PyObject *iscoroutine_typecache;
+
 
 typedef enum {
     STATE_PENDING,
@@ -116,6 +119,71 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 /* Get FutureIter from Future */
 static PyObject* future_new_iter(PyObject *);
 static inline int future_call_schedule_callbacks(FutureObj *);
+
+
+static int
+_is_coroutine(PyObject *coro)
+{
+    /* 'coro' is not a native coroutine, call asyncio.iscoroutine()
+       to check if it's another coroutine flavour.
+
+       Do this check after 'future_init()'; in case we need to raise
+       an error, __del__ needs a properly initialized object.
+    */
+    PyObject *res = PyObject_CallFunctionObjArgs(
+        asyncio_iscoroutine_func, coro, NULL);
+    if (res == NULL) {
+        return -1;
+    }
+
+    int is_res_true = PyObject_IsTrue(res);
+    Py_DECREF(res);
+    if (is_res_true <= 0) {
+        return is_res_true;
+    }
+
+    if (PySet_Size(iscoroutine_typecache) < 100) {
+        /* Just in case we don't want to cache more than 100
+           positive types.  That shouldn't ever happen, unless
+           someone stressing the system on purpose.
+        */
+        if (PySet_Add(iscoroutine_typecache, (PyObject*) Py_TYPE(coro))) {
+            return -1;
+        }
+    }
+
+    return 1;
+}
+
+
+static inline int
+is_coroutine(PyObject *coro)
+{
+    if (PyCoro_CheckExact(coro)) {
+        return 1;
+    }
+
+    /* Check if `type(coro)` is in the cache.
+       Caching makes is_coroutine() function almost as fast as
+       PyCoro_CheckExact() for non-native coroutine-like objects
+       (like coroutines compiled with Cython).
+
+       asyncio.iscoroutine() has its own type caching mechanism.
+       This cache allows us to avoid the cost of even calling
+       a pure-Python function in 99.9% cases.
+    */
+    int has_it = PySet_Contains(
+        iscoroutine_typecache, (PyObject*) Py_TYPE(coro));
+    if (has_it == 0) {
+        /* type(coro) is not in iscoroutine_typecache */
+        return _is_coroutine(coro);
+    }
+
+    /* either an error has occured or
+       type(coro) is in iscoroutine_typecache
+    */
+    return has_it;
+}
 
 
 static int
@@ -1778,37 +1846,20 @@ static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
 /*[clinic end generated code: output=9f24774c2287fc2f input=8d132974b049593e]*/
 {
-    PyObject *res;
-
     if (future_init((FutureObj*)self, loop)) {
         return -1;
     }
 
-    if (!PyCoro_CheckExact(coro)) {
-        /* 'coro' is not a native coroutine, call asyncio.iscoroutine()
-           to check if it's another coroutine flavour.
-
-           Do this check after 'future_init()'; in case we need to raise
-           an error, __del__ needs a properly initialized object.
-        */
-        res = PyObject_CallFunctionObjArgs(
-            asyncio_iscoroutine_func, coro, NULL);
-        if (res == NULL) {
-            return -1;
-        }
-
-        int tmp = PyObject_Not(res);
-        Py_DECREF(res);
-        if (tmp < 0) {
-            return -1;
-        }
-        if (tmp) {
-            self->task_log_destroy_pending = 0;
-            PyErr_Format(PyExc_TypeError,
-                         "a coroutine was expected, got %R",
-                         coro, NULL);
-            return -1;
-        }
+    int is_coro = is_coroutine(coro);
+    if (is_coro == -1) {
+        return -1;
+    }
+    if (is_coro == 0) {
+        self->task_log_destroy_pending = 0;
+        PyErr_Format(PyExc_TypeError,
+                     "a coroutine was expected, got %R",
+                     coro, NULL);
+        return -1;
     }
 
     self->task_fut_waiter = NULL;
@@ -3007,8 +3058,9 @@ module_free(void *m)
     Py_CLEAR(asyncio_InvalidStateError);
     Py_CLEAR(asyncio_CancelledError);
 
-    Py_CLEAR(current_tasks);
     Py_CLEAR(all_tasks);
+    Py_CLEAR(current_tasks);
+    Py_CLEAR(iscoroutine_typecache);
 
     module_free_freelists();
 }
@@ -3025,6 +3077,11 @@ module_init(void)
 
     current_tasks = PyDict_New();
     if (current_tasks == NULL) {
+        goto fail;
+    }
+
+    iscoroutine_typecache = PySet_New(NULL);
+    if (iscoroutine_typecache == NULL) {
         goto fail;
     }
 
