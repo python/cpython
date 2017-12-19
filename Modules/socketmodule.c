@@ -874,13 +874,10 @@ init_sockobject(PySocketSockObject *s,
     s->sock_type = type;
 
     /* It's possible to pass SOCK_NONBLOCK and SOCK_CLOEXEC bit flags
-       on Linux as part of socket.type.  We want to reset them here,
+       on some OSes as part of socket.type.  We want to reset them here,
        to make socket.type be set to the same value on all platforms.
        Otherwise, simple code like 'if sock.type == SOCK_STREAM' is
        not portable.
-
-       0xF is SOCK_TYPE_MASK in include/linux/net.h which on Linux
-       is used to mask off SOCK_NONBLOCK and SOCK_CLOEXEC.
     */
 #ifdef SOCK_NONBLOCK
     s->sock_type = s->sock_type & ~SOCK_NONBLOCK;

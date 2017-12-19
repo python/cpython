@@ -483,17 +483,18 @@ The following functions all create :ref:`socket objects <socket-objects>`.
        The CAN_ISOTP protocol was added.
 
    .. versionchanged:: 3.7
-      Linux-specific: when :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
+      When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
       bit flags are applied to *type* they are cleared, and
       :attr:`socket.type` will not reflect them.  They are still passed
-      to the underlying Linux' `socket()` call, therefore::
+      to the underlying system `socket()` call.  Therefore::
 
           sock = socket.socket(
               socket.AF_INET,
               socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
 
-      will still create a non-blocking socket on Linux, but
-      ``sock.type`` will be set to ``socket.SOCK_STREAM``.
+      will still create a non-blocking socket on OSes that support
+      ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
+      ``socket.SOCK_STREAM``.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -1432,7 +1433,7 @@ to sockets.
 
    .. versionchanged:: 3.7
       The method no longer applies :const:`SOCK_NONBLOCK` flag on
-      :attr:`socket.type` on Linux.
+      :attr:`socket.type`.
 
 
 .. method:: socket.settimeout(value)
@@ -1448,7 +1449,7 @@ to sockets.
 
    .. versionchanged:: 3.7
       The method no longer toggles :const:`SOCK_NONBLOCK` flag on
-      :attr:`socket.type` on Linux.
+      :attr:`socket.type`.
 
 
 .. method:: socket.setsockopt(level, optname, value: int)
