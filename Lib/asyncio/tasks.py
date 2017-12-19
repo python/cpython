@@ -115,10 +115,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return base_tasks._task_repr_info(self)
 
     def set_result(self, result):
-        raise NotImplementedError
+        raise RuntimeError('Tasks do not support set_result operation')
 
     def set_exception(self, exception):
-        raise NotImplementedError
+        raise RuntimeError('Tasks do not support set_exception operation')
 
     def get_stack(self, *, limit=None):
         """Return the list of stack frames for this task's coroutine.

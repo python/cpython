@@ -1340,10 +1340,10 @@ class BaseTaskTests:
         gen = notmuch()
         task = self.new_task(self.loop, gen)
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaisesRegex(RuntimeError, 'not support set_result'):
             task.set_result('ok')
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaisesRegex(RuntimeError, 'not support set_exception'):
             task.set_exception(ValueError())
 
         self.assertEqual(
