@@ -9872,7 +9872,6 @@ fi
 
 
 
-
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
 	if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
@@ -14359,6 +14358,17 @@ fi
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_RTLD_DEEPBIND $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_MEMBER" "ac_cv_have_decl_RTLD_MEMBER" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_MEMBER" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_MEMBER $ac_have_decl
 _ACEOF
 
 
