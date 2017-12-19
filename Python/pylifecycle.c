@@ -737,7 +737,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     }
 
     /* Initialize _warnings. */
-    if (_PyWarnings_InitWithConfig(&interp->core_config) == NULL) {
+    if (_PyWarnings_Init() == NULL) {
         return _Py_INIT_ERR("can't initialize warnings");
     }
 
@@ -847,7 +847,9 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     }
 
     /* Initialize warnings. */
-    if (PySys_HasWarnOptions()) {
+    if (interp->config.warnoptions != NULL &&
+        PyList_Size(interp->config.warnoptions) > 0)
+    {
         PyObject *warnings_module = PyImport_ImportModule("warnings");
         if (warnings_module == NULL) {
             fprintf(stderr, "'import warnings' failed; traceback:\n");
@@ -1021,9 +1023,15 @@ Py_FinalizeEx(void)
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
+#ifdef Py_REF_DEBUG
     int show_ref_count = interp->core_config.show_ref_count;
+#endif
+#ifdef Py_TRACE_REFS
     int dump_refs = interp->core_config.dump_refs;
+#endif
+#ifdef WITH_PYMALLOC
     int malloc_stats = interp->core_config.malloc_stats;
+#endif
 
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */

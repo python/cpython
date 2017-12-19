@@ -1173,7 +1173,7 @@ create_filter(PyObject *category, _Py_Identifier *id)
 
 
 static PyObject *
-init_filters(const _PyCoreConfig *config)
+init_filters(void)
 {
 #ifdef Py_DEBUG
     /* Py_DEBUG builds show all warnings by default */
@@ -1218,8 +1218,8 @@ static struct PyModuleDef warningsmodule = {
 };
 
 
-PyObject*
-_PyWarnings_InitWithConfig(const _PyCoreConfig *config)
+PyMODINIT_FUNC
+_PyWarnings_Init(void)
 {
     PyObject *m;
 
@@ -1228,7 +1228,7 @@ _PyWarnings_InitWithConfig(const _PyCoreConfig *config)
         return NULL;
 
     if (_PyRuntime.warnings.filters == NULL) {
-        _PyRuntime.warnings.filters = init_filters(config);
+        _PyRuntime.warnings.filters = init_filters();
         if (_PyRuntime.warnings.filters == NULL)
             return NULL;
     }
@@ -1258,13 +1258,4 @@ _PyWarnings_InitWithConfig(const _PyCoreConfig *config)
 
     _PyRuntime.warnings.filters_version = 0;
     return m;
-}
-
-
-PyMODINIT_FUNC
-_PyWarnings_Init(void)
-{
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
-    const _PyCoreConfig *config = &interp->core_config;
-    return _PyWarnings_InitWithConfig(config);
 }

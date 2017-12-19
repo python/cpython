@@ -1151,27 +1151,6 @@ pymain_get_program_name(_PyMain *pymain)
 }
 
 
-/* Initialize the main interpreter.
- *
- * Replaces previous call to Py_Initialize()
- *
- * Return 0 on success.
- * Set pymain->err and return -1 on error.
- */
-static int
-pymain_init_main_interpreter(_PyMain *pymain)
-{
-    _PyInitError err;
-
-    err = _Py_InitializeMainInterpreter(&pymain->config);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
-        return -1;
-    }
-    return 0;
-}
-
-
 static void
 pymain_header(_PyMain *pymain)
 {
@@ -2357,7 +2336,9 @@ pymain_init_python_main(_PyMain *pymain)
         return -1;
     }
 
-    if (pymain_init_main_interpreter(pymain)) {
+    err = _Py_InitializeMainInterpreter(&pymain->config);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
         return -1;
     }
 
