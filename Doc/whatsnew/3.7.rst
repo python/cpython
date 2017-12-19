@@ -892,6 +892,13 @@ Changes in the Python API
   recent to be more consistent with :mod:`traceback`.
   (Contributed by Jesse Bakker in :issue:`32121`.)
 
+* On OSes that support :const:`socket.SOCK_NONBLOCK` or
+  :const:`socket.SOCK_CLOEXEC` bit flags, the
+  :attr:`socket.type <socket.socket.type>` no longer has them applied.
+  Therefore, checks like ``if sock.type == socket.SOCK_STREAM``
+  work as expected on all platforms.
+  (Contributed by Yury Selivanov in :issue:`32331`.)
+
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
 * On Windows the default for the *close_fds* argument of
