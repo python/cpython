@@ -1,2 +1,0 @@
-zlib is no longer bundled in the CPython source, instead it is downloaded on
-demand just like bz2, lzma, OpenSSL, Tcl/Tk, and SQLite.

@@ -360,9 +360,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             self.assertEqual(cap.getvalue(), data*2)
         finally:
-            t.join(timeout=TIMEOUT)
-            if t.is_alive():
-                self.fail("join() timed out")
+            support.join_thread(t, timeout=TIMEOUT)
 
 
 @unittest.skipUnless(hasattr(asyncore, 'file_wrapper'),
@@ -728,14 +726,10 @@ class BaseTestAPI:
     def test_create_socket(self):
         s = asyncore.dispatcher()
         s.create_socket(self.family)
+        self.assertEqual(s.socket.type, socket.SOCK_STREAM)
         self.assertEqual(s.socket.family, self.family)
-        SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
-        sock_type = socket.SOCK_STREAM | SOCK_NONBLOCK
-        if hasattr(socket, 'SOCK_CLOEXEC'):
-            self.assertIn(s.socket.type,
-                          (sock_type | socket.SOCK_CLOEXEC, sock_type))
-        else:
-            self.assertEqual(s.socket.type, sock_type)
+        self.assertEqual(s.socket.gettimeout(), 0)
+        self.assertFalse(s.socket.get_inheritable())
 
     def test_bind(self):
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
@@ -794,9 +788,7 @@ class BaseTestAPI:
                 except OSError:
                     pass
         finally:
-            t.join(timeout=TIMEOUT)
-            if t.is_alive():
-                self.fail("join() timed out")
+            support.join_thread(t, timeout=TIMEOUT)
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET

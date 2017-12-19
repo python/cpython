@@ -5,7 +5,7 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # asyncio
-**/*asyncio*                  @1st1
+**/*asyncio*                  @1st1 @asvetlov
 
 # Core
 **/*genobject*                @1st1
@@ -35,7 +35,7 @@ Python/bootstrap_hash.c       @python/crypto-team
 
 # Windows
 /PC/                          @python/windows-team
-/PCBuild/                     @python/windows-team
+/PCbuild/                     @python/windows-team
 
 # Windows installer packages
 /Tools/msi/                   @python/windows-team
@@ -49,3 +49,9 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*heapq*                    @rhettinger
 **/*functools*                @ncoghlan @rhettinger
 **/*decimal*                  @rhettinger @skrah
+
+**/*dataclasses*              @ericvsmith
+
+**/*idlelib*                  @terryjreedy
+
+**/*typing*                   @gvanrossum @ilevkivskyi

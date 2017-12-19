@@ -1,2 +1,0 @@
-concurrent.futures: WorkItem.run() used by ThreadPoolExecutor now breaks a
-reference cycle between an exception object and the WorkItem object.

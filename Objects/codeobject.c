@@ -4,37 +4,25 @@
 #include "code.h"
 #include "structmember.h"
 
-#define NAME_CHARS \
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
-
 /* Holder for co_extra information */
 typedef struct {
     Py_ssize_t ce_size;
     void *ce_extras[1];
 } _PyCodeObjectExtra;
 
-/* all_name_chars(s): true iff all chars in s are valid NAME_CHARS */
-
+/* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
 all_name_chars(PyObject *o)
 {
-    static char ok_name_char[256];
-    static const unsigned char *name_chars = (unsigned char *)NAME_CHARS;
     const unsigned char *s, *e;
 
-    if (!PyUnicode_Check(o) || PyUnicode_READY(o) == -1 ||
-        !PyUnicode_IS_ASCII(o))
+    if (!PyUnicode_IS_ASCII(o))
         return 0;
 
-    if (ok_name_char[*name_chars] == 0) {
-        const unsigned char *p;
-        for (p = name_chars; *p; p++)
-            ok_name_char[*p] = 1;
-    }
     s = PyUnicode_1BYTE_DATA(o);
     e = s + PyUnicode_GET_LENGTH(o);
-    while (s != e) {
-        if (ok_name_char[*s++] == 0)
+    for (; s != e; s++) {
+        if (!Py_ISALNUM(*s) && *s != '_')
             return 0;
     }
     return 1;
@@ -64,6 +52,10 @@ intern_string_constants(PyObject *tuple)
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
+            if (PyUnicode_READY(v) == -1) {
+                PyErr_Clear();
+                continue;
+            }
             if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
@@ -132,12 +124,20 @@ PyCode_New(int argcount, int kwonlyargcount,
     if (PyUnicode_READY(filename) < 0)
         return NULL;
 
-    n_cellvars = PyTuple_GET_SIZE(cellvars);
     intern_strings(names);
     intern_strings(varnames);
     intern_strings(freevars);
     intern_strings(cellvars);
     intern_string_constants(consts);
+
+    /* Check for any inner or outer closure references */
+    n_cellvars = PyTuple_GET_SIZE(cellvars);
+    if (!n_cellvars && !PyTuple_GET_SIZE(freevars)) {
+        flags |= CO_NOFREE;
+    } else {
+        flags &= ~CO_NOFREE;
+    }
+
     /* Create mapping between cells and arguments if needed. */
     if (n_cellvars) {
         Py_ssize_t total_args = argcount + kwonlyargcount +

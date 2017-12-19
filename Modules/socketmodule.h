@@ -80,7 +80,10 @@ typedef int socklen_t;
 #endif
 
 #ifdef HAVE_LINUX_CAN_H
-#include <linux/can.h>
+# include <linux/can.h>
+#else
+# undef AF_CAN
+# undef PF_CAN
 #endif
 
 #ifdef HAVE_LINUX_CAN_RAW_H
@@ -199,7 +202,7 @@ typedef union sock_addr {
 #ifdef HAVE_SOCKADDR_ALG
     struct sockaddr_alg alg;
 #endif
-#ifdef AF_VSOCK 
+#ifdef AF_VSOCK
     struct sockaddr_vm vm;
 #endif
 } sock_addr_t;

@@ -841,6 +841,41 @@ class GrammarTests(unittest.TestCase):
         # Check annotation refleak on SyntaxError
         check_syntax_error(self, "def g(a:(yield)): pass")
 
+    def test_yield_in_comprehensions(self):
+        # Check yield in comprehensions
+        def g(): [x for x in [(yield 1)]]
+        def g(): [x for x in [(yield from ())]]
+
+        def check(code, warntext):
+            with self.assertWarnsRegex(DeprecationWarning, warntext):
+                compile(code, '<test string>', 'exec')
+            import warnings
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=DeprecationWarning)
+                with self.assertRaisesRegex(SyntaxError, warntext):
+                    compile(code, '<test string>', 'exec')
+
+        check("def g(): [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("def g(): [x for x in () if not (yield x)]",
+              "'yield' inside list comprehension")
+        check("def g(): [y for x in () for y in [(yield x)]]",
+              "'yield' inside list comprehension")
+        check("def g(): {(yield x) for x in ()}",
+              "'yield' inside set comprehension")
+        check("def g(): {(yield x): x for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): {x: (yield x) for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        check("def g(): [(yield from x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("class C: [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("[(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+
     def test_raise(self):
         # 'raise' test [',' test]
         try: raise RuntimeError('just testing')

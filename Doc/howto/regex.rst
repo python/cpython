@@ -153,8 +153,8 @@ These sequences can be included inside a character class.  For example,
 ``','`` or ``'.'``.
 
 The final metacharacter in this section is ``.``.  It matches anything except a
-newline character, and there's an alternate mode (``re.DOTALL``) where it will
-match even a newline.  ``'.'`` is often used where you want to match "any
+newline character, and there's an alternate mode (:const:`re.DOTALL`) where it will
+match even a newline.  ``.`` is often used where you want to match "any
 character".
 
 
@@ -168,14 +168,11 @@ wouldn't be much of an advance. Another capability is that you can specify that
 portions of the RE must be repeated a certain number of times.
 
 The first metacharacter for repeating things that we'll look at is ``*``.  ``*``
-doesn't match the literal character ``*``; instead, it specifies that the
+doesn't match the literal character ``'*'``; instead, it specifies that the
 previous character can be matched zero or more times, instead of exactly once.
 
-For example, ``ca*t`` will match ``ct`` (0 ``a`` characters), ``cat`` (1 ``a``),
-``caaat`` (3 ``a`` characters), and so forth.  The RE engine has various
-internal limitations stemming from the size of C's ``int`` type that will
-prevent it from matching over 2 billion ``a`` characters; patterns
-are usually not written to match that much data.
+For example, ``ca*t`` will match ``'ct'`` (0 ``'a'`` characters), ``'cat'`` (1 ``'a'``),
+``'caaat'`` (3 ``'a'`` characters), and so forth.
 
 Repetitions such as ``*`` are :dfn:`greedy`; when repeating a RE, the matching
 engine will try to repeat it as many times as possible. If later portions of the
@@ -185,7 +182,7 @@ fewer repetitions.
 A step-by-step example will make this more obvious.  Let's consider the
 expression ``a[bcd]*b``.  This matches the letter ``'a'``, zero or more letters
 from the class ``[bcd]``, and finally ends with a ``'b'``.  Now imagine matching
-this RE against the string ``abcbd``.
+this RE against the string ``'abcbd'``.
 
 +------+-----------+---------------------------------+
 | Step | Matched   | Explanation                     |
@@ -218,7 +215,7 @@ this RE against the string ``abcbd``.
 |      |           | it succeeds.                    |
 +------+-----------+---------------------------------+
 
-The end of the RE has now been reached, and it has matched ``abcb``.  This
+The end of the RE has now been reached, and it has matched ``'abcb'``.  This
 demonstrates how the matching engine goes as far as it can at first, and if no
 match is found it will then progressively back up and retry the rest of the RE
 again and again.  It will back up until it has tried zero matches for
@@ -229,24 +226,23 @@ Another repeating metacharacter is ``+``, which matches one or more times.  Pay
 careful attention to the difference between ``*`` and ``+``; ``*`` matches
 *zero* or more times, so whatever's being repeated may not be present at all,
 while ``+`` requires at least *one* occurrence.  To use a similar example,
-``ca+t`` will match ``cat`` (1 ``a``), ``caaat`` (3 ``a``'s), but won't match
-``ct``.
+``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``'a'``\ s), but won't
+match ``'ct'``.
 
 There are two more repeating qualifiers.  The question mark character, ``?``,
 matches either once or zero times; you can think of it as marking something as
-being optional.  For example, ``home-?brew`` matches either ``homebrew`` or
-``home-brew``.
+being optional.  For example, ``home-?brew`` matches either ``'homebrew'`` or
+``'home-brew'``.
 
 The most complicated repeated qualifier is ``{m,n}``, where *m* and *n* are
 decimal integers.  This qualifier means there must be at least *m* repetitions,
-and at most *n*.  For example, ``a/{1,3}b`` will match ``a/b``, ``a//b``, and
-``a///b``.  It won't match ``ab``, which has no slashes, or ``a////b``, which
+and at most *n*.  For example, ``a/{1,3}b`` will match ``'a/b'``, ``'a//b'``, and
+``'a///b'``.  It won't match ``'ab'``, which has no slashes, or ``'a////b'``, which
 has four.
 
 You can omit either *m* or *n*; in that case, a reasonable value is assumed for
 the missing value.  Omitting *m* is interpreted as a lower limit of 0, while
-omitting *n* results in an upper bound of infinity --- actually, the upper bound
-is the 2-billion limit mentioned earlier, but that might as well be infinity.
+omitting *n* results in an upper bound of infinity.
 
 Readers of a reductionist bent may notice that the three other qualifiers can
 all be expressed using this notation.  ``{0,}`` is the same as ``*``, ``{1,}``
@@ -366,7 +362,7 @@ for a complete listing.
 |                  | returns them as an :term:`iterator`.          |
 +------------------+-----------------------------------------------+
 
-:meth:`~re.regex.match` and :meth:`~re.regex.search` return ``None`` if no match can be found.  If
+:meth:`~re.Pattern.match` and :meth:`~re.Pattern.search` return ``None`` if no match can be found.  If
 they're successful, a :ref:`match object <match-objects>` instance is returned,
 containing information about the match: where it starts and ends, the substring
 it matched, and more.
@@ -388,24 +384,24 @@ Python interpreter, import the :mod:`re` module, and compile a RE::
 
 Now, you can try matching various strings against the RE ``[a-z]+``.  An empty
 string shouldn't match at all, since ``+`` means 'one or more repetitions'.
-:meth:`match` should return ``None`` in this case, which will cause the
+:meth:`~re.Pattern.match` should return ``None`` in this case, which will cause the
 interpreter to print no output.  You can explicitly print the result of
-:meth:`match` to make this clear. ::
+:meth:`!match` to make this clear. ::
 
    >>> p.match("")
    >>> print(p.match(""))
    None
 
 Now, let's try it on a string that it should match, such as ``tempo``.  In this
-case, :meth:`match` will return a :ref:`match object <match-objects>`, so you
+case, :meth:`~re.Pattern.match` will return a :ref:`match object <match-objects>`, so you
 should store the result in a variable for later use. ::
 
    >>> m = p.match('tempo')
-   >>> m  #doctest: +ELLIPSIS
-   <_sre.SRE_Match object; span=(0, 5), match='tempo'>
+   >>> m
+   <re.Match object; span=(0, 5), match='tempo'>
 
 Now you can query the :ref:`match object <match-objects>` for information
-about the matching string.  :ref:`match object <match-objects>` instances
+about the matching string.  Match object instances
 also have several methods and attributes; the most important ones are:
 
 +------------------+--------------------------------------------+
@@ -430,18 +426,18 @@ Trying these methods will soon clarify their meaning::
    >>> m.span()
    (0, 5)
 
-:meth:`~re.match.group` returns the substring that was matched by the RE.  :meth:`~re.match.start`
-and :meth:`~re.match.end` return the starting and ending index of the match. :meth:`~re.match.span`
-returns both start and end indexes in a single tuple.  Since the :meth:`match`
-method only checks if the RE matches at the start of a string, :meth:`start`
-will always be zero.  However, the :meth:`search` method of patterns
+:meth:`~re.Match.group` returns the substring that was matched by the RE.  :meth:`~re.Match.start`
+and :meth:`~re.Match.end` return the starting and ending index of the match. :meth:`~re.Match.span`
+returns both start and end indexes in a single tuple.  Since the :meth:`~re.Pattern.match`
+method only checks if the RE matches at the start of a string, :meth:`!start`
+will always be zero.  However, the :meth:`~re.Pattern.search` method of patterns
 scans through the string, so  the match may not start at zero in that
 case. ::
 
    >>> print(p.match('::: message'))
    None
-   >>> m = p.search('::: message'); print(m)  #doctest: +ELLIPSIS
-   <_sre.SRE_Match object; span=(4, 11), match='message'>
+   >>> m = p.search('::: message'); print(m)
+   <re.Match object; span=(4, 11), match='message'>
    >>> m.group()
    'message'
    >>> m.span()
@@ -459,14 +455,14 @@ In actual programs, the most common style is to store the
        print('No match')
 
 Two pattern methods return all of the matches for a pattern.
-:meth:`~re.regex.findall` returns a list of matching strings::
+:meth:`~re.Pattern.findall` returns a list of matching strings::
 
    >>> p = re.compile('\d+')
    >>> p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
    ['12', '11', '10']
 
-:meth:`findall` has to create the entire list before it can be returned as the
-result.  The :meth:`~re.regex.finditer` method returns a sequence of
+:meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
+result.  The :meth:`~re.Pattern.finditer` method returns a sequence of
 :ref:`match object <match-objects>` instances as an :term:`iterator`::
 
    >>> iterator = p.finditer('12 drummers drumming, 11 ... 10 ...')
@@ -493,7 +489,7 @@ the RE string added as the first argument, and still return either ``None`` or a
    >>> print(re.match(r'From\s+', 'Fromage amk'))
    None
    >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')  #doctest: +ELLIPSIS
-   <_sre.SRE_Match object; span=(0, 5), match='From '>
+   <re.Match object; span=(0, 5), match='From '>
 
 Under the hood, these functions simply create a pattern object for you
 and call the appropriate method on it.  They also store the compiled
@@ -529,14 +525,14 @@ of each one.
 |                                 | characters with the respective property.   |
 +---------------------------------+--------------------------------------------+
 | :const:`DOTALL`, :const:`S`     | Make ``.`` match any character, including  |
-|                                 | newlines                                   |
+|                                 | newlines.                                  |
 +---------------------------------+--------------------------------------------+
-| :const:`IGNORECASE`, :const:`I` | Do case-insensitive matches                |
+| :const:`IGNORECASE`, :const:`I` | Do case-insensitive matches.               |
 +---------------------------------+--------------------------------------------+
-| :const:`LOCALE`, :const:`L`     | Do a locale-aware match                    |
+| :const:`LOCALE`, :const:`L`     | Do a locale-aware match.                   |
 +---------------------------------+--------------------------------------------+
 | :const:`MULTILINE`, :const:`M`  | Multi-line matching, affecting ``^`` and   |
-|                                 | ``$``                                      |
+|                                 | ``$``.                                     |
 +---------------------------------+--------------------------------------------+
 | :const:`VERBOSE`, :const:`X`    | Enable verbose REs, which can be organized |
 | (for 'extended')                | more cleanly and understandably.           |
@@ -549,27 +545,41 @@ of each one.
 
    Perform case-insensitive matching; character class and literal strings will
    match letters by ignoring case.  For example, ``[A-Z]`` will match lowercase
-   letters, too, and ``Spam`` will match ``Spam``, ``spam``, or ``spAM``. This
-   lowercasing doesn't take the current locale into account; it will if you also
-   set the :const:`LOCALE` flag.
+   letters, too. Full Unicode matching also works unless the :const:`ASCII`
+   flag is used to disable non-ASCII matches.  When the Unicode patterns
+   ``[a-z]`` or ``[A-Z]`` are used in combination with the :const:`IGNORECASE`
+   flag, they will match the 52 ASCII letters and 4 additional non-ASCII
+   letters: 'İ' (U+0130, Latin capital letter I with dot above), 'ı' (U+0131,
+   Latin small letter dotless i), 'ſ' (U+017F, Latin small letter long s) and
+   'K' (U+212A, Kelvin sign).  ``Spam`` will match ``'Spam'``, ``'spam'``,
+   ``'spAM'``, or ``'ſpam'`` (the latter is matched only in Unicode mode).
+   This lowercasing doesn't take the current locale into account;
+   it will if you also set the :const:`LOCALE` flag.
 
 
 .. data:: L
           LOCALE
    :noindex:
 
-   Make ``\w``, ``\W``, ``\b``, and ``\B``, dependent on the current locale
-   instead of the Unicode database.
+   Make ``\w``, ``\W``, ``\b``, ``\B`` and case-insensitive matching dependent
+   on the current locale instead of the Unicode database.
 
-   Locales are a feature of the C library intended to help in writing programs that
-   take account of language differences.  For example, if you're processing French
-   text, you'd want to be able to write ``\w+`` to match words, but ``\w`` only
-   matches the character class ``[A-Za-z]``; it won't match ``'é'`` or ``'ç'``.  If
-   your system is configured properly and a French locale is selected, certain C
-   functions will tell the program that ``'é'`` should also be considered a letter.
+   Locales are a feature of the C library intended to help in writing programs
+   that take account of language differences.  For example, if you're
+   processing encoded French text, you'd want to be able to write ``\w+`` to
+   match words, but ``\w`` only matches the character class ``[A-Za-z]`` in
+   bytes patterns; it won't match bytes corresponding to ``é`` or ``ç``.
+   If your system is configured properly and a French locale is selected,
+   certain C functions will tell the program that the byte corresponding to
+   ``é`` should also be considered a letter.
    Setting the :const:`LOCALE` flag when compiling a regular expression will cause
    the resulting compiled object to use these C functions for ``\w``; this is
    slower, but also enables ``\w+`` to match French words as you'd expect.
+   The use of this flag is discouraged in Python 3 as the locale mechanism
+   is very unreliable, it only handles one "culture" at a time, and it only
+   works with 8-bit locales.  Unicode matching is already enabled by default
+   in Python 3 for Unicode (str) patterns, and it is able to handle different
+   locales/languages.
 
 
 .. data:: M
@@ -667,11 +677,11 @@ zero-width assertions should never be repeated, because if they match once at a
 given location, they can obviously be matched an infinite number of times.
 
 ``|``
-   Alternation, or the "or" operator.   If A and B are regular expressions,
-   ``A|B`` will match any string that matches either ``A`` or ``B``. ``|`` has very
+   Alternation, or the "or" operator.   If *A* and *B* are regular expressions,
+   ``A|B`` will match any string that matches either *A* or *B*. ``|`` has very
    low precedence in order to make it work reasonably when you're alternating
-   multi-character strings. ``Crow|Servo`` will match either ``Crow`` or ``Servo``,
-   not ``Cro``, a ``'w'`` or an ``'S'``, and ``ervo``.
+   multi-character strings. ``Crow|Servo`` will match either ``'Crow'`` or ``'Servo'``,
+   not ``'Cro'``, a ``'w'`` or an ``'S'``, and ``'ervo'``.
 
    To match a literal ``'|'``, use ``\|``, or enclose it inside a character class,
    as in ``[|]``.
@@ -685,23 +695,22 @@ given location, they can obviously be matched an infinite number of times.
    line, the RE to use is ``^From``. ::
 
       >>> print(re.search('^From', 'From Here to Eternity'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(0, 4), match='From'>
+      <re.Match object; span=(0, 4), match='From'>
       >>> print(re.search('^From', 'Reciting From Memory'))
       None
 
-   .. To match a literal \character{\^}, use \regexp{\e\^} or enclose it
-   .. inside a character class, as in \regexp{[{\e}\^]}.
+   To match a literal ``'^'``, use ``\^``.
 
 ``$``
    Matches at the end of a line, which is defined as either the end of the string,
    or any location followed by a newline character.     ::
 
       >>> print(re.search('}$', '{block}'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(6, 7), match='}'>
+      <re.Match object; span=(6, 7), match='}'>
       >>> print(re.search('}$', '{block} '))
       None
       >>> print(re.search('}$', '{block}\n'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(6, 7), match='}'>
+      <re.Match object; span=(6, 7), match='}'>
 
    To match a literal ``'$'``, use ``\$`` or enclose it inside a character class,
    as in  ``[$]``.
@@ -725,8 +734,8 @@ given location, they can obviously be matched an infinite number of times.
    match when it's contained inside another word. ::
 
       >>> p = re.compile(r'\bclass\b')
-      >>> print(p.search('no class at all'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(3, 8), match='class'>
+      >>> print(p.search('no class at all'))
+      <re.Match object; span=(3, 8), match='class'>
       >>> print(p.search('the declassified algorithm'))
       None
       >>> print(p.search('one subclass is'))
@@ -743,8 +752,8 @@ given location, they can obviously be matched an infinite number of times.
       >>> p = re.compile('\bclass\b')
       >>> print(p.search('no class at all'))
       None
-      >>> print(p.search('\b' + 'class' + '\b'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(0, 7), match='\x08class\x08'>
+      >>> print(p.search('\b' + 'class' + '\b'))
+      <re.Match object; span=(0, 7), match='\x08class\x08'>
 
    Second, inside a character class, where there's no use for this assertion,
    ``\b`` represents the backspace character, for compatibility with Python's
@@ -786,7 +795,8 @@ of a group with a repeating qualifier, such as ``*``, ``+``, ``?``, or
 
 Groups indicated with ``'('``, ``')'`` also capture the starting and ending
 index of the text that they match; this can be retrieved by passing an argument
-to :meth:`group`, :meth:`start`, :meth:`end`, and :meth:`span`.  Groups are
+to :meth:`~re.Match.group`, :meth:`~re.Match.start`, :meth:`~re.Match.end`, and
+:meth:`~re.Match.span`.  Groups are
 numbered starting with 0.  Group 0 is always present; it's the whole RE, so
 :ref:`match object <match-objects>` methods all have group 0 as their default
 argument.  Later we'll see how to express groups that don't capture the span
@@ -812,13 +822,13 @@ from left to right. ::
    >>> m.group(2)
    'b'
 
-:meth:`group` can be passed multiple group numbers at a time, in which case it
+:meth:`~re.Match.group` can be passed multiple group numbers at a time, in which case it
 will return a tuple containing the corresponding values for those groups. ::
 
    >>> m.group(2,1,2)
    ('b', 'abc', 'b')
 
-The :meth:`groups` method returns a tuple containing the strings for all the
+The :meth:`~re.Match.groups` method returns a tuple containing the strings for all the
 subgroups, from 1 up to however many there are. ::
 
    >>> m.groups()
@@ -834,7 +844,7 @@ backreferences in a RE.
 
 For example, the following RE detects doubled words in a string. ::
 
-   >>> p = re.compile(r'(\b\w+)\s+\1')
+   >>> p = re.compile(r'\b(\w+)\s+\1\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
@@ -933,9 +943,9 @@ number of the group.  There's naturally a variant that uses the group name
 instead of the number. This is another Python extension: ``(?P=name)`` indicates
 that the contents of the group called *name* should again be matched at the
 current point.  The regular expression for finding doubled words,
-``(\b\w+)\s+\1`` can also be written as ``(?P<word>\b\w+)\s+(?P=word)``::
+``\b(\w+)\s+\1\b`` can also be written as ``\b(?P<word>\w+)\s+(?P=word)\b``::
 
-   >>> p = re.compile(r'(?P<word>\b\w+)\s+(?P=word)')
+   >>> p = re.compile(r'\b(?P<word>\w+)\s+(?P=word)\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
@@ -1034,7 +1044,7 @@ using the following pattern methods:
 | ``sub()``        | Find all substrings where the RE matches, and |
 |                  | replace them with a different string          |
 +------------------+-----------------------------------------------+
-| ``subn()``       | Does the same thing as :meth:`sub`,  but      |
+| ``subn()``       | Does the same thing as :meth:`!sub`,  but     |
 |                  | returns the new string and the number of      |
 |                  | replacements                                  |
 +------------------+-----------------------------------------------+
@@ -1043,10 +1053,10 @@ using the following pattern methods:
 Splitting Strings
 -----------------
 
-The :meth:`split` method of a pattern splits a string apart
+The :meth:`~re.Pattern.split` method of a pattern splits a string apart
 wherever the RE matches, returning a list of the pieces. It's similar to the
-:meth:`split` method of strings but provides much more generality in the
-delimiters that you can split by; string :meth:`split` only supports splitting by
+:meth:`~str.split` method of strings but provides much more generality in the
+delimiters that you can split by; string :meth:`!split` only supports splitting by
 whitespace or by a fixed string.  As you'd expect, there's a module-level
 :func:`re.split` function, too.
 
@@ -1098,7 +1108,7 @@ Search and Replace
 ------------------
 
 Another common task is to find all the matches for a pattern, and replace them
-with a different string.  The :meth:`sub` method takes a replacement value,
+with a different string.  The :meth:`~re.Pattern.sub` method takes a replacement value,
 which can be either a string or a function, and the string to be processed.
 
 .. method:: .sub(replacement, string[, count=0])
@@ -1112,7 +1122,7 @@ which can be either a string or a function, and the string to be processed.
    replaced; *count* must be a non-negative integer.  The default value of 0 means
    to replace all occurrences.
 
-Here's a simple example of using the :meth:`sub` method.  It replaces colour
+Here's a simple example of using the :meth:`~re.Pattern.sub` method.  It replaces colour
 names with the word ``colour``::
 
    >>> p = re.compile('(blue|white|red)')
@@ -1121,7 +1131,7 @@ names with the word ``colour``::
    >>> p.sub('colour', 'blue socks and red shoes', count=1)
    'colour socks and red shoes'
 
-The :meth:`subn` method does the same work, but returns a 2-tuple containing the
+The :meth:`~re.Pattern.subn` method does the same work, but returns a 2-tuple containing the
 new string value and the number of replacements  that were performed::
 
    >>> p = re.compile('(blue|white|red)')
@@ -1206,24 +1216,24 @@ Use String Methods
 
 Sometimes using the :mod:`re` module is a mistake.  If you're matching a fixed
 string, or a single character class, and you're not using any :mod:`re` features
-such as the :const:`IGNORECASE` flag, then the full power of regular expressions
+such as the :const:`~re.IGNORECASE` flag, then the full power of regular expressions
 may not be required. Strings have several methods for performing operations with
 fixed strings and they're usually much faster, because the implementation is a
 single small C loop that's been optimized for the purpose, instead of the large,
 more generalized regular expression engine.
 
 One example might be replacing a single fixed string with another one; for
-example, you might replace ``word`` with ``deed``.  ``re.sub()`` seems like the
-function to use for this, but consider the :meth:`replace` method.  Note that
-:func:`replace` will also replace ``word`` inside words, turning ``swordfish``
+example, you might replace ``word`` with ``deed``.  :func:`re.sub` seems like the
+function to use for this, but consider the :meth:`~str.replace` method.  Note that
+:meth:`!replace` will also replace ``word`` inside words, turning ``swordfish``
 into ``sdeedfish``, but the  naive RE ``word`` would have done that, too.  (To
 avoid performing the substitution on parts of words, the pattern would have to
 be ``\bword\b``, in order to require that ``word`` have a word boundary on
-either side.  This takes the job beyond  :meth:`replace`'s abilities.)
+either side.  This takes the job beyond  :meth:`!replace`'s abilities.)
 
 Another common task is deleting every occurrence of a single character from a
 string or replacing it with another single character.  You might do this with
-something like ``re.sub('\n', ' ', S)``, but :meth:`translate` is capable of
+something like ``re.sub('\n', ' ', S)``, but :meth:`~str.translate` is capable of
 doing both tasks and will be faster than any regular expression operation can
 be.
 
@@ -1234,18 +1244,18 @@ can be solved with a faster and simpler string method.
 match() versus search()
 -----------------------
 
-The :func:`match` function only checks if the RE matches at the beginning of the
-string while :func:`search` will scan forward through the string for a match.
-It's important to keep this distinction in mind.  Remember,  :func:`match` will
+The :func:`~re.match` function only checks if the RE matches at the beginning of the
+string while :func:`~re.search` will scan forward through the string for a match.
+It's important to keep this distinction in mind.  Remember,  :func:`!match` will
 only report a successful match which will start at 0; if the match wouldn't
-start at zero,  :func:`match` will *not* report it. ::
+start at zero,  :func:`!match` will *not* report it. ::
 
    >>> print(re.match('super', 'superstition').span())
    (0, 5)
    >>> print(re.match('super', 'insuperable'))
    None
 
-On the other hand, :func:`search` will scan forward through the string,
+On the other hand, :func:`~re.search` will scan forward through the string,
 reporting the first match it finds. ::
 
    >>> print(re.search('super', 'superstition').span())
@@ -1284,12 +1294,12 @@ doesn't work because of the greedy nature of ``.*``. ::
    >>> print(re.match('<.*>', s).group())
    <html><head><title>Title</title>
 
-The RE matches the ``'<'`` in ``<html>``, and the ``.*`` consumes the rest of
+The RE matches the ``'<'`` in ``'<html>'``, and the ``.*`` consumes the rest of
 the string.  There's still more left in the RE, though, and the ``>`` can't
 match at the end of the string, so the regular expression engine has to
 backtrack character by character until it finds a match for the ``>``.   The
-final match extends from the ``'<'`` in ``<html>`` to the ``'>'`` in
-``</title>``, which isn't what you want.
+final match extends from the ``'<'`` in ``'<html>'`` to the ``'>'`` in
+``'</title>'``, which isn't what you want.
 
 In this case, the solution is to use the non-greedy qualifiers ``*?``, ``+?``,
 ``??``, or ``{m,n}?``, which match as *little* text as possible.  In the above
@@ -1315,7 +1325,7 @@ notation, but they're not terribly readable.  REs of moderate complexity can
 become lengthy collections of backslashes, parentheses, and metacharacters,
 making them difficult to read and understand.
 
-For such REs, specifying the ``re.VERBOSE`` flag when compiling the regular
+For such REs, specifying the :const:`re.VERBOSE` flag when compiling the regular
 expression can be helpful, because it allows you to format the regular
 expression more clearly.
 
@@ -1354,5 +1364,5 @@ Friedl's Mastering Regular Expressions, published by O'Reilly.  Unfortunately,
 it exclusively concentrates on Perl and Java's flavours of regular expressions,
 and doesn't contain any Python material at all, so it won't be useful as a
 reference for programming in Python.  (The first edition covered Python's
-now-removed :mod:`regex` module, which won't help you much.)  Consider checking
+now-removed :mod:`!regex` module, which won't help you much.)  Consider checking
 it out from your library.

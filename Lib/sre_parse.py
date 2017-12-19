@@ -65,8 +65,8 @@ FLAGS = {
     "u": SRE_FLAG_UNICODE,
 }
 
-GLOBAL_FLAGS = (SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE |
-                SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE)
+TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
+GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
 
 class Verbose(Exception):
     pass
@@ -517,6 +517,12 @@ def _parse(source, state, verbose, nested, first=False):
             setappend = set.append
 ##          if sourcematch(":"):
 ##              pass # handle character classes
+            if source.next == '[':
+                import warnings
+                warnings.warn(
+                    'Possible nested set at position %d' % source.tell(),
+                    FutureWarning, stacklevel=nested + 6
+                )
             negate = sourcematch("^")
             # check remaining characters
             while True:
@@ -529,6 +535,17 @@ def _parse(source, state, verbose, nested, first=False):
                 elif this[0] == "\\":
                     code1 = _class_escape(source, this)
                 else:
+                    if set and this in '-&~|' and source.next == this:
+                        import warnings
+                        warnings.warn(
+                            'Possible set %s at position %d' % (
+                                'difference' if this == '-' else
+                                'intersection' if this == '&' else
+                                'symmetric difference' if this == '~' else
+                                'union',
+                                source.tell() - 1),
+                            FutureWarning, stacklevel=nested + 6
+                        )
                     code1 = LITERAL, _ord(this)
                 if sourcematch("-"):
                     # potential range
@@ -545,6 +562,13 @@ def _parse(source, state, verbose, nested, first=False):
                     if that[0] == "\\":
                         code2 = _class_escape(source, that)
                     else:
+                        if that == '-':
+                            import warnings
+                            warnings.warn(
+                                'Possible set difference at position %d' % (
+                                    source.tell() - 2),
+                                FutureWarning, stacklevel=nested + 6
+                            )
                         code2 = LITERAL, _ord(that)
                     if code1[0] != LITERAL or code2[0] != LITERAL:
                         msg = "bad character range %s-%s" % (this, that)
@@ -822,7 +846,19 @@ def _parse_flags(source, state, char):
     del_flags = 0
     if char != "-":
         while True:
-            add_flags |= FLAGS[char]
+            flag = FLAGS[char]
+            if source.istext:
+                if char == 'L':
+                    msg = "bad inline flags: cannot use 'L' flag with a str pattern"
+                    raise source.error(msg)
+            else:
+                if char == 'u':
+                    msg = "bad inline flags: cannot use 'u' flag with a bytes pattern"
+                    raise source.error(msg)
+            add_flags |= flag
+            if (flag & TYPE_FLAGS) and (add_flags & TYPE_FLAGS) != flag:
+                msg = "bad inline flags: flags 'a', 'u' and 'L' are incompatible"
+                raise source.error(msg)
             char = sourceget()
             if char is None:
                 raise source.error("missing -, : or )")
@@ -844,7 +880,11 @@ def _parse_flags(source, state, char):
             msg = "unknown flag" if char.isalpha() else "missing flag"
             raise source.error(msg, len(char))
         while True:
-            del_flags |= FLAGS[char]
+            flag = FLAGS[char]
+            if flag & TYPE_FLAGS:
+                msg = "bad inline flags: cannot turn off flags 'a', 'u' and 'L'"
+                raise source.error(msg)
+            del_flags |= flag
             char = sourceget()
             if char is None:
                 raise source.error("missing :")
