@@ -62,6 +62,20 @@ class Dummy:
         pass
 
 
+class CoroLikeObject:
+    def send(self, v):
+        raise StopIteration(42)
+
+    def throw(self, *exc):
+        pass
+
+    def close(self):
+        pass
+
+    def __await__(self):
+        return self
+
+
 class BaseTaskTests:
 
     Task = None
@@ -2085,12 +2099,24 @@ class BaseTaskTests:
                                     "a coroutine was expected, got 123"):
             self.new_task(self.loop, 123)
 
+        # test it for the second time to ensure that caching
+        # in asyncio.iscoroutine() doesn't break things.
+        with self.assertRaisesRegex(TypeError,
+                                    "a coroutine was expected, got 123"):
+            self.new_task(self.loop, 123)
+
     def test_create_task_with_oldstyle_coroutine(self):
 
         @asyncio.coroutine
         def coro():
             pass
 
+        task = self.new_task(self.loop, coro())
+        self.assertIsInstance(task, self.Task)
+        self.loop.run_until_complete(task)
+
+        # test it for the second time to ensure that caching
+        # in asyncio.iscoroutine() doesn't break things.
         task = self.new_task(self.loop, coro())
         self.assertIsInstance(task, self.Task)
         self.loop.run_until_complete(task)
@@ -2103,6 +2129,23 @@ class BaseTaskTests:
         task = self.new_task(self.loop, coro())
         self.assertIsInstance(task, self.Task)
         self.loop.run_until_complete(task)
+
+        # test it for the second time to ensure that caching
+        # in asyncio.iscoroutine() doesn't break things.
+        task = self.new_task(self.loop, coro())
+        self.assertIsInstance(task, self.Task)
+        self.loop.run_until_complete(task)
+
+    def test_create_task_with_asynclike_function(self):
+        task = self.new_task(self.loop, CoroLikeObject())
+        self.assertIsInstance(task, self.Task)
+        self.assertEqual(self.loop.run_until_complete(task), 42)
+
+        # test it for the second time to ensure that caching
+        # in asyncio.iscoroutine() doesn't break things.
+        task = self.new_task(self.loop, CoroLikeObject())
+        self.assertIsInstance(task, self.Task)
+        self.assertEqual(self.loop.run_until_complete(task), 42)
 
     def test_bare_create_task(self):
 
