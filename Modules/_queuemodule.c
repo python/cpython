@@ -1,10 +1,5 @@
 #include "Python.h"
 #include "structmember.h" /* offsetof */
-
-#ifndef WITH_THREAD
-#error "This module can only be compiled with threads support."
-#endif
-
 #include "pythread.h"
 
 /*[clinic input]
