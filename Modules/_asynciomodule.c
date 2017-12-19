@@ -3023,7 +3023,7 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 
 
 static void
-module_free_freelists()
+module_free_freelists(void)
 {
     PyObject *next;
     PyObject *current;
