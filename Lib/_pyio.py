@@ -551,6 +551,11 @@ class IOBase(metaclass=abc.ABCMeta):
         for line in lines:
             self.write(line)
 
+    def register_buffer(self, buf):
+        """Used if a buffered I/O object wraps this object.  The 'flush()'
+        method of 'buf' will be called before this object is closed.
+        """
+
 io.IOBase.register(IOBase)
 
 
@@ -1182,6 +1187,8 @@ class BufferedWriter(_BufferedIOMixin):
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
+        if hasattr(self._raw, 'register_buffer'):
+            self._raw.register_buffer(self)
 
     def writable(self):
         return self.raw.writable()
@@ -1241,6 +1248,14 @@ class BufferedWriter(_BufferedIOMixin):
             if n > len(self._write_buf) or n < 0:
                 raise OSError("write() returned incorrect number of bytes")
             del self._write_buf[:n]
+
+    def _flush_raw_closing(self):
+        # called when the underlying raw object is closing
+        try:
+            print('calling _flush_raw_closing')
+            self.flush()
+        except Exception:
+            pass
 
     def tell(self):
         return _BufferedIOMixin.tell(self) + len(self._write_buf)
@@ -1423,6 +1438,7 @@ class FileIO(RawIOBase):
     _appending = False
     _seekable = None
     _closefd = True
+    _buffers = []
 
     def __init__(self, file, mode='r', closefd=True, opener=None):
         """Open a file.  The mode can be 'r' (default), 'w', 'x' or 'a' for reading,
@@ -1540,6 +1556,8 @@ class FileIO(RawIOBase):
                 os.close(owned_fd)
             raise
         self._fd = fd
+        if self._writable:
+            self._buffers = []
 
     def __del__(self):
         if self._fd >= 0 and self._closefd and not self.closed:
@@ -1682,6 +1700,11 @@ class FileIO(RawIOBase):
         os.ftruncate(self._fd, size)
         return size
 
+    def register_buffer(self, buf):
+        if self._writable:
+            print('register flush', buf)
+            self._buffers.append(buf)
+
     def close(self):
         """Close the file.
 
@@ -1689,6 +1712,15 @@ class FileIO(RawIOBase):
         called more than once without error.
         """
         if not self.closed:
+            if self._buffers:
+                print('flushing buffers', self._buffers)
+                for buf in self._buffers:
+                    print('calling flush', buf)
+                    try:
+                        buf.flush()
+                    except Exception:
+                        pass
+                del self._buffers[:]
             try:
                 if self._closefd:
                     os.close(self._fd)

@@ -1133,7 +1133,6 @@ Py_FinalizeEx(void)
      * XXX but I'm unclear on exactly how that one happens.  In any case,
      * XXX I haven't seen a real-life report of either of these.
      */
-    fprintf(stderr, "_PyGC_CollectIfEnabled\n");
     _PyGC_CollectIfEnabled();
 #ifdef COUNT_ALLOCS
     /* With COUNT_ALLOCS, it helps to run GC multiple times:
@@ -1144,7 +1143,6 @@ Py_FinalizeEx(void)
 #endif
 
     /* Destroy all modules */
-    fprintf(stderr, "PyImport_Cleanup\n");
     PyImport_Cleanup();
 
     /* Flush sys.stdout and sys.stderr (again, in case more was printed) */
