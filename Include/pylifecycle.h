@@ -54,14 +54,15 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadEnv(_PyCoreConfig *);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
 
-PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *, _PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
+    _PyMainInterpreterConfig *config,
+    const _PyCoreConfig *core_config);
 PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
 PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
@@ -90,7 +91,7 @@ PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
  * exit functions.
  */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
+PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
 #endif
 PyAPI_FUNC(int) Py_AtExit(void (*func)(void));
 

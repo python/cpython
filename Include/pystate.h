@@ -47,10 +47,25 @@ typedef struct {
     wchar_t *home;          /* PYTHONHOME environment variable,
                                see also Py_SetPythonHome(). */
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
+
+    int argc;               /* Number of command line arguments,
+                               -1 means unset */
+    wchar_t **argv;         /* Command line arguments */
+    wchar_t *program;       /* argv[0] or "" */
+
+    int nxoption;           /* Number of -X options */
+    wchar_t **xoptions;     /* -X options */
+
+    int nwarnoption;        /* Number of warnings options */
+    wchar_t **warnoptions;  /* Warnings options */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
-    (_PyCoreConfig){.use_hash_seed = -1, .coerce_c_locale = -1, .utf8_mode = -1}
+    (_PyCoreConfig){ \
+        .use_hash_seed = -1, \
+        .coerce_c_locale = -1, \
+        .utf8_mode = -1, \
+        .argc = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
@@ -123,6 +138,9 @@ typedef struct _is {
     PyObject *after_forkers_parent;
     PyObject *after_forkers_child;
 #endif
+    /* AtExit module */
+    void (*pyexitfunc)(PyObject *);
+    PyObject *pyexitmodule;
 } PyInterpreterState;
 #endif   /* !Py_LIMITED_API */
 
