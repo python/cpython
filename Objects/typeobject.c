@@ -1632,17 +1632,16 @@ check_duplicates(PyObject *tuple)
 */
 
 static void
-set_mro_error(PyObject *to_merge, int *remain)
+set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, int *remain)
 {
-    Py_ssize_t i, n, off, to_merge_size;
+    Py_ssize_t i, n, off;
     char buf[1000];
     PyObject *k, *v;
     PyObject *set = PyDict_New();
     if (!set) return;
 
-    to_merge_size = PyTuple_GET_SIZE(to_merge);
     for (i = 0; i < to_merge_size; i++) {
-        PyObject *L = PyTuple_GET_ITEM(to_merge, i);
+        PyObject *L = to_merge[i];
         if (remain[i] < PyTuple_GET_SIZE(L)) {
             PyObject *c = PyTuple_GET_ITEM(L, remain[i]);
             if (PyDict_SetItem(set, c, Py_None) < 0) {
@@ -1677,19 +1676,17 @@ consistent method resolution\norder (MRO) for bases");
 }
 
 static int
-pmerge(PyObject *acc, PyObject* to_merge)
+pmerge(PyObject *acc, PyObject **to_merge, Py_ssize_t to_merge_size)
 {
     int res = 0;
-    Py_ssize_t i, j, to_merge_size, empty_cnt;
+    Py_ssize_t i, j, empty_cnt;
     int *remain;
-
-    to_merge_size = PyTuple_GET_SIZE(to_merge);
 
     /* remain stores an index into each sublist of to_merge.
        remain[i] is the index of the next base in to_merge[i]
        that is not included in acc.
     */
-    remain = (int *)PyMem_MALLOC(SIZEOF_INT*to_merge_size);
+    remain = PyMem_New(int, to_merge_size);
     if (remain == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -1702,7 +1699,7 @@ pmerge(PyObject *acc, PyObject* to_merge)
     for (i = 0; i < to_merge_size; i++) {
         PyObject *candidate;
 
-        PyObject *cur_tuple = PyTuple_GET_ITEM(to_merge, i);
+        PyObject *cur_tuple = to_merge[i];
 
         if (remain[i] >= PyTuple_GET_SIZE(cur_tuple)) {
             empty_cnt++;
@@ -1718,7 +1715,7 @@ pmerge(PyObject *acc, PyObject* to_merge)
 
         candidate = PyTuple_GET_ITEM(cur_tuple, remain[i]);
         for (j = 0; j < to_merge_size; j++) {
-            PyObject *j_lst = PyTuple_GET_ITEM(to_merge, j);
+            PyObject *j_lst = to_merge[j];
             if (tail_contains(j_lst, remain[j], candidate))
                 goto skip; /* continue outer loop */
         }
@@ -1727,7 +1724,7 @@ pmerge(PyObject *acc, PyObject* to_merge)
             goto out;
 
         for (j = 0; j < to_merge_size; j++) {
-            PyObject *j_lst = PyTuple_GET_ITEM(to_merge, j);
+            PyObject *j_lst = to_merge[j];
             if (remain[j] < PyTuple_GET_SIZE(j_lst) &&
                 PyTuple_GET_ITEM(j_lst, remain[j]) == candidate) {
                 remain[j]++;
@@ -1738,12 +1735,12 @@ pmerge(PyObject *acc, PyObject* to_merge)
     }
 
     if (empty_cnt != to_merge_size) {
-        set_mro_error(to_merge, remain);
+        set_mro_error(to_merge, to_merge_size, remain);
         res = -1;
     }
 
   out:
-    PyMem_FREE(remain);
+    PyMem_Del(remain);
 
     return res;
 }
@@ -1753,7 +1750,7 @@ mro_implementation(PyTypeObject *type)
 {
     PyObject *result;
     PyObject *bases;
-    PyObject *to_merge;
+    PyObject **to_merge;
     Py_ssize_t i, n;
 
     if (type->tp_dict == NULL) {
@@ -1804,36 +1801,36 @@ mro_implementation(PyTypeObject *type)
        of the explicit tuples of bases and the constraints implied by
        each base class.
 
-       to_merge is a tuple of tuples, where each tuple is a superclass
+       to_merge is an array of tuples, where each tuple is a superclass
        linearization implied by a base class.  The last element of
        to_merge is the declared tuple of bases.
     */
 
-    to_merge = PyTuple_New(n+1);
-    if (to_merge == NULL)
+    to_merge = PyMem_New(PyObject *, n + 1);
+    if (to_merge == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     for (i = 0; i < n; i++) {
         PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
-        Py_INCREF(base->tp_mro);
-        PyTuple_SET_ITEM(to_merge, i, base->tp_mro);
+        to_merge[i] = base->tp_mro;
     }
-    Py_INCREF(bases);
-    PyTuple_SET_ITEM(to_merge, n, bases);
+    to_merge[n] = bases;
 
     result = PyList_New(1);
     if (result == NULL) {
-        Py_DECREF(to_merge);
+        PyMem_Del(to_merge);
         return NULL;
     }
 
     Py_INCREF(type);
     PyList_SET_ITEM(result, 0, (PyObject *)type);
-    if (pmerge(result, to_merge) < 0) {
+    if (pmerge(result, to_merge, n + 1) < 0) {
         Py_CLEAR(result);
     }
 
-    Py_DECREF(to_merge);
+    PyMem_Del(to_merge);
     return result;
 }
 
