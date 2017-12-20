@@ -1761,6 +1761,36 @@ mro_implementation(PyTypeObject *type)
             return NULL;
     }
 
+    bases = type->tp_bases;
+    n = PyTuple_GET_SIZE(bases);
+    if (n == 1) {
+        /* Fast path: if there is a single base, constructing the MRO
+         * is trivial.
+         */
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, 0);
+        Py_ssize_t k;
+
+        if (base->tp_mro == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "Cannot extend an incomplete type '%.100s'",
+                         base->tp_name);
+            return NULL;
+        }
+        k = PyTuple_GET_SIZE(base->tp_mro);
+        result = PyTuple_New(k + 1);
+        if (result == NULL) {
+            return NULL;
+        }
+        Py_INCREF(type);
+        PyTuple_SET_ITEM(result, 0, (PyObject *) type);
+        for (i = 0; i < k; i++) {
+            PyObject *cls = PyTuple_GET_ITEM(base->tp_mro, i);
+            Py_INCREF(cls);
+            PyTuple_SET_ITEM(result, i + 1, cls);
+        }
+        return result;
+    }
+
     /* Find a superclass linearization that honors the constraints
        of the explicit lists of bases and the constraints implied by
        each base class.
@@ -1769,9 +1799,6 @@ mro_implementation(PyTypeObject *type)
        linearization implied by a base class.  The last element of
        to_merge is the declared list of bases.
     */
-
-    bases = type->tp_bases;
-    n = PyTuple_GET_SIZE(bases);
 
     to_merge = PyList_New(n+1);
     if (to_merge == NULL)
@@ -1830,7 +1857,12 @@ static PyObject *
 type_mro_impl(PyTypeObject *self)
 /*[clinic end generated code: output=bffc4a39b5b57027 input=28414f4e156db28d]*/
 {
-    return mro_implementation(self);
+    PyObject *seq;
+    seq = mro_implementation(self);
+    if (seq != NULL && !PyList_Check(seq)) {
+        Py_SETREF(seq, PySequence_List(seq));
+    }
+    return seq;
 }
 
 static int
