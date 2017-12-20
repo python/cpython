@@ -1857,7 +1857,16 @@ static PyObject *
 type_mro_impl(PyTypeObject *self)
 /*[clinic end generated code: output=bffc4a39b5b57027 input=28414f4e156db28d]*/
 {
-    return mro_implementation(self);
+    PyObject *seq;
+    seq = mro_implementation(self);
+    if (seq != NULL && PyTuple_CheckExact(seq)) {
+        PyObject *lst = PySequence_List(seq);
+        Py_DECREF(seq);
+        return lst;
+    }
+    else {
+        return seq;
+    }
 }
 
 static int
