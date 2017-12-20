@@ -1,0 +1,2 @@
+Added more documentation on manually embedding python with custom frozen
+modules.
