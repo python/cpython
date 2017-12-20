@@ -1053,6 +1053,11 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                                         'A Stream Socket was expected'):
                 self.loop.run_until_complete(coro)
 
+    def test_create_server_ssl_timeout_for_plain_socket(self):
+        coro = self.loop.create_server(
+            MyProto, 'example.com', 80, ssl_handshake_timeout=1)
+        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'no socket.SOCK_NONBLOCK (linux only)')
     def test_create_server_stream_bittype(self):
@@ -1360,6 +1365,11 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_connection(MyProto, None, None,
                                            ssl=True, sock=sock)
         self.addCleanup(sock.close)
+        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+
+    def test_create_connection_ssl_timeout_for_plain_socket(self):
+        coro = self.loop.create_connection(
+            MyProto, 'example.com', 80, ssl_handshake_timeout=1)
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
     def test_create_server_empty_host(self):
