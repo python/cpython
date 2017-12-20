@@ -45,6 +45,11 @@ static PySocketModule_APIObject PySocketModule;
 #include <sys/poll.h>
 #endif
 
+#ifndef MS_WINDOWS
+/* inet_pton */
+#include <arpa/inet.h>
+#endif
+
 /* Don't warn about deprecated functions */
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -755,8 +760,41 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     SSL_set_mode(self->ssl, mode);
 
 #if HAVE_SNI
-    if (server_hostname != NULL)
-        SSL_set_tlsext_host_name(self->ssl, server_hostname);
+    if (server_hostname != NULL) {
+/* Don't send SNI for IP addresses. We cannot simply use inet_aton() and
+ * inet_pton() here. inet_aton() may be linked weakly and inet_pton() isn't
+ * available on all platforms. Use OpenSSL's IP address parser. It's
+ * available since 1.0.2 and LibreSSL since at least 2.3.0. */
+        int send_sni = 1;
+#if OPENSSL_VERSION_NUMBER >= 0x10200000L
+        ASN1_OCTET_STRING *ip = a2i_IPADDRESS(server_hostname);
+        if (ip == NULL) {
+            send_sni = 1;
+            ERR_clear_error();
+        } else {
+            send_sni = 0;
+            ASN1_OCTET_STRING_free(ip);
+        }
+#elif defined(HAVE_INET_PTON)
+#ifdef ENABLE_IPV6
+        char packed[Py_MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
+#else
+        char packed[sizeof(struct in_addr)];
+#endif /* ENABLE_IPV6 */
+        if (inet_pton(AF_INET, server_hostname, packed)) {
+            send_sni = 0;
+#ifdef ENABLE_IPV6
+        } else if(inet_pton(AF_INET6, server_hostname, packed)) {
+            send_sni = 0;
+#endif /* ENABLE_IPV6 */
+        } else {
+            send_sni = 1;
+        }
+#endif /* HAVE_INET_PTON */
+        if (send_sni) {
+            SSL_set_tlsext_host_name(self->ssl, server_hostname);
+        }
+    }
 #endif
     /* If the socket is in non-blocking mode or timeout mode, set the BIO
      * to non-blocking mode (blocking is the default)

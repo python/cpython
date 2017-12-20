@@ -1,0 +1,2 @@
+The SSL module no longer sends IP addresses in SNI TLS extension on
+platforms with OpenSSL 1.0.2+ or inet_pton.
