@@ -302,6 +302,16 @@ wanted to add our own module to the frozen list we would normally do this::
 
     const struct _frozen * PyImport_FrozenModules = _PyImport_FrozenModules;
 
+.. note::
+   The reason why this example includes ``importlib.h`` and
+   ``importlib_external.h`` is because of the fact that your embedded
+   interpreter might need them to run properly (load the python standard
+   library from an zip file or the sources like normally). Also in order
+   for your compiler to work you must point it to the Python subdirectory
+   in an active clone of the cpython repository or source tarball.
+   However it is not required to manually build the python core if you are
+   using an clone or source tarbar of an version instealled on your system.
+
 As you can see the above code will compile (with an warning on Windows
 which will export ``PyImport_FrozenModules`` on the embedded python program).
 This is not what we want. And if we were to run it with ``myprogram`` We will
