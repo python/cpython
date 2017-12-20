@@ -1859,14 +1859,10 @@ type_mro_impl(PyTypeObject *self)
 {
     PyObject *seq;
     seq = mro_implementation(self);
-    if (seq != NULL && PyTuple_CheckExact(seq)) {
-        PyObject *lst = PySequence_List(seq);
-        Py_DECREF(seq);
-        return lst;
+    if (seq != NULL && !PyList_Check(seq)) {
+        Py_SETREF(seq, PySequence_List(seq));
     }
-    else {
-        return seq;
-    }
+    return seq;
 }
 
 static int
