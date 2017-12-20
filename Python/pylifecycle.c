@@ -56,7 +56,7 @@ static _PyInitError initfsencoding(PyInterpreterState *interp);
 static _PyInitError initsite(void);
 static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
-static void call_py_exitfuncs(void);
+static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 extern int _PyUnicode_Init(void);
@@ -1006,6 +1006,10 @@ Py_FinalizeEx(void)
 
     wait_for_thread_shutdown();
 
+    /* Get current thread state and interpreter pointer */
+    tstate = PyThreadState_GET();
+    interp = tstate->interp;
+
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
      * or exit func is still waiting to do an import, the import machinery
@@ -1015,11 +1019,8 @@ Py_FinalizeEx(void)
      * threads created thru it, so this also protects pending imports in
      * the threads created via Threading.
      */
-    call_py_exitfuncs();
 
-    /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
-    interp = tstate->interp;
+    call_py_exitfuncs(interp);
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -1411,6 +1412,8 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
 
     wait_for_thread_shutdown();
+
+    call_py_exitfuncs(interp);
 
     if (tstate != interp->tstate_head || tstate->next != NULL)
         Py_FatalError("Py_EndInterpreter: not the last thread");
@@ -2023,20 +2026,28 @@ _Py_FatalInitError(_PyInitError err)
 #  include "pythread.h"
 
 /* For the atexit module. */
-void _Py_PyAtExit(void (*func)(void))
+void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
+    PyThreadState *ts;
+    PyInterpreterState *is;
+    
+    ts = PyThreadState_GET();
+    is = ts->interp;
+
     /* Guard against API misuse (see bpo-17852) */
-    assert(_PyRuntime.pyexitfunc == NULL || _PyRuntime.pyexitfunc == func);
-    _PyRuntime.pyexitfunc = func;
+    assert(is->pyexitfunc == NULL || is->pyexitfunc == func);
+
+    is->pyexitfunc = func;
+    is->pyexitmodule = module;
 }
 
 static void
-call_py_exitfuncs(void)
+call_py_exitfuncs(PyInterpreterState *istate)
 {
-    if (_PyRuntime.pyexitfunc == NULL)
+    if (istate->pyexitfunc == NULL)
         return;
 
-    (*_PyRuntime.pyexitfunc)();
+    (*istate->pyexitfunc)(istate->pyexitmodule);
     PyErr_Clear();
 }
 

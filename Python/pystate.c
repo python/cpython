@@ -153,6 +153,8 @@ PyInterpreterState_New(void)
     interp->after_forkers_parent = NULL;
     interp->after_forkers_child = NULL;
 #endif
+    interp->pyexitfunc = NULL;
+    interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
     interp->next = _PyRuntime.interpreters.head;

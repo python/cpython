@@ -90,7 +90,6 @@ typedef struct pyruntimestate {
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
-    void (*pyexitfunc)(void);
 
     struct _gc_runtime_state gc;
     struct _warnings_runtime_state warnings;

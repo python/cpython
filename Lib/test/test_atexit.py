@@ -2,6 +2,7 @@ import sys
 import unittest
 import io
 import atexit
+import os
 from test import support
 from test.support import script_helper
 
@@ -202,6 +203,24 @@ class SubinterpreterTest(unittest.TestCase):
         ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
+
+    def test_callback_on_subinterpreter_teardown(self):
+        # This tests if a callback is called on
+        # subinterpreter teardown.
+        expected = b"The test has passed!"
+        r, w = os.pipe()
+
+        code = r"""if 1:
+            import os
+            import atexit
+            def callback():
+                os.write({:d}, b"The test has passed!")
+            atexit.register(callback)
+        """.format(w)
+        ret = support.run_in_subinterp(code)
+        os.close(w)
+        self.assertEqual(os.read(r, len(expected)), expected)
+        os.close(r)
 
 
 if __name__ == "__main__":
