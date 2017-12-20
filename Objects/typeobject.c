@@ -1564,12 +1564,13 @@ call_maybe(PyObject *obj, _Py_Identifier *name,
  */
 
 static int
-tail_contains(PyObject *list, int whence, PyObject *o) {
+tail_contains(PyObject *tuple, int whence, PyObject *o)
+{
     Py_ssize_t j, size;
-    size = PyList_GET_SIZE(list);
+    size = PyTuple_GET_SIZE(tuple);
 
     for (j = whence+1; j < size; j++) {
-        if (PyList_GET_ITEM(list, j) == o)
+        if (PyTuple_GET_ITEM(tuple, j) == o)
             return 1;
     }
     return 0;
@@ -1593,17 +1594,17 @@ class_name(PyObject *cls)
 }
 
 static int
-check_duplicates(PyObject *list)
+check_duplicates(PyObject *tuple)
 {
     Py_ssize_t i, j, n;
     /* Let's use a quadratic time algorithm,
-       assuming that the bases lists is short.
+       assuming that the bases tuples is short.
     */
-    n = PyList_GET_SIZE(list);
+    n = PyTuple_GET_SIZE(tuple);
     for (i = 0; i < n; i++) {
-        PyObject *o = PyList_GET_ITEM(list, i);
+        PyObject *o = PyTuple_GET_ITEM(tuple, i);
         for (j = i + 1; j < n; j++) {
-            if (PyList_GET_ITEM(list, j) == o) {
+            if (PyTuple_GET_ITEM(tuple, j) == o) {
                 o = class_name(o);
                 if (o != NULL) {
                     PyErr_Format(PyExc_TypeError,
@@ -1631,19 +1632,18 @@ check_duplicates(PyObject *list)
 */
 
 static void
-set_mro_error(PyObject *to_merge, int *remain)
+set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, int *remain)
 {
-    Py_ssize_t i, n, off, to_merge_size;
+    Py_ssize_t i, n, off;
     char buf[1000];
     PyObject *k, *v;
     PyObject *set = PyDict_New();
     if (!set) return;
 
-    to_merge_size = PyList_GET_SIZE(to_merge);
     for (i = 0; i < to_merge_size; i++) {
-        PyObject *L = PyList_GET_ITEM(to_merge, i);
-        if (remain[i] < PyList_GET_SIZE(L)) {
-            PyObject *c = PyList_GET_ITEM(L, remain[i]);
+        PyObject *L = to_merge[i];
+        if (remain[i] < PyTuple_GET_SIZE(L)) {
+            PyObject *c = PyTuple_GET_ITEM(L, remain[i]);
             if (PyDict_SetItem(set, c, Py_None) < 0) {
                 Py_DECREF(set);
                 return;
@@ -1676,19 +1676,17 @@ consistent method resolution\norder (MRO) for bases");
 }
 
 static int
-pmerge(PyObject *acc, PyObject* to_merge)
+pmerge(PyObject *acc, PyObject **to_merge, Py_ssize_t to_merge_size)
 {
     int res = 0;
-    Py_ssize_t i, j, to_merge_size, empty_cnt;
+    Py_ssize_t i, j, empty_cnt;
     int *remain;
-
-    to_merge_size = PyList_GET_SIZE(to_merge);
 
     /* remain stores an index into each sublist of to_merge.
        remain[i] is the index of the next base in to_merge[i]
        that is not included in acc.
     */
-    remain = (int *)PyMem_MALLOC(SIZEOF_INT*to_merge_size);
+    remain = PyMem_New(int, to_merge_size);
     if (remain == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -1701,9 +1699,9 @@ pmerge(PyObject *acc, PyObject* to_merge)
     for (i = 0; i < to_merge_size; i++) {
         PyObject *candidate;
 
-        PyObject *cur_list = PyList_GET_ITEM(to_merge, i);
+        PyObject *cur_tuple = to_merge[i];
 
-        if (remain[i] >= PyList_GET_SIZE(cur_list)) {
+        if (remain[i] >= PyTuple_GET_SIZE(cur_tuple)) {
             empty_cnt++;
             continue;
         }
@@ -1715,9 +1713,9 @@ pmerge(PyObject *acc, PyObject* to_merge)
            of the earliest direct superclass of the new class.
         */
 
-        candidate = PyList_GET_ITEM(cur_list, remain[i]);
+        candidate = PyTuple_GET_ITEM(cur_tuple, remain[i]);
         for (j = 0; j < to_merge_size; j++) {
-            PyObject *j_lst = PyList_GET_ITEM(to_merge, j);
+            PyObject *j_lst = to_merge[j];
             if (tail_contains(j_lst, remain[j], candidate))
                 goto skip; /* continue outer loop */
         }
@@ -1726,9 +1724,9 @@ pmerge(PyObject *acc, PyObject* to_merge)
             goto out;
 
         for (j = 0; j < to_merge_size; j++) {
-            PyObject *j_lst = PyList_GET_ITEM(to_merge, j);
-            if (remain[j] < PyList_GET_SIZE(j_lst) &&
-                PyList_GET_ITEM(j_lst, remain[j]) == candidate) {
+            PyObject *j_lst = to_merge[j];
+            if (remain[j] < PyTuple_GET_SIZE(j_lst) &&
+                PyTuple_GET_ITEM(j_lst, remain[j]) == candidate) {
                 remain[j]++;
             }
         }
@@ -1737,12 +1735,12 @@ pmerge(PyObject *acc, PyObject* to_merge)
     }
 
     if (empty_cnt != to_merge_size) {
-        set_mro_error(to_merge, remain);
+        set_mro_error(to_merge, to_merge_size, remain);
         res = -1;
     }
 
   out:
-    PyMem_FREE(remain);
+    PyMem_Del(remain);
 
     return res;
 }
@@ -1750,10 +1748,9 @@ pmerge(PyObject *acc, PyObject* to_merge)
 static PyObject *
 mro_implementation(PyTypeObject *type)
 {
-    PyObject *result = NULL;
+    PyObject *result;
     PyObject *bases;
-    PyObject *to_merge, *bases_aslist;
-    int res;
+    PyObject **to_merge;
     Py_ssize_t i, n;
 
     if (type->tp_dict == NULL) {
@@ -1762,21 +1759,25 @@ mro_implementation(PyTypeObject *type)
     }
 
     bases = type->tp_bases;
+    assert(PyTuple_Check(bases));
     n = PyTuple_GET_SIZE(bases);
-    if (n == 1) {
-        /* Fast path: if there is a single base, constructing the MRO
-         * is trivial.
-         */
-        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, 0);
-        Py_ssize_t k;
-
+    for (i = 0; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
         if (base->tp_mro == NULL) {
             PyErr_Format(PyExc_TypeError,
                          "Cannot extend an incomplete type '%.100s'",
                          base->tp_name);
             return NULL;
         }
-        k = PyTuple_GET_SIZE(base->tp_mro);
+        assert(PyTuple_Check(base->tp_mro));
+    }
+
+    if (n == 1) {
+        /* Fast path: if there is a single base, constructing the MRO
+         * is trivial.
+         */
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, 0);
+        Py_ssize_t k = PyTuple_GET_SIZE(base->tp_mro);
         result = PyTuple_New(k + 1);
         if (result == NULL) {
             return NULL;
@@ -1791,59 +1792,45 @@ mro_implementation(PyTypeObject *type)
         return result;
     }
 
+    /* This is just a basic sanity check. */
+    if (check_duplicates(bases) < 0) {
+        return NULL;
+    }
+
     /* Find a superclass linearization that honors the constraints
-       of the explicit lists of bases and the constraints implied by
+       of the explicit tuples of bases and the constraints implied by
        each base class.
 
-       to_merge is a list of lists, where each list is a superclass
+       to_merge is an array of tuples, where each tuple is a superclass
        linearization implied by a base class.  The last element of
-       to_merge is the declared list of bases.
+       to_merge is the declared tuple of bases.
     */
 
-    to_merge = PyList_New(n+1);
-    if (to_merge == NULL)
+    to_merge = PyMem_New(PyObject *, n + 1);
+    if (to_merge == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     for (i = 0; i < n; i++) {
-        PyTypeObject *base;
-        PyObject *base_mro_aslist;
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+        to_merge[i] = base->tp_mro;
+    }
+    to_merge[n] = bases;
 
-        base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
-        if (base->tp_mro == NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "Cannot extend an incomplete type '%.100s'",
-                         base->tp_name);
-            goto out;
-        }
-
-        base_mro_aslist = PySequence_List(base->tp_mro);
-        if (base_mro_aslist == NULL)
-            goto out;
-
-        PyList_SET_ITEM(to_merge, i, base_mro_aslist);
+    result = PyList_New(1);
+    if (result == NULL) {
+        PyMem_Del(to_merge);
+        return NULL;
     }
 
-    bases_aslist = PySequence_List(bases);
-    if (bases_aslist == NULL)
-        goto out;
-    /* This is just a basic sanity check. */
-    if (check_duplicates(bases_aslist) < 0) {
-        Py_DECREF(bases_aslist);
-        goto out;
-    }
-    PyList_SET_ITEM(to_merge, n, bases_aslist);
-
-    result = Py_BuildValue("[O]", (PyObject *)type);
-    if (result == NULL)
-        goto out;
-
-    res = pmerge(result, to_merge);
-    if (res < 0)
+    Py_INCREF(type);
+    PyList_SET_ITEM(result, 0, (PyObject *)type);
+    if (pmerge(result, to_merge, n + 1) < 0) {
         Py_CLEAR(result);
+    }
 
-  out:
-    Py_DECREF(to_merge);
-
+    PyMem_Del(to_merge);
     return result;
 }
 
