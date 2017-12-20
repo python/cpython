@@ -854,6 +854,7 @@ class EventLoopTestsMixin:
 
     def test_connect_accepted_socket_ssl_timeout_for_plain_socket(self):
         sock = socket.socket()
+        self.addCleanup(sock.close)
         coro = self.loop.connect_accepted_socket(
             MyProto, sock, ssl_handshake_timeout=1)
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
