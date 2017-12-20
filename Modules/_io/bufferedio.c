@@ -817,7 +817,6 @@ buffered_flush_and_rewind_unlocked(buffered *self)
            the current logical position. */
         Py_off_t n;
         n = _buffered_raw_seek(self, -RAW_OFFSET(self), 1);
-        self->raw_pos = self->pos;
         _bufferedreader_reset_buf(self);
         if (n == -1)
             return NULL;
@@ -1900,9 +1899,9 @@ _bufferedwriter_flush_unlocked(buffered *self)
             goto error;
     }
 
-    _bufferedwriter_reset_buf(self);
 
 end:
+    _bufferedwriter_reset_buf(self);
     Py_RETURN_NONE;
 
 error:
