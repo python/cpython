@@ -2060,7 +2060,7 @@ done:
 }
 
 
-void
+static void
 config_init_locale(_PyCoreConfig *config)
 {
     if (config->utf8_mode >= 0 && config->coerce_c_locale >= 0) {
