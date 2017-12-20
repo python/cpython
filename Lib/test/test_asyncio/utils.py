@@ -28,6 +28,7 @@ except ImportError:  # pragma: no cover
 
 from asyncio import base_events
 from asyncio import events
+from asyncio import format_helpers
 from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
@@ -326,12 +327,19 @@ class TestLoop(base_events.BaseEventLoop):
             return False
 
     def assert_reader(self, fd, callback, *args):
-        assert fd in self.readers, 'fd {} is not registered'.format(fd)
+        if fd not in self.readers:
+            raise AssertionError(f'fd {fd} is not registered')
         handle = self.readers[fd]
-        assert handle._callback == callback, '{!r} != {!r}'.format(
-            handle._callback, callback)
-        assert handle._args == args, '{!r} != {!r}'.format(
-            handle._args, args)
+        if handle._callback != callback:
+            raise AssertionError(
+                f'unexpected callback: {handle._callback} != {callback}')
+        if handle._args != args:
+            raise AssertionError(
+                f'unexpected callback args: {handle._args} != {args}')
+
+    def assert_no_reader(self, fd):
+        if fd in self.readers:
+            raise AssertionError(f'fd {fd} is registered')
 
     def _add_writer(self, fd, callback, *args):
         self.writers[fd] = events.Handle(callback, args, self)
@@ -429,7 +437,7 @@ class MockPattern(str):
 
 
 def get_function_source(func):
-    source = events._get_function_source(func)
+    source = format_helpers._get_function_source(func)
     if source is None:
         raise ValueError("unable to get the source of %r" % (func,))
     return source

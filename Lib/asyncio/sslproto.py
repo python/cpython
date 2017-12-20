@@ -6,6 +6,7 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
+from . import constants
 from . import protocols
 from . import transports
 from .log import logger
@@ -317,6 +318,12 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
                           source=self)
             self.close()
 
+    def is_reading(self):
+        tr = self._ssl_protocol._transport
+        if tr is None:
+            raise RuntimeError('SSL transport has not been initialized yet')
+        return tr.is_reading()
+
     def pause_reading(self):
         """Pause the receiving end.
 
@@ -394,7 +401,8 @@ class SSLProtocol(protocols.Protocol):
 
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
-                 call_connection_made=True):
+                 call_connection_made=True,
+                 ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 
@@ -428,6 +436,7 @@ class SSLProtocol(protocols.Protocol):
         # transport, ex: SelectorSocketTransport
         self._transport = None
         self._call_connection_made = call_connection_made
+        self._ssl_handshake_timeout = ssl_handshake_timeout
 
     def _wakeup_waiter(self, exc=None):
         if self._waiter is None:
@@ -555,9 +564,18 @@ class SSLProtocol(protocols.Protocol):
         # the SSL handshake
         self._write_backlog.append((b'', 1))
         self._loop.call_soon(self._process_write_backlog)
+        self._handshake_timeout_handle = \
+            self._loop.call_later(self._ssl_handshake_timeout,
+                                  self._check_handshake_timeout)
+
+    def _check_handshake_timeout(self):
+        if self._in_handshake is True:
+            logger.warning("%r stalled during handshake", self)
+            self._abort()
 
     def _on_handshake_complete(self, handshake_exc):
         self._in_handshake = False
+        self._handshake_timeout_handle.cancel()
 
         sslobj = self._sslpipe.ssl_object
         try:

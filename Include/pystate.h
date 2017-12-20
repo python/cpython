@@ -38,27 +38,44 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable */
+    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable,
+                               -1 means unknown */
 
     wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
     wchar_t *home;          /* PYTHONHOME environment variable,
                                see also Py_SetPythonHome(). */
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
+
+    int argc;               /* Number of command line arguments,
+                               -1 means unset */
+    wchar_t **argv;         /* sys.argv, ignored if argc is negative */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT (_PyCoreConfig){.use_hash_seed = -1}
+#define _PyCoreConfig_INIT \
+    (_PyCoreConfig){ \
+        .use_hash_seed = -1, \
+        .coerce_c_locale = -1, \
+        .utf8_mode = -1, \
+        .argc = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
- *
- * For the moment, just handle the args to _Py_InitializeEx
  */
 typedef struct {
     int install_signal_handlers;
-    PyObject *argv;                 /* sys.argv list, can be NULL */
-    PyObject *module_search_path;   /* sys.path list */
+    PyObject *argv;                /* sys.argv list, can be NULL */
+    PyObject *executable;          /* sys.executable str */
+    PyObject *prefix;              /* sys.prefix str */
+    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
+    PyObject *exec_prefix;         /* sys.exec_prefix str */
+    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
+    PyObject *module_search_path;  /* sys.path list */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \

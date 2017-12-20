@@ -277,8 +277,9 @@ Miscellaneous options
 
 .. cmdoption:: -R
 
-   Kept for compatibility.  On Python 3.3 and greater, hash randomization is
-   turned on by default.
+   Turn on hash randomization. This option only has an effect if the
+   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
+   randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`__hash__` values of str, bytes and datetime
@@ -293,6 +294,9 @@ Miscellaneous options
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
+
+   .. versionchanged:: 3.7
+      The option is no longer ignored.
 
    .. versionadded:: 3.2.3
 
@@ -775,9 +779,7 @@ conflict.
 
    If set to the value ``0``, causes the main Python command line application
    to skip coercing the legacy ASCII-based C locale to a more capable UTF-8
-   based alternative. Note that this setting is checked even when the
-   :option:`-E` or :option:`-I` options are used, as it is handled prior to
-   the processing of command line options.
+   based alternative.
 
    If this variable is *not* set, or is set to a value other than ``0``, and
    the current locale reported for the ``LC_CTYPE`` category is the default

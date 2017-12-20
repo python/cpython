@@ -11,86 +11,14 @@ __all__ = (
     '_get_running_loop',
 )
 
-import functools
-import inspect
 import os
-import reprlib
 import socket
 import subprocess
 import sys
 import threading
-import traceback
 
 from . import constants
-
-
-def _get_function_source(func):
-    func = inspect.unwrap(func)
-    if inspect.isfunction(func):
-        code = func.__code__
-        return (code.co_filename, code.co_firstlineno)
-    if isinstance(func, functools.partial):
-        return _get_function_source(func.func)
-    if isinstance(func, functools.partialmethod):
-        return _get_function_source(func.func)
-    return None
-
-
-def _format_args_and_kwargs(args, kwargs):
-    """Format function arguments and keyword arguments.
-
-    Special case for a single parameter: ('hello',) is formatted as ('hello').
-    """
-    # use reprlib to limit the length of the output
-    items = []
-    if args:
-        items.extend(reprlib.repr(arg) for arg in args)
-    if kwargs:
-        items.extend(f'{k}={reprlib.repr(v)}' for k, v in kwargs.items())
-    return '({})'.format(', '.join(items))
-
-
-def _format_callback(func, args, kwargs, suffix=''):
-    if isinstance(func, functools.partial):
-        suffix = _format_args_and_kwargs(args, kwargs) + suffix
-        return _format_callback(func.func, func.args, func.keywords, suffix)
-
-    if hasattr(func, '__qualname__'):
-        func_repr = getattr(func, '__qualname__')
-    elif hasattr(func, '__name__'):
-        func_repr = getattr(func, '__name__')
-    else:
-        func_repr = repr(func)
-
-    func_repr += _format_args_and_kwargs(args, kwargs)
-    if suffix:
-        func_repr += suffix
-    return func_repr
-
-
-def _format_callback_source(func, args):
-    func_repr = _format_callback(func, args, None)
-    source = _get_function_source(func)
-    if source:
-        func_repr += f' at {source[0]}:{source[1]}'
-    return func_repr
-
-
-def extract_stack(f=None, limit=None):
-    """Replacement for traceback.extract_stack() that only does the
-    necessary work for asyncio debug mode.
-    """
-    if f is None:
-        f = sys._getframe().f_back
-    if limit is None:
-        # Limit the amount of work to a reasonable amount, as extract_stack()
-        # can be called for each coroutine and future in debug mode.
-        limit = constants.DEBUG_STACK_DEPTH
-    stack = traceback.StackSummary.extract(traceback.walk_stack(f),
-                                           limit=limit,
-                                           lookup_lines=False)
-    stack.reverse()
-    return stack
+from . import format_helpers
 
 
 class Handle:
@@ -106,7 +34,8 @@ class Handle:
         self._cancelled = False
         self._repr = None
         if self._loop.get_debug():
-            self._source_traceback = extract_stack(sys._getframe(1))
+            self._source_traceback = format_helpers.extract_stack(
+                sys._getframe(1))
         else:
             self._source_traceback = None
 
@@ -115,7 +44,8 @@ class Handle:
         if self._cancelled:
             info.append('cancelled')
         if self._callback is not None:
-            info.append(_format_callback_source(self._callback, self._args))
+            info.append(format_helpers._format_callback_source(
+                self._callback, self._args))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append(f'created at {frame[0]}:{frame[1]}')
@@ -145,7 +75,8 @@ class Handle:
         try:
             self._callback(*self._args)
         except Exception as exc:
-            cb = _format_callback_source(self._callback, self._args)
+            cb = format_helpers._format_callback_source(
+                self._callback, self._args)
             msg = f'Exception in callback {cb}'
             context = {
                 'message': msg,
@@ -319,16 +250,20 @@ class AbstractEventLoop:
     async def getnameinfo(self, sockaddr, flags=0):
         raise NotImplementedError
 
-    async def create_connection(self, protocol_factory, host=None, port=None,
-                                *, ssl=None, family=0, proto=0,
-                                flags=0, sock=None, local_addr=None,
-                                server_hostname=None):
+    async def create_connection(
+            self, protocol_factory, host=None, port=None,
+            *, ssl=None, family=0, proto=0,
+            flags=0, sock=None, local_addr=None,
+            server_hostname=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         raise NotImplementedError
 
-    async def create_server(self, protocol_factory, host=None, port=None,
-                            *, family=socket.AF_UNSPEC,
-                            flags=socket.AI_PASSIVE, sock=None, backlog=100,
-                            ssl=None, reuse_address=None, reuse_port=None):
+    async def create_server(
+            self, protocol_factory, host=None, port=None,
+            *, family=socket.AF_UNSPEC,
+            flags=socket.AI_PASSIVE, sock=None, backlog=100,
+            ssl=None, reuse_address=None, reuse_port=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -363,16 +298,25 @@ class AbstractEventLoop:
         the same port as other existing endpoints are bound to, so long as
         they all set this flag when being created. This option is not
         supported on Windows.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for completion of the SSL handshake before aborting the
+        connection. Default is 10s, longer timeouts may increase vulnerability
+        to DoS attacks (see https://support.f5.com/csp/article/K13834)
         """
         raise NotImplementedError
 
-    async def create_unix_connection(self, protocol_factory, path=None, *,
-                                     ssl=None, sock=None,
-                                     server_hostname=None):
+    async def create_unix_connection(
+            self, protocol_factory, path=None, *,
+            ssl=None, sock=None,
+            server_hostname=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         raise NotImplementedError
 
-    async def create_unix_server(self, protocol_factory, path=None, *,
-                                 sock=None, backlog=100, ssl=None):
+    async def create_unix_server(
+            self, protocol_factory, path=None, *,
+            sock=None, backlog=100, ssl=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop
@@ -389,6 +333,9 @@ class AbstractEventLoop:
 
         ssl can be set to an SSLContext to enable SSL over the
         accepted connections.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for the SSL handshake to complete (defaults to 10s).
         """
         raise NotImplementedError
 

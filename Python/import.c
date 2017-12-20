@@ -2291,7 +2291,7 @@ int
 PyImport_ExtendInittab(struct _inittab *newtab)
 {
     struct _inittab *p;
-    Py_ssize_t i, n;
+    size_t i, n;
     int res = 0;
 
     /* Count the number of entries in both tables */
@@ -2308,12 +2308,10 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     /* Allocate new memory for the combined table */
-    if ((i + n + 1) <= PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(struct _inittab)) {
+    p = NULL;
+    if (i + n <= SIZE_MAX / sizeof(struct _inittab) - 1) {
         size_t size = sizeof(struct _inittab) * (i + n + 1);
         p = PyMem_RawRealloc(inittab_copy, size);
-    }
-    else {
-        p = NULL;
     }
     if (p == NULL) {
         res = -1;

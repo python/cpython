@@ -432,8 +432,16 @@ class CmdLineTest(unittest.TestCase):
 
         # Verify that sys.flags contains hash_randomization
         code = 'import sys; print("random is", sys.flags.hash_randomization)'
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(rc, 0)
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='')
+        self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='random')
+        self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='0')
+        self.assertIn(b'random is 0', out)
+
+        rc, out, err = assert_python_ok('-R', '-c', code, PYTHONHASHSEED='0')
         self.assertIn(b'random is 1', out)
 
     def test_del___main__(self):
@@ -543,7 +551,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out, "True")
 
         # Warnings
-        code = ("import sys, warnings; "
+        code = ("import warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
         if Py_DEBUG:

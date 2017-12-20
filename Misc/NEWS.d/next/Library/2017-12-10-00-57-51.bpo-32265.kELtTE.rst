@@ -1,0 +1,3 @@
+All class and static methods of builtin types now are correctly classified
+by inspect.classify_class_attrs() and grouped in pydoc ouput. Added
+types.ClassMethodDescriptorType for unbound class methods of builtin types.

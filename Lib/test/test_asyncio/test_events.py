@@ -1702,7 +1702,7 @@ class EventLoopTestsMixin:
     def test_prompt_cancellation(self):
         r, w = socket.socketpair()
         r.setblocking(False)
-        f = self.loop.sock_recv(r, 1)
+        f = self.loop.create_task(self.loop.sock_recv(r, 1))
         ov = getattr(f, 'ov', None)
         if ov is not None:
             self.assertTrue(ov.pending)
@@ -1819,7 +1819,8 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.call_at(self.loop.time() + .0, func)
         with self.assertRaises(RuntimeError):
-            self.loop.run_in_executor(None, func)
+            self.loop.run_until_complete(
+                self.loop.run_in_executor(None, func))
         with self.assertRaises(RuntimeError):
             self.loop.create_task(coro)
         with self.assertRaises(RuntimeError):

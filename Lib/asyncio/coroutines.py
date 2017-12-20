@@ -1,5 +1,6 @@
 __all__ = 'coroutine', 'iscoroutinefunction', 'iscoroutine'
 
+import collections.abc
 import functools
 import inspect
 import os
@@ -7,11 +8,9 @@ import sys
 import traceback
 import types
 
-from collections.abc import Awaitable, Coroutine
-
-from . import constants
-from . import events
 from . import base_futures
+from . import constants
+from . import format_helpers
 from .log import logger
 
 
@@ -48,7 +47,7 @@ class CoroWrapper:
         assert inspect.isgenerator(gen) or inspect.iscoroutine(gen), gen
         self.gen = gen
         self.func = func  # Used to unwrap @coroutine decorator
-        self._source_traceback = events.extract_stack(sys._getframe(1))
+        self._source_traceback = format_helpers.extract_stack(sys._getframe(1))
         self.__name__ = getattr(gen, '__name__', None)
         self.__qualname__ = getattr(gen, '__qualname__', None)
 
@@ -162,7 +161,7 @@ def coroutine(func):
                 except AttributeError:
                     pass
                 else:
-                    if isinstance(res, Awaitable):
+                    if isinstance(res, collections.abc.Awaitable):
                         res = yield from await_meth()
             return res
 
@@ -199,12 +198,24 @@ def iscoroutinefunction(func):
 # Prioritize native coroutine check to speed-up
 # asyncio.iscoroutine.
 _COROUTINE_TYPES = (types.CoroutineType, types.GeneratorType,
-                    Coroutine, CoroWrapper)
+                    collections.abc.Coroutine, CoroWrapper)
+_iscoroutine_typecache = set()
 
 
 def iscoroutine(obj):
     """Return True if obj is a coroutine object."""
-    return isinstance(obj, _COROUTINE_TYPES)
+    if type(obj) in _iscoroutine_typecache:
+        return True
+
+    if isinstance(obj, _COROUTINE_TYPES):
+        # Just in case we don't want to cache more than 100
+        # positive types.  That shouldn't ever happen, unless
+        # someone stressing the system on purpose.
+        if len(_iscoroutine_typecache) < 100:
+            _iscoroutine_typecache.add(type(obj))
+        return True
+    else:
+        return False
 
 
 def _format_coroutine(coro):
@@ -243,7 +254,7 @@ def _format_coroutine(coro):
         func = coro
 
     if coro_name is None:
-        coro_name = events._format_callback(func, (), {})
+        coro_name = format_helpers._format_callback(func, (), {})
 
     try:
         coro_code = coro.gi_code
@@ -260,7 +271,7 @@ def _format_coroutine(coro):
     if (isinstance(coro, CoroWrapper) and
             not inspect.isgeneratorfunction(coro.func) and
             coro.func is not None):
-        source = events._get_function_source(coro.func)
+        source = format_helpers._get_function_source(coro.func)
         if source is not None:
             filename, lineno = source
         if coro_frame is None:
