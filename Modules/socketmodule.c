@@ -2614,30 +2614,18 @@ sock_settimeout(PySocketSockObject *s, PyObject *arg)
     /* Blocking mode for a Python socket object means that operations
        like :meth:`recv` or :meth:`sendall` will block the execution of
        the current thread until they are complete or aborted with a
-       :exc:`socket.timeout` or :exc:`socket.error` errors.
+       `socket.timeout` or `socket.error` errors.  When timeout is `None`,
+       the underlying FD is in a blocking mode.  When timeout is a positive
+       number, the FD is in a non-blocking mode, and socket ops are
+       implemented with a `select()` call.
 
-       Non-blocking mode means that socket operations will raise
-       a :exc:`BlockingIOError` if they cannot complete immediately.
-
-       Internally, if a Python socket object has a positive timeout, its
-       underlying file descriptor (FD) is switched to a non-blocking mode.
-       Methods like :meth:`recv` for such sockets are implemented using a
-       :func:`select.select` call.
-
-       If a Python socket has its timeout set to ``None``, the underlying
-       FD will be switched to a blocking mode.
-
-       If a Python socket has ``0.0`` timeout, the underlying FD will
-       be in a non-blocking mode.
-
-       When timeout is ``0.0`` or ``None``, methods like :meth:`recv`
-       are just thin wrappers over corresponding system calls.
+       When timeout is 0.0, the FD is in a non-blocking mode.
 
        This table summarizes all states in which the socket object and
        its underlying FD can be:
 
        ==================== ===================== ==============
-        :meth:`gettimeout`   :meth:`getblocking`   socket's FD
+        `gettimeout()`       `getblocking()`       FD
        ==================== ===================== ==============
         ``None``             ``True``              blocking
         ``0.0``              ``False``             non-blocking
