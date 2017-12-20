@@ -323,6 +323,9 @@ static struct PyModuleDef atexitmodule = {
     (freefunc)atexit_free
 };
 
+
+extern void _Py_PyAtExit(void (*func)(void));
+
 PyMODINIT_FUNC
 PyInit_atexit(void)
 {
