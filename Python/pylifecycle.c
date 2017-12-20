@@ -874,30 +874,29 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 _PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
-    _PyCoreConfig core_config = _PyCoreConfig_INIT;
-    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
-    core_config.ignore_environment = Py_IgnoreEnvironmentFlag;
-    core_config._disable_importlib = !install_importlib;
+    config.ignore_environment = Py_IgnoreEnvironmentFlag;
+    config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _PyCoreConfig_Read(&core_config);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _Py_InitializeCore(&core_config);
+    err = _Py_InitializeCore(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyMainInterpreterConfig_Read(&config, &core_config);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
+    _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
+    err = _PyMainInterpreterConfig_Read(&main_config, &config);
+    if (!_Py_INIT_FAILED(err)) {
+        err = _Py_InitializeMainInterpreter(&main_config);
     }
-
-    err = _Py_InitializeMainInterpreter(&config);
+    _PyMainInterpreterConfig_Clear(&main_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -905,8 +904,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     err = _Py_INIT_OK();
 
 done:
-    _PyCoreConfig_Clear(&core_config);
-    _PyMainInterpreterConfig_Clear(&config);
+    _PyCoreConfig_Clear(&config);
     return err;
 }
 
