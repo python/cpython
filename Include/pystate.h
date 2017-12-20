@@ -50,7 +50,14 @@ typedef struct {
 
     int argc;               /* Number of command line arguments,
                                -1 means unset */
-    wchar_t **argv;         /* sys.argv, ignored if argc is negative */
+    wchar_t **argv;         /* Command line arguments */
+    wchar_t *program;       /* argv[0] or "" */
+
+    int nxoption;           /* Number of -X options */
+    wchar_t **xoptions;     /* -X options */
+
+    int nwarnoption;        /* Number of warnings options */
+    wchar_t **warnoptions;  /* Warnings options */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \

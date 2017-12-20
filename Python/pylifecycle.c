@@ -882,7 +882,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     core_config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _PyCoreConfig_ReadEnv(&core_config);
+    err = _PyCoreConfig_Read(&core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -2030,7 +2030,7 @@ void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
     PyThreadState *ts;
     PyInterpreterState *is;
-    
+
     ts = PyThreadState_GET();
     is = ts->interp;
 
