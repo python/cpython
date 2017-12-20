@@ -649,11 +649,12 @@ pymain_free_raw(_PyMain *pymain)
        Py_Initialize()-Py_Finalize() can be called multiple times. */
     _PyPathConfig_Clear(&_Py_path_config);
 
+    pymain_clear_config(pymain);
+
     /* Force the allocator used by pymain_read_conf() */
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyCoreConfig_Clear(&pymain->config);
     pymain_clear_pymain(pymain);
 
     clear_wstrlist(orig_argc, orig_argv);
@@ -1963,11 +1964,6 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 {
     int res = -1;
 
-    /* Force default allocator, since pymain_free() must use the same allocator
-       than this function. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     char *oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
     if (oldloc == NULL) {
         pymain->err = _Py_INIT_NO_MEMORY();
@@ -2055,7 +2051,6 @@ done:
         PyMem_RawFree(oldloc);
     }
 
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
 }
 
@@ -2578,6 +2573,15 @@ pymain_cmdline_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 static int
 pymain_cmdline(_PyMain *pymain)
 {
+    /* Force default allocator, since pymain_free() and pymain_clear_config()
+       must use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+#ifdef Py_DEBUG
+    PyMemAllocatorEx default_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &default_alloc);
+#endif
+
     _Py_CommandLineDetails cmdline;
     memset(&cmdline, 0, sizeof(cmdline));
 
@@ -2588,6 +2592,14 @@ pymain_cmdline(_PyMain *pymain)
     pymain_set_global_config(pymain, &cmdline);
 
     pymain_clear_cmdline(pymain, &cmdline);
+
+#ifdef Py_DEBUG
+    /* Make sure that PYMEM_DOMAIN_RAW has not been modified */
+    PyMemAllocatorEx cur_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &cur_alloc);
+    assert(memcmp(&cur_alloc, &default_alloc, sizeof(cur_alloc)) == 0);
+#endif
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
 }
 
