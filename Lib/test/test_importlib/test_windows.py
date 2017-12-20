@@ -99,10 +99,9 @@ class WindowsExtensionSuffixTests:
             expected_tag = "_d" + expected_tag
 
         self.assertIn(expected_tag, suffixes)
-
-        # Ensure the tags are in the correct order
-        tagged_i = suffixes.index(expected_tag)
-        self.assertLess(tagged_i, untagged_i)
+        # Untagged extensions are not recognized anymore
+        self.assertNotIn(".pyd", suffixes)
+        self.assertNotIn("_d.pyd", suffixes)
 
 (Frozen_WindowsExtensionSuffixTests,
  Source_WindowsExtensionSuffixTests
