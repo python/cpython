@@ -126,7 +126,6 @@ static int test_forced_io_encoding(void)
     return 0;
 }
 
-
 /*********************************************************
  * Test parts of the C-API that work before initialization
  *********************************************************/
