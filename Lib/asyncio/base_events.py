@@ -29,7 +29,6 @@ import sys
 import warnings
 import weakref
 
-from . import constants
 from . import coroutines
 from . import events
 from . import futures
@@ -280,7 +279,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, rawsock, protocol, sslcontext, waiter=None,
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         """Create SSL transport."""
         raise NotImplementedError
 
@@ -643,7 +642,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             *, ssl=None, family=0,
             proto=0, flags=0, sock=None,
             local_addr=None, server_hostname=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given Internet host and
@@ -673,6 +672,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError('You must set server_hostname '
                                  'when using ssl without a host')
             server_hostname = host
+
+        if ssl_handshake_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         if host is not None or port is not None:
             if sock is not None:
@@ -769,7 +772,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _create_connection_transport(
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
 
         sock.setblocking(False)
 
@@ -948,7 +951,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl=None,
             reuse_address=None,
             reuse_port=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         """Create a TCP server.
 
         The host parameter can be a string, in that case the TCP server is
@@ -966,6 +969,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
+
+        if ssl_handshake_timeout is not None and ssl is None:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
+
         if host is not None or port is not None:
             if sock is not None:
                 raise ValueError(
@@ -1046,7 +1054,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def connect_accepted_socket(
             self, protocol_factory, sock,
             *, ssl=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of
@@ -1057,6 +1065,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         if sock.type != socket.SOCK_STREAM:
             raise ValueError(f'A Stream Socket was expected, got {sock!r}')
+
+        if ssl_handshake_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,

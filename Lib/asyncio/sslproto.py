@@ -402,9 +402,16 @@ class SSLProtocol(protocols.Protocol):
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
                  call_connection_made=True,
-                 ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+                 ssl_handshake_timeout=None):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
+
+        if ssl_handshake_timeout is None:
+            ssl_handshake_timeout = constants.SSL_HANDSHAKE_TIMEOUT
+        elif ssl_handshake_timeout <= 0:
+            raise ValueError(
+                f"ssl_handshake_timeout should be a positive number, "
+                f"got {ssl_handshake_timeout}")
 
         if not sslcontext:
             sslcontext = _create_transport_context(

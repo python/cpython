@@ -196,7 +196,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,
             server_hostname=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -205,6 +205,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         else:
             if server_hostname is not None:
                 raise ValueError('server_hostname is only meaningful with ssl')
+            if ssl_handshake_timeout is not None:
+                raise ValueError(
+                    'ssl_handshake_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -237,9 +240,13 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
+
+        if ssl_handshake_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:

@@ -327,6 +327,14 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         finally:
             os.unlink(fn)
 
+    def test_create_unix_server_ssl_timeout_with_plain_sock(self):
+        coro = self.loop.create_unix_server(lambda: None, path='spam',
+                                            ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
+
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()
         with sock:
@@ -382,6 +390,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             ValueError, 'you have to pass server_hostname when using ssl'):
 
             self.loop.run_until_complete(coro)
+
+    def test_create_unix_connection_ssl_timeout_with_plain_sock(self):
+        coro = self.loop.create_unix_connection(lambda: None, path='spam',
+                                            ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
+
 
 
 class UnixReadPipeTransportTests(test_utils.TestCase):

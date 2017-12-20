@@ -75,6 +75,22 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             self.loop.run_until_complete(tasks.sleep(0.2, loop=self.loop))
         self.assertTrue(transport.abort.called)
 
+    def test_handshake_timeout_zero(self):
+        sslcontext = test_utils.dummy_ssl_context()
+        app_proto = mock.Mock()
+        waiter = mock.Mock()
+        with self.assertRaisesRegex(ValueError, 'a positive number'):
+            sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
+                                 ssl_handshake_timeout=0)
+
+    def test_handshake_timeout_negative(self):
+        sslcontext = test_utils.dummy_ssl_context()
+        app_proto = mock.Mock()
+        waiter = mock.Mock()
+        with self.assertRaisesRegex(ValueError, 'a positive number'):
+            sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
+                                 ssl_handshake_timeout=-10)
+
     def test_eof_received_waiter(self):
         waiter = asyncio.Future(loop=self.loop)
         ssl_proto = self.ssl_protocol(waiter)
