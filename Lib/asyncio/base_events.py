@@ -675,7 +675,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
-                'ssl_handshake_timeout is only meaningfu with ssl')
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         if host is not None or port is not None:
             if sock is not None:
@@ -972,7 +972,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if ssl_handshake_timeout is not None and ssl is None:
             raise ValueError(
-                'ssl_handshake_timeout is only meaningfu with ssl')
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         if host is not None or port is not None:
             if sock is not None:
@@ -1068,7 +1068,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
-                'ssl_handshake_timeout is only meaningfu with ssl')
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,

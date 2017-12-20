@@ -207,7 +207,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError('server_hostname is only meaningful with ssl')
             if ssl_handshake_timeout is not None:
                 raise ValueError(
-                    'ssl_handshake_timeout is only meaningfu with ssl')
+                    'ssl_handshake_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -246,7 +246,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
-                'ssl_handshake_timeout is only meaningfu with ssl')
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
