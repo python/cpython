@@ -2577,6 +2577,10 @@ pymain_cmdline(_PyMain *pymain)
        must use the same allocator than this function. */
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+#ifdef Py_DEBUG
+    PyMemAllocatorEx default_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &default_alloc);
+#endif
 
     _Py_CommandLineDetails cmdline;
     memset(&cmdline, 0, sizeof(cmdline));
@@ -2589,6 +2593,12 @@ pymain_cmdline(_PyMain *pymain)
 
     pymain_clear_cmdline(pymain, &cmdline);
 
+#ifdef Py_DEBUG
+    /* Make sure that PYMEM_DOMAIN_RAW has not been modified */
+    PyMemAllocatorEx cur_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &cur_alloc);
+    assert(memcmp(&cur_alloc, &default_alloc, sizeof(cur_alloc)) == 0);
+#endif
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
 }
