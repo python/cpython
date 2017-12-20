@@ -79,7 +79,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sslcontext = test_utils.dummy_ssl_context()
         app_proto = mock.Mock()
         waiter = mock.Mock()
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'a positive number'):
             sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
                                  ssl_handshake_timeout=0)
 
@@ -87,7 +87,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sslcontext = test_utils.dummy_ssl_context()
         app_proto = mock.Mock()
         waiter = mock.Mock()
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'a positive number'):
             sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
                                  ssl_handshake_timeout=-10)
 

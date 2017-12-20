@@ -857,7 +857,10 @@ class EventLoopTestsMixin:
         self.addCleanup(sock.close)
         coro = self.loop.connect_accepted_socket(
             MyProto, sock, ssl_handshake_timeout=1)
-        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
 
     @mock.patch('asyncio.base_events.socket')
     def create_server_multiple_hosts(self, family, hosts, mock_sock):

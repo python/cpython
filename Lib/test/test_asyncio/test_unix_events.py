@@ -330,7 +330,9 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
     def test_create_unix_server_ssl_timeout_with_plain_sock(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
                                             ssl_handshake_timeout=1)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
             self.loop.run_until_complete(coro)
 
     def test_create_unix_connection_path_inetsock(self):
@@ -392,7 +394,9 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
     def test_create_unix_connection_ssl_timeout_with_plain_sock(self):
         coro = self.loop.create_unix_connection(lambda: None, path='spam',
                                             ssl_handshake_timeout=1)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
             self.loop.run_until_complete(coro)
 
 
