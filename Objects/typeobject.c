@@ -2015,6 +2015,7 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     return 1;
 }
 
+
 /* Calculate the best base amongst multiple base classes.
    This is the first one that's on the path to the "solid base". */
 
