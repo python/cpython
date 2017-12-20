@@ -408,6 +408,10 @@ class SSLProtocol(protocols.Protocol):
 
         if ssl_handshake_timeout is None:
             ssl_handshake_timeout = constants.SSL_HANDSHAKE_TIMEOUT
+        elif ssl_handshake_timeout <= 0:
+            raise ValueError(
+                f"ssl_handshake_timeout should be a positive number, "
+                f"got {ssl_handshake_timeout}")
 
         if not sslcontext:
             sslcontext = _create_transport_context(
