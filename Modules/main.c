@@ -389,6 +389,7 @@ typedef struct {
     wchar_t *command;            /* -c argument */
     const wchar_t *module;       /* -m argument */
     _Py_OptList warning_options; /* -W options */
+    _Py_OptList env_warning_options;  /* PYTHONWARNINGS env var */
     int print_help;              /* -h, -? options */
     int print_version;           /* -V option */
     int bytes_warning;           /* Py_BytesWarningFlag, -b */
@@ -412,39 +413,45 @@ typedef struct {
     int legacy_windows_stdio;        /* Py_LegacyWindowsStdioFlag,
                                         PYTHONLEGACYWINDOWSSTDIO */
 #endif
-    _Py_OptList env_warning_options;  /* PYTHONWARNINGS env var */
 } _Py_CommandLineDetails;
 
 /* Structure used by Py_Main() to pass data to subfunctions */
 typedef struct {
-    /* Exit status ("exit code") */
-    int status;
-    PyCompilerFlags cf;
-    /* non-zero is stdin is a TTY or if -i option is used */
-    int stdin_is_interactive;
-    _PyCoreConfig core_config;
-    _PyMainInterpreterConfig config;
-    _Py_CommandLineDetails cmdline;
-    PyObject *main_importer_path;
-    /* non-zero if filename, command (-c) or module (-m) is set
-       on the command line */
-    int run_code;
-    /* Error message if a function failed */
-    _PyInitError err;
-
+    /* Input arguments */
     int argc;
     int use_bytes_argv;
     char **bytes_argv;
     wchar_t **wchar_argv;
+
+    /* Exit status or "exit code": result of pymain_main() */
+    int status;
+    /* Error message if a function failed */
+    _PyInitError err;
+
+    _Py_CommandLineDetails cmdline;
+    /* non-zero is stdin is a TTY or if -i option is used */
+    int stdin_is_interactive;
+
+    _PyCoreConfig core_config;
+    _PyMainInterpreterConfig config;
+
+    PyObject *main_importer_path;
 } _PyMain;
 
 /* .cmdline is initialized to zeros */
 #define _PyMain_INIT \
     {.core_config = _PyCoreConfig_INIT, \
      .config = _PyMainInterpreterConfig_INIT, \
-     .run_code = -1, \
      .err = _Py_INIT_OK()}
 /* Note: _PyMain_INIT sets other fields to 0/NULL */
+
+
+/* Non-zero if filename, command (-c) or module (-m) is set
+   on the command line */
+#define RUN_CODE(pymain) \
+    (pymain->cmdline.command != NULL \
+     || pymain->cmdline.filename != NULL \
+     || pymain->cmdline.module != NULL)
 
 
 static void
@@ -525,7 +532,6 @@ pymain_clear_cmdline(_PyMain *pymain)
     }
     cmdline->argv = NULL;
 }
-
 
 static void
 pymain_clear_configs(_PyMain *pymain)
@@ -815,9 +821,6 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
     {
         cmdline->filename = cmdline->argv[_PyOS_optind];
     }
-
-    pymain->run_code = (cmdline->command != NULL || cmdline->filename != NULL
-                        || cmdline->module != NULL);
 
     /* -c and -m options are exclusive */
     assert(!(cmdline->command != NULL && cmdline->module != NULL));
@@ -1174,12 +1177,11 @@ pymain_get_program_name(_PyMain *pymain)
 static void
 pymain_header(_PyMain *pymain)
 {
-    /* TODO: Move this to _PyRun_PrepareMain */
     if (Py_QuietFlag) {
         return;
     }
 
-    if (!Py_VerboseFlag && (pymain->run_code || !pymain->stdin_is_interactive)) {
+    if (!Py_VerboseFlag && (RUN_CODE(pymain) || !pymain->stdin_is_interactive)) {
         return;
     }
 
@@ -1291,17 +1293,32 @@ config_init_argv(_PyMainInterpreterConfig *config, const _PyCoreConfig *core_con
 
 
 static int
-pymain_update_sys_path(_PyMain *pymain)
+pymain_init_path0(_PyMain *pymain, PyObject **path0)
 {
     if (pymain->main_importer_path != NULL) {
         /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
+        *path0 = NULL;
         return 0;
     }
 
     if (Py_IsolatedFlag) {
+        *path0 = NULL;
         return 0;
     }
 
+    *path0 = _PyPathConfig_ComputeArgv0(pymain->core_config.argc,
+                                        pymain->core_config.argv);
+    if (*path0 == NULL) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        return -1;
+    }
+    return 0;
+}
+
+
+static int
+pymain_update_sys_path(_PyMain *pymain, PyObject *path0)
+{
     /* Prepend argv[0] to sys.path.
        If argv[0] is a symlink, use the real path. */
     PyObject *sys_path = PySys_GetObject("path");
@@ -1310,20 +1327,11 @@ pymain_update_sys_path(_PyMain *pymain)
         return -1;
     }
 
-    PyObject *path0 = _PyPathConfig_ComputeArgv0(pymain->core_config.argc, pymain->core_config.argv);
-    if (path0 == NULL) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
-    }
-
     /* Prepend path0 to sys.path */
     if (PyList_Insert(sys_path, 0, path0) < 0) {
-        Py_DECREF(path0);
         pymain->err = _Py_INIT_ERR("sys.path.insert(0, path0) failed");
         return -1;
     }
-    Py_DECREF(path0);
-
     return 0;
 }
 
@@ -1357,7 +1365,7 @@ pymain_get_global_config(_PyMain *pymain)
 }
 
 
-/* Set Py_XXX global configuration variables */
+/* Set Py_xxx global configuration variables */
 static void
 pymain_set_global_config(_PyMain *pymain)
 {
@@ -1396,7 +1404,7 @@ pymain_import_readline(_PyMain *pymain)
     if (Py_IsolatedFlag) {
         return;
     }
-    if (!Py_InspectFlag && pymain->run_code) {
+    if (!Py_InspectFlag && RUN_CODE(pymain)) {
         return;
     }
     if (!isatty(fileno(stdin))) {
@@ -1464,13 +1472,13 @@ pymain_open_filename(_PyMain *pymain)
 
 
 static void
-pymain_run_filename(_PyMain *pymain)
+pymain_run_filename(_PyMain *pymain, PyCompilerFlags *cf)
 {
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
     if (cmdline->filename == NULL && pymain->stdin_is_interactive) {
         Py_InspectFlag = 0; /* do exit on SystemExit */
-        pymain_run_startup(&pymain->cf);
+        pymain_run_startup(cf);
         pymain_run_interactive_hook();
     }
 
@@ -1490,12 +1498,12 @@ pymain_run_filename(_PyMain *pymain)
         fp = stdin;
     }
 
-    pymain->status = pymain_run_file(fp, cmdline->filename, &pymain->cf);
+    pymain->status = pymain_run_file(fp, cmdline->filename, cf);
 }
 
 
 static void
-pymain_repl(_PyMain *pymain)
+pymain_repl(_PyMain *pymain, PyCompilerFlags *cf)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
@@ -1503,15 +1511,14 @@ pymain_repl(_PyMain *pymain)
         Py_InspectFlag = 1;
     }
 
-    if (!(Py_InspectFlag && pymain->stdin_is_interactive
-          && pymain->run_code)) {
+    if (!(Py_InspectFlag && pymain->stdin_is_interactive && RUN_CODE(pymain))) {
         return;
     }
 
     Py_InspectFlag = 0;
     pymain_run_interactive_hook();
 
-    int res = PyRun_AnyFileFlags(stdin, "<stdin>", &pymain->cf);
+    int res = PyRun_AnyFileFlags(stdin, "<stdin>", cf);
     pymain->status = (res != 0);
 }
 
@@ -1966,14 +1973,14 @@ pymain_read_conf_impl(_PyMain *pymain)
         return res;
     }
 
+    if (pymain_init_core_argv(pymain) < 0) {
+        return -1;
+    }
+
     /* Set Py_IgnoreEnvironmentFlag for Py_GETENV() */
     Py_IgnoreEnvironmentFlag = pymain->core_config.ignore_environment;
 
     if (pymain_parse_envvars(pymain) < 0) {
-        return -1;
-    }
-
-    if (pymain_init_core_argv(pymain) < 0) {
         return -1;
     }
 
@@ -1986,6 +1993,8 @@ pymain_read_conf_impl(_PyMain *pymain)
 }
 
 
+/* Read the configuration, but initialize also the LC_CTYPE locale:
+   enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538) */
 static int
 pymain_read_conf(_PyMain *pymain)
 {
@@ -2426,9 +2435,21 @@ pymain_init_python_main(_PyMain *pymain)
         pymain->main_importer_path = pymain_get_importer(pymain->cmdline.filename);
     }
 
-    if (pymain_update_sys_path(pymain) < 0) {
+    PyObject *path0;
+    if (pymain_init_path0(pymain, &path0) < 0) {
         return -1;
     }
+
+    pymain_clear_configs(pymain);
+
+    if (path0 != NULL) {
+        if (pymain_update_sys_path(pymain, path0) < 0) {
+            Py_DECREF(path0);
+            return -1;
+        }
+        Py_DECREF(path0);
+    }
+
     return 0;
 }
 
@@ -2436,21 +2457,22 @@ pymain_init_python_main(_PyMain *pymain)
 static void
 pymain_run_python(_PyMain *pymain)
 {
+    PyCompilerFlags cf = {.cf_flags = 0};
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
 
     pymain_header(pymain);
     pymain_import_readline(pymain);
 
     if (cmdline->command) {
-        pymain->status = pymain_run_command(cmdline->command, &pymain->cf);
+        pymain->status = pymain_run_command(cmdline->command, &cf);
     }
     else if (cmdline->module) {
         pymain->status = (pymain_run_module(cmdline->module, 1) != 0);
     }
     else {
-        pymain_run_filename(pymain);
+        pymain_run_filename(pymain, &cf);
     }
-    pymain_repl(pymain);
+    pymain_repl(pymain, &cf);
 }
 
 
@@ -2476,59 +2498,37 @@ pymain_init(_PyMain *pymain)
 
 
 static int
-pymain_impl(_PyMain *pymain)
+pymain_init_cmdline(_PyMain *pymain)
 {
     pymain->err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(pymain->err)) {
         return -1;
     }
 
-    /* Read the configuration, but initialize also the LC_CTYPE locale:
-       enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538) */
     int res = pymain_read_conf(pymain);
     if (res < 0) {
         return -1;
     }
     if (res > 0) {
         /* --help or --version command: we are done */
-        return 0;
+        return 1;
     }
 
     _Py_CommandLineDetails *cmdline = &pymain->cmdline;
     if (cmdline->print_help) {
         pymain_usage(0, cmdline->argv[0]);
-        return 0;
+        return 1;
     }
 
     if (cmdline->print_version) {
         printf("Python %s\n",
                (cmdline->print_version >= 2) ? Py_GetVersion() : PY_VERSION);
-        return 0;
+        return 1;
     }
 
     /* For Py_GetArgcArgv(). Cleared by pymain_free(). */
     orig_argc = pymain->argc;
     orig_argv = cmdline->argv;
-
-    res = pymain_init_python_core(pymain);
-    if (res < 0) {
-        return -1;
-    }
-
-    res = pymain_init_python_main(pymain);
-    if (res < 0) {
-        return -1;
-    }
-
-    pymain_clear_configs(pymain);
-
-    pymain_run_python(pymain);
-
-    if (Py_FinalizeEx() < 0) {
-        /* Value unlikely to be confused with a non-error exit status or
-           other special meaning */
-        pymain->status = 120;
-    }
     return 0;
 }
 
@@ -2538,9 +2538,31 @@ pymain_main(_PyMain *pymain)
 {
     pymain_init(pymain);
 
-    if (pymain_impl(pymain) < 0) {
+    int res = pymain_init_cmdline(pymain);
+    if (res < 0) {
         _Py_FatalInitError(pymain->err);
     }
+    if (res == 1) {
+        goto done;
+    }
+
+    if (pymain_init_python_core(pymain) < 0) {
+        _Py_FatalInitError(pymain->err);
+    }
+
+    if (pymain_init_python_main(pymain) < 0) {
+        _Py_FatalInitError(pymain->err);
+    }
+
+    pymain_run_python(pymain);
+
+    if (Py_FinalizeEx() < 0) {
+        /* Value unlikely to be confused with a non-error exit status or
+           other special meaning */
+        pymain->status = 120;
+    }
+
+done:
     pymain_free(pymain);
 
     return pymain->status;

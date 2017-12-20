@@ -2003,13 +2003,13 @@ exit:
     }
 }
 
-void
+void _Py_NO_RETURN
 Py_FatalError(const char *msg)
 {
     fatal_error(NULL, msg, -1);
 }
 
-void
+void _Py_NO_RETURN
 _Py_FatalInitError(_PyInitError err)
 {
     /* On "user" error: exit with status 1.
