@@ -928,9 +928,9 @@ Text I/O
       ``errors='strict`` is used when *encoding* is specified but
       *errors* is not specified.
 
-      It is not possible to change the encoding if some data has already
-      been read from the stream. On the other hand, changing encoding
-      after write is possible.
+      It is not possible to change the encoding or newline if some data
+      has already been read from the stream. On the other hand, changing
+      encoding after write is possible.
 
       This method does an implicit stream flush before setting the
       new parameters.
