@@ -1,0 +1,4 @@
+Added seek and rest to the ZipExtFile class. This only works if the file
+object used to open the zipfile is seekable. This change is the first
+iteration of this feature and can easily be optimized by considering the
+_readbuffer.
