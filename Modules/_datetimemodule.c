@@ -664,6 +664,167 @@ set_date_fields(PyDateTime_Date *self, int y, int m, int d)
 }
 
 /* ---------------------------------------------------------------------------
+ * String parsing utilities and helper functions
+ */
+
+static const char*
+parse_digits(const char* ptr, int* var, size_t num_digits)
+{
+    for (size_t i = 0; i < num_digits; ++i) {
+        unsigned int tmp = (unsigned int)(*(ptr++) - '0');
+        if (tmp > 9) {
+            return NULL;
+        }
+        *var *= 10;
+        *var += (signed int)tmp;
+    }
+
+    return ptr;
+}
+
+static int parse_isoformat_date(const char *dtstr,
+                                int* year, int *month, int* day) {
+    /* Parse the date components of the result of date.isoformat()
+    *
+    *  Return codes:
+    *       0:  Success
+    *      -1:  Failed to parse date component
+    *      -2:  Failed to parse dateseparator
+    */
+    const char *p = dtstr;
+    p = parse_digits(p, year, 4);
+    if (NULL == p) {
+        return -1;
+    }
+    
+    if (*(p++) != '-') {
+        return -2;
+    }
+
+    p = parse_digits(p, month, 2);
+    if (NULL == p) {
+        return -1;
+    }
+
+    if (*(p++) != '-') {
+        return -2;
+    }
+
+    p = parse_digits(p, day, 2);
+    if (p == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end,
+                  int* hour, int* minute, int *second, int *microsecond) {
+    const char *p = tstr;
+    const char *p_end = tstr_end;
+    int *vals[3] = {hour, minute, second};
+
+    // Parse [HH[:MM[:SS]]]
+    for (size_t i = 0; i < 3; ++i) {
+        p = parse_digits(p, vals[i], 2);
+        if (NULL == p) {
+            return -3;
+        }
+
+        char c = *(p++);
+        if (p >= p_end) {
+            return c != '\0';
+        } else if (c == ':') {
+            continue;
+        } else if (c == '.') {
+            break;
+        } else {
+            return -4;      // Malformed time separator
+        }
+    }
+
+    // Parse .fff[fff]
+    size_t len_remains = p_end - p;
+    if (!(len_remains == 6 || len_remains == 3)) {
+        return -3;
+    }
+
+    p = parse_digits(p, microsecond, len_remains);
+    if (NULL == p) {
+        return -3;
+    }
+
+    if (len_remains == 3) {
+        *microsecond *= 1000;
+    }
+
+    // Return 1 if it's not the end of the string
+    return *p != '\0';
+}
+
+static int
+parse_isoformat_time(const char *dtstr, size_t dtlen,
+                     int* hour, int *minute, int *second, int *microsecond,
+                     int* tzoffset, int *tzmicrosecond) {
+    // Parse the time portion of a datetime.isoformat() string
+    //
+    // Return codes:
+    //      0:  Success (no tzoffset)
+    //      1:  Success (with tzoffset)
+    //     -3:  Failed to parse time component
+    //     -4:  Failed to parse time separator
+    //     -5:  Malformed timezone string
+
+    const char *p = dtstr;
+    const char *p_end = dtstr + dtlen;
+
+    const char *tzinfo_pos = p;
+    do {
+        if (*tzinfo_pos == '+' || *tzinfo_pos == '-') {
+            break;
+        }
+    } while(++tzinfo_pos < p_end);
+
+    int rv = parse_hh_mm_ss_ff(dtstr, tzinfo_pos,
+                               hour, minute, second, microsecond);
+
+    if (rv < 0) {
+        return rv;
+    } else if (tzinfo_pos == p_end) {
+        // We know that there's no time zone, so if there's stuff at the
+        // end of the string it's an error.
+        if (rv == 1) {
+            return -5;
+        } else {
+            return 0;
+        }
+    }
+
+    // Parse time zone component
+    // Valid formats are:
+    //    - +HH:MM           (len  6)
+    //    - +HH:MM:SS        (len  9)
+    //    - +HH:MM:SS.ffffff (len 16)
+    size_t tzlen = p_end - tzinfo_pos;
+    if (!(tzlen == 6 || tzlen == 9 || tzlen == 16)) {
+        return -5;
+    }
+
+    int tzsign = (*tzinfo_pos == '-')?-1:1;
+    tzinfo_pos++;
+    int tzhour = 0, tzminute = 0, tzsecond = 0;
+    rv = parse_hh_mm_ss_ff(tzinfo_pos, p_end,
+                           &tzhour, &tzminute, &tzsecond, tzmicrosecond);
+
+    *tzoffset = tzsign * ((tzhour * 3600) + (tzminute * 60) + tzsecond);
+    *tzmicrosecond *= tzsign;
+
+    return rv?-5:1;
+}
+
+
+/* ---------------------------------------------------------------------------
  * Create various objects, mostly without range checking.
  */
 
@@ -1061,6 +1222,27 @@ append_keyword_fold(PyObject *repr, int fold)
     repr = PyUnicode_FromFormat("%U, fold=%d)", temp, fold);
     Py_DECREF(temp);
     return repr;
+}
+
+static inline PyObject *
+tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds) {
+    PyObject *tzinfo;
+    if (rv == 1) {
+        // Create a timezone from offset in seconds (0 returns UTC)
+        if (tzoffset == 0) {
+            Py_INCREF(PyDateTime_TimeZone_UTC);
+            return PyDateTime_TimeZone_UTC;
+        }
+
+        PyObject *delta = new_delta(0, tzoffset, tz_useconds, 1);
+        tzinfo = new_timezone(delta, NULL);
+        Py_XDECREF(delta);
+    } else {
+        tzinfo = Py_None;
+        Py_INCREF(Py_None);
+    }
+
+    return tzinfo;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2607,6 +2789,7 @@ date_fromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
+
 /* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
  * the ordinal is out of range.
  */
@@ -2632,6 +2815,46 @@ date_fromordinal(PyObject *cls, PyObject *args)
     }
     return result;
 }
+
+/* Return the new date from a string as generated by date.isoformat() */
+static PyObject *
+date_fromisoformat(PyObject *cls, PyObject *dtstr) {
+    assert(dtstr != NULL);
+
+    if (!PyUnicode_Check(dtstr)) {
+        PyErr_SetString(PyExc_TypeError, "fromisoformat: argument must be str");
+        return NULL;
+    }
+
+    Py_ssize_t len;
+
+    const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+
+    int year = 0, month = 0, day = 0;
+
+    int rv;
+    if (len == 10) {
+        rv = parse_isoformat_date(dt_ptr, &year, &month, &day);
+    } else {
+        rv = -1;
+    }
+
+    if (rv < 0) {
+        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s",
+                     dt_ptr);
+        return NULL;
+    }
+
+    PyObject *result;
+    if ( (PyTypeObject*)cls == &PyDateTime_DateType ) {
+        result = new_date_ex(year, month, day, (PyTypeObject*)cls);
+    } else {
+        result = PyObject_CallFunction(cls, "iii", year, month, day);
+    }
+
+    return result;
+}
+
 
 /*
  * Date arithmetic.
@@ -2924,6 +3147,10 @@ static PyMethodDef date_methods[] = {
                                                     METH_CLASS,
      PyDoc_STR("int -> date corresponding to a proleptic Gregorian "
                "ordinal.")},
+
+     {"fromisoformat", (PyCFunction)date_fromisoformat,  METH_O |
+                                                         METH_CLASS,
+      PyDoc_STR("str -> Construct a date from the output of date.isoformat()")},
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
@@ -3972,6 +4199,49 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     return clone;
 }
 
+static PyObject *
+time_fromisoformat(PyObject *cls, PyObject *tstr) {
+    assert(tstr != NULL);
+
+    if (!PyUnicode_Check(tstr)) {
+        PyErr_SetString(PyExc_TypeError, "fromisoformat: argument must be str");
+        return NULL;
+    }
+
+    Py_ssize_t len;
+    const char *p = PyUnicode_AsUTF8AndSize(tstr, &len);
+
+    int hour = 0, minute = 0, second = 0, microsecond = 0;
+    int tzoffset, tzimicrosecond = 0;
+    int rv = parse_isoformat_time(p, len,
+                                  &hour, &minute, &second, &microsecond,
+                                  &tzoffset, &tzimicrosecond);
+
+    if (rv < 0) {
+        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", p);
+        return NULL;
+    }
+
+    PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
+                                                     tzimicrosecond);
+
+    if (tzinfo == NULL) {
+        return NULL;
+    }
+
+    PyObject *t;
+    if ( (PyTypeObject *)cls == &PyDateTime_TimeType ) {
+        t = new_time(hour, minute, second, microsecond, tzinfo, 0);
+    } else {
+        t = PyObject_CallFunction(cls, "iiiiO",
+                                  hour, minute, second, microsecond, tzinfo);
+    }
+
+    Py_DECREF(tzinfo);
+    return t;
+}
+
+
 /* Pickle support, a simple use of __reduce__. */
 
 /* Let basestate be the non-tzinfo data string.
@@ -4040,6 +4310,9 @@ static PyMethodDef time_methods[] = {
 
     {"replace",     (PyCFunction)time_replace,          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},
+
+     {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
+     PyDoc_STR("string -> time from time.isoformat() output")},
 
     {"__reduce_ex__", (PyCFunction)time_reduce_ex,        METH_VARARGS,
      PyDoc_STR("__reduce_ex__(proto) -> (cls, state)")},
@@ -4505,6 +4778,82 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
     }
     return result;
 }
+
+static PyObject *
+datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
+    assert(dtstr != NULL);
+
+    if (!PyUnicode_Check(dtstr)) {
+        PyErr_SetString(PyExc_TypeError, "fromisoformat: argument must be str");
+        return NULL;
+    }
+
+    Py_ssize_t len;
+    const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+    const char * p = dt_ptr;
+
+    int year = 0, month = 0, day = 0;
+    int hour = 0, minute = 0, second = 0, microsecond = 0;
+    int tzoffset = 0, tzusec = 0;
+
+    // date has a fixed length of 10
+    int rv = parse_isoformat_date(p, &year, &month, &day);
+
+    if (!rv && len > 10) {
+        // In UTF-8, the length of multi-byte characters is encoded in the MSB
+        if ((p[10] & 0x80) == 0) {
+            p += 11;
+        } else {
+            switch(p[10] & 0xf0) {
+                case 0xe0:
+                    p += 13;
+                    break;
+                case 0xf0:
+                    p += 14;
+                    break;
+                default:
+                    p += 12;
+                    break;
+            }
+        }
+
+        len -= (p - dt_ptr);
+        rv = parse_isoformat_time(p, len,
+                                  &hour, &minute, &second, &microsecond,
+                                  &tzoffset, &tzusec);
+    }
+    if (rv < 0) {
+        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", dt_ptr);
+        return NULL;
+    }
+
+    PyObject* tzinfo = tzinfo_from_isoformat_results(rv, tzoffset, tzusec);
+    if (tzinfo == NULL) {
+        return NULL;
+    }
+
+    PyObject* dt;
+    if ( (PyTypeObject*)cls == &PyDateTime_DateTimeType ) {
+        // Use the fast path constructor
+        dt = new_datetime(year, month, day, hour, minute, second, microsecond,
+                          tzinfo, 0);
+    } else {
+        // Subclass
+        dt = PyObject_CallFunction(cls, "iiiiiiiO",
+                                       year,
+                                       month,
+                                       day,
+                                       hour,
+                                       minute,
+                                       second,
+                                       microsecond,
+                                       tzinfo);
+    }
+
+    Py_DECREF(tzinfo);
+    return dt;
+}
+
 
 /*
  * Destructor.
@@ -5518,6 +5867,10 @@ static PyMethodDef datetime_methods[] = {
     {"combine", (PyCFunction)datetime_combine,
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("date, time -> datetime with same date and time fields")},
+
+    {"fromisoformat", (PyCFunction)datetime_fromisoformat,
+     METH_O | METH_CLASS,
+     PyDoc_STR("string -> datetime from datetime.isoformat() output")},
 
     /* Instance methods: */
 

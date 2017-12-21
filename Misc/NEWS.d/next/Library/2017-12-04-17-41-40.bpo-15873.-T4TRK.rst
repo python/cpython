@@ -1,0 +1,3 @@
+Added new alternate constructors :meth:`datetime.datetime.fromisoformat`,
+:meth:`datetime.time.fromisoformat` and :meth:`datetime.date.fromisoformat`
+as the inverse operation of each classes's respective ``isoformat`` methods.
