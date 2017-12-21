@@ -56,7 +56,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 self.remove_signal_handler(sig)
         else:
             warinigs.warn(f"Closing the loop {self} on interpreter shutdown "
-                          f"stage, signal unsubsription is disabled")
+                          f"stage, signal unsubsription is disabled",
+                          stacklevel=2)
 
     def _process_self_data(self, data):
         for signum in data:
