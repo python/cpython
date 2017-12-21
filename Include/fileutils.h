@@ -19,6 +19,13 @@ PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
     size_t *error_pos);
 #endif
 
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
+    const char *s,
+    Py_ssize_t size,
+    size_t *p_wlen);
+#endif
+
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 

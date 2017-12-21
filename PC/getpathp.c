@@ -565,58 +565,6 @@ done:
 
 
 static int
-find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
-{
-    int result = 0; /* meaning not found */
-    char buffer[MAXPATHLEN*2+1];  /* allow extra for key, '=', etc. */
-
-    fseek(env_file, 0, SEEK_SET);
-    while (!feof(env_file)) {
-        char * p = fgets(buffer, MAXPATHLEN*2, env_file);
-        wchar_t tmpbuffer[MAXPATHLEN*2+1];
-        PyObject * decoded;
-        size_t n;
-
-        if (p == NULL) {
-            break;
-        }
-        n = strlen(p);
-        if (p[n - 1] != '\n') {
-            /* line has overflowed - bail */
-            break;
-        }
-        if (p[0] == '#') {
-            /* Comment - skip */
-            continue;
-        }
-        decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
-        if (decoded != NULL) {
-            Py_ssize_t k;
-            k = PyUnicode_AsWideChar(decoded,
-                                     tmpbuffer, MAXPATHLEN * 2);
-            Py_DECREF(decoded);
-            if (k >= 0) {
-                wchar_t * context = NULL;
-                wchar_t * tok = wcstok_s(tmpbuffer, L" \t\r\n", &context);
-                if ((tok != NULL) && !wcscmp(tok, key)) {
-                    tok = wcstok_s(NULL, L" \t", &context);
-                    if ((tok != NULL) && !wcscmp(tok, L"=")) {
-                        tok = wcstok_s(NULL, L"\r\n", &context);
-                        if (tok != NULL) {
-                            wcsncpy(value, tok, MAXPATHLEN);
-                            result = 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return result;
-}
-
-
-static int
 read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
               int *isolated, int *nosite)
 {
@@ -765,9 +713,11 @@ calculate_pyvenv_file(PyCalculatePath *calculate)
     FILE *env_file = _Py_wfopen(envbuffer, L"r");
     if (env_file == NULL) {
         errno = 0;
+
         reduce(envbuffer);
         reduce(envbuffer);
         join(envbuffer, env_cfg);
+
         env_file = _Py_wfopen(envbuffer, L"r");
         if (env_file == NULL) {
             errno = 0;
@@ -780,7 +730,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate)
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
     wchar_t tmpbuffer[MAXPATHLEN+1];
-    if (find_env_config_value(env_file, L"home", tmpbuffer)) {
+    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, MAXPATHLEN)) {
         wcscpy_s(calculate->argv0_path, MAXPATHLEN+1, tmpbuffer);
     }
     fclose(env_file);
