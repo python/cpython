@@ -22,6 +22,8 @@ extern int winerror_to_errno(int);
 
 extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size,
                                                size_t *p_wlen);
+extern char* _Py_EncodeUTF8_surrogateescape(const wchar_t *text,
+                                            size_t *error_pos);
 
 #ifdef O_CLOEXEC
 /* Does open() support the O_CLOEXEC flag? Possible values:
@@ -418,42 +420,6 @@ Py_DecodeLocale(const char* arg, size_t *size)
 #endif   /* __APPLE__ or __ANDROID__ */
 }
 
-static char*
-_Py_EncodeLocaleUTF8(const wchar_t *text, size_t *error_pos)
-{
-    Py_ssize_t len;
-    PyObject *unicode, *bytes = NULL;
-    char *cpath;
-
-    unicode = PyUnicode_FromWideChar(text, wcslen(text));
-    if (unicode == NULL) {
-        return NULL;
-    }
-
-    bytes = _PyUnicode_AsUTF8String(unicode, "surrogateescape");
-    Py_DECREF(unicode);
-    if (bytes == NULL) {
-        PyErr_Clear();
-        if (error_pos != NULL) {
-            *error_pos = (size_t)-1;
-        }
-        return NULL;
-    }
-
-    len = PyBytes_GET_SIZE(bytes);
-    cpath = PyMem_Malloc(len+1);
-    if (cpath == NULL) {
-        PyErr_Clear();
-        Py_DECREF(bytes);
-        if (error_pos != NULL) {
-            *error_pos = (size_t)-1;
-        }
-        return NULL;
-    }
-    memcpy(cpath, PyBytes_AsString(bytes), len + 1);
-    Py_DECREF(bytes);
-    return cpath;
-}
 
 #if !defined(__APPLE__) && !defined(__ANDROID__)
 static char*
@@ -537,10 +503,10 @@ char*
 Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
 #if defined(__APPLE__) || defined(__ANDROID__)
-    return _Py_EncodeLocaleUTF8(text, error_pos);
+    return _Py_EncodeUTF8_surrogateescape(text, error_pos);
 #else   /* __APPLE__ */
     if (Py_UTF8Mode == 1) {
-        return _Py_EncodeLocaleUTF8(text, error_pos);
+        return _Py_EncodeUTF8_surrogateescape(text, error_pos);
     }
 
 #ifndef MS_WINDOWS
