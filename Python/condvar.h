@@ -81,6 +81,14 @@ PyCOND_INIT(PyCOND_T *cond)
     return err;
 }
 
+# ifdef MONOTONIC
+# define GETTIME _PyTime_GetMonotonicClock
+# else
+# define GETTIME _PyTime_GetSystemClock
+# endif
+
+# define MAXIMUM_TIMEOUT 100
+
 /* return 0 for success, 1 on timeout, -1 on error */
 Py_LOCAL_INLINE(int)
 PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, PY_TIMEOUT_T us)
@@ -89,14 +97,16 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, PY_TIMEOUT_T us)
     struct timespec ts;
     _PyTime_t deadline;
 
-#ifdef MONOTONIC
-    deadline = _PyTime_GetMonotonicClock();
-#else
-    deadline = _PyTime_GetSystemClock();
-#endif
-
-    deadline += _PyTime_FromNanoseconds(us * 1000);
-    _PyTime_AsTimespec(deadline, &ts);
+    while (1) {
+        _PyTime_t delta;
+        deadline = GETTIME() + _PyTime_FromNanoseconds(us * 1000);
+        if (us < MAXIMUM_TIMEOUT && ((delta=(GETTIME() - deadline)) > 0)) {
+            us += _PyTime_AsMicroseconds(delta, _PyTime_ROUND_CEILING);
+            continue;
+        }
+        _PyTime_AsTimespec(deadline, &ts);
+        break;
+    }
 
     r = pthread_cond_timedwait((cond), (mut), &ts);
     if (r == ETIMEDOUT)
