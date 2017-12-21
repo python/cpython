@@ -23,7 +23,7 @@ extern int winerror_to_errno(int);
 extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size,
                                                size_t *p_wlen);
 extern char* _Py_EncodeUTF8_surrogateescape(const wchar_t *text,
-                                            size_t *error_pos);
+                                            size_t *error_pos, int raw_malloc);
 
 #ifdef O_CLOEXEC
 /* Does open() support the O_CLOEXEC flag? Possible values:
@@ -183,7 +183,7 @@ error:
 }
 
 static char*
-encode_ascii_surrogateescape(const wchar_t *text, size_t *error_pos)
+encode_ascii_surrogateescape(const wchar_t *text, size_t *error_pos, int raw_malloc)
 {
     char *result = NULL, *out;
     size_t len, i;
@@ -194,7 +194,13 @@ encode_ascii_surrogateescape(const wchar_t *text, size_t *error_pos)
 
     len = wcslen(text);
 
-    result = PyMem_Malloc(len + 1);  /* +1 for NUL byte */
+    /* +1 for NUL byte */
+    if (raw_malloc) {
+        result = PyMem_RawMalloc(len + 1);
+    }
+    else {
+        result = PyMem_Malloc(len + 1);
+    }
     if (result == NULL)
         return NULL;
 
@@ -211,9 +217,15 @@ encode_ascii_surrogateescape(const wchar_t *text, size_t *error_pos)
             *out++ = (char)(ch - 0xdc00);
         }
         else {
-            if (error_pos != NULL)
+            if (error_pos != NULL) {
                 *error_pos = i;
-            PyMem_Free(result);
+            }
+            if (raw_malloc) {
+                PyMem_RawFree(result);
+            }
+            else {
+                PyMem_Free(result);
+            }
             return NULL;
         }
     }
@@ -423,7 +435,7 @@ Py_DecodeLocale(const char* arg, size_t *size)
 
 #if !defined(__APPLE__) && !defined(__ANDROID__)
 static char*
-encode_locale(const wchar_t *text, size_t *error_pos)
+encode_current_locale(const wchar_t *text, size_t *error_pos, int raw_malloc)
 {
     const size_t len = wcslen(text);
     char *result = NULL, *bytes = NULL;
@@ -455,8 +467,14 @@ encode_locale(const wchar_t *text, size_t *error_pos)
                 else
                     converted = wcstombs(NULL, buf, 0);
                 if (converted == (size_t)-1) {
-                    if (result != NULL)
-                        PyMem_Free(result);
+                    if (result != NULL) {
+                        if (raw_malloc) {
+                            PyMem_RawFree(result);
+                        }
+                        else {
+                            PyMem_Free(result);
+                        }
+                    }
                     if (error_pos != NULL)
                         *error_pos = i;
                     return NULL;
@@ -475,10 +493,16 @@ encode_locale(const wchar_t *text, size_t *error_pos)
         }
 
         size += 1; /* nul byte at the end */
-        result = PyMem_Malloc(size);
+        if (raw_malloc) {
+            result = PyMem_RawMalloc(size);
+        }
+        else {
+            result = PyMem_Malloc(size);
+        }
         if (result == NULL) {
-            if (error_pos != NULL)
+            if (error_pos != NULL) {
                 *error_pos = (size_t)-1;
+            }
             return NULL;
         }
         bytes = result;
@@ -486,6 +510,28 @@ encode_locale(const wchar_t *text, size_t *error_pos)
     return result;
 }
 #endif
+
+static char*
+encode_locale(const wchar_t *text, size_t *error_pos, int raw_malloc)
+{
+#if defined(__APPLE__) || defined(__ANDROID__)
+    return _Py_EncodeUTF8_surrogateescape(text, error_pos, raw_malloc);
+#else   /* __APPLE__ */
+    if (Py_UTF8Mode == 1) {
+        return _Py_EncodeUTF8_surrogateescape(text, error_pos, raw_malloc);
+    }
+
+#ifndef MS_WINDOWS
+    if (force_ascii == -1)
+        force_ascii = check_force_ascii();
+
+    if (force_ascii)
+        return encode_ascii_surrogateescape(text, error_pos, raw_malloc);
+#endif
+
+    return encode_current_locale(text, error_pos, raw_malloc);
+#endif   /* __APPLE__ or __ANDROID__ */
+}
 
 /* Encode a wide character string to the locale encoding with the
    surrogateescape error handler: surrogate characters in the range
@@ -502,23 +548,16 @@ encode_locale(const wchar_t *text, size_t *error_pos)
 char*
 Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
-#if defined(__APPLE__) || defined(__ANDROID__)
-    return _Py_EncodeUTF8_surrogateescape(text, error_pos);
-#else   /* __APPLE__ */
-    if (Py_UTF8Mode == 1) {
-        return _Py_EncodeUTF8_surrogateescape(text, error_pos);
-    }
+    return encode_locale(text, error_pos, 0);
+}
 
-#ifndef MS_WINDOWS
-    if (force_ascii == -1)
-        force_ascii = check_force_ascii();
 
-    if (force_ascii)
-        return encode_ascii_surrogateescape(text, error_pos);
-#endif
-
-    return encode_locale(text, error_pos);
-#endif   /* __APPLE__ or __ANDROID__ */
+/* Similar to Py_EncodeLocale(), but result must be freed by PyMem_RawFree()
+   instead of PyMem_Free(). */
+char*
+_Py_EncodeLocaleRaw(const wchar_t *text, size_t *error_pos)
+{
+    return encode_locale(text, error_pos, 1);
 }
 
 
@@ -1029,11 +1068,12 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
         errno = EINVAL;
         return NULL;
     }
-    cpath = Py_EncodeLocale(path, NULL);
-    if (cpath == NULL)
+    cpath = _Py_EncodeLocaleRaw(path, NULL);
+    if (cpath == NULL) {
         return NULL;
+    }
     f = fopen(cpath, cmode);
-    PyMem_Free(cpath);
+    PyMem_RawFree(cpath);
 #else
     f = _wfopen(path, mode);
 #endif
@@ -1341,13 +1381,13 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
     int res;
     size_t r1;
 
-    cpath = Py_EncodeLocale(path, NULL);
+    cpath = _Py_EncodeLocaleRaw(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return -1;
     }
     res = (int)readlink(cpath, cbuf, Py_ARRAY_LENGTH(cbuf));
-    PyMem_Free(cpath);
+    PyMem_RawFree(cpath);
     if (res == -1)
         return -1;
     if (res == Py_ARRAY_LENGTH(cbuf)) {
@@ -1386,13 +1426,13 @@ _Py_wrealpath(const wchar_t *path,
     wchar_t *wresolved_path;
     char *res;
     size_t r;
-    cpath = Py_EncodeLocale(path, NULL);
+    cpath = _Py_EncodeLocaleRaw(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return NULL;
     }
     res = realpath(cpath, cresolved_path);
-    PyMem_Free(cpath);
+    PyMem_RawFree(cpath);
     if (res == NULL)
         return NULL;
 
