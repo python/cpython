@@ -1490,14 +1490,14 @@ pymain_open_filename(_PyMain *pymain)
         char *cfilename_buffer;
         const char *cfilename;
         int err = errno;
-        cfilename_buffer = Py_EncodeLocale(pymain->filename, NULL);
+        cfilename_buffer = _Py_EncodeLocaleRaw(pymain->filename, NULL);
         if (cfilename_buffer != NULL)
             cfilename = cfilename_buffer;
         else
             cfilename = "<unprintable file name>";
         fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
                 pymain->config.program, cfilename, err, strerror(err));
-        PyMem_Free(cfilename_buffer);
+        PyMem_RawFree(cfilename_buffer);
         pymain->status = 2;
         return NULL;
     }
