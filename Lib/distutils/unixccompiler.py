@@ -177,18 +177,6 @@ class UnixCCompiler(CCompiler):
                     linker = self.linker_exe[:]
                 else:
                     linker = self.linker_so[:]
-                if target_lang == "c++" and self.compiler_cxx:
-                    # skip over environment variable settings if /usr/bin/env
-                    # is used to set up the linker's environment.
-                    # This is needed on OSX. Note: this assumes that the
-                    # normal and C++ compiler have the same environment
-                    # settings.
-                    i = 0
-                    if os.path.basename(linker[0]) == "env":
-                        i = 1
-                        while '=' in linker[i]:
-                            i += 1
-                    linker[i] = self.compiler_cxx[i]
 
                 if sys.platform == 'darwin':
                     linker = _osx_support.compiler_fixup(linker, ld_args)
