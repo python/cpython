@@ -428,6 +428,19 @@ Other constructors, all class methods:
       :exc:`ValueError` on :c:func:`localtime` failure.
 
 
+.. classmethod:: date.fromisoformat(date_string)
+
+   Return a date object corresponding to *date_string*, according to RFC 3339,
+   a stricter, simpler subset of ISO 8601, and such as is returned by
+   :func:`date.isoformat`. Microseconds are rounded to 6 digits.
+   :exc:`ValueError` is raised if *date_string* is not a valid RFC 3339
+   date string.
+
+   .. `RFC 3339`: https://www.ietf.org/rfc/rfc3339.txt
+
+   .. versionadded:: 3.7
+
+
 .. classmethod:: date.fromordinal(ordinal)
 
    Return the date corresponding to the proleptic Gregorian ordinal, where January
@@ -791,6 +804,19 @@ Other constructors, all class methods:
       is out of the range of values supported by the platform C
       :c:func:`gmtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`gmtime` failure.
+
+
+.. classmethod:: datetime.fromisoformat(datetime_string)
+
+   Return a datetime object corresponding to *datetime_string*, according to RFC 3339,
+   a stricter, simpler subset of ISO 8601, and such as is returned by
+   :func:`datetime.isoformat`. Microseconds are rounded to 6 digits.
+   :exc:`ValueError` is raised if *datetime_string* is not a valid RFC 3339
+   datetime string.
+
+   .. `RFC 3339`: https://www.ietf.org/rfc/rfc3339.txt
+
+   .. versionadded:: 3.7
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -1393,6 +1419,22 @@ day, and subject to adjustment via a :class:`tzinfo` object.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised.  All
    default to ``0`` except *tzinfo*, which defaults to :const:`None`.
+
+
+Other constructor:
+
+.. classmethod:: time.fromisoformat(string)
+
+   Return a time object corresponding to *time_string*, according to RFC 3339,
+   a stricter, simpler subset of ISO 8601, and such as is returned by
+   :func:`time.isoformat`. Microseconds are rounded to 6 digits.
+   :exc:`ValueError` is raised if *time_string* is not a valid RFC 3339
+   time string..
+
+   .. `RFC 3339`: https://www.ietf.org/rfc/rfc3339.txt
+
+   .. versionadded:: 3.7
+
 
 Class attributes:
 

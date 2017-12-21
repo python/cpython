@@ -732,6 +732,15 @@ class date:
         y, m, d = _ord2ymd(n)
         return cls(y, m, d)
 
+    @classmethod
+    def fromisoformat(cls, date_string):
+        """Constructs a date from an RFC 3339 string, a strict subset of ISO 8601.
+
+        Raises ValueError in case of ill-formatted or invalid string.
+        """
+        import _strptime
+        return _strptime._parse_isodate(cls, date_string)
+
     # Conversions to string
 
     def __repr__(self):
@@ -1074,6 +1083,16 @@ class time:
         self._hashcode = -1
         self._fold = fold
         return self
+
+    @classmethod
+    def fromisoformat(cls, time_string):
+        """Constructs a time from an RFC 3339 string, a strict subset of ISO 8601.
+        Microseconds are rounded to 6 digits.
+
+        Raises ValueError in case of ill-formatted or invalid string.
+        """
+        import _strptime
+        return _strptime._parse_isotime(cls, time_string)
 
     # Read-only field accessors
     @property
@@ -1471,6 +1490,16 @@ class datetime(date):
     def utcfromtimestamp(cls, t):
         """Construct a naive UTC datetime from a POSIX timestamp."""
         return cls._fromtimestamp(t, True, None)
+
+    @classmethod
+    def fromisoformat(cls, datetime_string):
+        """Constructs a datetime from an RFC 3339 string, a strict subset of ISO 8601.
+        Microseconds are rounded to 6 digits.
+
+        Raises ValueError in case of ill-formatted or invalid string.
+        """
+        import _strptime
+        return _strptime._parse_isodatetime(cls, datetime_string)
 
     @classmethod
     def now(cls, tz=None):
