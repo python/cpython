@@ -772,6 +772,17 @@ class ZipExtFile(io.BufferedIOBase):
         else:
             self._expected_crc = None
 
+        self._seekable = False
+        try:
+            if fileobj.seekable():
+                self._orig_compress_start = fileobj.tell()
+                self._orig_compress_size = zipinfo.compress_size
+                self._orig_file_size = zipinfo.file_size
+                self._orig_start_crc = self._running_crc
+                self._seekable = True
+        except AttributeError:
+            pass
+
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
                               self.__class__.__qualname__)]
@@ -956,6 +967,47 @@ class ZipExtFile(io.BufferedIOBase):
                 self._fileobj.close()
         finally:
             super().close()
+
+    def seekable(self):
+        return self._seekable
+
+    def seek(self, offset, from_what = 0):
+        if not self._seekable:
+            raise io.UnsupportedOperation("underlying stream is not seekable")
+        curr_pos = self.tell()
+        new_pos = offset # Default seek from start of file
+        if from_what == 1: # Seek from current position
+            new_pos = curr_pos + offset
+        elif from_what == 2: # Seek from EOF
+            new_pos = self._orig_file_size + offset
+
+        if new_pos > self._orig_file_size:
+            new_pos = self._orig_file_size
+
+        if new_pos < 0:
+            new_pos = 0
+
+        if new_pos > curr_pos:
+            self.read(new_pos - curr_pos)
+        elif new_pos < curr_pos:
+            self._fileobj.seek(self._orig_compress_start)
+            self._running_crc = self._orig_start_crc
+            self._compress_left = self._orig_compress_size
+            self._left = self._orig_file_size
+            self._readbuffer = b''
+            self._offset = 0
+            self._decompressor = zipfile._get_decompressor(self._compress_type)
+            self._eof = False
+            if new_pos > 0:
+                self.read(new_pos)
+
+        return self.tell()
+
+    def tell(self):
+        if not self._seekable:
+            raise io.UnsupportedOperation("underlying stream is not seekable")
+        filepos = self._orig_file_size - self._left - len(self._readbuffer) + self._offset
+        return filepos
 
 
 class _ZipWriteFile(io.BufferedIOBase):
