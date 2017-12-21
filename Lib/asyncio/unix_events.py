@@ -51,8 +51,14 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def close(self):
         super().close()
-        for sig in list(self._signal_handlers):
-            self.remove_signal_handler(sig)
+        if not sys.is_finalizing():
+            for sig in list(self._signal_handlers):
+                self.remove_signal_handler(sig)
+        else:
+            warinigs.warn(f"Closing the loop {self!r} on interpreter shutdown "
+                          f"stage, signal unsubsription is disabled",
+                          ResourceWarning,
+                          source=self)
 
     def _process_self_data(self, data):
         for signum in data:
