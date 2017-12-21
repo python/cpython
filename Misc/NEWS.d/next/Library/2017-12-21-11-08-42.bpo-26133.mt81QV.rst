@@ -1,0 +1,1 @@
+Dont unsubscribe signals in asyncio UNIX event loop on interpreter shutdown.
