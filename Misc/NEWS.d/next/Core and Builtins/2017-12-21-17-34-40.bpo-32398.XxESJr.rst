@@ -1,0 +1,1 @@
+Remove ancient OSX C++ linking workaround in distutils.
