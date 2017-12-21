@@ -140,13 +140,13 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
     char *fname;
-    fname = Py_EncodeLocale(path, NULL);
+    fname = _Py_EncodeLocaleRaw(path, NULL);
     if (fname == NULL) {
         errno = EINVAL;
         return -1;
     }
     err = stat(fname, buf);
-    PyMem_Free(fname);
+    PyMem_RawFree(fname);
     return err;
 }
 

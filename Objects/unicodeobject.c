@@ -5158,7 +5158,8 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size, size_t *p_wlen)
    On memory allocation failure, return NULL and write (size_t)-1 into
    *error_pos (if error_pos is set). */
 char*
-_Py_EncodeUTF8_surrogateescape(const wchar_t *text, size_t *error_pos)
+_Py_EncodeUTF8_surrogateescape(const wchar_t *text, size_t *error_pos,
+                               int raw_malloc)
 {
     const Py_ssize_t max_char_size = 4;
     Py_ssize_t len = wcslen(text);
@@ -5167,7 +5168,12 @@ _Py_EncodeUTF8_surrogateescape(const wchar_t *text, size_t *error_pos)
 
     char *bytes;
     if (len <= PY_SSIZE_T_MAX / max_char_size - 1) {
-        bytes = PyMem_Malloc((len + 1) * max_char_size);
+        if (raw_malloc) {
+            bytes = PyMem_RawMalloc((len + 1) * max_char_size);
+        }
+        else {
+            bytes = PyMem_Malloc((len + 1) * max_char_size);
+        }
     }
     else {
         bytes = NULL;
@@ -5221,7 +5227,13 @@ _Py_EncodeUTF8_surrogateescape(const wchar_t *text, size_t *error_pos)
     *p++ = '\0';
 
     size_t final_size = (p - bytes);
-    char *bytes2 = PyMem_Realloc(bytes, final_size);
+    char *bytes2;
+    if (raw_malloc) {
+        bytes2 = PyMem_RawRealloc(bytes, final_size);
+    }
+    else {
+        bytes2 = PyMem_Realloc(bytes, final_size);
+    }
     if (bytes2 == NULL) {
         if (error_pos != NULL) {
             *error_pos = (size_t)-1;
@@ -5231,7 +5243,12 @@ _Py_EncodeUTF8_surrogateescape(const wchar_t *text, size_t *error_pos)
     return bytes2;
 
  error:
-    PyMem_Free(bytes);
+    if (raw_malloc) {
+        PyMem_RawFree(bytes);
+    }
+    else {
+        PyMem_Free(bytes);
+    }
     return NULL;
 }
 
