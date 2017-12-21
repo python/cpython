@@ -3408,6 +3408,123 @@ class TextIOWrapperTest(unittest.TestCase):
         F.tell = lambda x: 0
         t = self.TextIOWrapper(F(), encoding='utf-8')
 
+    def test_reconfigure_encoding_read(self):
+        # latin1 -> utf8
+        # (latin1 can decode utf-8 encoded string)
+        data = 'abc\xe9\n'.encode('latin1') + 'd\xe9f\n'.encode('utf8')
+        raw = self.BytesIO(data)
+        txt = self.TextIOWrapper(raw, encoding='latin1', newline='\n')
+        self.assertEqual(txt.readline(), 'abc\xe9\n')
+        with self.assertRaises(self.UnsupportedOperation):
+            txt.reconfigure(encoding='utf-8')
+        with self.assertRaises(self.UnsupportedOperation):
+            txt.reconfigure(newline=None)
+
+    def test_reconfigure_write_fromascii(self):
+        # ascii has a specific encodefunc in the C implementation,
+        # but utf-8-sig has not. Make sure that we get rid of the
+        # cached encodefunc when we switch encoders.
+        raw = self.BytesIO()
+        txt = self.TextIOWrapper(raw, encoding='ascii', newline='\n')
+        txt.write('foo\n')
+        txt.reconfigure(encoding='utf-8-sig')
+        txt.write('\xe9\n')
+        txt.flush()
+        self.assertEqual(raw.getvalue(), b'foo\n\xc3\xa9\n')
+
+    def test_reconfigure_write(self):
+        # latin -> utf8
+        raw = self.BytesIO()
+        txt = self.TextIOWrapper(raw, encoding='latin1', newline='\n')
+        txt.write('abc\xe9\n')
+        txt.reconfigure(encoding='utf-8')
+        self.assertEqual(raw.getvalue(), b'abc\xe9\n')
+        txt.write('d\xe9f\n')
+        txt.flush()
+        self.assertEqual(raw.getvalue(), b'abc\xe9\nd\xc3\xa9f\n')
+
+        # ascii -> utf-8-sig: ensure that no BOM is written in the middle of
+        # the file
+        raw = self.BytesIO()
+        txt = self.TextIOWrapper(raw, encoding='ascii', newline='\n')
+        txt.write('abc\n')
+        txt.reconfigure(encoding='utf-8-sig')
+        txt.write('d\xe9f\n')
+        txt.flush()
+        self.assertEqual(raw.getvalue(), b'abc\nd\xc3\xa9f\n')
+
+    def test_reconfigure_write_non_seekable(self):
+        raw = self.BytesIO()
+        raw.seekable = lambda: False
+        raw.seek = None
+        txt = self.TextIOWrapper(raw, encoding='ascii', newline='\n')
+        txt.write('abc\n')
+        txt.reconfigure(encoding='utf-8-sig')
+        txt.write('d\xe9f\n')
+        txt.flush()
+
+        # If the raw stream is not seekable, there'll be a BOM
+        self.assertEqual(raw.getvalue(),  b'abc\n\xef\xbb\xbfd\xc3\xa9f\n')
+
+    def test_reconfigure_defaults(self):
+        txt = self.TextIOWrapper(self.BytesIO(), 'ascii', 'replace', '\n')
+        txt.reconfigure(encoding=None)
+        self.assertEqual(txt.encoding, 'ascii')
+        self.assertEqual(txt.errors, 'replace')
+        txt.write('LF\n')
+
+        txt.reconfigure(newline='\r\n')
+        self.assertEqual(txt.encoding, 'ascii')
+        self.assertEqual(txt.errors, 'replace')
+
+        txt.reconfigure(errors='ignore')
+        self.assertEqual(txt.encoding, 'ascii')
+        self.assertEqual(txt.errors, 'ignore')
+        txt.write('CRLF\n')
+
+        txt.reconfigure(encoding='utf-8', newline=None)
+        self.assertEqual(txt.errors, 'strict')
+        txt.seek(0)
+        self.assertEqual(txt.read(), 'LF\nCRLF\n')
+
+        self.assertEqual(txt.detach().getvalue(), b'LF\nCRLF\r\n')
+
+    def test_reconfigure_newline(self):
+        raw = self.BytesIO(b'CR\rEOF')
+        txt = self.TextIOWrapper(raw, 'ascii', newline='\n')
+        txt.reconfigure(newline=None)
+        self.assertEqual(txt.readline(), 'CR\n')
+        raw = self.BytesIO(b'CR\rEOF')
+        txt = self.TextIOWrapper(raw, 'ascii', newline='\n')
+        txt.reconfigure(newline='')
+        self.assertEqual(txt.readline(), 'CR\r')
+        raw = self.BytesIO(b'CR\rLF\nEOF')
+        txt = self.TextIOWrapper(raw, 'ascii', newline='\r')
+        txt.reconfigure(newline='\n')
+        self.assertEqual(txt.readline(), 'CR\rLF\n')
+        raw = self.BytesIO(b'LF\nCR\rEOF')
+        txt = self.TextIOWrapper(raw, 'ascii', newline='\n')
+        txt.reconfigure(newline='\r')
+        self.assertEqual(txt.readline(), 'LF\nCR\r')
+        raw = self.BytesIO(b'CR\rCRLF\r\nEOF')
+        txt = self.TextIOWrapper(raw, 'ascii', newline='\r')
+        txt.reconfigure(newline='\r\n')
+        self.assertEqual(txt.readline(), 'CR\rCRLF\r\n')
+
+        txt = self.TextIOWrapper(self.BytesIO(), 'ascii', newline='\r')
+        txt.reconfigure(newline=None)
+        txt.write('linesep\n')
+        txt.reconfigure(newline='')
+        txt.write('LF\n')
+        txt.reconfigure(newline='\n')
+        txt.write('LF\n')
+        txt.reconfigure(newline='\r')
+        txt.write('CR\n')
+        txt.reconfigure(newline='\r\n')
+        txt.write('CRLF\n')
+        expected = 'linesep' + os.linesep + 'LF\nLF\nCR\rCRLF\r\n'
+        self.assertEqual(txt.detach().getvalue().decode('ascii'), expected)
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
