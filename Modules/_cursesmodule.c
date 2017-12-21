@@ -1049,7 +1049,7 @@ PyCursesWindow_InsCh(PyCursesWindowObject *self, PyObject *args)
         use_xy = TRUE;
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "insch requires 1 or 4 arguments");
+        PyErr_SetString(PyExc_TypeError, "insch requires 1 to 4 arguments");
         return NULL;
     }
 
@@ -1082,7 +1082,7 @@ PyCursesWindow_InCh(PyCursesWindowObject *self, PyObject *args)
         rtn = mvwinch(self->win,y,x);
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "inch requires 0 or 2 arguments");
+        PyErr_SetString(PyExc_TypeError, "inch requires 0 to 2 arguments");
         return NULL;
     }
     return PyInt_FromLong((long) rtn);
