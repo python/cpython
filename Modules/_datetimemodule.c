@@ -844,6 +844,19 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
     return (PyObject *) self;
 }
 
+/* Create date instance with no range checking, or call subclass constructor */
+static PyObject *
+new_date_subclass_ex(int year, int month, int day, PyObject *cls) {
+    PyObject *result;
+    if ( (PyTypeObject *)cls == & PyDateTime_DateType ) {
+        result = new_date_ex(year, month, day, (PyTypeObject *)cls);
+    } else {
+        result = PyObject_CallFunction(cls, "iii", year, month, day);
+    }
+
+    return result;
+}
+
 #define new_date(year, month, day) \
     new_date_ex(year, month, day, &PyDateTime_DateType)
 
@@ -2743,10 +2756,10 @@ date_local_from_object(PyObject *cls, PyObject *obj)
     if (_PyTime_localtime(t, &tm) != 0)
         return NULL;
 
-    return PyObject_CallFunction(cls, "iii",
-                                 tm.tm_year + 1900,
-                                 tm.tm_mon + 1,
-                                 tm.tm_mday);
+    return new_date_subclass_ex(tm.tm_year + 1900,
+                                tm.tm_mon + 1,
+                                tm.tm_mday,
+                                cls);
 }
 
 /* Return new date from current time.
@@ -2809,8 +2822,7 @@ date_fromordinal(PyObject *cls, PyObject *args)
                                               ">= 1");
         else {
             ord_to_ymd(ordinal, &year, &month, &day);
-            result = PyObject_CallFunction(cls, "iii",
-                                           year, month, day);
+            result = new_date_subclass_ex(year, month, day, cls);
         }
     }
     return result;
@@ -2845,14 +2857,7 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
         return NULL;
     }
 
-    PyObject *result;
-    if ( (PyTypeObject*)cls == &PyDateTime_DateType ) {
-        result = new_date_ex(year, month, day, (PyTypeObject*)cls);
-    } else {
-        result = PyObject_CallFunction(cls, "iii", year, month, day);
-    }
-
-    return result;
+    return new_date_subclass_ex(year, month, day, cls);
 }
 
 
