@@ -520,6 +520,15 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(result.url, defrag)
             self.assertEqual(result.fragment, frag)
 
+    def test_urlsplit_scoped_IPv6(self):
+        p = urllib.parse.urlsplit('http://[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+        self.assertEqual(p.hostname, "fe80::822a:a8ff:fe49:470c%tESt")
+        self.assertEqual(p.netloc, '[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+
+        p = urllib.parse.urlsplit(b'http://[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+        self.assertEqual(p.hostname, b"fe80::822a:a8ff:fe49:470c%tESt")
+        self.assertEqual(p.netloc, b'[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+
     def test_urlsplit_attributes(self):
         url = "HTTP://WWW.PYTHON.ORG/doc/#frag"
         p = urllib.parse.urlsplit(url)
