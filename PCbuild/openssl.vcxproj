@@ -73,7 +73,7 @@ nmake
     <PropertyGroup>
       <Uplink>$(opensslDir)\ms\uplink.c</Uplink>
       <BeforePatch>((h = GetModuleHandle(NULL)) == NULL)</BeforePatch>
-      <AfterPatch>((h = GetModuleHandleA("_ssl$(PydTag).pyd")) == NULL) if ((h = GetModuleHandleA("_ssl_d$(PydTag).pyd")) == NULL) if ((h = GetModuleHandle(NULL)) == NULL /*patched*/)</AfterPatch>
+      <AfterPatch>((h = GetModuleHandleA("_ssl.pyd")) == NULL) if ((h = GetModuleHandleA("_ssl_d.pyd")) == NULL) if ((h = GetModuleHandle(NULL)) == NULL /*patched*/)</AfterPatch>
     </PropertyGroup>
     <Error Text="Cannot find $(Uplink)" Condition="!Exists($(Uplink))" />
     <PropertyGroup>

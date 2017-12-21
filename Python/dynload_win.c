@@ -30,8 +30,11 @@ void _Py_DeactivateActCtx(ULONG_PTR cookie);
 #define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) ".pyd"
 #endif
 
+#define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
+
 const char *_PyImport_DynLoadFiletab[] = {
     PYD_TAGGED_SUFFIX,
+    PYD_UNTAGGED_SUFFIX,
     NULL
 };
 

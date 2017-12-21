@@ -17,9 +17,6 @@ from winreg import (
     EnumKey, CloseKey, DeleteKey, OpenKey
 )
 
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
-
 def delete_registry_tree(root, subkey):
     try:
         hkey = OpenKey(root, subkey, access=KEY_ALL_ACCESS)
@@ -95,13 +92,17 @@ class WindowsExtensionSuffixTests:
         suffixes = self.machinery.EXTENSION_SUFFIXES
         expected_tag = ".cp{0.major}{0.minor}-{1}.pyd".format(sys.version_info,
             re.sub('[^a-zA-Z0-9]', '_', get_platform()))
-        if COMPILED_WITH_PYDEBUG:
+        try:
+            untagged_i = suffixes.index(".pyd")
+        except ValueError:
+            untagged_i = suffixes.index("_d.pyd")
             expected_tag = "_d" + expected_tag
+
         self.assertIn(expected_tag, suffixes)
 
-        # Untagged extensions are not recognized anymore (3.7+)
-        self.assertNotIn(".pyd", suffixes)
-        self.assertNotIn("_d.pyd", suffixes)
+        # Ensure the tags are in the correct order
+        tagged_i = suffixes.index(expected_tag)
+        self.assertLess(tagged_i, untagged_i)
 
 (Frozen_WindowsExtensionSuffixTests,
  Source_WindowsExtensionSuffixTests
