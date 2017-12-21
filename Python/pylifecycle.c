@@ -172,6 +172,15 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
         /* This is too late to have any effect */
         return -1;
     }
+
+    int res = 0;
+
+    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
+       but Py_Initialize() can change the allocator. Use a known allocator
+       to be able to release the memory later. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
      * initialised yet.
      *
@@ -182,7 +191,8 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     if (encoding) {
         _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
         if (!_Py_StandardStreamEncoding) {
-            return -2;
+            res = -2;
+            goto done;
         }
     }
     if (errors) {
@@ -191,7 +201,8 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
             if (_Py_StandardStreamEncoding) {
                 PyMem_RawFree(_Py_StandardStreamEncoding);
             }
-            return -3;
+            res = -3;
+            goto done;
         }
     }
 #ifdef MS_WINDOWS
@@ -200,7 +211,11 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
         Py_LegacyWindowsStdioFlag = 1;
     }
 #endif
-    return 0;
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    return res;
 }
 
 
@@ -597,8 +612,10 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return err;
     }
 
-    if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
-        return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
+    if (core_config->allocator != NULL) {
+        if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
+            return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
+        }
     }
 
     if (_PyRuntime.initialized) {
@@ -874,30 +891,29 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 _PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
-    _PyCoreConfig core_config = _PyCoreConfig_INIT;
-    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
-    core_config.ignore_environment = Py_IgnoreEnvironmentFlag;
-    core_config._disable_importlib = !install_importlib;
+    config.ignore_environment = Py_IgnoreEnvironmentFlag;
+    config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _PyCoreConfig_ReadEnv(&core_config);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _Py_InitializeCore(&core_config);
+    err = _Py_InitializeCore(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyMainInterpreterConfig_Read(&config, &core_config);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
+    _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
+    err = _PyMainInterpreterConfig_Read(&main_config, &config);
+    if (!_Py_INIT_FAILED(err)) {
+        err = _Py_InitializeMainInterpreter(&main_config);
     }
-
-    err = _Py_InitializeMainInterpreter(&config);
+    _PyMainInterpreterConfig_Clear(&main_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -905,8 +921,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     err = _Py_INIT_OK();
 
 done:
-    _PyCoreConfig_Clear(&core_config);
-    _PyMainInterpreterConfig_Clear(&config);
+    _PyCoreConfig_Clear(&config);
     return err;
 }
 
@@ -1820,7 +1835,11 @@ init_sys_streams(PyInterpreterState *interp)
 error:
     res = _Py_INIT_ERR("can't initialize sys standard streams");
 
+    /* Use the same allocator than Py_SetStandardStreamEncoding() */
+    PyMemAllocatorEx old_alloc;
 done:
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     /* We won't need them anymore. */
     if (_Py_StandardStreamEncoding) {
         PyMem_RawFree(_Py_StandardStreamEncoding);
@@ -1830,6 +1849,9 @@ done:
         PyMem_RawFree(_Py_StandardStreamErrors);
         _Py_StandardStreamErrors = NULL;
     }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
@@ -2030,7 +2052,7 @@ void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
     PyThreadState *ts;
     PyInterpreterState *is;
-    
+
     ts = PyThreadState_GET();
     is = ts->interp;
 
