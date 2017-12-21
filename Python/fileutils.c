@@ -20,8 +20,6 @@ extern int winerror_to_errno(int);
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
-extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size,
-                                               size_t *p_wlen);
 extern char* _Py_EncodeUTF8_surrogateescape(const wchar_t *text,
                                             size_t *error_pos, int raw_malloc);
 
@@ -194,7 +192,7 @@ encode_ascii_surrogateescape(const wchar_t *text, size_t *error_pos, int raw_mal
 
     len = wcslen(text);
 
-    /* +1 for NUL byte */
+    /* +1 for NULL byte */
     if (raw_malloc) {
         result = PyMem_RawMalloc(len + 1);
     }
@@ -467,13 +465,11 @@ encode_current_locale(const wchar_t *text, size_t *error_pos, int raw_malloc)
                 else
                     converted = wcstombs(NULL, buf, 0);
                 if (converted == (size_t)-1) {
-                    if (result != NULL) {
-                        if (raw_malloc) {
-                            PyMem_RawFree(result);
-                        }
-                        else {
-                            PyMem_Free(result);
-                        }
+                    if (raw_malloc) {
+                        PyMem_RawFree(result);
+                    }
+                    else {
+                        PyMem_Free(result);
                     }
                     if (error_pos != NULL)
                         *error_pos = i;
