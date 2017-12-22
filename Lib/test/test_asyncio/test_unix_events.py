@@ -402,7 +402,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'sendfile'),
                      'sendfile is not supported')
-class SelectorEventLoopUnixSendfileTests(unittest.TestCase):
+class SelectorEventLoopUnixSockSendfileTests(unittest.TestCase):
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
 
     class MyProto(asyncio.Protocol):
@@ -456,21 +456,21 @@ class SelectorEventLoopUnixSendfileTests(unittest.TestCase):
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
         return sock, proto
 
-    def test_sock_sendfile(self):
+    def test_ok(self):
         sock, proto = self.prepare()
         self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
         self.assertEqual(proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
-    def test_sock_sendfile_offset_and_count(self):
+    def test_with_offset_and_count(self):
         sock, proto = self.prepare()
         self.run_loop(self.loop.sock_sendfile(sock, self.file, 1000, 2000))
 
         self.assertEqual(proto.data, self.DATA[1000:3000])
         self.assertEqual(self.file.tell(), 3000)
 
-    def test_sock_sendfile_blocking_socket(self):
+    def test_blocking_socket(self):
         self.loop.set_debug(True)
         sock = self.make_socket(True)
         with self.assertRaises(ValueError):
