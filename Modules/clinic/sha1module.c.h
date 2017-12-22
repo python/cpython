@@ -78,7 +78,7 @@ static PyObject *
 _sha1_sha1_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha1_sha1(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -94,4 +94,4 @@ _sha1_sha1(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=594cf600d6ba4776 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ee2aec7bb2b9e72 input=a9049054013a1b77]*/

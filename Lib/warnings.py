@@ -62,7 +62,7 @@ def _formatwarnmsg_impl(msg):
             tb = None
 
         if tb is not None:
-            s += 'Object allocated at (most recent call first):\n'
+            s += 'Object allocated at (most recent call last):\n'
             for frame in tb:
                 s += ('  File "%s", lineno %s\n'
                       % (frame.filename, frame.lineno))
@@ -128,7 +128,6 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    import re
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(message, str), "message must be a string"
@@ -137,8 +136,20 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     assert isinstance(module, str), "module must be a string"
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
-    _add_filter(action, re.compile(message, re.I), category,
-            re.compile(module), lineno, append=append)
+
+    if message or module:
+        import re
+
+    if message:
+        message = re.compile(message, re.I)
+    else:
+        message = None
+    if module:
+        module = re.compile(module)
+    else:
+        module = None
+
+    _add_filter(action, message, category, module, lineno, append=append)
 
 def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
@@ -353,7 +364,6 @@ def warn_explicit(message, category, filename, lineno,
         action = defaultaction
     # Early exit actions
     if action == "ignore":
-        registry[key] = 1
         return
 
     # Prime the linecache for formatting, in case the
@@ -509,34 +519,11 @@ except ImportError:
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    dev_mode = ('dev' in getattr(sys, '_xoptions', {}))
-    py_debug = hasattr(sys, 'gettotalrefcount')
-
-    if not(dev_mode or py_debug):
-        silence = [ImportWarning, PendingDeprecationWarning]
-        silence.append(DeprecationWarning)
-        for cls in silence:
-            simplefilter("ignore", category=cls)
-
-    bytes_warning = sys.flags.bytes_warning
-    if bytes_warning > 1:
-        bytes_action = "error"
-    elif bytes_warning:
-        bytes_action = "default"
-    else:
-        bytes_action = "ignore"
-    simplefilter(bytes_action, category=BytesWarning, append=1)
-
-    # resource usage warnings are enabled by default in pydebug mode
-    if dev_mode or py_debug:
-        resource_action = "always"
-    else:
-        resource_action = "ignore"
-    simplefilter(resource_action, category=ResourceWarning, append=1)
-
-    if dev_mode:
-        simplefilter("default", category=Warning, append=1)
-
-    del py_debug, dev_mode
+    # Several warning categories are ignored by default in Py_DEBUG builds
+    if not hasattr(sys, 'gettotalrefcount'):
+        simplefilter("ignore", category=DeprecationWarning, append=1)
+        simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+        simplefilter("ignore", category=ImportWarning, append=1)
+        simplefilter("ignore", category=ResourceWarning, append=1)
 
 del _warnings_defaults

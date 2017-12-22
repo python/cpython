@@ -125,6 +125,7 @@ class FilterTests(BaseTest):
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.warn("FilterTests.test_ignore", UserWarning)
             self.assertEqual(len(w), 0)
+            self.assertEqual(list(__warningregistry__), ['version'])
 
     def test_ignore_after_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -940,11 +941,11 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None
-            Object allocated at (most recent call first):
-              File "{fname}", lineno 3
-                f = open(__file__)
+            Object allocated at (most recent call last):
               File "{fname}", lineno 7
                 func()
+              File "{fname}", lineno 3
+                f = open(__file__)
         ''')
         expected = expected.format(fname=support.TESTFN).strip()
         self.assertEqual(stderr, expected)
@@ -1109,20 +1110,23 @@ class EnvironmentVariableTests(BaseTest):
     def test_single_warning(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout, b"['ignore::DeprecationWarning']")
 
     def test_comma_separated_warnings(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
     def test_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
@@ -1130,7 +1134,8 @@ class EnvironmentVariableTests(BaseTest):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
             "warnings.warn('Message', DeprecationWarning)",
-            PYTHONWARNINGS="default::DeprecationWarning")
+            PYTHONWARNINGS="default::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['default::DeprecationWarning', 'error::DeprecationWarning']")
         self.assertEqual(stderr.splitlines(),
@@ -1144,7 +1149,8 @@ class EnvironmentVariableTests(BaseTest):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS="ignore:DeprecaciónWarning")
+            PYTHONWARNINGS="ignore:DeprecaciónWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             "['ignore:DeprecaciónWarning']".encode('utf-8'))
 

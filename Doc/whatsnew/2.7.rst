@@ -1809,7 +1809,7 @@ wish to read the Tcl/Tk manual page describing the
 Ttk theme engine, available at
 https://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
 screenshots of the Python/Ttk code in use are at
-http://code.google.com/p/python-ttk/wiki/Screenshots.
+https://code.google.com/archive/p/python-ttk/wikis/Screenshots.wiki.
 
 The :mod:`ttk` module was written by Guilherme Polo and added in
 :issue:`2983`.  An alternate version called ``Tile.py``, written by
@@ -1832,8 +1832,8 @@ https://pypi.python.org/pypi/unittest2.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <http://pytest.org>`__ or
-`nose <http://code.google.com/p/python-nose/>`__, but provides a simple way
-to run tests kept within a set of package directories.  For example,
+`nose <https://nose.readthedocs.io/>`__, but provides a
+simple way to run tests kept within a set of package directories.  For example,
 the following command will search the :file:`test/` subdirectory for
 any importable test files named ``test*.py``::
 

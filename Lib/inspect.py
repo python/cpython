@@ -457,10 +457,10 @@ def classify_class_attrs(cls):
             continue
         obj = get_obj if get_obj is not None else dict_obj
         # Classify the object or its descriptor.
-        if isinstance(dict_obj, staticmethod):
+        if isinstance(dict_obj, (staticmethod, types.BuiltinMethodType)):
             kind = "static method"
             obj = dict_obj
-        elif isinstance(dict_obj, classmethod):
+        elif isinstance(dict_obj, (classmethod, types.ClassMethodDescriptorType)):
             kind = "class method"
             obj = dict_obj
         elif isinstance(dict_obj, property):
@@ -1381,7 +1381,7 @@ def getclosurevars(func):
         func = func.__func__
 
     if not isfunction(func):
-        raise TypeError("'{!r}' is not a Python function".format(func))
+        raise TypeError("{!r} is not a Python function".format(func))
 
     code = func.__code__
     # Nonlocal references are named in co_freevars and resolved
@@ -1624,7 +1624,7 @@ def getgeneratorlocals(generator):
     bound values."""
 
     if not isgenerator(generator):
-        raise TypeError("'{!r}' is not a Python generator".format(generator))
+        raise TypeError("{!r} is not a Python generator".format(generator))
 
     frame = getattr(generator, "gi_frame", None)
     if frame is not None:

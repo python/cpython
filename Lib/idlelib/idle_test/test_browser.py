@@ -4,17 +4,19 @@ Coverage: 88%
 (Higher, because should exclude 3 lines that .coveragerc won't exclude.)
 """
 
-import os.path
-import unittest
-import pyclbr
-
-from idlelib import browser, filelist
-from idlelib.tree import TreeNode
-from test.support import requires
-from unittest import mock
-from tkinter import Tk
-from idlelib.idle_test.mock_idle import Func
 from collections import deque
+import os.path
+import pyclbr
+from tkinter import Tk
+
+from test.support import requires
+import unittest
+from unittest import mock
+from idlelib.idle_test.mock_idle import Func
+
+from idlelib import browser
+from idlelib import filelist
+from idlelib.tree import TreeNode
 
 
 class ModuleBrowserTest(unittest.TestCase):
@@ -29,6 +31,7 @@ class ModuleBrowserTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.mb.close()
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root, cls.mb
 
@@ -38,6 +41,7 @@ class ModuleBrowserTest(unittest.TestCase):
         eq(mb.path, __file__)
         eq(pyclbr._modules, {})
         self.assertIsInstance(mb.node, TreeNode)
+        self.assertIsNotNone(browser.file_open)
 
     def test_settitle(self):
         mb = self.mb
@@ -151,10 +155,9 @@ class ModuleBrowserTreeItemTest(unittest.TestCase):
         self.assertEqual(sub0.name, 'f0')
         self.assertEqual(sub1.name, 'C0(base)')
 
-
-    def test_ondoubleclick(self):
+    @mock.patch('idlelib.browser.file_open')
+    def test_ondoubleclick(self, fopen):
         mbt = self.mbt
-        fopen = browser.file_open = mock.Mock()
 
         with mock.patch('os.path.exists', return_value=False):
             mbt.OnDoubleClick()
@@ -164,8 +167,6 @@ class ModuleBrowserTreeItemTest(unittest.TestCase):
             mbt.OnDoubleClick()
             fopen.assert_called()
             fopen.called_with(fname)
-
-        del browser.file_open
 
 
 class ChildBrowserTreeItemTest(unittest.TestCase):
@@ -212,14 +213,13 @@ class ChildBrowserTreeItemTest(unittest.TestCase):
 
         eq(self.cbt_F1.GetSubList(), [])
 
-    def test_ondoubleclick(self):
-        fopen = browser.file_open = mock.Mock()
+    @mock.patch('idlelib.browser.file_open')
+    def test_ondoubleclick(self, fopen):
         goto = fopen.return_value.gotoline = mock.Mock()
         self.cbt_F1.OnDoubleClick()
         fopen.assert_called()
         goto.assert_called()
         goto.assert_called_with(self.cbt_F1.obj.lineno)
-        del browser.file_open
         # Failure test would have to raise OSError or AttributeError.
 
 

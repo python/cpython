@@ -1,0 +1,2 @@
+Implement support for `subprocess.Popen(close_fds=True)` on Windows. Patch
+by Segev Finer.

@@ -4115,7 +4115,7 @@ class TestNoForkBomb(unittest.TestCase):
 #
 
 class TestForkAwareThreadLock(unittest.TestCase):
-    # We recurisvely start processes.  Issue #17555 meant that the
+    # We recursively start processes.  Issue #17555 meant that the
     # after fork registry would get duplicate entries for the same
     # lock.  The size of the registry at generation n was ~2**n.
 
@@ -4365,7 +4365,7 @@ class TestSemaphoreTracker(unittest.TestCase):
         '''
         r, w = os.pipe()
         p = subprocess.Popen([sys.executable,
-                             '-c', cmd % (w, w)],
+                             '-E', '-c', cmd % (w, w)],
                              pass_fds=[w],
                              stderr=subprocess.PIPE)
         os.close(w)

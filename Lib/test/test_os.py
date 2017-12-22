@@ -352,6 +352,11 @@ class StatAttributeTests(unittest.TestCase):
         for value, member in enumerate(members):
             self.assertEqual(getattr(result, 'f_' + member), result[value])
 
+        self.assertTrue(isinstance(result.f_fsid, int))
+
+        # Test that the size of the tuple doesn't change
+        self.assertEqual(len(result), 10)
+
         # Make sure that assignment really fails
         try:
             result.f_bfree = 1
@@ -1321,7 +1326,7 @@ class URandomTests(unittest.TestCase):
             'sys.stdout.buffer.flush()'))
         out = assert_python_ok('-c', code)
         stdout = out[1]
-        self.assertEqual(len(stdout), 16)
+        self.assertEqual(len(stdout), count)
         return stdout
 
     def test_urandom_subprocess(self):

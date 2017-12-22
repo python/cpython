@@ -316,6 +316,13 @@ The :mod:`locale` module defines the following exception and functions:
    preferences, so this function is not thread-safe. If invoking setlocale is not
    necessary or desired, *do_setlocale* should be set to ``False``.
 
+   On Android or in the UTF-8 mode (:option:`-X` ``utf8`` option), always
+   return ``'UTF-8'``, the locale and the *do_setlocale* argument are ignored.
+
+   .. versionchanged:: 3.7
+      The function now always returns ``UTF-8`` on Android or if the UTF-8 mode
+      is enabled.
+
 
 .. function:: normalize(localename)
 

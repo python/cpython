@@ -13,6 +13,7 @@ import tempfile
 import threading
 import unittest
 from unittest import mock
+from test import support
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -20,8 +21,8 @@ if sys.platform == 'win32':
 
 import asyncio
 from asyncio import log
-from asyncio import test_utils
 from asyncio import unix_events
+from test.test_asyncio import utils as test_utils
 
 
 MOCK_ANY = mock.ANY
@@ -76,9 +77,8 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     def test_add_signal_handler_coroutine_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
 
-        @asyncio.coroutine
-        def simple_coroutine():
-            yield from []
+        async def simple_coroutine():
+            pass
 
         # callback must not be a coroutine function
         coro_func = simple_coroutine
@@ -239,6 +239,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_existing_path_sock(self):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX)
@@ -251,6 +252,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_pathlib(self):
         with test_utils.unix_socket_path() as path:
             path = pathlib.Path(path)
@@ -308,6 +310,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'no socket.SOCK_NONBLOCK (linux only)')
+    @support.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
         sock = socket.socket(
             socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
@@ -323,6 +326,14 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                 self.loop.run_until_complete(srv.wait_closed())
         finally:
             os.unlink(fn)
+
+    def test_create_unix_server_ssl_timeout_with_plain_sock(self):
+        coro = self.loop.create_unix_server(lambda: None, path='spam',
+                                            ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
 
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()
@@ -380,6 +391,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
             self.loop.run_until_complete(coro)
 
+    def test_create_unix_connection_ssl_timeout_with_plain_sock(self):
+        coro = self.loop.create_unix_connection(lambda: None, path='spam',
+                                            ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
+
+
 
 class UnixReadPipeTransportTests(test_utils.TestCase):
 
@@ -390,7 +410,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
+        blocking_patcher = mock.patch('os.set_blocking')
         blocking_patcher.start()
         self.addCleanup(blocking_patcher.stop)
 
@@ -540,7 +560,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
+        blocking_patcher = mock.patch('os.set_blocking')
         blocking_patcher.start()
         self.addCleanup(blocking_patcher.stop)
 
