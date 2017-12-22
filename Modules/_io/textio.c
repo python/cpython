@@ -1037,6 +1037,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (errors == Py_None) {
         errors = _PyUnicode_FromId(&PyId_strict); /* borrowed */
+        if (errors == NULL) {
+            return -1;
+        }
     }
     else if (!PyUnicode_Check(errors)) {
         // Check 'errors' argument here because Argument Clinic doesn't support
@@ -1249,6 +1252,9 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
     }
     else if (errors == Py_None) {
         errors = _PyUnicode_FromId(&PyId_strict);
+        if (errors == NULL) {
+            return -1;
+        }
     }
 
     const char *c_errors = PyUnicode_AsUTF8(errors);
