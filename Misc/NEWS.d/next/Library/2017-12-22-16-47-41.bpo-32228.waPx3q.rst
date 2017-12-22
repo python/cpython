@@ -1,0 +1,1 @@
+Reset ``write_end`` value after ``truncate()``
