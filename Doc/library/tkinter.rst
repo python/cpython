@@ -77,7 +77,7 @@ Or, more often::
    However, the following keyword arguments are currently recognized:
 
    *screenName*
-      When given (as a string), sets the :envvar:`DISPLAY` environmental
+      When given (as a string), sets the :envvar:`DISPLAY` environment
       variable. (X11 only)
    *baseName*
       Name of the profile file.  By default, *baseName* is derived from the
@@ -105,15 +105,15 @@ Or, more often::
    :file:`.{className}.tcl` and :file:`.{baseName}.tcl`, into the Tcl
    interpreter and calls :func:`exec` on the contents of
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
-   profile files is the :envvar:`HOME` environmental variable or, if that
+   profile files is the :envvar:`HOME` environment variable or, if that
    isn't defined, then :attr:`os.curdir`.
 
    .. attribute:: tk
 
-      The ``_tkinter.tkapp`` object created by instantiating :class:`Tk`.  This
-      provides access to the C methods and attributes, including the Tcl
-      interpreter.  Each widget that is attached the same instance of
-      :class:`Tk` has the same value for its :attr:`tk` attribute.
+      The Tk application object created by instantiating :class:`Tk`.  This
+      provides access to the Tcl interpreter.  Each widget that is attached
+      the same instance of :class:`Tk` has the same value for its :attr:`tk`
+      attribute.
 
    .. attribute:: master
 
