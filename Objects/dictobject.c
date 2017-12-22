@@ -1764,7 +1764,6 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             PyDictObject *mp = (PyDictObject *)d;
             PyObject *oldvalue;
             Py_ssize_t pos = 0;
-            PyObject *key;
             Py_hash_t hash;
 
             if (dictresize(mp, ESTIMATE_SIZE(PyDict_GET_SIZE(iterable)))) {
@@ -1783,7 +1782,6 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
             Py_ssize_t pos = 0;
-            PyObject *key;
             Py_hash_t hash;
 
             if (dictresize(mp, ESTIMATE_SIZE(PySet_GET_SIZE(iterable)))) {

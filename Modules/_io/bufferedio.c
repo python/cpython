@@ -504,9 +504,9 @@ buffered_close(buffered *self, PyObject *args)
     }
 
     if (self->finalizing) {
-        PyObject *r = buffered_dealloc_warn(self, (PyObject *) self);
-        if (r)
-            Py_DECREF(r);
+        PyObject *obj = buffered_dealloc_warn(self, (PyObject *) self);
+        if (obj)
+            Py_DECREF(obj);
         else
             PyErr_Clear();
     }

@@ -1280,7 +1280,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
     double x;
     long exp, top_exp, lsb, key_digit;
     const char *s, *coeff_start, *s_store, *coeff_end, *exp_start, *s_end;
-    int half_eps, digit, round_up, negate=0;
+    int half_eps, curr_dig, round_up, negate=0;
     Py_ssize_t length, ndigits, fdigits, i;
 
     /*
@@ -1429,7 +1429,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
 
     /* top_exp = 1 more than exponent of most sig. bit of coefficient */
     top_exp = exp + 4*((long)ndigits - 1);
-    for (digit = HEX_DIGIT(ndigits-1); digit != 0; digit /= 2)
+    for (curr_dig = HEX_DIGIT(ndigits-1); curr_dig != 0; curr_dig /= 2)
         top_exp++;
 
     /* catch almost all nonextreme cases of overflow and underflow here */
@@ -1458,14 +1458,14 @@ float_fromhex(PyTypeObject *type, PyObject *string)
     key_digit = (lsb - exp - 1) / 4;
     for (i = ndigits-1; i > key_digit; i--)
         x = 16.0*x + HEX_DIGIT(i);
-    digit = HEX_DIGIT(key_digit);
-    x = 16.0*x + (double)(digit & (16-2*half_eps));
+    curr_dig = HEX_DIGIT(key_digit);
+    x = 16.0*x + (double)(curr_dig & (16-2*half_eps));
 
     /* round-half-even: round up if bit lsb-1 is 1 and at least one of
        bits lsb, lsb-2, lsb-3, lsb-4, ... is 1. */
-    if ((digit & half_eps) != 0) {
+    if ((curr_dig & half_eps) != 0) {
         round_up = 0;
-        if ((digit & (3*half_eps-1)) != 0 ||
+        if ((curr_dig & (3*half_eps-1)) != 0 ||
             (half_eps == 8 && (HEX_DIGIT(key_digit+1) & 1) != 0))
             round_up = 1;
         else

@@ -2492,16 +2492,16 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         return ret;
     }
     if (is_multiindex(key)) {
-        char *ptr;
+        char *p;
         if (PyTuple_GET_SIZE(key) < view->ndim) {
             PyErr_SetString(PyExc_NotImplementedError,
                             "sub-views are not implemented");
             return -1;
         }
-        ptr = ptr_from_tuple(view, key);
-        if (ptr == NULL)
+        p = ptr_from_tuple(view, key);
+        if (p == NULL)
             return -1;
-        return pack_single(ptr, value, fmt);
+        return pack_single(p, value, fmt);
     }
     if (PySlice_Check(key) || is_multislice(key)) {
         /* Call memory_subscript() to produce a sliced lvalue, then copy

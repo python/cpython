@@ -1021,7 +1021,7 @@ faulthandler_fatal_error_thread(void *plock)
 static PyObject *
 faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 {
-    long thread;
+    long thread_id;
     PyThread_type_lock lock;
 
     faulthandler_suppress_crash_report();
@@ -1032,8 +1032,8 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 
     PyThread_acquire_lock(lock, WAIT_LOCK);
 
-    thread = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
-    if (thread == -1) {
+    thread_id = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
+    if (thread_id == -1) {
         PyThread_free_lock(lock);
         PyErr_SetString(PyExc_RuntimeError, "unable to start the thread");
         return NULL;

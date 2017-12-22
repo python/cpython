@@ -1753,9 +1753,9 @@ element_subscr(PyObject* self_, PyObject* item)
 
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
-                PyObject* item = self->extra->children[cur];
-                Py_INCREF(item);
-                PyList_SET_ITEM(list, i, item);
+                PyObject* curr_item = self->extra->children[cur];
+                Py_INCREF(curr_item);
+                PyList_SET_ITEM(list, i, curr_item);
             }
 
             return list;
@@ -1802,9 +1802,6 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
 
         if (value == NULL) {
             /* Delete slice */
-            size_t cur;
-            Py_ssize_t i;
-
             if (slicelen <= 0)
                 return 0;
 
@@ -1834,12 +1831,12 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
              * Note that in the ith iteration, shifting is done i+i places down
              * because i children were already removed.
             */
-            for (cur = start, i = 0; cur < (size_t)stop; cur += step, ++i) {
+            for (cur = start, i = 0; cur < stop; cur += step, ++i) {
                 /* Compute how many children have to be moved, clipping at the
                  * list end.
                 */
                 Py_ssize_t num_moved = step - 1;
-                if (cur + step >= (size_t)self->extra->length) {
+                if (cur + step >= self->extra->length) {
                     num_moved = self->extra->length - cur - 1;
                 }
 
@@ -1853,7 +1850,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
 
             /* Leftover "tail" after the last removed child */
             cur = start + (size_t)slicelen * step;
-            if (cur < (size_t)self->extra->length) {
+            if (cur < self->extra->length) {
                 memmove(
                     self->extra->children + cur - slicelen,
                     self->extra->children + cur,

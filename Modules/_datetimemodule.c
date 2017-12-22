@@ -1536,16 +1536,16 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
     {
-        PyObject *format;
+        PyObject *new_format;
         PyObject *time = PyImport_ImportModuleNoBlock("time");
 
         if (time == NULL)
             goto Done;
-        format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
-        if (format != NULL) {
+        new_format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+        if (new_format != NULL) {
             result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
-                                                   format, timetuple, NULL);
-            Py_DECREF(format);
+                                                   new_format, timetuple, NULL);
+            Py_DECREF(new_format);
         }
         Py_DECREF(time);
     }

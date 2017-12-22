@@ -2483,7 +2483,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
         /* Check for valid slot names and two special cases */
         for (i = 0; i < nslots; i++) {
-            PyObject *tmp = PyTuple_GET_ITEM(slots, i);
+            tmp = PyTuple_GET_ITEM(slots, i);
             if (!valid_identifier(tmp))
                 goto error;
             assert(PyUnicode_Check(tmp));

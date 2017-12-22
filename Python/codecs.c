@@ -883,11 +883,11 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         }
         outp = PyUnicode_1BYTE_DATA(res);
         for (i = start; i < end; i++, outp += 4) {
-            unsigned char c = p[i];
+            unsigned char curr_ch = p[i];
             outp[0] = '\\';
             outp[1] = 'x';
-            outp[2] = Py_hexdigits[(c>>4)&0xf];
-            outp[3] = Py_hexdigits[c&0xf];
+            outp[2] = Py_hexdigits[(curr_ch>>4)&0xf];
+            outp[3] = Py_hexdigits[curr_ch&0xf];
         }
 
         assert(_PyUnicode_CheckConsistency(res, 1));

@@ -230,8 +230,8 @@ static PyThreadState *tcl_tstate = NULL;
 #endif
 
 #define ENTER_TCL \
-    { PyThreadState *tstate = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
+    { PyThreadState *t_state = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
+        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = t_state;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \

@@ -3387,9 +3387,9 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
                 goto error;
         }
         else if (parent != module) {
-            PickleState *st = _Pickle_GetGlobalState();
+            PickleState *curr_st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
-                                        st->getattr, parent, lastname);
+                                                   curr_st->getattr, parent, lastname);
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)
@@ -3672,7 +3672,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
     if (use_newobj_ex) {
         PyObject *cls;
-        PyObject *args;
+        PyObject *tup_args;
         PyObject *kwargs;
 
         if (PyTuple_GET_SIZE(argtup) != 3) {
@@ -3689,11 +3689,11 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
                          "be a class, not %.200s", Py_TYPE(cls)->tp_name);
             return -1;
         }
-        args = PyTuple_GET_ITEM(argtup, 1);
-        if (!PyTuple_Check(args)) {
+        tup_args = PyTuple_GET_ITEM(argtup, 1);
+        if (!PyTuple_Check(tup_args)) {
             PyErr_Format(st->PicklingError,
                          "second item from NEWOBJ_EX argument tuple must "
-                         "be a tuple, not %.200s", Py_TYPE(args)->tp_name);
+                         "be a tuple, not %.200s", Py_TYPE(tup_args)->tp_name);
             return -1;
         }
         kwargs = PyTuple_GET_ITEM(argtup, 2);
@@ -3706,7 +3706,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
         if (self->proto >= 4) {
             if (save(self, cls, 0) < 0 ||
-                save(self, args, 0) < 0 ||
+                save(self, tup_args, 0) < 0 ||
                 save(self, kwargs, 0) < 0 ||
                 _Pickler_Write(self, &newobj_ex_op, 1) < 0) {
                 return -1;
@@ -6988,7 +6988,6 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         }
     }
     else if (PyDict_Check(obj)) {
-        Py_ssize_t i = 0;
         PyObject *key, *value;
 
         new_memo_size = PyDict_GET_SIZE(obj);
@@ -6996,6 +6995,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         if (new_memo == NULL)
             return -1;
 
+        i = 0;
         while (PyDict_Next(obj, &i, &key, &value)) {
             Py_ssize_t idx;
             if (!PyLong_Check(key)) {

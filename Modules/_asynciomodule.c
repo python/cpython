@@ -2493,12 +2493,12 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 tb = NULL;
                 goto set_exception;
             }
-            PyObject *res = future_set_result((FutureObj*)task, o);
+            PyObject *set_res = future_set_result((FutureObj*)task, o);
             Py_DECREF(o);
-            if (res == NULL) {
+            if (set_res == NULL) {
                 return NULL;
             }
-            Py_DECREF(res);
+            Py_DECREF(set_res);
             Py_RETURN_NONE;
         }
 
@@ -2551,7 +2551,7 @@ set_exception:
     /* Check if `result` is FutureObj or TaskObj (and not a subclass) */
     if (Future_CheckExact(result) || Task_CheckExact(result)) {
         PyObject *wrapper;
-        PyObject *res;
+        PyObject *add_res;
         FutureObj *fut = (FutureObj*)result;
 
         /* Check if `result` future is attached to a different loop */
@@ -2567,12 +2567,12 @@ set_exception:
             if (wrapper == NULL) {
                 goto fail;
             }
-            res = future_add_done_callback((FutureObj*)result, wrapper);
+            add_res = future_add_done_callback((FutureObj*)result, wrapper);
             Py_DECREF(wrapper);
-            if (res == NULL) {
+            if (add_res == NULL) {
                 goto fail;
             }
-            Py_DECREF(res);
+            Py_DECREF(add_res);
 
             /* task._fut_waiter = result */
             task->task_fut_waiter = result;  /* no incref is necessary */
@@ -2613,7 +2613,7 @@ set_exception:
         else {
             /* `result` is a Future-compatible object */
             PyObject *wrapper;
-            PyObject *res;
+            PyObject *method_res;
 
             int blocking = PyObject_IsTrue(o);
             Py_DECREF(o);
@@ -2646,14 +2646,14 @@ set_exception:
                 if (wrapper == NULL) {
                     goto fail;
                 }
-                res = _PyObject_CallMethodIdObjArgs(result,
-                                                    &PyId_add_done_callback,
-                                                    wrapper, NULL);
+                method_res = _PyObject_CallMethodIdObjArgs(result,
+                                                           &PyId_add_done_callback,
+                                                           wrapper, NULL);
                 Py_DECREF(wrapper);
-                if (res == NULL) {
+                if (method_res == NULL) {
                     goto fail;
                 }
-                Py_DECREF(res);
+                Py_DECREF(method_res);
 
                 /* task._fut_waiter = result */
                 task->task_fut_waiter = result;  /* no incref is necessary */

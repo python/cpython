@@ -565,16 +565,16 @@ compiler_enter_scope(struct compiler *c, identifier name,
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
         _Py_IDENTIFIER(__class__);
-        PyObject *tuple, *name;
+        PyObject *tuple, *class_name;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        name = _PyUnicode_FromId(&PyId___class__);
-        if (!name) {
+        class_name = _PyUnicode_FromId(&PyId___class__);
+        if (!class_name) {
             compiler_unit_free(u);
             return 0;
         }
-        tuple = _PyCode_ConstantKey(name);
+        tuple = _PyCode_ConstantKey(class_name);
         if (!tuple) {
             compiler_unit_free(u);
             return 0;
@@ -2211,20 +2211,20 @@ static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     basicblock *end, *next;
-    int constant;
+    int const_expr;
     assert(s->kind == If_kind);
     end = compiler_new_block(c);
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(c, s->v.If.test);
-    /* constant = 0: "if 0"
-     * constant = 1: "if 1", "if 2", ...
-     * constant = -1: rest */
-    if (constant == 0) {
+    const_expr = expr_constant(c, s->v.If.test);
+    /* const_expr = 0: "if 0"
+     * const_expr = 1: "if 1", "if 2", ...
+     * const_expr = -1: rest */
+    if (const_expr == 0) {
         if (s->v.If.orelse)
             VISIT_SEQ(c, stmt, s->v.If.orelse);
-    } else if (constant == 1) {
+    } else if (const_expr == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {
@@ -2363,16 +2363,16 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(c, s->v.While.test);
+    int const_expr = expr_constant(c, s->v.While.test);
 
-    if (constant == 0) {
+    if (const_expr == 0) {
         if (s->v.While.orelse)
             VISIT_SEQ(c, stmt, s->v.While.orelse);
         return 1;
     }
     loop = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (constant == -1) {
+    if (const_expr == -1) {
         anchor = compiler_new_block(c);
         if (anchor == NULL)
             return 0;
@@ -2391,7 +2391,7 @@ compiler_while(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, loop);
     if (!compiler_push_fblock(c, LOOP, loop))
         return 0;
-    if (constant == -1) {
+    if (const_expr == -1) {
         if (!compiler_jump_if(c, s->v.While.test, anchor, 0))
             return 0;
     }
@@ -2402,7 +2402,7 @@ compiler_while(struct compiler *c, stmt_ty s)
        if there is no else clause ?
     */
 
-    if (constant == -1)
+    if (const_expr == -1)
         compiler_use_next_block(c, anchor);
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, LOOP, loop);

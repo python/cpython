@@ -2409,9 +2409,9 @@ printone(FILE *out, const char* msg, size_t value)
     k = 3;
     do {
         size_t nextvalue = value / 10;
-        unsigned int digit = (unsigned int)(value - nextvalue * 10);
+        unsigned int curr_dig = (unsigned int)(value - nextvalue * 10);
         value = nextvalue;
-        buf[i--] = (char)(digit + '0');
+        buf[i--] = (char)(curr_dig + '0');
         --k;
         if (k == 0 && value && i >= 0) {
             k = 3;

@@ -4214,7 +4214,7 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
             PyObject *w;
             int kind;
             void *data;
-            Py_ssize_t len, i;
+            Py_ssize_t w_len, i;
             w = decode_utf8(c, &s, end);
             if (w == NULL) {
                 Py_DECREF(u);
@@ -4222,8 +4222,8 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
             }
             kind = PyUnicode_KIND(w);
             data = PyUnicode_DATA(w);
-            len = PyUnicode_GET_LENGTH(w);
-            for (i = 0; i < len; i++) {
+            w_len = PyUnicode_GET_LENGTH(w);
+            for (i = 0; i < w_len; i++) {
                 Py_UCS4 chr = PyUnicode_READ(kind, data, i);
                 sprintf(p, "\\U%08x", chr);
                 p += 10;
@@ -4345,10 +4345,10 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
        because turning the expression '' in to '()' would go from being invalid
        to valid. */
     for (s = expr_start; s != expr_end; s++) {
-        char c = *s;
+        char ch = *s;
         /* The Python parser ignores only the following whitespace
            characters (\r already is converted to \n). */
-        if (!(c == ' ' || c == '\t' || c == '\n' || c == '\f')) {
+        if (!(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\f')) {
             break;
         }
     }
@@ -4884,30 +4884,30 @@ typedef struct {
 #define FstringParser_check_invariants(state)
 #else
 static void
-FstringParser_check_invariants(FstringParser *state)
+FstringParser_check_invariants(FstringParser *parser_state)
 {
-    if (state->last_str)
-        assert(PyUnicode_CheckExact(state->last_str));
-    ExprList_check_invariants(&state->expr_list);
+    if (parser_state->last_str)
+        assert(PyUnicode_CheckExact(parser_state->last_str));
+    ExprList_check_invariants(&parser_state->expr_list);
 }
 #endif
 
 static void
-FstringParser_Init(FstringParser *state)
+FstringParser_Init(FstringParser *parser_state)
 {
-    state->last_str = NULL;
-    state->fmode = 0;
-    ExprList_Init(&state->expr_list);
-    FstringParser_check_invariants(state);
+    parser_state->last_str = NULL;
+    parser_state->fmode = 0;
+    ExprList_Init(&parser_state->expr_list);
+    FstringParser_check_invariants(parser_state);
 }
 
 static void
-FstringParser_Dealloc(FstringParser *state)
+FstringParser_Dealloc(FstringParser *parser_state)
 {
-    FstringParser_check_invariants(state);
+    FstringParser_check_invariants(parser_state);
 
-    Py_XDECREF(state->last_str);
-    ExprList_Dealloc(&state->expr_list);
+    Py_XDECREF(parser_state->last_str);
+    ExprList_Dealloc(&parser_state->expr_list);
 }
 
 /* Make a Str node, but decref the PyUnicode object being added. */
@@ -4927,9 +4927,9 @@ make_str_node_and_del(PyObject **str, struct compiling *c, const node* n)
 /* Add a non-f-string (that is, a regular literal string). str is
    decref'd. */
 static int
-FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
+FstringParser_ConcatAndDel(FstringParser *parser_state, PyObject *str)
 {
-    FstringParser_check_invariants(state);
+    FstringParser_check_invariants(parser_state);
 
     assert(PyUnicode_CheckExact(str));
 
@@ -4938,28 +4938,28 @@ FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
         return 0;
     }
 
-    if (!state->last_str) {
+    if (!parser_state->last_str) {
         /* We didn't have a string before, so just remember this one. */
-        state->last_str = str;
+        parser_state->last_str = str;
     } else {
         /* Concatenate this with the previous string. */
-        PyUnicode_AppendAndDel(&state->last_str, str);
-        if (!state->last_str)
+        PyUnicode_AppendAndDel(&parser_state->last_str, str);
+        if (!parser_state->last_str)
             return -1;
     }
-    FstringParser_check_invariants(state);
+    FstringParser_check_invariants(parser_state);
     return 0;
 }
 
 /* Parse an f-string. The f-string is in *str to end, with no
    'f' or quotes. */
 static int
-FstringParser_ConcatFstring(FstringParser *state, const char **str,
+FstringParser_ConcatFstring(FstringParser *parser_state, const char **str,
                             const char *end, int raw, int recurse_lvl,
                             struct compiling *c, const node *n)
 {
-    FstringParser_check_invariants(state);
-    state->fmode = 1;
+    FstringParser_check_invariants(parser_state);
+    parser_state->fmode = 1;
 
     /* Parse the f-string. */
     while (1) {
@@ -4980,15 +4980,15 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
         if (!literal) {
             /* Do nothing. Just leave last_str alone (and possibly
                NULL). */
-        } else if (!state->last_str) {
+        } else if (!parser_state->last_str) {
             /*  Note that the literal can be zero length, if the
                 input string is "\\\n" or "\\\r", among others. */
-            state->last_str = literal;
+            parser_state->last_str = literal;
             literal = NULL;
         } else {
             /* We have a literal, concatenate it. */
             assert(PyUnicode_GET_LENGTH(literal) != 0);
-            if (FstringParser_ConcatAndDel(state, literal) < 0)
+            if (FstringParser_ConcatAndDel(parser_state, literal) < 0)
                 return -1;
             literal = NULL;
         }
@@ -5010,16 +5010,16 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
 
         /* We know we have an expression. Convert any existing string
            to a Str node. */
-        if (!state->last_str) {
+        if (!parser_state->last_str) {
             /* Do nothing. No previous literal. */
         } else {
             /* Convert the existing last_str literal to a Str node. */
-            expr_ty str = make_str_node_and_del(&state->last_str, c, n);
-            if (!str || ExprList_Append(&state->expr_list, str) < 0)
+            expr_ty str_expr = make_str_node_and_del(&parser_state->last_str, c, n);
+            if (!str_expr || ExprList_Append(&parser_state->expr_list, str_expr) < 0)
                 return -1;
         }
 
-        if (ExprList_Append(&state->expr_list, expression) < 0)
+        if (ExprList_Append(&parser_state->expr_list, expression) < 0)
             return -1;
     }
 
@@ -5035,51 +5035,51 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
         return -1;
     }
 
-    FstringParser_check_invariants(state);
+    FstringParser_check_invariants(parser_state);
     return 0;
 }
 
 /* Convert the partial state reflected in last_str and expr_list to an
    expr_ty. The expr_ty can be a Str, or a JoinedStr. */
 static expr_ty
-FstringParser_Finish(FstringParser *state, struct compiling *c,
+FstringParser_Finish(FstringParser *parser_state, struct compiling *c,
                      const node *n)
 {
     asdl_seq *seq;
 
-    FstringParser_check_invariants(state);
+    FstringParser_check_invariants(parser_state);
 
     /* If we're just a constant string with no expressions, return
        that. */
-    if (!state->fmode) {
-        assert(!state->expr_list.size);
-        if (!state->last_str) {
+    if (!parser_state->fmode) {
+        assert(!parser_state->expr_list.size);
+        if (!parser_state->last_str) {
             /* Create a zero length string. */
-            state->last_str = PyUnicode_FromStringAndSize(NULL, 0);
-            if (!state->last_str)
+            parser_state->last_str = PyUnicode_FromStringAndSize(NULL, 0);
+            if (!parser_state->last_str)
                 goto error;
         }
-        return make_str_node_and_del(&state->last_str, c, n);
+        return make_str_node_and_del(&parser_state->last_str, c, n);
     }
 
     /* Create a Str node out of last_str, if needed. It will be the
        last node in our expression list. */
-    if (state->last_str) {
-        expr_ty str = make_str_node_and_del(&state->last_str, c, n);
-        if (!str || ExprList_Append(&state->expr_list, str) < 0)
+    if (parser_state->last_str) {
+        expr_ty str = make_str_node_and_del(&parser_state->last_str, c, n);
+        if (!str || ExprList_Append(&parser_state->expr_list, str) < 0)
             goto error;
     }
     /* This has already been freed. */
-    assert(state->last_str == NULL);
+    assert(parser_state->last_str == NULL);
 
-    seq = ExprList_Finish(&state->expr_list, c->c_arena);
+    seq = ExprList_Finish(&parser_state->expr_list, c->c_arena);
     if (!seq)
         goto error;
 
     return JoinedStr(seq, LINENO(n), n->n_col_offset, c->c_arena);
 
 error:
-    FstringParser_Dealloc(state);
+    FstringParser_Dealloc(parser_state);
     return NULL;
 }
 
@@ -5090,16 +5090,16 @@ static expr_ty
 fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
               struct compiling *c, const node *n)
 {
-    FstringParser state;
+    FstringParser parser_state;
 
-    FstringParser_Init(&state);
-    if (FstringParser_ConcatFstring(&state, str, end, raw, recurse_lvl,
+    FstringParser_Init(&parser_state);
+    if (FstringParser_ConcatFstring(&parser_state, str, end, raw, recurse_lvl,
                                     c, n) < 0) {
-        FstringParser_Dealloc(&state);
+        FstringParser_Dealloc(&parser_state);
         return NULL;
     }
 
-    return FstringParser_Finish(&state, c, n);
+    return FstringParser_Finish(&parser_state, c, n);
 }
 
 /* n is a Python string literal, including the bracketing quote
@@ -5226,8 +5226,8 @@ parsestrplus(struct compiling *c, const node *n)
     PyObject *bytes_str = NULL;
     int i;
 
-    FstringParser state;
-    FstringParser_Init(&state);
+    FstringParser parser_state;
+    FstringParser_Init(&parser_state);
 
     for (i = 0; i < NCH(n); i++) {
         int this_bytesmode;
@@ -5254,7 +5254,7 @@ parsestrplus(struct compiling *c, const node *n)
             int result;
             assert(s == NULL && !bytesmode);
             /* This is an f-string. Parse and concatenate it. */
-            result = FstringParser_ConcatFstring(&state, &fstr, fstr+fstrlen,
+            result = FstringParser_ConcatFstring(&parser_state, &fstr, fstr+fstrlen,
                                                  this_rawmode, 0, c, n);
             if (result < 0)
                 goto error;
@@ -5277,7 +5277,7 @@ parsestrplus(struct compiling *c, const node *n)
                 }
             } else {
                 /* This is a regular string. Concatenate it. */
-                if (FstringParser_ConcatAndDel(&state, s) < 0)
+                if (FstringParser_ConcatAndDel(&parser_state, s) < 0)
                     goto error;
             }
         }
@@ -5292,10 +5292,10 @@ parsestrplus(struct compiling *c, const node *n)
     /* We're not a bytes string, bytes_str should never have been set. */
     assert(bytes_str == NULL);
 
-    return FstringParser_Finish(&state, c, n);
+    return FstringParser_Finish(&parser_state, c, n);
 
 error:
     Py_XDECREF(bytes_str);
-    FstringParser_Dealloc(&state);
+    FstringParser_Dealloc(&parser_state);
     return NULL;
 }

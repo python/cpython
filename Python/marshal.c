@@ -936,11 +936,11 @@ r_object(RFILE *p)
     PyObject *v, *v2;
     Py_ssize_t idx = 0;
     long i, n;
-    int type, code = r_byte(p);
+    int type, obj_code = r_byte(p);
     int flag, is_interned = 0;
     PyObject *retval = NULL;
 
-    if (code == EOF) {
+    if (obj_code == EOF) {
         PyErr_SetString(PyExc_EOFError,
                         "EOF read where object expected");
         return NULL;
@@ -954,8 +954,8 @@ r_object(RFILE *p)
         return NULL;
     }
 
-    flag = code & FLAG_REF;
-    type = code & ~FLAG_REF;
+    flag = obj_code & FLAG_REF;
+    type = obj_code & ~FLAG_REF;
 
 #define R_REF(O) do{\
     if (flag) \

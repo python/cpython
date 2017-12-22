@@ -8270,7 +8270,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
         need_dict = 1;
 
     if (need_dict) {
-        PyObject *result = PyDict_New();
+        result = PyDict_New();
         PyObject *key, *value;
         if (!result)
             return NULL;
@@ -8310,7 +8310,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     count3 = 0;
     for (i = 1; i < length; i++) {
         int o1, o2, o3, i2, i3;
-        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        ch = PyUnicode_READ(kind, data, i);
         if (ch == 0xFFFE)
             /* unmapped character */
             continue;
@@ -8883,10 +8883,10 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
     }
 
     if (PyLong_Check(item)) {
-        long ch = (Py_UCS4)PyLong_AS_LONG(item);
+        long long_ch = (Py_UCS4)PyLong_AS_LONG(item);
         /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
            used it */
-        if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0) {
+        if (_PyUnicodeWriter_WriteCharInline(writer, long_ch) < 0) {
             Py_DECREF(item);
             return -1;
         }
@@ -9225,9 +9225,9 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
     for (i = 0; i < length; i++) {
         Py_UCS4 ch = s[i];
         if (ch > 127) {
-            int decimal = Py_UNICODE_TODECIMAL(ch);
-            if (decimal >= 0)
-                ch = '0' + decimal;
+            const int dec_int = Py_UNICODE_TODECIMAL(ch);
+            if (dec_int >= 0)
+                ch = '0' + dec_int;
             maxchar = Py_MAX(maxchar, ch);
         }
     }
@@ -9242,9 +9242,9 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
     for (i = 0; i < length; i++) {
         Py_UCS4 ch = s[i];
         if (ch > 127) {
-            int decimal = Py_UNICODE_TODECIMAL(ch);
-            if (decimal >= 0)
-                ch = '0' + decimal;
+            const int dec_int = Py_UNICODE_TODECIMAL(ch);
+            if (dec_int >= 0)
+                ch = '0' + dec_int;
         }
         PyUnicode_WRITE(kind, data, i, ch);
     }
@@ -14051,7 +14051,7 @@ unicode_subscript(PyObject* self, PyObject* item)
         dest_data = PyUnicode_DATA(result);
 
         for (cur = start, i = 0; i < slicelength; cur += step, i++) {
-            Py_UCS4 ch = PyUnicode_READ(src_kind, src_data, cur);
+            ch = PyUnicode_READ(src_kind, src_data, cur);
             PyUnicode_WRITE(dest_kind, dest_data, i, ch);
         }
         assert(_PyUnicode_CheckConsistency(result, 1));

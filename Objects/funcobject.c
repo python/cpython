@@ -457,7 +457,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
               PyObject *name, PyObject *defaults, PyObject *closure)
 /*[clinic end generated code: output=99c6d9da3a24e3be input=93611752fc2daf11]*/
 {
-    PyFunctionObject *newfunc;
+    PyFunctionObject *new_func_obj;
     Py_ssize_t nfree, nclosure;
 
     if (name != Py_None && !PyUnicode_Check(name)) {
@@ -502,25 +502,25 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
         }
     }
 
-    newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
-                                                 globals);
-    if (newfunc == NULL)
+    new_func_obj = (PyFunctionObject *)PyFunction_New((PyObject *)code,
+                                                      globals);
+    if (new_func_obj == NULL)
         return NULL;
 
     if (name != Py_None) {
         Py_INCREF(name);
-        Py_SETREF(newfunc->func_name, name);
+        Py_SETREF(new_func_obj->func_name, name);
     }
     if (defaults != Py_None) {
         Py_INCREF(defaults);
-        newfunc->func_defaults  = defaults;
+        new_func_obj->func_defaults  = defaults;
     }
     if (closure != Py_None) {
         Py_INCREF(closure);
-        newfunc->func_closure = closure;
+        new_func_obj->func_closure = closure;
     }
 
-    return (PyObject *)newfunc;
+    return (PyObject *)new_func_obj;
 }
 
 static void

@@ -1284,9 +1284,9 @@ PyDoc_STRVAR(getter_doc,
              "Descriptor to change the getter on a property.");
 
 static PyObject *
-property_getter(PyObject *self, PyObject *getter)
+property_getter(PyObject *self, PyObject *get)
 {
-    return property_copy(self, getter, NULL, NULL);
+    return property_copy(self, get, NULL, NULL);
 }
 
 
@@ -1294,9 +1294,9 @@ PyDoc_STRVAR(setter_doc,
              "Descriptor to change the setter on a property.");
 
 static PyObject *
-property_setter(PyObject *self, PyObject *setter)
+property_setter(PyObject *self, PyObject *set)
 {
-    return property_copy(self, NULL, setter, NULL);
+    return property_copy(self, NULL, set, NULL);
 }
 
 

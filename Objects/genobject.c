@@ -279,21 +279,21 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
                CO_FUTURE_GENERATOR_STOP flag.
             */
 
-            PyObject *exc, *val, *tb;
+            PyObject *except, *val, *tb;
 
             /* Pop the exception before issuing a warning. */
-            PyErr_Fetch(&exc, &val, &tb);
+            PyErr_Fetch(&except, &val, &tb);
 
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                                  "generator '%.50S' raised StopIteration",
                                  gen->gi_qualname)) {
                 /* Warning was converted to an error. */
-                Py_XDECREF(exc);
+                Py_XDECREF(except);
                 Py_XDECREF(val);
                 Py_XDECREF(tb);
             }
             else {
-                PyErr_Restore(exc, val, tb);
+                PyErr_Restore(except, val, tb);
             }
         }
     }
@@ -485,7 +485,6 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         }
         Py_DECREF(yf);
         if (!ret) {
-            PyObject *val;
             /* Pop subiterator from stack */
             ret = *(--gen->gi_frame->f_stacktop);
             assert(ret == yf);
@@ -908,7 +907,7 @@ gen_is_coroutine(PyObject *o)
 PyObject *
 _PyCoro_GetAwaitableIter(PyObject *o)
 {
-    unaryfunc getter = NULL;
+    unaryfunc getter_func = NULL;
     PyTypeObject *ot;
 
     if (PyCoro_CheckExact(o) || gen_is_coroutine(o)) {
@@ -919,10 +918,10 @@ _PyCoro_GetAwaitableIter(PyObject *o)
 
     ot = Py_TYPE(o);
     if (ot->tp_as_async != NULL) {
-        getter = ot->tp_as_async->am_await;
+        getter_func = ot->tp_as_async->am_await;
     }
-    if (getter != NULL) {
-        PyObject *res = (*getter)(o);
+    if (getter_func != NULL) {
+        PyObject *res = (*getter_func)(o);
         if (res != NULL) {
             if (PyCoro_CheckExact(res) || gen_is_coroutine(res)) {
                 /* __await__ must return an *iterator*, not

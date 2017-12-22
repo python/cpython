@@ -217,7 +217,7 @@ cleanup_buffer(PyObject *self, void *ptr)
 }
 
 static int
-addcleanup(void *ptr, freelist_t *freelist, destr_t destructor)
+addcleanup(void *ptr, freelist_t *freelist, destr_t dtor)
 {
     int index;
 
@@ -225,7 +225,7 @@ addcleanup(void *ptr, freelist_t *freelist, destr_t destructor)
     freelist->first_available += 1;
 
     freelist->entries[index].item = ptr;
-    freelist->entries[index].destructor = destructor;
+    freelist->entries[index].destructor = dtor;
 
     return 0;
 }

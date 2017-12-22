@@ -170,7 +170,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
 
     if (ob_arg != NULL) {
         if (PyArg_Parse(ob_arg, "w*:ioctl", &pstr)) {
-            char *arg;
+            char *buf_arg;
             str = pstr.buf;
             len = pstr.len;
 
@@ -178,10 +178,10 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                 if (len <= IOCTL_BUFSZ) {
                     memcpy(buf, str, len);
                     buf[len] = '\0';
-                    arg = buf;
+                    buf_arg = buf;
                 }
                 else {
-                    arg = str;
+                    buf_arg = str;
                 }
             }
             else {
@@ -194,16 +194,16 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                 else {
                     memcpy(buf, str, len);
                     buf[len] = '\0';
-                    arg = buf;
+                    buf_arg = buf;
                 }
             }
-            if (buf == arg) {
+            if (buf == buf_arg) {
                 Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-                ret = ioctl(fd, code, arg);
+                ret = ioctl(fd, code, buf_arg);
                 Py_END_ALLOW_THREADS
             }
             else {
-                ret = ioctl(fd, code, arg);
+                ret = ioctl(fd, code, buf_arg);
             }
             if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                 memcpy(str, buf, len);

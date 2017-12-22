@@ -706,7 +706,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
         case Py_GE: cmp = result >= 0; break;
         default: return NULL; /* cannot happen */
         }
-        PyObject *res = cmp ? Py_True : Py_False;
+        res = cmp ? Py_True : Py_False;
         Py_INCREF(res);
         return res;
     }
@@ -2107,7 +2107,6 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         Py_ssize_t itemcount = Py_SIZE(items) / mf_descr.size;
         const unsigned char *memstr =
             (unsigned char *)PyBytes_AS_STRING(items);
-        const struct arraydescr *descr;
 
         /* If possible, try to pack array's items using a data type
          * that fits better. This may result in an array with narrower
@@ -2354,7 +2353,7 @@ array_subscr(arrayobject* self, PyObject* item)
             return newarrayobject(&Arraytype, 0, self->ob_descr);
         }
         else if (step == 1) {
-            PyObject *result = newarrayobject(&Arraytype,
+            result = newarrayobject(&Arraytype,
                                     slicelength, self->ob_descr);
             if (result == NULL)
                 return NULL;

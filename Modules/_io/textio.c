@@ -447,8 +447,6 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
         }
         else {
             void *translated;
-            int kind = PyUnicode_KIND(output);
-            void *in_str = PyUnicode_DATA(output);
             Py_ssize_t in, out;
             /* XXX: Previous in-place translation here is disabled as
                resizing is not possible anymore */
@@ -1975,7 +1973,7 @@ _PyIO_find_line_ending(
                 e = s;
             while (s < e) {
                 Py_ssize_t i;
-                const char *pos = find_control_char(kind, s, end, nl[0]);
+                pos = find_control_char(kind, s, end, nl[0]);
                 if (pos == NULL || pos >= e)
                     break;
                 for (i = 1; i < readnl_len; i++) {

@@ -41,7 +41,7 @@ name_matches(const char *name1, const char *name2) {
 
 
 PyObject *
-PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
+PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor dtor)
 {
     PyCapsule *capsule;
 
@@ -58,7 +58,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
     capsule->pointer = pointer;
     capsule->name = name;
     capsule->context = NULL;
-    capsule->destructor = destructor;
+    capsule->destructor = dtor;
 
     return (PyObject *)capsule;
 }
@@ -164,7 +164,7 @@ PyCapsule_SetName(PyObject *o, const char *name)
 
 
 int
-PyCapsule_SetDestructor(PyObject *o, PyCapsule_Destructor destructor)
+PyCapsule_SetDestructor(PyObject *o, PyCapsule_Destructor dtor)
 {
     PyCapsule *capsule = (PyCapsule *)o;
 
@@ -172,7 +172,7 @@ PyCapsule_SetDestructor(PyObject *o, PyCapsule_Destructor destructor)
         return -1;
     }
 
-    capsule->destructor = destructor;
+    capsule->destructor = dtor;
     return 0;
 }
 

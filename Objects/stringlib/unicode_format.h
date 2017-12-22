@@ -1154,14 +1154,14 @@ fieldnameiter_dealloc(fieldnameiterobject *it)
 static PyObject *
 fieldnameiter_next(fieldnameiterobject *it)
 {
-    int result;
+    int iter_res;
     int is_attr;
     Py_ssize_t idx;
     SubString name;
 
-    result = FieldNameIterator_next(&it->it_field, &is_attr,
-                                    &idx, &name);
-    if (result == 0 || result == 1)
+    iter_res = FieldNameIterator_next(&it->it_field, &is_attr,
+                                      &idx, &name);
+    if (iter_res == 0 || iter_res == 1)
         /* if 0, error has already been set, if 1, iterator is empty */
         return NULL;
     else {

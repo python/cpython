@@ -146,9 +146,9 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
         assert(_Py_OPCODE(codestr[pos]) == LOAD_CONST);
 
         unsigned int arg = get_arg(codestr, pos);
-        PyObject *constant = PyList_GET_ITEM(consts, arg);
-        Py_INCREF(constant);
-        PyTuple_SET_ITEM(newconst, i, constant);
+        PyObject *curr_const = PyList_GET_ITEM(consts, arg);
+        Py_INCREF(curr_const);
+        PyTuple_SET_ITEM(newconst, i, curr_const);
     }
 
     /* Append folded constant onto consts */

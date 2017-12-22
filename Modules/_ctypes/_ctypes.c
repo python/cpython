@@ -4512,12 +4512,12 @@ Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
             return -1;
         }
         for (cur = start, i = 0; i < otherlen; cur += step, i++) {
-            PyObject *item = PySequence_GetItem(value, i);
+            PyObject *curr_item = PySequence_GetItem(value, i);
             int result;
-            if (item == NULL)
+            if (curr_item == NULL)
                 return -1;
-            result = Array_ass_item(myself, cur, item);
-            Py_DECREF(item);
+            result = Array_ass_item(myself, cur, curr_item);
+            Py_DECREF(curr_item);
             if (result == -1)
                 return -1;
         }

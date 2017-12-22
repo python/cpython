@@ -1571,8 +1571,9 @@ function try_add_base_warnings() {
     try_add_nodist_warnings "-Wvarargs" "if we can turn on $CC varargs warning"
     try_add_nodist_warnings "-Wuninitialized" "if we can turn on $CC uninitialized warning"
     try_add_nodist_warnings "-Wcast-align" "if we can turn on $CC cast-align warning"
-
+    try_add_nodist_warnings "-Wshadow" "if we can turn on $CC shadow warning"
     try_add_nodist_warnings "-Werror=implicit-function-declaration" "if we can make implicit function declaration an error in $CC"
+
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
     # Issue #24324: Unfortunately, the unreachable code warning does not work

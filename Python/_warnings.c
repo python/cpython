@@ -157,7 +157,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
 
     /* _PyRuntime.warnings.filters could change while we are iterating over it. */
     for (i = 0; i < PyList_GET_SIZE(filters); i++) {
-        PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
+        PyObject *tmp_item, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
 

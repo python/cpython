@@ -894,11 +894,11 @@ get_hash_info(void)
 {
     PyObject *hash_info;
     int field = 0;
-    PyHash_FuncDef *hashfunc;
+    PyHash_FuncDef *hash_func;
     hash_info = PyStructSequence_New(&Hash_InfoType);
     if (hash_info == NULL)
         return NULL;
-    hashfunc = PyHash_GetFuncDef();
+    hash_func = PyHash_GetFuncDef();
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(8*sizeof(Py_hash_t)));
     PyStructSequence_SET_ITEM(hash_info, field++,
@@ -910,11 +910,11 @@ get_hash_info(void)
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(_PyHASH_IMAG));
     PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyUnicode_FromString(hashfunc->name));
+                              PyUnicode_FromString(hash_func->name));
     PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(hashfunc->hash_bits));
+                              PyLong_FromLong(hash_func->hash_bits));
     PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(hashfunc->seed_bits));
+                              PyLong_FromLong(hash_func->seed_bits));
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(Py_HASH_CUTOFF));
     if (PyErr_Occurred()) {

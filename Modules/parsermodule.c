@@ -568,15 +568,15 @@ err_string(const char *message)
 static PyObject*
 parser_do_parse(PyObject *args, PyObject *kw, const char *argspec, int type)
 {
-    char*     string = 0;
-    PyObject* res    = 0;
-    int flags        = 0;
+    char*     str   = 0;
+    PyObject* res   = 0;
+    int flags       = 0;
     perrdetail err;
 
     static char *keywords[] = {"source", NULL};
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, argspec, keywords, &string)) {
-        node* n = PyParser_ParseStringFlagsFilenameEx(string, NULL,
+    if (PyArg_ParseTupleAndKeywords(args, kw, argspec, keywords, &str)) {
+        node* n = PyParser_ParseStringFlagsFilenameEx(str, NULL,
                                                        &_PyParser_Grammar,
                                                       (type == PyST_EXPR)
                                                       ? eval_input : file_input,
@@ -647,7 +647,7 @@ validate_node(node *tree)
     int nch = NCH(tree);
     dfa *nt_dfa;
     state *dfa_state;
-    int pos, arc;
+    int pos, arc_ind;
 
     assert(ISNONTERMINAL(type));
     type -= NT_OFFSET;
@@ -663,8 +663,8 @@ validate_node(node *tree)
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
-        for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
-            short a_label = dfa_state->s_arc[arc].a_lbl;
+        for (arc_ind = 0; arc_ind < dfa_state->s_narcs; ++arc_ind) {
+            short a_label = dfa_state->s_arc[arc_ind].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
             if (_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type) {
                 /* The child is acceptable; if non-terminal, validate it recursively. */
@@ -672,7 +672,7 @@ validate_node(node *tree)
                     return 0;
 
                 /* Update the state, and move on to the next child. */
-                dfa_state = &nt_dfa->d_state[dfa_state->s_arc[arc].a_arrow];
+                dfa_state = &nt_dfa->d_state[dfa_state->s_arc[arc_ind].a_arrow];
                 goto arc_found;
             }
         }
@@ -697,8 +697,8 @@ arc_found:
         continue;
     }
     /* Are we in a final state? If so, return 1 for successful validation. */
-    for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
-        if (!dfa_state->s_arc[arc].a_lbl) {
+    for (arc_ind = 0; arc_ind < dfa_state->s_narcs; ++arc_ind) {
+        if (!dfa_state->s_arc[arc_ind].a_lbl) {
             return 1;
         }
     }
@@ -799,14 +799,14 @@ parser_tuple2st(PyST_Object *self, PyObject *args, PyObject *kw)
 static node*
 build_node_children(PyObject *tuple, node *root, int *line_num)
 {
-    Py_ssize_t len = PyObject_Size(tuple);
+    const Py_ssize_t tup_len = PyObject_Size(tuple);
     Py_ssize_t i;
     int  err;
 
-    if (len < 0) {
+    if (tup_len < 0) {
         return NULL;
     }
-    for (i = 1; i < len; ++i) {
+    for (i = 1; i < tup_len; ++i) {
         /* elem must always be a sequence, however simple */
         PyObject* elem = PySequence_GetItem(tuple, i);
         int ok = elem != NULL;
@@ -833,10 +833,10 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             }
         }
         if (!ok) {
-            PyObject *err = Py_BuildValue("Os", elem,
-                                          "Illegal node construct.");
-            PyErr_SetObject(parser_error, err);
-            Py_XDECREF(err);
+            PyObject *err_obj = Py_BuildValue("Os", elem,
+                                              "Illegal node construct.");
+            PyErr_SetObject(parser_error, err_obj);
+            Py_XDECREF(err_obj);
             Py_XDECREF(elem);
             return NULL;
         }
@@ -914,9 +914,9 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
              *  It has to be one or the other; this is an error.
              *  Raise an exception.
              */
-            PyObject *err = Py_BuildValue("Os", elem, "unknown node type.");
-            PyErr_SetObject(parser_error, err);
-            Py_XDECREF(err);
+            PyObject *err_obj = Py_BuildValue("Os", elem, "unknown node type.");
+            PyErr_SetObject(parser_error, err_obj);
+            Py_XDECREF(err_obj);
             Py_DECREF(elem);
             return NULL;
         }
@@ -1007,9 +1007,9 @@ build_node_tree(PyObject *tuple)
             }
             if (res && encoding) {
                 Py_ssize_t len;
-                const char *temp;
-                temp = PyUnicode_AsUTF8AndSize(encoding, &len);
-                if (temp == NULL) {
+                const char *tmp_str;
+                tmp_str = PyUnicode_AsUTF8AndSize(encoding, &len);
+                if (tmp_str == NULL) {
                     PyNode_Free(res);
                     Py_DECREF(encoding);
                     Py_DECREF(tuple);
@@ -1023,7 +1023,7 @@ build_node_tree(PyObject *tuple)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                (void) memcpy(res->n_str, temp, len + 1);
+                (void) memcpy(res->n_str, tmp_str, len + 1);
             }
         }
         if (encoding != NULL) {

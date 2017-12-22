@@ -519,7 +519,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             const char *fieldfmt = dict->format ? dict->format : "B";
             const char *fieldname = PyUnicode_AsUTF8(name);
             char *ptr;
-            Py_ssize_t len;
+            Py_ssize_t str_len;
             char *buf;
 
             if (fieldname == NULL)
@@ -528,9 +528,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
 
-            len = strlen(fieldname) + strlen(fieldfmt);
+            str_len = strlen(fieldname) + strlen(fieldfmt);
 
-            buf = PyMem_Malloc(len + 2 + 1);
+            buf = PyMem_Malloc(str_len + 2 + 1);
             if (buf == NULL) {
                 Py_DECREF(pair);
                 PyErr_NoMemory();

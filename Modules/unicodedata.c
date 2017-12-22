@@ -639,7 +639,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     void *data;
     Py_UCS4 *output;
     Py_ssize_t i, i1, o, len;
-    int f,l,index,index1,comb;
+    int f,l,index,index_1,comb;
     Py_UCS4 code;
     Py_ssize_t skipped[20];
     int cskipped = 0;
@@ -734,8 +734,8 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
               continue;
           }
           index = f*TOTAL_LAST + l;
-          index1 = comp_index[index >> COMP_SHIFT];
-          code = comp_data[(index1<<COMP_SHIFT)+
+          index_1 = comp_index[index >> COMP_SHIFT];
+          code = comp_data[(index_1<<COMP_SHIFT)+
                            (index&((1<<COMP_SHIFT)-1))];
           if (code == 0)
               goto not_combinable;

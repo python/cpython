@@ -2282,7 +2282,7 @@ digit beyond the first.
 
         if (log_base_BASE[base] == 0.0) {
             twodigits convmax = base;
-            int i = 1;
+            int k = 1;
 
             log_base_BASE[base] = (log((double)base) /
                                    log((double)PyLong_BASE));
@@ -2292,11 +2292,11 @@ digit beyond the first.
                     break;
                 }
                 convmax = next;
-                ++i;
+                ++k;
             }
             convmultmax_base[base] = convmax;
-            assert(i > 0);
-            convwidth_base[base] = i;
+            assert(k > 0);
+            convwidth_base[base] = k;
         }
 
         /* Find length of the string of numeric characters. */

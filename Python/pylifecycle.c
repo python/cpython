@@ -1476,8 +1476,8 @@ add_main_module(PyInterpreterState *interp)
      */
     loader = PyDict_GetItemString(d, "__loader__");
     if (loader == NULL || loader == Py_None) {
-        PyObject *loader = PyObject_GetAttrString(interp->importlib,
-                                                  "BuiltinImporter");
+        loader = PyObject_GetAttrString(interp->importlib,
+                                        "BuiltinImporter");
         if (loader == NULL) {
             return _Py_INIT_ERR("Failed to retrieve BuiltinImporter");
         }

@@ -1691,17 +1691,17 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         }
 
         TARGET(GET_AITER) {
-            unaryfunc getter = NULL;
+            unaryfunc get_func = NULL;
             PyObject *iter = NULL;
             PyObject *obj = TOP();
             PyTypeObject *type = Py_TYPE(obj);
 
             if (type->tp_as_async != NULL) {
-                getter = type->tp_as_async->am_aiter;
+                get_func = type->tp_as_async->am_aiter;
             }
 
-            if (getter != NULL) {
-                iter = (*getter)(obj);
+            if (get_func != NULL) {
+                iter = (*get_func)(obj);
                 Py_DECREF(obj);
                 if (iter == NULL) {
                     SET_TOP(NULL);
@@ -1737,7 +1737,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         }
 
         TARGET(GET_ANEXT) {
-            unaryfunc getter = NULL;
+            unaryfunc get_func = NULL;
             PyObject *next_iter = NULL;
             PyObject *awaitable = NULL;
             PyObject *aiter = TOP();
@@ -1750,11 +1750,11 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 }
             } else {
                 if (type->tp_as_async != NULL){
-                    getter = type->tp_as_async->am_anext;
+                    get_func = type->tp_as_async->am_anext;
                 }
 
-                if (getter != NULL) {
-                    next_iter = (*getter)(aiter);
+                if (get_func != NULL) {
+                    next_iter = (*get_func)(aiter);
                     if (next_iter == NULL) {
                         goto error;
                     }
@@ -3172,15 +3172,15 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         }
 
         TARGET(CALL_FUNCTION_KW) {
-            PyObject **sp, *res, *names;
+            PyObject **sp, *res, *args_names;
 
-            names = POP();
-            assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
+            args_names = POP();
+            assert(PyTuple_CheckExact(args_names) && PyTuple_GET_SIZE(args_names) <= oparg);
             sp = stack_pointer;
-            res = call_function(&sp, oparg, names);
+            res = call_function(&sp, oparg, args_names);
             stack_pointer = sp;
             PUSH(res);
-            Py_DECREF(names);
+            Py_DECREF(args_names);
 
             if (res == NULL) {
                 goto error;
@@ -3797,16 +3797,16 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            normally interned this should almost always hit. */
         co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
         for (j = 0; j < total_args; j++) {
-            PyObject *name = co_varnames[j];
-            if (name == keyword) {
+            PyObject *curr_name = co_varnames[j];
+            if (curr_name == keyword) {
                 goto kw_found;
             }
         }
 
         /* Slow fallback, just in case */
         for (j = 0; j < total_args; j++) {
-            PyObject *name = co_varnames[j];
-            int cmp = PyObject_RichCompareBool( keyword, name, Py_EQ);
+            PyObject *curr_name = co_varnames[j];
+            const int cmp = PyObject_RichCompareBool( keyword, curr_name, Py_EQ);
             if (cmp > 0) {
                 goto kw_found;
             }
@@ -3875,12 +3875,12 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            PyObject *name;
+            PyObject *curr_name;
             if (GETLOCAL(i) != NULL)
                 continue;
-            name = PyTuple_GET_ITEM(co->co_varnames, i);
+            curr_name = PyTuple_GET_ITEM(co->co_varnames, i);
             if (kwdefs != NULL) {
-                PyObject *def = PyDict_GetItem(kwdefs, name);
+                PyObject *def = PyDict_GetItem(kwdefs, curr_name);
                 if (def) {
                     Py_INCREF(def);
                     SETLOCAL(i, def);

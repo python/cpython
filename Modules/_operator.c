@@ -1617,11 +1617,10 @@ done:
 static PyObject *
 methodcaller_reduce(methodcallerobject *mc)
 {
-    PyObject *newargs;
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
         Py_ssize_t i;
         Py_ssize_t callargcount = PyTuple_GET_SIZE(mc->args);
-        newargs = PyTuple_New(1 + callargcount);
+        PyObject *newargs = PyTuple_New(1 + callargcount);
         if (newargs == NULL)
             return NULL;
         Py_INCREF(mc->name);
