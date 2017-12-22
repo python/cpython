@@ -1,5 +1,5 @@
 from dataclasses import (
-    dataclass, field, FrozenInstanceError, fields, asdict, astuple,
+    dataclass, Data, field, FrozenInstanceError, fields, asdict, astuple,
     make_dataclass, replace, InitVar, Field
 )
 
@@ -7,7 +7,7 @@ import pickle
 import inspect
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar
+from typing import ClassVar, List, Union, Tuple, Dict, Generic, TypeVar
 from collections import deque, OrderedDict, namedtuple
 
 # Just any custom exception we can catch.
@@ -200,7 +200,7 @@ class TestCase(unittest.TestCase):
         #  the same as defined in Base.
         @dataclass
         class Base:
-            x: Any = 15.0
+            x: Data = 15.0
             y: int = 0
 
         @dataclass
