@@ -1,8 +1,6 @@
 import contextlib
 import os
-import os.path
-import shutil
-import tempfile
+import pickle
 from textwrap import dedent, indent
 import threading
 import unittest
@@ -13,55 +11,43 @@ from test.support import script_helper
 interpreters = support.import_module('_interpreters')
 
 
-SCRIPT_THREADED_INTERP = """\
-from textwrap import dedent
-import threading
-import _interpreters
-def f():
-    _interpreters.run_string(id, dedent('''
-        {}
-        '''))
+def _captured_script(script):
+    r, w = os.pipe()
+    indented = script.replace('\n', '\n                ')
+    wrapped = dedent(f"""
+        import contextlib
+        with open({w}, 'w') as chan:
+            with contextlib.redirect_stdout(chan):
+                {indented}
+        """)
+    return wrapped, open(r)
 
-t = threading.Thread(target=f)
-t.start()
-"""
+
+def _run_output(interp, request):
+    script, chan = _captured_script(request)
+    with chan:
+        interpreters.run_string(interp, script)
+        return chan.read()
 
 
 @contextlib.contextmanager
-def _blocked(dirname):
-    filename = os.path.join(dirname, '.lock')
-    wait_script = dedent("""
-        import os.path
-        import time
-        while not os.path.exists('{}'):
-            time.sleep(0.1)
-        """).format(filename)
-    try:
-        yield wait_script
-    finally:
-        support.create_empty_file(filename)
+def _running(interp):
+    r, w = os.pipe()
+    def run():
+        interpreters.run_string(interp, dedent(f"""
+            # wait for "signal"
+            with open({r}) as chan:
+                chan.read()
+            """))
 
+    t = threading.Thread(target=run)
+    t.start()
 
-class InterpreterTests(unittest.TestCase):
+    yield
 
-    def setUp(self):
-        self.dirname = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.dirname)
-
-    def test_still_running_at_exit(self):
-        subscript = dedent("""
-            import time
-            # Give plenty of time for the main interpreter to finish.
-            time.sleep(1_000_000)
-            """)
-        script = SCRIPT_THREADED_INTERP.format(indent(subscript, '        '))
-        filename = script_helper.make_script(self.dirname, 'interp', script)
-        with script_helper.spawn_python(filename) as proc:
-            retcode = proc.wait()
-
-        self.assertEqual(retcode, 0)
+    with open(w, 'w') as chan:
+        chan.write('done')
+    t.join()
 
 
 class TestBase(unittest.TestCase):
@@ -76,79 +62,105 @@ class TestBase(unittest.TestCase):
                 pass  # already destroyed
 
 
-class EnumerateTests(TestBase):
+class ListAllTests(TestBase):
 
-    def test_multiple(self):
-        main, = interpreters.list_all()
-        id1 = interpreters.create()
-        id2 = interpreters.create()
+    def test_initial(self):
+        main = interpreters.get_main()
         ids = interpreters.list_all()
+        self.assertEqual(ids, [main])
 
-        self.assertEqual(set(ids), {main, id1, id2})
+    def test_after_creating(self):
+        main = interpreters.get_main()
+        first = interpreters.create()
+        second = interpreters.create()
+        ids = interpreters.list_all()
+        self.assertEqual(ids, [main, first, second])
 
-    def test_main_only(self):
-        main, = interpreters.list_all()
-
-        self.assertEqual(main, 0)
+    def test_after_destroying(self):
+        main = interpreters.get_main()
+        first = interpreters.create()
+        second = interpreters.create()
+        interpreters.destroy(first)
+        ids = interpreters.list_all()
+        self.assertEqual(ids, [main, second])
 
 
 class GetCurrentTests(TestBase):
 
     def test_main(self):
-        main, = interpreters.list_all()
-        id = interpreters.get_current()
+        main = interpreters.get_main()
+        cur = interpreters.get_current()
+        self.assertEqual(cur, main)
 
-        self.assertEqual(id, main)
-
-    def test_sub(self):
-        id1 = interpreters.create()
-        ns = interpreters.run_string_unrestricted(id1, dedent("""
+    def test_subinterpreter(self):
+        main = interpreters.get_main()
+        interp = interpreters.create()
+        out = _run_output(interp, dedent("""
             import _interpreters
-            id = _interpreters.get_current()
+            print(_interpreters.get_current())
             """))
-        id2 = ns['id']
-
-        self.assertEqual(id2, id1)
+        cur = int(out.strip())
+        _, expected = interpreters.list_all()
+        self.assertEqual(cur, expected)
+        self.assertNotEqual(cur, main)
 
 
 class GetMainTests(TestBase):
 
-    def test_main(self):
-        expected, = interpreters.list_all()
+    def test_from_main(self):
+        [expected] = interpreters.list_all()
         main = interpreters.get_main()
+        self.assertEqual(main, expected)
 
-        self.assertEqual(main, 0)
+    def test_from_subinterpreter(self):
+        [expected] = interpreters.list_all()
+        interp = interpreters.create()
+        out = _run_output(interp, dedent("""
+            import _interpreters
+            print(_interpreters.get_main())
+            """))
+        main = int(out.strip())
         self.assertEqual(main, expected)
 
 
 class IsRunningTests(TestBase):
 
-    def test_main_running(self):
-        main, = interpreters.list_all()
-        sub = interpreters.create()
-        main_running = interpreters.is_running(main)
-        sub_running = interpreters.is_running(sub)
+    def test_main(self):
+        main = interpreters.get_main()
+        self.assertTrue(interpreters.is_running(main))
 
-        self.assertTrue(main_running)
-        self.assertFalse(sub_running)
+    def test_subinterpreter(self):
+        interp = interpreters.create()
+        self.assertFalse(interpreters.is_running(interp))
 
-    def test_sub_running(self):
-        main, = interpreters.list_all()
-        sub1 = interpreters.create()
-        sub2 = interpreters.create()
-        ns = interpreters.run_string_unrestricted(sub1, dedent(f"""
+        with _running(interp):
+            self.assertTrue(interpreters.is_running(interp))
+        self.assertFalse(interpreters.is_running(interp))
+
+    def test_from_subinterpreter(self):
+        interp = interpreters.create()
+        out = _run_output(interp, dedent(f"""
             import _interpreters
-            main = _interpreters.is_running({main})
-            sub1 = _interpreters.is_running({sub1})
-            sub2 = _interpreters.is_running({sub2})
+            if _interpreters.is_running({interp}):
+                print(True)
+            else:
+                print(False)
             """))
-        main_running = ns['main']
-        sub1_running = ns['sub1']
-        sub2_running = ns['sub2']
+        self.assertEqual(out.strip(), 'True')
 
-        self.assertTrue(main_running)
-        self.assertTrue(sub1_running)
-        self.assertFalse(sub2_running)
+    def test_already_destroyed(self):
+        interp = interpreters.create()
+        interpreters.destroy(interp)
+        with self.assertRaises(RuntimeError):
+            interpreters.is_running(interp)
+
+    def test_does_not_exist(self):
+        with self.assertRaises(RuntimeError):
+            interpreters.is_running(1_000_000)
+
+    def test_bad_id(self):
+        with self.assertRaises(RuntimeError):
+            interpreters.is_running(-1)
 
 
 class CreateTests(TestBase):
@@ -186,33 +198,33 @@ class CreateTests(TestBase):
     def test_in_subinterpreter(self):
         main, = interpreters.list_all()
         id1 = interpreters.create()
-        ns = interpreters.run_string_unrestricted(id1, dedent("""
+        out = _run_output(id1, dedent("""
             import _interpreters
             id = _interpreters.create()
+            print(id)
             """))
-        id2 = ns['id']
+        id2 = int(out.strip())
 
         self.assertEqual(set(interpreters.list_all()), {main, id1, id2})
 
     def test_in_threaded_subinterpreter(self):
         main, = interpreters.list_all()
         id1 = interpreters.create()
-        ns = None
-        script = dedent("""
-            import _interpreters
-            id = _interpreters.create()
-            """)
+        id2 = None
         def f():
-            nonlocal ns
-            ns = interpreters.run_string_unrestricted(id1, script)
+            nonlocal id2
+            out = _run_output(id1, dedent("""
+                import _interpreters
+                id = _interpreters.create()
+                print(id)
+                """))
+            id2 = int(out.strip())
 
         t = threading.Thread(target=f)
         t.start()
         t.join()
-        id2 = ns['id']
 
         self.assertEqual(set(interpreters.list_all()), {main, id1, id2})
-
 
     def test_after_destroy_all(self):
         before = set(interpreters.list_all())
@@ -326,22 +338,12 @@ class DestroyTests(TestBase):
         t.join()
 
     def test_still_running(self):
-        # XXX Rewrite this test without files by using
-        # run_string_unrestricted().
         main, = interpreters.list_all()
-        id = interpreters.create()
-        def f():
-            interpreters.run_string(id, wait_script)
-
-        dirname = tempfile.mkdtemp()
-        t = threading.Thread(target=f)
-        with _blocked(dirname) as wait_script:
-            t.start()
+        interp = interpreters.create()
+        with _running(interp):
             with self.assertRaises(RuntimeError):
-                interpreters.destroy(id)
-
-        t.join()
-        self.assertEqual(set(interpreters.list_all()), {main, id})
+                interpreters.destroy(interp)
+            self.assertTrue(interpreters.is_running(interp))
 
 
 class RunStringTests(TestBase):
@@ -353,115 +355,96 @@ class RunStringTests(TestBase):
     FILENAME = 'spam'
 
     def setUp(self):
+        super().setUp()
         self.id = interpreters.create()
-        self.dirname = None
-        self.filename = None
+        self._fs = None
 
     def tearDown(self):
-        if self.dirname is not None:
-            try:
-                shutil.rmtree(self.dirname)
-            except FileNotFoundError:
-                pass  # already deleted
+        if self._fs is not None:
+            self._fs.close()
         super().tearDown()
 
-    def _resolve_filename(self, name=None):
-        if name is None:
-            name = self.FILENAME
-        if self.dirname is None:
-            self.dirname = tempfile.mkdtemp()
-        return os.path.join(self.dirname, name)
-
-    def _empty_file(self):
-        self.filename = self._resolve_filename()
-        support.create_empty_file(self.filename)
-        return self.filename
-
-    def assert_file_contains(self, expected, filename=None):
-        if filename is None:
-            filename = self.filename
-        self.assertIsNotNone(filename)
-        with open(filename) as out:
-            content = out.read()
-        self.assertEqual(content, expected)
+    @property
+    def fs(self):
+        if self._fs is None:
+            self._fs = FSFixture(self)
+        return self._fs
 
     def test_success(self):
-        filename = self._empty_file()
-        expected = 'spam spam spam spam spam'
-        script = self.SCRIPT.format(filename, expected)
-        interpreters.run_string(self.id, script)
+        script, file = _captured_script('print("it worked!", end="")')
+        with file:
+            interpreters.run_string(self.id, script)
+            out = file.read()
 
-        self.assert_file_contains(expected)
+        self.assertEqual(out, 'it worked!')
 
     def test_in_thread(self):
-        filename = self._empty_file()
-        expected = 'spam spam spam spam spam'
-        script = self.SCRIPT.format(filename, expected)
-        def f():
-            interpreters.run_string(self.id, script)
-
-        t = threading.Thread(target=f)
-        t.start()
-        t.join()
-
-        self.assert_file_contains(expected)
-
-    def test_create_thread(self):
-        filename = self._empty_file()
-        expected = 'spam spam spam spam spam'
-        script = dedent("""
-            import threading
+        script, file = _captured_script('print("it worked!", end="")')
+        with file:
             def f():
-                with open('{}', 'w') as out:
-                    out.write('{}')
+                interpreters.run_string(self.id, script)
 
             t = threading.Thread(target=f)
             t.start()
             t.join()
-            """).format(filename, expected)
-        interpreters.run_string(self.id, script)
+            out = file.read()
 
-        self.assert_file_contains(expected)
+        self.assertEqual(out, 'it worked!')
+
+    def test_create_thread(self):
+        script, file = _captured_script("""
+            import threading
+            def f():
+                print('it worked!', end='')
+
+            t = threading.Thread(target=f)
+            t.start()
+            t.join()
+            """)
+        with file:
+            interpreters.run_string(self.id, script)
+            out = file.read()
+
+        self.assertEqual(out, 'it worked!')
 
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
     def test_fork(self):
-        filename = self._empty_file()
-        expected = 'spam spam spam spam spam'
-        script = dedent("""
-            import os
-            r, w = os.pipe()
-            pid = os.fork()
-            if pid == 0:  # child
-                import sys
-                filename = '{}'
-                with open(filename, 'w') as out:
-                    out.write('{}')
-                os.write(w, b'done!')
+        import tempfile
+        with tempfile.NamedTemporaryFile('w+') as file:
+            file.write('')
+            file.flush()
 
-                # Kill the unittest runner in the child process.
-                os._exit(1)
-            else:
-                import select
-                try:
-                    select.select([r], [], [])
-                finally:
-                    os.close(r)
-                    os.close(w)
-            """).format(filename, expected)
-        interpreters.run_string(self.id, script)
-        self.assert_file_contains(expected)
+            expected = 'spam spam spam spam spam'
+            # XXX leaking a process...
+            script = dedent(f"""
+                # (inspired by Lib/test/test_fork.py)
+                import os
+                pid = os.fork()
+                if pid == 0:  # child
+                    with open('{file.name}', 'w') as out:
+                        out.write('{expected}')
+                    # Kill the unittest runner in the child process.
+                    os._exit(1)
+                else:
+                    SHORT_SLEEP = 0.1
+                    import time
+                    for _ in range(10):
+                        spid, status = os.waitpid(pid, os.WNOHANG)
+                        if spid == pid:
+                            break
+                        time.sleep(SHORT_SLEEP)
+                    assert(spid == pid)
+                """)
+            interpreters.run_string(self.id, script)
+
+            file.seek(0)
+            content = file.read()
+            self.assertEqual(content, expected)
 
     def test_already_running(self):
-        def f():
-            interpreters.run_string(self.id, wait_script)
-
-        t = threading.Thread(target=f)
-        dirname = tempfile.mkdtemp()
-        with _blocked(dirname) as wait_script:
-            t.start()
+        with _running(self.id):
             with self.assertRaises(RuntimeError):
                 interpreters.run_string(self.id, 'print("spam")')
-        t.join()
 
     def test_does_not_exist(self):
         id = 0
@@ -478,93 +461,99 @@ class RunStringTests(TestBase):
         with self.assertRaises(TypeError):
             interpreters.run_string('spam', 'print("spam")')
 
-    def test_bad_code(self):
+    def test_bad_script(self):
         with self.assertRaises(TypeError):
             interpreters.run_string(self.id, 10)
 
-    def test_bytes_for_code(self):
+    def test_bytes_for_script(self):
         with self.assertRaises(TypeError):
             interpreters.run_string(self.id, b'print("spam")')
 
+    @contextlib.contextmanager
+    def assert_run_failed(self, exctype, msg=None):
+        with self.assertRaises(interpreters.RunFailedError) as caught:
+            yield
+        if msg is None:
+            self.assertEqual(str(caught.exception).split(':')[0],
+                             str(exctype))
+        else:
+            self.assertEqual(str(caught.exception),
+                             "{}: {}".format(exctype, msg))
+
     def test_invalid_syntax(self):
-        with self.assertRaises(SyntaxError):
+        with self.assert_run_failed(SyntaxError):
             # missing close paren
             interpreters.run_string(self.id, 'print("spam"')
 
     def test_failure(self):
-        with self.assertRaises(Exception) as caught:
+        with self.assert_run_failed(Exception, 'spam'):
             interpreters.run_string(self.id, 'raise Exception("spam")')
-        self.assertEqual(str(caught.exception), 'spam')
+
+    def test_SystemExit(self):
+        with self.assert_run_failed(SystemExit, '42'):
+            interpreters.run_string(self.id, 'raise SystemExit(42)')
 
     def test_sys_exit(self):
-        with self.assertRaises(SystemExit) as cm:
+        with self.assert_run_failed(SystemExit):
             interpreters.run_string(self.id, dedent("""
                 import sys
                 sys.exit()
                 """))
-        self.assertIsNone(cm.exception.code)
 
-        with self.assertRaises(SystemExit) as cm:
+        with self.assert_run_failed(SystemExit, '42'):
             interpreters.run_string(self.id, dedent("""
                 import sys
                 sys.exit(42)
                 """))
-        self.assertEqual(cm.exception.code, 42)
 
-    def test_SystemError(self):
-        with self.assertRaises(SystemExit) as cm:
-            interpreters.run_string(self.id, 'raise SystemExit(42)')
-        self.assertEqual(cm.exception.code, 42)
+    def test_main_shared(self):
+        r, w = os.pipe()
+        interpreters.run_string(self.id, dedent(f"""
+            spam = True
 
+            ns = dict(vars())
+            del ns['__builtins__']
+            import pickle
+            with open({w}, 'wb') as chan:
+                pickle.dump(ns, chan)
+            del ns, pickle, chan
+            """))
+        with open(r, 'rb') as chan:
+            ns1 = pickle.load(chan)
 
-class RunStringUnrestrictedTests(TestBase):
+        r, w = os.pipe()
+        interpreters.run_string(self.id, dedent(f"""
+            eggs = False
 
-    def setUp(self):
-        self.id = interpreters.create()
-
-    def test_without_ns(self):
-        script = dedent("""
-            spam = 42
-            """)
-        ns = interpreters.run_string_unrestricted(self.id, script)
-
-        self.assertEqual(ns['spam'], 42)
-
-    def test_with_ns(self):
-        updates = {'spam': 'ham', 'eggs': -1}
-        script = dedent("""
-            spam = 42
-            result = spam + eggs
-            """)
-        ns = interpreters.run_string_unrestricted(self.id, script, updates)
-
-        self.assertEqual(ns['spam'], 42)
-        self.assertEqual(ns['eggs'], -1)
-        self.assertEqual(ns['result'], 41)
-
-    def test_ns_does_not_overwrite(self):
-        updates = {'__name__': 'not __main__'}
-        script = dedent("""
-            spam = 42
-            """)
-        ns = interpreters.run_string_unrestricted(self.id, script, updates)
-
-        self.assertEqual(ns['__name__'], '__main__')
-
-    def test_main_not_shared(self):
-        ns1 = interpreters.run_string_unrestricted(self.id, 'spam = True')
-        ns2 = interpreters.run_string_unrestricted(self.id, 'eggs = False')
+            ns = dict(vars())
+            del ns['__builtins__']
+            import pickle
+            with open({w}, 'wb') as chan:
+                pickle.dump(ns, chan)
+            """))
+        with open(r, 'rb') as chan:
+            ns2 = pickle.load(chan)
 
         self.assertIn('spam', ns1)
         self.assertNotIn('eggs', ns1)
         self.assertIn('eggs', ns2)
-        self.assertNotIn('spam', ns2)
+        self.assertIn('spam', ns2)
 
-    def test_return_execution_namespace(self):
-        script = dedent("""
+    def test_execution_namespace_is_main(self):
+        r, w = os.pipe()
+
+        script = dedent(f"""
             spam = 42
+
+            ns = dict(vars())
+            ns['__builtins__'] = str(ns['__builtins__'])
+            import pickle
+            with open({w}, 'wb') as chan:
+                pickle.dump(ns, chan)
             """)
-        ns = interpreters.run_string_unrestricted(self.id, script)
+        interpreters.run_string(self.id, script)
+        with open(r, 'rb') as chan:
+            ns = pickle.load(chan)
 
         ns.pop('__builtins__')
         ns.pop('__loader__')
@@ -576,6 +565,28 @@ class RunStringUnrestrictedTests(TestBase):
             '__spec__': None,
             'spam': 42,
             })
+
+    def test_still_running_at_exit(self):
+        script = dedent(f"""
+        from textwrap import dedent
+        import threading
+        import _interpreters
+        def f():
+            _interpreters.run_string(id, dedent('''
+                import time
+                # Give plenty of time for the main interpreter to finish.
+                time.sleep(1_000_000)
+                '''))
+
+        t = threading.Thread(target=f)
+        t.start()
+        """)
+        with support.temp_dir() as dirname:
+            filename = script_helper.make_script(dirname, 'interp', script)
+            with script_helper.spawn_python(filename) as proc:
+                retcode = proc.wait()
+
+        self.assertEqual(retcode, 0)
 
 
 if __name__ == '__main__':

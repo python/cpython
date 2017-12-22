@@ -180,7 +180,11 @@ _get_shared_exception(void)
     PyObject *value;
     PyObject *tb;
     PyErr_Fetch(&exc, &value, &tb);
-    PyObject *msg = PyUnicode_FromFormat("%S: %S", exc, value);
+    PyObject *msg;
+    if (value == NULL)
+        msg = PyUnicode_FromFormat("%S", exc);
+    else
+        msg = PyUnicode_FromFormat("%S: %S", exc, value);
     if (msg == NULL) {
         err->msg = "unable to format exception";
         return NULL;
@@ -609,6 +613,7 @@ static PyMethodDef module_functions[] = {
     {"run_string",              (PyCFunction)interp_run_string,
      METH_VARARGS, run_string_doc},
 
+    // XXX untested
     {"is_shareable",            (PyCFunction)object_is_shareable,
      METH_VARARGS, is_shareable_doc},
 
