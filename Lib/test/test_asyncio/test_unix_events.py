@@ -471,7 +471,8 @@ class SelectorEventLoopUnixSockSendfileTests(unittest.TestCase):
         self.assertEqual(self.file.tell(), 3000)
 
     def test_blocking_socket(self):
-        self.loop.set_debug(True)
+        # loop.set_debug(True) alters environment variable
+        self.loop._debug = True
         sock = self.make_socket(True)
         with self.assertRaises(ValueError):
             self.run_loop(self.loop.sock_sendfile(sock, self.file))
