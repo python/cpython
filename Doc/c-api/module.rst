@@ -196,17 +196,17 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: traverseproc m_traverse
 
       A traversal function to call during GC traversal of the module object, or
-      *NULL* if not needed.
+      *NULL* if not needed. If m_state is processed within this function, NULL check is needed.
 
    .. c:member:: inquiry m_clear
 
       A clear function to call during GC clearing of the module object, or
-      *NULL* if not needed.
+      *NULL* if not needed. If m_state is processed within this function, NULL check is needed.
 
    .. c:member:: freefunc m_free
 
       A function to call during deallocation of the module object, or *NULL* if
-      not needed.
+      not needed. If m_state is processed within this function, NULL check is needed.
 
 Single-phase initialization
 ...........................

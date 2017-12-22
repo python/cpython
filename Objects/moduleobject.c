@@ -21,6 +21,14 @@ static PyMemberDef module_members[] = {
     {0}
 };
 
+#ifdef Py_DEBUG
+static int
+PyTestVisit(PyObject *self, void *arg) {
+    assert(self != NULL);
+    return 0;
+}
+#endif
+
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
@@ -345,6 +353,11 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
+#ifdef Py_DEBUG
+    if (def->m_traverse != NULL) {
+        def->m_traverse(m, bad_traverse_test, NULL);
+    }
+#endif
     Py_DECREF(nameobj);
     return m;
 

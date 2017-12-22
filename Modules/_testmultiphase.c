@@ -10,6 +10,10 @@ typedef struct {
     PyObject            *x_attr;        /* Attributes dictionary */
 } ExampleObject;
 
+typedef struct {
+    PyObject *integer;
+} testmultiphase_state;
+
 /* Example methods */
 
 static int
@@ -218,17 +222,20 @@ static int execfunc(PyObject *m)
 }
 
 /* Helper for module definitions; there'll be a lot of them */
-#define TEST_MODULE_DEF(name, slots, methods) { \
+
+#define TEST_MODULE_DEF_EX(name, slots, methods, statesize, traversefunc) { \
     PyModuleDef_HEAD_INIT,                      /* m_base */ \
     name,                                       /* m_name */ \
     PyDoc_STR("Test module " name),             /* m_doc */ \
-    0,                                          /* m_size */ \
+    statesize,                                  /* m_size */ \
     methods,                                    /* m_methods */ \
     slots,                                      /* m_slots */ \
-    NULL,                                       /* m_traverse */ \
+    traversefunc,                               /* m_traverse */ \
     NULL,                                       /* m_clear */ \
     NULL,                                       /* m_free */ \
 }
+
+#define TEST_MODULE_DEF(name, slots, methods) TEST_MODULE_DEF_EX(name, slots, methods, 0, NULL)
 
 PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
@@ -613,6 +620,44 @@ PyInit__testmultiphase_exec_unreported_exception(PyObject *spec)
     return PyModuleDef_Init(&def_exec_unreported_exception);
 }
 
+static int
+bad_traverse(PyObject *self, visitproc visit, void *arg) {
+    testmultiphase_state *m_state;
+
+    m_state = PyModule_GetState(self);
+    Py_VISIT(m_state->integer);
+    return 0;
+}
+
+static int
+execfunc_with_bad_traverse(PyObject *mod) {
+    testmultiphase_state *m_state;
+
+    m_state = PyModule_GetState(mod);
+    if (m_state == NULL) {
+        return -1;
+    }
+
+    m_state->integer = PyLong_FromLong(0x7fffffff);
+    Py_INCREF(m_state->integer);
+
+    return 0;
+}
+
+static PyModuleDef_Slot slots_with_bad_traverse[] = {
+    {Py_mod_exec, execfunc_with_bad_traverse},
+    {0, NULL}
+};
+
+static PyModuleDef def_with_bad_traverse = TEST_MODULE_DEF_EX(
+       "_testmultiphase_with_bad_traverse", slots_with_bad_traverse, NULL,
+       sizeof(testmultiphase_state), bad_traverse);
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_with_bad_traverse(PyObject *spec) {
+    return PyModuleDef_Init(&def_with_bad_traverse);
+}
+
 /*** Helper for imp test ***/
 
 static PyModuleDef imp_dummy_def = TEST_MODULE_DEF("imp_dummy", main_slots, testexport_methods);
@@ -622,3 +667,4 @@ PyInit_imp_dummy(PyObject *spec)
 {
     return PyModuleDef_Init(&imp_dummy_def);
 }
+
