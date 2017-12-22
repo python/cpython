@@ -402,7 +402,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'sendfile'),
                      'sendfile is not supported')
-class SelectorEventLoopUnixSockSendfileTests(unittest.TestCase):
+class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
 
     class MyProto(asyncio.Protocol):
@@ -425,17 +425,21 @@ class SelectorEventLoopUnixSockSendfileTests(unittest.TestCase):
     def setUpClass(cls):
         with open(support.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
+        super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         support.unlink(support.TESTFN)
+        super().tearDownClass()
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
         self.file = open(support.TESTFN, 'rb')
         self.addCleanup(self.file.close)
+        super().setUp()
 
     def tearDown(self):
+        super().tearDown()
         self.loop.close()
 
     def make_socket(self, blocking=False):
@@ -451,12 +455,19 @@ class SelectorEventLoopUnixSockSendfileTests(unittest.TestCase):
         sock = self.make_socket()
         proto = self.MyProto()
         port = support.find_unused_port()
-        self.run_loop(self.loop.create_server(
+        server = self.run_loop(self.loop.create_server(
             lambda: proto, support.HOST, port))
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+
+        def cleanup():
+            server.close()
+            self.run_loop(server.wait_closed())
+
+        self.addCleanup(cleanup)
+
         return sock, proto
 
-    def test_ok(self):
+    def test_success(self):
         sock, proto = self.prepare()
         self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
@@ -471,7 +482,7 @@ class SelectorEventLoopUnixSockSendfileTests(unittest.TestCase):
         self.assertEqual(self.file.tell(), 3000)
 
     def test_blocking_socket(self):
-        self.loop._set_debug(True)
+        self.loop.set_debug(True)
         sock = self.make_socket(True)
         with self.assertRaises(ValueError):
             self.run_loop(self.loop.sock_sendfile(sock, self.file))
