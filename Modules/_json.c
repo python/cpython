@@ -518,7 +518,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                 PyUnicode_READ(kind, buf, next++) == 'u') {
                 Py_UCS4 c2 = 0;
                 end += 6;
-                /* Decode 4 hex curr_digs */
+                /* Decode 4 hex digits */
                 for (; next < end; next++) {
                     Py_UCS4 curr_dig = PyUnicode_READ(kind, buf, next);
                     c2 <<= 4;

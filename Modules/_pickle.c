@@ -3718,7 +3718,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             Py_ssize_t i;
             _Py_IDENTIFIER(__new__);
 
-            newargs = PyTuple_New(PyTuple_GET_SIZE(args) + 2);
+            newargs = PyTuple_New(PyTuple_GET_SIZE(tup_args) + 2);
             if (newargs == NULL)
                 return -1;
 
@@ -3730,8 +3730,8 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             PyTuple_SET_ITEM(newargs, 0, cls_new);
             Py_INCREF(cls);
             PyTuple_SET_ITEM(newargs, 1, cls);
-            for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
-                PyObject *item = PyTuple_GET_ITEM(args, i);
+            for (i = 0; i < PyTuple_GET_SIZE(tup_args); i++) {
+                PyObject *item = PyTuple_GET_ITEM(tup_args, i);
                 Py_INCREF(item);
                 PyTuple_SET_ITEM(newargs, i + 2, item);
             }
