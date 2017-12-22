@@ -439,8 +439,9 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         super().setUp()
 
     def tearDown(self):
-        super().tearDown()
+        self.doCleanups()
         self.loop.close()
+        super().tearDown()
 
     def make_socket(self, blocking=False):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
