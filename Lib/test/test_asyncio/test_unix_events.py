@@ -400,6 +400,58 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             self.loop.run_until_complete(coro)
 
 
+@unittest.skipUnless(hasattr(os, 'sendfile'),
+                     'sendfile is not supported')
+class SelectorEventLoopUnixSendfileTests(unittest.TestCase):
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
+
+    class MyProto(asyncio.Protocol):
+
+        def __init__(self):
+            self.started = False
+            self.closed = False
+            self.data = bytearray()
+
+        def connection_made(self, transport):
+            self.started = True
+
+        def data_received(self, data):
+            self.data.extend(data)
+
+        def connection_lost(self, exc):
+            self.closed = True
+
+    @classmethod
+    def setUpClass(cls):
+        with open(support.TESTFN, "wb") as fp:
+            fp.write(cls.DATA)
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(support.TESTFN)
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+
+    def tearDown(self):
+        self.loop.close()
+
+    def test_sock_sendfile(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(False)
+        self.addCleanup(sock.close)
+        proto = self.MyProto()
+        port = support.find_unused_port()
+        self.loop.run_until_complete(self.loop.create_server(lambda: proto,
+                                                             support.HOST,
+                                                             port))
+        self.loop.run_until_complete(
+            self.loop.sock_connect(sock, (support.HOST, port)))
+        with open(support.TESTFN, 'rb') as f:
+            self.loop.run_until_complete(self.loop.sock_sendfile(sock, f))
+
+        self.assertEqual(proto.data, self.DATA)
+
 
 class UnixReadPipeTransportTests(test_utils.TestCase):
 

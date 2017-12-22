@@ -20,6 +20,10 @@ import threading
 from . import format_helpers
 
 
+class SendfileUnsupportedError(ValueError):
+    """Sendfile preparation failed."""
+
+
 class Handle:
     """Object returned by callback registration methods."""
 
@@ -447,6 +451,9 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     async def sock_accept(self, sock):
+        raise NotImplementedError
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None):
         raise NotImplementedError
 
     # Signal handling.

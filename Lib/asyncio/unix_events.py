@@ -1,6 +1,7 @@
 """Selector event loop for Unix with signal handling."""
 
 import errno
+import io
 import os
 import selectors
 import signal
@@ -298,6 +299,99 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self._start_serving(protocol_factory, sock, ssl, server,
                             ssl_handshake_timeout=ssl_handshake_timeout)
         return server
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+        try:
+            os.sendfile
+        except AttributeError as exc:
+            raise events.SendfileUnsupportedError(exc)
+        self._check_sendfile_params(sock, file, offset, count)
+        try:
+            fileno = file.fileno()
+        except (AttributeError, io.UnsupportedOperation) as exc:
+            raise events.SendfileUnsupportedError(exc)  # not a regular file
+        try:
+            fsize = os.fstat(fileno).st_size
+        except OSError as exc:
+            raise events.SendfileUnsupportedError(exc)  # not a regular file
+        if not fsize:
+            return 0  # empty file
+        blocksize = fsize if not count else count
+
+        fut = self.create_future()
+        self._sock_sendfile(fut, None, sock, file, offset, count, blocksize, 0)
+        return await fut
+
+    def _sock_sendfile(self, fut, registered_fd, sock, file, offset,
+                       count, blocksize, total_sent):
+        if registered_fd is not None:
+            # Remove the callback early.  It should be rare that the
+            # selector says the fd is ready but the call still returns
+            # EAGAIN, and I am willing to take a hit in that case in
+            # order to simplify the common case.
+            self.remove_writer(registered_fd)
+        if fut.cancelled():
+            self._update_filepos(file, offset, total_sent)
+            return
+        if count:
+            blocksize = count - total_sent
+            if blocksize <= 0:
+                self._update_filepos(file, offset, total_sent)
+                fut.set_result(total_sent)
+                return
+
+        fd = sock.fileno()
+        try:
+            sent = os.sendfile(fd, file.fileno(), offset, blocksize)
+        except (BlockingIOError, InterruptedError):
+            self.add_writer(fd, self._sock_sendfile, fut, fd, sock,
+                            file, offset, count, blocksize. total_sent)
+        except OSError as exc:
+            if total_sent == 0:
+                # We can get here for different reasons, the main
+                # one being 'file' is not a regular mmap(2)-like
+                # file, in which case we'll fall back on using
+                # plain send().
+                err = events.SendfileUnsupportedError(exc)
+                self._update_filepos(file, offset, total_sent)
+                fut.set_exception(err)
+            else:
+                self._update_filepos(file, offset, total_sent)
+                fut.set_exception(exc)
+        except Exception as exc:
+            self._update_filepos(file, offset, total_sent)
+            fut.set_exception(exc)
+        else:
+            if sent == 0:
+                # EOF
+                self._update_filepos(file, offset, total_sent)
+                fut.set_result(total_sent)
+            else:
+                offset += sent
+                total_sent += sent
+                fd = sock.fileno()
+                self.add_writer(fd, self._sock_sendfile, fut, fd, sock,
+                                file, offset, count, blocksize, total_sent)
+
+    def _update_filepos(self, file, offset, total_sent):
+        if total_sent > 0 and hasattr(file, 'seek'):
+            file.seek(offset)
+
+    def _check_sendfile_params(self, sock, file, offset, count):
+        if 'b' not in getattr(file, 'mode', 'b'):
+            raise ValueError("file should be opened in binary mode")
+        if not sock.type & socket.SOCK_STREAM:
+            raise ValueError("only SOCK_STREAM type sockets are supported")
+        if count is not None:
+            if not isinstance(count, int):
+                raise TypeError(
+                    "count must be a positive integer (got {!r})".format(count))
+            if count <= 0:
+                raise ValueError(
+                    "count must be a positive integer (got {!r})".format(count))
+
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):
