@@ -109,6 +109,10 @@ class Grammar(object):
         f.close()
         self.__dict__.update(d)
 
+    def loads(self, pkl):
+        """Load the grammar tables from a pickle bytes object."""
+        self.__dict__.update(pickle.loads(pkl))
+
     def copy(self):
         """
         Copy the grammar.
