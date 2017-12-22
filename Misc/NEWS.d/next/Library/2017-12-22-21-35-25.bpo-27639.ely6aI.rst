@@ -1,0 +1,2 @@
+Slices of ``collections.UserList`` objects are now instances of ``UserList``
+or its subclasses.

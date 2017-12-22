@@ -17,6 +17,12 @@ class UserListTest(list_tests.CommonTest):
             for j in range(-3, 6):
                 self.assertEqual(u[i:j], l[i:j])
 
+    def test_slice_type(self):
+        l = [0, 1, 2, 3, 4]
+        u = self.type2test(l)
+        self.assertIsInstance(u[:], self.type2test)
+        self.assertEqual(u[:], l)
+
     def test_add_specials(self):
         u = UserList("spam")
         u2 = u + "eggs"

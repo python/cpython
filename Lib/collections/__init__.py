@@ -1041,7 +1041,7 @@ class UserList(MutableSequence):
             if type(initlist) == type(self.data):
                 self.data[:] = initlist
             elif isinstance(initlist, UserList):
-                self.data[:] = initlist.data[:]
+                self.data[:] = initlist.data
             else:
                 self.data = list(initlist)
     def __repr__(self): return repr(self.data)
@@ -1054,8 +1054,16 @@ class UserList(MutableSequence):
         return other.data if isinstance(other, UserList) else other
     def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
-    def __getitem__(self, i): return self.data[i]
-    def __setitem__(self, i, item): self.data[i] = item
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return self.__class__(self.data[i])
+        else:
+            return self.data[i]
+    def __setitem__(self, i, item):
+        if isinstance(i, slice) and isinstance(item, UserList):
+            self.data[i] = item.data
+        else:
+            self.data[i] = item
     def __delitem__(self, i): del self.data[i]
     def __add__(self, other):
         if isinstance(other, UserList):
