@@ -1724,6 +1724,9 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
             self.assertEqual(f.read(), b"abc")
 
     def test_truncate_after_write(self):
+        # Ensure that truncate preserves the file position after
+        # writes longer than the buffer size.
+        # Issue: https://bugs.python.org/issue32228
         with self.open(support.TESTFN, "wb") as f:
             # Fill with some buffer
             f.write(b'\x00' * 10000)
@@ -1736,7 +1739,6 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
                 # read operation makes sure that pos != raw_pos
                 f.truncate()
                 self.assertEqual(f.tell(), buffer_size + 2)
-
 
     @support.requires_resource('cpu')
     def test_threads(self):
