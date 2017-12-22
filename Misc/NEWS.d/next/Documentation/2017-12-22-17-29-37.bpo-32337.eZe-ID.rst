@@ -1,0 +1,1 @@
+Update tutorial for ``dict`` order, since Python 3.7 order of dict is now guaranteed.
