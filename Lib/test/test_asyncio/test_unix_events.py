@@ -461,6 +461,14 @@ class SelectorEventLoopUnixSendfileTests(unittest.TestCase):
         self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
         self.assertEqual(proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sock_sendfile_offset_and_count(self):
+        sock, proto = self.prepare()
+        self.run_loop(self.loop.sock_sendfile(sock, self.file, 1000, 2000))
+
+        self.assertEqual(proto.data, self.DATA[1000:3000])
+        self.assertEqual(self.file.tell(), 3000)
 
     def test_sock_sendfile_blocking_socket(self):
         self.loop.set_debug(True)
