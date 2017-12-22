@@ -1,7 +1,11 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifndef _AIX61
 #include <uuid/uuid.h>
+#else
+#include <uuid.h>
+#endif
 
 
 static PyObject *
@@ -15,8 +19,14 @@ py_uuid_generate_time_safe(void)
     return Py_BuildValue("y#i", (const char *) out, sizeof(out), res);
 #else
     uuid_t out;
+#ifndef _AIX61
     uuid_generate_time(out);
     return Py_BuildValue("y#O", (const char *) out, sizeof(out), Py_None);
+#else
+    unsigned32 status;
+    uuid_create(&out, &status);
+    return Py_BuildValue("y#O", (const char *) &out, sizeof(out), Py_None);
+#endif
 #endif
 }
 
