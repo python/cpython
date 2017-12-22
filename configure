@@ -6780,13 +6780,33 @@ UNIVERSAL_ARCH_FLAGS=
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wextra" >&5
-$as_echo_n "checking for -Wextra... " >&6; }
+
+# $1 = [Output] The name of the variable to concat the given flag
+#        (e.g. CFLAGS_NODIST, BASECFLAGS..)
+# $2 = The warning to add (Including the '-W' prefix)
+# $3 = The message to display for the check
+#
+# NOTE: DO NOT USE THIS FUCNTION DIRECTRY.
+#       Please use the below functions instead.
+function _try_add_warnings_helper() {
+    # Remove the '-W' prefix. Substituted for e.g. "ac_cv_extra_warning"
+    ac_cv_var="ac_cv_${2:2}_warning"
+
+    # Handle warnings with multiple words: e.g. "-Wcast-align"
+    # Turn it into "cast_align"
+    ac_cv_var="${ac_cv_var//-/_}"
+
+    # Handle cases where we want to turn specific warnings into errors.
+    # In this case, we get e.g. "-Werror=logical-op".
+    # Turn it into "error_logical_op"
+    ac_cv_var="${ac_cv_var//=/_}"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking $3" >&5
+$as_echo_n "checking $3... " >&6; }
      ac_save_cc="$CC"
-     CC="$CC -Wextra -Werror"
-     if ${ac_cv_extra_warnings+:} false; then :
+     CC="$CC $2 -Werror"
+
+     if { as_var=!ac_cv_var; eval \${$as_var+:} false; }; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6804,25 +6824,68 @@ main ()
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
-           ac_cv_extra_warnings=yes
+           eval ${ac_cv_var}=yes
 
 else
 
-           ac_cv_extra_warnings=no
+           eval ${ac_cv_var}=no
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
      CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_extra_warnings" >&5
-$as_echo "$ac_cv_extra_warnings" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${!ac_cv_var}" >&5
+$as_echo "${!ac_cv_var}" >&6; }
 
-    if test $ac_cv_extra_warnings = yes
+    if test ${!ac_cv_var} = yes
     then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"
+      eval ${1}="\"${!1} $2\""
+    fi
+}
+
+# $1 = The warning to add (Including the '-W' prefix)
+# $2 = The message to display for the check
+function try_add_nodist_warnings() {
+    _try_add_warnings_helper "CFLAGS_NODIST" "$1" "$2"
+}
+function try_add_base_warnings() {
+    _try_add_warnings_helper "BASECFLAGS" "$1" "$2"
+}
+
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+
+    ################################
+    ## *!*! ENABLED WARNINGS *!*! ##
+    ################################
+    try_add_base_warnings "-Wsign-compare" "if we can turn on $CC mixed sign comparison warning"
+
+    try_add_nodist_warnings "-Wextra" "for -Wextra"
+    try_add_nodist_warnings "-Wc99-c11-compat" "if we can turn on $CC c99/c11 compatibility warnings"
+    try_add_nodist_warnings "-Wlogical-op" "if we can turn on $CC logical-op warning"
+    try_add_nodist_warnings "-Wformat=2" "if we can turn on $CC format=2 warning"
+    try_add_nodist_warnings "-Wvarargs" "if we can turn on $CC varargs warning"
+    try_add_nodist_warnings "-Wuninitialized" "if we can turn on $CC uninitialized warning"
+    try_add_nodist_warnings "-Wcast-align" "if we can turn on $CC cast-align warning"
+    try_add_nodist_warnings "-Wshadow" "if we can turn on $CC shadow warning"
+    try_add_nodist_warnings "-Werror=implicit-function-declaration" "if we can make implicit function declaration an error in $CC"
+
+    # Don't enable unreachable code warning in debug mode, since it usually
+    # results in non-standard code paths.
+    # Issue #24324: Unfortunately, the unreachable code warning does not work
+    # correctly on gcc and has been silently removed from the compiler.
+    # It is supported on clang but on OS X systems gcc may be an alias
+    # for clang.  Try to determine if the compiler is not really gcc and,
+    # if so, only then enable the warning.
+    if test "$Py_DEBUG" != "true" && \
+        test -z "`$CC --version 2>/dev/null | grep 'Free Software Foundation'`"
+    then
+        try_add_base_warnings "-Wunreachable-code" "if we can turn on $CC unreachable code warning"
     fi
 
+    #################################
+    ## *!*! DISABLED WARNINGS *!*! ##
+    #################################
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
     # -fno-strict-aliasing on versions of GCC that support but produce
@@ -6897,274 +6960,17 @@ $as_echo "$ac_cv_no_strict_aliasing" >&6; }
     ## XXX does it emit an unused result warning and can it be disabled?
     case "$CC" in
     *icc*)
-    ac_cv_disable_unused_result_warning=no
     ;;
     *)
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC unused result warning" >&5
-$as_echo_n "checking if we can turn off $CC unused result warning... " >&6; }
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-result -Werror"
-     save_CFLAGS="$CFLAGS"
-     if ${ac_cv_disable_unused_result_warning+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-           ac_cv_disable_unused_result_warning=yes
-
-else
-
-           ac_cv_disable_unused_result_warning=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
-$as_echo "$ac_cv_disable_unused_result_warning" >&6; }
+    try_add_base_warnings "-Wno-unused-result" "if we can turn off $CC unused result warning"
+    try_add_nodist_warnings "-Wno-unused-result" "if we can turn off $CC unused result warning"
     ;;
     esac
 
-    if test $ac_cv_disable_unused_result_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wno-unused-result"
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC unused parameter warning" >&5
-$as_echo_n "checking if we can turn off $CC unused parameter warning... " >&6; }
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-parameter -Werror"
-     if ${ac_cv_disable_unused_parameter_warning+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
+    try_add_nodist_warnings "-Wno-unused-parameter" "if we can turn off $CC unused parameter warning"
+    try_add_nodist_warnings "-Wno-missing-field-initializers" "if we can turn off $CC missing field initializers warning"
 
 
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-           ac_cv_disable_unused_parameter_warning=yes
-
-else
-
-           ac_cv_disable_unused_parameter_warning=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-     CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_parameter_warning" >&5
-$as_echo "$ac_cv_disable_unused_parameter_warning" >&6; }
-
-    if test $ac_cv_disable_unused_parameter_warning = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC missing field initializers warning" >&5
-$as_echo_n "checking if we can turn off $CC missing field initializers warning... " >&6; }
-     ac_save_cc="$CC"
-     CC="$CC -Wmissing-field-initializers -Werror"
-     if ${ac_cv_disable_missing_field_initializers+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-           ac_cv_disable_missing_field_initializers=yes
-
-else
-
-           ac_cv_disable_missing_field_initializers=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-     CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_missing_field_initializers" >&5
-$as_echo "$ac_cv_disable_missing_field_initializers" >&6; }
-
-    if test $ac_cv_disable_missing_field_initializers = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC mixed sign comparison warning" >&5
-$as_echo_n "checking if we can turn on $CC mixed sign comparison warning... " >&6; }
-     ac_save_cc="$CC"
-     CC="$CC -Wsign-compare"
-     save_CFLAGS="$CFLAGS"
-     if ${ac_cv_enable_sign_compare_warning+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-           ac_cv_enable_sign_compare_warning=yes
-
-else
-
-           ac_cv_enable_sign_compare_warning=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_sign_compare_warning" >&5
-$as_echo "$ac_cv_enable_sign_compare_warning" >&6; }
-
-    if test $ac_cv_enable_sign_compare_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wsign-compare"
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC unreachable code warning" >&5
-$as_echo_n "checking if we can turn on $CC unreachable code warning... " >&6; }
-     ac_save_cc="$CC"
-     CC="$CC -Wunreachable-code"
-     save_CFLAGS="$CFLAGS"
-     if ${ac_cv_enable_unreachable_code_warning+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-           ac_cv_enable_unreachable_code_warning=yes
-
-else
-
-           ac_cv_enable_unreachable_code_warning=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-
-    # Don't enable unreachable code warning in debug mode, since it usually
-    # results in non-standard code paths.
-    # Issue #24324: Unfortunately, the unreachable code warning does not work
-    # correctly on gcc and has been silently removed from the compiler.
-    # It is supported on clang but on OS X systems gcc may be an alias
-    # for clang.  Try to determine if the compiler is not really gcc and,
-    # if so, only then enable the warning.
-    if test $ac_cv_enable_unreachable_code_warning = yes && \
-        test "$Py_DEBUG" != "true" && \
-        test -z "`$CC --version 2>/dev/null | grep 'Free Software Foundation'`"
-    then
-      BASECFLAGS="$BASECFLAGS -Wunreachable-code"
-    else
-      ac_cv_enable_unreachable_code_warning=no
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
-$as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can make implicit function declaration an error in $CC" >&5
-$as_echo_n "checking if we can make implicit function declaration an error in $CC... " >&6; }
-     ac_save_cc="$CC"
-     CC="$CC -Werror=implicit-function-declaration"
-     if ${ac_cv_enable_implicit_function_declaration_error+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-           ac_cv_enable_implicit_function_declaration_error=yes
-
-else
-
-           ac_cv_enable_implicit_function_declaration_error=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-     CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_implicit_function_declaration_error" >&5
-$as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
-
-    if test $ac_cv_enable_implicit_function_declaration_error = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
-    fi
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
