@@ -1,0 +1,2 @@
+Correct compiler syntax error on AIX for st.f_fsid addition
+Error message: 1506-280 (S) Function argument assignment between types "unsigned long" and "struct fsid_t" is not allowed.
