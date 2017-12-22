@@ -990,16 +990,20 @@ class ZipExtFile(io.BufferedIOBase):
         if new_pos > curr_pos:
             self.read(new_pos - curr_pos)
         elif new_pos < curr_pos:
-            self._fileobj.seek(self._orig_compress_start)
-            self._running_crc = self._orig_start_crc
-            self._compress_left = self._orig_compress_size
-            self._left = self._orig_file_size
-            self._readbuffer = b''
-            self._offset = 0
-            self._decompressor = zipfile._get_decompressor(self._compress_type)
-            self._eof = False
-            if new_pos > 0:
-                self.read(new_pos)
+            if self._offset >= curr_pos - new_pos:
+                # No need to reset if the new position is within the read buffer
+                self._offset -= curr_pos - new_pos
+            else:
+                self._fileobj.seek(self._orig_compress_start)
+                self._running_crc = self._orig_start_crc
+                self._compress_left = self._orig_compress_size
+                self._left = self._orig_file_size
+                self._readbuffer = b''
+                self._offset = 0
+                self._decompressor = zipfile._get_decompressor(self._compress_type)
+                self._eof = False
+                if new_pos > 0:
+                    self.read(new_pos)
 
         return self.tell()
 
