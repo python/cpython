@@ -496,19 +496,6 @@ class OtherFileTests:
         self.assertEqual(f.seek(0, io.SEEK_END), 15)
         f.close()
 
-        f = io.open(TESTFN, 'r+b')
-        # Fill with some buffer
-        f.write(b'\x00' * 5000)
-        f.close()
-        f = io.open(TESTFN, 'r+b')
-        f.write(b'\x00' * 4097)
-        # After write write_pos and write_end are set to 0
-        f.read(1)
-        # read operation makes sure that pos != raw_pos
-        f.truncate()
-        self.assertEqual(f.tell(), 4098)
-        f.close()
-
     def testTruncateOnWindows(self):
         def bug801631():
             # SF bug <http://www.python.org/sf/801631>

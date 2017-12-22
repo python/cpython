@@ -1292,7 +1292,6 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
         if (res == NULL)
             goto end;
         Py_CLEAR(res);
-        _bufferedwriter_reset_buf(self);
     }
 
     /* TODO: align on block boundary and read buffer if needed? */
