@@ -257,7 +257,7 @@ on the value, ``'!r'`` which calls :func:`repr` and ``'!a'`` which calls
 Some examples::
 
    "Harold's a clever {0!s}"        # Calls str() on the argument first
-   "Bring out the holy {name!r}"    # Calls repr() on the argument first
+   "Bring out the holy {name!r}"    # Calls repr() on the keyword argument 'name'
    "More {!a}"                      # Calls ascii() on the argument first
 
 The *format_spec* field contains a specification of how the value should be
