@@ -4704,7 +4704,8 @@ static PyMethodDef object_methods[] = {
 };
 
 PyDoc_STRVAR(object_doc,
-"object()\n--\n\nThe superclass for all Python classes.");
+"object()\n--\n\nThe starting base class of all types and classes other\n"
+"than itself.");
 
 PyTypeObject PyBaseObject_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
