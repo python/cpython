@@ -2118,7 +2118,7 @@ Alternatively, inputs can be rounded upon creation using the
 
 Q. Is the CPython implementation fast for large numbers?
 
-A. Yes.  A change was added to the Cpython specific implementation that uses
+A. Yes.  A change was added to the CPython specific implementation that uses
 better than expected algorithms which can payoff nicely when used with very
 large numbers.  However, to realize this performance gain, the context needs
 to be set for unrounded calculations.
