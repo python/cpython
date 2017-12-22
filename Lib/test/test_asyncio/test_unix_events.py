@@ -452,6 +452,14 @@ class SelectorEventLoopUnixSendfileTests(unittest.TestCase):
 
         self.assertEqual(proto.data, self.DATA)
 
+    def test_sock_sendfile_blocking_socket(self):
+        self.loop.set_debug(True)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        with self.assertRaises(ValueError):
+            with open(support.TESTFN, 'rb') as f:
+                self.loop.run_until_complete(
+                    self.loop.sock_sendfile(sock, f))
+
 
 class UnixReadPipeTransportTests(test_utils.TestCase):
 
