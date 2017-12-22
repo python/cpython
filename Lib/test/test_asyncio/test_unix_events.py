@@ -423,7 +423,7 @@ class SelectorEventLoopUnixSendfileTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, "wb") as fp:
+        with open(support.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
 
     @classmethod
@@ -432,33 +432,41 @@ class SelectorEventLoopUnixSendfileTests(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
+        self.file = open(support.TESTFN, 'rb')
+        self.addCleanup(self.file.close)
 
     def tearDown(self):
         self.loop.close()
 
-    def test_sock_sendfile(self):
+    def make_socket(self, blocking=False):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setblocking(False)
         self.addCleanup(sock.close)
+        return sock
+
+    def run_loop(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def prepare(self):
+        sock = self.make_socket()
         proto = self.MyProto()
         port = support.find_unused_port()
-        self.loop.run_until_complete(self.loop.create_server(lambda: proto,
-                                                             support.HOST,
-                                                             port))
-        self.loop.run_until_complete(
-            self.loop.sock_connect(sock, (support.HOST, port)))
-        with open(support.TESTFN, 'rb') as f:
-            self.loop.run_until_complete(self.loop.sock_sendfile(sock, f))
+        self.run_loop(self.loop.create_server(
+            lambda: proto, support.HOST, port))
+        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+        return sock, proto
+
+    def test_sock_sendfile(self):
+        sock, proto = self.prepare()
+        self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
         self.assertEqual(proto.data, self.DATA)
 
     def test_sock_sendfile_blocking_socket(self):
         self.loop.set_debug(True)
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = self.make_socket(True)
         with self.assertRaises(ValueError):
-            with open(support.TESTFN, 'rb') as f:
-                self.loop.run_until_complete(
-                    self.loop.sock_sendfile(sock, f))
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
 
 class UnixReadPipeTransportTests(test_utils.TestCase):
