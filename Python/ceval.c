@@ -1908,7 +1908,7 @@ main_loop:
             FAST_DISPATCH();
         }
 
-        TARGET(PUSH_NO_EXCEPT) {
+        TARGET(BEGIN_FINALLY) {
             PUSH(NULL);
             FAST_DISPATCH();
         }

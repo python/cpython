@@ -971,7 +971,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
             return 0;
-        case PUSH_NO_EXCEPT:
+        case BEGIN_FINALLY:
             return 6;
         case END_FINALLY:
             /* Pops the 3 values of the pushed exception
@@ -2584,7 +2584,7 @@ compiler_continue(struct compiler *c)
         SETUP_FINALLY           L
         <code for body>
         POP_BLOCK
-        PUSH_NO_EXCEPT
+        BEGIN_FINALLY
     L:
         <code for finalbody>
         END_FINALLY
@@ -2637,7 +2637,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, PUSH_NO_EXCEPT);
+    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, FINALLY_TRY, body);
 
     /* `finally` block */
@@ -2755,7 +2755,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
-            ADDOP(c, PUSH_NO_EXCEPT);
+            ADDOP(c, BEGIN_FINALLY);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
 
             /* finally: */
@@ -4337,7 +4337,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, PUSH_NO_EXCEPT);
+    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, ASYNC_WITH, block);
 
     /* `finally` block: await __exit__(*exc_info) */
@@ -4424,7 +4424,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally blocks */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, PUSH_NO_EXCEPT);
+    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, WITH, block);
 
     /* `finally` block */

@@ -287,7 +287,7 @@ dis_traceback = """\
              34 STORE_FAST               1 (tb)
              36 POP_BLOCK
              38 POP_EXCEPT
-             40 PUSH_NO_EXCEPT
+             40 BEGIN_FINALLY
         >>   42 LOAD_CONST               0 (None)
              44 STORE_FAST               0 (e)
              46 DELETE_FAST              0 (e)
@@ -987,12 +987,12 @@ expected_opinfo_jumpy = [
   Instruction(opname='CALL_FUNCTION', opcode=131, arg=1, argval=1, argrepr='', offset=158, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=160, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_BLOCK', opcode=87, arg=None, argval=None, argrepr='', offset=162, starts_line=None, is_jump_target=False),
-  Instruction(opname='PUSH_NO_EXCEPT', opcode=54, arg=None, argval=None, argrepr='', offset=164, starts_line=None, is_jump_target=False),
+  Instruction(opname='BEGIN_FINALLY', opcode=54, arg=None, argval=None, argrepr='', offset=164, starts_line=None, is_jump_target=False),
   Instruction(opname='WITH_CLEANUP_START', opcode=81, arg=None, argval=None, argrepr='', offset=166, starts_line=None, is_jump_target=True),
   Instruction(opname='WITH_CLEANUP_FINISH', opcode=82, arg=None, argval=None, argrepr='', offset=168, starts_line=None, is_jump_target=False),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=0, argval=172, argrepr='to 172', offset=170, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_BLOCK', opcode=87, arg=None, argval=None, argrepr='', offset=172, starts_line=None, is_jump_target=True),
-  Instruction(opname='PUSH_NO_EXCEPT', opcode=54, arg=None, argval=None, argrepr='', offset=174, starts_line=None, is_jump_target=False),
+  Instruction(opname='BEGIN_FINALLY', opcode=54, arg=None, argval=None, argrepr='', offset=174, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=1, argval='print', argrepr='print', offset=176, starts_line=28, is_jump_target=True),
   Instruction(opname='LOAD_CONST', opcode=100, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=178, starts_line=None, is_jump_target=False),
   Instruction(opname='CALL_FUNCTION', opcode=131, arg=1, argval=1, argrepr='', offset=180, starts_line=None, is_jump_target=False),
