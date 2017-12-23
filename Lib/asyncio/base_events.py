@@ -145,7 +145,7 @@ def _run_until_complete_cb(fut):
             # Issue #22429: run_forever() already finished, no need to
             # stop it.
             return
-    fut._loop.stop()
+    futures._get_loop(fut).stop()
 
 
 class Server(events.AbstractServer):
