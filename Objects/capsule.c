@@ -194,62 +194,35 @@ PyCapsule_SetContext(PyObject *o, void *context)
 void *
 PyCapsule_Import(const char *name, int no_block)
 {
-    PyObject *object = NULL;
-    void *return_value = NULL;
-    char *trace;
-    size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_MALLOC(name_length);
+    PyObject *module = NULL, *capsule = NULL;
+    size_t name_len = strlen(name) + 1;
+    char *module_name = NULL, *capsule_name = NULL;
+    void *result = NULL;
 
-    if (!name_dup) {
-        return NULL;
+    module_name = PyMem_MALLOC(name_len);
+    if (module_name == NULL) {
+        return PyErr_NoMemory();
     }
-
-    memcpy(name_dup, name, name_length);
-
-    trace = name_dup;
-    while (trace) {
-        char *dot = strchr(trace, '.');
-        if (dot) {
-            *dot++ = '\0';
-        }
-
-        if (object == NULL) {
-            if (no_block) {
-                object = PyImport_ImportModuleNoBlock(trace);
-            } else {
-                object = PyImport_ImportModule(trace);
-                if (!object) {
-                    PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
-                }
+    memcpy(module_name, name, name_len);
+    capsule_name = strrchr(module_name, '.');
+    if (capsule_name == NULL) {
+        PyErr_Format(PyExc_ImportError,
+                     "PyCapsule_Import malformed name '%s'", name);
+    }
+    else {
+        *capsule_name++ = '\0';
+        module = PyImport_ImportModule(module_name);
+        if (module != NULL) {
+            capsule = PyObject_GetAttrString(module, capsule_name);
+            if (capsule != NULL) {
+                result = PyCapsule_GetPointer(capsule, name);
+                Py_DECREF(capsule);
             }
-        } else {
-            PyObject *object2 = PyObject_GetAttrString(object, trace);
-            Py_DECREF(object);
-            object = object2;
+            Py_DECREF(module);
         }
-        if (!object) {
-            goto EXIT;
-        }
-
-        trace = dot;
     }
-
-    /* compare attribute name to module.name by hand */
-    if (PyCapsule_IsValid(object, name)) {
-        PyCapsule *capsule = (PyCapsule *)object;
-        return_value = capsule->pointer;
-    } else {
-        PyErr_Format(PyExc_AttributeError,
-            "PyCapsule_Import \"%s\" is not valid",
-            name);
-    }
-
-EXIT:
-    Py_XDECREF(object);
-    if (name_dup) {
-        PyMem_FREE(name_dup);
-    }
-    return return_value;
+    PyMem_FREE(module_name);
+    return result;
 }
 
 
@@ -320,5 +293,4 @@ PyTypeObject PyCapsule_Type = {
     0,                          /*tp_flags*/
     PyCapsule_Type__doc__       /*tp_doc*/
 };
-
 
