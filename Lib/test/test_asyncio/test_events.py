@@ -1843,12 +1843,16 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.call_at(self.loop.time() + .0, func)
         with self.assertRaises(RuntimeError):
-            self.loop.run_until_complete(
-                self.loop.run_in_executor(None, func))
-        with self.assertRaises(RuntimeError):
             self.loop.create_task(coro)
         with self.assertRaises(RuntimeError):
             self.loop.add_signal_handler(signal.SIGTERM, func)
+
+        # run_in_executor test is tricky: the method is a coroutine,
+        # but run_until_complete cannot be called on closed loop.
+        # Thus iterate once explicitly.
+        with self.assertRaises(RuntimeError):
+            it = self.loop.run_in_executor(None, func).__await__()
+            next(it)
 
 
 class SubprocessTestsMixin:
