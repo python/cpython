@@ -304,7 +304,7 @@ def call(*popenargs, timeout=None, **kwargs):
     with Popen(*popenargs, **kwargs) as p:
         try:
             return p.wait(timeout=timeout)
-        except:
+        except Exception:  # Ignore KeyboardInterrupt and SystemExit.
             p.kill()
             p.wait()
             raise
@@ -450,7 +450,7 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             stdout, stderr = process.communicate()
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
-        except:
+        except Exception:  # Ignore KeyboardInterrupt and SystemExit.
             process.kill()
             process.wait()
             raise
