@@ -337,18 +337,18 @@ def test():
         elif sys.platform.startswith("aix"):
             from ctypes import CDLL
             if sys.maxsize < 2**32:
-                print("Using CDLL(name, os.RTLD_MEMBER): %s" % CDLL("libc.a(shr.o)", os.RTLD_MEMBER))
-                print("Using cdll.LoadLibrary(): %s" % cdll.LoadLibrary("libc.a(shr.o)"))
+                print(f"Using CDLL(name, os.RTLD_MEMBER): {CDLL('libc.a(shr.o)', os.RTLD_MEMBER)}")
+                print(f"Using cdll.LoadLibrary(): {cdll.LoadLibrary('libc.a(shr.o)')}")
                 # librpm.so is only available as 32-bit shared library
                 print(find_library("rpm"))
                 print(cdll.LoadLibrary("librpm.so"))
             else:
-                print("Using CDLL(name, os.RTLD_MEMBER): %s" % CDLL("libc.a(shr_64.o)", os.RTLD_MEMBER))
-                print("Using cdll.LoadLibrary(): %s" % cdll.LoadLibrary("libc.a(shr_64.o)"))
-            print("crypt\t:: %s" % find_library("crypt"))
-            print("crypt\t:: %s" % cdll.LoadLibrary(find_library("crypt")))
-            print("crypto\t:: %s" % find_library("crypto"))
-            print("crypto\t:: %s" % cdll.LoadLibrary(find_library("crypto")))
+                print(f"Using CDLL(name, os.RTLD_MEMBER): {CDLL('libc.a(shr_64.o)', os.RTLD_MEMBER)}")
+                print(f"Using cdll.LoadLibrary(): {cdll.LoadLibrary('libc.a(shr_64.o)')}")
+            print(f"crypt\t:: {find_library('crypt')}")
+            print(f"crypt\t:: {cdll.LoadLibrary(find_library('crypt'))}")
+            print(f"crypto\t:: {find_library('crypto')}")
+            print(f"crypto\t:: {cdll.LoadLibrary(find_library('crypto'))}")
         else:
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
