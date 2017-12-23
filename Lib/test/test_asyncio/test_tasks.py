@@ -2308,10 +2308,28 @@ class BaseTaskIntrospectionTests:
     _enter_task = None
     _leave_task = None
 
-    def test__register_task(self):
-        task = mock.Mock()
+    def test__register_task_1(self):
+        class TaskLike:
+            @property
+            def _loop(self):
+                return loop
+
+        task = TaskLike()
         loop = mock.Mock()
-        task.get_loop = lambda: loop
+
+        self.assertEqual(asyncio.all_tasks(loop), set())
+        self._register_task(task)
+        self.assertEqual(asyncio.all_tasks(loop), {task})
+        self._unregister_task(task)
+
+    def test__register_task_2(self):
+        class TaskLike:
+            def get_loop(self):
+                return loop
+
+        task = TaskLike()
+        loop = mock.Mock()
+
         self.assertEqual(asyncio.all_tasks(loop), set())
         self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), {task})
