@@ -2302,6 +2302,32 @@ class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
         pass
 
 
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class CTask_Future_Tests(test_utils.TestCase):
+
+    def test_foobar(self):
+        class Fut(asyncio.Future):
+            @property
+            def get_loop(self):
+                raise AttributeError
+
+        async def coro():
+            await fut
+            return 'spam'
+
+        self.loop = asyncio.new_event_loop()
+        try:
+            fut = Fut(loop=self.loop)
+            self.loop.call_later(0.1, fut.set_result(1))
+            task = asyncio.Task(coro(), loop=self.loop)
+            res = self.loop.run_until_complete(task)
+        finally:
+            self.loop.close()
+
+        self.assertEqual(res, 'spam')
+
+
 class BaseTaskIntrospectionTests:
     _register_task = None
     _unregister_task = None
