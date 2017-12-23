@@ -4810,18 +4810,16 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
             else
                 tzinfo = Py_None;
         }
-        result = new_datetime_subclass_ex(GET_YEAR(date),
-                                          GET_MONTH(date),
-                                          GET_DAY(date),
-                                          TIME_GET_HOUR(time),
-                                          TIME_GET_MINUTE(time),
-                                          TIME_GET_SECOND(time),
-                                          TIME_GET_MICROSECOND(time),
-                                          tzinfo,
-                                          cls);
-
-        if (result)
-            DATE_SET_FOLD(result, TIME_GET_FOLD(time));
+        result = new_datetime_subclass_fold_ex(GET_YEAR(date),
+                                               GET_MONTH(date),
+                                               GET_DAY(date),
+                                               TIME_GET_HOUR(time),
+                                               TIME_GET_MINUTE(time),
+                                               TIME_GET_SECOND(time),
+                                               TIME_GET_MICROSECOND(time),
+                                               tzinfo,
+                                               TIME_GET_FOLD(time),
+                                               cls);
     }
     return result;
 }
