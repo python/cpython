@@ -203,6 +203,7 @@ get_future_loop(PyObject *fut)
         return res;
     }
 
+    PyErr_Clear();
     return _PyObject_GetAttrId(fut, &PyId__loop);
 }
 
