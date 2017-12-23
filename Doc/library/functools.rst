@@ -332,7 +332,7 @@ The :mod:`functools` module defines the following functions:
      False
 
    When called, the generic function dispatches on the type of the first
-   argument::
+   argument, unless it is used on class::
 
      >>> fun("Hello, world.")
      Hello, world.

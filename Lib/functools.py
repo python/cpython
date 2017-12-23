@@ -757,7 +757,6 @@ def singledispatch(func):
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
     import types, weakref
-
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
@@ -816,8 +815,15 @@ def singledispatch(func):
         dispatch_cache.clear()
         return func
 
+
     def wrapper(*args, **kw):
-        return dispatch(args[0].__class__)(*args, **kw)
+        # If our decorated function is in the first arg's attributes,
+        # we are using a method.
+        if getattr(args[0], func.__name__, False):
+            arg = args[1]
+        else:
+            arg = args[0]
+        return dispatch(arg.__class__)(*args, **kw)
 
     registry[object] = func
     wrapper.register = register
