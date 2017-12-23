@@ -155,6 +155,10 @@ class AbstractServer:
         """Coroutine to wait until service is closed."""
         return NotImplemented
 
+    def get_loop(self):
+        """ Get the event loop the Server object is attached to."""
+        return NotImplemented
+
 
 class AbstractEventLoop:
     """Abstract event loop."""
