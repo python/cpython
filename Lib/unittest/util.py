@@ -1,6 +1,6 @@
 """Various utility functions."""
 
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 from os.path import commonprefix
 
 __unittest = True
@@ -155,7 +155,7 @@ def _count_diff_all_purpose(actual, expected):
 
 def _ordered_count(iterable):
     'Return dict of element counts, in the order they were first seen'
-    c = OrderedDict()
+    c = {}
     for elem in iterable:
         c[elem] = c.get(elem, 0) + 1
     return c
