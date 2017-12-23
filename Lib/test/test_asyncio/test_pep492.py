@@ -10,6 +10,21 @@ import asyncio
 from test.test_asyncio import utils as test_utils
 
 
+# Test that asyncio.iscoroutine() uses collections.abc.Coroutine
+class FakeCoro:
+    def send(self, value):
+        pass
+
+    def throw(self, typ, val=None, tb=None):
+        pass
+
+    def close(self):
+        pass
+
+    def __await__(self):
+        yield
+
+
 class BaseTest(test_utils.TestCase):
 
     def setUp(self):
@@ -98,13 +113,6 @@ class CoroutineTests(BaseTest):
             self.assertTrue(asyncio.iscoroutine(f))
         finally:
             f.close() # silence warning
-
-        # Test that asyncio.iscoroutine() uses collections.abc.Coroutine
-        class FakeCoro:
-            def send(self, value): pass
-            def throw(self, typ, val=None, tb=None): pass
-            def close(self): pass
-            def __await__(self): yield
 
         self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
