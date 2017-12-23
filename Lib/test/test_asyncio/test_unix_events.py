@@ -434,13 +434,12 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
         self.file = open(support.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         super().setUp()
 
     def tearDown(self):
-        self.doCleanups()
-        self.loop.close()
         super().tearDown()
 
     def make_socket(self, blocking=False):
