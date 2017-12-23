@@ -1,9 +1,10 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#ifndef _AIX61
+#ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
-#else
+#endif
+#ifdef HAVE_UUID_H
 #include <uuid.h>
 #endif
 
@@ -11,22 +12,19 @@
 static PyObject *
 py_uuid_generate_time_safe(void)
 {
+    uuid_t uuid;
 #ifdef HAVE_UUID_GENERATE_TIME_SAFE
-    uuid_t out;
     int res;
 
-    res = uuid_generate_time_safe(out);
-    return Py_BuildValue("y#i", (const char *) out, sizeof(out), res);
-#else
-    uuid_t out;
-#ifndef _AIX61
-    uuid_generate_time(out);
-    return Py_BuildValue("y#O", (const char *) out, sizeof(out), Py_None);
-#else
+    res = uuid_generate_time_safe(uuid);
+    return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
+#elif HAVE_UUID_CREATE
     unsigned32 status;
-    uuid_create(&out, &status);
-    return Py_BuildValue("y#O", (const char *) &out, sizeof(out), Py_None);
-#endif
+    uuid_create(&uuid, &status);
+    return Py_BuildValue("y#O", (const char *) &uuid, sizeof(uuid), Py_None);
+#else
+    uuid_generate_time(uuid);
+    return Py_BuildValue("y#O", (const char *) uuid, sizeof(uuid), Py_None);
 #endif
 }
 
