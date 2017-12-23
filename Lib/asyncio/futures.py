@@ -105,6 +105,10 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
+    def get_loop(self):
+        """Return the event loop the Future is bound to."""
+        return self._loop
+
     def cancel(self):
         """Cancel the future and schedule callbacks.
 
@@ -249,6 +253,18 @@ class Future:
 _PyFuture = Future
 
 
+def _get_loop(fut):
+    # Tries to call Future.get_loop() if it's available.
+    # Otherwise fallbacks to using the old '_loop' property.
+    try:
+        get_loop = fut.get_loop
+    except AttributeError:
+        pass
+    else:
+        return get_loop()
+    return fut._loop
+
+
 def _set_result_unless_cancelled(fut, result):
     """Helper setting the result only if the future was not cancelled."""
     if fut.cancelled():
@@ -304,8 +320,8 @@ def _chain_future(source, destination):
     if not isfuture(destination) and not isinstance(destination,
                                                     concurrent.futures.Future):
         raise TypeError('A future is required for destination argument')
-    source_loop = source._loop if isfuture(source) else None
-    dest_loop = destination._loop if isfuture(destination) else None
+    source_loop = _get_loop(source) if isfuture(source) else None
+    dest_loop = _get_loop(destination) if isfuture(destination) else None
 
     def _set_state(future, other):
         if isfuture(future):

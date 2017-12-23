@@ -139,6 +139,7 @@ class BaseFutureTests:
         asyncio.set_event_loop(self.loop)
         f = self._new_future()
         self.assertIs(f._loop, self.loop)
+        self.assertIs(f.get_loop(), self.loop)
 
     def test_constructor_positional(self):
         # Make sure Future doesn't accept a positional argument

@@ -141,6 +141,7 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertEqual(t.result(), 'ok')
         self.assertIs(t._loop, self.loop)
+        self.assertIs(t.get_loop(), self.loop)
 
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
@@ -2310,10 +2311,11 @@ class BaseTaskIntrospectionTests:
     def test__register_task(self):
         task = mock.Mock()
         loop = mock.Mock()
+        task.get_loop = lambda: loop
         self.assertEqual(asyncio.all_tasks(loop), set())
-        self._register_task(loop, task)
+        self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), {task})
-        self._unregister_task(loop, task)
+        self._unregister_task(task)
 
     def test__enter_task(self):
         task = mock.Mock()
@@ -2360,14 +2362,15 @@ class BaseTaskIntrospectionTests:
     def test__unregister_task(self):
         task = mock.Mock()
         loop = mock.Mock()
-        self._register_task(loop, task)
-        self._unregister_task(loop, task)
+        task.get_loop = lambda: loop
+        self._register_task(task)
+        self._unregister_task(task)
         self.assertEqual(asyncio.all_tasks(loop), set())
 
     def test__unregister_task_not_registered(self):
         task = mock.Mock()
         loop = mock.Mock()
-        self._unregister_task(loop, task)
+        self._unregister_task(task)
         self.assertEqual(asyncio.all_tasks(loop), set())
 
 
