@@ -29,17 +29,6 @@ _Py_GetRefTotal(void)
     return total;
 }
 
-PyObject *
-_PyDebug_XOptionShowRefCount(void)
-{
-    PyObject *xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
-        return NULL;
-
-    _Py_IDENTIFIER(showrefcount);
-    return _PyDict_GetItemId(xoptions, &PyId_showrefcount);
-}
-
 void
 _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
@@ -106,16 +95,10 @@ extern Py_ssize_t null_strings, one_strings;
 void
 dump_counts(FILE* f)
 {
-    PyTypeObject *tp;
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showalloccount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (!inter->core_config.show_alloc_count) {
         return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
-    if (value != Py_True)
-        return;
+    }
 
     for (tp = type_list; tp; tp = tp->tp_next)
         fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "
@@ -480,7 +463,12 @@ PyObject_Repr(PyObject *v)
     assert(!PyErr_Occurred());
 #endif
 
+    /* It is possible for a type to have a tp_repr representation that loops
+       infinitely. */
+    if (Py_EnterRecursiveCall(" while getting the repr of an object"))
+        return NULL;
     res = (*v->ob_type->tp_repr)(v);
+    Py_LeaveRecursiveCall();
     if (res == NULL)
         return NULL;
     if (!PyUnicode_Check(res)) {

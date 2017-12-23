@@ -272,9 +272,9 @@ class MiscNews(Directive):
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
-    'assert', 'assignment', 'atom-identifiers', 'atom-literals',
-    'attribute-access', 'attribute-references', 'augassign', 'binary',
-    'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
+    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
+    'attribute-access', 'attribute-references', 'augassign', 'await',
+    'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
     'context-managers', 'continue', 'conversions', 'customization', 'debugger',

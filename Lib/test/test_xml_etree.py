@@ -2237,6 +2237,39 @@ class ElementFindTest(unittest.TestCase):
             ['tag'] * 2)
         self.assertEqual(e.findall('section//'), e.findall('section//*'))
 
+        self.assertEqual(summarize_list(e.findall(".//section[tag='subtext']")),
+            ['section'])
+        self.assertEqual(summarize_list(e.findall(".//section[tag ='subtext']")),
+            ['section'])
+        self.assertEqual(summarize_list(e.findall(".//section[tag= 'subtext']")),
+            ['section'])
+        self.assertEqual(summarize_list(e.findall(".//section[tag = 'subtext']")),
+            ['section'])
+        self.assertEqual(summarize_list(e.findall(".//section[ tag = 'subtext' ]")),
+            ['section'])
+
+        self.assertEqual(summarize_list(e.findall(".//tag[.='subtext']")),
+                         ['tag'])
+        self.assertEqual(summarize_list(e.findall(".//tag[. ='subtext']")),
+                         ['tag'])
+        self.assertEqual(summarize_list(e.findall('.//tag[.= "subtext"]')),
+                         ['tag'])
+        self.assertEqual(summarize_list(e.findall('.//tag[ . = "subtext" ]')),
+                         ['tag'])
+        self.assertEqual(summarize_list(e.findall(".//tag[. = 'subtext']")),
+                         ['tag'])
+        self.assertEqual(summarize_list(e.findall(".//tag[. = 'subtext ']")),
+                         [])
+        self.assertEqual(summarize_list(e.findall(".//tag[.= ' subtext']")),
+                         [])
+
+        # duplicate section => 2x tag matches
+        e[1] = e[2]
+        self.assertEqual(summarize_list(e.findall(".//section[tag = 'subtext']")),
+                         ['section', 'section'])
+        self.assertEqual(summarize_list(e.findall(".//tag[. = 'subtext']")),
+                         ['tag', 'tag'])
+
     def test_test_find_with_ns(self):
         e = ET.XML(SAMPLE_XML_NS)
         self.assertEqual(summarize_list(e.findall('tag')), [])
@@ -2299,7 +2332,7 @@ class ElementIterTest(unittest.TestCase):
         sourcefile = serialize(doc, to_string=False)
         self.assertEqual(next(ET.iterparse(sourcefile))[0], 'end')
 
-        # With an explitit parser too (issue #9708)
+        # With an explicit parser too (issue #9708)
         sourcefile = serialize(doc, to_string=False)
         parser = ET.XMLParser(target=ET.TreeBuilder())
         self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0],

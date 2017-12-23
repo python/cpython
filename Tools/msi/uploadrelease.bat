@@ -8,8 +8,9 @@ set HOST=
 set USER=
 set TARGET=
 set DRYRUN=false
+set NOUPLOAD=
 set NOGPG=
-set PURGE_OPTION=/p:Purge=true
+set NOPURGE=
 set NOTEST=
 
 :CheckOpts
@@ -21,10 +22,11 @@ if "%1" EQU "--user" (set USER=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "-t" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--target" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--dry-run" (set DRYRUN=true) && shift && goto CheckOpts
+if "%1" EQU "--skip-upload" (set NOUPLOAD=true) && shift && goto CheckOpts
 if "%1" EQU "--skip-gpg" (set NOGPG=true) && shift && goto CheckOpts
-if "%1" EQU "--skip-purge" (set PURGE_OPTION=) && shift && godo CheckOpts
-if "%1" EQU "--skip-test" (set NOTEST=true) && shift && godo CheckOpts
-if "%1" EQU "-T" (set NOTEST=true) && shift && godo CheckOpts
+if "%1" EQU "--skip-purge" (set NOPURGE=true) && shift && goto CheckOpts
+if "%1" EQU "--skip-test" (set NOTEST=true) && shift && goto CheckOpts
+if "%1" EQU "-T" (set NOTEST=true) && shift && goto CheckOpts
 if "%1" NEQ "" echo Unexpected argument "%1" & exit /B 1
 
 if not defined PLINK where plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
@@ -52,16 +54,42 @@ if defined NOGPG (
 call "%PCBUILD%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 pushd "%D%"
-%MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x86 %PURGE_OPTION%
-%MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x64 /p:IncludeDoc=false %PURGE_OPTION%
+if not defined NOUPLOAD (
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x86
+    if errorlevel 1 goto :failed
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x64 /p:IncludeDoc=false
+    if errorlevel 1 goto :failed
+)
+if not defined NOPURGE (
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Purge
+)
 if not defined NOTEST (
-    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x86
-    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x64
+    call :test x86
+    if errorlevel 1 goto :failed
+    call :test x64
+    if errorlevel 1 goto :failed
 )
 %MSBUILD% /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x86
+if errorlevel 1 goto :failed
 %MSBUILD% /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x64 /p:IncludeDoc=false
+if errorlevel 1 goto :failed
+
 popd
 exit /B 0
+
+:test
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=%1
+if errorlevel 1 (
+    echo Test failed - purging and retrying
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Purge
+    if errorlevel 1 exit /B
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=%1
+)
+exit /B
+
+:failed
+popd
+exit /B
 
 :Help
 echo uploadrelease.bat --host HOST --user USERNAME [--target TARGET] [--dry-run] [-h]

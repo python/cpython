@@ -9,6 +9,12 @@
 #include "structmember.h"
 
 /* error strings used for warnings */
+#define GLOBAL_PARAM \
+"name '%U' is parameter and global"
+
+#define NONLOCAL_PARAM \
+"name '%U' is parameter and nonlocal"
+
 #define GLOBAL_AFTER_ASSIGN \
 "name '%U' is assigned to before global declaration"
 
@@ -465,12 +471,6 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
              PyObject *global)
 {
     if (flags & DEF_GLOBAL) {
-        if (flags & DEF_PARAM) {
-            PyErr_Format(PyExc_SyntaxError,
-                        "name '%U' is parameter and global",
-                        name);
-            return error_at_directive(ste, name);
-        }
         if (flags & DEF_NONLOCAL) {
             PyErr_Format(PyExc_SyntaxError,
                          "name '%U' is nonlocal and global",
@@ -485,12 +485,6 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
         return 1;
     }
     if (flags & DEF_NONLOCAL) {
-        if (flags & DEF_PARAM) {
-            PyErr_Format(PyExc_SyntaxError,
-                         "name '%U' is parameter and nonlocal",
-                         name);
-            return error_at_directive(ste, name);
-        }
         if (!bound) {
             PyErr_Format(PyExc_SyntaxError,
                          "nonlocal declaration not allowed at module level");
@@ -1284,9 +1278,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
-            if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
-                char* msg;
-                if (cur & USE) {
+            if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
+                const char* msg;
+                if (cur & DEF_PARAM) {
+                    msg = GLOBAL_PARAM;
+                } else if (cur & USE) {
                     msg = GLOBAL_AFTER_USE;
                 } else if (cur & DEF_ANNOT) {
                     msg = GLOBAL_ANNOT;
@@ -1315,9 +1311,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
-            if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
-                char* msg;
-                if (cur & USE) {
+            if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
+                const char* msg;
+                if (cur & DEF_PARAM) {
+                    msg = NONLOCAL_PARAM;
+                } else if (cur & USE) {
                     msg = NONLOCAL_AFTER_USE;
                 } else if (cur & DEF_ANNOT) {
                     msg = NONLOCAL_ANNOT;
@@ -1736,7 +1734,6 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               e->lineno, e->col_offset)) {
         return 0;
     }
-    st->st_cur->ste_generator = is_generator;
     if (outermost->is_async) {
         st->st_cur->ste_coroutine = 1;
     }
@@ -1756,6 +1753,36 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (value)
         VISIT(st, expr, value);
     VISIT(st, expr, elt);
+    if (st->st_cur->ste_generator) {
+        PyObject *msg = PyUnicode_FromString(
+            (e->kind == ListComp_kind) ? "'yield' inside list comprehension" :
+            (e->kind == SetComp_kind) ? "'yield' inside set comprehension" :
+            (e->kind == DictComp_kind) ? "'yield' inside dict comprehension" :
+            "'yield' inside generator expression");
+        if (msg == NULL) {
+            symtable_exit_block(st, (void *)e);
+            return 0;
+        }
+        if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning,
+                msg, st->st_filename, st->st_cur->ste_lineno,
+                NULL, NULL) == -1)
+        {
+            if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+                /* Replace the DeprecationWarning exception with a SyntaxError
+                   to get a more accurate error report */
+                PyErr_Clear();
+                PyErr_SetObject(PyExc_SyntaxError, msg);
+                PyErr_SyntaxLocationObject(st->st_filename,
+                                           st->st_cur->ste_lineno,
+                                           st->st_cur->ste_col_offset);
+            }
+            Py_DECREF(msg);
+            symtable_exit_block(st, (void *)e);
+            return 0;
+        }
+        Py_DECREF(msg);
+    }
+    st->st_cur->ste_generator |= is_generator;
     return symtable_exit_block(st, (void *)e);
 }
 

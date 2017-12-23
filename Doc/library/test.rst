@@ -440,7 +440,7 @@ The :mod:`test.support` module defines the following functions:
    otherwise.
 
 
-.. decorator:: skip_unless_symlink()
+.. decorator:: skip_unless_symlink
 
    A decorator for running tests that require support for symbolic links.
 

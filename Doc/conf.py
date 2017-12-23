@@ -38,7 +38,8 @@ highlight_language = 'python3'
 needs_sphinx = '1.2'
 
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR', 'venv')
+exclude_patterns = [venvdir+'/*', 'README.rst']
 
 
 # Options for HTML output
@@ -89,11 +90,10 @@ html_split_index = True
 # Options for LaTeX output
 # ------------------------
 
+latex_engine = 'xelatex'
+
 # Get LaTeX to handle Unicode correctly
 latex_elements = {
-    'inputenc': r'\usepackage[utf8x]{inputenc}',
-    'utf8extra': '',
-    'fontenc': r'\usepackage[T1,T2A]{fontenc}',
 }
 
 # Additional stuff for the LaTeX preamble.

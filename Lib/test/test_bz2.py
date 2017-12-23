@@ -62,7 +62,7 @@ class BaseTest(unittest.TestCase):
     BAD_DATA = b'this is not a valid bzip2 file'
 
     # Some tests need more than one block of uncompressed data. Since one block
-    # is at least 100 kB, we gather some data dynamically and compress it.
+    # is at least 100,000 bytes, we gather some data dynamically and compress it.
     # Note that this assumes that compression works correctly, so we cannot
     # simply use the bigger test data for all tests.
     test_size = 0

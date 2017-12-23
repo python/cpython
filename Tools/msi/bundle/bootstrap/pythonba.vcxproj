@@ -26,12 +26,14 @@
     <ProjectGuid>{7A09B132-B3EE-499B-A700-A4B2157FEA3D}</ProjectGuid>
     <TargetName>PythonBA</TargetName>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="..\..\wix.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <IntDir>$(Py_IntDir)\$(Configuration)_$(Platform)_Setup\Bootstrap\</IntDir>
+    <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(PySourcePath)PCbuild\obj\</Py_IntDir>
+    <IntDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\msi_$(ProjectName)\</IntDir>
+    <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
     <OutDir>$(IntDir)</OutDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
