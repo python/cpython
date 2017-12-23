@@ -144,7 +144,7 @@ _is_coroutine(PyObject *coro)
 
     Py_ssize_t size = PySet_Size(iscoroutine_typecache);
     if (size < 0) {
-	return -1;
+        return -1;
     }
     if (size < 100) {
         /* Just in case we don't want to cache more than 100
