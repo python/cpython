@@ -142,7 +142,11 @@ _is_coroutine(PyObject *coro)
         return is_res_true;
     }
 
-    if (PySet_Size(iscoroutine_typecache) < 100) {
+    Py_ssize_t size = PySet_Size(iscoroutine_typecache);
+    if (size < 0) {
+	return -1;
+    }
+    if (size < 100) {
         /* Just in case we don't want to cache more than 100
            positive types.  That shouldn't ever happen, unless
            someone stressing the system on purpose.
@@ -3023,7 +3027,7 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 
 
 static void
-module_free_freelists()
+module_free_freelists(void)
 {
     PyObject *next;
     PyObject *current;
