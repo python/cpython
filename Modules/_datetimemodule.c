@@ -844,21 +844,29 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
     return (PyObject *) self;
 }
 
+#define new_date(year, month, day) \
+    new_date_ex(year, month, day, &PyDateTime_DateType)
+
+// Forward declaration
+static PyObject * new_datetime_ex(int, int, int, int, int, int, int,
+                                  PyObject*, PyTypeObject*);
+
 /* Create date instance with no range checking, or call subclass constructor */
 static PyObject *
 new_date_subclass_ex(int year, int month, int day, PyObject *cls) {
     PyObject *result;
+    // We have "fast path" constructors for two subclasses: date and datetime
     if ((PyTypeObject *)cls == &PyDateTime_DateType) {
         result = new_date_ex(year, month, day, (PyTypeObject *)cls);
+    } else if ((PyTypeObject *)cls == &PyDateTime_DateTimeType) {
+        result = new_datetime_ex(year, month, day, 0, 0, 0, 0, Py_None,
+                                 (PyTypeObject *)cls);
     } else {
         result = PyObject_CallFunction(cls, "iii", year, month, day);
     }
 
     return result;
 }
-
-#define new_date(year, month, day) \
-    new_date_ex(year, month, day, &PyDateTime_DateType)
 
 /* Create a datetime instance with no range checking. */
 static PyObject *
