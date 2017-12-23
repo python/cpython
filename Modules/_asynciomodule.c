@@ -138,7 +138,7 @@ _is_coroutine(PyObject *coro)
         return is_res_true;
     }
 
-    if (PySet_Size(iscoroutine_typecache) < 100) {
+    if (PySet_GET_SIZE(iscoroutine_typecache) < 100) {
         /* Just in case we don't want to cache more than 100
            positive types.  That shouldn't ever happen, unless
            someone stressing the system on purpose.
