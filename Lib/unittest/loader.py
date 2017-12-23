@@ -247,7 +247,7 @@ class TestLoader(object):
         If the start directory is not the top level directory then the top
         level directory must be specified separately.
 
-        If a test package name (directory with '__init__.py') matches the
+        If a test package name (directory with '__init__.py' or '__init__.pyc') matches the
         pattern then the package will be checked for a 'load_tests' function. If
         this exists then it will be called with (loader, tests, pattern) unless
         the package has already had load_tests called from the same discovery
@@ -289,7 +289,9 @@ class TestLoader(object):
         if os.path.isdir(os.path.abspath(start_dir)):
             start_dir = os.path.abspath(start_dir)
             if start_dir != top_level_dir:
-                is_not_importable = not os.path.isfile(os.path.join(start_dir, '__init__.py'))
+                is_not_importable = not any([
+                  os.path.isfile(os.path.join(start_dir, '__init__.py')),
+                  os.path.isfile(os.path.join(start_dir, '__init__.pyc'))])
         else:
             # support for discovery from dotted module names
             try:
@@ -351,7 +353,8 @@ class TestLoader(object):
         module = sys.modules[module_name]
         full_path = os.path.abspath(module.__file__)
 
-        if os.path.basename(full_path).lower().startswith('__init__.py'):
+        if any([os.path.basename(full_path).lower().startswith('__init__.py'),
+                os.path.basename(full_path).lower().startswith('__init__.pyc')]):
             return os.path.dirname(os.path.dirname(full_path))
         else:
             # here we have been given a module rather than a package - so
@@ -416,8 +419,8 @@ class TestLoader(object):
     def _find_test_path(self, full_path, pattern, namespace=False):
         """Used by discovery.
 
-        Loads tests from a single file, or a directories' __init__.py when
-        passed the directory.
+        Loads tests from a single file, or a directories' __init__.py
+        (or __init__.pyc) when passed the directory.
 
         Returns a tuple (None_or_tests_from_file, should_recurse).
         """
@@ -458,7 +461,8 @@ class TestLoader(object):
                 return self.loadTestsFromModule(module, pattern=pattern), False
         elif os.path.isdir(full_path):
             if (not namespace and
-                not os.path.isfile(os.path.join(full_path, '__init__.py'))):
+                not os.path.isfile(os.path.join(full_path, '__init__.py')) and
+                not os.path.isfile(os.path.join(full_path, '__init__.pyc'))):
                 return None, False
 
             load_tests = None
