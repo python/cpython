@@ -499,17 +499,6 @@ _Py_CheckRecursiveCall(const char *where)
     return 0;
 }
 
-/* Status code for main loop (reason for stack unwind) */
-enum why_code {
-        WHY_NOT =       0x0001, /* No error */
-        WHY_EXCEPTION = 0x0002, /* Exception occurred */
-        WHY_RETURN =    0x0008, /* 'return' statement */
-        WHY_BREAK =     0x0010, /* 'break' statement */
-        WHY_CONTINUE =  0x0020, /* 'continue' statement */
-        WHY_YIELD =     0x0040, /* 'yield' operator */
-        WHY_SILENCED =  0x0080  /* Exception silenced by 'with' */
-};
-
 static int do_raise(PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, int, PyObject **);
 
@@ -1903,6 +1892,47 @@ main_loop:
             DISPATCH();
         }
 
+        TARGET(POP_NO_EXCEPT) {
+            /* Pop exception state from stack, clear exception.  Preserve
+             * top value of stack. The only place this opcode is used
+             * is when returning from a final body of a try/finally. */
+            PyObject *top = POP();
+            PyObject *exc_type = POP();
+            if (exc_type != NULL) {
+                /* We are here because there was an exception, need to pop the
+                 * EXCEPT_HANDLER block that was pushed in 'exception_unwind'.
+                 * If we get here without an exception, there is no
+                 * EXCEPT_HANDLER block.
+                 *
+                 * Generally the unwinding of the frame block stack is done by
+                 * the compiler.  EXCEPT_HANDLER blocks are the exception.
+                 * When we enter a final body without an exception, there is
+                 * no EXCEPT_HANDLER block pushed.  However, if there is an
+                 * exception in the try part, then 'exception_unwind' will
+                 * push a EXCEPT_HANDLER block.  So, here we have to check at
+                 * runtime the exception info on the stack to decide if we
+                 * need to pop the EXCEPT_HANDLER block.
+                 */
+                PyTryBlock *b = PyFrame_BlockPop(f);
+                if (b->b_type != EXCEPT_HANDLER) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "popped block is not an except handler");
+                    goto error;
+                }
+                /* the only thing on the stack after the EXCEPT_HANDLER block
+                 * should be the 5 values from the exception info (pushed by
+                 * exception_unwind or by PUSH_NO_EXCEPT) */
+                assert(STACK_LEVEL() != (b)->b_level + 5);
+            }
+            for (int i = 0; i < 5; i++) {
+                Py_XDECREF(POP());
+            }
+            PUSH(top);
+            PyErr_SetExcInfo(NULL, NULL, NULL);
+            PyErr_Clear();
+            FAST_DISPATCH();
+        }
+
         PREDICTED(POP_BLOCK);
         TARGET(POP_BLOCK) {
             PyFrame_BlockPop(f);
@@ -1910,15 +1940,22 @@ main_loop:
         }
 
         TARGET(PUSH_NO_EXCEPT) {
-            int i;
             STACKADJ(6);
-            for (i = 1; i <= 6; i++) {
+            for (int i = 1; i <= 6; i++) {
                 SET_VALUE(i, NULL);
             }
             FAST_DISPATCH();
         }
 
         TARGET(RERAISE) {
+            /* The handling of EXCEPT_HANDLER frame blocks is subtle here.  If
+             * we entered a final body without an exception, there will be no
+             * EXCEPT_HANDLER block on the stack.  However, if there was an
+             * exception, then there is one.  The "goto exception_unwind" case
+             * below handles the case for exceptions.  This is a situation
+             * where the unwind of frame blocks is not determined by the
+             * compiler.  POP_NO_EXCEPT is another case.
+             */
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
@@ -2875,14 +2912,8 @@ main_loop:
             PREDICT(POP_BLOCK);
             DISPATCH();
         }
-
         TARGET(SETUP_EXCEPT)
         TARGET(SETUP_FINALLY) {
-            /* NOTE: If you add any new block-setup opcodes that
-               are not try/except/finally handlers, you may need
-               to update the PyGen_NeedsFinalizing() function.
-               */
-
             PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
@@ -3023,7 +3054,7 @@ main_loop:
                     /* There was an exception and a True return.
                      * We must manually unwind the EXCEPT_HANDLER block
                      * which was created when the exception was caught,
-                     * otherwise the stack will be in an inconsisten state.
+                     * otherwise the stack will be in an inconsistent state.
                      */
                     PyTryBlock *b = PyFrame_BlockPop(f);
                     assert(b->b_type == EXCEPT_HANDLER);
@@ -3377,6 +3408,13 @@ exception_unwind:
             }
             UNWIND_BLOCK(b);
             if ((b->b_type == SETUP_EXCEPT || b->b_type == SETUP_FINALLY)) {
+                /* we are inside exception handler block
+                 * push a new EXCEPT_HANDLER frame block
+                 * push 6 items on the stack:
+                 *      old value of exc_info->exc_{type, value, traceback}
+                 *      new value of exc_info->exc_{type, value, traceback}
+                 * jump to bytecode offset of handler
+                 */
                 PyObject *exc, *val, *tb;
                 int handler = b->b_handler;
                 _PyErr_StackItem *exc_info = tstate->exc_info;

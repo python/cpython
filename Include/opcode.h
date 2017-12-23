@@ -60,6 +60,7 @@ extern "C" {
 #define INPLACE_XOR              78
 #define INPLACE_OR               79
 #define RERAISE                  80
+#define POP_NO_EXCEPT            81
 #define RETURN_VALUE             83
 #define IMPORT_STAR              84
 #define SETUP_ANNOTATIONS        85

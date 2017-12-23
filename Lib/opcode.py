@@ -119,6 +119,7 @@ def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
 def_op('RERAISE', 80)
+def_op('POP_NO_EXCEPT', 81)
 
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)

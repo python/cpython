@@ -81,8 +81,8 @@ It's called a frame block to distinguish it from a basic block in the
 compiler IR.
 */
 
-enum fblocktype { LOOP, EXCEPT, FINALLY_TRY, FINALLY_END, HANDLER_CLEANUP,
-                  WITH, ASYNC_WITH, NO_TYPE };
+enum fblocktype { LOOP, EXCEPT, FINALLY_TRY, FINAL_BODY, HANDLER_CLEANUP,
+                  WITH, ASYNC_WITH, WITH_EXIT, NO_TYPE };
 
 struct fblock_;
 struct compiler;
@@ -986,6 +986,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case PUSH_NO_EXCEPT:
             return 6;
         case RERAISE:
+        case POP_NO_EXCEPT:
             /* Pops the 3 values of the pushed exception
              * + the 3 values of the saved exception state
              */
@@ -1525,7 +1526,8 @@ compiler_unwind_fblock(struct compiler *c, enum fblocktype stop,
         }
         info = info->fb_parent;
     }
-    *found = NULL;
+    if (found != NULL)
+        *found = NULL;
     return 1;
 }
 
@@ -1594,6 +1596,31 @@ fblock_unwind_async_with(struct compiler *c, fblock *info, int preserve_tos)
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
     ADDOP(c, POP_TOP);
+    return 1;
+}
+
+static int
+fblock_unwind_with_exit(struct compiler *c, fblock *info, int preserve_tos)
+{
+    /* we are exiting from a final body of a with statement */
+    Py_FatalError("compiler bug, fblock_unwind_with_exit()");
+    return 1;
+}
+
+static int
+fblock_unwind_final_body(struct compiler *c, fblock *info, int preserve_tos)
+{
+    /* We are exiting from a final body of a try/finally statement.
+     * Need to cleanup exception info on stack and clear the current
+     * exception.
+     */
+    if (!preserve_tos) {
+        /* The POP_NO_EXCEPT opcode always preserves to top of stack.  If
+         * someone is calling this with preserve_tos then it is a bug in the
+         * compiler. */
+        Py_FatalError("compiler bug, fblock_unwind_final_body()");
+    }
+    ADDOP(c, POP_NO_EXCEPT);
     return 1;
 }
 
@@ -1675,9 +1702,17 @@ compiler_push_async_with(struct compiler *c, basicblock *final)
 }
 
 static int
-compiler_push_finally_end(struct compiler *c, basicblock *final)
+compiler_push_with_exit(struct compiler *c, basicblock *final)
 {
-    return compiler_push_fblock(c, FINALLY_END, final, NULL, NULL, NULL);
+    return compiler_push_fblock(c, WITH_EXIT, final,
+                                fblock_unwind_with_exit, NULL, NULL);
+}
+
+static int
+compiler_push_final_body(struct compiler *c, basicblock *final)
+{
+    return compiler_push_fblock(c, FINAL_BODY, final,
+                                fblock_unwind_final_body, NULL, NULL);
 }
 
 static int
@@ -2702,7 +2737,7 @@ compiler_continue(struct compiler *c)
     int err;
     fblock *found;
 
-    err = compiler_unwind_fblock(c, LOOP, FINALLY_END, &found, 0);
+    err = compiler_unwind_fblock(c, LOOP, FINAL_BODY, &found, 0);
     if (err == 0)
         return 0;  /* XXX Illegal state in compiler (NO_TYPE) */
     if (err == -1)
@@ -2778,11 +2813,11 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 
     /* `finally` block */
     compiler_use_next_block(c, final);
-    if (!compiler_push_finally_end(c, final))
+    if (!compiler_push_final_body(c, final))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    compiler_pop_fblock(c, FINAL_BODY, final);
     ADDOP(c, RERAISE);
-    compiler_pop_fblock(c, FINALLY_END, final);
 
     compiler_use_next_block(c, exit);
     return 1;
@@ -2897,7 +2932,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /* finally: */
             compiler_use_next_block(c, cleanup_end);
-            if (!compiler_push_finally_end(c, cleanup_end))
+            if (!compiler_push_final_body(c, cleanup_end))
                 return 0;
 
             /* name = None; del name */
@@ -2906,7 +2941,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
             ADDOP(c, RERAISE);
-            compiler_pop_fblock(c, FINALLY_END, cleanup_end);
+            compiler_pop_fblock(c, FINAL_BODY, cleanup_end);
         }
         else {
             basicblock *cleanup_body;
@@ -3193,7 +3228,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         else
             ADDOP_O(c, LOAD_CONST, Py_None, consts);
         /* Unwind all frame blocks but preserve TOS */
-        if (compiler_unwind_fblock(c, NO_TYPE, NO_TYPE, &found, 1) == 0)
+        if (compiler_unwind_fblock(c, NO_TYPE, NO_TYPE, NULL, 1) == 0)
             return 0;
         ADDOP(c, RETURN_VALUE);
         break;
@@ -4525,7 +4560,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* `finally` block: await __exit__(*exc_info) */
     compiler_use_next_block(c, final);
-    if (!compiler_push_finally_end(c, final))
+    if (!compiler_push_with_exit(c, final))
         return 0;
 
     ADDOP(c, WITH_CLEANUP_START);
@@ -4534,7 +4569,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, YIELD_FROM);
     ADDOP(c, WITH_CLEANUP_FINISH);
 
-    compiler_pop_fblock(c, FINALLY_END, final);
+    compiler_pop_fblock(c, WITH_EXIT, final);
     ADDOP_JREL(c, JUMP_FORWARD, exit);
 
 
@@ -4612,12 +4647,12 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* `finally` block */
     compiler_use_next_block(c, final);
-    if (!compiler_push_finally_end(c, final))
+    if (!compiler_push_with_exit(c, final))
         return 0;
 
     ADDOP(c, WITH_CLEANUP_START);
     ADDOP(c, WITH_CLEANUP_FINISH);
-    compiler_pop_fblock(c, FINALLY_END, final);
+    compiler_pop_fblock(c, WITH_EXIT, final);
     ADDOP_JREL(c, JUMP_FORWARD, exit);
 
     compiler_use_next_block(c, exit);

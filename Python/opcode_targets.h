@@ -80,7 +80,7 @@ static void *opcode_targets[256] = {
     &&TARGET_INPLACE_XOR,
     &&TARGET_INPLACE_OR,
     &&TARGET_RERAISE,
-    &&_unknown_opcode,
+    &&TARGET_POP_NO_EXCEPT,
     &&_unknown_opcode,
     &&TARGET_RETURN_VALUE,
     &&TARGET_IMPORT_STAR,

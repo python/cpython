@@ -122,7 +122,7 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
             }
             break;
         case WITH_CLEANUP_FINISH:
-            /* This is the end of a 'finally' block */
+            /* This is the end of a 'with/finally' block */
             assert(blockstack_top > 0);
             assert(code[blockstack[blockstack_top-1]] == SETUP_FINALLY);
             blockstack_top--;
