@@ -148,7 +148,7 @@ def load_packaged_grammar(package, grammar_source):
     Python version and using a ``.pickle`` extension.
 
     However, if *grammar_source* is an extant file, load_grammar(grammar_source)
-    is called instead. This facilities using a packaged grammar file when needed
+    is called instead. This facilitates using a packaged grammar file when needed
     but preserves load_grammar's automatic regeneration behavior when possible.
 
     """
