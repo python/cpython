@@ -929,6 +929,20 @@ CPython bytecode changes
 * Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
+* The interpreter loop  has been simplified by moving the logic of unrolling
+  the stack of blocks into the compiler.  The compiler emits now explicit
+  instructions for adjusting the stack of values and calling the cleaning
+  up code for :keyword:`break`, :keyword:`continue` and :keyword:`return`.
+
+  Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
+  :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
+  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY` and :opcode:`CALL_FINALLY`.
+  Changed the behavior of :opcode:`END_FINALLY`.  :opcode:`WITH_CLEANUP_FINISH`
+  now includes :opcode:`END_FINALLY`.
+
+  (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
+  :issue:`17611`.)
+
 
 Other CPython implementation changes
 ------------------------------------
