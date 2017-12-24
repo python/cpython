@@ -740,6 +740,9 @@ class ZipExtFile(io.BufferedIOBase):
     # Read from compressed files in 4k blocks.
     MIN_READ_SIZE = 4096
 
+    # Chunk size to read during seek
+    MAX_SEEK_READ = 1 << 24
+
     def __init__(self, fileobj, mode, zipinfo, decrypter=None,
                  close_fileobj=False):
         self._fileobj = fileobj
@@ -987,23 +990,30 @@ class ZipExtFile(io.BufferedIOBase):
         if new_pos < 0:
             new_pos = 0
 
-        if new_pos > curr_pos:
-            self.read(new_pos - curr_pos)
-        elif new_pos < curr_pos:
-            if self._offset >= curr_pos - new_pos:
-                # No need to reset if the new position is within the read buffer
-                self._offset -= curr_pos - new_pos
-            else:
-                self._fileobj.seek(self._orig_compress_start)
-                self._running_crc = self._orig_start_crc
-                self._compress_left = self._orig_compress_size
-                self._left = self._orig_file_size
-                self._readbuffer = b''
-                self._offset = 0
-                self._decompressor = zipfile._get_decompressor(self._compress_type)
-                self._eof = False
-                if new_pos > 0:
-                    self.read(new_pos)
+        read_offset = new_pos - curr_pos
+        buff_offset = read_offset + self._offset
+
+        if buff_offset >= 0 and buff_offset < len(self._readbuffer):
+            # Just move the _offset index if the new position is in the _readbuffer
+            self._offset = buff_offset
+            read_offset = 0
+        elif read_offset < 0:
+            # Position is before the current position. Reset the ZipExtFile
+
+            self._fileobj.seek(self._orig_compress_start)
+            self._running_crc = self._orig_start_crc
+            self._compress_left = self._orig_compress_size
+            self._left = self._orig_file_size
+            self._readbuffer = b''
+            self._offset = 0
+            self._decompressor = zipfile._get_decompressor(self._compress_type)
+            self._eof = False
+            read_offset = new_pos
+
+        while read_offset > 0:
+            read_len = min(MAX_SEEK_READ, read_offset)
+            self.read(read_len)
+            read_offset -= read_len
 
         return self.tell()
 
