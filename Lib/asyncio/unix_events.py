@@ -312,7 +312,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             os.sendfile
         except AttributeError as exc:
-            raise NotImplementedError("os.sendfile() in not available")
+            raise RuntimeError("os.sendfile() in not available")
         socket._check_sendfile_params(sock, file, offset, count)
         fileno, blocksize = socket._prepare_sendfile(file, count)
         if not blocksize:
@@ -353,7 +353,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # one being 'file' is not a regular mmap(2)-like
                 # file, in which case we'll fall back on using
                 # plain send().
-                err = NotImplementedError(exc)
+                err = RuntimeError(exc)
                 self._update_filepos(fileno, offset, total_sent)
                 fut.set_exception(err)
             else:

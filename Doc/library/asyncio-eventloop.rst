@@ -680,7 +680,7 @@ Low-level socket operations
 
    The socket *sock* must be non-blocking.
 
-   Raise :exc:`NotImplementedError` if the system does not support
+   Raise :exc:`RuntimeError` if the system does not support
    *sendfile* syscall.
 
    .. versionadded:: 3.7

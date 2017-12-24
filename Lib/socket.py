@@ -145,11 +145,11 @@ def _prepare_sendfile(file, count):
     try:
         fileno = file.fileno()
     except (AttributeError, io.UnsupportedOperation) as err:
-        raise NotImplementedError(err)  # not a regular file
+        raise RuntimeError(err)  # not a regular file
     try:
         fsize = os.fstat(fileno).st_size
     except OSError as err:
-        raise NotImplementedError(err)  # not a regular file
+        raise RuntimeError(err)  # not a regular file
     if count:
         return fileno, count
     else:
@@ -326,7 +326,7 @@ class socket(_socket.socket):
                             # one being 'file' is not a regular mmap(2)-like
                             # file, in which case we'll fall back on using
                             # plain send().
-                            raise NotImplementedError(err)
+                            raise RuntimeError(err)
                         raise err from None
                     else:
                         if sent == 0:
@@ -339,7 +339,7 @@ class socket(_socket.socket):
                     file.seek(offset)
     else:
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
-            raise NotImplementedError(
+            raise RuntimeError(
                 "os.sendfile() not available on this platform")
 
     def _sendfile_use_send(self, file, offset=0, count=None):
@@ -398,7 +398,7 @@ class socket(_socket.socket):
         """
         try:
             return self._sendfile_use_sendfile(file, offset, count)
-        except NotImplementedError:
+        except RuntimeError:
             return self._sendfile_use_send(file, offset, count)
 
     def _decref_socketios(self):
