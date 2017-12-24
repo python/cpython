@@ -1629,7 +1629,7 @@ class GeneralModuleTests(unittest.TestCase):
         with socket.socket() as sock:
             fd = os.open(os.curdir, os.O_RDONLY)
             os.close(fd)
-            with self.assertRaises(socket._GiveupOnSendfile):
+            with self.assertRaises(NotImplementedError):
                 sock._sendfile_use_sendfile(File(fd))
             with self.assertRaises(OverflowError):
                 sock._sendfile_use_sendfile(File(2**1000))
@@ -5401,7 +5401,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
             sent = sock.sendfile(file)
             self.assertEqual(sent, self.FILESIZE)
             self.assertEqual(file.tell(), self.FILESIZE)
-            self.assertRaises(socket._GiveupOnSendfile,
+            self.assertRaises(NotImplementedError,
                               sock._sendfile_use_sendfile, file)
 
     def testNonRegularFile(self):

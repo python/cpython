@@ -141,9 +141,6 @@ def _check_sendfile_params(sock, file, offset, count):
                 "count must be a positive integer (got {!r})".format(count))
 
 
-class _GiveupOnSendfile(Exception): pass
-
-
 class socket(_socket.socket):
 
     """A subclass of _socket.socket adding the makefile() method."""
@@ -275,11 +272,11 @@ class socket(_socket.socket):
             try:
                 fileno = file.fileno()
             except (AttributeError, io.UnsupportedOperation) as err:
-                raise _GiveupOnSendfile(err)  # not a regular file
+                raise NotImplementedError(err)  # not a regular file
             try:
                 fsize = os.fstat(fileno).st_size
             except OSError as err:
-                raise _GiveupOnSendfile(err)  # not a regular file
+                raise NotImplementedError(err)  # not a regular file
             if not fsize:
                 return 0  # empty file
             blocksize = fsize if not count else count
@@ -322,7 +319,7 @@ class socket(_socket.socket):
                             # one being 'file' is not a regular mmap(2)-like
                             # file, in which case we'll fall back on using
                             # plain send().
-                            raise _GiveupOnSendfile(err)
+                            raise NotImplementedError(err)
                         raise err from None
                     else:
                         if sent == 0:
@@ -335,7 +332,7 @@ class socket(_socket.socket):
                     file.seek(offset)
     else:
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
-            raise _GiveupOnSendfile(
+            raise NotImplementedError(
                 "os.sendfile() not available on this platform")
 
     def _sendfile_use_send(self, file, offset=0, count=None):
@@ -394,7 +391,7 @@ class socket(_socket.socket):
         """
         try:
             return self._sendfile_use_sendfile(file, offset, count)
-        except _GiveupOnSendfile:
+        except NotImplementedError:
             return self._sendfile_use_send(file, offset, count)
 
     def _decref_socketios(self):
