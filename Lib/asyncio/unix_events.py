@@ -313,7 +313,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             os.sendfile
         except AttributeError as exc:
             raise events.SendfileUnsupportedError(exc)
-        self._check_sendfile_params(sock, file, offset, count)
+        socket._check_sendfile_params(sock, file, offset, count)
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as exc:
@@ -384,20 +384,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _update_filepos(self, file, offset, total_sent):
         if total_sent > 0 and hasattr(file, 'seek'):
             file.seek(offset)
-
-    def _check_sendfile_params(self, sock, file, offset, count):
-        if 'b' not in getattr(file, 'mode', 'b'):
-            raise ValueError("file should be opened in binary mode")
-        if not sock.type & socket.SOCK_STREAM:
-            raise ValueError("only SOCK_STREAM type sockets are supported")
-        if count is not None:
-            if not isinstance(count, int):
-                raise TypeError(
-                    "count must be a positive integer (got {!r})".format(count))
-            if count <= 0:
-                raise ValueError(
-                    "count must be a positive integer (got {!r})".format(count))
-
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):

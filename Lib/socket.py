@@ -127,6 +127,20 @@ if sys.platform.lower().startswith("win"):
     __all__.append("errorTab")
 
 
+def _check_sendfile_params(sock, file, offset, count):
+    if 'b' not in getattr(file, 'mode', 'b'):
+        raise ValueError("file should be opened in binary mode")
+    if not sock.type & SOCK_STREAM:
+        raise ValueError("only SOCK_STREAM type sockets are supported")
+    if count is not None:
+        if not isinstance(count, int):
+            raise TypeError(
+                "count must be a positive integer (got {!r})".format(count))
+        if count <= 0:
+            raise ValueError(
+                "count must be a positive integer (got {!r})".format(count))
+
+
 class _GiveupOnSendfile(Exception): pass
 
 
@@ -256,7 +270,7 @@ class socket(_socket.socket):
     if hasattr(os, 'sendfile'):
 
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
-            self._check_sendfile_params(file, offset, count)
+            _check_sendfile_params(self, file, offset, count)
             sockno = self.fileno()
             try:
                 fileno = file.fileno()
@@ -325,7 +339,7 @@ class socket(_socket.socket):
                 "os.sendfile() not available on this platform")
 
     def _sendfile_use_send(self, file, offset=0, count=None):
-        self._check_sendfile_params(file, offset, count)
+        _check_sendfile_params(self, file, offset, count)
         if self.gettimeout() == 0:
             raise ValueError("non-blocking sockets are not supported")
         if offset:
@@ -359,19 +373,6 @@ class socket(_socket.socket):
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + total_sent)
-
-    def _check_sendfile_params(self, file, offset, count):
-        if 'b' not in getattr(file, 'mode', 'b'):
-            raise ValueError("file should be opened in binary mode")
-        if not self.type & SOCK_STREAM:
-            raise ValueError("only SOCK_STREAM type sockets are supported")
-        if count is not None:
-            if not isinstance(count, int):
-                raise TypeError(
-                    "count must be a positive integer (got {!r})".format(count))
-            if count <= 0:
-                raise ValueError(
-                    "count must be a positive integer (got {!r})".format(count))
 
     def sendfile(self, file, offset=0, count=None):
         """sendfile(file[, offset[, count]]) -> sent
