@@ -686,6 +686,32 @@ class JumpTestCase(unittest.TestCase):
                 output.append(8)
             output.append(9)
 
+    @jump_test(6, 7, [2, 7], (ZeroDivisionError, ''))
+    def test_jump_in_nested_finally_2(output):
+        try:
+            output.append(2)
+            1/0
+            return
+        finally:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
+    @jump_test(6, 11, [2, 11], (ZeroDivisionError, ''))
+    def test_jump_in_nested_finally_3(output):
+        try:
+            output.append(2)
+            1/0
+            return
+        finally:
+            output.append(6)
+            try:
+                output.append(8)
+            finally:
+                output.append(10)
+            output.append(11)
+        output.append(12)
+
     @jump_test(3, 4, [1, 4])
     def test_jump_infinite_while_loop(output):
         output.append(1)
@@ -759,6 +785,57 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
             output.append(6)
         output.append(7)
+
+    @jump_test(8, 11, [1, 3, 5, 11, 12])
+    def test_jump_out_of_complex_nested_blocks(output):
+        output.append(1)
+        for i in [1]:
+            output.append(3)
+            for j in [1, 2]:
+                output.append(5)
+                try:
+                    for k in [1, 2]:
+                        output.append(8)
+                finally:
+                    output.append(10)
+            output.append(11)
+        output.append(12)
+
+    @jump_test(3, 5, [1, 2, 5])
+    def test_jump_out_of_with_assignment(output):
+        output.append(1)
+        with tracecontext(output, 2) \
+                as x:
+            output.append(4)
+        output.append(5)
+
+    @jump_test(3, 6, [1, 6, 8, 9])
+    def test_jump_over_return_in_try_finally_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+            if not output: # always false
+                return
+            output.append(6)
+        finally:
+            output.append(8)
+        output.append(9)
+
+    @jump_test(5, 8, [1, 3, 8, 10, 11, 13])
+    def test_jump_over_break_in_try_finally_block(output):
+        output.append(1)
+        while True:
+            output.append(3)
+            try:
+                output.append(5)
+                if not output: # always false
+                    break
+                output.append(8)
+            finally:
+                output.append(10)
+            output.append(11)
+            break
+        output.append(13)
 
     # The second set of 'jump' tests are for things that are not allowed:
 
