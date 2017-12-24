@@ -187,6 +187,8 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case JUMP_ABSOLUTE:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
+            case SETUP_WITH:
+            case SETUP_ASYNC_WITH:
             case CALL_FINALLY:
                 j = GETJUMPTGT(code, i);
                 assert(j < len);
@@ -377,6 +379,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case JUMP_ABSOLUTE:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
+            case SETUP_WITH:
+            case SETUP_ASYNC_WITH:
             case CALL_FINALLY:
                 h = GETJUMPTGT(codestr, i);
                 tgt = find_op(codestr, h);
@@ -459,6 +463,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case JUMP_FORWARD:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
+            case SETUP_WITH:
+            case SETUP_ASYNC_WITH:
             case CALL_FINALLY:
                 j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;
                 j *= sizeof(_Py_CODEUNIT);

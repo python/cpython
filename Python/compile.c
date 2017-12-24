@@ -959,8 +959,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
 
         /* Exception handling */
-        case ENTER_WITH:
-            return 1;
+        case SETUP_WITH:
+            return 7;
         case WITH_CLEANUP_START:
             return 2;
         case WITH_CLEANUP_FINISH:
@@ -1050,6 +1050,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         /* Iterators and generators */
         case GET_AWAITABLE:
             return 0;
+        case SETUP_ASYNC_WITH:
+            return 6;
         case BEFORE_ASYNC_WITH:
             return 1;
         case GET_AITER:
@@ -4296,15 +4298,14 @@ expr_constant(struct compiler *c, expr_ty e)
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final, *exit;
+    basicblock *block, *finally;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
 
     block = compiler_new_block(c);
-    final = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    if (!block || !final || !exit)
+    finally = compiler_new_block(c);
+    if (!block || !finally)
         return 0;
 
     /* Evaluate EXPR */
@@ -4315,6 +4316,14 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
 
+    ADDOP_JREL(c, SETUP_ASYNC_WITH, finally);
+
+    /* SETUP_ASYNC_WITH pushes a finally block. */
+    compiler_use_next_block(c, block);
+    if (!compiler_push_fblock(c, ASYNC_WITH, block, finally)) {
+        return 0;
+    }
+
     if (item->optional_vars) {
         VISIT(c, expr, item->optional_vars);
     }
@@ -4322,11 +4331,6 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     /* Discard result from context.__aenter__() */
         ADDOP(c, POP_TOP);
     }
-
-    ADDOP_JREL(c, SETUP_FINALLY, final);
-    compiler_use_next_block(c, block);
-    if (!compiler_push_fblock(c, ASYNC_WITH, block, final))
-        return 0;
 
     pos++;
     if (pos == asdl_seq_LEN(s->v.AsyncWith.items))
@@ -4340,22 +4344,23 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, ASYNC_WITH, block);
 
-    /* `finally` block: await __exit__(*exc_info) */
-    compiler_use_next_block(c, final);
-    if (!compiler_push_fblock(c, FINALLY_END, final, NULL))
+    compiler_use_next_block(c, finally);
+    if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
         return 0;
 
+    /* Finally block starts; context.__exit__ is on the stack under
+       the exception or return information. Just issue our magic
+       opcode. */
     ADDOP(c, WITH_CLEANUP_START);
+
     ADDOP(c, GET_AWAITABLE);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
+
     ADDOP(c, WITH_CLEANUP_FINISH);
 
-    compiler_pop_fblock(c, FINALLY_END, final);
-    ADDOP_JREL(c, JUMP_FORWARD, exit);
-
-
-    compiler_use_next_block(c, exit);
+    /* Finally block ends. */
+    compiler_pop_fblock(c, FINALLY_END, finally);
     return 1;
 }
 
@@ -4386,21 +4391,25 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final, *exit;
+    basicblock *block, *finally;
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
     block = compiler_new_block(c);
-    final = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    if (!block || !final || !exit)
+    finally = compiler_new_block(c);
+    if (!block || !finally)
         return 0;
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
-    /* Will push bound __exit__ */
-    ADDOP(c, ENTER_WITH);
+    ADDOP_JREL(c, SETUP_WITH, finally);
+
+    /* SETUP_WITH pushes a finally block. */
+    compiler_use_next_block(c, block);
+    if (!compiler_push_fblock(c, WITH, block, finally)) {
+        return 0;
+    }
 
     if (item->optional_vars) {
         VISIT(c, expr, item->optional_vars);
@@ -4410,11 +4419,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         ADDOP(c, POP_TOP);
     }
 
-    ADDOP_JREL(c, SETUP_FINALLY, final);
-    compiler_use_next_block(c, block);
-    if (!compiler_push_fblock(c, WITH, block, final))
-        return 0;
-
     pos++;
     if (pos == asdl_seq_LEN(s->v.With.items))
         /* BLOCK code */
@@ -4422,22 +4426,23 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     else if (!compiler_with(c, s, pos))
             return 0;
 
-    /* End of try block; start the finally blocks */
+    /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
     ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, WITH, block);
 
-    /* `finally` block */
-    compiler_use_next_block(c, final);
-    if (!compiler_push_fblock(c, FINALLY_END, final, NULL))
+    compiler_use_next_block(c, finally);
+    if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
         return 0;
 
+    /* Finally block starts; context.__exit__ is on the stack under
+       the exception or return information. Just issue our magic
+       opcode. */
     ADDOP(c, WITH_CLEANUP_START);
     ADDOP(c, WITH_CLEANUP_FINISH);
-    compiler_pop_fblock(c, FINALLY_END, final);
-    ADDOP_JREL(c, JUMP_FORWARD, exit);
 
-    compiler_use_next_block(c, exit);
+    /* Finally block ends. */
+    compiler_pop_fblock(c, FINALLY_END, finally);
     return 1;
 }
 

@@ -1684,6 +1684,9 @@ main_loop:
 
         TARGET(RETURN_VALUE) {
             retval = POP();
+            if (f->f_iblock != 0) {
+                fprintf(stderr, "f->f_iblock = %d\n", f->f_iblock);
+            }
             assert(f->f_iblock == 0);
             goto return_or_yield;
         }
@@ -2909,19 +2912,19 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(SETUP_WITH)
         TARGET(SETUP_ASYNC_WITH) {
-            PyErr_SetNone(PyExc_SystemError);
-            goto error;
+            PyObject *res = POP();
+            /* Setup the finally block before pushing the result
+               of __aenter__ on the stack. */
+            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+                               STACK_LEVEL());
+            PUSH(res);
+            DISPATCH();
         }
 
-        TARGET(ENTER_WITH) {
-            /* Replace TOP with TOP.__exit__ and push the result
-             * of calling TOP.__enter__()
-             */
+        TARGET(SETUP_WITH) {
             _Py_IDENTIFIER(__exit__);
             _Py_IDENTIFIER(__enter__);
-
             PyObject *mgr = TOP();
             PyObject *enter = special_lookup(mgr, &PyId___enter__), *exit;
             PyObject *res;
@@ -2938,6 +2941,11 @@ main_loop:
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;
+            /* Setup the finally block before pushing the result
+               of __enter__ on the stack. */
+            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+                               STACK_LEVEL());
+
             PUSH(res);
             DISPATCH();
         }
