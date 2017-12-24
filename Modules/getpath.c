@@ -140,13 +140,13 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
     char *fname;
-    fname = Py_EncodeLocale(path, NULL);
+    fname = _Py_EncodeLocaleRaw(path, NULL);
     if (fname == NULL) {
         errno = EINVAL;
         return -1;
     }
     err = stat(fname, buf);
-    PyMem_Free(fname);
+    PyMem_RawFree(fname);
     return err;
 }
 
@@ -293,62 +293,6 @@ absolutize(wchar_t *path)
     }
     copy_absolute(buffer, path, MAXPATHLEN+1);
     wcscpy(path, buffer);
-}
-
-
-/* search for a prefix value in an environment file. If found, copy it
-   to the provided buffer, which is expected to be no more than MAXPATHLEN
-   bytes long.
-*/
-static int
-find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
-{
-    int result = 0; /* meaning not found */
-    char buffer[MAXPATHLEN*2+1];  /* allow extra for key, '=', etc. */
-
-    fseek(env_file, 0, SEEK_SET);
-    while (!feof(env_file)) {
-        char * p = fgets(buffer, MAXPATHLEN*2, env_file);
-        wchar_t tmpbuffer[MAXPATHLEN*2+1];
-        PyObject * decoded;
-        int n;
-
-        if (p == NULL) {
-            break;
-        }
-        n = strlen(p);
-        if (p[n - 1] != '\n') {
-            /* line has overflowed - bail */
-            break;
-        }
-        if (p[0] == '#') {
-            /* Comment - skip */
-            continue;
-        }
-        decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
-        if (decoded != NULL) {
-            Py_ssize_t k;
-            wchar_t * state;
-            k = PyUnicode_AsWideChar(decoded,
-                                     tmpbuffer, MAXPATHLEN * 2);
-            Py_DECREF(decoded);
-            if (k >= 0) {
-                wchar_t * tok = wcstok(tmpbuffer, L" \t\r\n", &state);
-                if ((tok != NULL) && !wcscmp(tok, key)) {
-                    tok = wcstok(NULL, L" \t", &state);
-                    if ((tok != NULL) && !wcscmp(tok, L"=")) {
-                        tok = wcstok(NULL, L"\r\n", &state);
-                        if (tok != NULL) {
-                            wcsncpy(value, tok, MAXPATHLEN);
-                            result = 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return result;
 }
 
 
@@ -501,24 +445,17 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
         }
         else {
             char buf[MAXPATHLEN+1];
-            PyObject *decoded;
-            wchar_t rel_builddir_path[MAXPATHLEN+1];
+            wchar_t *rel_builddir_path;
             n = fread(buf, 1, MAXPATHLEN, f);
             buf[n] = '\0';
             fclose(f);
-            decoded = PyUnicode_DecodeUTF8(buf, n, "surrogateescape");
-            if (decoded != NULL) {
-                Py_ssize_t k;
-                k = PyUnicode_AsWideChar(decoded,
-                                         rel_builddir_path, MAXPATHLEN);
-                Py_DECREF(decoded);
-                if (k >= 0) {
-                    rel_builddir_path[k] = L'\0';
-                    wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
-                    exec_prefix[MAXPATHLEN] = L'\0';
-                    joinpath(exec_prefix, rel_builddir_path);
-                    return -1;
-                }
+            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n, NULL);
+            if (rel_builddir_path != NULL) {
+                wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
+                exec_prefix[MAXPATHLEN] = L'\0';
+                joinpath(exec_prefix, rel_builddir_path);
+                PyMem_RawFree(rel_builddir_path );
+                return -1;
             }
         }
     }
@@ -784,7 +721,7 @@ calculate_read_pyenv(PyCalculatePath *calculate)
     }
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
-    if (find_env_config_value(env_file, L"home", tmpbuffer)) {
+    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, MAXPATHLEN)) {
         wcscpy(calculate->argv0_path, tmpbuffer);
     }
     fclose(env_file);

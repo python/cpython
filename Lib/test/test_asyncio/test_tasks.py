@@ -141,6 +141,7 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertEqual(t.result(), 'ok')
         self.assertIs(t._loop, self.loop)
+        self.assertIs(t.get_loop(), self.loop)
 
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
@@ -2301,19 +2302,64 @@ class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
         pass
 
 
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class CTask_Future_Tests(test_utils.TestCase):
+
+    def test_foobar(self):
+        class Fut(asyncio.Future):
+            @property
+            def get_loop(self):
+                raise AttributeError
+
+        async def coro():
+            await fut
+            return 'spam'
+
+        self.loop = asyncio.new_event_loop()
+        try:
+            fut = Fut(loop=self.loop)
+            self.loop.call_later(0.1, fut.set_result(1))
+            task = asyncio.Task(coro(), loop=self.loop)
+            res = self.loop.run_until_complete(task)
+        finally:
+            self.loop.close()
+
+        self.assertEqual(res, 'spam')
+
+
 class BaseTaskIntrospectionTests:
     _register_task = None
     _unregister_task = None
     _enter_task = None
     _leave_task = None
 
-    def test__register_task(self):
-        task = mock.Mock()
+    def test__register_task_1(self):
+        class TaskLike:
+            @property
+            def _loop(self):
+                return loop
+
+        task = TaskLike()
         loop = mock.Mock()
+
         self.assertEqual(asyncio.all_tasks(loop), set())
-        self._register_task(loop, task)
+        self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), {task})
-        self._unregister_task(loop, task)
+        self._unregister_task(task)
+
+    def test__register_task_2(self):
+        class TaskLike:
+            def get_loop(self):
+                return loop
+
+        task = TaskLike()
+        loop = mock.Mock()
+
+        self.assertEqual(asyncio.all_tasks(loop), set())
+        self._register_task(task)
+        self.assertEqual(asyncio.all_tasks(loop), {task})
+        self._unregister_task(task)
 
     def test__enter_task(self):
         task = mock.Mock()
@@ -2360,14 +2406,15 @@ class BaseTaskIntrospectionTests:
     def test__unregister_task(self):
         task = mock.Mock()
         loop = mock.Mock()
-        self._register_task(loop, task)
-        self._unregister_task(loop, task)
+        task.get_loop = lambda: loop
+        self._register_task(task)
+        self._unregister_task(task)
         self.assertEqual(asyncio.all_tasks(loop), set())
 
     def test__unregister_task_not_registered(self):
         task = mock.Mock()
         loop = mock.Mock()
-        self._unregister_task(loop, task)
+        self._unregister_task(task)
         self.assertEqual(asyncio.all_tasks(loop), set())
 
 

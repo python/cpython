@@ -66,6 +66,20 @@ def _test_get_event_loop_new_process__sub_proc():
     return loop.run_until_complete(doit())
 
 
+class CoroLike:
+    def send(self, v):
+        pass
+
+    def throw(self, *exc):
+        pass
+
+    def close(self):
+        pass
+
+    def __await__(self):
+        pass
+
+
 ONLYCERT = data_file('ssl_cert.pem')
 ONLYKEY = data_file('ssl_key.pem')
 SIGNED_CERTFILE = data_file('keycert3.pem')
@@ -1829,12 +1843,16 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.call_at(self.loop.time() + .0, func)
         with self.assertRaises(RuntimeError):
-            self.loop.run_until_complete(
-                self.loop.run_in_executor(None, func))
-        with self.assertRaises(RuntimeError):
             self.loop.create_task(coro)
         with self.assertRaises(RuntimeError):
             self.loop.add_signal_handler(signal.SIGTERM, func)
+
+        # run_in_executor test is tricky: the method is a coroutine,
+        # but run_until_complete cannot be called on closed loop.
+        # Thus iterate once explicitly.
+        with self.assertRaises(RuntimeError):
+            it = self.loop.run_in_executor(None, func).__await__()
+            next(it)
 
 
 class SubprocessTestsMixin:
@@ -2365,20 +2383,7 @@ class HandleTests(test_utils.TestCase):
         # collections.abc.Coroutine, but lack cr_core or gi_code attributes
         # (such as ones compiled with Cython).
 
-        class Coro:
-            def send(self, v):
-                pass
-
-            def throw(self, *exc):
-                pass
-
-            def close(self):
-                pass
-
-            def __await__(self):
-                pass
-
-        coro = Coro()
+        coro = CoroLike()
         coro.__name__ = 'AAA'
         self.assertTrue(asyncio.iscoroutine(coro))
         self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
@@ -2389,10 +2394,10 @@ class HandleTests(test_utils.TestCase):
         coro.cr_running = True
         self.assertEqual(coroutines._format_coroutine(coro), 'BBB() running')
 
-        coro = Coro()
+        coro = CoroLike()
         # Some coroutines might not have '__name__', such as
         # built-in async_gen.asend().
-        self.assertEqual(coroutines._format_coroutine(coro), 'Coro()')
+        self.assertEqual(coroutines._format_coroutine(coro), 'CoroLike()')
 
 
 class TimerTests(unittest.TestCase):

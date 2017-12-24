@@ -118,6 +118,11 @@ PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
 PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(const _PyCoreConfig *core_config);
 PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv);
+PyAPI_FUNC(int) _Py_FindEnvConfigValue(
+    FILE *env_file,
+    const wchar_t *key,
+    wchar_t *value,
+    size_t value_size);
 #endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
