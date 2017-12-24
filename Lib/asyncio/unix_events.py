@@ -312,8 +312,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             os.sendfile
         except AttributeError as exc:
-            raise NotImplementedError("os.sendfile() in not supported by "
-                                      "Operation System")
+            raise NotImplementedError("os.sendfile() in not available")
         socket._check_sendfile_params(sock, file, offset, count)
         fileno, blocksize = socket._prepare_sendfile(file, count)
         if not blocksize:
