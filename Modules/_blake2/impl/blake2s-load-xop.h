@@ -18,8 +18,9 @@
 
 #define TOB(x) ((x)*4*0x01010101 + 0x03020100) /* ..or not TOB */
 
+#if 0
 /* Basic VPPERM emulation, for testing purposes */
-/*static __m128i _mm_perm_epi8(const __m128i src1, const __m128i src2, const __m128i sel)
+static __m128i _mm_perm_epi8(const __m128i src1, const __m128i src2, const __m128i sel)
 {
    const __m128i sixteen = _mm_set1_epi8(16);
    const __m128i t0 = _mm_shuffle_epi8(src1, sel);
@@ -27,7 +28,8 @@
    const __m128i mask = _mm_or_si128(_mm_cmpeq_epi8(sel, sixteen),
                                      _mm_cmpgt_epi8(sel, sixteen)); /* (>=16) = 0xff : 00 */
    return _mm_blendv_epi8(t0, s1, mask);
-}*/
+}
+#endif
 
 #define LOAD_MSG_0_1(buf) \
 buf = _mm_perm_epi8(m0, m1, _mm_set_epi32(TOB(6),TOB(4),TOB(2),TOB(0)) );

@@ -1,8 +1,38 @@
-/* Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
-   See the file COPYING for copying permission.
+/*
+                            __  __            _
+                         ___\ \/ /_ __   __ _| |_
+                        / _ \\  /| '_ \ / _` | __|
+                       |  __//  \| |_) | (_| | |_
+                        \___/_/\_\ .__/ \__,_|\__|
+                                 |_| XML parser
+
+   Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
+   Copyright (c) 2000-2017 Expat development team
+   Licensed under the MIT license:
+
+   Permission is  hereby granted,  free of charge,  to any  person obtaining
+   a  copy  of  this  software   and  associated  documentation  files  (the
+   "Software"),  to  deal in  the  Software  without restriction,  including
+   without  limitation the  rights  to use,  copy,  modify, merge,  publish,
+   distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons  to whom  the Software  is  furnished to  do so,  subject to  the
+   following conditions:
+
+   The above copyright  notice and this permission notice  shall be included
+   in all copies or substantial portions of the Software.
+
+   THE  SOFTWARE  IS  PROVIDED  "AS  IS",  WITHOUT  WARRANTY  OF  ANY  KIND,
+   EXPRESS  OR IMPLIED,  INCLUDING  BUT  NOT LIMITED  TO  THE WARRANTIES  OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE AUTHORS OR  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <stddef.h>
+#include <stdbool.h>
+#include <string.h>  // memcpy
 
 #ifdef _WIN32
 #include "winconfig.h"
@@ -363,22 +393,33 @@ utf8_toUtf8(const ENCODING *UNUSED_P(enc),
             const char **fromP, const char *fromLim,
             char **toP, const char *toLim)
 {
-  char *to;
-  const char *from;
-  const char *fromLimInitial = fromLim;
+  bool input_incomplete = false;
+  bool output_exhausted = false;
 
-  /* Avoid copying partial characters. */
+  /* Avoid copying partial characters (due to limited space). */
+  const ptrdiff_t bytesAvailable = fromLim - *fromP;
+  const ptrdiff_t bytesStorable = toLim - *toP;
+  if (bytesAvailable > bytesStorable) {
+    fromLim = *fromP + bytesStorable;
+    output_exhausted = true;
+  }
+
+  /* Avoid copying partial characters (from incomplete input). */
+  const char * const fromLimBefore = fromLim;
   align_limit_to_full_utf8_characters(*fromP, &fromLim);
+  if (fromLim < fromLimBefore) {
+    input_incomplete = true;
+  }
 
-  for (to = *toP, from = *fromP; (from < fromLim) && (to < toLim); from++, to++)
-    *to = *from;
-  *fromP = from;
-  *toP = to;
+  const ptrdiff_t bytesToCopy = fromLim - *fromP;
+  memcpy((void *)*toP, (const void *)*fromP, (size_t)bytesToCopy);
+  *fromP += bytesToCopy;
+  *toP += bytesToCopy;
 
-  if (fromLim < fromLimInitial)
-    return XML_CONVERT_INPUT_INCOMPLETE;
-  else if ((to == toLim) && (from < fromLim))
+  if (output_exhausted)  // needs to go first
     return XML_CONVERT_OUTPUT_EXHAUSTED;
+  else if (input_incomplete)
+    return XML_CONVERT_INPUT_INCOMPLETE;
   else
     return XML_CONVERT_COMPLETED;
 }

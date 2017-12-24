@@ -32,7 +32,7 @@ generically as an :term:`importer`) to participate in the import process.
     :ref:`import`
         The language reference for the :keyword:`import` statement.
 
-    `Packages specification <http://legacy.python.org/doc/essays/packages.html>`__
+    `Packages specification <https://www.python.org/doc/essays/packages/>`__
         Original specification of packages. Some semantics have changed since
         the writing of this document (e.g. redirecting based on ``None``
         in :data:`sys.modules`).
@@ -66,6 +66,9 @@ generically as an :term:`importer`) to participate in the import process.
 
     :pep:`489`
         Multi-phase extension module initialization
+
+    :pep:`552`
+        Deterministic pycs
 
     :pep:`3120`
         Using UTF-8 as the Default Source Encoding
@@ -230,6 +233,7 @@ ABC hierarchy::
      |    +-- MetaPathFinder
      |    +-- PathEntryFinder
      +-- Loader
+          +-- ResourceReader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
                +-- ExecutionLoader --+
@@ -463,6 +467,71 @@ ABC hierarchy::
 
         .. deprecated:: 3.4
            The import machinery now takes care of this automatically.
+
+
+.. class:: ResourceReader
+
+    An :term:`abstract base class` for :term:`package`
+    :term:`loaders <loader>` to provide the ability to read
+    *resources*.
+
+    From the perspective of this ABC, a *resource* is a binary
+    artifact that is shipped within a package. Typically this is
+    something like a data file that lives next to the ``__init__.py``
+    file of the package. The purpose of this class is to help abstract
+    out the accessing of such data files so that it does not matter if
+    the package and its data file(s) are stored in a e.g. zip file
+    versus on the file system.
+
+    For any of methods of this class, a *resource* argument is
+    expected to be a :term:`file-like object` which represents
+    conceptually just a file name. This means that no subdirectory
+    paths should be included in the *resource* argument. This is
+    because the location of the package that the loader is for acts
+    as the "directory". Hence the metaphor for directories and file
+    names is packages and resources, respectively. This is also why
+    instances of this class are expected to directly correlate to
+    a specific package (instead of potentially representing multiple
+    packages or a module).
+
+    .. versionadded:: 3.7
+
+    .. abstractmethod:: open_resource(resource)
+
+        Returns an opened, :term:`file-like object` for binary reading
+        of the *resource*.
+
+        If the resource cannot be found, :exc:`FileNotFoundError` is
+        raised.
+
+    .. abstractmethod:: resource_path(resource)
+
+        Returns the file system path to the *resource*.
+
+        If the resource does not concretely exist on the file system,
+        raise :exc:`FileNotFoundError`.
+
+    .. abstractmethod:: is_resource(name)
+
+        Returns ``True`` if the named *name* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *name* does not exist.
+
+    .. abstractmethod:: contents()
+
+        Returns an :term:`iterator` of strings over the contents of
+        the package. Do note that it is not required that all names
+        returned by the iterator be actual resources, e.g. it is
+        acceptable to return names for which :meth:`is_resource` would
+        be false.
+
+        Allowing non-resource names to be returned is to allow for
+        situations where how a package and its resources are stored
+        are known a priori and the non-resource names would be useful.
+        For instance, returning subdirectory names is allowed so that
+        when it is known that the package and resources are stored on
+        the file system then those subdirectory names can be used.
+
+        The abstract method returns an empty iterator.
 
 
 .. class:: ResourceLoader
@@ -1048,7 +1117,15 @@ find and load modules.
 
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
-   A specification for a module's import-system-related state.
+   A specification for a module's import-system-related state.  This is
+   typically exposed as the module's ``__spec__`` attribute.  In the
+   descriptions below, the names in parentheses give the corresponding
+   attribute available directly on the module object.
+   E.g. ``module.__spec__.origin == module.__file__``.  Note however that
+   while the *values* are usually equivalent, they can differ since there is
+   no synchronization between the two objects.  Thus it is possible to update
+   the module's ``__path__`` at runtime, and this will not be automatically
+   reflected in ``__spec__.submodule_search_locations``.
 
    .. versionadded:: 3.4
 
@@ -1318,6 +1395,14 @@ an :term:`importer`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+.. function:: source_hash(source_bytes)
+
+   Return the hash of *source_bytes* as bytes. A hash-based ``.pyc`` file embeds
+   the :func:`source_hash` of the corresponding source file's contents in its
+   header.
+
+   .. versionadded:: 3.7
 
 .. class:: LazyLoader(loader)
 

@@ -22,12 +22,13 @@ import urllib.parse
 import tempfile
 import time
 import datetime
+import threading
 from unittest import mock
 from io import BytesIO
 
 import unittest
 from test import support
-threading = support.import_module('threading')
+
 
 class NoLogRequestHandler:
     def log_message(self, *args):
@@ -56,6 +57,7 @@ class TestServerThread(threading.Thread):
 
     def stop(self):
         self.server.shutdown()
+        self.join()
 
 
 class BaseTestCase(unittest.TestCase):
@@ -382,7 +384,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         reader.close()
         return body
 
-    @support.requires_mac_ver(10, 5)
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'undecodable name cannot always be decoded on macOS')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
     @unittest.skipUnless(support.TESTFN_UNDECODABLE,

@@ -2335,8 +2335,6 @@ features:
       * the time of creation on Windows, expressed in nanoseconds as an
         integer.
 
-   See also the :func:`stat_float_times` function.
-
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
@@ -2431,33 +2429,6 @@ features:
       Added the :attr:`st_file_attributes` member on Windows.
 
 
-.. function:: stat_float_times([newvalue])
-
-   Determine whether :class:`stat_result` represents time stamps as float objects.
-   If *newvalue* is ``True``, future calls to :func:`~os.stat` return floats, if it is
-   ``False``, future calls return ints. If *newvalue* is omitted, return the
-   current setting.
-
-   For compatibility with older Python versions, accessing :class:`stat_result` as
-   a tuple always returns integers.
-
-   Python now returns float values by default. Applications which do not work
-   correctly with floating point time stamps can use this function to restore the
-   old behaviour.
-
-   The resolution of the timestamps (that is the smallest possible fraction)
-   depends on the system. Some systems only support second resolution; on these
-   systems, the fraction will always be zero.
-
-   It is recommended that this setting is only changed at program startup time in
-   the *__main__* module; libraries should never change this setting. If an
-   application uses a library that works incorrectly if floating point time stamps
-   are processed, this application should turn the feature off until the library
-   has been corrected.
-
-   .. deprecated:: 3.3
-
-
 .. function:: statvfs(path)
 
    Perform a :c:func:`statvfs` system call on the given path.  The return value is
@@ -2465,7 +2436,7 @@ features:
    correspond to the members of the :c:type:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
-   :attr:`f_flag`, :attr:`f_namemax`.
+   :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
 
    Two module-level constants are defined for the :attr:`f_flag` attribute's
    bit-flags: if :const:`ST_RDONLY` is set, the filesystem is mounted
@@ -2499,6 +2470,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionadded:: 3.7
+      Added :attr:`f_fsid`.
 
 
 .. data:: supports_dir_fd

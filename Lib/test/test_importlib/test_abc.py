@@ -305,6 +305,45 @@ class ExecutionLoaderDefaultsTests(ABCTestHarness):
  ) = test_util.test_both(InspectLoaderDefaultsTests)
 
 
+class ResourceReader:
+
+    def open_resource(self, *args, **kwargs):
+        return super().open_resource(*args, **kwargs)
+
+    def resource_path(self, *args, **kwargs):
+        return super().resource_path(*args, **kwargs)
+
+    def is_resource(self, *args, **kwargs):
+        return super().is_resource(*args, **kwargs)
+
+    def contents(self, *args, **kwargs):
+        return super().contents(*args, **kwargs)
+
+
+class ResourceReaderDefaultsTests(ABCTestHarness):
+
+    SPLIT = make_abc_subclasses(ResourceReader)
+
+    def test_open_resource(self):
+        with self.assertRaises(FileNotFoundError):
+            self.ins.open_resource('dummy_file')
+
+    def test_resource_path(self):
+        with self.assertRaises(FileNotFoundError):
+            self.ins.resource_path('dummy_file')
+
+    def test_is_resource(self):
+        with self.assertRaises(FileNotFoundError):
+            self.ins.is_resource('dummy_file')
+
+    def test_contents(self):
+        self.assertEqual([], list(self.ins.contents()))
+
+(Frozen_RRDefaultTests,
+ Source_RRDefaultsTests
+ ) = test_util.test_both(ResourceReaderDefaultsTests)
+
+
 ##### MetaPathFinder concrete methods ##########################################
 class MetaPathFinderFindModuleTests:
 
@@ -673,6 +712,7 @@ class SourceLoader(SourceOnlyLoader):
         if magic is None:
             magic = self.util.MAGIC_NUMBER
         data = bytearray(magic)
+        data.extend(self.init._w_long(0))
         data.extend(self.init._w_long(self.source_mtime))
         data.extend(self.init._w_long(self.source_size))
         code_object = compile(self.source, self.path, 'exec',
@@ -836,6 +876,7 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         if bytecode_written:
             self.assertIn(self.cached, self.loader.written)
             data = bytearray(self.util.MAGIC_NUMBER)
+            data.extend(self.init._w_long(0))
             data.extend(self.init._w_long(self.loader.source_mtime))
             data.extend(self.init._w_long(self.loader.source_size))
             data.extend(marshal.dumps(code_object))

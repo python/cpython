@@ -79,6 +79,15 @@ The following options are understood:
 
    :option:`--main` cannot be specified when copying an archive.
 
+.. cmdoption:: -c, --compress
+
+   Compress files with the deflate method, reducing the size of the output
+   file. By default, files are stored uncompressed in the archive.
+
+   :option:`--compress` has no effect when copying an archive.
+
+   .. versionadded:: 3.7
+
 .. cmdoption:: --info
 
    Display the interpreter embedded in the archive, for diagnostic purposes.  In
@@ -98,8 +107,7 @@ Python API
 The module defines two convenience functions:
 
 
-.. function:: create_archive(source, target=None, interpreter=None, main=None,
-                             include_file=None)
+.. function:: create_archive(source, target=None, interpreter=None, main=None, filter=None, compressed=False)
 
    Create an application archive from *source*.  The source can be any
    of the following:
@@ -144,9 +152,15 @@ The module defines two convenience functions:
    contain a ``__main__.py`` file, as otherwise the resulting archive
    would not be executable.
 
-   The *include_file* argument specifies a callback function that is passed the
-   relative path to the file in order to determine which files to store when
-   being called against a directory.
+   The optional *filter* argument specifies a callback function that
+   is passed a Path object representing the path to the file being added
+   (relative to the source directory).  It should return ``True`` if the
+   file is to be added.
+
+   The optional *compressed* argument determines whether files are
+   compressed.  If set to ``True``, files in the archive are compressed
+   with the deflate method; otherwise, files are stored uncompressed.
+   This argument has no effect when copying an existing archive.
 
    If a file object is specified for *source* or *target*, it is the
    caller's responsibility to close it after calling create_archive.
@@ -156,6 +170,9 @@ The module defines two convenience functions:
    archive from a directory, if the target is a file object it will be
    passed to the ``zipfile.ZipFile`` class, and must supply the methods
    needed by that class.
+
+   .. versionadded:: 3.7
+      Added the *filter* and *compressed* arguments.
 
 .. function:: get_interpreter(archive)
 

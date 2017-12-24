@@ -437,6 +437,11 @@ Supported XPath syntax
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
+| ``[.='text']``        | Selects all elements whose complete text content,    |
+|                       | including descendants, equals the given ``text``.    |
+|                       |                                                      |
+|                       | .. versionadded:: 3.7                                |
++-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
 |                       | descendants, equals the given ``text``.              |

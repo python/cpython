@@ -1,7 +1,65 @@
 """ Test suite for the code in msilib """
+import os.path
 import unittest
-from test.support import import_module
+from test.support import TESTFN, import_module, unlink
 msilib = import_module('msilib')
+import msilib.schema
+
+
+def init_database():
+    path = TESTFN + '.msi'
+    db = msilib.init_database(
+        path,
+        msilib.schema,
+        'Python Tests',
+        'product_code',
+        '1.0',
+        'PSF',
+    )
+    return db, path
+
+
+class MsiDatabaseTestCase(unittest.TestCase):
+
+    def test_view_fetch_returns_none(self):
+        db, db_path = init_database()
+        properties = []
+        view = db.OpenView('SELECT Property, Value FROM Property')
+        view.Execute(None)
+        while True:
+            record = view.Fetch()
+            if record is None:
+                break
+            properties.append(record.GetString(1))
+        view.Close()
+        db.Close()
+        self.assertEqual(
+            properties,
+            [
+                'ProductName', 'ProductCode', 'ProductVersion',
+                'Manufacturer', 'ProductLanguage',
+            ]
+        )
+        self.addCleanup(unlink, db_path)
+
+    def test_database_open_failed(self):
+        with self.assertRaises(msilib.MSIError) as cm:
+            msilib.OpenDatabase('non-existent.msi', msilib.MSIDBOPEN_READONLY)
+        self.assertEqual(str(cm.exception), 'open failed')
+
+    def test_database_create_failed(self):
+        db_path = os.path.join(TESTFN, 'test.msi')
+        with self.assertRaises(msilib.MSIError) as cm:
+            msilib.OpenDatabase(db_path, msilib.MSIDBOPEN_CREATE)
+        self.assertEqual(str(cm.exception), 'create failed')
+
+    def test_get_property_vt_empty(self):
+        db, db_path = init_database()
+        summary = db.GetSummaryInformation(0)
+        self.assertIsNone(summary.GetProperty(msilib.PID_SECURITY))
+        db.Close()
+        self.addCleanup(unlink, db_path)
+
 
 class Test_make_id(unittest.TestCase):
     #http://msdn.microsoft.com/en-us/library/aa369212(v=vs.85).aspx

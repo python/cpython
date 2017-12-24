@@ -267,7 +267,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    should be about 16 or more bytes from a proper source, e.g. :func:`os.urandom`.
 
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
-   factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MB).
+   factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
 
    Availability: OpenSSL 1.1+
@@ -482,7 +482,7 @@ Keyed hashing
 
 Keyed hashing can be used for authentication as a faster and simpler
 replacement for `Hash-based message authentication code
-<http://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
+<https://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
 BLAKE2 can be securely used in prefix-MAC mode thanks to the
 indifferentiability property inherited from BLAKE.
 
@@ -506,18 +506,23 @@ to users and later verify them to make sure they weren't tampered with::
     >>> AUTH_SIZE = 16
     >>>
     >>> def sign(cookie):
-    ...     h = blake2b(data=cookie, digest_size=AUTH_SIZE, key=SECRET_KEY)
-    ...     return h.hexdigest()
+    ...     h = blake2b(digest_size=AUTH_SIZE, key=SECRET_KEY)
+    ...     h.update(cookie)
+    ...     return h.hexdigest().encode('utf-8')
     >>>
-    >>> cookie = b'user:vatrogasac'
+    >>> def verify(cookie, sig):
+    ...     good_sig = sign(cookie)
+    ...     return compare_digest(good_sig, sig)
+    >>>
+    >>> cookie = b'user-alice'
     >>> sig = sign(cookie)
     >>> print("{0},{1}".format(cookie.decode('utf-8'), sig))
-    user:vatrogasac,349cf904533767ed2d755279a8df84d0
-    >>> compare_digest(cookie, sig)
+    user-alice,b'43b3c982cf697e0c5ab22172d1ca7421'
+    >>> verify(cookie, sig)
     True
-    >>> compare_digest(b'user:policajac', sig)
+    >>> verify(b'user-bob', sig)
     False
-    >>> compare_digesty(cookie, '0102030405060708090a0b0c0d0e0f00')
+    >>> verify(cookie, b'0102030405060708090a0b0c0d0e0f00')
     False
 
 Even though there's a native keyed hashing mode, BLAKE2 can, of course, be used
@@ -694,7 +699,7 @@ implementation, extension code, and this documentation:
 
    You should have received a copy of the CC0 Public Domain Dedication along
    with this software. If not, see
-   http://creativecommons.org/publicdomain/zero/1.0/.
+   https://creativecommons.org/publicdomain/zero/1.0/.
 
 The following people have helped with development or contributed their changes
 to the project and the public domain according to the Creative Commons Public

@@ -39,6 +39,7 @@ BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 WrapperDescriptorType = type(object.__init__)
 MethodWrapperType = type(object().__str__)
 MethodDescriptorType = type(str.join)
+ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
 ModuleType = type(sys)
 
@@ -60,10 +61,34 @@ del sys, _f, _g, _C, _c,                           # Not for export
 # Provide a PEP 3115 compliant mechanism for class creation
 def new_class(name, bases=(), kwds=None, exec_body=None):
     """Create a class object dynamically using the appropriate metaclass."""
-    meta, ns, kwds = prepare_class(name, bases, kwds)
+    resolved_bases = resolve_bases(bases)
+    meta, ns, kwds = prepare_class(name, resolved_bases, kwds)
     if exec_body is not None:
         exec_body(ns)
-    return meta(name, bases, ns, **kwds)
+    if resolved_bases is not bases:
+        ns['__orig_bases__'] = bases
+    return meta(name, resolved_bases, ns, **kwds)
+
+def resolve_bases(bases):
+    """Resolve MRO entries dynamically as specified by PEP 560."""
+    new_bases = list(bases)
+    updated = False
+    shift = 0
+    for i, base in enumerate(bases):
+        if isinstance(base, type):
+            continue
+        if not hasattr(base, "__mro_entries__"):
+            continue
+        new_base = base.__mro_entries__(bases)
+        updated = True
+        if not isinstance(new_base, tuple):
+            raise TypeError("__mro_entries__ must return a tuple")
+        else:
+            new_bases[i+shift:i+shift+1] = new_base
+            shift += len(new_base) - 1
+    if not updated:
+        return bases
+    return tuple(new_bases)
 
 def prepare_class(name, bases=(), kwds=None):
     """Call the __prepare__ method of the appropriate metaclass.
@@ -172,9 +197,6 @@ class DynamicClassAttribute:
         return result
 
 
-import functools as _functools
-import collections.abc as _collections_abc
-
 class _GeneratorWrapper:
     # TODO: Implement this in C.
     def __init__(self, gen):
@@ -247,7 +269,10 @@ def coroutine(func):
     # return generator-like objects (for instance generators
     # compiled with Cython).
 
-    @_functools.wraps(func)
+    # Delay functools and _collections_abc import for speeding up types import.
+    import functools
+    import _collections_abc
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
         if (coro.__class__ is CoroutineType or

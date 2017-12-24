@@ -2,6 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 static Py_ssize_t max_module_number;
@@ -161,11 +162,17 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
+    if (!_PyImport_IsInitialized(PyThreadState_GET()->interp))
+        Py_FatalError("Python import machinery not initialized");
+    return _PyModule_CreateInitialized(module, module_api_version);
+}
+
+PyObject *
+_PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
+{
     const char* name;
     PyModuleObject *m;
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
-    if (interp->modules == NULL)
-        Py_FatalError("Python import machinery not initialized");
+
     if (!PyModuleDef_Init(module))
         return NULL;
     name = module->m_name;
@@ -672,21 +679,25 @@ module_repr(PyModuleObject *m)
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
-    PyObject *attr, *mod_name;
+    PyObject *attr, *mod_name, *getattr;
     attr = PyObject_GenericGetAttr((PyObject *)m, name);
-    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError))
+    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return attr;
+    }
     PyErr_Clear();
     if (m->md_dict) {
+        _Py_IDENTIFIER(__getattr__);
+        getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
+        if (getattr) {
+            PyObject* stack[1] = {name};
+            return _PyObject_FastCall(getattr, stack, 1);
+        }
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
-        if (mod_name) {
+        if (mod_name && PyUnicode_Check(mod_name)) {
             PyErr_Format(PyExc_AttributeError,
                         "module '%U' has no attribute '%U'", mod_name, name);
             return NULL;
-        }
-        else if (PyErr_Occurred()) {
-            PyErr_Clear();
         }
     }
     PyErr_Format(PyExc_AttributeError,
@@ -726,8 +737,15 @@ module_dir(PyObject *self, PyObject *args)
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
-        if (PyDict_Check(dict))
-            result = PyDict_Keys(dict);
+        if (PyDict_Check(dict)) {
+            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            if (dirfunc) {
+                result = _PyObject_CallNoArg(dirfunc);
+            }
+            else {
+                result = PyDict_Keys(dict);
+            }
+        }
         else {
             const char *name = PyModule_GetName(self);
             if (name)

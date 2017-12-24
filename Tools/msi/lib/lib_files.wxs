@@ -14,11 +14,11 @@
             <Component Id="sqlite3.dll" Directory="DLLs" Guid="*">
                 <File Name="sqlite3.dll" KeyPath="yes" />
             </Component>
-            <Component Id="libeay32.dll" Directory="DLLs" Guid="*">
-                <File Name="libeay32.dll" KeyPath="yes" />
+            <Component Id="libcrypto.dll" Directory="DLLs" Guid="*">
+                <File Name="libcrypto$(var.ssltag).dll" KeyPath="yes" />
             </Component>
-            <Component Id="ssleay32.dll" Directory="DLLs" Guid="*">
-                <File Name="ssleay32.dll" KeyPath="yes" />
+            <Component Id="libssl.dll" Directory="DLLs" Guid="*">
+                <File Name="libssl$(var.ssltag).dll" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -36,11 +36,11 @@
             <Component Id="sqlite3.pdb" Directory="DLLs" Guid="*">
                 <File Name="sqlite3.pdb" />
             </Component>
-            <Component Id="libeay32.pdb" Directory="DLLs" Guid="*">
-                <File Name="libeay32.pdb" KeyPath="yes" />
+            <Component Id="libcrypto.pdb" Directory="DLLs" Guid="*">
+                <File Name="libcrypto$(var.ssltag).pdb" KeyPath="yes" />
             </Component>
-            <Component Id="ssleay32.pdb" Directory="DLLs" Guid="*">
-                <File Name="ssleay32.pdb" KeyPath="yes" />
+            <Component Id="libssl.pdb" Directory="DLLs" Guid="*">
+                <File Name="libssl$(var.ssltag).pdb" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
