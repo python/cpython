@@ -9288,6 +9288,31 @@ os_WSTOPSIG_impl(PyObject *module, int status)
    needed definitions in sys/statvfs.h */
 #define _SVID3
 #endif
+#if defined(_AIX) && defined(_ALL_SOURCE)
+/*
+ * https://www.gnu.org/software/autoconf/manual/autoconf-2.64/html_node/Posix-Variants.html
+ * describes _ALL_SOURCE as a macro for AIX3
+ * With _ALL_SOURCE undefined the variable name on AIX is the same as
+ * Linux
+/usr/include/bits/typesizes.h:72:#define __FSID_T_TYPE          struct { int __val[2]; }
+ * AIX: /usr/include/sys/types.h
+  +360  / * typedef for the File System Identifier (fsid).  This must correspond
+  +361    * to the "struct fsid" structure in _ALL_SOURCE below.
+  +362    * /
+  +363  typedef struct fsid_t {
+  +364  #ifdef __64BIT_KERNEL
+  +365          unsigned long val[2];
+  +366  #else  / * __64BIT_KERNEL * /
+  +367  #ifdef _ALL_SOURCE
+  +368          unsigned int val[2];
+  +369  #else  / * _ALL_SOURCE * /
+  +370          unsigned int __val[2];
+  +371  #endif / * _ALL_SOURCE * /
+  +372  #endif / * __64BIT_KERNEL * /
+  +373  } fsid_t;
+ */
+#undef _ALL_SOURCE
+#endif
 #include <sys/statvfs.h>
 
 static PyObject*
@@ -9325,11 +9350,7 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
-#ifndef _AIX
     PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
-#else
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
-#endif
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;

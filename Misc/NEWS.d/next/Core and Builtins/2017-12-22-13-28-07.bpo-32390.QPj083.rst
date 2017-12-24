@@ -1,2 +1,4 @@
-Correct compiler syntax error on AIX for st.f_fsid addition
+Fix os.statvfs(path) on AIX
+when _ALL_SOURCE is defined f_fsid member of the statvfs structure is a structure instead of unsigned long.
+when _ALL_SOURCE is not defined f_fsid member of the statvfs structure is nearly identical to Linux
 Error message: 1506-280 (S) Function argument assignment between types "unsigned long" and "struct fsid_t" is not allowed.
