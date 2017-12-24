@@ -1683,9 +1683,6 @@ main_loop:
 
         TARGET(RETURN_VALUE) {
             retval = POP();
-            if (f->f_iblock != 0) {
-                fprintf(stderr, "f->f_iblock = %d\n", f->f_iblock);
-            }
             assert(f->f_iblock == 0);
             goto return_or_yield;
         }
