@@ -1,0 +1,2 @@
+Make ``csv.DictReader`` returning regular ``dict`` instead of
+``OrderedDict``.
