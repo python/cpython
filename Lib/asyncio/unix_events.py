@@ -319,7 +319,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             return 0  # empty file
 
         fut = self.create_future()
-        fd = selectors._fileobj_to_fd(sock)
+        fd = sock.fileno()
         self._sock_sendfile(fut, None, fd, fileno,
                             offset, count, blocksize, 0)
         return await fut
