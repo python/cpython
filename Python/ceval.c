@@ -1900,8 +1900,9 @@ main_loop:
 
         TARGET(CALL_FINALLY) {
             PyObject *ret = PyLong_FromLong(INSTR_OFFSET());
-            if (ret == NULL)
+            if (ret == NULL) {
                 goto error;
+            }
             PUSH(ret);
             JUMPBY(oparg);
             FAST_DISPATCH();
@@ -1913,11 +1914,18 @@ main_loop:
         }
 
         TARGET(END_FINALLY) {
+            /* At the top of the stack are 1 or 6 values:
+               Either:
+                - NULL or an integer
+               or:
+                - (TOP, SECOND, THIRD) = exc_info()
+                - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
+            */
             PyObject *exc = POP();
             if (exc == NULL) {
                 FAST_DISPATCH();
             }
-            else if (PyLong_Check(exc)) {
+            else if (PyLong_CheckExact(exc)) {
                 int ret = _PyLong_AsInt(exc);
                 Py_DECREF(exc);
                 if (ret == -1 && PyErr_Occurred()) {
@@ -1927,9 +1935,9 @@ main_loop:
                 FAST_DISPATCH();
             }
             else {
+                assert(PyExceptionClass_Check(exc));
                 PyObject *val = POP();
                 PyObject *tb = POP();
-                assert(PyExceptionClass_Check(exc));
                 PyErr_Restore(exc, val, tb);
                 goto exception_unwind;
             }
@@ -2948,7 +2956,7 @@ main_loop:
         TARGET(WITH_CLEANUP_START) {
             /* At the top of the stack are 2 or 7 values:
                Either:
-                - NULL
+                - NULL or an integer
                 - SECOND: the context.__exit__ bound method
                or:
                 - (TOP, SECOND, THIRD) = exc_info()
@@ -2964,16 +2972,16 @@ main_loop:
             PyObject *exc, *val, *tb, *res;
 
             exc = TOP();
-            if (exc == NULL || PyLong_Check(exc)) {
+            if (exc == NULL || PyLong_CheckExact(exc)) {
                 exit_func = SECOND();
                 exit_stack[0] = Py_None;
                 exit_stack[1] = Py_None;
                 exit_stack[2] = Py_None;
             }
             else {
+                assert(PyExceptionClass_Check(exc));
                 val = SECOND();
                 tb = THIRD();
-                assert(PyExceptionClass_Check(exc));
                 exit_func = PEEK(7);
                 exit_stack[0] = exc;
                 exit_stack[1] = val;
@@ -2995,7 +3003,7 @@ main_loop:
             PyObject *res = POP();
             PyObject *exc = POP();
 
-            if (exc == NULL || PyLong_Check(exc)) {
+            if (exc == NULL || PyLong_CheckExact(exc)) {
                 Py_DECREF(res);
                 if (exc != NULL) {
                     int ret = _PyLong_AsInt(exc);
@@ -3006,7 +3014,7 @@ main_loop:
                     JUMPTO(ret);
                 }
                 /* At the top of the stack are 2 values:
-                    - NULL or int
+                    - NULL or an integer
                     - SECOND: the context.__exit__ bound method
                 */
                 assert(TOP() == exc);
@@ -3434,9 +3442,8 @@ exception_unwind:
         Py_XDECREF(o);
     }
 
-    retval = NULL;
-
-    assert((retval != NULL) ^ (PyErr_Occurred() != NULL));
+    assert(retval == NULL);
+    assert(PyErr_Occurred());
 
 return_or_yield:
     if (tstate->use_tracing) {

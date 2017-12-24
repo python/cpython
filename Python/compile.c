@@ -82,7 +82,7 @@ compiler IR.
 */
 
 enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_END,
-                  WITH, ASYNC_WITH, HANDLER_CLEANUP, };
+                  WITH, ASYNC_WITH, HANDLER_CLEANUP };
 
 struct fblockinfo;
 struct compiler;
@@ -2599,7 +2599,6 @@ compiler_continue(struct compiler *c)
     L:
         <code for finalbody>
         END_FINALLY
-    EXIT:
 
    The special instructions use the block stack.  Each block
    stack entry contains the instruction that created it (here
@@ -2627,18 +2626,17 @@ compiler_continue(struct compiler *c)
 static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *final, *exit;
+    basicblock *body, *end;
 
     body = compiler_new_block(c);
-    final = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    if (body == NULL || final == NULL || exit == NULL)
+    end = compiler_new_block(c);
+    if (body == NULL || end == NULL)
         return 0;
 
     /* `try` block */
-    ADDOP_JREL(c, SETUP_FINALLY, final);
+    ADDOP_JREL(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, FINALLY_TRY, body, final))
+    if (!compiler_push_fblock(c, FINALLY_TRY, body, end))
         return 0;
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
         if (!compiler_try_except(c, s))
@@ -2652,14 +2650,12 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_TRY, body);
 
     /* `finally` block */
-    compiler_use_next_block(c, final);
-    if (!compiler_push_fblock(c, FINALLY_END, final, NULL))
+    compiler_use_next_block(c, end);
+    if (!compiler_push_fblock(c, FINALLY_END, end, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
-    compiler_pop_fblock(c, FINALLY_END, final);
-
-    compiler_use_next_block(c, exit);
+    compiler_pop_fblock(c, FINALLY_END, end);
     return 1;
 }
 
