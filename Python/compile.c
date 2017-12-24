@@ -952,27 +952,35 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 0;
         case JUMP_IF_TRUE_OR_POP:
         case JUMP_IF_FALSE_OR_POP:
-            /* -1 if jump not taken */
-            return 0;
+            /* 0 if jumped */
+            return -1;
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
             return -1;
 
         /* Exception handling */
         case SETUP_WITH:
+            /* Replace TOP with __exit__, reserve 6 cells for an exception,
+             * and push the result of __enter__() */
             return 7;
         case WITH_CLEANUP_START:
             return 2;
         case WITH_CLEANUP_FINISH:
-            return -6;
+            /* Pop 2 values pushed by WITH_CLEANUP_START, adjust 6 cells
+             * reserved by SETUP_WITH, and pop __exit__ */
+            return -9;
         case POP_EXCEPT:
             return -3;
         case CALL_FINALLY:
+            return 0;
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
-            return 0;
-        case BEGIN_FINALLY:
+            /* Reserve 3 items for the new exception
+             * + 3 others for the previous exception state */
             return 6;
+        case BEGIN_FINALLY:
+            /* The stack has been reserved by SETUP_FINALLY */
+            return 0;
         case END_FINALLY:
             /* Pops the 3 values of the pushed exception
              * + the 3 values of the saved exception state
@@ -987,7 +995,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case YIELD_FROM:
             return -1;
         case POP_BLOCK:
-            return 0;
+            /* Adjust 6 cells reserved by SETUP_FINALLY */
+            return -6;
         case FOR_ITER:
             return 1; /* or -1, at end of iterator */
 
@@ -1051,6 +1060,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case GET_AWAITABLE:
             return 0;
         case SETUP_ASYNC_WITH:
+            /* Reserve 6 cells for an exception */
             return 6;
         case BEFORE_ASYNC_WITH:
             return 1;
@@ -5033,19 +5043,11 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
             }
             else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
                      instr->i_opcode == JUMP_IF_FALSE_OR_POP) {
-                depth = depth - 1;
+                target_depth = depth + 1;
             }
-            else if (instr->i_opcode == SETUP_EXCEPT ||
-                     instr->i_opcode == SETUP_FINALLY) {
-                /* An exception will first unwind this block
-                 * then push 3 values for the new exception
-                 * + 3 others for the previous exception state
-                 */
-                /* Note this will first walk the except/finally block
-                 * with pessimal stack effect, so any later jump
-                 * into that block with have a lower depth.
-                 */
-                target_depth = depth + 6;
+            else if (instr->i_opcode == SETUP_WITH ||
+                     instr->i_opcode == SETUP_ASYNC_WITH) {
+                target_depth = depth - 1;
             }
             target_depth = stackdepth_walk(c, instr->i_target, target_depth);
             if (target_depth > maxdepth)
