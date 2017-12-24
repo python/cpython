@@ -974,14 +974,14 @@ class ZipExtFile(io.BufferedIOBase):
     def seekable(self):
         return self._seekable
 
-    def seek(self, offset, from_what = 0):
+    def seek(self, offset, whence = 0):
         if not self._seekable:
             raise io.UnsupportedOperation("underlying stream is not seekable")
         curr_pos = self.tell()
         new_pos = offset # Default seek from start of file
-        if from_what == 1: # Seek from current position
+        if whence == 1: # Seek from current position
             new_pos = curr_pos + offset
-        elif from_what == 2: # Seek from EOF
+        elif whence == 2: # Seek from EOF
             new_pos = self._orig_file_size + offset
 
         if new_pos > self._orig_file_size:
