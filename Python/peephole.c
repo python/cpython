@@ -185,7 +185,6 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_ABSOLUTE:
-            case SETUP_EXCEPT:
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
@@ -377,7 +376,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case FOR_ITER:
             case JUMP_FORWARD:
             case JUMP_ABSOLUTE:
-            case SETUP_EXCEPT:
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
@@ -461,7 +459,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
             case FOR_ITER:
             case JUMP_FORWARD:
-            case SETUP_EXCEPT:
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:

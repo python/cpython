@@ -158,8 +158,7 @@ jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 
-jrel_op('SETUP_EXCEPT', 121)    # Distance to target address
-jrel_op('SETUP_FINALLY', 122)   # ""
+jrel_op('SETUP_FINALLY', 122)   # Distance to target address
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)

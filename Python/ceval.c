@@ -926,9 +926,8 @@ main_loop:
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
-            if (/*_Py_OPCODE(*next_instr) == SETUP_EXCEPT ||
-                _Py_OPCODE(*next_instr) == SETUP_FINALLY ||
-                */_Py_OPCODE(*next_instr) == YIELD_FROM) {
+            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
+                _Py_OPCODE(*next_instr) == YIELD_FROM) {
                 /* Two cases where we skip running signal handlers and other
                    pending calls:
                    - If we're about to enter the try: of a try/finally (not
@@ -2876,7 +2875,6 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(SETUP_EXCEPT)
         TARGET(SETUP_FINALLY) {
             /* NOTE: If you add any new block-setup opcodes that
                are not try/except/finally handlers, you may need
@@ -3386,7 +3384,7 @@ exception_unwind:
                 continue;
             }
             UNWIND_BLOCK(b);
-            if ((b->b_type == SETUP_EXCEPT || b->b_type == SETUP_FINALLY)) {
+            if ((b->b_type == SETUP_FINALLY)) {
                 PyObject *exc, *val, *tb;
                 int handler = b->b_handler;
                 _PyErr_StackItem *exc_info = tstate->exc_info;

@@ -201,7 +201,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
-        case SETUP_EXCEPT:
         case SETUP_FINALLY:
         case SETUP_WITH:
         case SETUP_ASYNC_WITH:
@@ -246,10 +245,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         }
 
         case END_FINALLY: {
-            /* Ignore END_FINALLYs for SETUP_EXCEPTs - they exist
-             * in the bytecode but don't correspond to an actual
-             * 'finally' block.  (If blockstack_top is 0, we must
-             * be seeing such an END_FINALLY.) */
             assert(blockstack_top > 0);
             int target_addr = blockstack[--blockstack_top];
             assert(target_addr <= addr);

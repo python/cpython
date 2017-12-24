@@ -973,7 +973,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -3;
         case CALL_FINALLY:
             return 0;
-        case SETUP_EXCEPT:
         case SETUP_FINALLY:
             /* Reserve 3 items for the new exception
              * + 3 others for the previous exception state */
@@ -2423,8 +2422,8 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, try);
 
 
-    /* SETUP_EXCEPT to guard the __anext__ call */
-    ADDOP_JREL(c, SETUP_EXCEPT, except);
+    /* SETUP_FINALLY to guard the __anext__ call */
+    ADDOP_JREL(c, SETUP_FINALLY, except);
     if (!compiler_push_fblock(c, EXCEPT, try, NULL))
         return 0;
 
@@ -2432,7 +2431,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
     VISIT(c, expr, s->v.AsyncFor.target);
-    ADDOP(c, POP_BLOCK);  /* for SETUP_EXCEPT */
+    ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
     compiler_pop_fblock(c, EXCEPT, try);
     ADDOP_JREL(c, JUMP_FORWARD, after_try);
 
@@ -2447,7 +2446,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
+    ADDOP(c, POP_EXCEPT); /* for SETUP_FINALLY */
     ADDOP(c, POP_TOP);  /* pop iterator from stack */
     ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
 
@@ -2671,7 +2670,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
    associated value, and 'exc' the exception.)
 
    Value stack          Label   Instruction     Argument
-   []                           SETUP_EXCEPT    L1
+   []                           SETUP_FINALLY   L1
    []                           <code for S>
    []                           POP_BLOCK
    []                           JUMP_FORWARD    L0
@@ -2707,7 +2706,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     end = compiler_new_block(c);
     if (body == NULL || except == NULL || orelse == NULL || end == NULL)
         return 0;
-    ADDOP_JREL(c, SETUP_EXCEPT, except);
+    ADDOP_JREL(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, EXCEPT, body, NULL))
         return 0;
@@ -4016,7 +4015,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     compiler_use_next_block(c, try);
 
 
-    ADDOP_JREL(c, SETUP_EXCEPT, except);
+    ADDOP_JREL(c, SETUP_FINALLY, except);
     if (!compiler_push_fblock(c, EXCEPT, try, NULL))
         return 0;
 
@@ -4038,7 +4037,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
+    ADDOP(c, POP_EXCEPT); /* for SETUP_FINALLY */
     ADDOP_JABS(c, JUMP_ABSOLUTE, anchor);
 
 
