@@ -449,7 +449,8 @@ class AbstractEventLoop:
     async def sock_accept(self, sock):
         raise NotImplementedError
 
-    async def sock_sendfile(self, sock, file, offset=0, count=None):
+    async def sock_sendfile(self, sock, file, offset=0, count=None,
+                            *, fallback=True):
         raise NotImplementedError
 
     # Signal handling.

@@ -145,11 +145,11 @@ def _prepare_sendfile(file, count):
     try:
         fileno = file.fileno()
     except (AttributeError, io.UnsupportedOperation) as err:
-        raise RuntimeError(err)  # not a regular file
+        raise RuntimeError("not a regular file")
     try:
         fsize = os.fstat(fileno).st_size
     except OSError as err:
-        raise RuntimeError(err)  # not a regular file
+        raise RuntimeError("not a regular file")
     if count:
         return fileno, count
     else:
@@ -326,7 +326,7 @@ class socket(_socket.socket):
                             # one being 'file' is not a regular mmap(2)-like
                             # file, in which case we'll fall back on using
                             # plain send().
-                            raise RuntimeError(err)
+                            raise RuntimeError("os.sendfile() call failed")
                         raise err from None
                     else:
                         if sent == 0:

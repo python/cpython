@@ -670,7 +670,8 @@ Low-level socket operations
       :meth:`AbstractEventLoop.create_server` and :func:`start_server`.
 
 .. coroutinemethod:: AbstractEventLoop.sock_sendfile(sock, file, \
-                                                     offset=0, count=None)
+                                                     offset=0, count=None, \
+                                                     *, fallback=True)
 
    Send a file by using high-performance :mod:`os.sendfile` and return
    the total number of bytes which were sent.

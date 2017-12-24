@@ -306,7 +306,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                             ssl_handshake_timeout=ssl_handshake_timeout)
         return server
 
-    async def sock_sendfile(self, sock, file, offset=0, count=None):
+    async def sock_sendfile(self, sock, file, offset=0, count=None,
+                            *, fallback=True):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -353,7 +354,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # one being 'file' is not a regular mmap(2)-like
                 # file, in which case we'll fall back on using
                 # plain send().
-                err = RuntimeError(exc)
+                err = RuntimeError("os.sendfile call failed")
                 self._update_filepos(fileno, offset, total_sent)
                 fut.set_exception(err)
             else:
