@@ -319,11 +319,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             return 0  # empty file
 
         fut = self.create_future()
-        self._sock_sendfile(fut, None, sock, fileno,
+        fd = selectors._fileobj_to_fd(sock)
+        self._sock_sendfile(fut, None, fd, fileno,
                             offset, count, blocksize, 0)
         return await fut
 
-    def _sock_sendfile(self, fut, registered_fd, sock, fileno, offset,
+    def _sock_sendfile(self, fut, registered_fd, fd, fileno, offset,
                        count, blocksize, total_sent):
         if registered_fd is not None:
             # Remove the callback early.  It should be rare that the
@@ -341,11 +342,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 fut.set_result(total_sent)
                 return
 
-        fd = sock.fileno()
         try:
             sent = os.sendfile(fd, fileno, offset, blocksize)
         except (BlockingIOError, InterruptedError):
-            self.add_writer(fd, self._sock_sendfile, fut, fd, sock,
+            self.add_writer(fd, self._sock_sendfile, fut, fd, fd,
                             fileno, offset, count, blocksize. total_sent)
         except OSError as exc:
             if total_sent == 0:
@@ -370,8 +370,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             else:
                 offset += sent
                 total_sent += sent
-                fd = sock.fileno()
-                self.add_writer(fd, self._sock_sendfile, fut, fd, sock,
+                self.add_writer(fd, self._sock_sendfile, fut, fd, fd,
                                 fileno, offset, count, blocksize, total_sent)
 
     def _update_filepos(self, fileno, offset, total_sent):
