@@ -8,8 +8,10 @@ import weakref
 import inspect
 
 from test import support
-
-_testcapi = support.import_module('_testcapi')
+try:
+    _testcapi = support.import_module('_testcapi')
+except ImportError:
+    _testcapi = None
 
 
 # This tests to make sure that if a SIGINT arrives just before we send into a
@@ -28,6 +30,7 @@ class SignalAndYieldFromTest(unittest.TestCase):
         else:
             return "FAILED"
 
+    @unittest.skipUnless(_testcapi is not None)
     def test_raise_and_yield_from(self):
         gen = self.generator1()
         gen.send(None)
