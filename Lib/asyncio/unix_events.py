@@ -312,25 +312,19 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             os.sendfile
         except AttributeError as exc:
-            raise events.SendfileUnsupportedError(exc)
+            raise NotImplementedError("os.sendfile() in not supported by "
+                                      "Operation System")
         socket._check_sendfile_params(sock, file, offset, count)
-        try:
-            fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as exc:
-            raise events.SendfileUnsupportedError(exc)  # not a regular file
-        try:
-            fsize = os.fstat(fileno).st_size
-        except OSError as exc:
-            raise events.SendfileUnsupportedError(exc)  # not a regular file
-        if not fsize:
+        fileno, blocksize = socket._prepare_sendfile(file, count)
+        if not blocksize:
             return 0  # empty file
-        blocksize = fsize if not count else count
 
         fut = self.create_future()
-        self._sock_sendfile(fut, None, sock, file, offset, count, blocksize, 0)
+        self._sock_sendfile(fut, None, sock, fileno,
+                            offset, count, blocksize, 0)
         return await fut
 
-    def _sock_sendfile(self, fut, registered_fd, sock, file, offset,
+    def _sock_sendfile(self, fut, registered_fd, sock, fileno, offset,
                        count, blocksize, total_sent):
         if registered_fd is not None:
             # Remove the callback early.  It should be rare that the
@@ -339,51 +333,51 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # order to simplify the common case.
             self.remove_writer(registered_fd)
         if fut.cancelled():
-            self._update_filepos(file, offset, total_sent)
+            self._update_filepos(fileno, offset, total_sent)
             return
         if count:
             blocksize = count - total_sent
             if blocksize <= 0:
-                self._update_filepos(file, offset, total_sent)
+                self._update_filepos(fileno, offset, total_sent)
                 fut.set_result(total_sent)
                 return
 
         fd = sock.fileno()
         try:
-            sent = os.sendfile(fd, file.fileno(), offset, blocksize)
+            sent = os.sendfile(fd, fileno, offset, blocksize)
         except (BlockingIOError, InterruptedError):
             self.add_writer(fd, self._sock_sendfile, fut, fd, sock,
-                            file, offset, count, blocksize. total_sent)
+                            fileno, offset, count, blocksize. total_sent)
         except OSError as exc:
             if total_sent == 0:
                 # We can get here for different reasons, the main
                 # one being 'file' is not a regular mmap(2)-like
                 # file, in which case we'll fall back on using
                 # plain send().
-                err = events.SendfileUnsupportedError(exc)
-                self._update_filepos(file, offset, total_sent)
+                err = NotImplementedError(exc)
+                self._update_filepos(fileno, offset, total_sent)
                 fut.set_exception(err)
             else:
-                self._update_filepos(file, offset, total_sent)
+                self._update_filepos(fileno, offset, total_sent)
                 fut.set_exception(exc)
         except Exception as exc:
-            self._update_filepos(file, offset, total_sent)
+            self._update_filepos(fileno, offset, total_sent)
             fut.set_exception(exc)
         else:
             if sent == 0:
                 # EOF
-                self._update_filepos(file, offset, total_sent)
+                self._update_filepos(fileno, offset, total_sent)
                 fut.set_result(total_sent)
             else:
                 offset += sent
                 total_sent += sent
                 fd = sock.fileno()
                 self.add_writer(fd, self._sock_sendfile, fut, fd, sock,
-                                file, offset, count, blocksize, total_sent)
+                                fileno, offset, count, blocksize, total_sent)
 
-    def _update_filepos(self, file, offset, total_sent):
-        if total_sent > 0 and hasattr(file, 'seek'):
-            file.seek(offset)
+    def _update_filepos(self, fileno, offset, total_sent):
+        if total_sent > 0:
+            os.lseek(fileno, offset, os.SEEK_SET)
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):

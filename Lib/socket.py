@@ -141,6 +141,21 @@ def _check_sendfile_params(sock, file, offset, count):
                 "count must be a positive integer (got {!r})".format(count))
 
 
+def _prepare_sendfile(file, count):
+    try:
+        fileno = file.fileno()
+    except (AttributeError, io.UnsupportedOperation) as err:
+        raise NotImplementedError(err)  # not a regular file
+    try:
+        fsize = os.fstat(fileno).st_size
+    except OSError as err:
+        raise NotImplementedError(err)  # not a regular file
+    if count:
+        return fileno, count
+    else:
+        return fileno, fsize
+
+
 class socket(_socket.socket):
 
     """A subclass of _socket.socket adding the makefile() method."""
@@ -269,17 +284,9 @@ class socket(_socket.socket):
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
             _check_sendfile_params(self, file, offset, count)
             sockno = self.fileno()
-            try:
-                fileno = file.fileno()
-            except (AttributeError, io.UnsupportedOperation) as err:
-                raise NotImplementedError(err)  # not a regular file
-            try:
-                fsize = os.fstat(fileno).st_size
-            except OSError as err:
-                raise NotImplementedError(err)  # not a regular file
-            if not fsize:
+            fileno, blocksize = _prepare_sendfile(file, count)
+            if not blocksize:
                 return 0  # empty file
-            blocksize = fsize if not count else count
 
             timeout = self.gettimeout()
             if timeout == 0:

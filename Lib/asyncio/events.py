@@ -20,10 +20,6 @@ import threading
 from . import format_helpers
 
 
-class SendfileUnsupportedError(ValueError):
-    """Sendfile preparation failed."""
-
-
 class Handle:
     """Object returned by callback registration methods."""
 
