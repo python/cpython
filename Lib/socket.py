@@ -130,7 +130,7 @@ if sys.platform.lower().startswith("win"):
 def _check_sendfile_params(sock, file, offset, count):
     if 'b' not in getattr(file, 'mode', 'b'):
         raise ValueError("file should be opened in binary mode")
-    if not sock.type & SOCK_STREAM:
+    if not sock.type == SOCK_STREAM:
         raise ValueError("only SOCK_STREAM type sockets are supported")
     if count is not None:
         if not isinstance(count, int):
