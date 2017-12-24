@@ -1,0 +1,1 @@
+Add documentation that at module level, locals() and globals() are the same dictionary
