@@ -669,6 +669,22 @@ Low-level socket operations
 
       :meth:`AbstractEventLoop.create_server` and :func:`start_server`.
 
+.. coroutinemethod:: AbstractEventLoop.sock_sendfile(sock, file, \
+                                                     offset=0, count=None)
+
+   Send a file by using high-performance :mod:`os.sendfile` and return
+   the total number of bytes which were sent.
+
+   Modelled after blocking :meth:`socket.socket.sendfile`, see the
+   method for parameters meaning.
+
+   The socket *sock* must be non-blocking.
+
+   Raise :exc:`NotImplementedError` if the system does not support
+   *sendfile* syscall.
+
+   .. versionadded:: 3.7
+
 
 Resolve host name
 -----------------
