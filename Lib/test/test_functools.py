@@ -2149,7 +2149,7 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_register(self):
         class A:
-            @functools.singledispatch
+            @functools.singledispatch(index=1)
             def t(self, arg):
                 return "base"
             @t.register(int)
@@ -2159,10 +2159,31 @@ class TestSingleDispatch(unittest.TestCase):
             def _(self, arg):
                 return "str"
         a = A()
+        
         self.assertEqual(a.t(0), "int")
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
 
+        self.assertEqual(A.t(a,0), "int")
+        self.assertEqual(A.t(a,''), "str")
+        self.assertEqual(A.t(a,0.0), "base")
+
+    def test_method_register_noargs(self):
+        msg = "tuple index out of range"
+        class B:
+            @functools.singledispatch(index=1)
+            def fun():
+                return 'base'
+            @fun.register(str)
+            def _():
+                return "str"
+            @fun.register(float)
+            def _():
+                return "float"
+        with self.assertRaises(IndexError) as exc:
+            B.fun()
+        self.assertEqual(str(exc.exception), msg)
+        
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "
         msg_suffix = (

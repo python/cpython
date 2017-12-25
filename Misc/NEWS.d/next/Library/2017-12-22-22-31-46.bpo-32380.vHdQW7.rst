@@ -1,2 +1,2 @@
 ``functools.singledispatch`` now supports decorating and registering with
-class methods.
+methods.

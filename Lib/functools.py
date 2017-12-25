@@ -744,7 +744,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def singledispatch(func):
+def singledispatch(func=None, arg=0):
     """Single-dispatch generic function decorator.
 
     Transforms a function into a generic function, which can have different
@@ -753,82 +753,78 @@ def singledispatch(func):
     implementations can be registered using the register() attribute of the
     generic function.
     """
-    # There are many programs that use functools without singledispatch, so we
-    # trade-off making singledispatch marginally slower for the benefit of
-    # making start-up of such applications slightly faster.
-    import types, weakref
-    registry = {}
-    dispatch_cache = weakref.WeakKeyDictionary()
-    cache_token = None
+    if func is None:
+        return partial(singledispatch, arg=arg)
+    else:
+        # There are many programs that use functools without singledispatch, so we
+        # trade-off making singledispatch marginally slower for the benefit of
+        # making start-up of such applications slightly faster.
+        import types, weakref
+        registry = {}
+        dispatch_cache = weakref.WeakKeyDictionary()
+        cache_token = None
 
-    def dispatch(cls):
-        """generic_func.dispatch(cls) -> <function implementation>
+        def dispatch(cls):
+            """generic_func.dispatch(cls) -> <function implementation>
 
-        Runs the dispatch algorithm to return the best available implementation
-        for the given *cls* registered on *generic_func*.
+            Runs the dispatch algorithm to return the best available implementation
+            for the given *cls* registered on *generic_func*.
 
-        """
-        nonlocal cache_token
-        if cache_token is not None:
-            current_token = get_cache_token()
-            if cache_token != current_token:
-                dispatch_cache.clear()
-                cache_token = current_token
-        try:
-            impl = dispatch_cache[cls]
-        except KeyError:
+            """
+            nonlocal cache_token
+            if cache_token is not None:
+                current_token = get_cache_token()
+                if cache_token != current_token:
+                    dispatch_cache.clear()
+                    cache_token = current_token
             try:
-                impl = registry[cls]
+                impl = dispatch_cache[cls]
             except KeyError:
-                impl = _find_impl(cls, registry)
-            dispatch_cache[cls] = impl
-        return impl
+                try:
+                    impl = registry[cls]
+                except KeyError:
+                    impl = _find_impl(cls, registry)
+                dispatch_cache[cls] = impl
+            return impl
 
-    def register(cls, func=None):
-        """generic_func.register(cls, func) -> func
+        def register(cls, func=None):
+            """generic_func.register(cls, func) -> func
 
-        Registers a new implementation for the given *cls* on a *generic_func*.
+            Registers a new implementation for the given *cls* on a *generic_func*.
 
-        """
-        nonlocal cache_token
-        if func is None:
-            if isinstance(cls, type):
-                return lambda f: register(cls, f)
-            ann = getattr(cls, '__annotations__', {})
-            if not ann:
-                raise TypeError(
-                    f"Invalid first argument to `register()`: {cls!r}. "
-                    f"Use either `@register(some_class)` or plain `@register` "
-                    f"on an annotated function."
+            """
+            nonlocal cache_token
+            if func is None:
+                if isinstance(cls, type):
+                    return lambda f: register(cls, f)
+                ann = getattr(cls, '__annotations__', {})
+                if not ann:
+                    raise TypeError(
+                        f"Invalid first argument to `register()`: {cls!r}. "
+                        f"Use either `@register(some_class)` or plain `@register` "
+                        f"on an annotated function."
+                    )
+                func = cls
+
+                # only import typing if annotation parsing is necessary
+                from typing import get_type_hints
+                argname, cls = next(iter(get_type_hints(func).items()))
+                assert isinstance(cls, type), (
+                    f"Invalid annotation for {argname!r}. {cls!r} is not a class."
                 )
-            func = cls
+            registry[cls] = func
+            if cache_token is None and hasattr(cls, '__abstractmethods__'):
+                cache_token = get_cache_token()
+            dispatch_cache.clear()
+            return func
 
-            # only import typing if annotation parsing is necessary
-            from typing import get_type_hints
-            argname, cls = next(iter(get_type_hints(func).items()))
-            assert isinstance(cls, type), (
-                f"Invalid annotation for {argname!r}. {cls!r} is not a class."
-            )
-        registry[cls] = func
-        if cache_token is None and hasattr(cls, '__abstractmethods__'):
-            cache_token = get_cache_token()
-        dispatch_cache.clear()
-        return func
+        def wrapper(*args, **kw):
+            return dispatch(args[arg].__class__)(*args, **kw)
 
-
-    def wrapper(*args, **kw):
-        # If our decorated function is in the first arg's attributes,
-        # we are using a method.
-        if getattr(args[0], func.__name__, False):
-            arg = args[1]
-        else:
-            arg = args[0]
-        return dispatch(arg.__class__)(*args, **kw)
-
-    registry[object] = func
-    wrapper.register = register
-    wrapper.dispatch = dispatch
-    wrapper.registry = types.MappingProxyType(registry)
-    wrapper._clear_cache = dispatch_cache.clear
-    update_wrapper(wrapper, func)
-    return wrapper
+        registry[object] = func
+        wrapper.register = register
+        wrapper.dispatch = dispatch
+        wrapper.registry = types.MappingProxyType(registry)
+        wrapper._clear_cache = dispatch_cache.clear
+        update_wrapper(wrapper, func)
+        return wrapper
