@@ -1058,6 +1058,11 @@ FutureObj_set_log_traceback(FutureObj *fut, PyObject *val)
     if (is_true < 0) {
         return -1;
     }
+    if (is_true) {
+        PyErr_SetString(PyExc_ValueError,
+                        "_log_traceback can only be set to False");
+        return -1;
+    }
     fut->fut_log_tb = is_true;
     return 0;
 }
