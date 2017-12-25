@@ -370,7 +370,8 @@ class BaseFutureTests:
         def test():
             arg1, arg2 = coro()
 
-        self.assertRaises(AssertionError, test)
+        with self.assertRaisesRegex(RuntimeError, "await wasn't used"):
+            test()
         fut.cancel()
 
     @mock.patch('asyncio.base_events.logger')
