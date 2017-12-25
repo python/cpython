@@ -365,11 +365,11 @@ The :mod:`functools` module defines the following functions:
         @singledispatch(arg=1)
         def neg(self, a):
             raise NotImplementedError("Cannot negate a")
-        
+
         @neg.register(int)
         def _(self, a):
             return -a
-        
+
         @neg.register(bool)
         def _(self, a):
             return not a

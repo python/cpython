@@ -2159,7 +2159,7 @@ class TestSingleDispatch(unittest.TestCase):
             def _(self, arg):
                 return "str"
         a = A()
-        
+
         self.assertEqual(a.t(0), "int")
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
@@ -2183,7 +2183,7 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaises(IndexError) as exc:
             B.fun()
         self.assertEqual(str(exc.exception), msg)
-        
+
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "
         msg_suffix = (
