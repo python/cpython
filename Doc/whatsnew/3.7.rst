@@ -437,6 +437,17 @@ string
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
+subprocess
+----------
+
+On Windows the default for *close_fds* was changed from :const:`False` to
+:const:`True` when redirecting the standard handles. It's now possible to set
+*close_fds* to :const:`True` when redirecting the standard handles. See
+:class:`subprocess.Popen`.
+
+This means that *close_fds* now defaults to :const:`True` on all supported
+platforms.
+
 sys
 ---
 
@@ -881,7 +892,22 @@ Changes in the Python API
   recent to be more consistent with :mod:`traceback`.
   (Contributed by Jesse Bakker in :issue:`32121`.)
 
+* On OSes that support :const:`socket.SOCK_NONBLOCK` or
+  :const:`socket.SOCK_CLOEXEC` bit flags, the
+  :attr:`socket.type <socket.socket.type>` no longer has them applied.
+  Therefore, checks like ``if sock.type == socket.SOCK_STREAM``
+  work as expected on all platforms.
+  (Contributed by Yury Selivanov in :issue:`32331`.)
+
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+* On Windows the default for the *close_fds* argument of
+  :class:`subprocess.Popen` was changed from :const:`False` to :const:`True`
+  when redirecting the standard handles. If you previously depended on handles
+  being inherited when using :class:`subprocess.Popen` with standard io
+  redirection, you will have to pass ``close_fds=False`` to preserve the
+  previous behaviour, or use
+  :attr:`STARTUPINFO.lpAttributeList <subprocess.STARTUPINFO.lpAttributeList>`.
 
 
 Changes in the C API

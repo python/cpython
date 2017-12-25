@@ -44,6 +44,10 @@ class BaseTransport:
 class ReadTransport(BaseTransport):
     """Interface for read-only transports."""
 
+    def is_reading(self):
+        """Return True if the transport is receiving."""
+        raise NotImplementedError
+
     def pause_reading(self):
         """Pause the receiving end.
 
