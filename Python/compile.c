@@ -5030,7 +5030,9 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
             Py_FatalError("invalid bytecode or bug in stackdepth()");
         }
         assert(depth >= 0);
-        if (instr->i_jrel || instr->i_jabs) {
+        if ((instr->i_jrel || instr->i_jabs) &&
+            instr->i_opcode != CALL_FINALLY)
+        {
             /* Recursively inspect jump target */
             target_depth = depth;
             if (instr->i_opcode == FOR_ITER) {

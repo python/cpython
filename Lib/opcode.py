@@ -211,6 +211,6 @@ def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
-def_op('CALL_FINALLY', 162)
+jrel_op('CALL_FINALLY', 162)
 
 del def_op, name_op, jrel_op, jabs_op
