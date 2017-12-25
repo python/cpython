@@ -56,9 +56,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 self.remove_signal_handler(sig)
         else:
             if self._signal_handlers:
-                warinigs.warn(f"Closing the loop {self!r} "
+                warnings.warn(f"Closing the loop {self!r} "
                               f"on interpreter shutdown "
-                              f"stage, signal unsubsription is disabled",
+                              f"stage, signal unsubscription is disabled",
                               ResourceWarning,
                               source=self)
                 self._signal_handlers.clear()
