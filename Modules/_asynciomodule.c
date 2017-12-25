@@ -779,7 +779,7 @@ _asyncio_Future_exception_impl(FutureObj *self)
 /*[clinic input]
 _asyncio.Future.set_result
 
-    res: object
+    result: object
     /
 
 Mark the future done and set its result.
@@ -789,11 +789,11 @@ InvalidStateError.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Future_set_result(FutureObj *self, PyObject *res)
-/*[clinic end generated code: output=a620abfc2796bfb6 input=5b9dc180f1baa56d]*/
+_asyncio_Future_set_result(FutureObj *self, PyObject *result)
+/*[clinic end generated code: output=1ec2e6bcccd6f2ce input=8b75172c2a7b05f1]*/
 {
     ENSURE_FUTURE_ALIVE(self)
-    return future_set_result(self, res);
+    return future_set_result(self, result);
 }
 
 /*[clinic input]
@@ -1468,8 +1468,8 @@ FutureIter_iternext(futureiterobject *it)
             Py_INCREF(fut);
             return (PyObject *)fut;
         }
-        PyErr_SetString(PyExc_AssertionError,
-                        "yield from wasn't used with future");
+        PyErr_SetString(PyExc_RuntimeError,
+                        "await wasn't used with future");
         return NULL;
     }
 
@@ -2232,6 +2232,39 @@ _asyncio_Task__wakeup_impl(TaskObj *self, PyObject *fut)
     return task_wakeup(self, fut);
 }
 
+/*[clinic input]
+_asyncio.Task.set_result
+
+    result: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_set_result(TaskObj *self, PyObject *result)
+/*[clinic end generated code: output=1dcae308bfcba318 input=9d1a00c07be41bab]*/
+{
+    PyErr_SetString(PyExc_RuntimeError,
+                    "Task does not support set_result operation");
+    return NULL;
+}
+
+/*[clinic input]
+_asyncio.Task.set_exception
+
+    exception: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_set_exception(TaskObj *self, PyObject *exception)
+/*[clinic end generated code: output=bc377fc28067303d input=9a8f65c83dcf893a]*/
+{
+    PyErr_SetString(PyExc_RuntimeError,
+                    "Task doed not support set_exception operation");
+    return NULL;
+}
+
+
 static void
 TaskObj_finalize(TaskObj *task)
 {
@@ -2304,12 +2337,12 @@ static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
 static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_FUTURE_RESULT_METHODDEF
     _ASYNCIO_FUTURE_EXCEPTION_METHODDEF
-    _ASYNCIO_FUTURE_SET_RESULT_METHODDEF
-    _ASYNCIO_FUTURE_SET_EXCEPTION_METHODDEF
     _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF
     _ASYNCIO_FUTURE_REMOVE_DONE_CALLBACK_METHODDEF
     _ASYNCIO_FUTURE_CANCELLED_METHODDEF
     _ASYNCIO_FUTURE_DONE_METHODDEF
+    _ASYNCIO_TASK_SET_RESULT_METHODDEF
+    _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF
     _ASYNCIO_TASK_CURRENT_TASK_METHODDEF
     _ASYNCIO_TASK_ALL_TASKS_METHODDEF
     _ASYNCIO_TASK_CANCEL_METHODDEF
@@ -2461,7 +2494,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
     PyObject *o;
 
     if (task->task_state != STATE_PENDING) {
-        PyErr_Format(PyExc_AssertionError,
+        PyErr_Format(asyncio_InvalidStateError,
                      "_step(): already done: %R %R",
                      task,
                      exc ? exc : Py_None);
