@@ -2149,7 +2149,7 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_register(self):
         class A:
-            @functools.singledispatch(index=1)
+            @functools.singledispatch(arg=1)
             def t(self, arg):
                 return "base"
             @t.register(int)
@@ -2171,7 +2171,7 @@ class TestSingleDispatch(unittest.TestCase):
     def test_method_register_noargs(self):
         msg = "tuple index out of range"
         class B:
-            @functools.singledispatch(index=1)
+            @functools.singledispatch(arg=1)
             def fun():
                 return 'base'
             @fun.register(str)
