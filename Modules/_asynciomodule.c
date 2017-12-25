@@ -2244,7 +2244,7 @@ _asyncio_Task_set_result(TaskObj *self, PyObject *result)
 /*[clinic end generated code: output=1dcae308bfcba318 input=9d1a00c07be41bab]*/
 {
     PyErr_SetString(PyExc_RuntimeError,
-                    "Tasks do not support set_result operation");
+                    "Task does not support set_result operation");
     return NULL;
 }
 
@@ -2260,7 +2260,7 @@ _asyncio_Task_set_exception(TaskObj *self, PyObject *exception)
 /*[clinic end generated code: output=bc377fc28067303d input=9a8f65c83dcf893a]*/
 {
     PyErr_SetString(PyExc_RuntimeError,
-                    "Tasks do not support set_exception operation");
+                    "Task doed not support set_exception operation");
     return NULL;
 }
 
