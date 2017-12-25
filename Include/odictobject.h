@@ -6,6 +6,7 @@ extern "C" {
 
 
 /* OrderedDict */
+/* This API is optional and mostly redundant. */
 
 #ifndef Py_LIMITED_API
 
@@ -20,10 +21,6 @@ PyAPI_DATA(PyTypeObject) PyODictValues_Type;
 #define PyODict_Check(op) PyObject_TypeCheck(op, &PyODict_Type)
 #define PyODict_CheckExact(op) (Py_TYPE(op) == &PyODict_Type)
 #define PyODict_SIZE(op) ((PyDictObject *)op)->ma_used
-
-#endif /* Py_LIMITED_API */
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 
 PyAPI_FUNC(PyObject *) PyODict_New(void);
 PyAPI_FUNC(int) PyODict_SetItem(PyObject *od, PyObject *key, PyObject *item);
