@@ -65,7 +65,7 @@ class Future:
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
 
-    _log_traceback = False
+    __log_traceback = False
 
     def __init__(self, *, loop=None):
         """Initialize the future.
@@ -90,7 +90,7 @@ class Future:
                                 ' '.join(self._repr_info()))
 
     def __del__(self):
-        if not self._log_traceback:
+        if not self.__log_traceback:
             # set_exception() was not called, or result() or exception()
             # has consumed the exception
             return
@@ -105,6 +105,16 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
+    @property
+    def _log_traceback(self):
+        return self.__log_traceback
+
+    @_log_traceback.setter
+    def _log_traceback(self, val):
+        if bool(val):
+            raise ValueError('_log_traceback can only be set to False')
+        self.__log_traceback = False
+
     def get_loop(self):
         """Return the event loop the Future is bound to."""
         return self._loop
@@ -116,7 +126,7 @@ class Future:
         change the future's state to cancelled, schedule the callbacks and
         return True.
         """
-        self._log_traceback = False
+        self.__log_traceback = False
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
@@ -162,7 +172,7 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Result is not ready.')
-        self._log_traceback = False
+        self.__log_traceback = False
         if self._exception is not None:
             raise self._exception
         return self._result
@@ -179,7 +189,7 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Exception is not set.')
-        self._log_traceback = False
+        self.__log_traceback = False
         return self._exception
 
     def add_done_callback(self, fn):
@@ -237,7 +247,7 @@ class Future:
         self._exception = exception
         self._state = _FINISHED
         self._schedule_callbacks()
-        self._log_traceback = True
+        self.__log_traceback = True
 
     def __await__(self):
         if not self.done():
