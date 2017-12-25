@@ -374,6 +374,11 @@ class BaseFutureTests:
             test()
         fut.cancel()
 
+    def test_log_traceback(self):
+        fut = self._new_future(loop=self.loop)
+        with self.assertRaisesRegex(ValueError, 'can only be set to False'):
+            fut._log_traceback = True
+
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_abandoned(self, m_log):
         fut = self._new_future(loop=self.loop)

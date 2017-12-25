@@ -623,6 +623,15 @@ class BaseTaskTests:
         t.cancel()
         self.assertRaises(asyncio.CancelledError, loop.run_until_complete, t)
 
+    def test_log_traceback(self):
+        async def coro():
+            pass
+
+        task = self.new_task(self.loop, coro())
+        with self.assertRaisesRegex(ValueError, 'can only be set to False'):
+            task._log_traceback = True
+        self.loop.run_until_complete(task)
+
     def test_wait_for_timeout_less_then_0_or_0_future_done(self):
         def gen():
             when = yield
