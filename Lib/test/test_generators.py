@@ -30,7 +30,7 @@ class SignalAndYieldFromTest(unittest.TestCase):
         else:
             return "FAILED"
 
-    @unittest.skipUnless(_testcapi is not None)
+    @unittest.skipUnless(_testcapi is not None, "'_testcapi' is failed to import")
     def test_raise_and_yield_from(self):
         gen = self.generator1()
         gen.send(None)
