@@ -284,9 +284,9 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     ``object_pairs_hook`` is an optional function that will be called with the
     result of any object literal decoded with an ordered list of pairs.  The
     return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders that rely on the
-    order that the key and value pairs are decoded. If ``object_hook`` is also
-    defined, the ``object_pairs_hook`` takes priority.
+    This feature can be used to implement custom decoders (e.g. sort by keys
+    before creating dict).  If ``object_hook`` is also defined, the
+    ``object_pairs_hook`` takes priority.
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
@@ -311,9 +311,9 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
     ``object_pairs_hook`` is an optional function that will be called with the
     result of any object literal decoded with an ordered list of pairs.  The
     return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders that rely on the
-    order that the key and value pairs are decoded. If ``object_hook`` is also
-    defined, the ``object_pairs_hook`` takes priority.
+    This feature can be used to implement custom decoders (e.g. sort by keys
+    before creating dict).  If ``object_hook`` is also defined, the
+    ``object_pairs_hook`` takes priority.
 
     ``parse_float``, if specified, will be called with the string
     of every JSON float to be decoded. By default this is equivalent to
