@@ -86,7 +86,7 @@ _asyncio_Future_exception(FutureObj *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_asyncio_Future_set_result__doc__,
-"set_result($self, res, /)\n"
+"set_result($self, result, /)\n"
 "--\n"
 "\n"
 "Mark the future done and set its result.\n"
@@ -536,6 +536,22 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_asyncio_Task_set_result__doc__,
+"set_result($self, result, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK_SET_RESULT_METHODDEF    \
+    {"set_result", (PyCFunction)_asyncio_Task_set_result, METH_O, _asyncio_Task_set_result__doc__},
+
+PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
+"set_exception($self, exception, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF    \
+    {"set_exception", (PyCFunction)_asyncio_Task_set_exception, METH_O, _asyncio_Task_set_exception__doc__},
+
 PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
 "_get_running_loop($module, /)\n"
 "--\n"
@@ -747,4 +763,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d100b3d74f2a0f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=616e814431893dcc input=a9049054013a1b77]*/

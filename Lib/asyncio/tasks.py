@@ -37,7 +37,9 @@ def all_tasks(loop=None):
     return {t for t in _all_tasks if futures._get_loop(t) is loop}
 
 
-class Task(futures.Future):
+class Task(futures._PyFuture):  # Inherit Python Task implementation
+                                # from a Python Future implementation.
+
     """A coroutine wrapped in a Future."""
 
     # An important invariant maintained while a Task not done:
@@ -107,10 +109,16 @@ class Task(futures.Future):
             if self._source_traceback:
                 context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
-        futures.Future.__del__(self)
+        super().__del__()
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
+
+    def set_result(self, result):
+        raise RuntimeError('Task does not support set_result operation')
+
+    def set_exception(self, exception):
+        raise RuntimeError('Task does not support set_exception operation')
 
     def get_stack(self, *, limit=None):
         """Return the list of stack frames for this task's coroutine.
@@ -180,7 +188,9 @@ class Task(futures.Future):
         return True
 
     def _step(self, exc=None):
-        assert not self.done(), f'_step(): already done: {self!r}, {exc!r}'
+        if self.done():
+            raise futures.InvalidStateError(
+                f'_step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
             if not isinstance(exc, futures.CancelledError):
                 exc = futures.CancelledError()
@@ -201,15 +211,15 @@ class Task(futures.Future):
             if self._must_cancel:
                 # Task is cancelled right before coro stops.
                 self._must_cancel = False
-                self.set_exception(futures.CancelledError())
+                super().set_exception(futures.CancelledError())
             else:
-                self.set_result(exc.value)
+                super().set_result(exc.value)
         except futures.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
         except Exception as exc:
-            self.set_exception(exc)
+            super().set_exception(exc)
         except BaseException as exc:
-            self.set_exception(exc)
+            super().set_exception(exc)
             raise
         else:
             blocking = getattr(result, '_asyncio_future_blocking', None)

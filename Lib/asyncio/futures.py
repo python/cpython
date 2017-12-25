@@ -239,14 +239,15 @@ class Future:
         self._schedule_callbacks()
         self._log_traceback = True
 
-    def __iter__(self):
+    def __await__(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self  # This tells Task to wait for completion.
-        assert self.done(), "await wasn't used with future"
+        if not self.done():
+            raise RuntimeError("await wasn't used with future")
         return self.result()  # May raise too.
 
-    __await__ = __iter__  # make compatible with 'await' expression
+    __iter__ = __await__  # make compatible with 'yield from'.
 
 
 # Needed for testing purposes.
