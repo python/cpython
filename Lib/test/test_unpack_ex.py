@@ -263,7 +263,7 @@ Unpacking non-sequence
     >>> a, *b = 7
     Traceback (most recent call last):
       ...
-    TypeError: 'int' object is not iterable
+    TypeError: cannot unpack non-iterable int object
 
 Unpacking sequence too short
 
