@@ -866,7 +866,7 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(Point3D(1, 2, 3), (1, 2, 3))
 
         # Make sure we can't unpack
-        with self.assertRaisesRegex(TypeError, 'is not iterable'):
+        with self.assertRaisesRegex(TypeError, 'unpack'):
             x, y, z = Point3D(4, 5, 6)
 
         # Maka sure another class with the same field names isn't
