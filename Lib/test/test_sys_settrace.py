@@ -721,6 +721,22 @@ class JumpTestCase(unittest.TestCase):
             output.append(3)
         output.append(4)
 
+    @jump_test(2, 4, [4, 4])
+    def test_jump_forwards_into_while_block(output):
+        i = 1
+        output.append(2)
+        while i <= 2:
+            output.append(4)
+            i += 1
+
+    @jump_test(5, 3, [3, 3, 3, 5])
+    def test_jump_backwards_into_while_block(output):
+        i = 1
+        while i <= 2:
+            output.append(3)
+            i += 1
+        output.append(5)
+
     @jump_test(2, 3, [1, 3])
     def test_jump_forwards_out_of_with_block(output):
         with tracecontext(output, 1):
@@ -895,22 +911,6 @@ class JumpTestCase(unittest.TestCase):
         for i in 1, 2:
             output.append(2)
         output.append(3)
-
-    @jump_test(2, 4, [], (ValueError, 'into'))
-    def test_no_jump_forwards_into_while_block(output):
-        i = 1
-        output.append(2)
-        while i <= 2:
-            output.append(4)
-            i += 1
-
-    @jump_test(5, 3, [3, 3], (ValueError, 'into'))
-    def test_no_jump_backwards_into_while_block(output):
-        i = 1
-        while i <= 2:
-            output.append(3)
-            i += 1
-        output.append(5)
 
     @jump_test(1, 3, [], (ValueError, 'into'))
     def test_no_jump_forwards_into_with_block(output):
