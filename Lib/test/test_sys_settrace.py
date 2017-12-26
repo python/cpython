@@ -997,14 +997,6 @@ class JumpTestCase(unittest.TestCase):
         finally:
             output.append(5)
 
-    def test_no_jump_to_non_integers(self):
-        self.run_test(no_jump_to_non_integers, 2, "Spam", [True])
-
-    def test_no_jump_without_trace_function(self):
-        # Must set sys.settrace(None) in setUp(), else condition is not
-        # triggered.
-        no_jump_without_trace_function()
-
     @jump_test(2, 4, [1, 4, 5, -4])
     def test_jump_across_with(output):
         output.append(1)
@@ -1020,6 +1012,14 @@ class JumpTestCase(unittest.TestCase):
             output.append(3)
         with tracecontext(output, 4):
             output.append(5)
+
+    def test_no_jump_to_non_integers(self):
+        self.run_test(no_jump_to_non_integers, 2, "Spam", [True])
+
+    def test_no_jump_without_trace_function(self):
+        # Must set sys.settrace(None) in setUp(), else condition is not
+        # triggered.
+        no_jump_without_trace_function()
 
     def test_large_function(self):
         d = {}
