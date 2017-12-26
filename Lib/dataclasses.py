@@ -3,8 +3,10 @@ import types
 from copy import deepcopy
 import collections
 import inspect
+import typing
 
-__all__ = ['dataclass',
+__all__ = ('dataclass',
+           'Data',
            'field',
            'FrozenInstanceError',
            'InitVar',
@@ -15,7 +17,9 @@ __all__ = ['dataclass',
            'astuple',
            'make_dataclass',
            'replace',
-           ]
+           )
+
+Data = typing.Any
 
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
