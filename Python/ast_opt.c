@@ -251,17 +251,143 @@ safe_mod(PyObject *v, PyObject *w)
     return PyNumber_Remainder(v, w);
 }
 
+
+static expr_ty
+parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
+{
+    const void *data = PyUnicode_DATA(fmt);
+    int kind = PyUnicode_KIND(fmt);
+    Py_ssize_t size = PyUnicode_GET_LENGTH(fmt);
+    Py_ssize_t start, pos;
+    int has_percents = 0;
+    start = pos = *ppos;
+    while (pos < size) {
+        if (PyUnicode_READ(kind, data, pos) != '%') {
+            pos++;
+        }
+        else if (pos+1 < size && PyUnicode_READ(kind, data, pos+1) == '%') {
+            has_percents = 1;
+            pos += 2;
+        }
+        else {
+            break;
+        }
+    }
+    *ppos = pos;
+    if (pos == start) {
+        return NULL;
+    }
+
+    PyObject *str = PyUnicode_Substring(fmt, start, pos);
+    if (str && has_percents) {
+        _Py_static_string(PyId_double_percent, "%%");
+        _Py_static_string(PyId_percent, "%");
+        PyObject *double_percent = _PyUnicode_FromId(&PyId_double_percent);
+        PyObject *percent = _PyUnicode_FromId(&PyId_percent);
+        if (!double_percent || !percent) {
+            Py_DECREF(str);
+            return NULL;
+        }
+        Py_SETREF(str, PyUnicode_Replace(str, double_percent, percent, -1));
+    }
+    if (!str) {
+        return NULL;
+    }
+
+    if (PyArena_AddPyObject(arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return Str(str, -1, -1, arena);
+}
+
+static expr_ty
+parse_format(PyObject *fmt, Py_ssize_t *ppos, expr_ty arg, PyArena *arena)
+{
+    Py_ssize_t pos = *ppos;
+    if (pos < PyUnicode_GET_LENGTH(fmt)) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(fmt, pos);
+        if (ch == 's' || ch == 'r' || ch == 'a') {
+            pos++;
+            *ppos = pos;
+            return FormattedValue(arg, ch, NULL,
+                                  arg->lineno, arg->col_offset, arena);
+        }
+//         PySys_FormatStderr("format = %R\n", fmt);
+    }
+    return NULL;
+}
+
+static int
+optimize_format(expr_ty node, PyObject *fmt, asdl_seq *elts, PyArena *arena)
+{
+    Py_ssize_t pos = 0;
+    Py_ssize_t cnt = 0;
+    asdl_seq *seq = _Py_asdl_seq_new(asdl_seq_LEN(elts) * 2 + 1, arena);
+    if (!seq) {
+        return 0;
+    }
+    seq->size = 0;
+
+    while (1) {
+        expr_ty lit = parse_literal(fmt, &pos, arena);
+        if (lit) {
+            asdl_seq_SET(seq, seq->size++, lit);
+        }
+        else if (PyErr_Occurred()) {
+            return 0;
+        }
+
+        if (pos >= PyUnicode_GET_LENGTH(fmt)) {
+            break;
+        }
+        if (cnt >= asdl_seq_LEN(elts)) {
+            // TODO: SyntaxWarning?
+            return 1;
+        }
+        assert(PyUnicode_READ_CHAR(fmt, pos) == '%');
+        pos++;
+        expr_ty expr = parse_format(fmt, &pos, asdl_seq_GET(elts, cnt), arena);
+        cnt++;
+        if (!expr) {
+            return !PyErr_Occurred();
+        }
+        asdl_seq_SET(seq, seq->size++, expr);
+    }
+    if (cnt < asdl_seq_LEN(elts)) {
+        // TODO: SyntaxWarning?
+        return 1;
+    }
+    expr_ty res = JoinedStr(seq, node->lineno, node->col_offset, arena);
+    if (!res) {
+        return 0;
+    }
+    COPY_NODE(node, res);
+//     PySys_FormatStderr("format = %R\n", fmt);
+    return 1;
+}
+
 static int
 fold_binop(expr_ty node, PyArena *arena, int optimize)
 {
     expr_ty lhs, rhs;
     lhs = node->v.BinOp.left;
     rhs = node->v.BinOp.right;
-    if (!is_const(lhs) || !is_const(rhs)) {
+    if (!is_const(lhs)) {
         return 1;
     }
-
     PyObject *lv = get_const_value(lhs);
+
+    if (node->v.BinOp.op == Mod &&
+        rhs->kind == Tuple_kind &&
+        PyUnicode_Check(lv))
+    {
+        return optimize_format(node, lv, rhs->v.Tuple.elts, arena);
+    }
+
+    if (!is_const(rhs)) {
+        return 1;
+    }
     PyObject *rv = get_const_value(rhs);
     PyObject *newval;
 
