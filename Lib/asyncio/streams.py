@@ -224,6 +224,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._stream_writer = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
+        self._closed = self._loop.create_future()
 
     def connection_made(self, transport):
         self._stream_reader.set_transport(transport)
@@ -243,12 +244,11 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._stream_reader.feed_eof()
             else:
                 self._stream_reader.set_exception(exc)
+        if exc is None:
+            self._closed.set_result(None)
+        else:
+            self._closed.set_exception(exc)
         super().connection_lost(exc)
-        if self._stream_writer is not None:
-            if exc is None:
-                self._stream_writer._closed.set_result(None)
-            else:
-                self._stream_writer._closed.set_exception(exc)
         self._stream_reader = None
         self._stream_writer = None
 
@@ -281,7 +281,6 @@ class StreamWriter:
         # drain() expects that the reader has an exception() method
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
-        self._closed = loop.create_future()
         self._loop = loop
 
     def __repr__(self):
@@ -313,7 +312,7 @@ class StreamWriter:
         return self._transport.is_closing()
 
     async def wait_closed(self):
-        await self._closed
+        await self._protocol._closed
 
     def get_extra_info(self, name, default=None):
         return self._transport.get_extra_info(name, default)
