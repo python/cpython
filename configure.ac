@@ -3373,8 +3373,6 @@ then
 	fi
 	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
-	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
-	Darwin/@<:@0156@:>@\..*) DYNLOADFILE="dynload_next.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading
@@ -4480,7 +4478,7 @@ then
   [define to 1 if your sem_getvalue is broken.])
 fi
 
-AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND], [], [], [[#include <dlfcn.h>]])
+AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])

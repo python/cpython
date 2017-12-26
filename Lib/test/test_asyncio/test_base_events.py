@@ -1053,6 +1053,14 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                                         'A Stream Socket was expected'):
                 self.loop.run_until_complete(coro)
 
+    def test_create_server_ssl_timeout_for_plain_socket(self):
+        coro = self.loop.create_server(
+            MyProto, 'example.com', 80, ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
+
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'no socket.SOCK_NONBLOCK (linux only)')
     def test_create_server_stream_bittype(self):
@@ -1301,34 +1309,45 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         self.loop._make_ssl_transport.side_effect = mock_make_ssl_transport
         ANY = mock.ANY
+        handshake_timeout = object()
         # First try the default server_hostname.
         self.loop._make_ssl_transport.reset_mock()
-        coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True)
+        coro = self.loop.create_connection(
+                MyProto, 'python.org', 80, ssl=True,
+                ssl_handshake_timeout=handshake_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
-            server_hostname='python.org')
+            server_hostname='python.org',
+            ssl_handshake_timeout=handshake_timeout)
         # Next try an explicit server_hostname.
         self.loop._make_ssl_transport.reset_mock()
-        coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True,
-                                           server_hostname='perl.com')
+        coro = self.loop.create_connection(
+                MyProto, 'python.org', 80, ssl=True,
+                server_hostname='perl.com',
+                ssl_handshake_timeout=handshake_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
-            server_hostname='perl.com')
+            server_hostname='perl.com',
+            ssl_handshake_timeout=handshake_timeout)
         # Finally try an explicit empty server_hostname.
         self.loop._make_ssl_transport.reset_mock()
-        coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True,
-                                           server_hostname='')
+        coro = self.loop.create_connection(
+                MyProto, 'python.org', 80, ssl=True,
+                server_hostname='',
+                ssl_handshake_timeout=handshake_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
-        self.loop._make_ssl_transport.assert_called_with(ANY, ANY, ANY, ANY,
-                                                         server_side=False,
-                                                         server_hostname='')
+        self.loop._make_ssl_transport.assert_called_with(
+                ANY, ANY, ANY, ANY,
+                server_side=False,
+                server_hostname='',
+                ssl_handshake_timeout=handshake_timeout)
 
     def test_create_connection_no_ssl_server_hostname_errors(self):
         # When not using ssl, server_hostname must be None.
@@ -1350,6 +1369,14 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                                            ssl=True, sock=sock)
         self.addCleanup(sock.close)
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+
+    def test_create_connection_ssl_timeout_for_plain_socket(self):
+        coro = self.loop.create_connection(
+            MyProto, 'example.com', 80, ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
 
     def test_create_server_empty_host(self):
         # if host is empty string use None instead
@@ -1687,7 +1714,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             constants.ACCEPT_RETRY_DELAY,
             # self.loop._start_serving
             mock.ANY,
-            MyProto, sock, None, None, mock.ANY)
+            MyProto, sock, None, None, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
         @asyncio.coroutine
