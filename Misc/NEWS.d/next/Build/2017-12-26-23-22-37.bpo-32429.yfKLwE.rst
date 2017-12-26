@@ -1,0 +1,3 @@
+Build will now fail when Module/Setup is out of date. Previously a warning
+was displayed but was invisible due to make verbosity, sometimes giving a
+non-working Python as a result, like in https://bugs.python.org/issue32335.
