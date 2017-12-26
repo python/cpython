@@ -8,6 +8,7 @@ import gc
 from functools import wraps
 
 class tracecontext:
+    """Contex manager that traces its enter and exit."""
     def __init__(self, output, value):
         self.output = output
         self.value = value
@@ -553,9 +554,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
 # command (aka. "Set next statement").
 
 class JumpTracer:
-    """Defines a trace function that jumps from one place to another,
-    with the source and destination lines of the jump being defined by
-    the 'jump' property of the function under test."""
+    """Defines a trace function that jumps from one place to another."""
 
     def __init__(self, function, jumpFrom, jumpTo):
         self.function = function
@@ -596,7 +595,7 @@ def no_jump_without_trace_function():
             raise
     else:
         # Something's wrong - the expected exception wasn't raised.
-        raise RuntimeError("Trace-function-less jump failed to fail")
+        raise AssertionError("Trace-function-less jump failed to fail")
 
 
 class JumpTestCase(unittest.TestCase):
@@ -623,9 +622,13 @@ class JumpTestCase(unittest.TestCase):
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None):
+        """Decorator that creates a test that makes a jump
+        from one place to another in the following code.
+        """
         def decorator(func):
             @wraps(func)
             def test(self):
+                # +1 to compensate a decorator line
                 self.run_test(func, jumpFrom+1, jumpTo+1, expected, error)
             return test
         return decorator
@@ -956,6 +959,7 @@ class JumpTestCase(unittest.TestCase):
             raise
         output.append(6)
 
+    # 'except' with a variable creates an implicit finally block
     @jump_test(5, 7, [4], (ValueError, 'into'))
     def test_no_jump_between_except_blocks_2(output):
         try:
@@ -967,13 +971,15 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(3, 5, [2, 5], (ValueError, 'finally'))
+    @jump_test(3, 6, [2, 5, 6], (ValueError, 'finally'))
     def test_no_jump_into_finally_block(output):
         try:
             output.append(2)
             output.append(3)
-        finally:
+        finally:  # still executed if the jump is failed
             output.append(5)
+            output.append(6)
+        output.append(7)
 
     @jump_test(1, 5, [], (ValueError, 'finally'))
     def test_no_jump_into_finally_block_2(output):
