@@ -421,12 +421,12 @@ if test "$cross_compiling" = yes; then
 			_host_cpu=$host_cpu
 		esac
 		;;
-        *-*-cygwin*)
-                _host_cpu=
-                ;;
-        *-*-vxworks*)
-                _host_cpu=$host_cpu
-                ;;
+	*-*-cygwin*)
+		_host_cpu=
+		;;
+	*-*-vxworks*)
+		_host_cpu=$host_cpu
+		;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"

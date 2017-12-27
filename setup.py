@@ -549,7 +549,7 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
         # only change this for cross builds for 3.3, issues on Mageia
-        if (cross_compiling and not host_platform == 'vxworks'):
+        if cross_compiling and not host_platform == 'vxworks':
             self.add_gcc_paths()
         self.add_multiarch_paths()
 
@@ -2198,6 +2198,7 @@ class PyBuildExt(build_ext):
         ext = Extension (
             '_decimal',
             include_dirs=include_dirs,
+            libraries=libraries,
             define_macros=define_macros,
             undef_macros=undef_macros,
             extra_compile_args=extra_compile_args,

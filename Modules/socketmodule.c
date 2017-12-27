@@ -532,7 +532,6 @@ set_error(void)
     return PyErr_SetFromErrno(PyExc_OSError);
 }
 
-/*#ifndef __VXWORKS__ */
 static PyObject *
 set_herror(int h_error)
 {
@@ -550,7 +549,7 @@ set_herror(int h_error)
 
     return NULL;
 }
-/* #endif */
+
 
 static PyObject *
 set_gaierror(int error)
