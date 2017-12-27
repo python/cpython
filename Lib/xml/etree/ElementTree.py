@@ -189,7 +189,7 @@ class Element:
         """
         return self.__class__(tag, attrib)
 
-    def copy(self):
+    def __copy__(self):
         """Return copy of current element.
 
         This creates a shallow copy. Subelements will be shared with the
