@@ -1561,7 +1561,7 @@ bytes_compare_eq(PyBytesObject *a, PyBytesObject *b)
     if (a->ob_sval[0] != b->ob_sval[0])
         return 0;
 
-    cmp = memcmp(a->ob_sval, b->ob_sval, len);
+    cmp = memcmp(a->ob_sval, b->ob_sval, lena);
     return (cmp == 0);
 }
 
