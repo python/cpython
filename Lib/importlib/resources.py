@@ -20,6 +20,11 @@ Resource = Union[str, os.PathLike]
 
 
 def _get_package(package) -> ModuleType:
+    """Take a package name or module object and return the module.
+
+    If a name, the module is imported.  If the passed or imported module
+    object is not a package, raise an exception.
+    """
     if hasattr(package, '__spec__'):
         if package.__spec__.submodule_search_locations is None:
             raise TypeError('{!r} is not a package'.format(
@@ -35,6 +40,10 @@ def _get_package(package) -> ModuleType:
 
 
 def _normalize_path(path) -> str:
+    """Normalize a path by ensuring it is a string.
+
+    If the resulting string contains path separators, an exception is raised.
+    """
     str_path = str(path)
     parent, file_name = os.path.split(str_path)
     if parent:
@@ -69,14 +78,14 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     full_path = os.path.join(package_path, resource)
     try:
         return builtins_open(full_path, mode='rb')
-    except IOError:
+    except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
         # get_data() will make it clear what is needed from the loader.
         loader = cast(ResourceLoader, package.__spec__.loader)
         data = None
         if hasattr(package.__spec__.loader, 'get_data'):
-            with suppress(IOError):
+            with suppress(OSError):
                 data = loader.get_data(full_path)
         if data is None:
             package_name = package.__spec__.name
@@ -105,14 +114,14 @@ def open_text(package: Package,
     try:
         return builtins_open(
             full_path, mode='r', encoding=encoding, errors=errors)
-    except IOError:
+    except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
         # get_data() will make it clear what is needed from the loader.
         loader = cast(ResourceLoader, package.__spec__.loader)
         data = None
         if hasattr(package.__spec__.loader, 'get_data'):
-            with suppress(IOError):
+            with suppress(OSError):
                 data = loader.get_data(full_path)
         if data is None:
             package_name = package.__spec__.name

@@ -820,15 +820,11 @@ The following functions are available.
 
     Open for binary reading the *resource* within *package*.
 
-    :param package: A package name or module object.  See above for the API
-                    that such module objects must support.
-    :type package: ``Package``
-    :param resource: The name of the resource to open within *package*.
-                     *resource* may not contain path separators and it may
-                     not have sub-resources (i.e. it cannot be a directory).
-    :type resource: ``Resource``
-    :returns: a binary I/O stream open for reading.
-    :rtype: ``typing.io.BinaryIO``
+    *package* is either a name or a module object which conforms to the
+    :class:`Package` requirements.  *resource* is the name of the resource to
+    open within *package*; it may not contain path separators and it may not
+    have sub-resources (i.e. it cannot be a directory).  This function returns
+    a ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
 
 
 .. function:: open_text(package, resource, encoding='utf-8', errors='strict')
@@ -836,55 +832,40 @@ The following functions are available.
     Open for text reading the *resource* within *package*.  By default, the
     resource is opened for reading as UTF-8.
 
-    :param package: A package name or module object.  See above for the API
-                    that such module objects must support.
-    :type package: ``Package``
-    :param resource: The name of the resource to open within *package*.
-                     *resource* may not contain path separators and it may
-                     not have sub-resources (i.e. it cannot be a directory).
-    :type resource: ``Resource``
-    :param encoding: The encoding to open the resource in.  *encoding* has
-                     the same meaning as with :func:`open`.
-    :type encoding: str
-    :param errors: This parameter has the same meaning as with :func:`open`.
-    :type errors: str
-    :returns: an I/O stream open for reading.
-    :rtype: ``typing.TextIO``
+    *package* is either a name or a module object which conforms to the
+    :class:`Package` requirements.  *resource* is the name of the resource to
+    open within *package*; it may not contain path separators and it may not
+    have sub-resources (i.e. it cannot be a directory).  *encoding* and
+    *errors* have the same meaning as with built-in :func:`open`.
+
+    This function returns a ``typing.TextIO`` instance, a text I/O stream open
+    for reading.
+
 
 .. function:: read_binary(package, resource)
 
     Read and return the contents of the *resource* within *package* as
     ``bytes``.
 
-    :param package: A package name or module object.  See above for the API
-                    that such module objects must support.
-    :type package: ``Package``
-    :param resource: The name of the resource to read within *package*.
-                     *resource* may not contain path separators and it may
-                     not have sub-resources (i.e. it cannot be a directory).
-    :type resource: ``Resource``
-    :returns: the contents of the resource.
-    :rtype: ``bytes``
+    *package* is either a name or a module object which conforms to the
+    :class:`Package` requirements.  *resource* is the name of the resource to
+    open within *package*; it may not contain path separators and it may not
+    have sub-resources (i.e. it cannot be a directory).  This function returns
+    the contents of the resource as :class:`bytes`.
+
 
 .. function:: read_text(package, resource, encoding='utf-8', errors='strict')
 
     Read and return the contents of *resource* within *package* as a ``str``.
     By default, the contents are read as strict UTF-8.
 
-    :param package: A package name or module object.  See above for the API
-                    that such module objects must support.
-    :type package: ``Package``
-    :param resource: The name of the resource to read within *package*.
-                     *resource* may not contain path separators and it may
-                     not have sub-resources (i.e. it cannot be a directory).
-    :type resource: ``Resource``
-    :param encoding: The encoding to read the contents of the resource in.
-                     *encoding* has the same meaning as with :func:`open`.
-    :type encoding: str
-    :param errors: This parameter has the same meaning as with :func:`open`.
-    :type errors: str
-    :returns: the contents of the resource.
-    :rtype: ``str``
+    *package* is either a name or a module object which conforms to the
+    :class:`Package` requirements.  *resource* is the name of the resource to
+    open within *package*; it may not contain path separators and it may not
+    have sub-resources (i.e. it cannot be a directory).  *encoding* and
+    *errors* have the same meaning as with built-in :func:`open`.  This
+    function returns the contents of the resource as :class:`str`.
+
 
 .. function:: path(package, resource)
 
@@ -895,46 +876,28 @@ The following functions are available.
     Exiting the context manager cleans up any temporary file created when the
     resource needs to be extracted from e.g. a zip file.
 
-    :param package: A package name or module object.  See above for the API
-                    that such module objects must support.
-    :type package: ``Package``
-    :param resource: The name of the resource to read within *package*.
-                     *resource* may not contain path separators and it may
-                     not have sub-resources (i.e. it cannot be a directory).
-    :type resource: ``Resource``
-    :returns: A context manager for use in a :keyword:`with` statement.
-              Entering the context manager provides a :class:`pathlib.Path`
-              object.
-    :rtype: context manager providing a :class:`pathlib.Path` object
+    *package* is either a name or a module object which conforms to the
+    :class:`Package` requirements.  *resource* is the name of the resource to
+    open within *package*; it may not contain path separators and it may not
+    have sub-resources (i.e. it cannot be a directory).
 
 
 .. function:: is_resource(package, name)
 
     Return ``True`` if there is a resource named *name* in the package,
     otherwise ``False``.  Remember that directories are *not* resources!
-
-    :param package: A package name or module object.  See above for the API
-                    that such module objects must support.
-    :type package: ``Package``
-    :param name: The name of the resource to read within *package*.
-                 *resource* may not contain path separators and it may
-                 not have sub-resources (i.e. it cannot be a directory).
-    :type name: ``str``
-    :returns: A flag indicating whether the resource exists or not.
-    :rtype: ``bool``
+    *package* is either a name or a module object which conforms to the
+    :class:`Package` requirements.
 
 
 .. function:: contents(package)
 
-    Return an iterator over the contents of the package.  The iterator can
-    return resources (e.g. files) and non-resources (e.g. directories).  The
-    iterator does not recurse into subdirectories.
+    Return an iterator over the named items within the package.  The iterator
+    returns :class:`str` resources (e.g. files) and non-resources
+    (e.g. directories).  The iterator does not recurse into subdirectories.
 
-    :param package: A package name or module object.  See above for the API
-                    that such module objects must support.
-    :type package: ``Package``
-    :returns: The contents of the package, both resources and non-resources.
-    :rtype: An iterator over ``str``
+    *package* is either a name or a module object which conforms to the
+    :class:`Package` requirements.
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
