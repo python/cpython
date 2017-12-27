@@ -1,1 +1,1 @@
-Changed patch.dict to return patched dictionary when used as context manager
+Changed ``mock.patch.dict`` to return patched dictionary when used as context manager
