@@ -1547,11 +1547,16 @@ static int
 bytes_compare_eq(PyBytesObject *a, PyBytesObject *b)
 {
     int cmp;
-    Py_ssize_t len;
+    Py_ssize_t lena, lenb;
 
-    len = Py_SIZE(a);
-    if (Py_SIZE(b) != len)
+    lena = Py_SIZE(a);
+    lenb = Py_SIZE(b);
+
+    if (lena != lenb)
         return 0;
+
+    if (lena == 0 && lenb == 0)
+        return 1;
 
     if (a->ob_sval[0] != b->ob_sval[0])
         return 0;
