@@ -492,6 +492,13 @@ and the ``--directory`` to the command line of the module :mod:`~http.server`.
 With this parameter, the server serves the specified directory, by default it uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
+hmac
+----
+
+The hmac module now has an optimized one-shot :func:`~hmac.digest` function,
+which is up to three times faster than :func:`~hmac.HMAC`.
+(Contributed by Christian Heimes in :issue:`32433`.)
+
 importlib
 ---------
 
