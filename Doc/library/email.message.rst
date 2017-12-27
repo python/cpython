@@ -519,6 +519,7 @@ message objects.
          False False
          False True
          False False
+         >>> from email.iterators import _structure
          >>> _structure(msg)
          multipart/report
              text/plain
