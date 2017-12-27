@@ -18,8 +18,8 @@ except ImportError:
 # This tests to make sure that if a SIGINT arrives just before we send into a
 # yield from chain, the KeyboardInterrupt is raised in the innermost
 # generator (see bpo-30039).
-@unittest.skipUnless(_testcapi is not None and hasattr(_testcapi,
-                     "raise_SIGINT_then_send_None"),
+@unittest.skipUnless(_testcapi is not None and
+                     hasattr(_testcapi, "raise_SIGINT_then_send_None"),
                      "needs _testcapi.raise_SIGINT_then_send_None")
 class SignalAndYieldFromTest(unittest.TestCase):
 
