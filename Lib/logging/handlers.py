@@ -27,6 +27,8 @@ import logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 import threading
+import requests
+import json
 
 #
 # Some constants...
@@ -40,6 +42,45 @@ SYSLOG_UDP_PORT             = 514
 SYSLOG_TCP_PORT             = 514
 
 _MIDNIGHT = 24 * 60 * 60  # number of seconds in a day
+
+class TelegramHandler(logging.Handler):
+    """
+    A handler for pushing logger messages from your telegram bot to several chats
+    https://web.telegram.org
+    """
+    def __init__(self,  bot_id, chat_ids, prefix = ""):
+        """
+        # bot_id
+        Create your bot https://core.telegram.org/bots
+        => you'll get bot_id. Something like: 332311222:A0Fprl2zGRtBfSIf6zK9RgLZW9fZziOO000
+        # chat_id
+        Get chat_id with help of /getUpdates     -- load history for the latest 24 hour
+        curl https://api.telegram.org/bot332311222:A0Fprl2zGRtBfSIf6zK9RgLZW9fZziOO000/getUpdates
+        From its output you can get chat_id. Like:
+            ... "chat":{"id":-19000001 ...
+        You can write to several chat_ids: ['-19000001', '250711222']
+        # prefix
+        Prefix for all messages for Telegram
+        """
+        logging.Handler.__init__(self)
+        assert isinstance(chat_ids, list)
+
+        self.bot_id = bot_id
+        self.chat_ids = chat_ids
+        self.prefix = (prefix + ": ") if prefix != "" else ""
+
+    def emit(self, record):
+        msg = self.format(record)
+        msg = self.prefix + msg
+        url = 'https://api.telegram.org/bot' + self.bot_id + '/sendMessage'
+        headers = {'Content-Type': 'application/json'}
+
+        for chat_id in self.chat_ids:
+            payload = {'chat_id': chat_id, 'text': msg}
+            logging.getLogger('urllib3').propagate = False  # otherwise it'll run recursion, as requests uses urllib3 and urllib3 uses logging
+            r = requests.post(url, data=json.dumps(payload), headers=headers)
+            if not r.ok:
+                raise RuntimeError("Telegram: Can't send msg: " + msg)
 
 class BaseRotatingHandler(logging.FileHandler):
     """
