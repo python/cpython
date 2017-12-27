@@ -291,9 +291,9 @@ for detailed information about platforms with pre-compiled installers.
       by Mark Pilgrim, 2004,
       ISBN 1-59059-356-1
 
-   `For Windows users <http://python.swaroopch.com/installation.html#installation-on-windows>`_
+   `For Windows users <https://python.swaroopch.com/installation.html#installation-on-windows>`_
       in "Installing Python"
-      in "`A Byte of Python <http://python.swaroopch.com/>`_"
+      in "`A Byte of Python <https://python.swaroopch.com/>`_"
       by Swaroop C H, 2003
 
 
@@ -871,7 +871,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <http://cx-freeze.sourceforge.net/>`_ is a :mod:`distutils`
+`cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ is a :mod:`distutils`
 extension (see :ref:`extending-distutils`) which wraps Python scripts into
 executable Windows programs (:file:`{*}.exe` files).  When you have done this,
 you can distribute your application without requiring your users to install

@@ -4409,7 +4409,7 @@ class Test_operator(FixerTestCase):
 
     def test_operator_isCallable(self):
         b = "operator.isCallable(x)"
-        a = "hasattr(x, '__call__')"
+        a = "callable(x)"
         self.check(b, a)
 
     def test_operator_sequenceIncludes(self):
@@ -4468,7 +4468,7 @@ class Test_operator(FixerTestCase):
 
     def test_bare_isCallable(self):
         s = "isCallable(x)"
-        t = "You should use 'hasattr(x, '__call__')' here."
+        t = "You should use 'callable(x)' here."
         self.warns_unchanged(s, t)
 
     def test_bare_sequenceIncludes(self):

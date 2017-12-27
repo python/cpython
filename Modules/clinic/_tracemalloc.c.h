@@ -90,7 +90,7 @@ static PyObject *
 _tracemalloc_start_impl(PyObject *module, int nframe);
 
 static PyObject *
-_tracemalloc_start(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int nframe = 1;
@@ -185,4 +185,4 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=db4f909464c186e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d98afded69c89d52 input=a9049054013a1b77]*/

@@ -12,7 +12,10 @@ from .support import driver
 from test.support import verbose
 
 # Python imports
+import importlib
+import operator
 import os
+import pickle
 import shutil
 import subprocess
 import sys
@@ -99,6 +102,18 @@ pgen2_driver.load_grammar(%r, save=True, force=True)
         finally:
             shutil.rmtree(tmpdir)
 
+    def test_load_packaged_grammar(self):
+        modname = __name__ + '.load_test'
+        class MyLoader:
+            def get_data(self, where):
+                return pickle.dumps({'elephant': 19})
+        class MyModule:
+            __file__ = 'parsertestmodule'
+            __spec__ = importlib.util.spec_from_loader(modname, MyLoader())
+        sys.modules[modname] = MyModule()
+        self.addCleanup(operator.delitem, sys.modules, modname)
+        g = pgen2_driver.load_packaged_grammar(modname, 'Grammar.txt')
+        self.assertEqual(g.elephant, 19)
 
 
 class GrammarTest(support.TestCase):

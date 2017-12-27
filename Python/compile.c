@@ -191,7 +191,7 @@ static void compiler_pop_fblock(struct compiler *, enum fblocktype,
 static int compiler_in_loop(struct compiler *);
 
 static int inplace_binop(struct compiler *, operator_ty);
-static int expr_constant(struct compiler *, expr_ty);
+static int expr_constant(expr_ty);
 
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
@@ -330,6 +330,10 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
     c.c_nestlevel = 0;
+
+    if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
+        goto finally;
+    }
 
     c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
     if (c.c_st == NULL) {
@@ -2208,7 +2212,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(c, s->v.If.test);
+    constant = expr_constant(s->v.If.test);
     /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
@@ -2354,7 +2358,7 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(c, s->v.While.test);
+    int constant = expr_constant(s->v.While.test);
 
     if (constant == 0) {
         if (s->v.While.orelse)
@@ -3085,13 +3089,13 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     PyObject *mangled;
     /* XXX AugStore isn't used anywhere! */
 
-    mangled = _Py_Mangle(c->u->u_private, name);
-    if (!mangled)
-        return 0;
-
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
+
+    mangled = _Py_Mangle(c->u->u_private, name);
+    if (!mangled)
+        return 0;
 
     op = 0;
     optype = OP_NAME;
@@ -4126,37 +4130,12 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
  */
 
 static int
-expr_constant(struct compiler *c, expr_ty e)
+expr_constant(expr_ty e)
 {
-    const char *id;
-    switch (e->kind) {
-    case Ellipsis_kind:
-        return 1;
-    case Constant_kind:
-        return PyObject_IsTrue(e->v.Constant.value);
-    case Num_kind:
-        return PyObject_IsTrue(e->v.Num.n);
-    case Str_kind:
-        return PyObject_IsTrue(e->v.Str.s);
-    case Name_kind:
-        /* optimize away names that can't be reassigned */
-        id = PyUnicode_AsUTF8(e->v.Name.id);
-        if (id && strcmp(id, "__debug__") == 0)
-            return !c->c_optimize;
-        return -1;
-    case NameConstant_kind: {
-        PyObject *o = e->v.NameConstant.value;
-        if (o == Py_None)
-            return 0;
-        else if (o == Py_True)
-            return 1;
-        else if (o == Py_False)
-            return 0;
+    if (is_const(e)) {
+        return PyObject_IsTrue(get_const_value(e));
     }
-    /* fall through */
-    default:
-        return -1;
-    }
+    return -1;
 }
 
 
@@ -5272,11 +5251,6 @@ compute_code_flags(struct compiler *c)
 
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
-
-    if (!PyDict_GET_SIZE(c->u->u_freevars) &&
-        !PyDict_GET_SIZE(c->u->u_cellvars)) {
-        flags |= CO_NOFREE;
-    }
 
     return flags;
 }

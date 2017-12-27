@@ -331,6 +331,7 @@ PYTHON_OBJS=	\
 		Python/Python-ast.o \
 		Python/asdl.o \
 		Python/ast.o \
+		Python/ast_opt.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
 		Python/compile.o \
@@ -349,8 +350,9 @@ PYTHON_OBJS=	\
 		Python/importdl.o \
 		Python/marshal.o \
 		Python/modsupport.o \
-		Python/mystrtoul.o \
 		Python/mysnprintf.o \
+		Python/mystrtoul.o \
+		Python/pathconfig.o \
 		Python/peephole.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
@@ -1002,7 +1004,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymath.h \
-		$(srcdir)/Include/pygetopt.h \
 		$(srcdir)/Include/pymacro.h \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
@@ -1032,7 +1033,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/ceval.h \
 		$(srcdir)/Include/internal/gil.h \
 		$(srcdir)/Include/internal/mem.h \
-		$(srcdir)/Include/internal/pymalloc.h \
+		$(srcdir)/Include/internal/pygetopt.h \
 		$(srcdir)/Include/internal/pystate.h \
 		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
@@ -1627,10 +1628,9 @@ autoconf:
 
 # Create a tags file for vi
 tags::
-	cd $(srcdir); \
-	ctags -w Include/*.h Include/internal/*.h; \
-	for i in $(SRCDIRS); do ctags -f tags -w -a $$i/*.[ch]; \
-	done; \
+	ctags -w $(srcdir)/Include/*.h $(srcdir)/Include/internal/*.h
+	for i in $(SRCDIRS); do ctags -f tags -w -a $(srcdir)/$$i/*.[ch]; done
+	ctags -f tags -w -a $(srcdir)/Modules/_ctypes/*.[ch]
 	LC_ALL=C sort -o tags tags
 
 # Create a tags file for GNU Emacs

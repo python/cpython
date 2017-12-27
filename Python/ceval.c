@@ -3703,10 +3703,10 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
 
 PyObject *
 _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
-           PyObject **args, Py_ssize_t argcount,
-           PyObject **kwnames, PyObject **kwargs,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *const *kwnames, PyObject *const *kwargs,
            Py_ssize_t kwcount, int kwstep,
-           PyObject **defs, Py_ssize_t defcount,
+           PyObject *const *defs, Py_ssize_t defcount,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
 {
@@ -3992,8 +3992,10 @@ fail: /* Jump here from prelude on failure */
 
 PyObject *
 PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
-           PyObject **args, int argcount, PyObject **kws, int kwcount,
-           PyObject **defs, int defcount, PyObject *kwdefs, PyObject *closure)
+                  PyObject *const *args, int argcount,
+                  PyObject *const *kws, int kwcount,
+                  PyObject *const *defs, int defcount,
+                  PyObject *kwdefs, PyObject *closure)
 {
     return _PyEval_EvalCodeWithName(_co, globals, locals,
                                     args, argcount,
@@ -4135,8 +4137,16 @@ unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
     assert(v != NULL);
 
     it = PyObject_GetIter(v);
-    if (it == NULL)
-        goto Error;
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError) &&
+            v->ob_type->tp_iter == NULL && !PySequence_Check(v))
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "cannot unpack non-iterable %.200s object",
+                         v->ob_type->tp_name);
+        }
+        return 0;
+    }
 
     for (; i < argcnt; i++) {
         w = PyIter_Next(it);
