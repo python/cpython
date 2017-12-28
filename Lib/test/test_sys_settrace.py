@@ -8,7 +8,7 @@ import gc
 from functools import wraps
 
 class tracecontext:
-    """Contex manager that traces its enter and exit."""
+    """Context manager that traces its enter and exit."""
     def __init__(self, output, value):
         self.output = output
         self.value = value
