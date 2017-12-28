@@ -240,47 +240,6 @@ PyContextVar_Reset(PyContextVar *var, PyContextToken *tok)
 }
 
 
-int
-PyContext_ClearFreeList(void)
-{
-    int size = ctx_freelist_len;
-    while (ctx_freelist_len) {
-        PyContext *ctx = ctx_freelist;
-        ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
-        ctx->ctx_weakreflist = NULL;
-        PyObject_GC_Del(ctx);
-        ctx_freelist_len--;
-    }
-    return size;
-}
-
-
-void
-_PyContext_Fini(void)
-{
-    (void)PyContext_ClearFreeList();
-    (void)_PyHamt_Fini();
-}
-
-
-int
-_PyContext_Init(void)
-{
-    if (!_PyHamt_Init()) {
-        return 0;
-    }
-
-    if ((PyType_Ready(&PyContext_Type) < 0) ||
-        (PyType_Ready(&PyContextVar_Type) < 0) ||
-        (PyType_Ready(&PyContextToken_Type) < 0))
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
-
 /////////////////////////// PyContext
 
 /*[clinic input]
@@ -930,6 +889,8 @@ PyTypeObject PyContextVar_Type = {
 
 /////////////////////////// Token
 
+static PyObject * get_token_missing(void);
+
 
 /*[clinic input]
 class _contextvars.Token "PyContextToken *" "&PyContextToken_Type"
@@ -969,15 +930,35 @@ token_tp_dealloc(PyContextToken *self)
     Py_TYPE(self)->tp_free(self);
 }
 
-static PyMethodDef PyContextToken_methods[] = {
-    {NULL, NULL}
+static PyObject *
+token_get_var(PyContextToken *self)
+{
+    Py_INCREF(self->tok_var);
+    return (PyObject *)self->tok_var;
+}
+
+static PyObject *
+token_get_old_val(PyContextToken *self)
+{
+    if (self->tok_oldval == NULL) {
+        return get_token_missing();
+    }
+
+    Py_INCREF(self->tok_oldval);
+    return self->tok_oldval;
+}
+
+static PyGetSetDef PyContextTokenType_getsetlist[] = {
+    {"var", (getter)token_get_var, NULL, NULL},
+    {"old_val", (getter)token_get_old_val, NULL, NULL},
+    {NULL}
 };
 
 PyTypeObject PyContextToken_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token",
     sizeof(PyContextToken),
-    .tp_methods = PyContextToken_methods,
+    .tp_getset = PyContextTokenType_getsetlist,
     .tp_dealloc = (destructor)token_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -1006,4 +987,106 @@ token_new(PyContextVar *var, PyObject *val)
 
     PyObject_GC_Track(tok);
     return tok;
+}
+
+
+/////////////////////////// Token.MISSING
+
+
+static PyObject *_token_missing;
+
+
+typedef struct {
+    PyObject_HEAD
+} PyContextTokenMissing;
+
+
+static PyObject *
+context_token_missing_tp_repr(PyObject *self)
+{
+    return PyUnicode_FromString("<Token.MISSING>");
+}
+
+
+PyTypeObject PyContextTokenMissing_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "Token.MISSING",
+    sizeof(PyContextTokenMissing),
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_repr = context_token_missing_tp_repr,
+};
+
+
+static PyObject *
+get_token_missing(void)
+{
+    if (_token_missing != NULL) {
+        Py_INCREF(_token_missing);
+        return _token_missing;
+    }
+
+    _token_missing = (PyObject *)PyObject_New(
+        PyContextTokenMissing, &PyContextTokenMissing_Type);
+    if (_token_missing == NULL) {
+        return NULL;
+    }
+
+    Py_INCREF(_token_missing);
+    return _token_missing;
+}
+
+
+///////////////////////////
+
+
+int
+PyContext_ClearFreeList(void)
+{
+    int size = ctx_freelist_len;
+    while (ctx_freelist_len) {
+        PyContext *ctx = ctx_freelist;
+        ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
+        ctx->ctx_weakreflist = NULL;
+        PyObject_GC_Del(ctx);
+        ctx_freelist_len--;
+    }
+    return size;
+}
+
+
+void
+_PyContext_Fini(void)
+{
+    Py_CLEAR(_token_missing);
+    (void)PyContext_ClearFreeList();
+    (void)_PyHamt_Fini();
+}
+
+
+int
+_PyContext_Init(void)
+{
+    if (!_PyHamt_Init()) {
+        return 0;
+    }
+
+    if ((PyType_Ready(&PyContext_Type) < 0) ||
+        (PyType_Ready(&PyContextVar_Type) < 0) ||
+        (PyType_Ready(&PyContextToken_Type) < 0) ||
+        (PyType_Ready(&PyContextTokenMissing_Type) < 0))
+    {
+        return 0;
+    }
+
+    PyObject *missing = get_token_missing();
+    if (PyDict_SetItemString(
+        PyContextToken_Type.tp_dict, "MISSING", missing))
+    {
+        Py_DECREF(missing);
+        return 0;
+    }
+    Py_DECREF(missing);
+
+    return 1;
 }
