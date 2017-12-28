@@ -139,7 +139,7 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
             var->var_cached_tsver == ts->contextvars_stack_ver)
     {
         *val = var->var_cached;
-        return 0;
+        goto found;
     }
 
     assert(PyHamt_Check(ts->contextvars));
@@ -148,7 +148,7 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
     PyObject *found = NULL;
     int res = _PyHamt_Find(vars, (PyObject*)var, &found);
     if (res < 0) {
-        return -1;
+        goto error;
     }
     if (res == 1) {
         assert(found != NULL);
@@ -157,23 +157,31 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
         var->var_cached_tsver = ts->contextvars_stack_ver;
 
         *val = found;
-        return 0;
+        goto found;
     }
 
 not_found:
     if (def == NULL) {
         if (var->var_default != NULL) {
             *val = var->var_default;
-            return 0;
+            goto found;
         }
 
         *val = NULL;
-        return 0;
+        goto found;
     }
     else {
         *val = def;
-        return 0;
+        goto found;
    }
+
+found:
+    Py_XINCREF(*val);
+    return 0;
+
+error:
+    *val = NULL;
+    return -1;
 }
 
 
@@ -813,7 +821,6 @@ _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
         return NULL;
     }
 
-    Py_INCREF(val);
     return val;
 }
 

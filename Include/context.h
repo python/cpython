@@ -49,6 +49,8 @@ PyAPI_FUNC(PyContextVar *) PyContextVar_New(
    - default_value, if not NULL;
    - the default value of "var", if not NULL;
    - NULL.
+
+   '*value' will be a new ref, if not NULL.
 */
 PyAPI_FUNC(int) PyContextVar_Get(
     PyContextVar *var, PyObject *default_value, PyObject **value);
