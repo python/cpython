@@ -801,14 +801,14 @@ abstract base class.
 
 The following types are defined.
 
-.. class:: Package
+.. data:: Package
 
-    ``Package`` types are defined as ``Union[str, ModuleType]``.  This means
+    The ``Package`` type is defined as ``Union[str, ModuleType]``.  This means
     that where the function describes accepting a ``Package``, you can pass in
     either a string or a module.  Module objects must have a resolvable
     ``__spec__.submodule_search_locations`` that is not ``None``.
 
-.. class:: Resource
+.. data:: Resource
 
     This type describes the resource names passed into the various functions
     in this package.  This is defined as ``Union[str, os.PathLike]``.
@@ -821,10 +821,10 @@ The following functions are available.
     Open for binary reading the *resource* within *package*.
 
     *package* is either a name or a module object which conforms to the
-    :class:`Package` requirements.  *resource* is the name of the resource to
-    open within *package*; it may not contain path separators and it may not
-    have sub-resources (i.e. it cannot be a directory).  This function returns
-    a ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  This function returns a
+    ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
 
 
 .. function:: open_text(package, resource, encoding='utf-8', errors='strict')
@@ -833,10 +833,10 @@ The following functions are available.
     resource is opened for reading as UTF-8.
 
     *package* is either a name or a module object which conforms to the
-    :class:`Package` requirements.  *resource* is the name of the resource to
-    open within *package*; it may not contain path separators and it may not
-    have sub-resources (i.e. it cannot be a directory).  *encoding* and
-    *errors* have the same meaning as with built-in :func:`open`.
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
+    have the same meaning as with built-in :func:`open`.
 
     This function returns a ``typing.TextIO`` instance, a text I/O stream open
     for reading.
@@ -848,10 +848,10 @@ The following functions are available.
     ``bytes``.
 
     *package* is either a name or a module object which conforms to the
-    :class:`Package` requirements.  *resource* is the name of the resource to
-    open within *package*; it may not contain path separators and it may not
-    have sub-resources (i.e. it cannot be a directory).  This function returns
-    the contents of the resource as :class:`bytes`.
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  This function returns the
+    contents of the resource as :class:`bytes`.
 
 
 .. function:: read_text(package, resource, encoding='utf-8', errors='strict')
@@ -860,11 +860,11 @@ The following functions are available.
     By default, the contents are read as strict UTF-8.
 
     *package* is either a name or a module object which conforms to the
-    :class:`Package` requirements.  *resource* is the name of the resource to
-    open within *package*; it may not contain path separators and it may not
-    have sub-resources (i.e. it cannot be a directory).  *encoding* and
-    *errors* have the same meaning as with built-in :func:`open`.  This
-    function returns the contents of the resource as :class:`str`.
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
+    have the same meaning as with built-in :func:`open`.  This function
+    returns the contents of the resource as :class:`str`.
 
 
 .. function:: path(package, resource)
@@ -877,9 +877,9 @@ The following functions are available.
     resource needs to be extracted from e.g. a zip file.
 
     *package* is either a name or a module object which conforms to the
-    :class:`Package` requirements.  *resource* is the name of the resource to
-    open within *package*; it may not contain path separators and it may not
-    have sub-resources (i.e. it cannot be a directory).
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).
 
 
 .. function:: is_resource(package, name)
@@ -887,7 +887,7 @@ The following functions are available.
     Return ``True`` if there is a resource named *name* in the package,
     otherwise ``False``.  Remember that directories are *not* resources!
     *package* is either a name or a module object which conforms to the
-    :class:`Package` requirements.
+    ``Package`` requirements.
 
 
 .. function:: contents(package)
@@ -897,7 +897,7 @@ The following functions are available.
     (e.g. directories).  The iterator does not recurse into subdirectories.
 
     *package* is either a name or a module object which conforms to the
-    :class:`Package` requirements.
+    ``Package`` requirements.
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
