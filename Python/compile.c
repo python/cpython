@@ -2527,13 +2527,17 @@ compiler_while(struct compiler *c, stmt_ty s)
 static int
 compiler_return(struct compiler *c, stmt_ty s)
 {
-    int preserve_tos = (s->v.Return.value != NULL);
+    int preserve_tos = ((s->v.Return.value != NULL) &&
+                        !is_const(s->v.Return.value));
     if (c->u->u_ste->ste_type != FunctionBlock)
         return compiler_error(c, "'return' outside function");
-    if (preserve_tos) {
-        if (c->u->u_ste->ste_coroutine && c->u->u_ste->ste_generator)
+    if (s->v.Return.value != NULL &&
+        c->u->u_ste->ste_coroutine && c->u->u_ste->ste_generator)
+    {
             return compiler_error(
                 c, "'return' with value in async generator");
+    }
+    if (preserve_tos) {
         VISIT(c, expr, s->v.Return.value);
     }
     for (int depth = c->u->u_nfblocks; depth--;) {
@@ -2542,8 +2546,11 @@ compiler_return(struct compiler *c, stmt_ty s)
         if (!compiler_unwind_fblock(c, info, preserve_tos))
             return 0;
     }
-    if (!preserve_tos) {
+    if (s->v.Return.value == NULL) {
         ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    }
+    else if (!preserve_tos) {
+        VISIT(c, expr, s->v.Return.value);
     }
     ADDOP(c, RETURN_VALUE);
 
