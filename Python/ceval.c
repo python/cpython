@@ -2886,7 +2886,7 @@ main_loop:
                to update the PyGen_NeedsFinalizing() function.
                */
 
-            PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
+            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
         }
@@ -3389,7 +3389,7 @@ exception_unwind:
                 continue;
             }
             UNWIND_BLOCK(b);
-            if ((b->b_type == SETUP_FINALLY)) {
+            if (b->b_type == SETUP_FINALLY) {
                 PyObject *exc, *val, *tb;
                 int handler = b->b_handler;
                 _PyErr_StackItem *exc_info = tstate->exc_info;

@@ -84,9 +84,6 @@ compiler IR.
 enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_END,
                   WITH, ASYNC_WITH, HANDLER_CLEANUP };
 
-struct fblockinfo;
-struct compiler;
-
 struct fblockinfo {
     enum fblocktype fb_type;
     basicblock *fb_block;
@@ -960,13 +957,13 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
         /* Exception handling */
         case SETUP_WITH:
-            /* Replace TOP with __exit__, reserve 6 cells for an exception,
+            /* Replace TOP with __exit__, reserve 6 entries for an exception,
              * and push the result of __enter__() */
             return 7;
         case WITH_CLEANUP_START:
             return 2;
         case WITH_CLEANUP_FINISH:
-            /* Pop 2 values pushed by WITH_CLEANUP_START, adjust 6 cells
+            /* Pop 2 values pushed by WITH_CLEANUP_START, adjust 6 entries
              * reserved by SETUP_WITH, and pop __exit__ */
             return -9;
         case POP_EXCEPT:
@@ -974,8 +971,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case CALL_FINALLY:
             return 0;
         case SETUP_FINALLY:
-            /* Reserve 3 items for the new exception
-             * + 3 others for the previous exception state */
+            /* Reserve 3 entries for the new exception
+             * + 3 entries for the previous exception state */
             return 6;
         case BEGIN_FINALLY:
             /* The stack has been reserved by SETUP_FINALLY */
@@ -994,7 +991,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case YIELD_FROM:
             return -1;
         case POP_BLOCK:
-            /* Adjust 6 cells reserved by SETUP_FINALLY */
+            /* Adjust 6 entries reserved by SETUP_FINALLY */
             return -6;
         case FOR_ITER:
             return 1; /* or -1, at end of iterator */
@@ -1059,7 +1056,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case GET_AWAITABLE:
             return 0;
         case SETUP_ASYNC_WITH:
-            /* Reserve 6 cells for an exception */
+            /* Reserve 6 entries for an exception */
             return 6;
         case BEFORE_ASYNC_WITH:
             return 1;
@@ -2604,18 +2601,18 @@ compiler_continue(struct compiler *c)
     Pushes the current value stack level and the label
     onto the block stack.
    POP_BLOCK:
-    Pops en entry from the block stack, and pops the value
-    stack until its level is the same as indicated on the
-    block stack.  (The label is ignored.)
+    Pops en entry from the block stack.
+   BEGIN_FINALLY
+    Pushes NULL onto the value stack.
    END_FINALLY:
-    Pops 3 entries from the *value* stack and re-raises the exception
-    they specify.
+    Pops 1 (NULL or int) or 6 entries from the *value* stack and restore
+    the raised and the caught exceptions they specify.
 
    The block stack is unwound when an exception is raised:
-   when a SETUP_FINALLY entry is found, the exception is pushed
-   onto the value stack (and the exception condition is cleared),
-   and the interpreter jumps to the label gotten from the block
-   stack.
+   when a SETUP_FINALLY entry is found, the raised and the caught
+   exceptions are pushed onto the value stack (and the exception
+   condition is cleared), and the interpreter jumps to the label
+   gotten from the block stack.
 */
 
 static int

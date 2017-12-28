@@ -738,7 +738,7 @@ iterations of the loop.
      re-raise the exception and restore ``sys.exc_info()``. 9 values are
      popped from the stack.
 
-   .. versionchanged:: 3.6
+   .. versionchanged:: 3.7
       WITH_CLEANUP_FINISH now includes the functionality of
       :opcode:`END_FINALLY`.
 
