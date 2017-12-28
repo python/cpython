@@ -1898,6 +1898,47 @@ main_loop:
             DISPATCH();
         }
 
+        TARGET(POP_FINALLY) {
+            PyObject *res = NULL;
+            if (oparg) {
+                res = POP();
+            }
+            PyObject *exc = POP();
+            if (exc == NULL || PyLong_CheckExact(exc)) {
+                Py_XDECREF(exc);
+            }
+            else {
+                Py_DECREF(exc);
+                Py_DECREF(POP());
+                Py_DECREF(POP());
+
+                PyObject *type, *value, *traceback;
+                _PyErr_StackItem *exc_info;
+                PyTryBlock *b = PyFrame_BlockPop(f);
+                if (b->b_type != EXCEPT_HANDLER) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "popped block is not an except handler");
+                    Py_XDECREF(res);
+                    goto error;
+                }
+                assert(STACK_LEVEL() == (b)->b_level + 3);
+                exc_info = tstate->exc_info;
+                type = exc_info->exc_type;
+                value = exc_info->exc_value;
+                traceback = exc_info->exc_traceback;
+                exc_info->exc_type = POP();
+                exc_info->exc_value = POP();
+                exc_info->exc_traceback = POP();
+                Py_XDECREF(type);
+                Py_XDECREF(value);
+                Py_XDECREF(traceback);
+            }
+            if (oparg) {
+                PUSH(res);
+            }
+            DISPATCH();
+        }
+
         TARGET(CALL_FINALLY) {
             PyObject *ret = PyLong_FromLong(INSTR_OFFSET());
             if (ret == NULL) {

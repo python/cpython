@@ -162,7 +162,7 @@ static void *opcode_targets[256] = {
     &&TARGET_LOAD_METHOD,
     &&TARGET_CALL_METHOD,
     &&TARGET_CALL_FINALLY,
-    &&_unknown_opcode,
+    &&TARGET_POP_FINALLY,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,

@@ -970,6 +970,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -3;
         case CALL_FINALLY:
             return 0;
+        case POP_FINALLY:
+            return -6;
         case SETUP_FINALLY:
             /* Reserve 3 entries for the new exception
              * + 3 entries for the previous exception state */
@@ -1478,7 +1480,10 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 {
     switch (info->fb_type) {
         case WHILE_LOOP:
+            return 1;
+
         case FINALLY_END:
+            ADDOP_I(c, POP_FINALLY, preserve_tos);
             return 1;
 
         case FOR_LOOP:
