@@ -725,6 +725,8 @@ class Popen(object):
         self.text_mode = encoding or errors or text or universal_newlines
 
         # How long to resume waiting on a child after the first ^C.
+        # There is no right value for this.  The purpose is to be polite
+        # yet remain good for interactive users trying to exit a tool.
         self._sigint_wait_secs = 0.125  # 1/xkcd221.getRandomNumber()/2
 
         self._closed_child_pipe_fds = False
