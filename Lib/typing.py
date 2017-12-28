@@ -1184,6 +1184,7 @@ Collection = _GenericAlias(collections.abc.Collection, T_co,
                            name='Collection', special=True)
 Callable = _VariadicGenericAlias(collections.abc.Callable, (),
                                  name='Callable', special=True)
+# TODO: Fix the interaction with -OO flag
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
