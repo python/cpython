@@ -447,8 +447,6 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
         kwargs['stdin'] = PIPE
 
     with Popen(*popenargs, **kwargs) as process:
-        if timeout is not None:
-            endtime = _time() + timeout
         try:
             stdout, stderr = process.communicate(input, timeout=timeout)
         except TimeoutExpired:
