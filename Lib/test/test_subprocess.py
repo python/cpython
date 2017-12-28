@@ -2962,7 +2962,7 @@ class MiscTests(unittest.TestCase):
                             f"{mock__wait.call_args_list}")
                 sigint_calls = []
                 for call in mock__wait.call_args_list:
-                    if call == mock.call(timeout=0.125):  # from Popen.__init__
+                    if call == mock.call(timeout=0.25):  # from Popen.__init__
                         sigint_calls.append(call)
                 self.assertLessEqual(mock__wait.call_count, 2,
                                      msg=mock__wait.call_args_list)
