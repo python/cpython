@@ -860,6 +860,7 @@ class Handler(Filterer):
         Set the formatter for this handler.
         """
         self.formatter = fmt
+        return self
 
     def flush(self):
         """
