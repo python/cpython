@@ -306,6 +306,12 @@ Future
       If the future is already done when this method is called, raises
       :exc:`InvalidStateError`.
 
+   .. method:: get_loop()
+
+      Return the event loop the future object is bound to.
+
+      .. versionadded:: 3.7
+
 
 Example: Future with run_until_complete()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

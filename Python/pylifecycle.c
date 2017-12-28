@@ -56,7 +56,7 @@ static _PyInitError initfsencoding(PyInterpreterState *interp);
 static _PyInitError initsite(void);
 static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
-static void call_py_exitfuncs(void);
+static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 extern int _PyUnicode_Init(void);
@@ -172,6 +172,15 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
         /* This is too late to have any effect */
         return -1;
     }
+
+    int res = 0;
+
+    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
+       but Py_Initialize() can change the allocator. Use a known allocator
+       to be able to release the memory later. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
      * initialised yet.
      *
@@ -182,7 +191,8 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     if (encoding) {
         _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
         if (!_Py_StandardStreamEncoding) {
-            return -2;
+            res = -2;
+            goto done;
         }
     }
     if (errors) {
@@ -191,7 +201,8 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
             if (_Py_StandardStreamEncoding) {
                 PyMem_RawFree(_Py_StandardStreamEncoding);
             }
-            return -3;
+            res = -3;
+            goto done;
         }
     }
 #ifdef MS_WINDOWS
@@ -200,7 +211,11 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
         Py_LegacyWindowsStdioFlag = 1;
     }
 #endif
-    return 0;
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    return res;
 }
 
 
@@ -597,8 +612,10 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return err;
     }
 
-    if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
-        return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
+    if (core_config->allocator != NULL) {
+        if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
+            return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
+        }
     }
 
     if (_PyRuntime.initialized) {
@@ -737,7 +754,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     }
 
     /* Initialize _warnings. */
-    if (_PyWarnings_InitWithConfig(&interp->core_config) == NULL) {
+    if (_PyWarnings_Init() == NULL) {
         return _Py_INIT_ERR("can't initialize warnings");
     }
 
@@ -847,7 +864,9 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     }
 
     /* Initialize warnings. */
-    if (PySys_HasWarnOptions()) {
+    if (interp->config.warnoptions != NULL &&
+        PyList_Size(interp->config.warnoptions) > 0)
+    {
         PyObject *warnings_module = PyImport_ImportModule("warnings");
         if (warnings_module == NULL) {
             fprintf(stderr, "'import warnings' failed; traceback:\n");
@@ -872,30 +891,29 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 _PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
-    _PyCoreConfig core_config = _PyCoreConfig_INIT;
-    _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
-    core_config.ignore_environment = Py_IgnoreEnvironmentFlag;
-    core_config._disable_importlib = !install_importlib;
+    config.ignore_environment = Py_IgnoreEnvironmentFlag;
+    config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _PyCoreConfig_ReadEnv(&core_config);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _Py_InitializeCore(&core_config);
+    err = _Py_InitializeCore(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyMainInterpreterConfig_Read(&config, &core_config);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
+    _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
+    err = _PyMainInterpreterConfig_Read(&main_config, &config);
+    if (!_Py_INIT_FAILED(err)) {
+        err = _Py_InitializeMainInterpreter(&main_config);
     }
-
-    err = _Py_InitializeMainInterpreter(&config);
+    _PyMainInterpreterConfig_Clear(&main_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -903,8 +921,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     err = _Py_INIT_OK();
 
 done:
-    _PyCoreConfig_Clear(&core_config);
-    _PyMainInterpreterConfig_Clear(&config);
+    _PyCoreConfig_Clear(&config);
     return err;
 }
 
@@ -1004,6 +1021,10 @@ Py_FinalizeEx(void)
 
     wait_for_thread_shutdown();
 
+    /* Get current thread state and interpreter pointer */
+    tstate = PyThreadState_GET();
+    interp = tstate->interp;
+
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
      * or exit func is still waiting to do an import, the import machinery
@@ -1013,17 +1034,20 @@ Py_FinalizeEx(void)
      * threads created thru it, so this also protects pending imports in
      * the threads created via Threading.
      */
-    call_py_exitfuncs();
 
-    /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
-    interp = tstate->interp;
+    call_py_exitfuncs(interp);
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
+#ifdef Py_REF_DEBUG
     int show_ref_count = interp->core_config.show_ref_count;
+#endif
+#ifdef Py_TRACE_REFS
     int dump_refs = interp->core_config.dump_refs;
+#endif
+#ifdef WITH_PYMALLOC
     int malloc_stats = interp->core_config.malloc_stats;
+#endif
 
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
@@ -1403,6 +1427,8 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
 
     wait_for_thread_shutdown();
+
+    call_py_exitfuncs(interp);
 
     if (tstate != interp->tstate_head || tstate->next != NULL)
         Py_FatalError("Py_EndInterpreter: not the last thread");
@@ -1809,7 +1835,11 @@ init_sys_streams(PyInterpreterState *interp)
 error:
     res = _Py_INIT_ERR("can't initialize sys standard streams");
 
+    /* Use the same allocator than Py_SetStandardStreamEncoding() */
+    PyMemAllocatorEx old_alloc;
 done:
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     /* We won't need them anymore. */
     if (_Py_StandardStreamEncoding) {
         PyMem_RawFree(_Py_StandardStreamEncoding);
@@ -1819,6 +1849,9 @@ done:
         PyMem_RawFree(_Py_StandardStreamErrors);
         _Py_StandardStreamErrors = NULL;
     }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
@@ -1995,13 +2028,13 @@ exit:
     }
 }
 
-void
+void _Py_NO_RETURN
 Py_FatalError(const char *msg)
 {
     fatal_error(NULL, msg, -1);
 }
 
-void
+void _Py_NO_RETURN
 _Py_FatalInitError(_PyInitError err)
 {
     /* On "user" error: exit with status 1.
@@ -2015,20 +2048,28 @@ _Py_FatalInitError(_PyInitError err)
 #  include "pythread.h"
 
 /* For the atexit module. */
-void _Py_PyAtExit(void (*func)(void))
+void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
+    PyThreadState *ts;
+    PyInterpreterState *is;
+
+    ts = PyThreadState_GET();
+    is = ts->interp;
+
     /* Guard against API misuse (see bpo-17852) */
-    assert(_PyRuntime.pyexitfunc == NULL || _PyRuntime.pyexitfunc == func);
-    _PyRuntime.pyexitfunc = func;
+    assert(is->pyexitfunc == NULL || is->pyexitfunc == func);
+
+    is->pyexitfunc = func;
+    is->pyexitmodule = module;
 }
 
 static void
-call_py_exitfuncs(void)
+call_py_exitfuncs(PyInterpreterState *istate)
 {
-    if (_PyRuntime.pyexitfunc == NULL)
+    if (istate->pyexitfunc == NULL)
         return;
 
-    (*_PyRuntime.pyexitfunc)();
+    (*istate->pyexitfunc)(istate->pyexitmodule);
     PyErr_Clear();
 }
 
