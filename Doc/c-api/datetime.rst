@@ -75,6 +75,18 @@ Type-check macros:
    *NULL*.
 
 
+.. c:function:: int PyTimeZone_Check(PyObject *ob)
+
+   Return true if *ob* is of type :c:data:`PyDateTime_TimeZoneType` or a subtype of
+   :c:data:`PyDateTime_TimeZoneType`.  *ob* must not be *NULL*.
+
+
+.. c:function:: int PyTimeZone_CheckExact(PyObject *ob)
+
+   Return true if *ob* is of type :c:data:`PyDateTime_TimeZoneType`. *ob* must not be
+   *NULL*.
+
+
 Macros to create objects:
 
 .. c:function:: PyObject* PyDate_FromDate(int year, int month, int day)
@@ -100,6 +112,20 @@ Macros to create objects:
    seconds and microseconds.  Normalization is performed so that the resulting
    number of microseconds and seconds lie in the ranges documented for
    ``datetime.timedelta`` objects.
+
+.. c:function:: PyObject* PyTimeZone_FromOffset(PyDateTime_DeltaType* offset)
+
+   Return a ``datetime.timezone`` object with an unnamed fixed offset
+   represented by the *offset* argument.
+
+   .. versionadded:: 3.7
+
+.. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyDateTime_DeltaType* offset, PyUnicode* name)
+
+   Return a ``datetime.timezone`` object with a fixed offset represented by
+   the *offset* argument and with tzname *name*.
+
+   .. versionadded:: 3.7
 
 
 Macros to extract fields from date objects.  The argument must be an instance of
