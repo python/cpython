@@ -460,7 +460,7 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             raise
         except KeyboardInterrupt:
             # https://bugs.python.org/issue25942
-            process.kill()  # It already got a chance within wait.
+            process.kill()  # It already got a chance within communicate.
             raise
         retcode = process.poll()
         if check and retcode:
