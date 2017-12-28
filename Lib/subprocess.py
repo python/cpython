@@ -304,13 +304,9 @@ def call(*popenargs, timeout=None, **kwargs):
     with Popen(*popenargs, **kwargs) as p:
         try:
             return p.wait(timeout=timeout)
-        except Exception:  # Excludes KeyboardInterrupt
+        except:  # Including KeyboardInterrupt, wait handled that.
             p.kill()
-            p.wait()
-            raise
-        except KeyboardInterrupt:
-            # https://bugs.python.org/issue25942
-            p.kill()  # It already got a chance within wait.
+            # We don't call p.wait() as p.__exit__ does that for us.
             raise
 
 
@@ -454,13 +450,9 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             stdout, stderr = process.communicate()
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
-        except Exception:  # excludes KeyboardInterrupt.
+        except:  # Including KeyboardInterrupt, communicate handled that.
             process.kill()
-            process.wait()
-            raise
-        except KeyboardInterrupt:
-            # https://bugs.python.org/issue25942
-            process.kill()  # It already got a chance within communicate.
+            # We don't call process.wait() as .__exit__ does that for us.
             raise
         retcode = process.poll()
         if check and retcode:
@@ -926,7 +918,7 @@ class Popen(object):
                                          self._remaining_time(endtime))
                 else:
                     sigint_timeout = self._sigint_wait_secs
-                self._sigint_wait_secs = 0  # prevent __exit__ from repeating this.
+                self._sigint_wait_secs = 0  # nothing else should wait.
                 try:
                     self._wait(timeout=sigint_timeout)
                 except TimeoutExpired:
@@ -973,15 +965,15 @@ class Popen(object):
             # https://bugs.python.org/issue25942
             # The first keyboard interrupt waits briefly for the child to
             # exit under the common assumption that it also received the ^C
-            # generated SIGINT and will exit rapidly.  A second will ^C
-            # will abort this immediately.  Matching user patterns of hitting
+            # generated SIGINT and will exit rapidly.  A second ^C will
+            # abort this immediately.  Matching user patterns of hitting
             # ^C more than once before resorting to ^\ (SIGKILL).
             if timeout is not None:
                 sigint_timeout = min(self._sigint_wait_secs,
                                      self._remaining_time(endtime))
             else:
                 sigint_timeout = self._sigint_wait_secs
-            self._sigint_wait_secs = 0  # prevent __exit__ from repeating this.
+            self._sigint_wait_secs = 0  # nothing else should wait.
             try:
                 self._wait(timeout=sigint_timeout)
             except TimeoutExpired:
