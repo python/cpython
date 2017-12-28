@@ -154,6 +154,10 @@ typedef struct {
     PyTypeObject *TimeType;
     PyTypeObject *DeltaType;
     PyTypeObject *TZInfoType;
+    PyTypeObject *TimeZoneType;
+
+    /* singletons */
+    PyObject *TimeZone_UTC;
 
     /* constructors */
     PyObject *(*Date_FromDate)(int, int, int, PyTypeObject*);
@@ -161,6 +165,7 @@ typedef struct {
         PyObject*, PyTypeObject*);
     PyObject *(*Time_FromTime)(int, int, int, int, PyObject*, PyTypeObject*);
     PyObject *(*Delta_FromDelta)(int, int, int, int, PyTypeObject*);
+    PyObject *(*TimeZone_FromTimeZone)(PyObject *offset, PyObject *name);
 
     /* constructors for the DB API */
     PyObject *(*DateTime_FromTimestamp)(PyObject*, PyObject*, PyObject*);
@@ -194,6 +199,9 @@ typedef struct {
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
 
+#define PyTimeZone_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TimeZoneType)
+#define PyTimeZone_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TimeZoneType)
+
 #else
 
 /* Define global variable for the C API and a macro for setting it. */
@@ -218,6 +226,10 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TZInfoType)
 
+#define PyTimeZone_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TimeZoneType)
+#define PyTimeZone_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TimeZoneType)
+
+
 /* Macros for accessing constructors in a simplified fashion. */
 #define PyDate_FromDate(year, month, day) \
     PyDateTimeAPI->Date_FromDate(year, month, day, PyDateTimeAPI->DateType)
@@ -241,6 +253,12 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #define PyDelta_FromDSU(days, seconds, useconds) \
     PyDateTimeAPI->Delta_FromDelta(days, seconds, useconds, 1, \
         PyDateTimeAPI->DeltaType)
+
+#define PyTimeZone_FromOffset(offset) \
+    PyDateTimeAPI->TimeZone_FromTimeZone(offset, NULL)
+
+#define PyTimeZone_FromOffsetAndName(offset, name) \
+    PyDateTimeAPI->TimeZone_FromTimeZone(offset, name)
 
 /* Macros supporting the DB API. */
 #define PyDateTime_FromTimestamp(args) \

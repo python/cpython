@@ -2220,10 +2220,66 @@ test_datetime_capi(PyObject *self, PyObject *args) {
     }
     test_run_counter++;
     PyDateTime_IMPORT;
+
     if (PyDateTimeAPI)
         Py_RETURN_NONE;
     else
         return NULL;
+}
+
+static PyObject *
+test_datetime_timezone_capi(PyObject *self, PyObject *args) {
+    // Make sure the DateTimeAPI is initialized by running the test
+    if (!PyDateTimeAPI) {
+        test_datetime_capi(self, args);
+    }
+
+    if(!PyDateTimeAPI) {
+        PyErr_SetString(PyExc_ValueError, "No API initialized");
+        return NULL;
+    }
+
+    // Test that the UTC singleton is a time zone
+    if(!PyTZInfo_Check(PyDateTimeAPI->TimeZone_UTC)) {
+        PyErr_SetString(PyExc_TypeError, "TimeZone_UTC is not a tzinfo subclass");
+        return NULL;
+    }
+
+    if(!PyTimeZone_CheckExact(PyDateTimeAPI->TimeZone_UTC)) {
+        PyErr_SetString(PyExc_TypeError, "TimeZone_UTC is not a TimeZoneType");
+        return NULL;
+    }
+
+    // Test the TimeZone objects API
+    PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
+    PyObject *name = PyUnicode_FromString("EST");
+
+    PyObject *est_zone = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
+
+    Py_DecRef(offset);
+    Py_DecRef(name);
+
+    if(!PyTZInfo_Check(est_zone)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "TimeZone_FromTimeZone timezone is not a tzinfo subclass");
+        return NULL;
+    }
+
+    if(!PyTimeZone_Check(est_zone)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "TimeZone_FromTimeZone timezone is not a TimeZoneType subclass");
+        return NULL;
+    }
+
+    if(!PyTimeZone_CheckExact(est_zone)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "TimeZone_FromTimeZone did not return a TimeZoneType");
+        return NULL;
+    }
+
+    Py_DecRef(est_zone);
+
+    Py_RETURN_NONE;
 }
 
 
@@ -4445,6 +4501,7 @@ static PyMethodDef TestMethods[] = {
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
     {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
+    {"test_datetime_timezone_capi", test_datetime_timezone_capi, METH_NOARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
