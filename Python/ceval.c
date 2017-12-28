@@ -1897,8 +1897,8 @@ main_loop:
              * top value of stack. The only place this opcode is used
              * is when returning from a final body of a try/finally. */
             PyObject *top = POP();
-            PyObject *exc_type = POP();
-            if (exc_type != NULL) {
+            PyObject *exc = POP();
+            if (exc != NULL) {
                 /* We are here because there was an exception, need to pop the
                  * EXCEPT_HANDLER block that was pushed in 'exception_unwind'.
                  * If we get here without an exception, there is no
@@ -1922,10 +1922,10 @@ main_loop:
                 /* the only thing on the stack after the EXCEPT_HANDLER block
                  * should be the 5 values from the exception info (pushed by
                  * exception_unwind or by PUSH_NO_EXCEPT) */
-                assert(STACK_LEVEL() != (b)->b_level + 5);
-            }
-            for (int i = 0; i < 5; i++) {
-                Py_XDECREF(POP());
+                assert(STACK_LEVEL() == (b)->b_level + 5);
+                for (int i = 0; i < 5; i++) {
+                    Py_XDECREF(POP());
+                }
             }
             PUSH(top);
             PyErr_SetExcInfo(NULL, NULL, NULL);
@@ -1940,35 +1940,24 @@ main_loop:
         }
 
         TARGET(PUSH_NO_EXCEPT) {
-            STACKADJ(6);
-            for (int i = 1; i <= 6; i++) {
-                SET_VALUE(i, NULL);
-            }
+            PUSH(NULL);
             FAST_DISPATCH();
         }
 
         TARGET(RERAISE) {
-            /* The handling of EXCEPT_HANDLER frame blocks is subtle here.  If
-             * we entered a final body without an exception, there will be no
-             * EXCEPT_HANDLER block on the stack.  However, if there was an
-             * exception, then there is one.  The "goto exception_unwind" case
-             * below handles the case for exceptions.  This is a situation
-             * where the unwind of frame blocks is not determined by the
-             * compiler.  POP_NO_EXCEPT is another case.
+            /* The handling of EXCEPT_HANDLER frame blocks is subtle
+             * here.  If we entered a final body without an
+             * exception, there will be no EXCEPT_HANDLER block on
+             * the stack.  However, if there was an exception, then
+             * there is one.  The "goto exception_unwind" case below
+             * handles the case for exceptions.  This is a situation
+             * where the unwind of frame blocks is not determined by
+             * the compiler.  POP_NO_EXCEPT is another case.
              */
             PyObject *exc = POP();
-            PyObject *val = POP();
-            PyObject *tb = POP();
-            if (exc == NULL) {
-                int i;
-                assert(val == NULL);
-                assert(tb == NULL);
-                /* Unwind stored exception state */
-                for (i = 0; i < 3; i++) {
-                    Py_XDECREF(POP());
-                }
-            }
-            else {
+            if (exc != NULL) {
+                PyObject *val = POP();
+                PyObject *tb = POP();
                 assert(PyExceptionClass_Check(exc));
                 PyErr_Restore(exc, val, tb);
                 goto exception_unwind;
@@ -2971,10 +2960,10 @@ main_loop:
         }
 
         TARGET(WITH_CLEANUP_START) {
-            /* At the top of the stack are 4 or 7 values:
+            /* At the top of the stack are 2 or 7 values:
                Either:
-                - 6 NULLs
-                - SEVENTH: the context.__exit__ bound method
+                - NULL
+                - SECOND: the context.__exit__ bound method
                or:
                 - (TOP, SECOND, THIRD) = exc_info()
                 - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
@@ -2989,18 +2978,16 @@ main_loop:
             PyObject *exc, *val, *tb, *res;
 
             exc = TOP();
-            val = SECOND();
-            tb = THIRD();
             if (exc == NULL) {
-                assert(val == NULL);
-                assert(tb == NULL);
-                exit_func = PEEK(7);
+                exit_func = SECOND();
                 exit_stack[0] = Py_None;
                 exit_stack[1] = Py_None;
                 exit_stack[2] = Py_None;
             }
             else {
-                assert(!PyLong_Check(exc));
+                assert(PyExceptionClass_Check(exc));
+                val = SECOND();
+                tb = THIRD();
                 exit_func = PEEK(7);
                 exit_stack[0] = exc;
                 exit_stack[1] = val;
@@ -3033,17 +3020,13 @@ main_loop:
                 goto error;
 
             if (exc == NULL) {
-                /* At the top of the stack are 7 values:
-                    - 6 NULLs
-                    - SEVENTH: the context.__exit__ bound method
+                /* At the top of the stack are 2 values:
+                    - NULL
+                    - SECOND: the context.__exit__ bound method
                 */
-                int i;
-                for (i = 0; i < 7; i++) {
-                    /* Pop the 6 values pushed by JUMP_FINALLY +
-                     * the bound __exit__ method
-                     */
-                    Py_XDECREF(POP());
-                }
+                assert(TOP() == exc);
+                STACKADJ(-1);
+                Py_DECREF(POP());
             }
             else {
                 /* The stack has the values pushed by the block which

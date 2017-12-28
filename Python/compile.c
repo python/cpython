@@ -975,20 +975,27 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case ENTER_WITH:
             return 1;
         case WITH_CLEANUP_START:
+            /* exception and __exit__ return value */
             return 2;
         case WITH_CLEANUP_FINISH:
-            return -6;
+            /* Pop 2 values pushed by WITH_CLEANUP_START, adjust 6
+             * cells reserved by PUSH_NO_EXCEPT, and pop __exit__ */
+            return -9;
         case POP_EXCEPT:
             return -3;
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
             return 0;
         case PUSH_NO_EXCEPT:
+            /* the opcode only actually pushes one but reserve 6 to
+             * handle the case that an exception occurs */
             return 6;
         case RERAISE:
         case POP_NO_EXCEPT:
-            /* Pops the 3 values of the pushed exception
-             * + the 3 values of the saved exception state
+            /* In the case of an exception, pops the 3 values of the
+             * pushed exception and the 3 values of the saved exception state.
+             * If no exception handled, pops the NULL value pushed
+             * by PUSH_NO_EXCEPT.
              */
             return -6;
 
@@ -1453,9 +1460,6 @@ compiler_push_fblock(struct compiler *c, enum fblocktype t,
                      basicblock *exit)
 {
     fblock *f;
-    /* FIXME: this limit should be reviewed now that we dynamically
-     * allocate fblocks.  Do we still need a limit or should we just
-     * check for memory exhaustion? */
     if (c->u->u_nfblocks >= CO_MAXBLOCKS) {
         PyErr_SetString(PyExc_SyntaxError,
                         "too many statically nested blocks");
