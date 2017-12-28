@@ -5,6 +5,255 @@
 #include "internal/hamt.h"
 
 
+/*
+This file provides an implemention of an immutable mapping using the
+Hash Array Mapped Trie (or HAMT) datastructure.
+
+This design allows to have:
+
+1. Efficient copy: immutable mappings can be copied by reference,
+   making it an O(1) operation.
+
+2. Efficient mutations: due to structural sharing, only a portion of
+   the trie needs to be copied when the collection is mutated.  The
+   cost of set/delete operations is O(log N).
+
+3. Efficient lookups: O(log N).
+
+(where N is number of key/value items in the immutable mapping.)
+
+
+HAMT
+====
+
+The core idea of HAMT is that the shape of the trie is encoded into the
+hashes of keys.
+
+Say we want to store a K/V pair in our mapping.  First, we calculate the
+hash of K, let's say it's 19830128, or in binary:
+
+    0b1001011101001010101110000 = 19830128
+
+Now let's partition this bit representation of the hash into blocks of
+5 bits each:
+
+    0b00_00000_10010_11101_00101_01011_10000 = 19830128
+          (6)   (5)   (4)   (3)   (2)   (1)
+
+Each block of 5 bits represents a number betwen 0 and 31.  So if we have
+a tree that consists of nodes, each of which is an array of 32 pointers,
+those 5-bit blocks will encode a position on a single tree level.
+
+For example, storing the key K with hash 19830128, results in the following
+tree structure:
+
+                     (array of 32 pointers)
+                     +---+ -- +----+----+----+ -- +----+
+  root node          | 0 | .. | 15 | 16 | 17 | .. | 31 |   0b10000 = 16 (1)
+  (level 1)          +---+ -- +----+----+----+ -- +----+
+                                      |
+                     +---+ -- +----+----+----+ -- +----+
+  a 2nd level node   | 0 | .. | 10 | 11 | 12 | .. | 31 |   0b01011 = 11 (2)
+                     +---+ -- +----+----+----+ -- +----+
+                                      |
+                     +---+ -- +----+----+----+ -- +----+
+  a 3rd level node   | 0 | .. | 04 | 05 | 06 | .. | 31 |   0b01011 = 5  (3)
+                     +---+ -- +----+----+----+ -- +----+
+                                      |
+                     +---+ -- +----+----+----+----+
+  a 4th level node   | 0 | .. | 04 | 29 | 30 | 31 |        0b11101 = 29 (4)
+                     +---+ -- +----+----+----+----+
+                                      |
+                     +---+ -- +----+----+----+ -- +----+
+  a 5th level node   | 0 | .. | 17 | 18 | 19 | .. | 31 |   0b10010 = 18 (5)
+                     +---+ -- +----+----+----+ -- +----+
+                                      |
+                       +--------------+
+                       |
+                     +---+ -- +----+----+----+ -- +----+
+  a 6th level node   | 0 | .. | 15 | 16 | 17 | .. | 31 |   0b00000 = 0  (6)
+                     +---+ -- +----+----+----+ -- +----+
+                       |
+                       V -- our value (or collision)
+
+To rehash: for a K/V pair, the hash of K encodes where in the tree V will
+be stored.
+
+To optimize memory footprint and handle hash collisions, our implementation
+uses three different types of nodes:
+
+ * A Bitmap node;
+ * An Array node;
+ * A Collision node.
+
+Because we implement an immutable dictionary, our nodes are also
+immutable.  Therefore, when we need to modify a node, we copy it, and
+do that modification to the copy.
+
+
+Array Nodes
+-----------
+
+These nodes are very simple.  Essentially they are arrays of 32 pointers
+we used to illustrate the high-level idea in the previous section.
+
+We use Array nodes only when we need to store more than 16 pointers
+in a single node.
+
+Array nodes do not store key objects or value objects.  They are used
+only as an indirection level - their pointers point to other nodes in
+the tree.
+
+
+Bitmap Node
+-----------
+
+Allocating a new 32-pointers array for every node of our tree would be
+very expensive.  Unless we store millions of keys, most of tree nodes would
+be very sparse.
+
+When we have less than 16 elements in a node, we don't want to use the
+Array node, that would mean that we waste a lot of memory.  Instead,
+we can use bitmap compression and can have just as many pointers
+as we need!
+
+Bitmap nodes consist of two fields:
+
+1. An array of pointers.  If a Bitmap node holds N elements, the
+   array will be of N pointers.
+
+2. A 32bit integer -- a bitmap field.  If an N-th bit is set in the
+   bitmap, it means that the node has an N-th element.
+
+For example, say we need to store a 3 elements sparse array:
+
+   +---+  --  +---+  --  +----+  --  +----+
+   | 0 |  ..  | 4 |  ..  | 11 |  ..  | 17 |
+   +---+  --  +---+  --  +----+  --  +----+
+                |          |           |
+                o1         o2          o3
+
+We allocate a three-pointer Bitmap node.  Its bitmap field will be
+then set to:
+
+   0b_00100_00010_00000_10000 == (1 << 17) | (1 << 11) | (1 << 4)
+
+To check if our Bitmap node has an I-th element we can do:
+
+   bitmap & (1 << I)
+
+
+And here's a formula to calculate a position in our pointer array
+which would correspond to an I-th element:
+
+   popcount(bitmap & ((1 << I) - 1))
+
+
+Let's break it down:
+
+ * `popcount` is a function that returns a number of bits set to 1;
+
+ * `((1 << I) - 1)` is a mask to filter the bitmask to contain bits
+   set to the *right* of our bit.
+
+
+So for our 17, 11, and 4 indexes:
+
+ * bitmap & ((1 << 17) - 1) == 0b100000010000 => 2 bits are set => index is 2.
+
+ * bitmap & ((1 << 11) - 1) == 0b10000 => 1 bit is set => index is 1.
+
+ * bitmap & ((1 << 4) - 1) == 0b0 => 0 bits are set => index is 0.
+
+
+To conclude: Bitmap nodes are just like Array nodes -- they can store
+a number of pointers, but use bitmap compression to eliminate unused
+pointers.
+
+
+Bitmap nodes have two pointers for each item:
+
+  +----+----+----+----+  --  +----+----+
+  | k1 | v1 | k2 | v2 |  ..  | kN | vN |
+  +----+----+----+----+  --  +----+----+
+
+When kI == NULL, vI points to another tree level.
+
+When kI != NULL, the actual key object is stored in kI, and its
+value is stored in vI.
+
+
+Collision Nodes
+---------------
+
+Collision nodes are simple arrays of pointers -- two pointers per
+key/value.  When there's a hash collision, say for k1/v1 and k2/v2
+we have `hash(k1)==hash(k2)`.  Then our collision node will be:
+
+  +----+----+----+----+
+  | k1 | v1 | k2 | v2 |
+  +----+----+----+----+
+
+
+Tree Structure
+--------------
+
+All nodes are PyObjects.
+
+The `PyHamtObject` object has a pointer to the root node (h_root),
+and has a length field (h_count).
+
+High-level functions accept a PyHamtObject object and dispatch to
+lower-level functions depending on what kind of node h_root points to.
+
+
+Operations
+==========
+
+There are three fundamental operations on an immutable dictionary:
+
+1. "o.assoc(k, v)" will return a new immutable dictionary, that will be
+   a copy of "o", but with the "k/v" item set.
+
+   Functions in this file:
+
+        hamt_node_assoc, hamt_node_bitmap_assoc,
+        hamt_node_array_assoc, hamt_node_collision_assoc
+
+   `hamt_node_assoc` function accepts a node object, and calls
+   other functions depending on its actual type.
+
+2. "o.find(k)" will lookup key "k" in "o".
+
+   Functions:
+
+        hamt_node_find, hamt_node_bitmap_find,
+        hamt_node_array_find, hamt_node_collision_find
+
+3. "o.without(k)" will return a new immutable dictionary, that will be
+   a copy of "o", buth without the "k" key.
+
+   Functions:
+
+        hamt_node_without, hamt_node_bitmap_without,
+        hamt_node_array_without, hamt_node_collision_without
+
+
+Further Reading
+===============
+
+1. http://blog.higher-order.net/2009/09/08/
+        understanding-clojures-persistenthashmap-deftwice.html
+
+2. http://blog.higher-order.net/2010/08/16/
+        assoc-and-clojures-persistenthashmap-part-ii.html
+
+3. Clojure's PersistentHashMap implementation:
+   https://github.com/clojure/clojure/blob/master/src/jvm/
+        clojure/lang/PersistentHashMap.java
+*/
+
+
 #define IS_ARRAY_NODE(node)     (Py_TYPE(node) == &_PyHamt_ArrayNode_Type)
 #define IS_BITMAP_NODE(node)    (Py_TYPE(node) == &_PyHamt_BitmapNode_Type)
 #define IS_COLLISION_NODE(node) (Py_TYPE(node) == &_PyHamt_CollisionNode_Type)
