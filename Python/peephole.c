@@ -297,9 +297,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 /* Try to fold tuples of constants.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
-                   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2.
-                   Replace BUILD_SEQN 4 UNPACK_SEQN 4 with ROT4 ROT3 ROT2.
-                   */
+                   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
             case BUILD_TUPLE:
                 j = get_arg(codestr, i);
                 if (j > 0 && lastlc >= j) {

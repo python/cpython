@@ -3399,7 +3399,6 @@ main_loop:
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
-        PyErr_SetString(PyExc_SystemError, "Illegal state in interpreter");
         Py_UNREACHABLE();
 
 error:

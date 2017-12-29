@@ -243,7 +243,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.7a0  3390 (add LOAD_METHOD and CALL_METHOD opcodes)
 #     Python 3.7a0  3391 (update GET_AITER #31709)
 #     Python 3.7a0  3392 (PEP 552: Deterministic pycs)
-#     Python 3.7a4  3393 (bpo-17611: move frame block handling to compiler)
+#     Python 3.7a4  3393 (move frame block handling to compiler #17611)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually

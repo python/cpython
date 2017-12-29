@@ -262,7 +262,6 @@ dis_compound_stmt_str = """\
              16 RETURN_VALUE
 """
 
-
 dis_traceback = """\
 %3d           0 SETUP_FINALLY           12 (to 14)
 
@@ -1007,7 +1006,6 @@ expected_opinfo_jumpy = [
   Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=184, starts_line=None, is_jump_target=False),
 ]
 
-
 # One last piece of inspect fodder to check the default line number handling
 def simple(): pass
 expected_opinfo_simple = [
@@ -1045,7 +1043,6 @@ class InstructionTests(BytecodeTestCase):
     def test_jumpy(self):
         actual = dis.get_instructions(jumpy, first_line=expected_jumpy_line)
         self.assertEqual(list(actual), expected_opinfo_jumpy)
-
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API

@@ -5016,13 +5016,7 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
 
         if (depth > maxdepth)
             maxdepth = depth;
-        if (depth < 0) {
-            /* Invalid code or bug in stackdepth() */
-            PySys_FormatStderr("negative depth %d in %S\n",
-                               depth, c->c_filename);
-            Py_FatalError("invalid bytecode or bug in stackdepth()");
-        }
-        assert(depth >= 0);
+        assert(depth >= 0); /* invalid code or bug in stackdepth() */
         if ((instr->i_jrel || instr->i_jabs) &&
             instr->i_opcode != CALL_FINALLY)
         {
