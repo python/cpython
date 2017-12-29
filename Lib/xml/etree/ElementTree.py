@@ -94,6 +94,7 @@ VERSION = "1.3.0"
 import sys
 import re
 import warnings
+import copy
 import io
 import collections
 import collections.abc
@@ -194,10 +195,33 @@ class Element:
         original tree.
 
         """
+        warnings.warn(
+            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
+            DeprecationWarning
+            )
+        return self.__copy__()
+
+    def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
         elem.text = self.text
         elem.tail = self.tail
         elem[:] = self
+        return elem
+
+    def __deepcopy__(self, memo):
+        tag = copy.deepcopy(self.tag, memo)
+        attrib = copy.deepcopy(self.attrib, memo)
+
+        elem = self.makeelement(tag, attrib)
+
+        elem.text = copy.deepcopy(self.text, memo)
+        elem.tail = copy.deepcopy(self.tail, memo)
+
+        for child in self:
+            elem.append(copy.deepcopy(child, memo))
+
+        memo[id(self)] = elem
+
         return elem
 
     def __len__(self):

@@ -295,10 +295,12 @@ create_new_element(PyObject* tag, PyObject* attrib)
     PyObject_GC_Track(self);
 
     if (attrib != Py_None && !is_empty_dict(attrib)) {
+        attrib = PyDict_Copy(attrib);
         if (create_extra(self, attrib) < 0) {
             Py_DECREF(self);
             return NULL;
         }
+        Py_DECREF(attrib);
     }
 
     return (PyObject*) self;
@@ -757,6 +759,24 @@ _elementtree_Element___copy___impl(ElementObject *self)
     }
 
     return (PyObject*) element;
+}
+
+/*[clinic input]
+_elementtree.Element.copy
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_Element_copy_impl(ElementObject *self)
+/*[clinic end generated code: output=84660e8524276b22 input=1f8134305a7719a3]*/
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "elem.copy() is deprecated. Use copy.copy(elem) instead.",
+                     1) < 0) {
+        return NULL;
+    }
+
+    return _elementtree_Element___copy___impl(self);
 }
 
 /* Helper for a deep copy. */
@@ -3801,6 +3821,7 @@ static PyMethodDef element_methods[] = {
 
     _ELEMENTTREE_ELEMENT_MAKEELEMENT_METHODDEF
 
+    _ELEMENTTREE_ELEMENT_COPY_METHODDEF
     _ELEMENTTREE_ELEMENT___COPY___METHODDEF
     _ELEMENTTREE_ELEMENT___DEEPCOPY___METHODDEF
     _ELEMENTTREE_ELEMENT___SIZEOF___METHODDEF

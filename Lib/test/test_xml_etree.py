@@ -6,6 +6,7 @@
 # monkey-patched when running the "test_xml_etree_c" test suite.
 
 import copy
+import itertools
 import functools
 import html
 import io
@@ -109,6 +110,11 @@ def checkwarnings(*filters, quiet=False):
     return decorator
 
 
+#-----------------------------------------------------------------------------
+# UNIT TESTS
+#-----------------------------------------------------------------------------
+
+
 class ModuleTest(unittest.TestCase):
     def test_sanity(self):
         # Import sanity.
@@ -120,6 +126,143 @@ class ModuleTest(unittest.TestCase):
     def test_all(self):
         names = ("xml.etree.ElementTree", "_elementtree")
         support.check__all__(self, ET, names, blacklist=("HTML_EMPTY",))
+
+
+class ElementTree_Element_UnitTest(unittest.TestCase):
+
+    def test___init__(self):
+        tag = "foo"
+        attrib = { "zix": "wyp" }
+
+        element_foo = ET.Element(tag, attrib)
+
+        with self.subTest("traits of an element"):
+            self.assertIsInstance(element_foo, ET.Element)
+            self.assertIn("tag", dir(element_foo))
+            self.assertIn("attrib", dir(element_foo))
+            self.assertIn("text", dir(element_foo))
+            self.assertIn("tail", dir(element_foo))
+
+        with self.subTest("string attributes have expected values"):
+            self.assertEqual(element_foo.tag, tag)
+            self.assertIsNone(element_foo.text)
+            self.assertIsNone(element_foo.tail)
+
+        with self.subTest("attrib is a copy"):
+            self.assertIsNot(element_foo.attrib, attrib)
+            self.assertEqual(element_foo.attrib, attrib)
+
+        with self.subTest("attrib isn't linked"):
+            attrib["bar"] = "baz"
+
+            self.assertIsNot(element_foo.attrib, attrib)
+            self.assertNotEqual(element_foo.attrib, attrib)
+
+    def test_copy(self):
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        with self.assertWarns(DeprecationWarning):
+            element_foo2 = element_foo.copy()
+
+        with self.subTest("elements are not the same"):
+            self.assertIsNot(element_foo2, element_foo)
+
+        with self.subTest("string attributes are the same"):
+            self.assertIs(element_foo2.tag, element_foo.tag)
+            self.assertIs(element_foo2.text, element_foo.text)
+            self.assertIs(element_foo2.tail, element_foo.tail)
+
+        with self.subTest("string attributes are equal"):
+            self.assertEqual(element_foo2.tag, element_foo.tag)
+            self.assertEqual(element_foo2.text, element_foo.text)
+            self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        with self.subTest("children are the same"):
+            for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+                self.assertIs(child1, child2)
+
+        with self.subTest("attrib is a copy"):
+            self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+            self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
+        with self.subTest("attrib isn't linked"):
+            element_foo.attrib["bar"] = "baz"
+
+            self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+            self.assertNotEqual(element_foo2.attrib, element_foo.attrib)
+
+    def test___copy__(self):
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        element_foo2 = copy.copy(element_foo)
+
+        with self.subTest("elements are not the same"):
+            self.assertIsNot(element_foo2, element_foo)
+
+        with self.subTest("string attributes are the same"):
+            self.assertIs(element_foo2.tag, element_foo.tag)
+            self.assertIs(element_foo2.text, element_foo.text)
+            self.assertIs(element_foo2.tail, element_foo.tail)
+
+        with self.subTest("string attributes are equal"):
+            self.assertEqual(element_foo2.tag, element_foo.tag)
+            self.assertEqual(element_foo2.text, element_foo.text)
+            self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        with self.subTest("children are the same"):
+            for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+                self.assertIs(child1, child2)
+
+        with self.subTest("attrib is a copy"):
+            self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+            self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
+        with self.subTest("attrib isn't linked"):
+            element_foo.attrib["bar"] = "baz"
+
+            self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+            self.assertNotEqual(element_foo2.attrib, element_foo.attrib)
+
+    def test___deepcopy__(self):
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        element_foo2 = copy.deepcopy(element_foo)
+
+        with self.subTest("elements are not the same"):
+            self.assertIsNot(element_foo2, element_foo)
+
+        # Strings should still be the same in a deep copy.
+        with self.subTest("string attributes are the same"):
+            self.assertIs(element_foo2.tag, element_foo.tag)
+            self.assertIs(element_foo2.text, element_foo.text)
+            self.assertIs(element_foo2.tail, element_foo.tail)
+
+        with self.subTest("string attributes are equal"):
+            self.assertEqual(element_foo2.tag, element_foo.tag)
+            self.assertEqual(element_foo2.text, element_foo.text)
+            self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        with self.subTest("children are not the same"):
+            for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+                self.assertIsNot(child1, child2)
+
+        with self.subTest("attrib is a copy"):
+            self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+            self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
+        with self.subTest("attrib isn't linked"):
+            element_foo.attrib["bar"] = "baz"
+
+            self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+            self.assertNotEqual(element_foo2.attrib, element_foo.attrib)
+
+
+#-----------------------------------------------------------------------------
+# INTEGRATION TESTS
+#-----------------------------------------------------------------------------
 
 
 def serialize(elem, to_string=True, encoding='unicode', **options):
@@ -1961,36 +2104,38 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         class Dummy:
             pass
 
-        # Test the shortest cycle: d->element->d
-        d = Dummy()
-        d.dummyref = ET.Element('joe', attr=d)
-        wref = weakref.ref(d)
-        del d
-        gc_collect()
-        self.assertIsNone(wref())
+        with self.subTest("Test the shortest cycle: d->element->d"):
+            d = Dummy()
+            d.dummyref = ET.Element('joe', attr=d)
+            wref = weakref.ref(d)
+            del d
+            gc_collect()
+            self.assertIsNone(wref())
 
-        # A longer cycle: d->e->e2->d
-        e = ET.Element('joe')
-        d = Dummy()
-        d.dummyref = e
-        wref = weakref.ref(d)
-        e2 = ET.SubElement(e, 'foo', attr=d)
-        del d, e, e2
-        gc_collect()
-        self.assertIsNone(wref())
+        with self.subTest("A longer cycle: d->e->e2->d"):
+            e = ET.Element('joe')
+            d = Dummy()
+            d.dummyref = e
+            wref = weakref.ref(d)
+            e2 = ET.SubElement(e, 'foo', attr=d)
+            del d, e, e2
+            gc_collect()
+            self.assertIsNone(wref())
 
-        # A cycle between Element objects as children of one another
-        # e1->e2->e3->e1
-        e1 = ET.Element('e1')
-        e2 = ET.Element('e2')
-        e3 = ET.Element('e3')
-        e1.append(e2)
-        e2.append(e2)
-        e3.append(e1)
-        wref = weakref.ref(e1)
-        del e1, e2, e3
-        gc_collect()
-        self.assertIsNone(wref())
+        with self.subTest(
+            "A cycle between Element objects as children of one another: "
+            "e1->e2->e3->e1"
+            ):
+            e1 = ET.Element('e1')
+            e2 = ET.Element('e2')
+            e3 = ET.Element('e3')
+            e3.append(e1)
+            e2.append(e3)
+            e1.append(e2)
+            wref = weakref.ref(e1)
+            del e1, e2, e3
+            gc_collect()
+            self.assertIsNone(wref())
 
     def test_weakref(self):
         flag = False
@@ -3302,6 +3447,7 @@ def test_main(module=None):
 
     test_classes = [
         ModuleTest,
+        ElementTree_Element_UnitTest,
         ElementSlicingTest,
         BasicElementTest,
         BadElementTest,

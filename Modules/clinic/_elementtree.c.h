@@ -64,6 +64,23 @@ _elementtree_Element___copy__(ElementObject *self, PyObject *Py_UNUSED(ignored))
     return _elementtree_Element___copy___impl(self);
 }
 
+PyDoc_STRVAR(_elementtree_Element_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n");
+
+#define _ELEMENTTREE_ELEMENT_COPY_METHODDEF    \
+    {"copy", (PyCFunction)_elementtree_Element_copy, METH_NOARGS, _elementtree_Element_copy__doc__},
+
+static PyObject *
+_elementtree_Element_copy_impl(ElementObject *self);
+
+static PyObject *
+_elementtree_Element_copy(ElementObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _elementtree_Element_copy_impl(self);
+}
+
 PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
 "__deepcopy__($self, memo, /)\n"
 "--\n"
@@ -853,4 +870,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=440b5d90a4b86590 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dfe73768e94a9bc3 input=a9049054013a1b77]*/
