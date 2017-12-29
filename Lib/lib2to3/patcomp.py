@@ -12,7 +12,6 @@ __author__ = "Guido van Rossum <guido@python.org>"
 
 # Python imports
 import io
-import os
 
 # Fairly local imports
 from .pgen2 import driver, literals, token, tokenize, parse, grammar
