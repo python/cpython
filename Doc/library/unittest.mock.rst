@@ -1275,8 +1275,7 @@ patch.dict
 
     :func:`patch.dict` can be used as a context manager, decorator or class
     decorator. When used as a class decorator :func:`patch.dict` honours
-    ``patch.TEST_PREFIX`` for choosing which methods to wrap. When used as a
-    context manager it returns patched *in_dict*.
+    ``patch.TEST_PREFIX`` for choosing which methods to wrap.
 
 :func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
@@ -1332,6 +1331,8 @@ magic methods :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and 
     ...
     >>> assert thing['one'] == 1
     >>> assert list(thing) == ['one']
+
+:func:`patch.dict` returns a patched dictionary when used as context manager.
 
 
 patch.multiple
