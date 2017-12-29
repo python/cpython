@@ -1,0 +1,2 @@
+Return the new file descriptor (i.e., the second argument) from ``os.dup2``.
+Previously, ``None`` was always returned.

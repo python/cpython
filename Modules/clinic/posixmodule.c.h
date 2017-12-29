@@ -3486,7 +3486,7 @@ PyDoc_STRVAR(os_dup2__doc__,
 #define OS_DUP2_METHODDEF    \
     {"dup2", (PyCFunction)os_dup2, METH_FASTCALL|METH_KEYWORDS, os_dup2__doc__},
 
-static PyObject *
+static int
 os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable);
 
 static PyObject *
@@ -3498,12 +3498,17 @@ os_dup2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     int fd;
     int fd2;
     int inheritable = 1;
+    int _return_value;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &fd, &fd2, &inheritable)) {
         goto exit;
     }
-    return_value = os_dup2_impl(module, fd, fd2, inheritable);
+    _return_value = os_dup2_impl(module, fd, fd2, inheritable);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -6405,4 +6410,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=b6ade5f170d5a431 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6345053cd5992caf input=a9049054013a1b77]*/
