@@ -114,6 +114,7 @@ def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
 def_op('YIELD_FROM', 72)
 def_op('GET_AWAITABLE', 73)
+def_op('END_FINALLY', 74)
 
 def_op('INPLACE_LSHIFT', 75)
 def_op('INPLACE_RSHIFT', 76)
@@ -214,5 +215,8 @@ def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
+
+jrel_op('JUMP_FINALLY', 162)
+jrel_op('LOAD_ADDR', 163)
 
 del def_op, name_op, jrel_op, jabs_op

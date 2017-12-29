@@ -3304,6 +3304,41 @@ main_loop:
             goto dispatch_opcode;
         }
 
+        TARGET(JUMP_FINALLY) {
+            PyObject *addr = PyLong_FromLong(INSTR_OFFSET());
+            if (addr == NULL) {
+                goto error;
+            }
+            PUSH(addr);
+            JUMPBY(oparg);
+            FAST_DISPATCH();
+        }
+
+        TARGET(LOAD_ADDR) {
+            long addr = INSTR_OFFSET() + oparg;
+            PyObject *obj = PyLong_FromLong(addr);
+            if (obj == NULL) {
+                goto error;
+            }
+            PUSH(obj);
+            FAST_DISPATCH();
+        }
+
+        TARGET(END_FINALLY) {
+            /* At the top of the stack is an integer representing an address.
+             * Jump to it.
+            */
+            PyObject *obj = POP();
+            int addr = _PyLong_AsInt(obj);
+            Py_DECREF(obj);
+            if (addr == -1 && PyErr_Occurred()) {
+                goto error;
+            }
+            JUMPTO(addr);
+            FAST_DISPATCH();
+        }
+
+
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:

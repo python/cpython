@@ -56,6 +56,7 @@ extern "C" {
 #define LOAD_BUILD_CLASS         71
 #define YIELD_FROM               72
 #define GET_AWAITABLE            73
+#define END_FINALLY              74
 #define INPLACE_LSHIFT           75
 #define INPLACE_RSHIFT           76
 #define INPLACE_AND              77
@@ -128,6 +129,8 @@ extern "C" {
 #define BUILD_TUPLE_UNPACK_WITH_CALL 158
 #define LOAD_METHOD             160
 #define CALL_METHOD             161
+#define JUMP_FINALLY            162
+#define LOAD_ADDR               163
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

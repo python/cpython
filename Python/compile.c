@@ -1014,7 +1014,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case JUMP_IF_FALSE_OR_POP:  /*  "" */
         case JUMP_ABSOLUTE:
         case END_ITER:
+        case JUMP_FINALLY:
             return 0;
+
+        case LOAD_ADDR:
+            return 1;
 
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
@@ -1084,6 +1088,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
+        case END_FINALLY:
+            return 0;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1513,7 +1519,7 @@ static int
 fblock_unwind_finally_try(struct compiler *c, struct fblockinfo *info, int preserve_tos)
 {
     ADDOP(c, POP_BLOCK);
-    VISIT_SEQ(c, stmt, info->fb_datum);
+    ADDOP_JREL(c, JUMP_FINALLY, info->fb_datum);
     return 1;
 }
 
@@ -1599,10 +1605,10 @@ compiler_push_except(struct compiler *c, basicblock *try)
 }
 
 static int
-compiler_push_finally_try(struct compiler *c, basicblock *final, asdl_seq *seq)
+compiler_push_finally_try(struct compiler *c, basicblock *body, basicblock *final)
 {
-    return compiler_push_fblock(c, FINALLY_TRY, final,
-                                fblock_unwind_finally_try, seq, NULL);
+    return compiler_push_fblock(c, FINALLY_TRY, body,
+                                fblock_unwind_finally_try, final, NULL);
 }
 
 static int
@@ -2692,19 +2698,22 @@ compiler_continue(struct compiler *c)
 static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *final1, *final2, *exit;
+    basicblock *body, *final1, *final2, *exit, *reraise, *finalbody;
     int end_body_line;
 
     body = compiler_new_block(c);
     final1 = compiler_new_block(c);
     final2 = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (body == NULL || final1 == NULL || final2 == NULL || exit == NULL)
+    reraise = compiler_new_block(c);
+    finalbody = compiler_new_block(c);
+    if (body == NULL || final1 == NULL || final2 == NULL ||
+        exit == NULL || reraise == NULL || finalbody == NULL) {
         return 0;
-
+    }
     ADDOP_JREL(c, SETUP_FINALLY, final2);
     compiler_use_next_block(c, body);
-    if (!compiler_push_finally_try(c, body, s->v.Try.finalbody))
+    if (!compiler_push_finally_try(c, body, finalbody))
         return 0;
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
         if (!compiler_try_except(c, s))
@@ -2717,26 +2726,27 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_TRY, body);
     end_body_line = c->u->u_lineno_set;
 
-    /* `finally` block for successful outcome */
+    /* Jump to `finally` block for successful outcome */
     compiler_use_next_block(c, final1);
-    if (!compiler_push_finally_end(c, final1))
-        return 0;
-    c->u->u_lineno_set = 0;
-    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    compiler_pop_fblock(c, FINALLY_END, final1);
 
-    c->u->u_lineno_set = end_body_line;
-    ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
+    ADDOP_JREL(c, LOAD_ADDR, exit);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, finalbody);
 
-    /* `finally` block for exceptional outcome */
+    /* Jump to `finally` block for exceptional outcome */
     compiler_use_next_block(c, final2);
-    if (!compiler_push_finally_end(c, final2))
-        return 0;
     c->u->u_lineno_set = 0;
-    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    ADDOP(c, RERAISE);
-    compiler_pop_fblock(c, FINALLY_END, final2);
+    ADDOP_JREL(c, LOAD_ADDR, reraise);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, finalbody);
 
+    /* Actual code for `finally` block */
+    if (!compiler_push_finally_end(c, finalbody))
+        return 0;
+    compiler_use_next_block(c, finalbody);
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    ADDOP(c, END_FINALLY);
+    compiler_pop_fblock(c, FINALLY_END, finalbody);
+    compiler_use_next_block(c, reraise);
+    ADDOP(c, RERAISE);
     compiler_use_next_block(c, exit);
     return 1;
 }
