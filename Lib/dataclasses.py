@@ -8,6 +8,7 @@ __all__ = ['dataclass',
            'field',
            'FrozenInstanceError',
            'InitVar',
+           'MISSING',
 
            # Helper functions.
            'fields',
@@ -29,11 +30,11 @@ class _HAS_DEFAULT_FACTORY_CLASS:
         return '<factory>'
 _HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
 
-# A sentinel object to detect if a parameter is supplied or not.
-class _MISSING_FACTORY:
-    def __repr__(self):
-        return '<missing>'
-_MISSING = _MISSING_FACTORY()
+# A sentinel object to detect if a parameter is supplied or not.  Use
+#  a class to give it a better repr.
+class _MISSING_TYPE:
+    pass
+MISSING = _MISSING_TYPE()
 
 # Since most per-field metadata will be unused, create an empty
 #  read-only proxy that can be shared among all fields.
@@ -114,7 +115,7 @@ class Field:
 # This function is used instead of exposing Field creation directly,
 #  so that a type checker can be told (via overloads) that this is a
 #  function whose type depends on its parameters.
-def field(*, default=_MISSING, default_factory=_MISSING, init=True, repr=True,
+def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
           hash=None, compare=True, metadata=None):
     """Return an object to identify dataclass fields.
 
@@ -130,7 +131,7 @@ def field(*, default=_MISSING, default_factory=_MISSING, init=True, repr=True,
     It is an error to specify both default and default_factory.
     """
 
-    if default is not _MISSING and default_factory is not _MISSING:
+    if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
     return Field(default, default_factory, init, repr, hash, compare,
                  metadata)
@@ -149,12 +150,12 @@ def _tuple_str(obj_name, fields):
 
 
 def _create_fn(name, args, body, globals=None, locals=None,
-               return_type=_MISSING):
+               return_type=MISSING):
     # Note that we mutate locals when exec() is called. Caller beware!
     if locals is None:
         locals = {}
     return_annotation = ''
-    if return_type is not _MISSING:
+    if return_type is not MISSING:
         locals['_return_type'] = return_type
         return_annotation = '->_return_type'
     args = ','.join(args)
@@ -182,7 +183,7 @@ def _field_init(f, frozen, globals, self_name):
     #  initialize this field.
 
     default_name = f'_dflt_{f.name}'
-    if f.default_factory is not _MISSING:
+    if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
             #  given, use it.  If not, call the factory.
@@ -210,10 +211,10 @@ def _field_init(f, frozen, globals, self_name):
     else:
         # No default factory.
         if f.init:
-            if f.default is _MISSING:
+            if f.default is MISSING:
                 # There's no default, just do an assignment.
                 value = f.name
-            elif f.default is not _MISSING:
+            elif f.default is not MISSING:
                 globals[default_name] = f.default
                 value = f.name
         else:
@@ -236,14 +237,14 @@ def _init_param(f):
     #  For example, the equivalent of 'x:int=3' (except instead of 'int',
     #  reference a variable set to int, and instead of '3', reference a
     #  variable set to 3).
-    if f.default is _MISSING and f.default_factory is _MISSING:
+    if f.default is MISSING and f.default_factory is MISSING:
         # There's no default, and no default_factory, just
         #  output the variable name and type.
         default = ''
-    elif f.default is not _MISSING:
+    elif f.default is not MISSING:
         # There's a default, this will be the name that's used to look it up.
         default = f'=_dflt_{f.name}'
-    elif f.default_factory is not _MISSING:
+    elif f.default_factory is not MISSING:
         # There's a factory function. Set a marker.
         default = '=_HAS_DEFAULT_FACTORY'
     return f'{f.name}:_type_{f.name}{default}'
@@ -261,13 +262,13 @@ def _init_fn(fields, frozen, has_post_init, self_name):
     for f in fields:
         # Only consider fields in the __init__ call.
         if f.init:
-            if not (f.default is _MISSING and f.default_factory is _MISSING):
+            if not (f.default is MISSING and f.default_factory is MISSING):
                 seen_default = True
             elif seen_default:
                 raise TypeError(f'non-default argument {f.name!r} '
                                 'follows default argument')
 
-    globals = {'_MISSING': _MISSING,
+    globals = {'MISSING': MISSING,
                '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY}
 
     body_lines = []
@@ -368,7 +369,7 @@ def _get_field(cls, a_name, a_type):
 
     # If the default value isn't derived from field, then it's
     #  only a normal default value.  Convert it to a Field().
-    default = getattr(cls, a_name, _MISSING)
+    default = getattr(cls, a_name, MISSING)
     if isinstance(default, Field):
         f = default
     else:
@@ -404,7 +405,7 @@ def _get_field(cls, a_name, a_type):
 
     # Special restrictions for ClassVar and InitVar.
     if f._field_type in (_FIELD_CLASSVAR, _FIELD_INITVAR):
-        if f.default_factory is not _MISSING:
+        if f.default_factory is not MISSING:
             raise TypeError(f'field {f.name} cannot have a '
                             'default factory')
         # Should I check for other field settings? default_factory
@@ -474,7 +475,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
         #  with the real default.  This is so that normal class
         #  introspection sees a real default value, not a Field.
         if isinstance(getattr(cls, f.name, None), Field):
-            if f.default is _MISSING:
+            if f.default is MISSING:
                 # If there's no default, delete the class attribute.
                 #  This happens if we specify field(repr=False), for
                 #  example (that is, we specified a field object, but
