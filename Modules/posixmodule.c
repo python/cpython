@@ -7804,6 +7804,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     Py_END_ALLOW_THREADS
     if (res < 0)
         return posix_error();
+    res = fd2; // msvcrt dup2 returns 0 on success.
 
     /* Character files like console cannot be make non-inheritable */
     if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
@@ -7855,7 +7856,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 
 #endif
 
-    Py_RETURN_NONE;
+    return PyLong_FromLong(res);
 }
 
 
