@@ -2227,69 +2227,6 @@ test_datetime_capi(PyObject *self, PyObject *args) {
         return NULL;
 }
 
-static PyObject *
-test_datetime_timezone_capi(PyObject *self, PyObject *args) {
-    // Make sure the DateTimeAPI is initialized by running the test
-    if (!PyDateTimeAPI) {
-        if(test_datetime_capi(self, args) == NULL) {
-            return NULL;
-        }
-    }
-
-    if(!PyDateTimeAPI) {
-        PyErr_SetString(PyExc_ValueError, "No API initialized");
-        return NULL;
-    }
-
-    // Test that the UTC singleton is a time zone
-    if(!PyTZInfo_Check(PyDateTimeAPI->TimeZone_UTC)) {
-        PyErr_SetString(PyExc_AssertionError, "TimeZone_UTC is not a tzinfo subclass");
-        return NULL;
-    }
-
-    if(!PyTimeZone_Check(PyDateTimeAPI->TimeZone_UTC)) {
-        PyErr_SetString(PyExc_AssertionError, "TimeZone_UTC is not a TimeZoneType subclass");
-        return NULL;
-    }
-
-
-    if(!PyTimeZone_CheckExact(PyDateTimeAPI->TimeZone_UTC)) {
-        PyErr_SetString(PyExc_AssertionError, "TimeZone_UTC is not a TimeZoneType");
-        return NULL;
-    }
-
-    // Test the TimeZone objects API
-    PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
-    PyObject *name = PyUnicode_FromString("EST");
-
-    PyObject *est_zone = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
-
-    Py_DecRef(offset);
-    Py_DecRef(name);
-
-    if(!PyTZInfo_Check(est_zone)) {
-        PyErr_SetString(PyExc_AssertionError,
-                        "TimeZone_FromTimeZone timezone is not a tzinfo subclass");
-        return NULL;
-    }
-
-    if(!PyTimeZone_Check(est_zone)) {
-        PyErr_SetString(PyExc_AssertionError,
-                        "TimeZone_FromTimeZone timezone is not a TimeZoneType subclass");
-        return NULL;
-    }
-
-    if(!PyTimeZone_CheckExact(est_zone)) {
-        PyErr_SetString(PyExc_AssertionError,
-                        "TimeZone_FromTimeZone did not return a TimeZoneType");
-        return NULL;
-    }
-
-    Py_DecRef(est_zone);
-
-    Py_RETURN_NONE;
-}
-
 /* Functions exposing the C API type checking for testing */
 #define MAKE_DATETIME_CHECK_FUNC(check_method, exact_method)    \
     PyObject *obj;                                              \
@@ -4584,7 +4521,6 @@ static PyMethodDef TestMethods[] = {
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
     {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
-    {"test_datetime_timezone_capi", test_datetime_timezone_capi, METH_NOARGS},
     {"datetime_check_date",     datetime_check_date,             METH_VARARGS},
     {"datetime_check_time",     datetime_check_time,             METH_VARARGS},
     {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
