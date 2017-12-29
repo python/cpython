@@ -317,7 +317,7 @@ class Telnet:
                     ready = poller.poll(None if timeout is None
                                         else 1000 * call_timeout)
                 except select.error as e:
-                    if e.errno == errno.EINTR:
+                    if e[0] == errno.EINTR:
                         if timeout is not None:
                             elapsed = time() - time_start
                             call_timeout = timeout-elapsed
@@ -688,7 +688,7 @@ class Telnet:
                     ready = poller.poll(None if timeout is None
                                         else 1000 * call_timeout)
                 except select.error as e:
-                    if e.errno == errno.EINTR:
+                    if e[0] == errno.EINTR:
                         if timeout is not None:
                             elapsed = time() - time_start
                             call_timeout = timeout-elapsed
