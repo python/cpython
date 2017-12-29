@@ -1,6 +1,6 @@
 from dataclasses import (
     dataclass, field, FrozenInstanceError, fields, asdict, astuple,
-    make_dataclass, replace, InitVar, Field
+    make_dataclass, replace, InitVar, Field, MISSING
 )
 
 import pickle
@@ -917,12 +917,12 @@ class TestCase(unittest.TestCase):
             param = next(params)
             self.assertEqual(param.name, 'k')
             self.assertIs   (param.annotation, F)
-            # Don't test for the default, since it's set to _MISSING
+            # Don't test for the default, since it's set to MISSING
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'l')
             self.assertIs   (param.annotation, float)
-            # Don't test for the default, since it's set to _MISSING
+            # Don't test for the default, since it's set to MISSING
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             self.assertRaises(StopIteration, next, params)
 
@@ -947,6 +947,52 @@ class TestCase(unittest.TestCase):
             z: complex=field(default=3+4j, init=False)
 
         validate_class(C)
+
+    def test_missing_default(self):
+        # Test that MISSING works the same as a default not being
+        #  specified.
+        @dataclass
+        class C:
+            x: int=field(default=MISSING)
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            C()
+        self.assertNotIn('x', C.__dict__)
+
+        @dataclass
+        class D:
+            x: int
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            D()
+        self.assertNotIn('x', D.__dict__)
+
+    def test_missing_default_factory(self):
+        # Test that MISSING works the same as a default factory not
+        #  being specified (which is really the same as a default not
+        #  being specified, too).
+        @dataclass
+        class C:
+            x: int=field(default_factory=MISSING)
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            C()
+        self.assertNotIn('x', C.__dict__)
+
+        @dataclass
+        class D:
+            x: int=field(default=MISSING, default_factory=MISSING)
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            D()
+        self.assertNotIn('x', D.__dict__)
+
+    def test_missing_repr(self):
+        self.assertIn('MISSING_TYPE object', repr(MISSING))
 
     def test_dont_include_other_annotations(self):
         @dataclass
