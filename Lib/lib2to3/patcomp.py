@@ -11,7 +11,6 @@ The compiler compiles a pattern to a pytree.*Pattern instance.
 __author__ = "Guido van Rossum <guido@python.org>"
 
 # Python imports
-import os
 import StringIO
 
 # Fairly local imports
