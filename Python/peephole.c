@@ -405,7 +405,21 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 /* Remove unreachable ops after RETURN */
             case RETURN_VALUE:
                 h = i + 1;
-                while (h < codelen && ISBASICBLOCK(blocks, i, h)) {
+                /* END_FINALLY should be kept since it denotes the end of
+                   the 'finally' block in frame_setlineno() in frameobject.c.
+                   SETUP_FINALLY should be kept for balancing.
+                 */
+                while (h < codelen && ISBASICBLOCK(blocks, i, h) &&
+                       _Py_OPCODE(codestr[h]) != END_FINALLY)
+                {
+                    if (_Py_OPCODE(codestr[h]) == SETUP_FINALLY) {
+                        while (h > i + 1 &&
+                               _Py_OPCODE(codestr[h - 1]) == EXTENDED_ARG)
+                        {
+                            h--;
+                        }
+                        break;
+                    }
                     h++;
                 }
                 if (h > i + 1) {
