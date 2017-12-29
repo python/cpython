@@ -71,11 +71,9 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     reader = _get_resource_reader(package)
     if reader is not None:
         return reader.open_resource(resource)
-    # Using pathlib doesn't work well here due to the lack of 'strict'
-    # argument for pathlib.Path.resolve() prior to Python 3.6.
-    absolute_package_path = os.path.abspath(package.__spec__.origin)
-    package_path = os.path.dirname(absolute_package_path)
-    full_path = os.path.join(package_path, resource)
+    absolute_package_path = Path(package.__spec__.origin).resolve()
+    package_path = absolute_package_path.parent
+    full_path = package_path / resource
     try:
         return builtins_open(full_path, mode='rb')
     except OSError:
@@ -86,7 +84,7 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
         data = None
         if hasattr(package.__spec__.loader, 'get_data'):
             with suppress(OSError):
-                data = loader.get_data(full_path)
+                data = loader.get_data(str(full_path))
         if data is None:
             package_name = package.__spec__.name
             message = '{!r} resource not found in {!r}'.format(
@@ -106,11 +104,9 @@ def open_text(package: Package,
     reader = _get_resource_reader(package)
     if reader is not None:
         return TextIOWrapper(reader.open_resource(resource), encoding, errors)
-    # Using pathlib doesn't work well here due to the lack of 'strict'
-    # argument for pathlib.Path.resolve() prior to Python 3.6.
-    absolute_package_path = os.path.abspath(package.__spec__.origin)
-    package_path = os.path.dirname(absolute_package_path)
-    full_path = os.path.join(package_path, resource)
+    absolute_package_path = Path(package.__spec__.origin).resolve()
+    package_path = absolute_package_path.parent
+    full_path = package_path / resource
     try:
         return builtins_open(
             full_path, mode='r', encoding=encoding, errors=errors)
@@ -122,7 +118,7 @@ def open_text(package: Package,
         data = None
         if hasattr(package.__spec__.loader, 'get_data'):
             with suppress(OSError):
-                data = loader.get_data(full_path)
+                data = loader.get_data(str(full_path))
         if data is None:
             package_name = package.__spec__.name
             message = '{!r} resource not found in {!r}'.format(
