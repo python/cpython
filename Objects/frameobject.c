@@ -55,7 +55,7 @@ frame_getlineno(PyFrameObject *f, void *closure)
  *  o Lines with an 'except' statement on them can't be jumped to, because
  *    they expect an exception to be on the top of the stack.
  *  o Lines that live in a 'finally' block can't be jumped from or to, since
- *    the END_FINALLY expects to clean up the stack after the 'try' block.
+ *    the RERAISE expects to clean up the stack after the 'try' block.
  *  o 'try'/'for'/'while' blocks can't be jumped into because the blockstack
  *    needs to be set up before their code runs, and for 'for' loops the
  *    iterator needs to be on the stack.
@@ -78,7 +78,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int min_addr = 0;                   /* Scanning the SETUPs and POPs */
     int max_addr = 0;                   /* (ditto) */
     int delta_iblock = 0;               /* (ditto) */
+    int delta_iter = 0;                 /* (ditto) */
     int min_delta_iblock = 0;           /* (ditto) */
+    int min_delta_iter = 0;             /* (ditto) */
     int min_iblock = 0;                 /* (ditto) */
     int f_lasti_setup_addr = 0;         /* Policing no-jump-into-finally */
     int new_lasti_setup_addr = 0;       /* (ditto) */
@@ -179,14 +181,18 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     }
 
     /* You can't jump into or out of a 'finally' block because the 'try'
-     * block leaves something on the stack for the END_FINALLY to clean
-     * up.      So we walk the bytecode, maintaining a simulated blockstack.
+     * block leaves something on the stack for the RETRY to clean up.
+     * So we walk the bytecode, maintaining a simulated blockstack.
      * When we reach the old or new address and it's in a 'finally' block
      * we note the address of the corresponding SETUP_FINALLY.  The jump
      * is only legal if neither address is in a 'finally' block or
      * they're both in the same one.  'blockstack' is a stack of the
      * bytecode addresses of the SETUP_X opcodes, and 'in_finally' tracks
-     * whether we're in a 'finally' block at each blockstack level. */
+     * whether we're in a 'finally' block at each blockstack level.
+     *
+     * Note this code is inherently delicate as it walks the bytecode
+     * in raw order without building the control flow graph.
+     */
     f_lasti_setup_addr = -1;
     new_lasti_setup_addr = -1;
     memset(blockstack, '\0', sizeof(blockstack));
@@ -195,11 +201,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
-        case SETUP_LOOP:
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
-        case SETUP_WITH:
-        case SETUP_ASYNC_WITH:
             blockstack[blockstack_top++] = addr;
             in_finally[blockstack_top-1] = 0;
             break;
@@ -207,8 +210,11 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         case POP_BLOCK:
             assert(blockstack_top > 0);
             setup_op = code[blockstack[blockstack_top-1]];
-            if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH
-                                    || setup_op == SETUP_ASYNC_WITH) {
+            if (setup_op == SETUP_FINALLY) {
+                /* This is the start of the 'finally' block.
+                 * It will end with RERAISE (if a 'try..finally' block)
+                 * or WITH_EXCEPT_FINISH (if a 'with' block).
+                 */
                 in_finally[blockstack_top-1] = 1;
             }
             else {
@@ -216,18 +222,21 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             }
             break;
 
-        case END_FINALLY:
-            /* Ignore END_FINALLYs for SETUP_EXCEPTs - they exist
-             * in the bytecode but don't correspond to an actual
-             * 'finally' block.  (If blockstack_top is 0, we must
-             * be seeing such an END_FINALLY.) */
+        case RERAISE:
             if (blockstack_top > 0) {
                 setup_op = code[blockstack[blockstack_top-1]];
-                if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH
-                                    || setup_op == SETUP_ASYNC_WITH) {
+                if (setup_op == SETUP_FINALLY) {
+                    /* This is the end of the 'finally' block. */
                     blockstack_top--;
                 }
+                /* RERAISE is also used by SETUP_EXCEPT, but we don't care. */
             }
+            break;
+        case WITH_EXCEPT_FINISH:
+            /* This is the end of the 'finally' block */
+            assert(blockstack_top > 0);
+            assert(code[blockstack[blockstack_top-1]] == SETUP_FINALLY);
+            blockstack_top--;
             break;
         }
 
@@ -279,20 +288,23 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     for (addr = min_addr; addr < max_addr; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
-        case SETUP_LOOP:
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
-        case SETUP_WITH:
-        case SETUP_ASYNC_WITH:
             delta_iblock++;
             break;
-
         case POP_BLOCK:
             delta_iblock--;
+            break;
+        case FOR_ITER:
+            delta_iter++;
+            break;
+        case END_ITER:
+            delta_iter--;
             break;
         }
 
         min_delta_iblock = Py_MIN(min_delta_iblock, delta_iblock);
+        min_delta_iter = Py_MIN(min_delta_iter, delta_iter);
     }
 
     /* Derive the absolute iblock values from the deltas. */
@@ -304,10 +316,11 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     else {
         /* Backwards jump. */
         new_iblock = f->f_iblock - delta_iblock;
+        delta_iter = -delta_iter;
     }
 
     /* Are we jumping into a block? */
-    if (new_iblock > min_iblock) {
+    if (new_iblock > min_iblock || delta_iter > min_delta_iter) {
         PyErr_SetString(PyExc_ValueError,
                         "can't jump into the middle of a block");
         return -1;
@@ -320,6 +333,12 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             PyObject *v = (*--f->f_stacktop);
             Py_DECREF(v);
         }
+    }
+    /* Pop the iterators of any 'for' loop we're jumping out of. */
+    while (delta_iter < 0) {
+        PyObject *v = (*--f->f_stacktop);
+        Py_DECREF(v);
+        delta_iter++;
     }
 
     /* Finally set the new f_lineno and f_lasti and return OK. */
