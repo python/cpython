@@ -825,23 +825,24 @@ code_object_inner = code_object_f.co_consts[3]
 expected_inner_line = code_object_inner.co_firstlineno - _line_offset
 expected_jumpy_line = 1
 
-# The following lines are useful to regenerate the expected results after
-# either the fodder is modified or the bytecode generation changes
-# After regeneration, update the references to code_object_f and
-# code_object_inner before rerunning the tests
 
-#_instructions = dis.get_instructions(outer, first_line=expected_outer_line)
-#print('expected_opinfo_outer = [\n  ',
-      #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
-#_instructions = dis.get_instructions(outer(), first_line=expected_f_line)
-#print('expected_opinfo_f = [\n  ',
-      #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
-#_instructions = dis.get_instructions(outer()(), first_line=expected_inner_line)
-#print('expected_opinfo_inner = [\n  ',
-      #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
-#_instructions = dis.get_instructions(jumpy, first_line=expected_jumpy_line)
-#print('expected_opinfo_jumpy = [\n  ',
-      #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
+if 0:
+    # The following lines are useful to regenerate the expected results
+    # after either the fodder is modified or the bytecode generation
+    # changes After regeneration, update the references to code_object_f
+    # and code_object_inner before rerunning the tests
+    def _get_instructions(func, first_line):
+        inst = dis.get_instructions(func, first_line=first_line)
+        inst = map(str, inst)
+        return '[\n  ' + ',\n  '.join(inst) + ',\n]\n'
+    print('expected_opinfo_outer =',
+          _get_instructions(outer, first_line=expected_outer_line))
+    print('expected_opinfo_f =',
+          _get_instructions(outer(), first_line=expected_f_line))
+    print('expected_opinfo_inner =',
+          _get_instructions(outer()(), first_line=expected_inner_line))
+    print('expected_opinfo_jumpy =',
+          _get_instructions(jumpy, first_line=expected_jumpy_line))
 
 
 Instruction = dis.Instruction
