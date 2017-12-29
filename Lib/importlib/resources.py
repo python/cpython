@@ -195,7 +195,7 @@ def path(package: Package, resource: Resource) -> Iterator[Path]:
 
 
 def is_resource(package: Package, name: str) -> bool:
-    """True if `name` is a resource inside `package`.
+    """True if 'name' is a resource inside 'package'.
 
     Directories are *not* resources.
     """
@@ -228,7 +228,7 @@ def is_resource(package: Package, name: str) -> bool:
         toc = zf.namelist()
     relpath = package_directory.relative_to(archive_path)
     candidate_path = relpath / name
-    for entry in toc:                               # pragma: nobranch
+    for entry in toc:
         try:
             relative_to_candidate = Path(entry).relative_to(candidate_path)
         except ValueError:
@@ -249,7 +249,7 @@ def is_resource(package: Package, name: str) -> bool:
 
 
 def contents(package: Package) -> Iterator[str]:
-    """Return the list of entries in `package`.
+    """Return the list of entries in 'package'.
 
     Note that not all entries are resources.  Specifically, directories are
     not considered resources.  Use `is_resource()` on each entry returned here
@@ -296,7 +296,7 @@ def contents(package: Package) -> Iterator[str]:
             subparts = path.parts[len(relpath.parts):]
             if len(subparts) == 1:
                 yield subparts[0]
-            elif len(subparts) > 1:                 # pragma: nobranch
+            elif len(subparts) > 1:
                 subdir = subparts[0]
                 if subdir not in subdirs_seen:
                     subdirs_seen.add(subdir)
