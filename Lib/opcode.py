@@ -90,7 +90,6 @@ def_op('WITH_CLEANUP_FINISH', 41)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
-def_op('ENTER_WITH', 53)
 
 def_op('INPLACE_ADD', 55)
 def_op('INPLACE_SUBTRACT', 56)
@@ -189,6 +188,8 @@ hasfree.append(138)
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
+jrel_op('SETUP_WITH', 143)
+
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 
@@ -204,6 +205,8 @@ def_op('BUILD_MAP_UNPACK', 150)
 def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
 def_op('BUILD_TUPLE_UNPACK', 152)
 def_op('BUILD_SET_UNPACK', 153)
+
+jrel_op('SETUP_ASYNC_WITH', 154)
 
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)

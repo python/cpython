@@ -35,7 +35,6 @@ extern "C" {
 #define GET_AITER                50
 #define GET_ANEXT                51
 #define BEFORE_ASYNC_WITH        52
-#define ENTER_WITH               53
 #define INPLACE_ADD              55
 #define INPLACE_SUBTRACT         56
 #define INPLACE_MULTIPLY         57
@@ -111,6 +110,7 @@ extern "C" {
 #define DELETE_DEREF            138
 #define CALL_FUNCTION_KW        141
 #define CALL_FUNCTION_EX        142
+#define SETUP_WITH              143
 #define EXTENDED_ARG            144
 #define LIST_APPEND             145
 #define SET_ADD                 146
@@ -121,6 +121,7 @@ extern "C" {
 #define BUILD_MAP_UNPACK_WITH_CALL 151
 #define BUILD_TUPLE_UNPACK      152
 #define BUILD_SET_UNPACK        153
+#define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156
 #define BUILD_STRING            157

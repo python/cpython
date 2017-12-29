@@ -1,5 +1,4 @@
 Move unwinding of stack (e.g. when exceptions are raised) from bytecode
 interpreter to bytecode compiler.  Update bytecode magic number.  Remove the
-opcodes BREAK_LOOP, END_FINALLY, CONTINUE_LOOP, SETUP_LOOP,
-SETUP_ASYNC_WITH.  Add the opcodes ROT_FOUR, RERAISE, PUSH_NO_EXCEPT. Rename
-the opcode SETUP_WITH to ENTER_WITH (it no longer adds a finally block).
+opcodes BREAK_LOOP, END_FINALLY, CONTINUE_LOOP, SETUP_LOOP.  Add the opcodes
+ROT_FOUR, RERAISE, PUSH_NO_EXCEPT.

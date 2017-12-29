@@ -2932,7 +2932,17 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(ENTER_WITH) {
+        TARGET(SETUP_ASYNC_WITH) {
+            PyObject *res = POP();
+            /* Setup the finally block before pushing the result
+               of __aenter__ on the stack. */
+            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+                               STACK_LEVEL());
+            PUSH(res);
+            DISPATCH();
+        }
+
+        TARGET(SETUP_WITH) {
             /* Replace TOP with TOP.__exit__ and push the result
              * of calling TOP.__enter__()
              */
@@ -2955,6 +2965,10 @@ main_loop:
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;
+            /* Setup the finally block before pushing the result
+               of __enter__ on the stack. */
+            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+                               STACK_LEVEL());
             PUSH(res);
             DISPATCH();
         }

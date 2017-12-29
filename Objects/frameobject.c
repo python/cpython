@@ -92,6 +92,8 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
         switch (op) {
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
+        case SETUP_WITH:
+        case SETUP_ASYNC_WITH:
             blockstack[blockstack_top++] = addr;
             in_finally[blockstack_top-1] = 0;
             break;
@@ -99,7 +101,8 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
         case POP_BLOCK:
             assert(blockstack_top > 0);
             setup_op = code[blockstack[blockstack_top-1]];
-            if (setup_op == SETUP_FINALLY) {
+            if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH
+                    || setup_op == SETUP_ASYNC_WITH) {
                 /* This is the start of a 'finally' block.
                  * It will end with RERAISE (if a 'try..finally' block)
                  * or WITH_CLEANUP_FINISH (if a 'with' block).
@@ -122,9 +125,10 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
             }
             break;
         case WITH_CLEANUP_FINISH:
-            /* This is the end of a 'with/finally' block */
+            /* This is the end of a 'with' or 'async with' block */
             assert(blockstack_top > 0);
-            assert(code[blockstack[blockstack_top-1]] == SETUP_FINALLY);
+            assert(code[blockstack[blockstack_top-1]] == SETUP_WITH ||
+                   code[blockstack[blockstack_top-1]] == SETUP_ASYNC_WITH);
             blockstack_top--;
             break;
         }
@@ -348,6 +352,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         switch (op) {
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
+        case SETUP_WITH:
+        case SETUP_ASYNC_WITH:
             delta_iblock++;
             break;
         case POP_BLOCK:

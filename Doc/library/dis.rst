@@ -584,6 +584,10 @@ the original TOS1.
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
    stack.  Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack.
 
+.. opcode:: SETUP_ASYNC_WITH
+
+   Pushes a new frame block on the block stack.  The top of stack value
+   is moved to after the new block.
 
 
 **Miscellaneous opcodes**
@@ -687,19 +691,22 @@ iterations of the loop.
    .. versionadded:: 3.7
 
 
-.. opcode:: ENTER_WITH
-
-   Replace the top of the stack with TOP.__exit__ and push the result
-   of calling TOP.__enter__().
-
-   .. versionadded:: 3.7
-
-
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
    by :opcode:`CALL_FUNCTION` to construct a class.
 
+
+.. opcode:: SETUP_WITH (delta)
+
+   This opcode performs several operations before a with block starts.  First,
+   it loads :meth:`~object.__exit__` from the context manager and pushes it onto
+   the stack for later use by :opcode:`WITH_CLEANUP`.  Then,
+   :meth:`~object.__enter__` is called, and a finally block pointing to *delta*
+   is pushed.  Finally, the result of calling the enter method is pushed onto
+   the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
+   store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
+   :opcode:`UNPACK_SEQUENCE`).
 
 .. opcode:: WITH_CLEANUP_START
 
