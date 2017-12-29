@@ -2231,7 +2231,9 @@ static PyObject *
 test_datetime_timezone_capi(PyObject *self, PyObject *args) {
     // Make sure the DateTimeAPI is initialized by running the test
     if (!PyDateTimeAPI) {
-        test_datetime_capi(self, args);
+        if(test_datetime_capi(self, args) == NULL) {
+            return NULL;
+        }
     }
 
     if(!PyDateTimeAPI) {
@@ -2241,12 +2243,18 @@ test_datetime_timezone_capi(PyObject *self, PyObject *args) {
 
     // Test that the UTC singleton is a time zone
     if(!PyTZInfo_Check(PyDateTimeAPI->TimeZone_UTC)) {
-        PyErr_SetString(PyExc_TypeError, "TimeZone_UTC is not a tzinfo subclass");
+        PyErr_SetString(PyExc_AssertionError, "TimeZone_UTC is not a tzinfo subclass");
         return NULL;
     }
 
+    if(!PyTimeZone_Check(PyDateTimeAPI->TimeZone_UTC)) {
+        PyErr_SetString(PyExc_AssertionError, "TimeZone_UTC is not a TimeZoneType subclass");
+        return NULL;
+    }
+
+
     if(!PyTimeZone_CheckExact(PyDateTimeAPI->TimeZone_UTC)) {
-        PyErr_SetString(PyExc_TypeError, "TimeZone_UTC is not a TimeZoneType");
+        PyErr_SetString(PyExc_AssertionError, "TimeZone_UTC is not a TimeZoneType");
         return NULL;
     }
 
@@ -2260,19 +2268,19 @@ test_datetime_timezone_capi(PyObject *self, PyObject *args) {
     Py_DecRef(name);
 
     if(!PyTZInfo_Check(est_zone)) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_AssertionError,
                         "TimeZone_FromTimeZone timezone is not a tzinfo subclass");
         return NULL;
     }
 
     if(!PyTimeZone_Check(est_zone)) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_AssertionError,
                         "TimeZone_FromTimeZone timezone is not a TimeZoneType subclass");
         return NULL;
     }
 
     if(!PyTimeZone_CheckExact(est_zone)) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_AssertionError,
                         "TimeZone_FromTimeZone did not return a TimeZoneType");
         return NULL;
     }
@@ -2280,6 +2288,81 @@ test_datetime_timezone_capi(PyObject *self, PyObject *args) {
     Py_DecRef(est_zone);
 
     Py_RETURN_NONE;
+}
+
+/* Functions exposing the C API type checking for testing */
+#define MAKE_DATETIME_CHECK_FUNC(check_method, exact_method)    \
+    PyObject *obj;                                              \
+    int exact = 0;                                              \
+    if (!PyArg_ParseTuple(args, "O|p", &obj, &exact)) {         \
+        return NULL;                                            \
+    }                                                           \
+    int rv = exact?exact_method(obj):check_method(obj);         \
+    if (rv) {                                                   \
+        Py_RETURN_TRUE;                                         \
+    } else {                                                    \
+        Py_RETURN_FALSE;                                        \
+    }
+
+static PyObject *
+datetime_check_date(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyDate_Check, PyDate_CheckExact)
+}
+
+static PyObject *
+datetime_check_time(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyTime_Check, PyTime_CheckExact)
+}
+
+static PyObject *
+datetime_check_datetime(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyDateTime_Check, PyDateTime_CheckExact)
+}
+
+static PyObject *
+datetime_check_delta(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyDelta_Check, PyDelta_CheckExact)
+}
+
+static PyObject *
+datetime_check_tzinfo(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyTZInfo_Check, PyTZInfo_CheckExact)
+}
+
+static PyObject *
+datetime_check_timezone(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyTimeZone_Check, PyTimeZone_CheckExact)
+}
+
+/* Makes three variations on timezone representing UTC-5:
+   1. timezone with offset and name from PyDateTimeAPI
+   2. timezone with offset and name from PyTimeZone_FromOffsetAndName
+   3. timezone with offset (no name) from PyTimeZone_FromOffset
+*/
+static PyObject *
+make_timezones_capi(PyObject *self, PyObject *args) {
+    PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
+    PyObject *name = PyUnicode_FromString("EST");
+
+    PyObject *est_zone_capi = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
+    PyObject *est_zone_macro = PyTimeZone_FromOffsetAndName(offset, name);
+    PyObject *est_zone_macro_noname = PyTimeZone_FromOffset(offset);
+
+    Py_DecRef(offset);
+    Py_DecRef(name);
+
+    PyObject *rv = PyTuple_New(3);
+
+    PyTuple_SET_ITEM(rv, 0, est_zone_capi);
+    PyTuple_SET_ITEM(rv, 1, est_zone_macro);
+    PyTuple_SET_ITEM(rv, 2, est_zone_macro_noname);
+
+    return rv;
+}
+
+static PyObject *
+get_timezone_utc_capi(PyObject* self, PyObject *args) {
+    return PyDateTimeAPI->TimeZone_UTC;
 }
 
 
@@ -4502,6 +4585,14 @@ static PyMethodDef TestMethods[] = {
     {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
     {"test_datetime_timezone_capi", test_datetime_timezone_capi, METH_NOARGS},
+    {"datetime_check_date",     datetime_check_date,             METH_VARARGS},
+    {"datetime_check_time",     datetime_check_time,             METH_VARARGS},
+    {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
+    {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
+    {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
+    {"datetime_check_timezone",     datetime_check_timezone,     METH_VARARGS},
+    {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
+    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_NOARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
