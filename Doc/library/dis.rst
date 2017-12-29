@@ -668,6 +668,22 @@ iterations of the loop.
    popped values are used to restore the exception state.
 
 
+.. opcode:: POP_FINALLY (preserve_tos)
+
+   Cleans up the value stack and the block stack.  If *preserve_tos* is not
+   ``0`` TOS first is popped from the stack and pushed on the stack after
+   perfoming other stack operations:
+
+   * If TOS is ``NULL`` or an integer (pushed by :opcode:`BEGIN_FINALLY`
+     or :opcode:`CALL_FINALLY`) it is popped from the stack.
+   * If TOS is an exception type (pushed when an exception has been raised)
+     6 values are popped from the stack, the last three popped values are
+     used to restore the exception state.  An exception handler block is
+     removed from the block stack.
+
+   .. versionadded:: 3.7
+
+
 .. opcode:: BEGIN_FINALLY
 
    Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY`.
@@ -687,8 +703,10 @@ iterations of the loop.
    * If TOS is an integer (pushed by :opcode:`CALL_FINALLY`), sets the
      bytecode counter to TOS.  TOS is popped.
    * If TOS is an exception type (pushed when an exception has been raised)
-     re-raise the exception and restore ``sys.exc_info()``. 6 values are
-     popped from the stack.
+     6 values are popped from the stack, the first three popped values are
+     used to re-raise the exception and the last three popped values are used
+     to restore the exception state.  An exception handler block is removed
+     from the block stack.
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -735,8 +753,12 @@ iterations of the loop.
    * If SECOND is an integer (pushed by :opcode:`CALL_FINALLY`), sets the
      bytecode counter to TOS.  4 values are popped from the stack.
    * If SECOND is an exception type (pushed when an exception has been raised)
-     re-raise the exception and restore ``sys.exc_info()``. 9 values are
-     popped from the stack.
+     and TOS is true SIXTH, SEVENTH and EIGHTH are used for restoring the
+     exception state.  9 values are popped from the stack. An exception
+     handler block is removed from the block stack.
+   * If SECOND is an exception type and TOS is false THIRD, FOURTH and FIFTH
+     are used for re-raising the exception state and SIXTH, SEVENTH and EIGHTH
+     are used for restoring the exception state.  9 values are popped from the stack. An exception handler block is removed from the block stack.
 
    .. versionchanged:: 3.7
       WITH_CLEANUP_FINISH now includes the functionality of

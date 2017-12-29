@@ -936,9 +936,9 @@ CPython bytecode changes
 
   Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
   :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
-  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY` and :opcode:`CALL_FINALLY`.
-  Changed the behavior of :opcode:`END_FINALLY`.  :opcode:`WITH_CLEANUP_FINISH`
-  now includes :opcode:`END_FINALLY`.
+  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY`, :opcode:`CALL_FINALLY` and
+  :opcode:`CALL_FINALLY`.  Changed the behavior of :opcode:`END_FINALLY`.
+  :opcode:`WITH_CLEANUP_FINISH` now includes :opcode:`END_FINALLY`.
 
   (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
   :issue:`17611`.)
