@@ -238,12 +238,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             break;
         }
 
-        case WITH_CLEANUP_FINISH: {
-            assert(blockstack_top > 0);
-            blockstack_top--;
-            break;
-        }
-
         case END_FINALLY: {
             assert(blockstack_top > 0);
             int target_addr = blockstack[--blockstack_top];

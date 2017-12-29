@@ -937,9 +937,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case WITH_CLEANUP_START:
             return 2;
         case WITH_CLEANUP_FINISH:
-            /* Pop 2 values pushed by WITH_CLEANUP_START, adjust 6 entries
-             * reserved by SETUP_WITH, and pop __exit__ */
-            return -9;
+            /* Pop 2 values pushed by WITH_CLEANUP_START and pop __exit__ */
+            return -3;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -4358,6 +4357,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_CLEANUP_FINISH);
 
     /* Finally block ends. */
+    ADDOP(c, END_FINALLY);
     compiler_pop_fblock(c, FINALLY_END, finally);
     return 1;
 }
@@ -4440,6 +4440,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_CLEANUP_FINISH);
 
     /* Finally block ends. */
+    ADDOP(c, END_FINALLY);
     compiler_pop_fblock(c, FINALLY_END, finally);
     return 1;
 }

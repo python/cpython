@@ -734,35 +734,27 @@ iterations of the loop.
    At the top of the stack are either ``NULL`` (pushed by
    :opcode:`BEGIN_FINALLY`), an integer (pushed by :opcode:`CALL_FINALLY`),
    or 6 values pushed if an exception has been raised in the with block.
-   Below is the context manager's :meth:`~object.__exit__` bound method.
+   Below is the context manager's :meth:`~object.__exit__` or
+   :meth:`~object.__aexit__` bound method.
 
    If TOS is ``NULL`` or an integer, calls ``SECOND(None, None, None)``,
-   otherwise calls ``SEVENTH(TOP, SECOND, THIRD)``.  Pushes result
-   of the call and TOS to the stack.
+   removes the function from the stack, leaving TOS, and pushes ``None``
+   to the stack.  Otherwise calls ``SEVENTH(TOP, SECOND, THIRD)``,
+   shifts the bottom 3 values of the stack down, replaces the empty spot
+   with ``NULL`` and pushes TOS.  Finally pushes the result of the call.
 
 
 .. opcode:: WITH_CLEANUP_FINISH
 
    Finishes cleaning up the stack when a :keyword:`with` statement block exits.
 
-   TOS is result of ``__exit__()`` function call pushed by
-   :opcode:`WITH_CLEANUP_START`.  SECOND indicates the action.
+   TOS is result of ``__exit__()`` or ``__aexit__()`` function call pushed
+   by :opcode:`WITH_CLEANUP_START`.  SECOND is ``None`` or an exception type
+   (pushed when an exception has been raised).
 
-   * If SECOND is ``NULL`` (pushed by :opcode:`BEGIN_FINALLY`) continue from
-     the next instruction.  4 values are popped from the stack.
-   * If SECOND is an integer (pushed by :opcode:`CALL_FINALLY`), sets the
-     bytecode counter to TOS.  4 values are popped from the stack.
-   * If SECOND is an exception type (pushed when an exception has been raised)
-     and TOS is true SIXTH, SEVENTH and EIGHTH are used for restoring the
-     exception state.  9 values are popped from the stack. An exception
-     handler block is removed from the block stack.
-   * If SECOND is an exception type and TOS is false THIRD, FOURTH and FIFTH
-     are used for re-raising the exception state and SIXTH, SEVENTH and EIGHTH
-     are used for restoring the exception state.  9 values are popped from the stack. An exception handler block is removed from the block stack.
-
-   .. versionchanged:: 3.7
-      WITH_CLEANUP_FINISH now includes the functionality of
-      :opcode:`END_FINALLY`.
+   Pops two values from the stack.  If SECOND is not None and TOS is true
+   unwinds the EXCEPT_HANDLER block which was created when the exception
+   was caught and pushes ``NULL`` to the stack.
 
 
 All of the following opcodes use their arguments.

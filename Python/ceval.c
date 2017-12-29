@@ -1954,6 +1954,7 @@ main_loop:
             FAST_DISPATCH();
         }
 
+        PREDICTED(END_FINALLY);
         TARGET(END_FINALLY) {
             /* At the top of the stack are 1 or 6 values:
                Either:
@@ -2995,44 +2996,72 @@ main_loop:
         }
 
         TARGET(WITH_CLEANUP_START) {
-            /* At the top of the stack are 2 or 7 values:
-               Either:
-                - NULL or an integer
-                - SECOND: the context.__exit__ bound method
-               or:
-                - (TOP, SECOND, THIRD) = exc_info()
-                - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-                - SEVENTH: the context.__exit__ bound method
+            /* At the top of the stack are 1 or 6 values indicating
+               how/why we entered the finally clause:
+               - TOP = None
+               - TOP = the return address (integer)
+               - (TOP, SECOND, THIRD) = exc_info()
+                 (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
+               Below them is EXIT, the context.__exit__ bound method.
+               In the last case, we must call
+                 EXIT(TOP, SECOND, THIRD)
+               otherwise we must call
+                 EXIT(None, None, None)
 
-               We call context.__exit__(TOP, SECOND, THIRD).
-               Then we push again the TOP exception and the __exit__
-               return value.
+               In the first two cases, we remove EXIT from the
+               stack, leaving TOP.  In the
+               last case, we shift the bottom 3 values of the
+               stack down, and replace the empty spot with NULL.
+
+               In the last case we push TOP on the stack, otherwise we push
+               None on the stack. Finally we push the result of the call.
             */
+            PyObject *stack[3];
             PyObject *exit_func;
-            PyObject *exit_stack[3];
             PyObject *exc, *val, *tb, *res;
 
+            val = tb = Py_None;
             exc = TOP();
             if (exc == NULL || PyLong_CheckExact(exc)) {
-                exit_func = SECOND();
-                exit_stack[0] = Py_None;
-                exit_stack[1] = Py_None;
-                exit_stack[2] = Py_None;
+                STACKADJ(-1);
+                exit_func = TOP();
+                SET_TOP(exc);
+                exc = Py_None;
             }
             else {
                 assert(PyExceptionClass_Check(exc));
+                PyObject *tp2, *exc2, *tb2;
+                PyTryBlock *block;
                 val = SECOND();
                 tb = THIRD();
+                tp2 = FOURTH();
+                exc2 = PEEK(5);
+                tb2 = PEEK(6);
                 exit_func = PEEK(7);
-                exit_stack[0] = exc;
-                exit_stack[1] = val;
-                exit_stack[2] = tb;
+                SET_VALUE(7, tb2);
+                SET_VALUE(6, exc2);
+                SET_VALUE(5, tp2);
+                /* UNWIND_EXCEPT_HANDLER will pop this off. */
+                SET_FOURTH(NULL);
+                /* We just shifted the stack down, so we have
+                   to tell the except handler block that the
+                   values are lower than it expects. */
+                assert(f->f_iblock > 0);
+                block = &f->f_blockstack[f->f_iblock - 1];
+                assert(block->b_type == EXCEPT_HANDLER);
+                assert(block->b_level > 0);
+                block->b_level--;
             }
-            res = _PyObject_FastCall(exit_func, exit_stack, 3);
+
+            stack[0] = exc;
+            stack[1] = val;
+            stack[2] = tb;
+            res = _PyObject_FastCall(exit_func, stack, 3);
+            Py_DECREF(exit_func);
             if (res == NULL)
                 goto error;
 
-            Py_XINCREF(exc); /* Duplicating the exception on the stack (XXX: required?) */
+            Py_INCREF(exc); /* Duplicating the exception on the stack */
             PUSH(exc);
             PUSH(res);
             PREDICT(WITH_CLEANUP_FINISH);
@@ -3041,60 +3070,38 @@ main_loop:
 
         PREDICTED(WITH_CLEANUP_FINISH);
         TARGET(WITH_CLEANUP_FINISH) {
+            /* TOP = the result of calling the context.__exit__ bound method
+               SECOND = either None or exception type
+
+               If SECOND is None below is NULL or the return address,
+               otherwise below are 7 values representing an exception.
+            */
             PyObject *res = POP();
             PyObject *exc = POP();
+            int err;
 
-            if (exc == NULL || PyLong_CheckExact(exc)) {
-                Py_DECREF(res);
-                if (exc != NULL) {
-                    int ret = _PyLong_AsInt(exc);
-                    Py_DECREF(exc);
-                    if (ret == -1 && PyErr_Occurred()) {
-                        goto error;
-                    }
-                    JUMPTO(ret);
-                }
-                /* At the top of the stack are 2 values:
-                    - NULL or an integer
-                    - SECOND: the context.__exit__ bound method
-                */
-                assert(TOP() == exc);
-                STACKADJ(-1);
-                Py_DECREF(POP());
-            }
-            else {
-                int err = PyObject_IsTrue(res);
-                Py_DECREF(res);
-                Py_DECREF(exc);
-                if (err < 0)
-                    goto error;
+            if (exc != Py_None)
+                err = PyObject_IsTrue(res);
+            else
+                err = 0;
 
-                /* The stack has the values pushed by the block which
-                 * errored out + the 7 values described in WITH_CLEANUP_START.
-                 * We will pop them all, one way or the other.
+            Py_DECREF(res);
+            Py_DECREF(exc);
+
+            if (err < 0)
+                goto error;
+            else if (err > 0) {
+                /* There was an exception and a True return.
+                 * We must manually unwind the EXCEPT_HANDLER block
+                 * which was created when the exception was caught,
+                 * otherwise the stack will be in an inconsisten state.
                  */
-                if (err > 0) {
-                    /* There was an exception and a True return.
-                     * We must manually unwind the EXCEPT_HANDLER block
-                     * which was created when the exception was caught,
-                     * otherwise the stack will be in an inconsisten state.
-                     */
-                    PyTryBlock *b = PyFrame_BlockPop(f);
-                    assert(b->b_type == EXCEPT_HANDLER);
-                    UNWIND_EXCEPT_HANDLER(b);
-                    /* The bound __exit__ method is still on top */
-                    Py_DECREF(POP());
-                }
-                else {
-                    PyObject *val, *tb;
-                    assert(TOP() == exc);
-                    STACKADJ(-1);
-                    val = POP();
-                    tb = POP();
-                    PyErr_Restore(exc, val, tb);
-                    goto error;
-                }
+                PyTryBlock *b = PyFrame_BlockPop(f);
+                assert(b->b_type == EXCEPT_HANDLER);
+                UNWIND_EXCEPT_HANDLER(b);
+                PUSH(NULL);
             }
+            PREDICT(END_FINALLY);
             DISPATCH();
         }
 
