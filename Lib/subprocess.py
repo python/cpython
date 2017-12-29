@@ -292,6 +292,30 @@ def _args_from_interpreter_flags():
 
     return args
 
+def _more_than_one_thread_in_process():
+    """Attempts to determine if we are a multithreaded process.
+
+    Returns True if so or if it cannot be determined.
+    False if we are known to be the only thread in the process.
+    """
+    if _mswindows:
+        return True
+    try:
+        # On Linux, the number of directory entries in /proc/self/task is
+        # the number of threads in your process.
+        task_iter = os.scandir('/proc/self/task')
+    except EnvironmentError:
+        return True  # That /proc API doesn't exist? assume threaded.
+    try:
+        next(task_iter)
+    except StopIteration:
+        return True  # Directory exists but is empty? nonsense. bail.
+    try:
+        next(task_iter)
+    except StopIteration:
+        return False  # A single entry exists? Single threaded!
+    return True  # multi-threaded
+
 
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
@@ -642,6 +666,16 @@ class Popen(object):
         # finished a waitpid() call.
         self._waitpid_lock = threading.Lock()
 
+        # If we're going to use SIGCHLD, we must block it before launching
+        # the child process in order to prevent a race condition of the
+        # child exiting before we are setup to check for the signal
+        # with signal.sigtimedwait().
+        if _more_than_one_thread_in_process():
+            self._singlethread_blocked_signals = None
+        else:
+            self._singlethread_blocked_signals = signal.pthread_sigmask(
+                    signal.SIG_BLOCK, (signal.SIGCHLD,))
+
         self._input = None
         self._communication_started = False
         if bufsize is None:
@@ -799,7 +833,13 @@ class Popen(object):
             # Wait for the process to terminate, to avoid zombies.
             self.wait()
 
-    def __del__(self, _maxsize=sys.maxsize, _warn=warnings.warn):
+    def __del__(self, _maxsize=sys.maxsize, _warn=warnings.warn
+                _sigchld=signal.SIGCHLD, _sigunblock=signal.SIG_UNBLOCK,
+                _sigprocmask=signal.pthread_sigmask):
+        if self._singlethread_blocked_signals is not None:
+            if _sigchld not in self._singlethread_blocked_signals):
+                _sigprocmask(_sigunblock, (_sigchld,))
+            self._singlethread_blocked_signals = None
         if not self._child_created:
             # We didn't get to successfully create a child process.
             return
@@ -1352,6 +1392,8 @@ class Popen(object):
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
+                    # TODO(gps): if signal.SIGCHLD not in self._singlethread_blocked_signals
+                    # we need to tell our child C code to unblock it before exec as blocks are inherited.
                     self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
@@ -1506,6 +1548,14 @@ class Popen(object):
 
             if timeout is not None:
                 endtime = _time() + timeout
+                if (self._singlethread_blocked_signals is not None
+                    and not _more_than_one_thread_in_process()):
+                    # recheck the process, threads may have started since.
+                    return self._wait_timeout_via_signal(timeout, endtime)
+                # In a multithreaded process we cannot assume control over the
+                # process-wide global signal mask.  So we resort to polling the
+                # child for its timely demise.
+
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
                 delay = 0.0005 # 500 us -> initial delay of 1 ms
@@ -1537,7 +1587,39 @@ class Popen(object):
                         # http://bugs.python.org/issue14396.
                         if pid == self.pid:
                             self._handle_exitstatus(sts)
+                            break
             return self.returncode
+
+
+        def _wait_timeout_via_signal(self, timeout, endtime):
+            """Single threaded process SIGCHLD based wait with a timeout."""
+            assert self._singlethread_blocked_signals is not None
+            assert timeout is not None
+            assert endtime > 0
+            sigchld_mask = (signal.SIGCHLD,)
+            remaining_timeout = timeout
+            try:
+                while remaining_timeout > 0:
+                    remaining_timeout = max(self._remaining_time(endtime), 0)
+                    try:
+                        signal.sigtimedwait(sigchld_mask, remaining_timeout)
+                    except OSError as err:
+                        if err.errno == err.EAGAIN:
+                            sys.exc_clear()  # Unchain our exception
+                            raise TimeoutExpired(self.args, timeout)
+                        elif err.errno != err.EINTR:
+                            raise  # Probably EINVAL for a multi-decade timeout
+                    with self._waitpid_lock:
+                        (pid, sts) = self._try_wait(os.WNOHANG)
+                        assert pid == self.pid or pid == 0
+                        if pid == self.pid:
+                            self._handle_exitstatus(sts)
+                            return self.returncode
+                raise TimeoutExpired(self.args, timeout)
+            finally:
+                if signal.SIGCHLD not in self._singlethread_blocked_signals:
+                    signal.pthread_sigmask(signal.SIG_UNBLOCK, sigchld_mask)
+                self._singlethread_blocked_signals = None
 
 
         def _communicate(self, input, endtime, orig_timeout):
