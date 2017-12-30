@@ -647,34 +647,38 @@ class BaseEventLoop(events.AbstractEventLoop):
         return await self.run_in_executor(
             None, socket.getnameinfo, sockaddr, flags)
 
-    async def _sendfile_fallback(self, sock, file, offset=0, count=None):
-        fileno, blocksize = socket._prepare_sendfile(file, count)
+    async def sock_sendfile(self, sock, file, offset=0, count=None,
+                            *, fallback=True):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+        socket._check_sendfile_params(sock, file, offset, count)
+        try:
+            await self._sock_sf_fast(sock, file, offset, count)
+        except RuntimeError:
+            if fallback:
+                await self._sock_sf_fallback(sock, file, offset, count)
+            else:
+                raise
+
+    async def _sock_sf_fast(self, sock, file, offset=0, count=None):
+        raise RuntimeError("Fast sendfile is not available")
+
+    async def _sock_sf_fallback(self, sock, file, offset=0, count=None):
         if offset:
             file.seek(offset)
-        blocksize = min(count, 8192) if count else 8192
+        blocksize = min(count, 16384) if count else 16384
         total_sent = 0
-        # localize variable access to minimize overhead
-        file_read = file.read
         try:
             while True:
                 if count:
                     blocksize = min(count - total_sent, blocksize)
                     if blocksize <= 0:
                         break
-                data = memoryview(file_read(blocksize))
+                data = memoryview(file.read(blocksize))
                 if not data:
                     break  # EOF
-                while True:
-                    try:
-                        sent = await self.sock_send(sock, data)
-                    except BlockingIOError:
-                        continue
-                    else:
-                        total_sent += sent
-                        if sent < len(data):
-                            data = data[sent:]
-                        else:
-                            break
+                await self.sock_sendall(sock, data)
+                total_sent += len(data)
             return total_sent
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):

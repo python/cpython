@@ -309,27 +309,23 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                             ssl_handshake_timeout=ssl_handshake_timeout)
         return server
 
-    async def sock_sendfile(self, sock, file, offset=0, count=None,
-                            *, fallback=True):
-        if self._debug and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
+    async def _sock_sf_fast(self, sock, file, offset=0, count=None):
         try:
             os.sendfile
         except AttributeError as exc:
             raise RuntimeError("os.sendfile() in not available")
-        socket._check_sendfile_params(sock, file, offset, count)
         fileno, blocksize = socket._prepare_sendfile(file, count)
         if not blocksize:
             return 0  # empty file
 
         fut = self.create_future()
         fd = sock.fileno()
-        self._sock_sendfile(fut, None, fd, fileno,
-                            offset, count, blocksize, 0)
+        self._sock_sf_fast_impl(fut, None, fd, fileno,
+                                offset, count, blocksize, 0)
         return await fut
 
-    def _sock_sendfile(self, fut, registered_fd, fd, fileno, offset,
-                       count, blocksize, total_sent):
+    def _sock_sf_fast_impl(self, fut, registered_fd, fd, fileno, offset,
+                           count, blocksize, total_sent):
         if registered_fd is not None:
             # Remove the callback early.  It should be rare that the
             # selector says the fd is ready but the call still returns
@@ -349,7 +345,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             sent = os.sendfile(fd, fileno, offset, blocksize)
         except (BlockingIOError, InterruptedError):
-            self.add_writer(fd, self._sock_sendfile, fut, fd, fd,
+            self.add_writer(fd, self._sock_sf_fast_impl, fut, fd, fd,
                             fileno, offset, count, blocksize. total_sent)
         except OSError as exc:
             if total_sent == 0:
@@ -374,7 +370,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             else:
                 offset += sent
                 total_sent += sent
-                self.add_writer(fd, self._sock_sendfile, fut, fd, fd,
+                self.add_writer(fd, self._sock_sf_fast_impl, fut, fd, fd,
                                 fileno, offset, count, blocksize, total_sent)
 
     def _update_filepos(self, fileno, offset, total_sent):
