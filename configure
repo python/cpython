@@ -9315,7 +9315,7 @@ then
 		  esac;;
 	CYGWIN*)
 		if test $enable_shared = "no"
-		then
+	 	then
 			LINKFORSHARED='-Wl,--out-implib=$(LDLIBRARY)'
 		fi;;
 	QNX*)
@@ -9549,8 +9549,9 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
-$as_echo_n "checking for uuid_create... " >&6; }
+# AIX provides support for RFC4122 (uuid) in libc.a starring with AIX 6.1 (anno 2007)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for RFC4122 - uuid support on AIX" >&5
+$as_echo_n "checking for RFC4122 - uuid support on AIX... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <uuid.h>
