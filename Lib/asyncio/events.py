@@ -155,6 +155,10 @@ class AbstractServer:
         """Coroutine to wait until service is closed."""
         return NotImplemented
 
+    def get_loop(self):
+        """ Get the event loop the Server object is attached to."""
+        return NotImplemented
+
 
 class AbstractEventLoop:
     """Abstract event loop."""
@@ -302,6 +306,17 @@ class AbstractEventLoop:
         will wait for completion of the SSL handshake before aborting the
         connection. Default is 10s, longer timeouts may increase vulnerability
         to DoS attacks (see https://support.f5.com/csp/article/K13834)
+        """
+        raise NotImplementedError
+
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade a transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
         """
         raise NotImplementedError
 
