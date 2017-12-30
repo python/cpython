@@ -91,9 +91,6 @@ def _set_reuseport(sock):
 def _ipaddr_info(host, port, family, type, proto):
     # Try to skip getaddrinfo if "host" is already an IP. Users might have
     # handled name resolution in their own code and pass in resolved IPs.
-    if not hasattr(socket, 'inet_pton'):
-        return
-
     if proto not in {0, socket.IPPROTO_TCP, socket.IPPROTO_UDP} or \
             host is None:
         return None
@@ -226,13 +223,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._task_factory = None
         self._coroutine_wrapper_set = False
 
-        if hasattr(sys, 'get_asyncgen_hooks'):
-            # Python >= 3.6
-            # A weak set of all asynchronous generators that are
-            # being iterated by the loop.
-            self._asyncgens = weakref.WeakSet()
-        else:
-            self._asyncgens = None
+        # A weak set of all asynchronous generators that are
+        # being iterated by the loop.
+        self._asyncgens = weakref.WeakSet()
 
         # Set to True when `loop.shutdown_asyncgens` is called.
         self._asyncgens_shutdown_called = False
@@ -352,9 +345,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Shutdown all active asynchronous generators."""
         self._asyncgens_shutdown_called = True
 
-        if self._asyncgens is None or not len(self._asyncgens):
-            # If Python version is <3.6 or we don't have any asynchronous
-            # generators alive.
+        if not len(self._asyncgens):
+            # No alive asynchronous generators.
             return
 
         closing_agens = list(self._asyncgens)
@@ -384,10 +376,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                 'Cannot run the event loop while another loop is running')
         self._set_coroutine_wrapper(self._debug)
         self._thread_id = threading.get_ident()
-        if self._asyncgens is not None:
-            old_agen_hooks = sys.get_asyncgen_hooks()
-            sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
-                                   finalizer=self._asyncgen_finalizer_hook)
+
+        old_agen_hooks = sys.get_asyncgen_hooks()
+        sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
+                               finalizer=self._asyncgen_finalizer_hook)
         try:
             events._set_running_loop(self)
             while True:
@@ -399,8 +391,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._thread_id = None
             events._set_running_loop(None)
             self._set_coroutine_wrapper(False)
-            if self._asyncgens is not None:
-                sys.set_asyncgen_hooks(*old_agen_hooks)
+            sys.set_asyncgen_hooks(*old_agen_hooks)
 
     def run_until_complete(self, future):
         """Run until the Future is done.
@@ -1467,18 +1458,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         handle = None  # Needed to break cycles when an exception occurs.
 
     def _set_coroutine_wrapper(self, enabled):
-        try:
-            set_wrapper = sys.set_coroutine_wrapper
-            get_wrapper = sys.get_coroutine_wrapper
-        except AttributeError:
-            return
-
         enabled = bool(enabled)
         if self._coroutine_wrapper_set == enabled:
             return
 
         wrapper = coroutines.debug_wrapper
-        current_wrapper = get_wrapper()
+        current_wrapper = sys.get_coroutine_wrapper()
 
         if enabled:
             if current_wrapper not in (None, wrapper):
@@ -1488,7 +1473,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f"{current_wrapper!r}",
                     RuntimeWarning)
             else:
-                set_wrapper(wrapper)
+                sys.set_coroutine_wrapper(wrapper)
                 self._coroutine_wrapper_set = True
         else:
             if current_wrapper not in (None, wrapper):
@@ -1497,7 +1482,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f"wrapper; another wrapper was set {current_wrapper!r}",
                     RuntimeWarning)
             else:
-                set_wrapper(None)
+                sys.set_coroutine_wrapper(None)
                 self._coroutine_wrapper_set = False
 
     def get_debug(self):
