@@ -691,7 +691,7 @@ class Mapping(Collection):
 Mapping.register(mappingproxy)
 
 
-class MappingView(Sized):
+class MappingView(Collection):
 
     __slots__ = '_mapping',
 
