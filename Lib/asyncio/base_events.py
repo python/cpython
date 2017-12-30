@@ -647,6 +647,39 @@ class BaseEventLoop(events.AbstractEventLoop):
         return await self.run_in_executor(
             None, socket.getnameinfo, sockaddr, flags)
 
+    async def _sendfile_fallback(self, sock, file, offset=0, count=None):
+        fileno, blocksize = socket._prepare_sendfile(file, count)
+        if offset:
+            file.seek(offset)
+        blocksize = min(count, 8192) if count else 8192
+        total_sent = 0
+        # localize variable access to minimize overhead
+        file_read = file.read
+        try:
+            while True:
+                if count:
+                    blocksize = min(count - total_sent, blocksize)
+                    if blocksize <= 0:
+                        break
+                data = memoryview(file_read(blocksize))
+                if not data:
+                    break  # EOF
+                while True:
+                    try:
+                        sent = await self.sock_send(sock, data)
+                    except BlockingIOError:
+                        continue
+                    else:
+                        total_sent += sent
+                        if sent < len(data):
+                            data = data[sent:]
+                        else:
+                            break
+            return total_sent
+        finally:
+            if total_sent > 0 and hasattr(file, 'seek'):
+                file.seek(offset + total_sent)
+
     async def create_connection(
             self, protocol_factory, host=None, port=None,
             *, ssl=None, family=0,
