@@ -811,6 +811,28 @@ def foo():
         expect = " \thello there\n  \thow are you?\n\tI'm fine, thanks"
         self.assertEqual(expect, dedent(text))
 
+    # dedent() should handle CRLF and CR line endings
+    def test_dedent_line_endings(self):
+        # test CRLF line endings
+        text = "  Hello there.\r\n  How are you?\r\n  I'm fine, thanks"
+        expect = "Hello there.\r\nHow are you?\r\nI'm fine, thanks"
+        self.assertEqual(expect, dedent(text))
+
+        # test CR line endings
+        text = "  Hello there.\r  How are you?\r  I'm fine, thanks"
+        expect = "Hello there.\rHow are you?\rI'm fine, thanks"
+        self.assertEqual(expect, dedent(text))
+
+        # test mixed line endings
+        text = "  Hello there.\r\n  How are you?\r  I'm fine,\n  thanks"
+        expect = "Hello there.\r\nHow are you?\rI'm fine,\nthanks"
+        self.assertEqual(expect, dedent(text))
+
+        # test mixed line endings with blank lines
+        text = "  Hello\n  \r\n   \r there.\r\n"
+        expect = " Hello\n\r\n\rthere.\r\n"
+        self.assertEqual(expect, dedent(text))
+
 
 # Test textwrap.indent
 class IndentTestCase(unittest.TestCase):
