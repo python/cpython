@@ -3420,35 +3420,32 @@ static int
 compiler_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
-    basicblock *cleanup = NULL;
 
-    /* XXX the logic can be cleaned up for 1 or multiple comparisons */
     VISIT(c, expr, e->v.Compare.left);
-    n = asdl_seq_LEN(e->v.Compare.ops);
-    assert(n > 0);
-    if (n > 1) {
-        cleanup = compiler_new_block(c);
+    assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
+    n = asdl_seq_LEN(e->v.Compare.ops) - 1;
+    if (n == 0) {
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
+        ADDOP_I(c, COMPARE_OP,
+            cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, 0))));
+    }
+    else {
+        basicblock *cleanup = compiler_new_block(c);
         if (cleanup == NULL)
             return 0;
-        VISIT(c, expr,
-            (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
-    }
-    for (i = 1; i < n; i++) {
-        ADDOP(c, DUP_TOP);
-        ADDOP(c, ROT_THREE);
-        ADDOP_I(c, COMPARE_OP,
-            cmpop((cmpop_ty)(asdl_seq_GET(
-                                      e->v.Compare.ops, i - 1))));
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, cleanup);
-        NEXT_BLOCK(c);
-        if (i < (n - 1))
+        for (i = 0; i < n; i++) {
             VISIT(c, expr,
                 (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-    }
-    VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n - 1));
-    ADDOP_I(c, COMPARE_OP,
-           cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, n - 1))));
-    if (n > 1) {
+            ADDOP(c, DUP_TOP);
+            ADDOP(c, ROT_THREE);
+            ADDOP_I(c, COMPARE_OP,
+                cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, i))));
+            ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, cleanup);
+            NEXT_BLOCK(c);
+        }
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+        ADDOP_I(c, COMPARE_OP,
+            cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, n))));
         basicblock *end = compiler_new_block(c);
         if (end == NULL)
             return 0;
