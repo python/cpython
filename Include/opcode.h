@@ -30,8 +30,6 @@ extern "C" {
 #define BINARY_TRUE_DIVIDE       27
 #define INPLACE_FLOOR_DIVIDE     28
 #define INPLACE_TRUE_DIVIDE      29
-#define WITH_CLEANUP_START       40
-#define WITH_CLEANUP_FINISH      41
 #define WITH_EXCEPT_START        42
 #define WITH_EXCEPT_FINISH       43
 #define GET_AITER                50

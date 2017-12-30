@@ -2916,31 +2916,6 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(WITH_CLEANUP_START) {
-            PyObject *exit_func;
-            PyObject *exit_stack[3];
-            PyObject *res;
-
-            exit_func = TOP();
-            exit_stack[0] = Py_None;
-            exit_stack[1] = Py_None;
-            exit_stack[2] = Py_None;
-            res = _PyObject_FastCall(exit_func, exit_stack, 3);
-            if (res == NULL)
-                goto error;
-
-            SET_TOP(res);
-            Py_DECREF(exit_func);
-            PREDICT(WITH_CLEANUP_FINISH);
-            DISPATCH();
-        }
-
-        PREDICTED(WITH_CLEANUP_FINISH);
-        TARGET(WITH_CLEANUP_FINISH) {
-            Py_DECREF(POP());
-            DISPATCH();
-        }
-
         TARGET(WITH_EXCEPT_START) {
             /* At the top of the stack are 7 values:
                - (TOP, SECOND, THIRD) = exc_info()

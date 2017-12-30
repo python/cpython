@@ -256,8 +256,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         old_stack = stack;
         new_stack = first_stack;
     }
-    printf("New stack: %lx\n", new_stack);
-    printf("Old stack: %lx\n", old_stack);
 
     /* Are we jumping into / out of a 'finally' block?
      In other words, are there any 3s in bit pairs in the stack.

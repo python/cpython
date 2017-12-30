@@ -936,10 +936,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case INPLACE_XOR:
         case INPLACE_OR:
             return -1;
-        case WITH_CLEANUP_START:
-            return 0;
-        case WITH_CLEANUP_FINISH:
-            return -1;
         case WITH_EXCEPT_START:
             return 2;
         case WITH_EXCEPT_FINISH:
@@ -2699,7 +2695,6 @@ static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
     basicblock *body, *final1, *final2, *exit, *reraise, *finalbody;
-    int end_body_line;
 
     body = compiler_new_block(c);
     final1 = compiler_new_block(c);
@@ -2724,7 +2719,6 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     }
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
-    end_body_line = c->u->u_lineno_set;
 
     /* Jump to `finally` block for successful outcome */
     compiler_use_next_block(c, final1);
@@ -4396,6 +4390,18 @@ expr_constant(expr_ty e)
 }
 
 
+static int
+compiler_call_exit_with_nones(struct compiler *c) {
+    PyObject *three_nones = PyTuple_Pack(3, Py_None, Py_None, Py_None);
+    if (three_nones == NULL) {
+        return 0;
+    }
+    ADDOP_O(c, LOAD_CONST, three_nones, consts);
+    ADDOP_I(c, CALL_FUNCTION_EX, 0);
+    Py_DECREF(three_nones);
+    return 1;
+}
+
 /*
    Implements the async with statement.
 
@@ -4474,11 +4480,12 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     if (!compiler_push_finally_end(c, final1))
         return 0;
 
-    ADDOP(c, WITH_CLEANUP_START);
+    if(!compiler_call_exit_with_nones(c))
+        return 0;
     ADDOP(c, GET_AWAITABLE);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
-    ADDOP(c, WITH_CLEANUP_FINISH);
+    ADDOP(c, POP_TOP);
 
     compiler_pop_fblock(c, FINALLY_END, final1);
     ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
@@ -4525,6 +4532,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
            exc = (None, None, None)
        exit(*exc)
  */
+
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
@@ -4575,9 +4583,9 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     compiler_use_next_block(c, final1);
     if (!compiler_push_finally_end(c, final1))
         return 0;
-
-    ADDOP(c, WITH_CLEANUP_START);
-    ADDOP(c, WITH_CLEANUP_FINISH);
+    if(!compiler_call_exit_with_nones(c))
+        return 0;
+    ADDOP(c, POP_TOP);
     compiler_pop_fblock(c, FINALLY_END, final1);
     ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
 
