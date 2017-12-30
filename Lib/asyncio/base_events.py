@@ -185,6 +185,9 @@ class Server(events.AbstractServer):
         if self._active_count == 0:
             self._wakeup()
 
+    def get_loop(self):
+        return self._loop
+
     def _wakeup(self):
         waiters = self._waiters
         self._waiters = None
