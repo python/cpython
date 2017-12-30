@@ -301,18 +301,10 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
-class _TupleGetter(property):
-    'Emulate property(itemgetter(index)) with writeable __doc__'
-
-    def __init__(self, index):
-        self.index = index
-        self.__doc__ = f'Alias for field number {self.index}'
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        return obj[self.index]
-
+try:
+    from _collections import _tuplegetter
+except ImportError:
+    _tuplegetter = lambda index: property(_itemgetter(index))
 
 def namedtuple(typename, field_names, *, rename=False, module=None):
     """Returns a new subclass of tuple with named fields.
@@ -439,7 +431,9 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
         '__getnewargs__': __getnewargs__,
     }
     for index, name in enumerate(field_names):
-        class_namespace[name] = _TupleGetter(index)
+        tuplegetter = _tuplegetter(index)
+        tuplegetter.__doc__ = f'Alias for field number {index}'
+        class_namespace[name] = tuplegetter
 
     result = type(typename, (tuple,), class_namespace)
 

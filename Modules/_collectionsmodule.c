@@ -2354,6 +2354,28 @@ done:
     Py_RETURN_NONE;
 }
 
+/* _tuplegetter *********************************************************/
+
+/*
+
+class _tuplegetter(property):
+    'Emulate property(itemgetter(index)) with writeable __doc__'
+
+    def __init__(self, index):
+        self.index = index
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return obj[self.index]
+
+typedef struct {
+    PyPropertyObject po;
+    Py_ssize_t index;
+} _tuplegetterobject;
+
+*/
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
