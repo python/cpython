@@ -694,6 +694,8 @@ class _SelectorTransport(transports._FlowControlMixin,
 
 class _SelectorSocketTransport(_SelectorTransport):
 
+    _start_tls_compatible = True
+
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, extra, server)
