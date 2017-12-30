@@ -71,8 +71,6 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     reader = _get_resource_reader(package)
     if reader is not None:
         return reader.open_resource(resource)
-    # Using pathlib doesn't work well here due to the lack of 'strict'
-    # argument for pathlib.Path.resolve() prior to Python 3.6.
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
@@ -106,8 +104,6 @@ def open_text(package: Package,
     reader = _get_resource_reader(package)
     if reader is not None:
         return TextIOWrapper(reader.open_resource(resource), encoding, errors)
-    # Using pathlib doesn't work well here due to the lack of 'strict'
-    # argument for pathlib.Path.resolve() prior to Python 3.6.
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
