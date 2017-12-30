@@ -251,6 +251,29 @@ Further Reading
 3. Clojure's PersistentHashMap implementation:
    https://github.com/clojure/clojure/blob/master/src/jvm/
         clojure/lang/PersistentHashMap.java
+
+
+Debug
+=====
+
+The HAMT datatype is accessible for testing purposes under the
+`_testcapi` module:
+
+    >>> from _testcapi import hamt
+    >>> h = hamt()
+    >>> h2 = h.set('a', 2)
+    >>> h3 = h2.set('b', 3)
+    >>> list(h3)
+    ['a', 'b']
+
+When CPython is built in debug mode, a '__dump__()' method is available
+to introspect the tree:
+
+    >>> print(h3.__dump__())
+    HAMT(len=2):
+        BitmapNode(size=4 count=2 bitmap=0b110 id=0x10eb9d9e8):
+            'a': 2
+            'b': 3
 */
 
 
