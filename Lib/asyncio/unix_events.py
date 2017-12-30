@@ -333,12 +333,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # order to simplify the common case.
             self.remove_writer(registered_fd)
         if fut.cancelled():
-            self._update_filepos(fileno, offset, total_sent)
+            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
             return
         if count:
             blocksize = count - total_sent
             if blocksize <= 0:
-                self._update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_result(total_sent)
                 return
 
@@ -354,18 +354,18 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # file, in which case we'll fall back on using
                 # plain send().
                 err = RuntimeError("os.sendfile call failed")
-                self._update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(err)
             else:
-                self._update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(exc)
         except Exception as exc:
-            self._update_filepos(fileno, offset, total_sent)
+            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
             fut.set_exception(exc)
         else:
             if sent == 0:
                 # EOF
-                self._update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_result(total_sent)
             else:
                 offset += sent
@@ -374,7 +374,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                 fd, fd, fileno,
                                 offset, count, blocksize, total_sent)
 
-    def _update_filepos(self, fileno, offset, total_sent):
+    def _sock_sendfile_update_filepos(self, fileno, offset, total_sent):
         if total_sent > 0:
             os.lseek(fileno, offset, os.SEEK_SET)
 

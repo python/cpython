@@ -705,16 +705,30 @@ Low-level socket operations
                                                      offset=0, count=None, \
                                                      *, fallback=True)
 
-   Send a file by using high-performance :mod:`os.sendfile` and return
-   the total number of bytes which were sent.
+   Send a file using high-performance :mod:`os.sendfile` if possible
+   and return the total number of bytes which were sent.
 
-   Modelled after blocking :meth:`socket.socket.sendfile`, see the
-   method for parameters meaning.
+   Asynchronous version of :meth:`socket.socket.sendfile`.
 
-   The socket *sock* must be non-blocking.
+   *sock* must be non-blocking :class:`~socket.socket` of
+   :const:`socket.SOCK_STREAM` type.
+
+   *file* must be a regular file object opened in binary mode.
+
+   *offset* tells from where to start reading the file. If specified,
+   *count* is the total number of bytes to transmit as opposed to
+   sending the file until EOF is reached. File position is updated on
+   return or also in case of error in which case :meth:`file.tell()
+   <io.IOBase.tell>` can be used to figure out the number of bytes
+   which were sent.
+
+   *fallback* is used for automatic switch to :meth:`sock_sendall` if
+   :mod:`os.sendfile` is not available (e.g. Windows or SSL socket) or
+   *file* is not a regular file. Set the parameter to ``False`` for
+   preventig fallback behavior.
 
    Raise :exc:`RuntimeError` if the system does not support
-   *sendfile* syscall.
+   *sendfile* syscall and *fallback* is ``False``.
 
    .. versionadded:: 3.7
 
