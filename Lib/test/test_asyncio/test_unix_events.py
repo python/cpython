@@ -456,9 +456,6 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.addCleanup(self.file.close)
         super().setUp()
 
-    def tearDown(self):
-        super().tearDown()
-
     def make_socket(self, blocking=False):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setblocking(blocking)
@@ -486,17 +483,20 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     def test_success(self):
         sock, proto = self.prepare()
-        self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
+        self.assertEqual(ret, len(self.DATA))
         self.assertEqual(proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_with_offset_and_count(self):
         sock, proto = self.prepare()
-        self.run_loop(self.loop.sock_sendfile(sock, self.file, 1000, 2000))
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                    1000, 2000))
 
         self.assertEqual(proto.data, self.DATA[1000:3000])
         self.assertEqual(self.file.tell(), 3000)
+        self.assertEqual(ret, 2000)
 
     def test_blocking_socket(self):
         self.loop.set_debug(True)

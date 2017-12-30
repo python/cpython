@@ -309,7 +309,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                             ssl_handshake_timeout=ssl_handshake_timeout)
         return server
 
-    async def _sock_sendfile_native(self, sock, file, offset=0, count=None):
+    async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             os.sendfile
         except AttributeError as exc:

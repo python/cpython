@@ -1787,5 +1787,107 @@ class RunningLoopTests(unittest.TestCase):
             outer_loop.close()
 
 
+class BaseLoopSendfileTests(test_utils.TestCase):
+
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
+
+    class MyProto(asyncio.Protocol):
+
+        def __init__(self, loop):
+            self.started = False
+            self.closed = False
+            self.data = bytearray()
+            self.fut = loop.create_future()
+
+        def connection_made(self, transport):
+            self.started = True
+
+        def data_received(self, data):
+            self.data.extend(data)
+
+        def connection_lost(self, exc):
+            self.closed = True
+            self.fut.set_result(None)
+
+        async def wait_closed(self):
+            await self.fut
+
+    @classmethod
+    def setUpClass(cls):
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(cls.DATA)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(support.TESTFN)
+        super().tearDownClass()
+
+    def setUp(self):
+        from asyncio.selector_events import BaseSelectorEventLoop
+        # BaseSelectorEventLoop() has no native implementation
+        self.loop = BaseSelectorEventLoop()
+        self.set_event_loop(self.loop)
+        self.file = open(support.TESTFN, 'rb')
+        self.addCleanup(self.file.close)
+        super().setUp()
+
+    def make_socket(self, blocking=False):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(blocking)
+        self.addCleanup(sock.close)
+        return sock
+
+    def run_loop(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def prepare(self):
+        sock = self.make_socket()
+        proto = self.MyProto(self.loop)
+        port = support.find_unused_port()
+        server = self.run_loop(self.loop.create_server(
+            lambda: proto, support.HOST, port))
+        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+
+        def cleanup():
+            server.close()
+            self.run_loop(server.wait_closed())
+
+        self.addCleanup(cleanup)
+
+        return sock, proto
+
+    def test__sock_sendfile_native_failure(self):
+        sock, proto = self.prepare()
+
+        with self.assertRaises(RuntimeError):
+            self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
+                                                          0, None))
+
+        self.assertEqual(proto.data, b'')
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_no_fallback(self):
+        sock, proto = self.prepare()
+
+        with self.assertRaises(RuntimeError):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                  fallback=False))
+
+        self.assertEqual(self.file.tell(), 0)
+        self.assertEqual(proto.data, b'')
+
+    def test_sock_sendfile_fallback(self):
+        sock, proto = self.prepare()
+
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(self.file.tell(), len(self.DATA))
+        self.assertEqual(proto.data, self.DATA)
+
+
 if __name__ == '__main__':
     unittest.main()
