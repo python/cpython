@@ -2826,19 +2826,36 @@ else:
         get_running_loop_impl = events._c_get_running_loop
         get_event_loop_impl = events._c_get_event_loop
 
+
 class TestServer(unittest.TestCase):
 
     def test_get_loop(self):
         loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
         proto = MyProto(loop)
         server = loop.run_until_complete(loop.create_server(lambda: proto, '0.0.0.0', 0))
         self.assertEqual(server.get_loop(), loop)
-        loop.close()
+        server.close()
+        loop.run_until_complete(server.wait_closed())
+
 
 class TestAbstractServer(unittest.TestCase):
 
+    def test_close(self):
+        with self.assertRaises(NotImplementedError):
+            events.AbstractServer().close()
+
+    def test_wait_closed(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        with self.assertRaises(NotImplementedError):
+            loop.run_until_complete(events.AbstractServer().wait_closed())
+
     def test_get_loop(self):
-        self.assertEqual(events.AbstractServer().get_loop(), NotImplemented)
+        with self.assertRaises(NotImplementedError):
+            events.AbstractServer().get_loop()
+
 
 if __name__ == '__main__':
     unittest.main()

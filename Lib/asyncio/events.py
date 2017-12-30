@@ -149,15 +149,15 @@ class AbstractServer:
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
-        return NotImplemented
+        raise NotImplementedError
 
     async def wait_closed(self):
         """Coroutine to wait until service is closed."""
-        return NotImplemented
+        raise NotImplementedError
 
     def get_loop(self):
         """ Get the event loop the Server object is attached to."""
-        return NotImplemented
+        raise NotImplementedError
 
 
 class AbstractEventLoop:
