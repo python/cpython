@@ -913,6 +913,12 @@ Server
       The server is closed asynchronously, use the :meth:`wait_closed`
       coroutine to wait until the server is closed.
 
+   .. method:: get_loop()
+
+      Gives the event loop associated with the server object.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
