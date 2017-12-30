@@ -17,7 +17,6 @@ import subprocess
 import sys
 import threading
 
-from . import constants
 from . import format_helpers
 
 
@@ -150,11 +149,15 @@ class AbstractServer:
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
-        return NotImplemented
+        raise NotImplementedError
 
     async def wait_closed(self):
         """Coroutine to wait until service is closed."""
-        return NotImplemented
+        raise NotImplementedError
+
+    def get_loop(self):
+        """ Get the event loop the Server object is attached to."""
+        raise NotImplementedError
 
 
 class AbstractEventLoop:
@@ -255,7 +258,7 @@ class AbstractEventLoop:
             *, ssl=None, family=0, proto=0,
             flags=0, sock=None, local_addr=None,
             server_hostname=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         raise NotImplementedError
 
     async def create_server(
@@ -263,7 +266,7 @@ class AbstractEventLoop:
             *, family=socket.AF_UNSPEC,
             flags=socket.AI_PASSIVE, sock=None, backlog=100,
             ssl=None, reuse_address=None, reuse_port=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -306,17 +309,28 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade a transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
+        """
+        raise NotImplementedError
+
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,
             server_hostname=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         raise NotImplementedError
 
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop

@@ -25,6 +25,7 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 
 typedef struct {
+    int install_signal_handlers;  /* Install signal handlers? -1 means unset */
     int ignore_environment; /* -E */
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
@@ -50,11 +51,19 @@ typedef struct {
 
     int argc;               /* Number of command line arguments,
                                -1 means unset */
-    wchar_t **argv;         /* sys.argv, ignored if argc is negative */
+    wchar_t **argv;         /* Command line arguments */
+    wchar_t *program;       /* argv[0] or "" */
+
+    int nxoption;           /* Number of -X options */
+    wchar_t **xoptions;     /* -X options */
+
+    int nwarnoption;        /* Number of warnings options */
+    wchar_t **warnoptions;  /* Warnings options */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
+        .install_signal_handlers = -1, \
         .use_hash_seed = -1, \
         .coerce_c_locale = -1, \
         .utf8_mode = -1, \
@@ -66,7 +75,7 @@ typedef struct {
  * See PEP 432 for final anticipated contents
  */
 typedef struct {
-    int install_signal_handlers;
+    int install_signal_handlers;   /* Install signal handlers? -1 means unset */
     PyObject *argv;                /* sys.argv list, can be NULL */
     PyObject *executable;          /* sys.executable str */
     PyObject *prefix;              /* sys.prefix str */

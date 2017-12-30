@@ -65,7 +65,7 @@ class Future:
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
 
-    _log_traceback = False
+    __log_traceback = False
 
     def __init__(self, *, loop=None):
         """Initialize the future.
@@ -90,7 +90,7 @@ class Future:
                                 ' '.join(self._repr_info()))
 
     def __del__(self):
-        if not self._log_traceback:
+        if not self.__log_traceback:
             # set_exception() was not called, or result() or exception()
             # has consumed the exception
             return
@@ -105,6 +105,20 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
+    @property
+    def _log_traceback(self):
+        return self.__log_traceback
+
+    @_log_traceback.setter
+    def _log_traceback(self, val):
+        if bool(val):
+            raise ValueError('_log_traceback can only be set to False')
+        self.__log_traceback = False
+
+    def get_loop(self):
+        """Return the event loop the Future is bound to."""
+        return self._loop
+
     def cancel(self):
         """Cancel the future and schedule callbacks.
 
@@ -112,7 +126,7 @@ class Future:
         change the future's state to cancelled, schedule the callbacks and
         return True.
         """
-        self._log_traceback = False
+        self.__log_traceback = False
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
@@ -158,7 +172,7 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Result is not ready.')
-        self._log_traceback = False
+        self.__log_traceback = False
         if self._exception is not None:
             raise self._exception
         return self._result
@@ -175,7 +189,7 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Exception is not set.')
-        self._log_traceback = False
+        self.__log_traceback = False
         return self._exception
 
     def add_done_callback(self, fn):
@@ -233,20 +247,33 @@ class Future:
         self._exception = exception
         self._state = _FINISHED
         self._schedule_callbacks()
-        self._log_traceback = True
+        self.__log_traceback = True
 
-    def __iter__(self):
+    def __await__(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self  # This tells Task to wait for completion.
-        assert self.done(), "await wasn't used with future"
+        if not self.done():
+            raise RuntimeError("await wasn't used with future")
         return self.result()  # May raise too.
 
-    __await__ = __iter__  # make compatible with 'await' expression
+    __iter__ = __await__  # make compatible with 'yield from'.
 
 
 # Needed for testing purposes.
 _PyFuture = Future
+
+
+def _get_loop(fut):
+    # Tries to call Future.get_loop() if it's available.
+    # Otherwise fallbacks to using the old '_loop' property.
+    try:
+        get_loop = fut.get_loop
+    except AttributeError:
+        pass
+    else:
+        return get_loop()
+    return fut._loop
 
 
 def _set_result_unless_cancelled(fut, result):
@@ -304,8 +331,8 @@ def _chain_future(source, destination):
     if not isfuture(destination) and not isinstance(destination,
                                                     concurrent.futures.Future):
         raise TypeError('A future is required for destination argument')
-    source_loop = source._loop if isfuture(source) else None
-    dest_loop = destination._loop if isfuture(destination) else None
+    source_loop = _get_loop(source) if isfuture(source) else None
+    dest_loop = _get_loop(destination) if isfuture(destination) else None
 
     def _set_state(future, other):
         if isfuture(future):

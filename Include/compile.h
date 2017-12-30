@@ -75,7 +75,7 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 #define PY_INVALID_STACK_EFFECT INT_MAX
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 
-PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena);
+PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
 
 #ifdef __cplusplus
 }

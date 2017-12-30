@@ -139,6 +139,7 @@ class BaseFutureTests:
         asyncio.set_event_loop(self.loop)
         f = self._new_future()
         self.assertIs(f._loop, self.loop)
+        self.assertIs(f.get_loop(), self.loop)
 
     def test_constructor_positional(self):
         # Make sure Future doesn't accept a positional argument
@@ -369,8 +370,14 @@ class BaseFutureTests:
         def test():
             arg1, arg2 = coro()
 
-        self.assertRaises(AssertionError, test)
+        with self.assertRaisesRegex(RuntimeError, "await wasn't used"):
+            test()
         fut.cancel()
+
+    def test_log_traceback(self):
+        fut = self._new_future(loop=self.loop)
+        with self.assertRaisesRegex(ValueError, 'can only be set to False'):
+            fut._log_traceback = True
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_abandoned(self, m_log):
