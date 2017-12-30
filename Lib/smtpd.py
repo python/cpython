@@ -86,6 +86,7 @@ import socket
 import asyncore
 import asynchat
 import collections
+from inspect import signature
 from warnings import warn
 from email._header_value_parser import get_addr_spec, get_angle_addr
 
@@ -383,6 +384,9 @@ class SMTPChannel(asynchat.async_chat):
                     'mail_options': self.mail_options,
                     'rcpt_options': self.rcpt_options,
                 }
+            process_msg_sig = signature(self.smtp_server.process_message)
+            if process_msg_sig.parameters.get('kwargs'):
+                kwargs['channel'] = self
             status = self.smtp_server.process_message(*args, **kwargs)
             self._set_post_data_state()
             if not status:

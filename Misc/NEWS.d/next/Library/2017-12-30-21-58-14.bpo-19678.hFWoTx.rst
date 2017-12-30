@@ -1,0 +1,2 @@
+smtpd.py: `channel` state is passed to `process_message` method for child
+classes of SMTPServer class. Patch by Sanyam Khurana.
