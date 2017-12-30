@@ -301,33 +301,18 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
-class _TupleGetter:
+class _TupleGetter(property):
     'Emulate property(itemgetter(index)) with writeable __doc__'
-
-    __slots__ = ['index', '_doc']
 
     def __init__(self, index):
         self.index = index
-        self._doc = None
+        self.__doc__ = f'Alias for field number {self.index}'
 
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
         return obj[self.index]
 
-    @property
-    def __doc__(self):
-        if self._doc is not None:
-            return self._doc
-        return f'Alias for field number {self.index}'
-
-    @__doc__.setter
-    def __doc__(self, value):
-        self._doc = value
-
-    @__doc__.deleter
-    def __doc__(self, value):
-        del self._doc
 
 def namedtuple(typename, field_names, *, rename=False, module=None):
     """Returns a new subclass of tuple with named fields.
