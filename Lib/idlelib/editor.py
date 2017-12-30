@@ -31,7 +31,6 @@ from idlelib import windows
 TK_TABWIDTH_DEFAULT = 8
 _py_version = ' (%s)' % platform.python_version()
 
-
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
     major, minor, micro, level, serial = sys.version_info
@@ -52,11 +51,22 @@ class EditorWindow(object):
     from idlelib import mainmenu
     from tkinter import Toplevel
     from idlelib.statusbar import MultiStatusBar
+    from idlelib.autocomplete import AutoComplete
+    from idlelib.autoexpand import AutoExpand
+    from idlelib.calltips import CallTips
+    from idlelib.codecontext import CodeContext
+    from idlelib.paragraph import FormatParagraph
+    from idlelib.parenmatch import ParenMatch
+    from idlelib.rstrip import RstripExtension
+    from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
+        # Delay import: runscript imports pyshell imports EditorWindow.
+        from idlelib.runscript import ScriptBinding
+
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
             if sys.platform.count('linux'):
@@ -84,14 +94,11 @@ class EditorWindow(object):
                     # Safari requires real file:-URLs
                     EditorWindow.help_url = 'file://' + EditorWindow.help_url
             else:
-                EditorWindow.help_url = "https://docs.python.org/%d.%d/" % sys.version_info[:2]
+                EditorWindow.help_url = ("https://docs.python.org/%d.%d/"
+                                         % sys.version_info[:2])
         self.flist = flist
         root = root or flist.root
         self.root = root
-        try:
-            sys.ps1
-        except AttributeError:
-            sys.ps1 = '>>> '
         self.menubar = Menu(root)
         self.top = top = windows.ListedToplevel(root, menu=self.menubar)
         if flist:
@@ -103,8 +110,10 @@ class EditorWindow(object):
             self.tkinter_vars = {}  # keys: Tkinter event names
                                     # values: Tkinter variable instances
             self.top.instance_dict = {}
-        self.recent_files_path = os.path.join(idleConf.GetUserCfgDir(),
-                'recent-files.lst')
+        self.recent_files_path = os.path.join(
+                idleConf.userdir, 'recent-files.lst')
+
+        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         self.width = idleConf.GetOption('main', 'EditorWindow',
@@ -179,7 +188,7 @@ class EditorWindow(object):
                 flist.dict[key] = self
             text.bind("<<open-new-window>>", self.new_callback)
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
-            text.bind("<<open-class-browser>>", self.open_class_browser)
+            text.bind("<<open-class-browser>>", self.open_module_browser)
             text.bind("<<open-path-browser>>", self.open_path_browser)
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
@@ -269,6 +278,43 @@ class EditorWindow(object):
         self.askyesno = tkMessageBox.askyesno
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
+
+        # Add pseudoevents for former extension fixed keys.
+        # (This probably needs to be done once in the process.)
+        text.event_add('<<autocomplete>>', '<Key-Tab>')
+        text.event_add('<<try-open-completions>>', '<KeyRelease-period>',
+                       '<KeyRelease-slash>', '<KeyRelease-backslash>')
+        text.event_add('<<try-open-calltip>>', '<KeyRelease-parenleft>')
+        text.event_add('<<refresh-calltip>>', '<KeyRelease-parenright>')
+        text.event_add('<<paren-closed>>', '<KeyRelease-parenright>',
+                       '<KeyRelease-bracketright>', '<KeyRelease-braceright>')
+
+        # Former extension bindings depends on frame.text being packed
+        # (called from self.ResetColorizer()).
+        autocomplete = self.AutoComplete(self)
+        text.bind("<<autocomplete>>", autocomplete.autocomplete_event)
+        text.bind("<<try-open-completions>>",
+                  autocomplete.try_open_completions_event)
+        text.bind("<<force-open-completions>>",
+                  autocomplete.force_open_completions_event)
+        text.bind("<<expand-word>>", self.AutoExpand(self).expand_word_event)
+        text.bind("<<format-paragraph>>",
+                  self.FormatParagraph(self).format_paragraph_event)
+        parenmatch = self.ParenMatch(self)
+        text.bind("<<flash-paren>>", parenmatch.flash_paren_event)
+        text.bind("<<paren-closed>>", parenmatch.paren_closed_event)
+        scriptbinding = ScriptBinding(self)
+        text.bind("<<check-module>>", scriptbinding.check_module_event)
+        text.bind("<<run-module>>", scriptbinding.run_module_event)
+        text.bind("<<do-rstrip>>", self.RstripExtension(self).do_rstrip)
+        calltips = self.CallTips(self)
+        text.bind("<<try-open-calltip>>", calltips.try_open_calltip_event)
+        #refresh-calltips must come after paren-closed to work right
+        text.bind("<<refresh-calltip>>", calltips.refresh_calltip_event)
+        text.bind("<<force-open-calltip>>", calltips.force_open_calltip_event)
+        text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
+        text.bind("<<toggle-code-context>>",
+                  self.CodeContext(self).toggle_code_context_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
@@ -584,10 +630,10 @@ class EditorWindow(object):
     def open_module(self):
         """Get module name from user and open it.
 
-        Return module path or None for calls by open_class_browser
+        Return module path or None for calls by open_module_browser
         when latter is not invoked in named editor window.
         """
-        # XXX This, open_class_browser, and open_path_browser
+        # XXX This, open_module_browser, and open_path_browser
         # would fit better in iomenu.IOBinding.
         try:
             name = self.text.get("sel.first", "sel.last").strip()
@@ -609,22 +655,20 @@ class EditorWindow(object):
         self.open_module()
         return "break"
 
-    def open_class_browser(self, event=None):
+    def open_module_browser(self, event=None):
         filename = self.io.filename
         if not (self.__class__.__name__ == 'PyShellEditorWindow'
                 and filename):
             filename = self.open_module()
             if filename is None:
                 return "break"
-        head, tail = os.path.split(filename)
-        base, ext = os.path.splitext(tail)
         from idlelib import browser
-        browser.ClassBrowser(self.flist, base, [head])
+        browser.ModuleBrowser(self.root, filename)
         return "break"
 
     def open_path_browser(self, event=None):
         from idlelib import pathbrowser
-        pathbrowser.PathBrowser(self.flist)
+        pathbrowser.PathBrowser(self.root)
         return "break"
 
     def open_turtle_demo(self, event = None):
@@ -981,16 +1025,8 @@ class EditorWindow(object):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
-    extfiles = {  # map config-extension section names to new file names
-        'AutoComplete': 'autocomplete',
-        'AutoExpand': 'autoexpand',
-        'CallTips': 'calltips',
-        'CodeContext': 'codecontext',
-        'FormatParagraph': 'paragraph',
-        'ParenMatch': 'parenmatch',
-        'RstripExtension': 'rstrip',
-        'ScriptBinding': 'runscript',
-        'ZoomHeight': 'zoomheight',
+    extfiles = {  # Map built-in config-extension section names to file names.
+        'ZzDummy': 'zzdummy',
         }
 
     def load_extension(self, name):
@@ -1175,13 +1211,9 @@ class EditorWindow(object):
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
-        if self.context_use_ps1:
-            last_line_of_prompt = sys.ps1.split('\n')[-1]
-        else:
-            last_line_of_prompt = ''
         ncharsdeleted = 0
         while 1:
-            if chars == last_line_of_prompt:
+            if chars == self.prompt_last_line:  # '' unless PyShell
                 break
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
@@ -1250,8 +1282,7 @@ class EditorWindow(object):
             indent = line[:i]
             # strip whitespace before insert point unless it's in the prompt
             i = 0
-            last_line_of_prompt = sys.ps1.split('\n')[-1]
-            while line and line[-1] in " \t" and line != last_line_of_prompt:
+            while line and line[-1] in " \t" and line != self.prompt_last_line:
                 line = line[:-1]
                 i = i+1
             if i:

@@ -11,7 +11,6 @@ import unittest
 from unittest import mock
 
 from test import support
-android_not_root = support.android_not_root
 TESTFN = support.TESTFN
 
 try:
@@ -1880,6 +1879,18 @@ class _BasePathTest(object):
             self.assertFalse((P / 'linkB').is_file())
             self.assertFalse((P/ 'brokenLink').is_file())
 
+    @only_posix
+    def test_is_mount(self):
+        P = self.cls(BASE)
+        R = self.cls('/')  # TODO: Work out windows
+        self.assertFalse((P / 'fileA').is_mount())
+        self.assertFalse((P / 'dirA').is_mount())
+        self.assertFalse((P / 'non-existing').is_mount())
+        self.assertFalse((P / 'fileA' / 'bah').is_mount())
+        self.assertTrue(R.is_mount())
+        if support.can_symlink():
+            self.assertFalse((P / 'linkA').is_mount())
+
     def test_is_symlink(self):
         P = self.cls(BASE)
         self.assertFalse((P / 'fileA').is_symlink())
@@ -1899,10 +1910,12 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA' / 'bah').is_fifo())
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
-        os.mkfifo(str(P))
+        try:
+            os.mkfifo(str(P))
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         self.assertTrue(P.is_fifo())
         self.assertFalse(P.is_socket())
         self.assertFalse(P.is_file())

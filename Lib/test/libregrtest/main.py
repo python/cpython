@@ -132,8 +132,9 @@ class Regrtest:
 
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count}"
-        if self.bad and not self.ns.pgo:
-            line = f"{line}/{len(self.bad)}"
+        fails = len(self.bad) + len(self.environment_changed)
+        if fails and not self.ns.pgo:
+            line = f"{line}/{fails}"
         line = f"[{line}] {test}"
 
         # add the system load prefix: "load avg: 1.80 "
@@ -256,12 +257,12 @@ class Regrtest:
             if isinstance(test, unittest.TestSuite):
                 self._list_cases(test)
             elif isinstance(test, unittest.TestCase):
-                if support._match_test(test):
+                if support.match_test(test):
                     print(test.id())
 
     def list_cases(self):
         support.verbose = False
-        support.match_tests = self.ns.match_tests
+        support.set_match_tests(self.ns.match_tests)
 
         for test in self.selected:
             abstest = get_abs_module(self.ns, test)
@@ -415,14 +416,14 @@ class Regrtest:
                 yield test
                 if self.bad:
                     return
+                if self.ns.fail_env_changed and self.environment_changed:
+                    return
 
     def display_header(self):
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
-        print("== hash algorithm:", sys.hash_info.algorithm,
-              "64bit" if sys.maxsize > 2**32 else "32bit")
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
@@ -430,7 +431,6 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
-        print("Testing with flags:", sys.flags)
 
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
@@ -478,7 +478,7 @@ class Regrtest:
             result = "FAILURE"
         elif self.interrupted:
             result = "INTERRUPTED"
-        elif self.environment_changed and self.ns.fail_env_changed:
+        elif self.ns.fail_env_changed and self.environment_changed:
             result = "ENV CHANGED"
         else:
             result = "SUCCESS"

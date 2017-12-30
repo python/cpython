@@ -11,8 +11,8 @@
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.  See also the :mod:`queue` module.
 
-The :mod:`dummy_threading` module is provided for situations where
-:mod:`threading` cannot be used because :mod:`_thread` is missing.
+.. versionchanged:: 3.7
+   This module used to be optional, it is now always available.
 
 .. note::
 
@@ -291,10 +291,10 @@ since it is impossible to detect the termination of alien threads.
    .. attribute:: ident
 
       The 'thread identifier' of this thread or ``None`` if the thread has not
-      been started.  This is a nonzero integer.  See the
-      :func:`_thread.get_ident()` function.  Thread identifiers may be recycled
-      when a thread exits and another thread is created.  The identifier is
-      available even after the thread has exited.
+      been started.  This is a nonzero integer.  See the :func:`get_ident`
+      function.  Thread identifiers may be recycled when a thread exits and
+      another thread is created.  The identifier is available even after the
+      thread has exited.
 
    .. method:: is_alive()
 
@@ -684,8 +684,8 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
 
 .. class:: Semaphore(value=1)
 
-   This class implements semaphore objects.  A semaphore manages a counter
-   representing the number of :meth:`release` calls minus the number of
+   This class implements semaphore objects.  A semaphore manages an atomic
+   counter representing the number of :meth:`release` calls minus the number of
    :meth:`acquire` calls, plus an initial value.  The :meth:`acquire` method
    blocks if necessary until it can return without making the counter negative.
    If not given, *value* defaults to 1.
@@ -701,19 +701,19 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
 
       Acquire a semaphore.
 
-      When invoked without arguments: if the internal counter is larger than
-      zero on entry, decrement it by one and return immediately.  If it is zero
-      on entry, block, waiting until some other thread has called
-      :meth:`~Semaphore.release` to make it larger than zero.  This is done
-      with proper interlocking so that if multiple :meth:`acquire` calls are
-      blocked, :meth:`~Semaphore.release` will wake exactly one of them up.
-      The implementation may pick one at random, so the order in which
-      blocked threads are awakened should not be relied on.  Returns
-      true (or blocks indefinitely).
+      When invoked without arguments:
+
+      * If the internal counter is larger than zero on entry, decrement it by
+        one and return true immediately.
+      * If the internal counter is zero on entry, block until awoken by a call to
+        :meth:`~Semaphore.release`.  Once awoken (and the counter is greater
+        than 0), decrement the counter by 1 and return true.  Exactly one
+        thread will be awoken by each call to :meth:`~Semaphore.release`.  The
+        order in which threads are awoken should not be relied on.
 
       When invoked with *blocking* set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise,
-      do the same thing as when called without arguments, and return true.
+      without an argument would block, return false immediately; otherwise, do
+      the same thing as when called without arguments, and return true.
 
       When invoked with a *timeout* other than ``None``, it will block for at
       most *timeout* seconds.  If acquire does not complete successfully in
@@ -875,8 +875,8 @@ Barrier Objects
 This class provides a simple synchronization primitive for use by a fixed number
 of threads that need to wait for each other.  Each of the threads tries to pass
 the barrier by calling the :meth:`~Barrier.wait` method and will block until
-all of the threads have made the call.  At this points, the threads are released
-simultaneously.
+all of the threads have made their :meth:`~Barrier.wait` calls. At this point,
+the threads are released simultaneously.
 
 The barrier can be reused any number of times for the same number of threads.
 

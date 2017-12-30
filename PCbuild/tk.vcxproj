@@ -49,30 +49,20 @@
     <TargetPath>$(OutDir)bin\$(tkDLLName)</TargetPath>
   </PropertyGroup>
   
-  <ItemGroup>
-    <ExpectedOutputs Include="
-        $(OutDir)bin\$(tkDLLName);
-        $(OutDir)include\tk.h;
-        $(OutDir)lib\$(tkLibName);
-        $(OutDir)lib\tk$(TkMajorVersion).$(TkMinorVersion)" />
-  </ItemGroup>
-  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   
   <PropertyGroup>
     <TkOpts>msvcrt</TkOpts>
     <TkOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TkOpts>
-    <TkDirs>TCLDIR="$(tclDir.TrimEnd(`\`))" INSTALLDIR="$(OutDir.TrimEnd(`\`))"</TkDirs>
+    <TkDirs>BUILDDIRTOP="$(BuildDirTop)" TCLDIR="$(tclDir.TrimEnd(`\`))" INSTALLDIR="$(OutDir.TrimEnd(`\`))"</TkDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
+    <WarningsFlags>WARNINGS="-W3 -wd4244 -wd4267 -wd4311 -wd4312 -wd4334"</WarningsFlags>
     <NMakeBuildCommandLine>setlocal
-@(ExpectedOutputs->'if not exist "%(FullPath)" goto build','
-')
-goto :eof
-:build
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tkDir)win"
-nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) all
-nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) install-binaries install-libraries
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) all
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) install-binaries install-libraries
+copy /Y ..\license.terms "$(OutDir)\tklicense.terms"
 </NMakeBuildCommandLine>
   </PropertyGroup>
   <ItemGroup>
@@ -83,15 +73,7 @@ nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   
-  <Target Name="CopyDll" Inputs="$(OutDir)\bin\$(tkDLLName)" Outputs="$(BuildPath)$(tkDLLName)" AfterTargets="Build">
-    <Copy SourceFiles="$(OutDir)\bin\$(tkDLLName)" DestinationFiles="$(BuildPath)$(tkDLLName)" />
-  </Target>
-  
   <Target Name="Clean" />
-  <Target Name="CleanAll">
-    <Delete Files="$(TargetPath);$(BuildPath)$(tkDLLName)" />
-    <RemoveDir Directories="$(IntDir)" />
-  </Target>
   
   <Target Name="ResolveAssemblyReferences" />
 </Project>

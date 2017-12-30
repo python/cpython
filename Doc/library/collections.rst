@@ -618,6 +618,25 @@ added elements by appending to the right and popping to the left::
             d.append(elem)
             yield s / n
 
+A `round-robin scheduler
+<https://en.wikipedia.org/wiki/Round-robin_scheduling>`_ can be implemented with
+input iterators stored in a :class:`deque`.  Values are yielded from the active
+iterator in position zero.  If that iterator is exhausted, it can be removed
+with :meth:`~deque.popleft`; otherwise, it can be cycled back to the end with
+the :meth:`~deque.rotate` method::
+
+    def roundrobin(*iterables):
+        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+        iterators = deque(map(iter, iterables))
+        while iterators:
+            try:
+                while True:
+                    yield next(iterators[0])
+                    iterators.rotate(-1)
+            except StopIteration:
+                # Remove an exhausted iterator.
+                iterators.popleft()
+
 The :meth:`rotate` method provides a way to implement :class:`deque` slicing and
 deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
 the :meth:`rotate` method to position elements to be popped::
@@ -763,7 +782,7 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
+.. function:: namedtuple(typename, field_names, *, rename=False, module=None)
 
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
@@ -786,10 +805,6 @@ they add the ability to access fields by name instead of position index.
     converted to ``['abc', '_1', 'ghi', '_3']``, eliminating the keyword
     ``def`` and the duplicate fieldname ``abc``.
 
-    If *verbose* is true, the class definition is printed after it is
-    built.  This option is outdated; instead, it is simpler to print the
-    :attr:`_source` attribute.
-
     If *module* is defined, the ``__module__`` attribute of the named tuple is
     set to that value.
 
@@ -805,6 +820,9 @@ they add the ability to access fields by name instead of position index.
 
     .. versionchanged:: 3.6
        Added the *module* parameter.
+
+    .. versionchanged:: 3.7
+       Remove the *verbose* parameter and the :attr:`_source` attribute.
 
 .. doctest::
     :options: +NORMALIZE_WHITESPACE
@@ -877,15 +895,6 @@ field names, the method and attribute names start with an underscore.
 
         >>> for partnum, record in inventory.items():
         ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
-
-.. attribute:: somenamedtuple._source
-
-    A string with the pure Python source code used to create the named
-    tuple class.  The source makes the named tuple self-documenting.
-    It can be printed, executed using :func:`exec`, or saved to a file
-    and imported.
-
-    .. versionadded:: 3.3
 
 .. attribute:: somenamedtuple._fields
 

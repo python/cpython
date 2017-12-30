@@ -17,6 +17,7 @@ typedef struct {
     PyObject *tgtkey;
     PyObject *currkey;
     PyObject *currvalue;
+    const void *currgrouper;  /* borrowed reference */
 } groupbyobject;
 
 static PyTypeObject groupby_type;
@@ -72,11 +73,39 @@ groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
     return 0;
 }
 
+Py_LOCAL_INLINE(int)
+groupby_step(groupbyobject *gbo)
+{
+    PyObject *newvalue, *newkey, *oldvalue;
+
+    newvalue = PyIter_Next(gbo->it);
+    if (newvalue == NULL)
+        return -1;
+
+    if (gbo->keyfunc == Py_None) {
+        newkey = newvalue;
+        Py_INCREF(newvalue);
+    } else {
+        newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
+        if (newkey == NULL) {
+            Py_DECREF(newvalue);
+            return -1;
+        }
+    }
+
+    oldvalue = gbo->currvalue;
+    gbo->currvalue = newvalue;
+    Py_XSETREF(gbo->currkey, newkey);
+    Py_XDECREF(oldvalue);
+    return 0;
+}
+
 static PyObject *
 groupby_next(groupbyobject *gbo)
 {
-    PyObject *newvalue, *newkey, *r, *grouper;
+    PyObject *r, *grouper;
 
+    gbo->currgrouper = NULL;
     /* skip to next iteration group */
     for (;;) {
         if (gbo->currkey == NULL)
@@ -93,25 +122,9 @@ groupby_next(groupbyobject *gbo)
                 break;
         }
 
-        newvalue = PyIter_Next(gbo->it);
-        if (newvalue == NULL)
+        if (groupby_step(gbo) < 0)
             return NULL;
-
-        if (gbo->keyfunc == Py_None) {
-            newkey = newvalue;
-            Py_INCREF(newvalue);
-        } else {
-            newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
-            if (newkey == NULL) {
-                Py_DECREF(newvalue);
-                return NULL;
-            }
-        }
-
-        Py_XSETREF(gbo->currkey, newkey);
-        Py_XSETREF(gbo->currvalue, newvalue);
     }
-
     Py_INCREF(gbo->currkey);
     Py_XSETREF(gbo->tgtkey, gbo->currkey);
 
@@ -174,8 +187,9 @@ static PyMethodDef groupby_methods[] = {
 };
 
 PyDoc_STRVAR(groupby_doc,
-"groupby(iterable[, keyfunc]) -> create an iterator which returns\n\
-(key, sub-iterator) grouped by each value of key(value).\n");
+"groupby(iterable, key=None) -> make an iterator that returns consecutive\n\
+keys and groups from the iterable.  If the key function is not specified or\n\
+is None, the element itself is used for grouping.\n");
 
 static PyTypeObject groupby_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -255,6 +269,7 @@ _grouper_create(groupbyobject *parent, PyObject *tgtkey)
     Py_INCREF(parent);
     igo->tgtkey = tgtkey;
     Py_INCREF(tgtkey);
+    parent->currgrouper = igo;  /* borrowed reference */
 
     PyObject_GC_Track(igo);
     return (PyObject *)igo;
@@ -281,28 +296,14 @@ static PyObject *
 _grouper_next(_grouperobject *igo)
 {
     groupbyobject *gbo = (groupbyobject *)igo->parent;
-    PyObject *newvalue, *newkey, *r;
+    PyObject *r;
     int rcmp;
 
+    if (gbo->currgrouper != igo)
+        return NULL;
     if (gbo->currvalue == NULL) {
-        newvalue = PyIter_Next(gbo->it);
-        if (newvalue == NULL)
+        if (groupby_step(gbo) < 0)
             return NULL;
-
-        if (gbo->keyfunc == Py_None) {
-            newkey = newvalue;
-            Py_INCREF(newvalue);
-        } else {
-            newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
-            if (newkey == NULL) {
-                Py_DECREF(newvalue);
-                return NULL;
-            }
-        }
-
-        assert(gbo->currkey == NULL);
-        gbo->currkey = newkey;
-        gbo->currvalue = newvalue;
     }
 
     assert(gbo->currkey != NULL);
@@ -321,6 +322,9 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz)
 {
+    if (((groupbyobject *)lz->parent)->currgrouper != lz) {
+        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+    }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
 
@@ -806,7 +810,7 @@ static PyObject *
 tee(PyObject *self, PyObject *args)
 {
     Py_ssize_t i, n=2;
-    PyObject *it, *iterable, *copyable, *result;
+    PyObject *it, *iterable, *copyable, *copyfunc, *result;
     _Py_IDENTIFIER(__copy__);
 
     if (!PyArg_ParseTuple(args, "O|n", &iterable, &n))
@@ -825,25 +829,43 @@ tee(PyObject *self, PyObject *args)
         Py_DECREF(result);
         return NULL;
     }
-    if (!_PyObject_HasAttrId(it, &PyId___copy__)) {
+
+    copyfunc = _PyObject_GetAttrId(it, &PyId___copy__);
+    if (copyfunc != NULL) {
+        copyable = it;
+    }
+    else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        Py_DECREF(it);
+        Py_DECREF(result);
+        return NULL;
+    }
+    else {
+        PyErr_Clear();
         copyable = tee_fromiterable(it);
         Py_DECREF(it);
         if (copyable == NULL) {
             Py_DECREF(result);
             return NULL;
         }
-    } else
-        copyable = it;
-    PyTuple_SET_ITEM(result, 0, copyable);
-    for (i=1 ; i<n ; i++) {
+        copyfunc = _PyObject_GetAttrId(copyable, &PyId___copy__);
+        if (copyfunc == NULL) {
+            Py_DECREF(copyable);
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
 
-        copyable = _PyObject_CallMethodId(copyable, &PyId___copy__, NULL);
+    PyTuple_SET_ITEM(result, 0, copyable);
+    for (i = 1; i < n; i++) {
+        copyable = _PyObject_CallNoArg(copyfunc);
         if (copyable == NULL) {
+            Py_DECREF(copyfunc);
             Py_DECREF(result);
             return NULL;
         }
         PyTuple_SET_ITEM(result, i, copyable);
     }
+    Py_DECREF(copyfunc);
     return result;
 }
 
@@ -4067,7 +4089,8 @@ static PyObject *
 count_repr(countobject *lz)
 {
     if (lz->cnt != PY_SSIZE_T_MAX)
-        return PyUnicode_FromFormat("count(%zd)", lz->cnt);
+        return PyUnicode_FromFormat("%s(%zd)",
+                                    _PyType_Name(Py_TYPE(lz)), lz->cnt);
 
     if (PyLong_Check(lz->long_step)) {
         long step = PyLong_AsLong(lz->long_step);
@@ -4076,11 +4099,14 @@ count_repr(countobject *lz)
         }
         if (step == 1) {
             /* Don't display step when it is an integer equal to 1 */
-            return PyUnicode_FromFormat("count(%R)", lz->long_cnt);
+            return PyUnicode_FromFormat("%s(%R)",
+                                        _PyType_Name(Py_TYPE(lz)),
+                                        lz->long_cnt);
         }
     }
-    return PyUnicode_FromFormat("count(%R, %R)",
-                                                            lz->long_cnt, lz->long_step);
+    return PyUnicode_FromFormat("%s(%R, %R)",
+                                _PyType_Name(Py_TYPE(lz)),
+                                lz->long_cnt, lz->long_step);
 }
 
 static PyObject *
@@ -4220,9 +4246,12 @@ static PyObject *
 repeat_repr(repeatobject *ro)
 {
     if (ro->cnt == -1)
-        return PyUnicode_FromFormat("repeat(%R)", ro->element);
+        return PyUnicode_FromFormat("%s(%R)",
+                                    _PyType_Name(Py_TYPE(ro)), ro->element);
     else
-        return PyUnicode_FromFormat("repeat(%R, %zd)", ro->element, ro->cnt);
+        return PyUnicode_FromFormat("%s(%R, %zd)",
+                                    _PyType_Name(Py_TYPE(ro)), ro->element,
+                                    ro->cnt);
 }
 
 static PyObject *
@@ -4630,7 +4659,7 @@ PyInit_itertools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
@@ -4663,10 +4692,9 @@ PyInit_itertools(void)
     for (i=0 ; typelist[i] != NULL ; i++) {
         if (PyType_Ready(typelist[i]) < 0)
             return NULL;
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
 
     return m;

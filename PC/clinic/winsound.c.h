@@ -14,13 +14,13 @@ PyDoc_STRVAR(winsound_PlaySound__doc__,
 "    Flag values, ored together.  See module documentation.");
 
 #define WINSOUND_PLAYSOUND_METHODDEF    \
-    {"PlaySound", (PyCFunction)winsound_PlaySound, METH_FASTCALL, winsound_PlaySound__doc__},
+    {"PlaySound", (PyCFunction)winsound_PlaySound, METH_FASTCALL|METH_KEYWORDS, winsound_PlaySound__doc__},
 
 static PyObject *
 winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags);
 
 static PyObject *
-winsound_PlaySound(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winsound_PlaySound(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sound", "flags", NULL};
@@ -51,13 +51,13 @@ PyDoc_STRVAR(winsound_Beep__doc__,
 "    How long the sound should play, in milliseconds.");
 
 #define WINSOUND_BEEP_METHODDEF    \
-    {"Beep", (PyCFunction)winsound_Beep, METH_FASTCALL, winsound_Beep__doc__},
+    {"Beep", (PyCFunction)winsound_Beep, METH_FASTCALL|METH_KEYWORDS, winsound_Beep__doc__},
 
 static PyObject *
 winsound_Beep_impl(PyObject *module, int frequency, int duration);
 
 static PyObject *
-winsound_Beep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winsound_Beep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"frequency", "duration", NULL};
@@ -84,13 +84,13 @@ PyDoc_STRVAR(winsound_MessageBeep__doc__,
 "x defaults to MB_OK.");
 
 #define WINSOUND_MESSAGEBEEP_METHODDEF    \
-    {"MessageBeep", (PyCFunction)winsound_MessageBeep, METH_FASTCALL, winsound_MessageBeep__doc__},
+    {"MessageBeep", (PyCFunction)winsound_MessageBeep, METH_FASTCALL|METH_KEYWORDS, winsound_MessageBeep__doc__},
 
 static PyObject *
 winsound_MessageBeep_impl(PyObject *module, int type);
 
 static PyObject *
-winsound_MessageBeep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winsound_MessageBeep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"type", NULL};
@@ -106,4 +106,4 @@ winsound_MessageBeep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=102a556c665a277d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=beeee8be95667b7d input=a9049054013a1b77]*/

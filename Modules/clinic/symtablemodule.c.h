@@ -16,16 +16,12 @@ _symtable_symtable_impl(PyObject *module, const char *str,
                         PyObject *filename, const char *startstr);
 
 static PyObject *
-_symtable_symtable(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *str;
     PyObject *filename;
     const char *startstr;
-
-    if (!_PyArg_NoStackKeywords("symtable", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "sO&s:symtable",
         &str, PyUnicode_FSDecoder, &filename, &startstr)) {
@@ -36,4 +32,4 @@ _symtable_symtable(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=388595f822b1fc79 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c18565060a6cae04 input=a9049054013a1b77]*/

@@ -15,6 +15,7 @@ from os import path
 from time import asctime
 from pprint import pformat
 from docutils.io import StringOutput
+from docutils.parsers.rst import Directive
 from docutils.utils import new_document
 
 from docutils import nodes, utils
@@ -23,7 +24,6 @@ from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.locale import translators
 from sphinx.util.nodes import split_explicit_title
-from sphinx.util.compat import Directive
 from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.text import TextWriter
 from sphinx.writers.latex import LaTeXTranslator
@@ -272,9 +272,9 @@ class MiscNews(Directive):
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
-    'assert', 'assignment', 'atom-identifiers', 'atom-literals',
-    'attribute-access', 'attribute-references', 'augassign', 'binary',
-    'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
+    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
+    'attribute-access', 'attribute-references', 'augassign', 'await',
+    'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
     'context-managers', 'continue', 'conversions', 'customization', 'debugger',

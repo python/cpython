@@ -38,10 +38,7 @@ from test.support import (import_fresh_module, TestFailed,
                           run_with_locale, cpython_only)
 import random
 import inspect
-try:
-    import threading
-except ImportError:
-    threading = None
+import threading
 
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
@@ -1621,14 +1618,17 @@ class ThreadingTest(unittest.TestCase):
         for sig in Signals[self.decimal]:
             self.assertFalse(DefaultContext.flags[sig])
 
+        th1.join()
+        th2.join()
+
         DefaultContext.prec = save_prec
         DefaultContext.Emax = save_emax
         DefaultContext.Emin = save_emin
 
-@unittest.skipUnless(threading, 'threading required')
+
 class CThreadingTest(ThreadingTest):
     decimal = C
-@unittest.skipUnless(threading, 'threading required')
+
 class PyThreadingTest(ThreadingTest):
     decimal = P
 

@@ -773,7 +773,6 @@ Is semantically equivalent to::
     mgr = (EXPR)
     aexit = type(mgr).__aexit__
     aenter = type(mgr).__aenter__(mgr)
-    exc = True
 
     VAR = await aenter
     try:

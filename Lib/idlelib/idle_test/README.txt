@@ -144,9 +144,18 @@ green. Idle tests must not disturb the environment in a way that makes
 other tests fail (issue 18081).
 
 To run an individual Testcase or test method, extend the dotted name
-given to unittest on the command line.
+given to unittest on the command line or use the test -m option.  The
+latter allows use of other regrtest options.  When using the latter,
+all components of the pattern must be present, but any can be replaced
+by '*'.
 
 python -m unittest -v idlelib.idle_test.test_xyz.Test_case.test_meth
+python -m test -m idlelib.idle_test.text_xyz.Test_case.test_meth test_idle
+
+The test suite can be run in an IDLE user process from Shell.
+>>> import test.autotest  # Issue 25588, 2017/10/13, 3.6.4, 3.7.0a2.
+There are currently failures not usually present, and this does not
+work when run from the editor.
 
 
 4. Human-mediated Tests
@@ -159,3 +168,59 @@ complete, though some tests need improvement. To run all htests, run the
 htest file from an editor or from the command line with:
 
 python -m idlelib.idle_test.htest
+
+
+5. Test Coverage
+
+Install the coverage package into your Python 3.6 site-packages
+directory.  (Its exact location depends on the OS).
+> python3 -m pip install coverage
+(On Windows, replace 'python3 with 'py -3.6' or perhaps just 'python'.)
+
+The problem with running coverage with repository python is that
+coverage uses absolute imports for its submodules, hence it needs to be
+in a directory in sys.path.  One solution: copy the package to the
+directory containing the cpython repository.  Call it 'dev'.  Then run
+coverage either directly or from a script in that directory so that
+'dev' is prepended to sys.path.
+
+Either edit or add dev/.coveragerc so it looks something like this.
+---
+# .coveragerc sets coverage options.
+[run]
+branch = True
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+
+    .*# htest #
+    if not _utest:
+    if _htest:
+---
+The additions for IDLE are 'branch = True', to test coverage both ways,
+and the last three exclude lines, to exclude things peculiar to IDLE
+that are not executed during tests.
+
+A script like the following cover.bat (for Windows) is very handy.
+---
+@echo off
+rem Usage: cover filename [test_ suffix] # proper case required by coverage
+rem filename without .py, 2nd parameter if test is not test_filename
+setlocal
+set py=f:\dev\3x\pcbuild\win32\python_d.exe
+set src=idlelib.%1
+if "%2" EQU "" set tst=f:/dev/3x/Lib/idlelib/idle_test/test_%1.py
+if "%2" NEQ "" set tst=f:/dev/ex/Lib/idlelib/idle_test/test_%2.py
+
+%py% -m coverage run --pylib --source=%src% %tst%
+%py% -m coverage report --show-missing
+%py% -m coverage html
+start htmlcov\3x_Lib_idlelib_%1_py.html
+rem Above opens new report; htmlcov\index.html displays report index
+---
+The second parameter was added for tests of module x not named test_x.
+(There were several before modules were renamed, now only one is left.)

@@ -1,7 +1,8 @@
 @echo off
 setlocal
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
+if "%Py_OutDir%"=="" set Py_OutDir=%PCBUILD%
 
 set BUILDX86=
 set BUILDX64=
@@ -28,7 +29,7 @@ if defined PACKAGES set PACKAGES="/p:Packages=%PACKAGES%"
 
 if defined BUILDX86 (
     if defined REBUILD ( call "%PCBUILD%build.bat" -e -r
-    ) else if not exist "%PCBUILD%win32\python.exe" call "%PCBUILD%build.bat" -e
+    ) else if not exist "%Py_OutDir%win32\python.exe" call "%PCBUILD%build.bat" -e
     if errorlevel 1 goto :eof
 
     %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x86 %OUTPUT% %PACKAGES%
@@ -37,7 +38,7 @@ if defined BUILDX86 (
 
 if defined BUILDX64 (
     if defined REBUILD ( call "%PCBUILD%build.bat" -p x64 -e -r
-    ) else if not exist "%PCBUILD%amd64\python.exe" call "%PCBUILD%build.bat" -p x64 -e
+    ) else if not exist "%Py_OutDir%amd64\python.exe" call "%PCBUILD%build.bat" -p x64 -e
     if errorlevel 1 goto :eof
 
     %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x64 %OUTPUT% %PACKAGES%

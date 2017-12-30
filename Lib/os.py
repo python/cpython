@@ -23,7 +23,7 @@ and opendir), and leave all pathname manipulation to os.path
 
 #'
 import abc
-import sys, errno
+import sys
 import stat as st
 
 _names = sys.builtin_module_names
@@ -590,12 +590,10 @@ def _execvpe(file, args, env=None):
         argrest = (args,)
         env = environ
 
-    head, tail = path.split(file)
-    if head:
+    if path.dirname(file):
         exec_func(file, *argrest)
         return
-    last_exc = saved_exc = None
-    saved_tb = None
+    saved_exc = None
     path_list = get_exec_path(env)
     if name != 'nt':
         file = fsencode(file)
@@ -604,16 +602,15 @@ def _execvpe(file, args, env=None):
         fullname = path.join(dir, file)
         try:
             exec_func(fullname, *argrest)
+        except (FileNotFoundError, NotADirectoryError) as e:
+            last_exc = e
         except OSError as e:
             last_exc = e
-            tb = sys.exc_info()[2]
-            if (e.errno != errno.ENOENT and e.errno != errno.ENOTDIR
-                and saved_exc is None):
+            if saved_exc is None:
                 saved_exc = e
-                saved_tb = tb
-    if saved_exc:
-        raise saved_exc.with_traceback(saved_tb)
-    raise last_exc.with_traceback(tb)
+    if saved_exc is not None:
+        raise saved_exc
+    raise last_exc
 
 
 def get_exec_path(env=None):
@@ -697,7 +694,9 @@ class _Environ(MutableMapping):
             raise KeyError(key) from None
 
     def __iter__(self):
-        for key in self._data:
+        # list() from dict object is an atomic operation
+        keys = list(self._data)
+        for key in keys:
             yield self.decodekey(key)
 
     def __len__(self):
@@ -892,7 +891,7 @@ If mode == P_WAIT return the process's exit code if it exits normally;
 otherwise return -SIG, where SIG is the signal that killed it. """
         return _spawnvef(mode, file, args, env, execve)
 
-    # Note: spawnvp[e] is't currently supported on Windows
+    # Note: spawnvp[e] isn't currently supported on Windows
 
     def spawnvp(mode, file, args):
         """spawnvp(mode, file, args) -> integer

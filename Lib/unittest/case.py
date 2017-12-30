@@ -852,7 +852,8 @@ class TestCase(object):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is more than the given delta.
+           difference between the two objects is more than the given
+           delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -896,7 +897,7 @@ class TestCase(object):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is less than the given delta.
+           difference between the two objects is less than the given delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -1273,7 +1274,7 @@ class TestCase(object):
 
         Args:
             expected_exception: Exception class expected to be raised.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1292,7 +1293,7 @@ class TestCase(object):
 
         Args:
             expected_warning: Warning class expected to be triggered.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.

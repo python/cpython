@@ -74,10 +74,13 @@ class InterProcessSignalTests(unittest.TestCase):
             # Nothing should happen: SIGUSR2 is ignored
             child.wait()
 
-        signal.alarm(1)
-        self.wait_signal(None, 'SIGALRM', KeyboardInterrupt)
-        self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 1,
-                                            'SIGALRM': 0})
+        try:
+            signal.alarm(1)
+            self.wait_signal(None, 'SIGALRM', KeyboardInterrupt)
+            self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 1,
+                                                'SIGALRM': 0})
+        finally:
+            signal.alarm(0)
 
 
 if __name__ == "__main__":
