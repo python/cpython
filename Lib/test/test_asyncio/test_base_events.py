@@ -1162,11 +1162,9 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertTrue(str(cm.exception).startswith('Multiple exceptions: '))
         self.assertTrue(m_socket.socket.return_value.close.called)
 
-    def _test_create_connection_ip_addr(self, m_socket, allow_inet_pton):
+    @patch_socket
+    def test_create_connection_ip_addr(self, m_socket):
         # Test the fallback code, even if this system has inet_pton.
-        if not allow_inet_pton:
-            del m_socket.inet_pton
-
         m_socket.getaddrinfo = socket.getaddrinfo
         sock = m_socket.socket.return_value
 
@@ -1190,8 +1188,9 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
         t, p = self.loop.run_until_complete(coro)
         try:
-            # Without inet_pton we use getaddrinfo, which transforms ('::1', 80)
-            # to ('::1', 80, 0, 0). The last 0s are flow info, scope id.
+            # Without inet_pton we use getaddrinfo, which transforms
+            # ('::1', 80) to ('::1', 80, 0, 0). The last 0s are flow info and
+            # scope id.
             [address] = sock.connect.call_args[0]
             host, port = address[:2]
             self.assertRegex(host, r'::(0\.)*1')
@@ -1202,14 +1201,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         finally:
             t.close()
             test_utils.run_briefly(self.loop)  # allow transport to close
-
-    @patch_socket
-    def test_create_connection_ip_addr(self, m_socket):
-        self._test_create_connection_ip_addr(m_socket, True)
-
-    @patch_socket
-    def test_create_connection_no_inet_pton(self, m_socket):
-        self._test_create_connection_ip_addr(m_socket, False)
 
     @patch_socket
     def test_create_connection_service_name(self, m_socket):
