@@ -305,6 +305,17 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade a transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
+        """
+        raise NotImplementedError
+
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,

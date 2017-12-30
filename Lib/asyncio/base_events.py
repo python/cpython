@@ -29,9 +29,15 @@ import sys
 import warnings
 import weakref
 
+try:
+    import ssl
+except ImportError:  # pragma: no cover
+    ssl = None
+
 from . import coroutines
 from . import events
 from . import futures
+from . import sslproto
 from . import tasks
 from .log import logger
 
@@ -279,7 +285,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, rawsock, protocol, sslcontext, waiter=None,
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            call_connection_made=True):
         """Create SSL transport."""
         raise NotImplementedError
 
@@ -794,6 +801,42 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise
 
         return transport, protocol
+
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
+        """
+        if ssl is None:
+            raise RuntimeError('Python ssl module is not available')
+
+        if not isinstance(sslcontext, ssl.SSLContext):
+            raise TypeError(
+                f'sslcontext is expected to be an instance of ssl.SSLContext, '
+                f'got {sslcontext!r}')
+
+        if not getattr(transport, '_start_tls_compatible', False):
+            raise TypeError(
+                f'transport {self!r} is not supported by start_tls()')
+
+        waiter = self.create_future()
+        ssl_protocol = sslproto.SSLProtocol(
+            self, protocol, sslcontext, waiter,
+            server_side, server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            call_connection_made=False)
+
+        transport.set_protocol(ssl_protocol)
+        self.call_soon(ssl_protocol.connection_made, transport)
+        if not transport.is_reading():
+            self.call_soon(transport.resume_reading)
+
+        await waiter
+        return ssl_protocol._app_transport
 
     async def create_datagram_endpoint(self, protocol_factory,
                                        local_addr=None, remote_addr=None, *,
