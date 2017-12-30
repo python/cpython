@@ -301,7 +301,18 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
-_nt_itemgetters = {}
+class _TupleGetter:
+    'Emulate property(itemgetter(index))'
+    # Consider making __doc__ a property
+
+    def __init__(self, index):
+        self.index = index
+        self.__doc__ = f'Alias for field number {index}'
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return obj[self.index]
 
 def namedtuple(typename, field_names, *, rename=False, module=None):
     """Returns a new subclass of tuple with named fields.
@@ -427,15 +438,8 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
     }
-    cache = _nt_itemgetters
     for index, name in enumerate(field_names):
-        try:
-            itemgetter_object, doc = cache[index]
-        except KeyError:
-            itemgetter_object = _itemgetter(index)
-            doc = f'Alias for field number {index}'
-            cache[index] = itemgetter_object, doc
-        class_namespace[name] = property(itemgetter_object, doc=doc)
+        class_namespace[name] = _TupleGetter(index)
 
     result = type(typename, (tuple,), class_namespace)
 
