@@ -653,17 +653,17 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("the socket must be non-blocking")
         socket._check_sendfile_params(sock, file, offset, count)
         try:
-            await self._sock_sf_fast(sock, file, offset, count)
+            await self._sock_sendfile_native(sock, file, offset, count)
         except RuntimeError:
             if fallback:
                 await self._sock_sf_fallback(sock, file, offset, count)
             else:
                 raise
 
-    async def _sock_sf_fast(self, sock, file, offset=0, count=None):
+    async def _sock_sendfile_native(self, sock, file, offset=0, count=None):
         raise RuntimeError("Fast sendfile is not available")
 
-    async def _sock_sf_fallback(self, sock, file, offset=0, count=None):
+    async def _sock_send_fallback(self, sock, file, offset=0, count=None):
         if offset:
             file.seek(offset)
         blocksize = min(count, 16384) if count else 16384
