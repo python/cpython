@@ -484,7 +484,7 @@ ABC hierarchy::
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is
-    expected to be a :term:`file-like object` which represents
+    expected to be a :term:`path-like object` which represents
     conceptually just a file name. This means that no subdirectory
     paths should be included in the *resource* argument. This is
     because the location of the package that the loader is for acts
@@ -773,6 +773,131 @@ ABC hierarchy::
         :meth:`ExecutionLoader.get_filename`) is a file named
         ``__init__`` when the file extension is removed **and** the module name
         itself does not end in ``__init__``.
+
+
+:mod:`importlib.resources` -- Resources
+---------------------------------------
+
+.. module:: importlib.resources
+    :synopsis: Package resource reading, opening, and access
+
+**Source code:** :source:`Lib/importlib/resources.py`
+
+--------------
+
+.. versionadded:: 3.7
+
+This module leverages Python's import system to provide access to *resources*
+within *packages*.  If you can import a package, you can access resources
+within that package.  Resources can be opened or read, in either binary or
+text mode.
+
+Resources are roughly akin to files inside directories, though it's important
+to keep in mind that this is just a metaphor.  Resources and packages **do
+not** have to exist as physical files and directories on the file system.
+
+Loaders can support resources by implementing the :class:`ResourceReader`
+abstract base class.
+
+The following types are defined.
+
+.. data:: Package
+
+    The ``Package`` type is defined as ``Union[str, ModuleType]``.  This means
+    that where the function describes accepting a ``Package``, you can pass in
+    either a string or a module.  Module objects must have a resolvable
+    ``__spec__.submodule_search_locations`` that is not ``None``.
+
+.. data:: Resource
+
+    This type describes the resource names passed into the various functions
+    in this package.  This is defined as ``Union[str, os.PathLike]``.
+
+
+The following functions are available.
+
+.. function:: open_binary(package, resource)
+
+    Open for binary reading the *resource* within *package*.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  This function returns a
+    ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
+
+
+.. function:: open_text(package, resource, encoding='utf-8', errors='strict')
+
+    Open for text reading the *resource* within *package*.  By default, the
+    resource is opened for reading as UTF-8.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
+    have the same meaning as with built-in :func:`open`.
+
+    This function returns a ``typing.TextIO`` instance, a text I/O stream open
+    for reading.
+
+
+.. function:: read_binary(package, resource)
+
+    Read and return the contents of the *resource* within *package* as
+    ``bytes``.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  This function returns the
+    contents of the resource as :class:`bytes`.
+
+
+.. function:: read_text(package, resource, encoding='utf-8', errors='strict')
+
+    Read and return the contents of *resource* within *package* as a ``str``.
+    By default, the contents are read as strict UTF-8.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
+    have the same meaning as with built-in :func:`open`.  This function
+    returns the contents of the resource as :class:`str`.
+
+
+.. function:: path(package, resource)
+
+    Return the path to the *resource* as an actual file system path.  This
+    function returns a context manager for use in a :keyword:`with` statement.
+    The context manager provides a :class:`pathlib.Path` object.
+
+    Exiting the context manager cleans up any temporary file created when the
+    resource needs to be extracted from e.g. a zip file.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).
+
+
+.. function:: is_resource(package, name)
+
+    Return ``True`` if there is a resource named *name* in the package,
+    otherwise ``False``.  Remember that directories are *not* resources!
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.
+
+
+.. function:: contents(package)
+
+    Return an iterator over the named items within the package.  The iterator
+    returns :class:`str` resources (e.g. files) and non-resources
+    (e.g. directories).  The iterator does not recurse into subdirectories.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
