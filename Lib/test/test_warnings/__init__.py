@@ -1166,7 +1166,7 @@ class EnvironmentVariableTests(BaseTest):
 
         if pure_python_api:
             # Disable the warnings acceleration module in the subprocess
-            code = "import sys; sys.modules['_warnings'] = None; "
+            code = "import sys; sys.modules.pop('warnings', None); sys.modules['_warnings'] = None; "
         else:
             code = ""
         code += "import warnings; [print(f) for f in warnings.filters]"
