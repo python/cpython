@@ -1,1 +1,1 @@
-Implement ``loop.sock_sendfile`` for asyncio UNIX event loop.
+Implement ``loop.sock_sendfile`` for asyncio event loop.
