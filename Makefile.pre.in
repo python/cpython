@@ -675,15 +675,17 @@ oldsharedmods: $(SHAREDMODS)
 Makefile Modules/config.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
-				Modules/Setup \
+				@SETUP_FILE@ \
 				Modules/Setup.local
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
-				Modules/Setup
+				@SETUP_FILE@
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
+@SETUP_DIST_TARGET@: $(srcdir)/Modules/Setup.dist
+	@cp $(srcdir)/Modules/Setup.dist @SETUP_DIST_TARGET@
 
 Modules/Setup: $(srcdir)/Modules/Setup.dist
 	@if test -f Modules/Setup; then \
@@ -1450,7 +1452,10 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_DATA) Programs/python.o $(DESTDIR)$(LIBPL)/python.o
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
-	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup
+	if test -f Modules/Setup; then \
+		$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup; \
+	fi
+	$(INSTALL_DATA) $(srcdir)/Modules/Setup.dist $(DESTDIR)$(LIBPL)/Setup.dist; \
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup

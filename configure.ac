@@ -5458,27 +5458,49 @@ if test "$have_getrandom" = yes; then
               [Define to 1 if the getrandom() function is available])
 fi
 
+# Enable builds from Modules/Setup.dist.
+AC_SUBST(SETUP_FILE, Modules/Setup)
+AC_MSG_CHECKING(for --enable-use-setup-dist)
+AC_ARG_ENABLE(use-setup-dist,
+    AS_HELP_STRING([--enable-use-setup-dist], [Enable builds from Modules/Setup.dist]),
+[
+if test "$enable_use_setup_dist" != no
+then
+  SETUP_FILE=Modules/Setup.dist
+  AC_MSG_RESULT(yes);
+else
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+
+# Avoid a circular reference when building from the source tree.
+AC_SUBST(SETUP_DIST_TARGET, dummy-setup-dist-target)
+if test "$(realpath $srcdir)" != "$(pwd)" -a $SETUP_FILE = Modules/Setup.dist ; then
+	SETUP_DIST_TARGET=Modules/Setup.dist
+fi
+
+
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
-echo "creating Modules/Setup" >&AS_MESSAGE_FD
-if test ! -f Modules/Setup
+if test ! -f $SETUP_FILE
 then
-	cp $srcdir/Modules/Setup.dist Modules/Setup
+	echo "creating $SETUP_FILE" >&AS_MESSAGE_FD
+	cp $srcdir/Modules/Setup.dist $SETUP_FILE
 fi
 
-echo "creating Modules/Setup.local" >&AS_MESSAGE_FD
 if test ! -f Modules/Setup.local
 then
+	echo "creating Modules/Setup.local" >&AS_MESSAGE_FD
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile" >&AS_MESSAGE_FD
+echo "creating Makefile from $SETUP_FILE" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup
+			Modules/Setup.local $SETUP_FILE
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then

@@ -623,6 +623,8 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+SETUP_DIST_TARGET
+SETUP_FILE
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
@@ -778,7 +780,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -838,6 +839,7 @@ with_libc
 enable_big_digits
 with_computed_gotos
 with_ensurepip
+enable_use_setup_dist
 '
       ac_precious_vars='build_alias
 host_alias
@@ -890,7 +892,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1143,15 +1144,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1289,7 +1281,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1442,7 +1434,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1491,6 +1482,7 @@ Optional Features:
   --disable-ipv6          Disable ipv6 support
   --enable-big-digits[=BITS]
                           use big digits for Python longs [[BITS=30]]
+  --enable-use-setup-dist Enable builds from Modules/Setup.dist
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -16659,6 +16651,37 @@ $as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 
 fi
 
+# Enable builds from Modules/Setup.dist.
+SETUP_FILE=Modules/Setup
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-use-setup-dist" >&5
+$as_echo_n "checking for --enable-use-setup-dist... " >&6; }
+# Check whether --enable-use-setup-dist was given.
+if test "${enable_use_setup_dist+set}" = set; then :
+  enableval=$enable_use_setup_dist;
+if test "$enable_use_setup_dist" != no
+then
+  SETUP_FILE=Modules/Setup.dist
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Avoid a circular reference when building from the source tree.
+SETUP_DIST_TARGET=dummy-setup-dist-target
+
+if test "$(realpath $srcdir)" != "$(pwd)" -a $SETUP_FILE = Modules/Setup.dist ; then
+	SETUP_DIST_TARGET=Modules/Setup.dist
+fi
+
+
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-config.sh"
 
@@ -17963,22 +17986,22 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "creating Modules/Setup" >&6
-if test ! -f Modules/Setup
+if test ! -f $SETUP_FILE
 then
-	cp $srcdir/Modules/Setup.dist Modules/Setup
+	echo "creating $SETUP_FILE" >&6
+	cp $srcdir/Modules/Setup.dist $SETUP_FILE
 fi
 
-echo "creating Modules/Setup.local" >&6
 if test ! -f Modules/Setup.local
 then
+	echo "creating Modules/Setup.local" >&6
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile" >&6
+echo "creating Makefile from $SETUP_FILE" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup
+			Modules/Setup.local $SETUP_FILE
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then

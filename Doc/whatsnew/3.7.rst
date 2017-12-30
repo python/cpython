@@ -657,6 +657,12 @@ Build and C API Changes
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
 
+* Add the ``--enable-use-setup-dist`` configure option to use
+  Modules/Setup.dist instead of Modules/Setup to build the Makefile. This
+  allows avoiding the warnings that occur whenever Modules/Setup.dist is older
+  than Modules/Setup after checking out another branch. (Contributed by Xavier
+  de Gaye in :issue:`32430`.)
+
 
 Other CPython Implementation Changes
 ====================================

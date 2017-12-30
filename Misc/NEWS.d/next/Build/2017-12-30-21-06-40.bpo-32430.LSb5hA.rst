@@ -1,0 +1,1 @@
+Add the ``--enable-use-setup-dist`` configure option

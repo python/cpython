@@ -322,7 +322,7 @@ search_for_prefix(const _PyCoreConfig *core_config,
     /* Check to see if argv[0] is in the build directory */
     wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
     prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, L"Modules/Setup");
+    joinpath(prefix, L"Modules/Setup.local");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = Py_DecodeLocale(VPATH, NULL);
