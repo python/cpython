@@ -133,10 +133,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self, annotation, drop_parens=False, is_tuple=False
     ):
         actual = self.getActual(annotation)
-        if annotation.startswith("'"):
-            # strings are passed verbatim
-            expected = eval(annotation)
-        elif is_tuple:
+        if is_tuple:
             expected = annotation[1:-1]
         else:
             expected = annotation

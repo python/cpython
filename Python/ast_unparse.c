@@ -4,8 +4,7 @@
 
 /* Forward declaration for recursion via helper functions. */
 static int
-append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens,
-    bool omit_string_brackets);
+append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens);
 
 static int
 append_charp(_PyUnicodeWriter *writer, const char *charp)
@@ -43,7 +42,6 @@ append_ast_boolop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
 
     if (-1 == append_ast_expr(writer,
                               (expr_ty)asdl_seq_GET(values, 0),
-                              false,
                               false)) {
         return -1;
     }
@@ -56,7 +54,6 @@ append_ast_boolop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
 
         if (-1 == append_ast_expr(writer,
                                   (expr_ty)asdl_seq_GET(values, i),
-                                  false,
                                   false)) {
             return -1;
         }
@@ -74,7 +71,7 @@ append_ast_binop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.BinOp.left, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.BinOp.left, false)) {
         return -1;
     }
 
@@ -98,7 +95,7 @@ append_ast_binop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.BinOp.right, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.BinOp.right, false)) {
         return -1;
     }
 
@@ -125,7 +122,7 @@ append_ast_unaryop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.UnaryOp.operand, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.UnaryOp.operand, false)) {
         return -1;
     }
 
@@ -142,7 +139,7 @@ append_ast_arg(_PyUnicodeWriter *writer, arg_ty arg)
         if (-1 == append_charp(writer, ": ")) {
             return -1;
         }
-        if (-1 == append_ast_expr(writer, arg->annotation, true, false)) {
+        if (-1 == append_ast_expr(writer, arg->annotation, true)) {
             return -1;
         }
     }
@@ -181,7 +178,7 @@ append_ast_args(_PyUnicodeWriter *writer, arguments_ty args)
                 return -1;
             }
             default_ = (expr_ty)asdl_seq_GET(args->defaults, di);
-            if (-1 == append_ast_expr(writer, default_, false, false)) {
+            if (-1 == append_ast_expr(writer, default_, false)) {
                 return -1;
             }
         }
@@ -229,7 +226,7 @@ append_ast_args(_PyUnicodeWriter *writer, arguments_ty args)
                 return -1;
             }
             default_ = (expr_ty)asdl_seq_GET(args->kw_defaults, di);
-            if (-1 == append_ast_expr(writer, default_, false, false)) {
+            if (-1 == append_ast_expr(writer, default_, false)) {
                 return -1;
             }
         }
@@ -275,7 +272,7 @@ append_ast_lambda(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.Lambda.body, true, false)) {
+    if (-1 == append_ast_expr(writer, e->v.Lambda.body, true)) {
         return -1;
     }
 
@@ -289,7 +286,7 @@ append_ast_ifexp(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.IfExp.body, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.IfExp.body, false)) {
         return -1;
     }
 
@@ -297,7 +294,7 @@ append_ast_ifexp(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.IfExp.test, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.IfExp.test, false)) {
         return -1;
     }
 
@@ -305,7 +302,7 @@ append_ast_ifexp(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.IfExp.orelse, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.IfExp.orelse, false)) {
         return -1;
     }
 
@@ -330,7 +327,7 @@ append_ast_dict(_PyUnicodeWriter *writer, expr_ty e)
         }
         key_node = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i);
         if (key_node != NULL) {
-            if (-1 == append_ast_expr(writer, key_node, false, false)) {
+            if (-1 == append_ast_expr(writer, key_node, false)) {
                 return -1;
             }
 
@@ -343,7 +340,7 @@ append_ast_dict(_PyUnicodeWriter *writer, expr_ty e)
         }
 
         value_node = (expr_ty)asdl_seq_GET(e->v.Dict.values, i);
-        if (-1 == append_ast_expr(writer, value_node, false, false)) {
+        if (-1 == append_ast_expr(writer, value_node, false)) {
             return -1;
         }
     }
@@ -368,7 +365,7 @@ append_ast_set(_PyUnicodeWriter *writer, expr_ty e)
         }
 
         elem_node = (expr_ty)asdl_seq_GET(e->v.Set.elts, i);
-        if (-1 == append_ast_expr(writer, elem_node, false, false)) {
+        if (-1 == append_ast_expr(writer, elem_node, false)) {
             return -1;
         }
     }
@@ -392,7 +389,7 @@ append_ast_list(_PyUnicodeWriter *writer, expr_ty e)
             return -1;
         }
         elem_node = (expr_ty)asdl_seq_GET(e->v.List.elts, i);
-        if (-1 == append_ast_expr(writer, elem_node, false, false)) {
+        if (-1 == append_ast_expr(writer, elem_node, false)) {
             return -1;
         }
     }
@@ -419,7 +416,7 @@ append_ast_tuple(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
             return -1;
         }
         elem_node = (expr_ty)asdl_seq_GET(e->v.Tuple.elts, i);
-        if (-1 == append_ast_expr(writer, elem_node, false, false)) {
+        if (-1 == append_ast_expr(writer, elem_node, false)) {
             return -1;
         }
     }
@@ -440,7 +437,7 @@ append_ast_comprehension(_PyUnicodeWriter *writer, comprehension_ty gen)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, gen->target, true, false)) {
+    if (-1 == append_ast_expr(writer, gen->target, true)) {
         return -1;
     }
 
@@ -448,7 +445,7 @@ append_ast_comprehension(_PyUnicodeWriter *writer, comprehension_ty gen)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, gen->iter, false, false)) {
+    if (-1 == append_ast_expr(writer, gen->iter, false)) {
         return -1;
     }
 
@@ -460,7 +457,6 @@ append_ast_comprehension(_PyUnicodeWriter *writer, comprehension_ty gen)
 
         if (-1 == append_ast_expr(writer,
                                   (expr_ty)asdl_seq_GET(gen->ifs, i),
-                                  false,
                                   false)) {
             return -1;
         }
@@ -492,7 +488,7 @@ append_ast_genexp(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.GeneratorExp.elt, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.GeneratorExp.elt, false)) {
         return -1;
     }
 
@@ -510,7 +506,7 @@ append_ast_listcomp(_PyUnicodeWriter *writer, expr_ty e)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.ListComp.elt, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.ListComp.elt, false)) {
         return -1;
     }
 
@@ -528,7 +524,7 @@ append_ast_setcomp(_PyUnicodeWriter *writer, expr_ty e)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.SetComp.elt, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.SetComp.elt, false)) {
         return -1;
     }
 
@@ -546,7 +542,7 @@ append_ast_dictcomp(_PyUnicodeWriter *writer, expr_ty e)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.DictComp.key, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.DictComp.key, false)) {
         return -1;
     }
 
@@ -554,7 +550,7 @@ append_ast_dictcomp(_PyUnicodeWriter *writer, expr_ty e)
         return -1;
     }
 
-    if (-1 == append_ast_expr(writer, e->v.DictComp.value, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.DictComp.value, false)) {
         return -1;
     }
 
@@ -583,7 +579,7 @@ append_ast_compare(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     assert(comparator_count > 0);
     assert(comparator_count == asdl_seq_LEN(ops));
 
-    if (-1 == append_ast_expr(writer, e->v.Compare.left, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.Compare.left, false)) {
         return -1;
     }
 
@@ -631,7 +627,6 @@ append_ast_compare(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
 
         if (-1 == append_ast_expr(writer,
                                   (expr_ty)asdl_seq_GET(comparators, i),
-                                  false,
                                   false)) {
             return -1;
         }
@@ -658,7 +653,7 @@ append_ast_keyword(_PyUnicodeWriter *writer, keyword_ty kw)
         }
     }
 
-    return append_ast_expr(writer, kw->value, false, false);
+    return append_ast_expr(writer, kw->value, false);
 }
 
 static int
@@ -669,7 +664,7 @@ append_ast_call(_PyUnicodeWriter *writer, expr_ty e)
     expr_ty expr;
     keyword_ty kw;
 
-    if (-1 == append_ast_expr(writer, e->v.Call.func, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.Call.func, false)) {
         return -1;
     }
 
@@ -688,7 +683,7 @@ append_ast_call(_PyUnicodeWriter *writer, expr_ty e)
         }
 
         expr = (expr_ty)asdl_seq_GET(e->v.Call.args, i);
-        if (-1 == append_ast_expr(writer, expr, false, false)) {
+        if (-1 == append_ast_expr(writer, expr, false)) {
             return -1;
         }
     }
@@ -715,7 +710,7 @@ static int
 append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 {
     const char *period;
-    if (-1 == append_ast_expr(writer, e->v.Attribute.value, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.Attribute.value, false)) {
         return -1;
     }
 
@@ -740,7 +735,7 @@ static int
 append_ast_simple_slice(_PyUnicodeWriter *writer, slice_ty slice)
 {
     if (slice->v.Slice.lower) {
-        if (-1 == append_ast_expr(writer, slice->v.Slice.lower, false, false)) {
+        if (-1 == append_ast_expr(writer, slice->v.Slice.lower, false)) {
             return -1;
         }
     }
@@ -750,7 +745,7 @@ append_ast_simple_slice(_PyUnicodeWriter *writer, slice_ty slice)
     }
 
     if (slice->v.Slice.upper) {
-        if (-1 == append_ast_expr(writer, slice->v.Slice.upper, false, false)) {
+        if (-1 == append_ast_expr(writer, slice->v.Slice.upper, false)) {
             return -1;
         }
     }
@@ -759,7 +754,7 @@ append_ast_simple_slice(_PyUnicodeWriter *writer, slice_ty slice)
         if (-1 == append_charp(writer, ":")) {
             return -1;
         }
-        if (-1 == append_ast_expr(writer, slice->v.Slice.step, false, false)) {
+        if (-1 == append_ast_expr(writer, slice->v.Slice.step, false)) {
             return -1;
         }
     }
@@ -777,7 +772,6 @@ append_ast_ext_slice(_PyUnicodeWriter *writer, slice_ty slice)
         }
         if (-1 == append_ast_expr(writer,
                                   (expr_ty)asdl_seq_GET(slice->v.ExtSlice.dims, i),
-                                  false,
                                   false)) {
             return -1;
         }
@@ -794,7 +788,7 @@ append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice, bool omit_parens)
     case ExtSlice_kind:
         return append_ast_ext_slice(writer, slice);
     case Index_kind:
-        return append_ast_expr(writer, slice->v.Index.value, omit_parens, false);
+        return append_ast_expr(writer, slice->v.Index.value, omit_parens);
     default:
         PyErr_SetString(PyExc_SystemError,
                         "unexpected slice kind");
@@ -805,7 +799,7 @@ append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice, bool omit_parens)
 static int
 append_ast_subscript(_PyUnicodeWriter *writer, expr_ty e)
 {
-    if (-1 == append_ast_expr(writer, e->v.Subscript.value, false, false)) {
+    if (-1 == append_ast_expr(writer, e->v.Subscript.value, false)) {
         return -1;
     }
 
@@ -827,7 +821,7 @@ append_ast_starred(_PyUnicodeWriter *writer, expr_ty e)
         return -1;
     }
 
-    return append_ast_expr(writer, e->v.Starred.value, false, false);
+    return append_ast_expr(writer, e->v.Starred.value, false);
 }
 
 static int
@@ -842,7 +836,7 @@ append_ast_yield(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     }
 
     if (e->v.Yield.value) {
-        if (-1 == append_ast_expr(writer, e->v.Yield.value, false, false)) {
+        if (-1 == append_ast_expr(writer, e->v.Yield.value, false)) {
             return -1;
         }
     }
@@ -862,7 +856,7 @@ append_ast_yield_from(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     }
 
     if (e->v.YieldFrom.value) {
-        if (-1 == append_ast_expr(writer, e->v.YieldFrom.value, false, false)) {
+        if (-1 == append_ast_expr(writer, e->v.YieldFrom.value, false)) {
             return -1;
         }
     }
@@ -881,7 +875,7 @@ append_ast_await(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     }
 
     if (e->v.Await.value) {
-        if (-1 == append_ast_expr(writer, e->v.Await.value, false, false)) {
+        if (-1 == append_ast_expr(writer, e->v.Await.value, false)) {
             return -1;
         }
     }
@@ -889,19 +883,7 @@ append_ast_await(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
 }
 
 static int
-append_ast_str(_PyUnicodeWriter *writer, expr_ty e, bool omit_string_brackets)
-{
-    PyObject *s =  e->v.Str.s;
-    if (omit_string_brackets) {
-        return _PyUnicodeWriter_WriteStr(writer, s);
-    }
-
-    return append_repr(writer, s);
-}
-
-static int
-append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens,
-    bool omit_string_brackets)
+append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
 {
     switch (e->kind) {
     case BoolOp_kind:
@@ -941,7 +923,7 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens,
     case Num_kind:
         return append_repr(writer, e->v.Num.n);
     case Str_kind:
-        return append_ast_str(writer, e, omit_string_brackets);
+        return append_repr(writer, e->v.Str.s);
     case JoinedStr_kind:
         PyErr_SetString(PyExc_SystemError,
                         "f-string support in annotations not implemented yet");
@@ -978,13 +960,13 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens,
 }
 
 PyObject *
-_PyAST_ExprAsUnicode(expr_ty e, bool omit_parens, bool omit_string_brackets)
+_PyAST_ExprAsUnicode(expr_ty e, bool omit_parens)
 {
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = 256;
     writer.overallocate = 1;
-    if (-1 == append_ast_expr(&writer, e, omit_parens, omit_string_brackets)) {
+    if (-1 == append_ast_expr(&writer, e, omit_parens)) {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
