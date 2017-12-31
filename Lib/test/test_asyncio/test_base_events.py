@@ -1888,6 +1888,18 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         self.assertEqual(self.file.tell(), len(self.DATA))
         self.assertEqual(proto.data, self.DATA)
 
+    def test_sock_sendfile_fallback_offset_and_count(self):
+        sock, proto = self.prepare()
+
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                    1000, 2000))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, 2000)
+        self.assertEqual(self.file.tell(), 3000)
+        self.assertEqual(proto.data, self.DATA[1000:3000])
+
     def test_blocking_socket(self):
         self.loop.set_debug(True)
         sock = self.make_socket(blocking=True)
