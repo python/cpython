@@ -17,7 +17,7 @@
 #endif /* MS_WINDOWS */
 
 
-PyThreadState* _PyOS_ReadlineTState;
+PyThreadState* _PyOS_ReadlineTState = NULL;
 
 #include "pythread.h"
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
@@ -284,7 +284,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
    Note: Python expects in return a buffer allocated with PyMem_Malloc. */
 
-char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
+char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
 
 /* Interface used by tokenizer.c and bltinmodule.c */
