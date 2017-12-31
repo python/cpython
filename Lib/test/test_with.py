@@ -602,6 +602,14 @@ class NonLocalFlowControlTestCase(unittest.TestCase):
         else:
             self.fail("Didn't raise RuntimeError")
 
+    def testWithRaiseInExpr(self):
+        l = []
+        try:
+            m = mock_contextmanager_generator()
+            with m as l[0]:
+                pass
+        except IndexError:
+            self.assertTrue(m.exit_called)
 
 class AssignmentTargetTestCase(unittest.TestCase):
 

@@ -926,10 +926,15 @@ main_loop:
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
+            if (_Py_OPCODE(*next_instr) == SETUP_WITH ||
+                _Py_OPCODE(*next_instr) == SETUP_FINALLY ||
                 _Py_OPCODE(*next_instr) == YIELD_FROM) {
-                /* Two cases where we skip running signal handlers and other
+                /* Three cases where we skip running signal handlers and other
                    pending calls:
+                   - If we're about the enter the body of a with statement
+                     having just called __enter__/__exit__, then make sure
+                     that the exception handler is pushed. Otherwise, we might
+                     not call __exit__ if an interrput occurs and just this moment.
                    - If we're about to enter the try: of a try/finally (not
                      *very* useful, but might help in some cases and it's
                      traditional)
@@ -2862,6 +2867,12 @@ main_loop:
 
             PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
+            DISPATCH();
+        }
+
+        TARGET(SETUP_WITH) {
+            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+                               STACK_LEVEL()-1);
             DISPATCH();
         }
 

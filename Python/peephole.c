@@ -188,6 +188,7 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case END_ITER:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
+            case SETUP_WITH:
             case JUMP_FINALLY:
             case LOAD_ADDR:
                 j = GETJUMPTGT(code, i);
@@ -379,6 +380,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case JUMP_ABSOLUTE:
             case END_ITER:
             case SETUP_EXCEPT:
+            case SETUP_WITH:
             case SETUP_FINALLY:
             case LOAD_ADDR:
 //             case SETUP_WITH:
@@ -465,6 +467,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case JUMP_FORWARD:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
+            case SETUP_WITH:
             case JUMP_FINALLY:
             case LOAD_ADDR:
                 j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;

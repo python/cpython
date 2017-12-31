@@ -220,6 +220,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             switch (op) {
                 case SETUP_EXCEPT:
                 case SETUP_FINALLY:
+                case SETUP_WITH:
                 {
                     unsigned int oparg = get_arg((const _Py_CODEUNIT *)code,
                                                 addr / sizeof(_Py_CODEUNIT));

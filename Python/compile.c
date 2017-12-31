@@ -1025,6 +1025,10 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case SETUP_FINALLY:
             return 6; /* can push 3 values for the new exception
                         + 3 others for the previous exception state */
+        case SETUP_WITH:
+            return 5; /* can push 3 values for the new exception
+                        + 3 others for the previous exception state
+                        -1 for the context manager. */
 
         case ENTER_WITH:
             return 1;
@@ -4462,6 +4466,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, GET_AWAITABLE);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
+    ADDOP_JREL(c, SETUP_WITH, final2);
 
     if (item->optional_vars) {
         VISIT(c, expr, item->optional_vars);
@@ -4471,7 +4476,6 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         ADDOP(c, POP_TOP);
     }
 
-    ADDOP_JREL(c, SETUP_FINALLY, final2);
     compiler_use_next_block(c, block);
     if (!compiler_push_async_with(c, block))
         return 0;
@@ -4566,6 +4570,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
     ADDOP(c, ENTER_WITH);
+    ADDOP_JREL(c, SETUP_WITH, final2);
 
     if (item->optional_vars) {
         VISIT(c, expr, item->optional_vars);
@@ -4575,7 +4580,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         ADDOP(c, POP_TOP);
     }
 
-    ADDOP_JREL(c, SETUP_FINALLY, final2);
     compiler_use_next_block(c, block);
     if (!compiler_push_with(c, block))
         return 0;
@@ -5191,7 +5195,8 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
                 target_depth = depth-2;
             }
             else if (instr->i_opcode == SETUP_FINALLY ||
-                     instr->i_opcode == SETUP_EXCEPT) {
+                     instr->i_opcode == SETUP_EXCEPT ||
+                     instr->i_opcode == SETUP_WITH) {
                 target_depth = depth+3;
                 if (target_depth > maxdepth)
                     maxdepth = target_depth;
