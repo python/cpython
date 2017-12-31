@@ -159,5 +159,44 @@ class FrameLocalsTest(unittest.TestCase):
         self.assertEqual(inner.f_locals, {})
 
 
+class ReprTest(unittest.TestCase):
+    """
+    Tests for repr(frame).
+    """
+
+    def test_repr(self):
+        def outer():
+            x = 5
+            y = 6
+            def inner():
+                z = x + 2
+                1/0
+                t = 9
+            return inner()
+
+        offset = outer.__code__.co_firstlineno
+        try:
+            outer()
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+            frames = []
+            while tb:
+                frames.append(tb.tb_frame)
+                tb = tb.tb_next
+        else:
+            self.fail("should have raised")
+
+        f_this, f_outer, f_inner = frames
+        self.assertRegex(repr(f_this),
+                         r"^<frame at 0x[0-9a-f]+, file %r, line %d, code test_repr>$"
+                         % (__file__, offset + 22))
+        self.assertRegex(repr(f_outer),
+                         r"^<frame at 0x[0-9a-f]+, file %r, line %d, code outer>$"
+                         % (__file__, offset + 7))
+        self.assertRegex(repr(f_inner),
+                         r"^<frame at 0x[0-9a-f]+, file %r, line %d, code inner>$"
+                         % (__file__, offset + 5))
+
+
 if __name__ == "__main__":
     unittest.main()
