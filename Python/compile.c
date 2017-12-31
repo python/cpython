@@ -1521,16 +1521,28 @@ fblock_unwind_finally_try(struct compiler *c, struct fblockinfo *info, int prese
 }
 
 static int
+compiler_call_exit_with_nones(struct compiler *c) {
+    PyObject *three_nones = PyTuple_Pack(3, Py_None, Py_None, Py_None);
+    if (three_nones == NULL) {
+        return 0;
+    }
+    ADDOP_O(c, LOAD_CONST, three_nones, consts);
+    ADDOP_I(c, CALL_FUNCTION_EX, 0);
+    Py_DECREF(three_nones);
+    return 1;
+}
+
+
+static int
 fblock_unwind_async_with(struct compiler *c, struct fblockinfo *info, int preserve_tos)
 {
     ADDOP(c, POP_BLOCK);
     if (preserve_tos)
         ADDOP(c, ROT_TWO);
     /* await __exit__(None, None, None) */
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
-    ADDOP(c, DUP_TOP);
-    ADDOP(c, DUP_TOP);
-    ADDOP_I(c, CALL_FUNCTION, 3);
+    if (!compiler_call_exit_with_nones(c)) {
+        return 0;
+    }
     ADDOP(c, GET_AWAITABLE);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
@@ -1569,10 +1581,9 @@ fblock_unwind_with(struct compiler *c, struct fblockinfo *info, int preserve_tos
     if (preserve_tos)
         ADDOP(c, ROT_TWO);
     /* call __exit__(None, None, None) */
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
-    ADDOP(c, DUP_TOP);
-    ADDOP(c, DUP_TOP);
-    ADDOP_I(c, CALL_FUNCTION, 3);
+    if (!compiler_call_exit_with_nones(c)) {
+        return 0;
+    }
     ADDOP(c, POP_TOP);
     return 1;
 }
@@ -2658,14 +2669,16 @@ compiler_continue(struct compiler *c)
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
-        SETUP_EXCEPT           F2
+        SETUP_EXCEPT           F1
         <code for body>
         POP_BLOCK
-    F1:
-        <code for finalbody>
-        JUMP_ABSOLUTE           EXIT
+        LOAD_ADDR              EXIT
+        JUMP_FORWARD           F2
+    F1: LOAD_ADDR              R
     F2:
         <code for finalbody>
+        END_FINALLY
+    R:
         RERAISE
     EXIT:
 
@@ -2681,6 +2694,10 @@ compiler_continue(struct compiler *c)
     Pops en entry from the block stack, and pops the value
     stack until its level is the same as indicated on the
     block stack.  (The label is ignored.)
+   LOAD_ADDR:
+    Pushes the given address (as an integer) to the value stack.
+   END_FINALLY:
+    Jumps to the address currently on the top of the value stack.
    RERAISE:
     Pops 3 entries from the *value* stack and re-raises the exception
     they specify.
@@ -2725,13 +2742,12 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, final1);
 
     ADDOP_JREL(c, LOAD_ADDR, exit);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, finalbody);
+    ADDOP_JREL(c, JUMP_FORWARD, finalbody);
 
     /* Jump to `finally` block for exceptional outcome */
     compiler_use_next_block(c, final2);
     c->u->u_lineno_set = 0;
     ADDOP_JREL(c, LOAD_ADDR, reraise);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, finalbody);
 
     /* Actual code for `finally` block */
     if (!compiler_push_finally_end(c, finalbody))
@@ -2858,8 +2874,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
             ADDOP_JREL(c, JUMP_FORWARD, end);
 
-            /* finally: */
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            /* cleanup: */
             compiler_use_next_block(c, cleanup_end);
             if (!compiler_push_finally_end(c, cleanup_end))
                 return 0;
@@ -4391,18 +4406,6 @@ expr_constant(expr_ty e)
 }
 
 static int
-compiler_call_exit_with_nones(struct compiler *c) {
-    PyObject *three_nones = PyTuple_Pack(3, Py_None, Py_None, Py_None);
-    if (three_nones == NULL) {
-        return 0;
-    }
-    ADDOP_O(c, LOAD_CONST, three_nones, consts);
-    ADDOP_I(c, CALL_FUNCTION_EX, 0);
-    Py_DECREF(three_nones);
-    return 1;
-}
-
-static int
 compiler_with_except_finish(struct compiler *c) {
     basicblock *exit;
     exit = compiler_new_block(c);
@@ -4529,25 +4532,27 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 /*
    Implements the with statement from PEP 343.
 
-   The semantics outlined in that PEP are as follows:
-
    with EXPR as VAR:
        BLOCK
 
-   It is implemented roughly as:
+   is implemented as:
 
-   context = EXPR
-   exit = context.__exit__  # not calling it
-   value = context.__enter__()
-   try:
-       VAR = value  # if VAR present in the syntax
-       BLOCK
-   finally:
-       if an exception was raised:
-           exc = copy of (exception, instance, traceback)
-       else:
-           exc = (None, None, None)
-       exit(*exc)
+        <code for EXPR>
+        ENTER_WITH
+        SETUP_WITH  E
+        <code to store to VAR> or POP_TOP
+        <code for BLOCK>
+        LOAD_CONST (None, None, None)
+        CALL_FUNCTION_EX 0
+        JUMP_FORWARD  EXIT
+    E:  WITH_EXCEPT_START (calls EXPR.__exit__)
+        POP_JUMP_IF_TRUE T:
+        RERAISE
+    T:  POP_TOP * 3 (remove exception from stack)
+        POP_EXCEPT
+        POP_TOP
+    EXIT:
+
  */
 
 static int
@@ -4604,7 +4609,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
     ADDOP(c, POP_TOP);
     compiler_pop_fblock(c, FINALLY_END, final1);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
+    ADDOP_JREL(c, JUMP_FORWARD, exit);
 
     /* `finally` block for exceptional outcome */
     compiler_use_next_block(c, final2);
