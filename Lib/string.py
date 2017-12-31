@@ -255,14 +255,11 @@ class Formatter:
         else:
             return kwargs[key]
 
-
     def check_unused_args(self, used_args, args, kwargs):
         pass
 
-
     def format_field(self, value, format_spec):
         return format(value, format_spec)
-
 
     def convert_field(self, value, conversion):
         # do any conversion on the resulting object
@@ -276,7 +273,6 @@ class Formatter:
             return ascii(value)
         raise ValueError("Unknown conversion specifier {0!s}".format(conversion))
 
-
     # returns an iterable that contains tuples of the form:
     # (literal_text, field_name, format_spec, conversion)
     # literal_text can be zero length
@@ -286,7 +282,6 @@ class Formatter:
     #  with format_spec and conversion and then used
     def parse(self, format_string):
         return _string.formatter_parser(format_string)
-
 
     # given a field_name, find the object it references.
     #  field_name:   the field being looked up, e.g. "0.name"
