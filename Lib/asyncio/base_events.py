@@ -698,6 +698,14 @@ class BaseEventLoop(events.AbstractEventLoop):
             if count <= 0:
                 raise ValueError(
                     "count must be a positive integer (got {!r})".format(count))
+        if not isinstance(offset, int):
+            raise TypeError(
+                "offset must be a non-negative integer (got {!r})".format(
+                    offset))
+        if offset < 0:
+            raise ValueError(
+                "offset must be a non-negative integer (got {!r})".format(
+                    offset))
 
     async def create_connection(
             self, protocol_factory, host=None, port=None,

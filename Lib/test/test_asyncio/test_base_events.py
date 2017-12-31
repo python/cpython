@@ -1888,6 +1888,36 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         self.assertEqual(self.file.tell(), len(self.DATA))
         self.assertEqual(proto.data, self.DATA)
 
+    def test_blocking_socket(self):
+        self.loop.set_debug(True)
+        sock = self.make_socket(blocking=True)
+        with self.assertRaisesRegex(ValueError, "must be non-blocking"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
+
+    def test_nonbinary_file(self):
+        sock = self.make_socket()
+        with open(support.TESTFN, 'r') as f:
+            with self.assertRaisesRegex(ValueError, "binary mode"):
+                self.run_loop(self.loop.sock_sendfile(sock, f))
+
+    def test_nonstream_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        with self.assertRaisesRegex(ValueError, "only SOCK_STREAM type"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
+
+    def test_notint_offset(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(TypeError,
+                                    "offset must be a non-negative integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 'offset'))
+
+    def test_negative_count(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(ValueError,
+                                    "offset must be a non-negative integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, -1))
+
 
 if __name__ == '__main__':
     unittest.main()
