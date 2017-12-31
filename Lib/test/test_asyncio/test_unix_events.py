@@ -498,6 +498,56 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.assertEqual(self.file.tell(), 3000)
         self.assertEqual(ret, 2000)
 
+    def test_sendfile_not_available(self):
+        sock, proto = self.prepare()
+        with mock.patch('asyncio.unix_events.os', spec=[]):
+            with self.assertRaisesRegex(RuntimeError,
+                                        "os[.]sendfile[(][)] is not available"):
+                self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
+                                                              0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sendfile_not_a_file(self):
+        sock, proto = self.prepare()
+        f = object()
+        with self.assertRaisesRegex(RuntimeError,
+                                    "not a regular file"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                          0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sendfile_iobuffer(self):
+        sock, proto = self.prepare()
+        f = io.BytesIO()
+        with self.assertRaisesRegex(RuntimeError,
+                                    "not a regular file"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                          0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sendfile_not_regular_file(self):
+        sock, proto = self.prepare()
+        f = mock.Mock()
+        f.fileno.return_value = -1
+        with self.assertRaisesRegex(RuntimeError,
+                                    "not a regular file"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                          0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sendfile_zero_size(self):
+        sock, proto = self.prepare()
+        fname = support.TESTFN + '.suffix'
+        with open(fname, 'wb') as f:
+            pass  # make zero sized file
+        f = open(fname, 'rb')
+        self.addCleanup(f.close)
+        self.addCleanup(support.unlink, fname)
+        ret = self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                            0, None))
+        self.assertEqual(ret, 0)
+        self.assertEqual(self.file.tell(), 0)
+
 
 class UnixReadPipeTransportTests(test_utils.TestCase):
 

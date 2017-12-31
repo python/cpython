@@ -313,7 +313,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             os.sendfile
         except AttributeError as exc:
-            raise RuntimeError("os.sendfile() in not available")
+            raise RuntimeError("os.sendfile() is not available")
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
