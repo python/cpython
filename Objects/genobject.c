@@ -680,8 +680,20 @@ _PyGen_FetchStopIterationValue(PyObject **pvalue)
 static PyObject *
 gen_repr(PyGenObject *gen)
 {
-    return PyUnicode_FromFormat("<generator object %S at %p>",
-                                gen->gi_qualname, gen);
+    const char *msg;
+    if (gen->gi_running) {
+        msg = "running";
+    } else {
+        msg = "closed";
+    }
+
+    return PyUnicode_FromFormat(
+        "<generator at %p, %s, file %R, line %d, code %S>",
+        gen,
+        msg,
+        gen->gi_frame->f_code->co_filename,
+        gen->gi_frame->f_lineno,
+        gen->gi_name);
 }
 
 static PyObject *
@@ -950,8 +962,20 @@ _PyCoro_GetAwaitableIter(PyObject *o)
 static PyObject *
 coro_repr(PyCoroObject *coro)
 {
-    return PyUnicode_FromFormat("<coroutine object %S at %p>",
-                                coro->cr_qualname, coro);
+    const char *msg;
+    if (coro->cr_running) {
+        msg = "running";
+    } else {
+        msg = "closed";
+    }
+
+    return PyUnicode_FromFormat(
+        "<coroutine at %p, %s, file %R, line %d, code %S>",
+        coro,
+        msg,
+        coro->cr_frame->f_code->co_filename,
+        coro->cr_frame->f_lineno,
+        coro->cr_name);
 }
 
 static PyObject *

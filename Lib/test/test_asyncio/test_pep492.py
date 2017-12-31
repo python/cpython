@@ -226,10 +226,10 @@ class CoroutineTests(BaseTest):
                 t.cancel()
 
         self.loop.set_debug(True)
-        with self.assertRaisesRegex(
-            RuntimeError,
-            r'Cannot await.*test_double_await.*\bafunc\b.*while.*\bsleep\b'):
-
+        afunc_first_line = afunc.__code__.co_firstlineno
+        error = (r"Cannot await .*{}.*{}.*\b afunc\b.* "
+                 r"while.*\bsleep\b".format(repr(__file__), afunc_first_line))
+        with self.assertRaisesRegex(RuntimeError, error):
             self.loop.run_until_complete(runner())
 
 

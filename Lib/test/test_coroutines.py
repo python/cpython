@@ -519,7 +519,7 @@ class CoroutineTest(unittest.TestCase):
             raise StopIteration
 
         with silence_coro_gc():
-            self.assertRegex(repr(foo()), '^<coroutine object.* at 0x.*>$')
+            self.assertRegex(repr(foo()), '^<coroutine at 0x.*>$')
 
     def test_func_4(self):
         async def foo():
@@ -890,7 +890,11 @@ class CoroutineTest(unittest.TestCase):
 
         async def f(): pass
         c = f()
-        self.assertIn('coroutine object', repr(c))
+        self.assertEqual("<coroutine at %s, %s, file %s, line %s, code f>" % (
+                          hex(id(c)),
+                          "closed",
+                          repr(__file__),
+                          f.__code__.co_firstlineno), repr(c))
         c.close()
 
     def test_await_1(self):

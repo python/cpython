@@ -1644,7 +1644,11 @@ class CoroutineTests(unittest.TestCase):
             return gen()
 
         wrapper = coro()
-        self.assertIn('GeneratorWrapper', repr(wrapper))
+        wrapper_repr = repr(wrapper)
+        self.assertIn('coroutine-like-object', wrapper_repr)
+        self.assertIn(hex(id(wrapper)), wrapper_repr)
+        self.assertIn(gen.__code__.co_filename, wrapper_repr)
+        self.assertIn(str(gen.__code__.co_firstlineno), wrapper_repr)
         self.assertEqual(repr(wrapper), str(wrapper))
         self.assertTrue(set(dir(wrapper)).issuperset({
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',

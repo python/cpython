@@ -233,6 +233,15 @@ class _GeneratorWrapper:
             return self.__wrapped
         return self
     __await__ = __iter__
+    def __repr__(self):
+        return ('<coroutine-like-object at %s, %s, file %s, line %s, '
+                'code %s>') % (
+            hex(id(self)),
+            'running' if self.gi_running else 'closed',
+            self.gi_frame.f_code.co_filename,
+            self.gi_frame.f_code.co_firstlineno,
+            self.gi_frame.f_code.co_name)
+
 
 def coroutine(func):
     """Convert regular generator function to a coroutine."""

@@ -156,6 +156,17 @@ class GeneratorTest(unittest.TestCase):
             with self.assertRaises((TypeError, pickle.PicklingError)):
                 pickle.dumps(g, proto)
 
+    def test_repr(self):
+        def f():
+            yield 1
+        g = f()
+        gen_repr = repr(g)
+        self.assertEqual("<generator at %s, %s, file %s, line %s, code f>" % (
+            hex(id(g)),
+            "closed",
+            repr(__file__),
+            f.__code__.co_firstlineno), gen_repr)
+
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
@@ -1225,7 +1236,7 @@ StopIteration
 True
 
 
-Test the __name__ attribute and the repr()
+Test the __name__ attribute
 
 >>> def f():
 ...    yield 5
@@ -1233,8 +1244,6 @@ Test the __name__ attribute and the repr()
 >>> g = f()
 >>> g.__name__
 'f'
->>> repr(g)  # doctest: +ELLIPSIS
-'<generator object f at ...>'
 
 Lambdas shouldn't have their usual return behavior.
 
