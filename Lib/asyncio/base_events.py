@@ -673,6 +673,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if offset:
             file.seek(offset)
         blocksize = min(count, 16384) if count else 16384
+        buf = bytearray(blocksize)
         total_sent = 0
         try:
             while True:
@@ -680,11 +681,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                     blocksize = min(count - total_sent, blocksize)
                     if blocksize <= 0:
                         break
-                data = memoryview(file.read(blocksize))
-                if not data:
+                view = memoryview(buf)[:blocksize]
+                read = file.readinto(view)
+                if not read:
                     break  # EOF
-                await self.sock_sendall(sock, data)
-                total_sent += len(data)
+                await self.sock_sendall(sock, view)
+                total_sent += read
             return total_sent
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
