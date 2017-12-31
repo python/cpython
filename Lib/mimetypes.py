@@ -496,6 +496,7 @@ def _default_mime_types():
         '.shar'   : 'application/x-shar',
         '.snd'    : 'audio/basic',
         '.so'     : 'application/octet-stream',
+        '.sql'    : 'application/sql',
         '.src'    : 'application/x-wais-source',
         '.sv4cpio': 'application/x-sv4cpio',
         '.sv4crc' : 'application/x-sv4crc',
