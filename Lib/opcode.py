@@ -85,7 +85,6 @@ def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
 def_op('WITH_EXCEPT_START', 42)
-def_op('WITH_EXCEPT_FINISH', 43)
 
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)

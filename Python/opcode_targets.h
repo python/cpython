@@ -42,7 +42,7 @@ static void *opcode_targets[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&TARGET_WITH_EXCEPT_START,
-    &&TARGET_WITH_EXCEPT_FINISH,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,

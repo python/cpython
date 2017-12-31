@@ -938,8 +938,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
         case WITH_EXCEPT_START:
             return 2;
-        case WITH_EXCEPT_FINISH:
-            return -2;  /* XXX Sometimes more */
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -4389,7 +4387,6 @@ expr_constant(expr_ty e)
     return -1;
 }
 
-
 static int
 compiler_call_exit_with_nones(struct compiler *c) {
     PyObject *three_nones = PyTuple_Pack(3, Py_None, Py_None, Py_None);
@@ -4399,6 +4396,23 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_O(c, LOAD_CONST, three_nones, consts);
     ADDOP_I(c, CALL_FUNCTION_EX, 0);
     Py_DECREF(three_nones);
+    return 1;
+}
+
+static int
+compiler_with_except_finish(struct compiler *c) {
+    basicblock *exit;
+    exit = compiler_new_block(c);
+    if (exit == NULL)
+        return 0;
+    ADDOP_JABS(c, POP_JUMP_IF_TRUE, exit);
+    ADDOP(c, RERAISE);
+    compiler_use_next_block(c, exit);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_EXCEPT);
+    ADDOP(c, POP_TOP);
     return 1;
 }
 
@@ -4500,7 +4514,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, GET_AWAITABLE);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
-    ADDOP(c, WITH_EXCEPT_FINISH);
+    compiler_with_except_finish(c);
 
     compiler_pop_fblock(c, FINALLY_END, final2);
 
@@ -4595,7 +4609,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
 
     ADDOP(c, WITH_EXCEPT_START);
-    ADDOP(c, WITH_EXCEPT_FINISH);
+    compiler_with_except_finish(c);
     compiler_pop_fblock(c, FINALLY_END, final2);
 
     compiler_use_next_block(c, exit);

@@ -2944,53 +2944,7 @@ main_loop:
             if (res == NULL)
                 goto error;
 
-            Py_INCREF(exc); /* Duplicating the exception on the stack (XXX: required?) */
-            PUSH(exc);
             PUSH(res);
-            PREDICT(WITH_EXCEPT_FINISH);
-            DISPATCH();
-        }
-
-        PREDICTED(WITH_EXCEPT_FINISH);
-        TARGET(WITH_EXCEPT_FINISH) {
-            PyObject *res = POP();
-            PyObject *exc = POP();
-            PyObject *val, *tb;
-            int err;
-
-            if (exc != Py_None)
-                err = PyObject_IsTrue(res);
-            else
-                err = 0;
-
-            Py_DECREF(res);
-            Py_DECREF(exc);
-
-            if (err < 0)
-                goto error;
-            if (exc != Py_None) {
-                if (err > 0) {
-                    /* There was an exception and a True return.
-                     * We must manually unwind the EXCEPT_HANDLER block
-                     * which was created when the exception was caught,
-                     * otherwise the stack will be in an inconsisten state.
-                     */
-                    PyTryBlock *b = PyFrame_BlockPop(f);
-                    assert(b->b_type == EXCEPT_HANDLER);
-                    UNWIND_EXCEPT_HANDLER(b);
-                    /* The bound __exit__ method is still on top */
-                    Py_DECREF(POP());
-                    DISPATCH();
-                }
-                else {
-                    assert(TOP() == exc);
-                    STACKADJ(-1);
-                    val = POP();
-                    tb = POP();
-                    PyErr_Restore(exc, val, tb);
-                    goto error;
-                }
-            }
             DISPATCH();
         }
 
