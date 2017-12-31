@@ -767,12 +767,6 @@ file_seek(PyFileObject *f, PyObject *args)
 
     if (f->f_fp == NULL)
         return err_closed();
-    if (f->unlocked_count > 0) {
-        PyErr_SetString(PyExc_IOError,
-            "seek() called during concurrent "
-            "operation on the same file object");
-        return NULL;
-    }
     drop_readahead(f);
     whence = 0;
     if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &whence))
@@ -2259,7 +2253,6 @@ readahead(PyFileObject *f, Py_ssize_t bufsize)
 {
     Py_ssize_t chunksize;
 
-    assert(f->unlocked_count == 0);
     if (f->f_buf != NULL) {
         if( (f->f_bufend - f->f_bufptr) >= 1)
             return 0;
@@ -2301,12 +2294,6 @@ readahead_get_line_skip(PyFileObject *f, Py_ssize_t skip, Py_ssize_t bufsize)
     char *buf;
     Py_ssize_t len;
 
-    if (f->unlocked_count > 0) {
-        PyErr_SetString(PyExc_IOError,
-            "next() called during concurrent "
-            "operation on the same file object");
-        return NULL;
-    }
     if (f->f_buf == NULL)
         if (readahead(f, bufsize) < 0)
             return NULL;
