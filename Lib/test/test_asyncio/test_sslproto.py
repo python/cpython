@@ -1,5 +1,6 @@
 """Tests for asyncio/sslproto.py."""
 
+import os
 import logging
 import unittest
 from unittest import mock
@@ -296,7 +297,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
-class SelectorStartTLS(BaseStartTLS, unittest.TestCase):
+class SelectorStartTLSTests(BaseStartTLS, unittest.TestCase):
 
     def new_loop(self):
         return asyncio.SelectorEventLoop()
@@ -304,7 +305,8 @@ class SelectorStartTLS(BaseStartTLS, unittest.TestCase):
 
 @unittest.skipIf(ssl is None, 'No ssl module')
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')
-class ProactorStartTLS(BaseStartTLS, unittest.TestCase):
+@unittest.skipIf(os.environ.get('APPVEYOR'), 'XXX: issue 32458')
+class ProactorStartTLSTests(BaseStartTLS, unittest.TestCase):
 
     def new_loop(self):
         return asyncio.ProactorEventLoop()
