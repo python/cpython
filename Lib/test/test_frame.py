@@ -190,13 +190,13 @@ class ReprTest(unittest.TestCase):
         f_this, f_outer, f_inner = frames
         file_repr = re.escape(repr(__file__))
         self.assertRegex(repr(f_this),
-                         r"^<frame at 0x[0-9a-f]+, file %s, line %d, code test_repr>$"
+                         r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code test_repr>$"
                          % (file_repr, offset + 23))
         self.assertRegex(repr(f_outer),
-                         r"^<frame at 0x[0-9a-f]+, file %s, line %d, code outer>$"
+                         r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code outer>$"
                          % (file_repr, offset + 7))
         self.assertRegex(repr(f_inner),
-                         r"^<frame at 0x[0-9a-f]+, file %s, line %d, code inner>$"
+                         r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code inner>$"
                          % (file_repr, offset + 5))
 
 
