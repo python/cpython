@@ -425,10 +425,11 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     class MyProto(asyncio.Protocol):
 
-        def __init__(self):
+        def __init__(self, loop):
             self.started = False
             self.closed = False
             self.data = bytearray()
+            self.fut = loop.create_future()
 
         def connection_made(self, transport):
             self.started = True
@@ -438,6 +439,10 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
         def connection_lost(self, exc):
             self.closed = True
+            self.fut.set_result(None)
+
+        async def wait_closed(self):
+            await self.fut
 
     @classmethod
     def setUpClass(cls):
@@ -468,7 +473,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     def prepare(self):
         sock = self.make_socket()
-        proto = self.MyProto()
+        proto = self.MyProto(self.loop)
         port = support.find_unused_port()
         server = self.run_loop(self.loop.create_server(
             lambda: proto, support.HOST, port))
@@ -485,6 +490,8 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_success(self):
         sock, proto = self.prepare()
         ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        sock.close()
+        self.run_loop(proto.wait_closed())
 
         self.assertEqual(ret, len(self.DATA))
         self.assertEqual(proto.data, self.DATA)
@@ -494,6 +501,8 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
         ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                     1000, 2000))
+        sock.close()
+        self.run_loop(proto.wait_closed())
 
         self.assertEqual(proto.data, self.DATA[1000:3000])
         self.assertEqual(self.file.tell(), 3000)
@@ -546,6 +555,9 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.addCleanup(support.unlink, fname)
         ret = self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                             0, None))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
         self.assertEqual(ret, 0)
         self.assertEqual(self.file.tell(), 0)
 
