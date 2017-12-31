@@ -1254,6 +1254,17 @@ location listed above.
                 push('    ' + makename(base))
             push('')
 
+        # List the built-in subclasses, if any:
+        subclasses = [
+            cls.__name__ for cls in object.__subclasses__()
+            if cls.__module__ == 'builtins'
+        ]
+        if subclasses:
+            push("Built-in subclasses:")
+            for subclassname in sorted(subclasses):
+                push('    ' + subclassname)
+            push('')
+
         # Cute little class to pump out a horizontal rule between sections.
         class HorizontalRule:
             def __init__(self):
