@@ -1,3 +1,4 @@
+import re
 import types
 import unittest
 import weakref
@@ -187,15 +188,16 @@ class ReprTest(unittest.TestCase):
             self.fail("should have raised")
 
         f_this, f_outer, f_inner = frames
+        file_repr = re.escape(repr(__file__))
         self.assertRegex(repr(f_this),
-                         r"^<frame at 0x[0-9a-f]+, file %r, line %d, code test_repr>$"
-                         % (__file__, offset + 22))
+                         r"^<frame at 0x[0-9a-f]+, file %s, line %d, code test_repr>$"
+                         % (file_repr, offset + 23))
         self.assertRegex(repr(f_outer),
-                         r"^<frame at 0x[0-9a-f]+, file %r, line %d, code outer>$"
-                         % (__file__, offset + 7))
+                         r"^<frame at 0x[0-9a-f]+, file %s, line %d, code outer>$"
+                         % (file_repr, offset + 7))
         self.assertRegex(repr(f_inner),
-                         r"^<frame at 0x[0-9a-f]+, file %r, line %d, code inner>$"
-                         % (__file__, offset + 5))
+                         r"^<frame at 0x[0-9a-f]+, file %s, line %d, code inner>$"
+                         % (file_repr, offset + 5))
 
 
 if __name__ == "__main__":
