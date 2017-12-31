@@ -1906,13 +1906,25 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         with self.assertRaisesRegex(ValueError, "only SOCK_STREAM type"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
+    def test_notint_count(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(TypeError,
+                                    "count must be a positive integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 0, 'count'))
+
+    def test_negative_count(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(ValueError,
+                                    "count must be a positive integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 0, -1))
+
     def test_notint_offset(self):
         sock = self.make_socket()
         with self.assertRaisesRegex(TypeError,
                                     "offset must be a non-negative integer"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file, 'offset'))
 
-    def test_negative_count(self):
+    def test_negative_offset(self):
         sock = self.make_socket()
         with self.assertRaisesRegex(ValueError,
                                     "offset must be a non-negative integer"):
