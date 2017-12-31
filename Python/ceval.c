@@ -927,7 +927,7 @@ main_loop:
 
         if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
             if (_Py_OPCODE(*next_instr) == SETUP_WITH ||
-                _Py_OPCODE(*next_instr) == SETUP_FINALLY ||
+                _Py_OPCODE(*next_instr) == SETUP_EXCEPT ||
                 _Py_OPCODE(*next_instr) == YIELD_FROM) {
                 /* Three cases where we skip running signal handlers and other
                    pending calls:
@@ -935,7 +935,7 @@ main_loop:
                      having just called __enter__/__exit__, then make sure
                      that the exception handler is pushed. Otherwise, we might
                      not call __exit__ if an interrput occurs and just this moment.
-                   - If we're about to enter the try: of a try/finally (not
+                   - If we're about to enter the try: of a try statement (not
                      *very* useful, but might help in some cases and it's
                      traditional)
                    - If we're resuming a chain of nested 'yield from' or
@@ -1877,7 +1877,7 @@ main_loop:
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
             PyTryBlock *b = PyFrame_BlockPop(f);
-            if (b->b_type != EXCEPT_HANDLER) {
+            if (b->b_handler >= 0) {
                 PyErr_SetString(PyExc_SystemError,
                                 "popped block is not an except handler");
                 goto error;
@@ -2858,20 +2858,14 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(SETUP_EXCEPT)
-        TARGET(SETUP_FINALLY) {
-            /* NOTE: If you add any new block-setup opcodes that
-               are not try/except/finally handlers, you may need
-               to update the PyGen_NeedsFinalizing() function.
-               */
-
-            PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
+        TARGET(SETUP_EXCEPT) {
+            PyFrame_BlockSetup(f, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
         }
 
         TARGET(SETUP_WITH) {
-            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+            PyFrame_BlockSetup(f, INSTR_OFFSET() + oparg,
                                STACK_LEVEL()-1);
             DISPATCH();
         }
@@ -3321,52 +3315,50 @@ exception_unwind:
             /* Pop the current block. */
             PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
 
-            if (b->b_type == EXCEPT_HANDLER) {
+            if (b->b_handler < 0) {
                 UNWIND_EXCEPT_HANDLER(b);
                 continue;
             }
             UNWIND_BLOCK(b);
-            if ((b->b_type == SETUP_EXCEPT || b->b_type == SETUP_FINALLY)) {
-                PyObject *exc, *val, *tb;
-                int handler = b->b_handler;
-                _PyErr_StackItem *exc_info = tstate->exc_info;
-                /* Beware, this invalidates all b->b_* fields */
-                PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL());
-                PUSH(exc_info->exc_traceback);
-                PUSH(exc_info->exc_value);
-                if (exc_info->exc_type != NULL) {
-                    PUSH(exc_info->exc_type);
-                }
-                else {
-                    Py_INCREF(Py_None);
-                    PUSH(Py_None);
-                }
-                PyErr_Fetch(&exc, &val, &tb);
-                /* Make the raw exception data
-                   available to the handler,
-                   so a program can emulate the
-                   Python main loop. */
-                PyErr_NormalizeException(
-                    &exc, &val, &tb);
-                if (tb != NULL)
-                    PyException_SetTraceback(val, tb);
-                else
-                    PyException_SetTraceback(val, Py_None);
-                Py_INCREF(exc);
-                exc_info->exc_type = exc;
-                Py_INCREF(val);
-                exc_info->exc_value = val;
-                exc_info->exc_traceback = tb;
-                if (tb == NULL)
-                    tb = Py_None;
-                Py_INCREF(tb);
-                PUSH(tb);
-                PUSH(val);
-                PUSH(exc);
-                JUMPTO(handler);
-                /* Resume normal execution */
-                goto main_loop;
+            PyObject *exc, *val, *tb;
+            int handler = b->b_handler;
+            _PyErr_StackItem *exc_info = tstate->exc_info;
+            /* Beware, this invalidates all b->b_* fields */
+            PyFrame_BlockSetup(f, -1, STACK_LEVEL());
+            PUSH(exc_info->exc_traceback);
+            PUSH(exc_info->exc_value);
+            if (exc_info->exc_type != NULL) {
+                PUSH(exc_info->exc_type);
             }
+            else {
+                Py_INCREF(Py_None);
+                PUSH(Py_None);
+            }
+            PyErr_Fetch(&exc, &val, &tb);
+            /* Make the raw exception data
+                available to the handler,
+                so a program can emulate the
+                Python main loop. */
+            PyErr_NormalizeException(
+                &exc, &val, &tb);
+            if (tb != NULL)
+                PyException_SetTraceback(val, tb);
+            else
+                PyException_SetTraceback(val, Py_None);
+            Py_INCREF(exc);
+            exc_info->exc_type = exc;
+            Py_INCREF(val);
+            exc_info->exc_value = val;
+            exc_info->exc_traceback = tb;
+            if (tb == NULL)
+                tb = Py_None;
+            Py_INCREF(tb);
+            PUSH(tb);
+            PUSH(val);
+            PUSH(exc);
+            JUMPTO(handler);
+            /* Resume normal execution */
+            goto main_loop;
         } /* unwind stack */
 
         /* End the loop as we still have an error */

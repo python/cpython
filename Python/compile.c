@@ -1022,7 +1022,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 1;
 
         case SETUP_EXCEPT:
-        case SETUP_FINALLY:
             return 6; /* can push 3 values for the new exception
                         + 3 others for the previous exception state */
         case SETUP_WITH:
@@ -2659,7 +2658,7 @@ compiler_continue(struct compiler *c)
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
-        SETUP_FINALLY           F2
+        SETUP_EXCEPT           F2
         <code for body>
         POP_BLOCK
     F1:
@@ -2672,10 +2671,10 @@ compiler_continue(struct compiler *c)
 
    The special instructions use the block stack.  Each block
    stack entry contains the instruction that created it (here
-   SETUP_FINALLY), the level of the value stack at the time the
+   SETUP_EXCEPT), the level of the value stack at the time the
    block stack entry was created, and a label (here L).
 
-   SETUP_FINALLY:
+   SETUP_EXCEPT:
     Pushes the current value stack level and the label
     onto the block stack.
    POP_BLOCK:
@@ -2687,7 +2686,7 @@ compiler_continue(struct compiler *c)
     they specify.
 
    The block stack is unwound when an exception is raised:
-   when a SETUP_FINALLY entry is found, the exception is pushed
+   when a SETUP_EXCEPT entry is found, the exception is pushed
    onto the value stack (and the exception condition is cleared),
    and the interpreter jumps to the label gotten from the block
    stack.
@@ -2708,7 +2707,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         exit == NULL || reraise == NULL || finalbody == NULL) {
         return 0;
     }
-    ADDOP_JREL(c, SETUP_FINALLY, final2);
+    ADDOP_JREL(c, SETUP_EXCEPT, final2);
     compiler_use_next_block(c, body);
     if (!compiler_push_finally_try(c, body, finalbody))
         return 0;
@@ -2841,7 +2840,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             */
 
             /* second try: */
-            ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
+            ADDOP_JREL(c, SETUP_EXCEPT, cleanup_end);
             compiler_use_next_block(c, cleanup_body);
             if (!compiler_push_except_handler(c, cleanup_body,
                                               handler->v.ExceptHandler.name))
@@ -5194,8 +5193,7 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
             if (instr->i_opcode == FOR_ITER) {
                 target_depth = depth-2;
             }
-            else if (instr->i_opcode == SETUP_FINALLY ||
-                     instr->i_opcode == SETUP_EXCEPT ||
+            else if (instr->i_opcode == SETUP_EXCEPT ||
                      instr->i_opcode == SETUP_WITH) {
                 target_depth = depth+3;
                 if (target_depth > maxdepth)

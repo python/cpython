@@ -95,7 +95,6 @@ extern "C" {
 #define LOAD_GLOBAL             116
 #define END_ITER                117
 #define SETUP_EXCEPT            121
-#define SETUP_FINALLY           122
 #define SETUP_WITH              123
 #define LOAD_FAST               124
 #define STORE_FAST              125
