@@ -154,6 +154,10 @@ def _run_until_complete_cb(fut):
     futures._get_loop(fut).stop()
 
 
+class _SendfileNotAvailable(Exception):
+    pass
+
+
 class Server(events.AbstractServer):
 
     def __init__(self, loop, sockets):
@@ -655,7 +659,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except RuntimeError:
+        except _SendfileNotAvailable:
             if fallback:
                 return await self._sock_sendfile_fallback(sock, file,
                                                           offset, count)
@@ -663,7 +667,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
-        raise RuntimeError("Fast sendfile is not available")
+        raise _SendfileNotAvailable("Fast sendfile is not available")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:

@@ -21,6 +21,7 @@ if sys.platform == 'win32':
 
 import asyncio
 from asyncio import log
+from asyncio import base_events
 from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
@@ -501,7 +502,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sendfile_not_available(self):
         sock, proto = self.prepare()
         with mock.patch('asyncio.unix_events.os', spec=[]):
-            with self.assertRaisesRegex(RuntimeError,
+            with self.assertRaisesRegex(base_events._SendfileNotAvailable,
                                         "os[.]sendfile[(][)] is not available"):
                 self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                               0, None))
@@ -510,7 +511,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
-        with self.assertRaisesRegex(RuntimeError,
+        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -519,7 +520,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sendfile_iobuffer(self):
         sock, proto = self.prepare()
         f = io.BytesIO()
-        with self.assertRaisesRegex(RuntimeError,
+        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -529,7 +530,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
         f = mock.Mock()
         f.fileno.return_value = -1
-        with self.assertRaisesRegex(RuntimeError,
+        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))

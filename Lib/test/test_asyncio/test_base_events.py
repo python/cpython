@@ -1860,7 +1860,8 @@ class BaseLoopSendfileTests(test_utils.TestCase):
     def test__sock_sendfile_native_failure(self):
         sock, proto = self.prepare()
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
+                                    "Fast sendfile is not available"):
             self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                           0, None))
 
@@ -1870,7 +1871,8 @@ class BaseLoopSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_no_fallback(self):
         sock, proto = self.prepare()
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
+                                    "Fast sendfile is not available"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                   fallback=False))
 
