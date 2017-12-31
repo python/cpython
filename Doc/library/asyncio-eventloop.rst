@@ -722,10 +722,9 @@ Low-level socket operations
    <io.IOBase.tell>` can be used to figure out the number of bytes
    which were sent.
 
-   *fallback* is used for automatic switch to :meth:`sock_sendall` if
-   :mod:`os.sendfile` is not available (e.g. Windows or SSL socket) or
-   *file* is not a regular file. Set the parameter to ``False`` for
-   preventig fallback behavior.
+   *fallback* set to ``True`` makes asyncio to manually read and send
+   the file when the platform does not support the sendfile syscall
+   (e.g. Windows or SSL socket on Unix).
 
    Raise :exc:`RuntimeError` if the system does not support
    *sendfile* syscall and *fallback* is ``False``.
