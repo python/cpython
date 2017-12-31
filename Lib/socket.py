@@ -127,33 +127,7 @@ if sys.platform.lower().startswith("win"):
     __all__.append("errorTab")
 
 
-def _check_sendfile_params(sock, file, offset, count):
-    if 'b' not in getattr(file, 'mode', 'b'):
-        raise ValueError("file should be opened in binary mode")
-    if not sock.type == SOCK_STREAM:
-        raise ValueError("only SOCK_STREAM type sockets are supported")
-    if count is not None:
-        if not isinstance(count, int):
-            raise TypeError(
-                "count must be a positive integer (got {!r})".format(count))
-        if count <= 0:
-            raise ValueError(
-                "count must be a positive integer (got {!r})".format(count))
-
-
-def _prepare_sendfile(file, count):
-    try:
-        fileno = file.fileno()
-    except (AttributeError, io.UnsupportedOperation) as err:
-        raise RuntimeError("not a regular file")
-    try:
-        fsize = os.fstat(fileno).st_size
-    except OSError as err:
-        raise RuntimeError("not a regular file")
-    if count:
-        return fileno, count
-    else:
-        return fileno, fsize
+class _GiveupOnSendfile(Exception): pass
 
 
 class socket(_socket.socket):
@@ -282,11 +256,19 @@ class socket(_socket.socket):
     if hasattr(os, 'sendfile'):
 
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
-            _check_sendfile_params(self, file, offset, count)
+            self._check_sendfile_params(file, offset, count)
             sockno = self.fileno()
-            fileno, blocksize = _prepare_sendfile(file, count)
-            if not blocksize:
+            try:
+                fileno = file.fileno()
+            except (AttributeError, io.UnsupportedOperation) as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            try:
+                fsize = os.fstat(fileno).st_size
+            except OSError as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            if not fsize:
                 return 0  # empty file
+            blocksize = fsize if not count else count
 
             timeout = self.gettimeout()
             if timeout == 0:
@@ -326,7 +308,7 @@ class socket(_socket.socket):
                             # one being 'file' is not a regular mmap(2)-like
                             # file, in which case we'll fall back on using
                             # plain send().
-                            raise RuntimeError("os.sendfile() call failed")
+                            raise _GiveupOnSendfile(err)
                         raise err from None
                     else:
                         if sent == 0:
@@ -339,11 +321,11 @@ class socket(_socket.socket):
                     file.seek(offset)
     else:
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
-            raise RuntimeError(
+            raise _GiveupOnSendfile(
                 "os.sendfile() not available on this platform")
 
     def _sendfile_use_send(self, file, offset=0, count=None):
-        _check_sendfile_params(self, file, offset, count)
+        self._check_sendfile_params(file, offset, count)
         if self.gettimeout() == 0:
             raise ValueError("non-blocking sockets are not supported")
         if offset:
@@ -378,6 +360,19 @@ class socket(_socket.socket):
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + total_sent)
 
+    def _check_sendfile_params(self, file, offset, count):
+        if 'b' not in getattr(file, 'mode', 'b'):
+            raise ValueError("file should be opened in binary mode")
+        if not self.type & SOCK_STREAM:
+            raise ValueError("only SOCK_STREAM type sockets are supported")
+        if count is not None:
+            if not isinstance(count, int):
+                raise TypeError(
+                    "count must be a positive integer (got {!r})".format(count))
+            if count <= 0:
+                raise ValueError(
+                    "count must be a positive integer (got {!r})".format(count))
+
     def sendfile(self, file, offset=0, count=None):
         """sendfile(file[, offset[, count]]) -> sent
 
@@ -398,7 +393,7 @@ class socket(_socket.socket):
         """
         try:
             return self._sendfile_use_sendfile(file, offset, count)
-        except RuntimeError:
+        except _GiveupOnSendfile:
             return self._sendfile_use_send(file, offset, count)
 
     def _decref_socketios(self):

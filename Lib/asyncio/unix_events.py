@@ -314,7 +314,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             os.sendfile
         except AttributeError as exc:
             raise RuntimeError("os.sendfile() in not available")
-        fileno, blocksize = socket._prepare_sendfile(file, count)
+        try:
+            fileno = file.fileno()
+        except (AttributeError, io.UnsupportedOperation) as err:
+            raise RuntimeError("not a regular file")
+        try:
+            fsize = os.fstat(fileno).st_size
+        except OSError as err:
+            raise RuntimeError("not a regular file")
+        blocksize = count if count else fsize
         if not blocksize:
             return 0  # empty file
 

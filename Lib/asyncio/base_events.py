@@ -651,7 +651,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                             *, fallback=True):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
-        socket._check_sendfile_params(sock, file, offset, count)
+        self._check_sendfile_params(sock, file, offset, count)
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
@@ -685,6 +685,19 @@ class BaseEventLoop(events.AbstractEventLoop):
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + total_sent)
+
+    def _check_sendfile_params(self, sock, file, offset, count):
+        if 'b' not in getattr(file, 'mode', 'b'):
+            raise ValueError("file should be opened in binary mode")
+        if not sock.type == socket.SOCK_STREAM:
+            raise ValueError("only SOCK_STREAM type sockets are supported")
+        if count is not None:
+            if not isinstance(count, int):
+                raise TypeError(
+                    "count must be a positive integer (got {!r})".format(count))
+            if count <= 0:
+                raise ValueError(
+                    "count must be a positive integer (got {!r})".format(count))
 
     async def create_connection(
             self, protocol_factory, host=None, port=None,
