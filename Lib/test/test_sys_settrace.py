@@ -827,14 +827,6 @@ class JumpTestCase(unittest.TestCase):
         with tracecontext(output, 4):
             output.append(5)
 
-    @jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
-    def test_jump_across_with_2(output):
-        output.append(1)
-        with tracecontext(output, 2):
-            output.append(3)
-        with tracecontext(output, 4):
-            output.append(5)
-
     @jump_test(8, 11, [1, 3, 5, 11, 12])
     def test_jump_out_of_complex_nested_blocks(output):
         output.append(1)
@@ -1036,6 +1028,14 @@ class JumpTestCase(unittest.TestCase):
         try:
             output.append(3)
         finally:
+            output.append(5)
+
+    @jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
+    def test_no_jump_between_with_blocks(output):
+        output.append(1)
+        with tracecontext(output, 2):
+            output.append(3)
+        with tracecontext(output, 4):
             output.append(5)
 
     @jump_test(5, 7, [2, 4], (ValueError, 'finally'))
