@@ -1029,7 +1029,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
                         + 3 others for the previous exception state
                         -1 for the context manager. */
 
-        case ENTER_WITH:
+        case BEFORE_WITH:
             return 1;
 
         case LOAD_FAST:
@@ -4538,7 +4538,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
    is implemented as:
 
         <code for EXPR>
-        ENTER_WITH
+        BEFORE_WITH
         SETUP_WITH  E
         <code to store to VAR> or POP_TOP
         <code for BLOCK>
@@ -4573,7 +4573,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
-    ADDOP(c, ENTER_WITH);
+    ADDOP(c, BEFORE_WITH);
     ADDOP_JREL(c, SETUP_WITH, final2);
 
     if (item->optional_vars) {

@@ -934,7 +934,7 @@ main_loop:
                    - If we're about the enter the body of a with statement
                      having just called __enter__/__exit__, then make sure
                      that the exception handler is pushed. Otherwise, we might
-                     not call __exit__ if an interrput occurs and just this moment.
+                     not call __exit__ if an interrupt occurs at just this moment.
                    - If we're about to enter the try: of a try statement (not
                      *very* useful, but might help in some cases and it's
                      traditional)
@@ -2894,7 +2894,7 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(ENTER_WITH) {
+        TARGET(BEFORE_WITH) {
             /* Replace TOP with TOP.__exit__ and push the result
              * of calling TOP.__enter__()
              */
