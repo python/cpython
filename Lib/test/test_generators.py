@@ -1236,7 +1236,7 @@ StopIteration
 True
 
 
-Test the __name__ attribute
+Test the __name__ attribute and the repr()
 
 >>> def f():
 ...    yield 5
@@ -1244,6 +1244,8 @@ Test the __name__ attribute
 >>> g = f()
 >>> g.__name__
 'f'
+>>> repr(g)  # doctest: +ELLIPSIS
+"<generator at ..., closed, file ..., code f>"
 
 Lambdas shouldn't have their usual return behavior.
 
