@@ -2234,7 +2234,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # all others should be integers
         else:
-            nargs_pattern = '(-*%s-*)' % '-*'.join('A' * nargs)
+            nargs_pattern = '(-*%s-*)' % '-*'.join('A' * int(nargs))
 
         # if this is an optional action, -- is not allowed
         if action.option_strings:
