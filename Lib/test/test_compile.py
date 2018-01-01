@@ -714,17 +714,30 @@ class TestStackSizeStability(unittest.TestCase):
     # Check that repeating certain snippets doesn't increase the stack size
     # beyond what a single snippet requires.
 
-    def check_stack_size(self, snippet):
-        sizes = []
-        for i in range(2, 5):
+    def check_stack_size(self, snippet, async_=False):
+        def compile_snippet(i):
             ns = {}
-            code = """def f():\n""" + i * snippet
-            code = compile(code, "<foo>", "exec")
+            script = """def func():\n""" + i * snippet
+            if async_:
+                script = "async " + script
+            code = compile(script, "<script>", "exec")
             exec(code, ns, ns)
-            sizes.append(ns['f'].__code__.co_stacksize)
+            return ns['func'].__code__
 
-        self.assertEqual(len(set(sizes)), 1,
-                         "stack sizes diverge with # of consecutive snippets: %s" % (sizes,))
+        sizes = [compile_snippet(i).co_stacksize for i in range(2, 5)]
+        if len(set(sizes)) != 1:
+            import dis, io
+            out = io.StringIO()
+            dis.dis(compile_snippet(1), file=out)
+            self.fail("stack sizes diverge with # of consecutive snippets: "
+                      "%s\n%s\n%s" % (sizes, snippet, out.getvalue()))
+
+    def test_if(self):
+        snippet = """
+            if x:
+                a
+            """
+        self.check_stack_size(snippet)
 
     def test_if_else(self):
         snippet = """
@@ -776,10 +789,33 @@ class TestStackSizeStability(unittest.TestCase):
 
     def test_try_finally(self):
         snippet = """
-            try:
+                try:
+                    a
+                finally:
+                    b
+            """
+        self.check_stack_size(snippet)
+
+    def test_with(self):
+        snippet = """
+            with x as y:
                 a
-            finally:
+            """
+        self.check_stack_size(snippet)
+
+    def test_while_else(self):
+        snippet = """
+            while x:
+                a
+            else:
                 b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for(self):
+        snippet = """
+            for x in y:
+                a
             """
         self.check_stack_size(snippet)
 
@@ -805,6 +841,29 @@ class TestStackSizeStability(unittest.TestCase):
                 b
             """
         self.check_stack_size(snippet)
+
+    def test_async_with(self):
+        snippet = """
+            async with x as y:
+                a
+            """
+        self.check_stack_size(snippet, async_=True)
+
+    def test_async_for(self):
+        snippet = """
+            async for x in y:
+                a
+            """
+        self.check_stack_size(snippet, async_=True)
+
+    def test_async_for_else(self):
+        snippet = """
+            async for x in y:
+                a
+            else:
+                b
+            """
+        self.check_stack_size(snippet, async_=True)
 
 
 if __name__ == "__main__":
