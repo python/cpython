@@ -681,6 +681,10 @@ iterations of the loop.
      used to restore the exception state.  An exception handler block is
      removed from the block stack.
 
+   It is similar to :opcode:`END_FINALLY`, but neither change the bytecode
+   counter nor raises an exception.  Used for implementing :keyword:`break`
+   and :keyword:`return` in the :keyword:`finally` block.
+
    .. versionadded:: 3.7
 
 
