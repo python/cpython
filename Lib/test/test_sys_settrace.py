@@ -870,6 +870,28 @@ class JumpTestCase(unittest.TestCase):
             break
         output.append(13)
 
+    @jump_test(1, 7, [7, 8])
+    def test_jump_over_for_block_before_else(output):
+        output.append(1)
+        if not output:  # always false
+            for i in [3]:
+                output.append(4)
+        else:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
+    @jump_test(7, 4, [1, 6], (ValueError, 'into'))
+    def test_no_jump_into_for_block_before_else(output):
+        output.append(1)
+        if not output:  # always false
+            for i in [3]:
+                output.append(4)
+        else:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
     # The second set of 'jump' tests are for things that are not allowed:
 
     @jump_test(2, 3, [1], (ValueError, 'after'))

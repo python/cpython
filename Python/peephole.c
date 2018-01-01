@@ -371,13 +371,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 /* Replace jumps to unconditional jumps */
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
-            case FOR_ITER:
             case JUMP_FORWARD:
             case JUMP_ABSOLUTE:
-            case SETUP_FINALLY:
-            case SETUP_WITH:
-            case SETUP_ASYNC_WITH:
-            case CALL_FINALLY:
                 h = GETJUMPTGT(codestr, i);
                 tgt = find_op(codestr, h);
                 /* Replace JUMP_* to a RETURN into just a RETURN */
