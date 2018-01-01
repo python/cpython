@@ -126,6 +126,7 @@ struct compiler_unit {
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
     basicblock *u_blocks;
+    basicblock *u_entryblock; /* pointer to first block */
     basicblock *u_curblock; /* pointer to current block */
 
     int u_nfblocks;
@@ -592,6 +593,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_blocks = NULL;
+    u->u_entryblock = NULL;
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
     u->u_lineno = 0;
@@ -760,6 +762,9 @@ compiler_new_block(struct compiler *c)
     /* Extend the singly linked list of blocks with new block. */
     b->b_list = u->u_blocks;
     u->u_blocks = b;
+    if (u->u_entryblock == NULL) {
+        u->u_entryblock = b;
+    }
     return b;
 }
 
@@ -781,6 +786,30 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
     return block;
+}
+
+static basicblock *
+compiler_split_block(struct compiler *c, basicblock *b, int off)
+{
+    basicblock *b2 = compiler_new_block(c);
+    if (b2 == NULL) {
+        return NULL;
+    }
+    assert(off < b->b_iused);
+    int size = b->b_iused - off;
+    b2->b_instr = (struct instr *)PyObject_Malloc(sizeof(struct instr) * size);
+    if (b2->b_instr == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    b2->b_iused = b2->b_ialloc = size;
+    memcpy(b2->b_instr, b->b_instr + off, sizeof(struct instr) * size);
+    b->b_iused = off;
+    b2->b_next = b->b_next;
+    b->b_next = b2;
+    b->b_return = 0;
+
+    return b2;
 }
 
 /* Returns the offset of the next instruction in the current block's
@@ -2398,9 +2427,17 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         /* fallback to general implementation */
         break;
     }
-    default:
+    default: {
+        int constant = expr_constant(e);
+        if (constant >= 0) {
+            if (constant == cond) {
+                ADDOP_JABS(c, JUMP_ABSOLUTE, next);
+            }
+            return 1;
+        }
         /* fallback to general implementation */
         break;
+    }
     }
 
     /* general implementation */
@@ -5119,14 +5156,14 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 static int
 stackdepth(struct compiler *c)
 {
-    basicblock *b, *entryblock = NULL;
+    basicblock *b, *entryblock;
     basicblock **stack, **sp;
     int nblocks = 0, maxdepth = 0;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         b->b_startdepth = INT_MIN;
-        entryblock = b;
         nblocks++;
     }
+    entryblock = c->u->u_entryblock;
     if (!entryblock)
         return 0;
     stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
@@ -5427,6 +5464,118 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
     } while (extended_arg_recompile);
 }
 
+#define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
+#define CONDITIONAL_JUMP(op) (op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
+    || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
+#define JUMPS_ON_TRUE(op) (op==POP_JUMP_IF_TRUE || op==JUMP_IF_TRUE_OR_POP)
+
+static void
+optimize_jumps(struct compiler *c)
+{
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            switch (instr->i_opcode) {
+            case JUMP_IF_FALSE_OR_POP:
+            case JUMP_IF_TRUE_OR_POP:
+            case POP_JUMP_IF_FALSE:
+            case POP_JUMP_IF_TRUE:
+            case JUMP_FORWARD:
+            case JUMP_ABSOLUTE:
+                assert(instr->i_target != NULL);
+                while (1) {
+                    /* Skip empty blocks */
+                    while (!instr->i_target->b_iused) {
+                        assert(instr->i_target->b_next);
+                        instr->i_target = instr->i_target->b_next;
+                    }
+
+                    struct instr *tgt = &instr->i_target->b_instr[0];
+                    if (tgt == instr) {
+                        break;
+                    }
+
+                    /* Replace jumps to unconditional jumps */
+                    if (UNCONDITIONAL_JUMP(tgt->i_opcode)) {
+                        if (instr->i_opcode == JUMP_FORWARD) {
+                            /* JUMP_ABSOLUTE can go backwards */
+                            *instr = *tgt;
+                        }
+                        else {
+                            instr->i_target = tgt->i_target;
+                        }
+                        continue;
+                    }
+
+                    /* Replace JUMP_* to a RETURN into just a RETURN */
+                    if (UNCONDITIONAL_JUMP(instr->i_opcode)) {
+                        if (tgt->i_opcode == RETURN_VALUE) {
+                            *instr = *tgt;
+                            break;
+                        }
+                    }
+
+                    /* Simplify conditional jump to conditional jump where the
+                       result of the first test implies the success of a similar
+                       test or the failure of the opposite test.
+                       Arises in code like:
+                       "a and b or c"
+                       "(a and b) and c"
+                       "(a or b) or c"
+                       "(a or b) and c"
+                       x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
+                          -->  x:JUMP_IF_FALSE_OR_POP z
+                       x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z
+                          -->  x:POP_JUMP_IF_FALSE y+1
+                       where y+1 is the instruction following the second test.
+                     */
+                    if ((instr->i_opcode == JUMP_IF_FALSE_OR_POP ||
+                         instr->i_opcode == JUMP_IF_TRUE_OR_POP) &&
+                        CONDITIONAL_JUMP(tgt->i_opcode))
+                    {
+                        /* NOTE: all possible jumps here are absolute. */
+                        if (JUMPS_ON_TRUE(tgt->i_opcode) == JUMPS_ON_TRUE(instr->i_opcode)) {
+                            /* The second jump will be taken iff the first is.
+                               The current opcode inherits its target's
+                               stack effect */
+                            instr->i_target = tgt->i_target;
+                            continue;
+                        }
+                        else {
+                            /* The second jump is not taken if the first is (so
+                               jump past it), and all conditional jumps pop their
+                               argument when they're not taken (so change the
+                               first jump to pop its argument when it's taken). */
+                            basicblock *b2;
+                            if (instr->i_target->b_iused > 1) {
+                                b2 = compiler_split_block(c, instr->i_target, 1);
+                                if (!b2) {
+                                    PyErr_Clear();
+                                    break;
+                                }
+                                /* Move b2 after b so it will be processed in future iterations */
+                                assert(c->u->u_blocks == b2);
+                                c->u->u_blocks = b2->b_list;
+                                b2->b_list = b->b_list;
+                                b->b_list = b2;
+                            }
+                            else {
+                                b2 = instr->i_target->b_next;
+                            }
+                            instr->i_target = b2;
+                            instr->i_opcode = instr->i_opcode == JUMP_IF_TRUE_OR_POP ?
+                                    POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE;
+                            continue;
+                        }
+                    }
+                    break;
+                }
+                break;
+            }
+        }
+    }
+}
+
 static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
@@ -5664,16 +5813,18 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
+    optimize_jumps(c);
+
     nblocks = 0;
-    entryblock = NULL;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         nblocks++;
-        entryblock = b;
     }
 
+    entryblock = c->u->u_entryblock;
+    assert(entryblock != NULL);
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
-        if (entryblock && entryblock->b_instr && entryblock->b_instr->i_lineno)
+        if (entryblock->b_instr && entryblock->b_instr->i_lineno)
             c->u->u_firstlineno = entryblock->b_instr->i_lineno;
         else
             c->u->u_firstlineno = 1;

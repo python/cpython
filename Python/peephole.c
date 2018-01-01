@@ -10,13 +10,9 @@
 #include "opcode.h"
 #include "wordcode_helpers.h"
 
-#define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
-#define CONDITIONAL_JUMP(op) (op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
-    || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
 #define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE \
     || op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
-#define JUMPS_ON_TRUE(op) (op==POP_JUMP_IF_TRUE || op==JUMP_IF_TRUE_OR_POP)
 #define GETJUMPTGT(arr, i) (get_arg(arr, i) / sizeof(_Py_CODEUNIT) + \
         (ABSOLUTE_JUMP(_Py_OPCODE(arr[i])) ? 0 : i+1))
 #define ISBASICBLOCK(blocks, start, end) \
@@ -82,27 +78,6 @@ static void
 fill_nops(_Py_CODEUNIT *codestr, Py_ssize_t start, Py_ssize_t end)
 {
     memset(codestr + start, NOP, (end - start) * sizeof(_Py_CODEUNIT));
-}
-
-/* Given the index of the effective opcode,
-   attempt to replace the argument, taking into account EXTENDED_ARG.
-   Returns -1 on failure, or the new op index on success */
-static Py_ssize_t
-set_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned int oparg)
-{
-    unsigned int curarg = get_arg(codestr, i);
-    int curilen, newilen;
-    if (curarg == oparg)
-        return i;
-    curilen = instrsize(curarg);
-    newilen = instrsize(oparg);
-    if (curilen < newilen) {
-        return -1;
-    }
-
-    write_op_arg(codestr + i + 1 - curilen, _Py_OPCODE(codestr[i]), oparg, newilen);
-    fill_nops(codestr, i + 1 - curilen + newilen, i + 1);
-    return i-curilen+newilen;
 }
 
 /* Attempt to write op/arg at end of specified region of memory.
@@ -230,7 +205,7 @@ PyObject *
 PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 PyObject *lnotab_obj)
 {
-    Py_ssize_t h, i, nexti, op_start, tgt;
+    Py_ssize_t h, i, nexti, op_start;
     unsigned int j, nops;
     unsigned char opcode, nextop;
     _Py_CODEUNIT *codestr = NULL;
@@ -296,17 +271,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         cumlc = 0;
 
         switch (opcode) {
-                /* Skip over LOAD_CONST trueconst
-                   POP_JUMP_IF_FALSE xx.  This improves
-                   "while 1" performance.  */
             case LOAD_CONST:
                 cumlc = lastlc + 1;
-                if (nextop != POP_JUMP_IF_FALSE  ||
-                    !ISBASICBLOCK(blocks, op_start, i + 1)  ||
-                    !PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i))))
-                    break;
-                fill_nops(codestr, op_start, nexti + 1);
-                cumlc = 0;
                 break;
 
                 /* Try to fold tuples of constants.
@@ -336,85 +302,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                     codestr[op_start] = PACKOPARG(ROT_THREE, 0);
                     codestr[op_start + 1] = PACKOPARG(ROT_TWO, 0);
                     fill_nops(codestr, op_start + 2, nexti + 1);
-                }
-                break;
-
-                /* Simplify conditional jump to conditional jump where the
-                   result of the first test implies the success of a similar
-                   test or the failure of the opposite test.
-                   Arises in code like:
-                   "a and b or c"
-                   "(a and b) and c"
-                   "(a or b) or c"
-                   "(a or b) and c"
-                   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
-                      -->  x:JUMP_IF_FALSE_OR_POP z
-                   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z
-                      -->  x:POP_JUMP_IF_FALSE y+1
-                   where y+1 is the instruction following the second test.
-                */
-            case JUMP_IF_FALSE_OR_POP:
-            case JUMP_IF_TRUE_OR_POP:
-                h = get_arg(codestr, i) / sizeof(_Py_CODEUNIT);
-                tgt = find_op(codestr, codelen, h);
-
-                j = _Py_OPCODE(codestr[tgt]);
-                if (CONDITIONAL_JUMP(j)) {
-                    /* NOTE: all possible jumps here are absolute. */
-                    if (JUMPS_ON_TRUE(j) == JUMPS_ON_TRUE(opcode)) {
-                        /* The second jump will be taken iff the first is.
-                           The current opcode inherits its target's
-                           stack effect */
-                        h = set_arg(codestr, i, get_arg(codestr, tgt));
-                    } else {
-                        /* The second jump is not taken if the first is (so
-                           jump past it), and all conditional jumps pop their
-                           argument when they're not taken (so change the
-                           first jump to pop its argument when it's taken). */
-                        Py_ssize_t arg = (tgt + 1);
-                        /* cannot overflow: codelen <= INT_MAX */
-                        assert((size_t)arg <= UINT_MAX / sizeof(_Py_CODEUNIT));
-                        arg *= sizeof(_Py_CODEUNIT);
-                        h = set_arg(codestr, i, (unsigned int)arg);
-                        j = opcode == JUMP_IF_TRUE_OR_POP ?
-                            POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE;
-                    }
-
-                    if (h >= 0) {
-                        nexti = h;
-                        codestr[nexti] = PACKOPARG(j, _Py_OPARG(codestr[nexti]));
-                        break;
-                    }
-                }
-                /* Intentional fallthrough */
-
-                /* Replace jumps to unconditional jumps */
-            case POP_JUMP_IF_FALSE:
-            case POP_JUMP_IF_TRUE:
-            case JUMP_FORWARD:
-            case JUMP_ABSOLUTE:
-                h = GETJUMPTGT(codestr, i);
-                tgt = find_op(codestr, codelen, h);
-                /* Replace JUMP_* to a RETURN into just a RETURN */
-                if (UNCONDITIONAL_JUMP(opcode) &&
-                    _Py_OPCODE(codestr[tgt]) == RETURN_VALUE) {
-                    codestr[op_start] = PACKOPARG(RETURN_VALUE, 0);
-                    fill_nops(codestr, op_start + 1, i + 1);
-                } else if (UNCONDITIONAL_JUMP(_Py_OPCODE(codestr[tgt]))) {
-                    size_t arg = GETJUMPTGT(codestr, tgt);
-                    if (opcode == JUMP_FORWARD) { /* JMP_ABS can go backwards */
-                        opcode = JUMP_ABSOLUTE;
-                    } else if (!ABSOLUTE_JUMP(opcode)) {
-                        if (arg < (size_t)(i + 1)) {
-                            break;           /* No backward relative jumps */
-                        }
-                        arg -= i + 1;          /* Calc relative jump addr */
-                    }
-                    /* cannot overflow: codelen <= INT_MAX */
-                    assert(arg <= (UINT_MAX / sizeof(_Py_CODEUNIT)));
-                    arg *= sizeof(_Py_CODEUNIT);
-                    copy_op_arg(codestr, op_start, opcode,
-                                (unsigned int)arg, i + 1);
                 }
                 break;
 
