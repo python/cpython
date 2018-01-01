@@ -861,6 +861,7 @@ int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     switch (opcode) {
+        /* Stack manipulation */
         case POP_TOP:
             return -1;
         case ROT_TWO:
@@ -871,6 +872,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case DUP_TOP_TWO:
             return 2;
 
+        /* Unary operators */
         case UNARY_POSITIVE:
         case UNARY_NEGATIVE:
         case UNARY_NOT:
@@ -883,6 +885,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case MAP_ADD:
             return -2;
 
+        /* Binary operators */
         case BINARY_POWER:
         case BINARY_MULTIPLY:
         case BINARY_MATRIX_MULTIPLY:
@@ -932,10 +935,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case BREAK_LOOP:
             return 0;
         case SETUP_WITH:
+            /* Replace TOP with __exit__, reserve 6 entries for an exception */
             return 6;
         case WITH_CLEANUP_START:
             return 2;
         case WITH_CLEANUP_FINISH:
+            /* Pop 2 values pushed by WITH_CLEANUP_START + __exit__ */
             return -3;
         case RETURN_VALUE:
             return -1;
@@ -952,6 +957,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case POP_EXCEPT:
             return -3;
         case END_FINALLY:
+            /* Pops the 3 values of the pushed exception
+             * + the 3 values of the saved exception state
+             */
             return -6;
 
         case STORE_NAME:
@@ -1002,6 +1010,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case IMPORT_FROM:
             return 1;
 
+        /* Jumps */
         case JUMP_FORWARD:
         case JUMP_IF_TRUE_OR_POP:  /* -1 if jump not taken */
         case JUMP_IF_FALSE_OR_POP:  /*  "" */
@@ -1021,8 +1030,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 0;
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
-            return 6; /* can push 3 values for the new exception
-                + 3 others for the previous exception state */
+            /* Reserve 3 entries for the new exception
+             * + 3 others for the previous exception state */
+            return 6;
 
         case LOAD_FAST:
             return 1;
@@ -1035,6 +1045,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
         case RAISE_VARARGS:
             return -oparg;
+
+        /* Functions and calls */
         case CALL_FUNCTION:
             return -oparg;
         case CALL_METHOD:
@@ -1052,6 +1064,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             else
                 return -1;
 
+        /* Closures */
         case LOAD_CLOSURE:
             return 1;
         case LOAD_DEREF:
@@ -1061,9 +1074,13 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
         case DELETE_DEREF:
             return 0;
+
+        /* Iterators and generators */
         case GET_AWAITABLE:
             return 0;
         case SETUP_ASYNC_WITH:
+            /* Reserve 6 entries for an exception before pushing the result
+               of __aenter__ on the stack */
             return 5;
         case BEFORE_ASYNC_WITH:
             return 1;
@@ -4930,6 +4947,11 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
                      instr->i_opcode == SETUP_WITH ||
                      instr->i_opcode == SETUP_ASYNC_WITH)
             {
+                /* SETUP_FINALLY: the correction for None pushed on the stack
+                 * before entering the finally block in normal flow.
+                 * SETUP_WITH: the result of __enter__.
+                 * SETUP_ASYNC_WITH: the result of __aenter__.
+                 */
                 depth = depth - 1;
             }
             else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
