@@ -932,11 +932,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case BREAK_LOOP:
             return 0;
         case SETUP_WITH:
-            return 7;
+            return 6;
         case WITH_CLEANUP_START:
-            return 1;
+            return 2;
         case WITH_CLEANUP_FINISH:
-            return -1; /* XXX Sometimes more */
+            return -3;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -950,9 +950,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
-            return 0;  /* -3 except if bad bytecode */
+            return -3;
         case END_FINALLY:
-            return -1; /* or -2 or -3 if exception occurred */
+            return -6;
 
         case STORE_NAME:
             return -1;
@@ -1064,7 +1064,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case GET_AWAITABLE:
             return 0;
         case SETUP_ASYNC_WITH:
-            return 6;
+            return 5;
         case BEFORE_ASYNC_WITH:
             return 1;
         case GET_AITER:
@@ -2329,6 +2329,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
+    ADDOP(c, POP_TOP); /* for correct calculation of stack effect */
     ADDOP(c, POP_BLOCK); /* for SETUP_LOOP */
     ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
 
@@ -2611,7 +2612,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* second # body */
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             ADDOP(c, POP_BLOCK);
-            ADDOP(c, POP_EXCEPT);
             compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
 
             /* finally: */
@@ -2628,6 +2628,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
             ADDOP(c, END_FINALLY);
+            ADDOP(c, POP_EXCEPT);
             compiler_pop_fblock(c, FINALLY_END, cleanup_end);
         }
         else {
@@ -4922,15 +4923,20 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
             if (instr->i_opcode == FOR_ITER) {
                 target_depth = depth-2;
             }
+            else if (instr->i_opcode == SETUP_EXCEPT) {
+                depth = depth - 6;
+            }
             else if (instr->i_opcode == SETUP_FINALLY ||
-                     instr->i_opcode == SETUP_EXCEPT) {
-                target_depth = depth+3;
-                if (target_depth > maxdepth)
-                    maxdepth = target_depth;
+                     instr->i_opcode == SETUP_WITH ||
+                     instr->i_opcode == SETUP_ASYNC_WITH)
+            {
+                depth = depth - 1;
             }
             else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
                      instr->i_opcode == JUMP_IF_FALSE_OR_POP)
                 depth = depth - 1;
+            if (target_depth > maxdepth)
+                maxdepth = target_depth;
             maxdepth = stackdepth_walk(c, instr->i_target,
                                        target_depth, maxdepth);
             if (instr->i_opcode == JUMP_ABSOLUTE ||

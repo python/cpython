@@ -672,7 +672,7 @@ if 1:
         compile("42", PathLike("test_compile_pathlike"), "single")
 
 
-class TestStackSize(unittest.TestCase):
+class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
     # stays within reasonable bounds (see issue #21523 for an example
     # dysfunction).
@@ -708,6 +708,160 @@ class TestStackSize(unittest.TestCase):
         code = "def f(x):\n"
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
+
+
+class TestStackSizeStability(unittest.TestCase):
+    # Check that repeating certain snippets doesn't increase the stack size
+    # beyond what a single snippet requires.
+
+    def check_stack_size(self, snippet, async_=False):
+        def compile_snippet(i):
+            ns = {}
+            script = """def func():\n""" + i * snippet
+            if async_:
+                script = "async " + script
+            code = compile(script, "<script>", "exec")
+            exec(code, ns, ns)
+            return ns['func'].__code__
+
+        sizes = [compile_snippet(i).co_stacksize for i in range(2, 5)]
+        if len(set(sizes)) != 1:
+            import dis, io
+            out = io.StringIO()
+            dis.dis(compile_snippet(1), file=out)
+            self.fail("stack sizes diverge with # of consecutive snippets: "
+                      "%s\n%s\n%s" % (sizes, snippet, out.getvalue()))
+
+    def test_if(self):
+        snippet = """
+            if x:
+                a
+            """
+        self.check_stack_size(snippet)
+
+    def test_if_else(self):
+        snippet = """
+            if x:
+                a
+            elif y:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_bare(self):
+        snippet = """
+            try:
+                a
+            except:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_qualified(self):
+        snippet = """
+            try:
+                a
+            except ImportError:
+                b
+            except:
+                c
+            else:
+                d
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_as(self):
+        snippet = """
+            try:
+                a
+            except ImportError as e:
+                b
+            except:
+                c
+            else:
+                d
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_finally(self):
+        snippet = """
+                try:
+                    a
+                finally:
+                    b
+            """
+        self.check_stack_size(snippet)
+
+    def test_with(self):
+        snippet = """
+            with x as y:
+                a
+            """
+        self.check_stack_size(snippet)
+
+    def test_while_else(self):
+        snippet = """
+            while x:
+                a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for(self):
+        snippet = """
+            for x in y:
+                a
+            """
+        self.check_stack_size(snippet)
+
+    def test_for_else(self):
+        snippet = """
+            for x in y:
+                a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for_break_continue(self):
+        snippet = """
+            for x in y:
+                if z:
+                    break
+                elif u:
+                    continue
+                else:
+                    a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_async_with(self):
+        snippet = """
+            async with x as y:
+                a
+            """
+        self.check_stack_size(snippet, async_=True)
+
+    def test_async_for(self):
+        snippet = """
+            async for x in y:
+                a
+            """
+        self.check_stack_size(snippet, async_=True)
+
+    def test_async_for_else(self):
+        snippet = """
+            async for x in y:
+                a
+            else:
+                b
+            """
+        self.check_stack_size(snippet, async_=True)
 
 
 if __name__ == "__main__":
