@@ -1,2 +1,0 @@
-Fix the problem that logging.handlers.SysLogHandler cannot handle IPv6
-addresses.

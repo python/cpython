@@ -1,2 +1,0 @@
-Optimize array.array comparison. It is now from 10x up to 70x faster when
-comparing arrays holding values of the same integer type.

@@ -1,1 +1,0 @@
-Get antigravity over HTTPS. Patch by Kaartic Sivaraam.

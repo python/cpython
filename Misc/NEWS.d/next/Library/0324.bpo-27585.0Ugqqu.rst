@@ -1,1 +1,0 @@
-Fix waiter cancellation in asyncio.Lock. Patch by Mathieu Sornay.

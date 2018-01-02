@@ -123,6 +123,7 @@ atexit atexitmodule.c      # Register functions to be run at interpreter-shutdow
 _signal signalmodule.c
 _stat _stat.c			# stat.h interface
 time timemodule.c	# -lm # time operations and variables
+_thread _threadmodule.c         # low-level threading interface
 
 # access to ISO C locale support
 _locale _localemodule.c  # -lintl
@@ -216,8 +217,6 @@ _symtable symtablemodule.c
 
 # The crypt module is now disabled by default because it breaks builds
 # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
-#
-# First, look at Setup.config; configure may have set this for you.
 
 #_crypt _cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 
@@ -308,8 +307,6 @@ _symtable symtablemodule.c
 # Curses support, requiring the System V version of curses, often
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
-#
-# First, look at Setup.config; configure may have set this for you.
 
 #_curses _cursesmodule.c -lcurses -ltermcap
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
@@ -323,18 +320,9 @@ _symtable symtablemodule.c
 # implementation independent wrapper for these; dbm/dumb.py provides
 # similar functionality (but slower of course) implemented in Python.
 
-# The standard Unix dbm module has been moved to Setup.config so that
-# it will be compiled as a shared library by default.  Compiling it as
-# a built-in module causes conflicts with the pybsddb3 module since it
-# creates a static dependency on an out-of-date version of db.so.
-#
-# First, look at Setup.config; configure may have set this for you.
-
 #_dbm _dbmmodule.c 	# dbm(3) may require -lndbm or similar
 
 # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
-#
-# First, look at Setup.config; configure may have set this for you.
 
 #_gdbm _gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 

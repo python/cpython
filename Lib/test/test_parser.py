@@ -30,7 +30,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.roundtrip(parser.expr, s)
 
     def test_flags_passed(self):
-        # The unicode literals flags has to be passed from the paser to AST
+        # The unicode literals flags has to be passed from the parser to AST
         # generation.
         suite = parser.suite("from __future__ import unicode_literals; x = ''")
         code = suite.compile()
@@ -679,16 +679,16 @@ class IllegalSyntaxTestCase(unittest.TestCase):
     def test_illegal_encoding(self):
         # Illegal encoding declaration
         tree = \
-            (339,
+            (340,
              (257, (0, '')))
         self.check_bad_tree(tree, "missed encoding")
         tree = \
-            (339,
+            (340,
              (257, (0, '')),
               b'iso-8859-1')
         self.check_bad_tree(tree, "non-string encoding")
         tree = \
-            (339,
+            (340,
              (257, (0, '')),
               '\udcff')
         with self.assertRaises(UnicodeEncodeError):

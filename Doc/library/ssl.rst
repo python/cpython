@@ -129,11 +129,26 @@ Functions, Constants, and Exceptions
 
    .. versionadded:: 3.3
 
+.. exception:: SSLCertVerificationError
+
+   A subclass of :exc:`SSLError` raised when certificate validation has
+   failed.
+
+   .. versionadded:: 3.7
+
+   .. attribute:: verify_code
+
+      A numeric error number that denotes the verification error.
+
+   .. attribute:: verify_message
+
+      A human readable string of the verification error.
+
 .. exception:: CertificateError
 
    Raised to signal an error with a certificate (such as mismatching
    hostname).  Certificate errors detected by OpenSSL, though, raise
-   an :exc:`SSLError`.
+   an :exc:`SSLCertVerificationError`.
 
 
 Socket creation
@@ -193,11 +208,11 @@ instead.
      .. table::
 
        ========================  ============  ============  =============  =========  ===========  ===========
-        *client* / **server**    **SSLv2**     **SSLv3**     **TLS**        **TLSv1**  **TLSv1.1**  **TLSv1.2**
+        *client* / **server**    **SSLv2**     **SSLv3**     **TLS** [3]_   **TLSv1**  **TLSv1.1**  **TLSv1.2**
        ------------------------  ------------  ------------  -------------  ---------  -----------  -----------
         *SSLv2*                    yes           no            no [1]_        no         no         no
         *SSLv3*                    no            yes           no [2]_        no         no         no
-        *TLS* (*SSLv23*)           no [1]_       no [2]_       yes            yes        yes        yes
+        *TLS* (*SSLv23*) [3]_      no [1]_       no [2]_       yes            yes        yes        yes
         *TLSv1*                    no            no            yes            yes        no         no
         *TLSv1.1*                  no            no            yes            no         yes        no
         *TLSv1.2*                  no            no            yes            no         no         yes
@@ -206,6 +221,9 @@ instead.
    .. rubric:: Footnotes
    .. [1] :class:`SSLContext` disables SSLv2 with :data:`OP_NO_SSLv2` by default.
    .. [2] :class:`SSLContext` disables SSLv3 with :data:`OP_NO_SSLv3` by default.
+   .. [3] TLS 1.3 protocol will be available with :data:`PROTOCOL_TLS` in
+      OpenSSL >= 1.1.1. There is no dedicated PROTOCOL constant for just
+      TLS 1.3.
 
    .. note::
 
@@ -215,7 +233,7 @@ instead.
 
    The *ciphers* parameter sets the available ciphers for this SSL object.
    It should be a string in the `OpenSSL cipher list format
-   <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
+   <https://wiki.openssl.org/index.php/Manual:Ciphers(1)#CIPHER_LIST_FORMAT>`_.
 
    The parameter ``do_handshake_on_connect`` specifies whether to do the SSL
    handshake automatically after doing a :meth:`socket.connect`, or whether the
@@ -293,6 +311,11 @@ purposes.
      ChaCha20/Poly1305 was added to the default cipher string.
 
      3DES was dropped from the default cipher string.
+
+   .. versionchanged:: 3.7
+
+     TLS 1.3 cipher suites TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
+     and TLS_CHACHA20_POLY1305_SHA256 were added to the default cipher string.
 
 
 Random generation
@@ -405,6 +428,10 @@ Certificate handling
    .. versionchanged:: 3.5
       Matching of IP addresses, when present in the subjectAltName field
       of the certificate, is now supported.
+
+   .. versionchanged:: 3.7
+      Allow wildcard when it is the leftmost and the only character
+      in that segment.
 
 .. function:: cert_time_to_seconds(cert_time)
 
@@ -764,6 +791,16 @@ Constants
 
    .. versionadded:: 3.4
 
+.. data:: OP_NO_TLSv1_3
+
+   Prevents a TLSv1.3 connection. This option is only applicable in conjunction
+   with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.3 as
+   the protocol version. TLS 1.3 is available with OpenSSL 1.1.1 or later.
+   When Python has been compiled against an older version of OpenSSL, the
+   flag defaults to *0*.
+
+   .. versionadded:: 3.7
+
 .. data:: OP_CIPHER_SERVER_PREFERENCE
 
    Use the server's cipher ordering preference, rather than the client's.
@@ -837,6 +874,12 @@ Constants
    which protocols you want to support.
 
    .. versionadded:: 3.3
+
+.. data:: HAS_TLSv1_3
+
+   Whether the OpenSSL library has built-in support for the TLS 1.3 protocol.
+
+   .. versionadded:: 3.7
 
 .. data:: CHANNEL_BINDING_TYPES
 
@@ -1331,7 +1374,7 @@ to speed up repeated connections from the same clients.
    The *capath* string, if present, is
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
-   <https://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
+   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_load_verify_locations.html>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
    PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
@@ -1426,7 +1469,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
+   <https://wiki.openssl.org/index.php/Manual:Ciphers(1)#CIPHER_LIST_FORMAT>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1547,15 +1590,16 @@ to speed up repeated connections from the same clients.
    .. versionadded:: 3.3
 
    .. seealso::
-      `SSL/TLS & Perfect Forward Secrecy <http://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy.html>`_
+      `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy>`_
          Vincent Bernat.
 
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \
       do_handshake_on_connect=True, suppress_ragged_eofs=True, \
       server_hostname=None, session=None)
 
-   Wrap an existing Python socket *sock* and return an :class:`SSLSocket`
-   object.  *sock* must be a :data:`~socket.SOCK_STREAM` socket; other socket
+   Wrap an existing Python socket *sock* and return an instance of
+   :attr:`SSLContext.sslsocket_class` (default :class:`SSLSocket`).
+   *sock* must be a :data:`~socket.SOCK_STREAM` socket; other socket
    types are unsupported.
 
    The returned SSL socket is tied to the context, its settings and
@@ -1578,12 +1622,25 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       *session* argument was added.
 
+    .. versionchanged:: 3.7
+      The method returns on instance of :attr:`SSLContext.sslsocket_class`
+      instead of hard-coded :class:`SSLSocket`.
+
+.. attribute:: SSLContext.sslsocket_class
+
+   The return type of :meth:`SSLContext.wrap_sockets`, defaults to
+   :class:`SSLSocket`. The attribute can be overridden on instance of class
+   in order to return a custom subclass of :class:`SSLSocket`.
+
+   .. versionadded:: 3.7
+
 .. method:: SSLContext.wrap_bio(incoming, outgoing, server_side=False, \
                                 server_hostname=None, session=None)
 
-   Create a new :class:`SSLObject` instance by wrapping the BIO objects
-   *incoming* and *outgoing*. The SSL routines will read input data from the
-   incoming BIO and write data to the outgoing BIO.
+   Wrap the BIO objects *incoming* and *outgoing* and return an instance of
+   attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
+   routines will read input data from the incoming BIO and write data to the
+   outgoing BIO.
 
    The *server_side*, *server_hostname* and *session* parameters have the
    same meaning as in :meth:`SSLContext.wrap_socket`.
@@ -1591,11 +1648,23 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       *session* argument was added.
 
+   .. versionchanged:: 3.7
+      The method returns on instance of :attr:`SSLContext.sslobject_class`
+      instead of hard-coded :class:`SSLObject`.
+
+.. attribute:: SSLContext.sslobject_class
+
+   The return type of :meth:`SSLContext.wrap_bio`, defaults to
+   :class:`SSLObject`. The attribute can be overridden on instance of class
+   in order to return a custom subclass of :class:`SSLObject`.
+
+   .. versionadded:: 3.7
+
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
    A dictionary is returned which maps the names of each `piece of information
-   <https://www.openssl.org/docs/ssl/SSL_CTX_sess_number.html>`_ to their
+   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -1609,7 +1678,10 @@ to speed up repeated connections from the same clients.
    :meth:`SSLSocket.do_handshake`. The context's
    :attr:`~SSLContext.verify_mode` must be set to :data:`CERT_OPTIONAL` or
    :data:`CERT_REQUIRED`, and you must pass *server_hostname* to
-   :meth:`~SSLContext.wrap_socket` in order to match the hostname.
+   :meth:`~SSLContext.wrap_socket` in order to match the hostname.  Enabling
+   hostname checking automatically sets :attr:`~SSLContext.verify_mode` from
+   :data:`CERT_NONE` to :data:`CERT_REQUIRED`.  It cannot be set back to
+   :data:`CERT_NONE` as long as hostname checking is enabled.
 
    Example::
 
@@ -1625,6 +1697,13 @@ to speed up repeated connections from the same clients.
       ssl_sock.connect(('www.verisign.com', 443))
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.7
+
+      :attr:`~SSLContext.verify_mode` is now automatically changed
+      to :data:`CERT_REQUIRED`  when hostname checking is enabled and
+      :attr:`~SSLContext.verify_mode` is :data:`CERT_NONE`. Previously
+      the same operation would have failed with a :exc:`ValueError`.
 
    .. note::
 

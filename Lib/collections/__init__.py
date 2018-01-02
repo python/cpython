@@ -301,59 +301,9 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
-_class_template = """\
-from builtins import property as _property, tuple as _tuple
-from operator import itemgetter as _itemgetter
-from collections import OrderedDict
+_nt_itemgetters = {}
 
-class {typename}(tuple):
-    '{typename}({arg_list})'
-
-    __slots__ = ()
-
-    _fields = {field_names!r}
-
-    def __new__(_cls, {arg_list}):
-        'Create new instance of {typename}({arg_list})'
-        return _tuple.__new__(_cls, ({arg_list}))
-
-    @classmethod
-    def _make(cls, iterable, new=tuple.__new__, len=len):
-        'Make a new {typename} object from a sequence or iterable'
-        result = new(cls, iterable)
-        if len(result) != {num_fields:d}:
-            raise TypeError('Expected {num_fields:d} arguments, got %d' % len(result))
-        return result
-
-    def _replace(_self, **kwds):
-        'Return a new {typename} object replacing specified fields with new values'
-        result = _self._make(map(kwds.pop, {field_names!r}, _self))
-        if kwds:
-            raise ValueError('Got unexpected field names: %r' % list(kwds))
-        return result
-
-    def __repr__(self):
-        'Return a nicely formatted representation string'
-        return self.__class__.__name__ + '({repr_fmt})' % self
-
-    def _asdict(self):
-        'Return a new OrderedDict which maps field names to their values.'
-        return OrderedDict(zip(self._fields, self))
-
-    def __getnewargs__(self):
-        'Return self as a plain tuple.  Used by copy and pickle.'
-        return tuple(self)
-
-{field_defs}
-"""
-
-_repr_template = '{name}=%r'
-
-_field_template = '''\
-    {name} = _property(_itemgetter({index:d}), doc='Alias for field number {index:d}')
-'''
-
-def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None):
+def namedtuple(typename, field_names, *, rename=False, module=None):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = namedtuple('Point', ['x', 'y'])
@@ -390,46 +340,104 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
                 or _iskeyword(name)
                 or name.startswith('_')
                 or name in seen):
-                field_names[index] = '_%d' % index
+                field_names[index] = f'_{index}'
             seen.add(name)
     for name in [typename] + field_names:
         if type(name) is not str:
             raise TypeError('Type names and field names must be strings')
         if not name.isidentifier():
             raise ValueError('Type names and field names must be valid '
-                             'identifiers: %r' % name)
+                             f'identifiers: {name!r}')
         if _iskeyword(name):
             raise ValueError('Type names and field names cannot be a '
-                             'keyword: %r' % name)
+                             f'keyword: {name!r}')
     seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
             raise ValueError('Field names cannot start with an underscore: '
-                             '%r' % name)
+                             f'{name!r}')
         if name in seen:
-            raise ValueError('Encountered duplicate field name: %r' % name)
+            raise ValueError(f'Encountered duplicate field name: {name!r}')
         seen.add(name)
 
-    # Fill-in the class template
-    class_definition = _class_template.format(
-        typename = typename,
-        field_names = tuple(field_names),
-        num_fields = len(field_names),
-        arg_list = repr(tuple(field_names)).replace("'", "")[1:-1],
-        repr_fmt = ', '.join(_repr_template.format(name=name)
-                             for name in field_names),
-        field_defs = '\n'.join(_field_template.format(index=index, name=name)
-                               for index, name in enumerate(field_names))
-    )
+    # Variables used in the methods and docstrings
+    field_names = tuple(map(_sys.intern, field_names))
+    num_fields = len(field_names)
+    arg_list = repr(field_names).replace("'", "")[1:-1]
+    repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
+    tuple_new = tuple.__new__
+    _len = len
 
-    # Execute the template string in a temporary namespace and support
-    # tracing utilities by setting a value for frame.f_globals['__name__']
-    namespace = dict(__name__='namedtuple_%s' % typename)
-    exec(class_definition, namespace)
-    result = namespace[typename]
-    result._source = class_definition
-    if verbose:
-        print(result._source)
+    # Create all the named tuple methods to be added to the class namespace
+
+    s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
+    namespace = {'_tuple_new': tuple_new, '__name__': f'namedtuple_{typename}'}
+    # Note: exec() has the side-effect of interning the typename and field names
+    exec(s, namespace)
+    __new__ = namespace['__new__']
+    __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
+
+    @classmethod
+    def _make(cls, iterable):
+        result = tuple_new(cls, iterable)
+        if _len(result) != num_fields:
+            raise TypeError(f'Expected {num_fields} arguments, got {len(result)}')
+        return result
+
+    _make.__func__.__doc__ = (f'Make a new {typename} object from a sequence '
+                              'or iterable')
+
+    def _replace(_self, **kwds):
+        result = _self._make(map(kwds.pop, field_names, _self))
+        if kwds:
+            raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
+        return result
+
+    _replace.__doc__ = (f'Return a new {typename} object replacing specified '
+                        'fields with new values')
+
+    def __repr__(self):
+        'Return a nicely formatted representation string'
+        return self.__class__.__name__ + repr_fmt % self
+
+    def _asdict(self):
+        'Return a new OrderedDict which maps field names to their values.'
+        return OrderedDict(zip(self._fields, self))
+
+    def __getnewargs__(self):
+        'Return self as a plain tuple.  Used by copy and pickle.'
+        return tuple(self)
+
+    # Modify function metadata to help with introspection and debugging
+
+    for method in (__new__, _make.__func__, _replace,
+                   __repr__, _asdict, __getnewargs__):
+        method.__qualname__ = f'{typename}.{method.__name__}'
+
+    # Build-up the class namespace dictionary
+    # and use type() to build the result class
+    class_namespace = {
+        '__doc__': f'{typename}({arg_list})',
+        '__slots__': (),
+        '_fields': field_names,
+        '__new__': __new__,
+        '_make': _make,
+        '_replace': _replace,
+        '__repr__': __repr__,
+        '_asdict': _asdict,
+        '__getnewargs__': __getnewargs__,
+    }
+    cache = _nt_itemgetters
+    for index, name in enumerate(field_names):
+        try:
+            itemgetter_object, doc = cache[index]
+        except KeyError:
+            itemgetter_object = _itemgetter(index)
+            doc = f'Alias for field number {index}'
+            cache[index] = itemgetter_object, doc
+        class_namespace[name] = property(itemgetter_object, doc=doc)
+
+    result = type(typename, (tuple,), class_namespace)
 
     # For pickling to work, the __module__ variable needs to be set to the frame
     # where the named tuple is created.  Bypass this step in environments where

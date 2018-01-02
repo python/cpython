@@ -25,25 +25,71 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 
 typedef struct {
-    int ignore_environment;
-    int use_hash_seed;
+    int install_signal_handlers;  /* Install signal handlers? -1 means unset */
+    int ignore_environment; /* -E */
+    int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
+    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
+    int dev_mode;           /* -X dev */
+    int faulthandler;       /* -X faulthandler */
+    int tracemalloc;        /* -X tracemalloc=N */
+    int import_time;        /* -X importtime */
+    int show_ref_count;     /* -X showrefcount */
+    int show_alloc_count;   /* -X showalloccount */
+    int dump_refs;          /* PYTHONDUMPREFS */
+    int malloc_stats;       /* PYTHONMALLOCSTATS */
+    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable,
+                               -1 means unknown */
+
+    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
+    wchar_t *home;          /* PYTHONHOME environment variable,
+                               see also Py_SetPythonHome(). */
+    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
+
+    int argc;               /* Number of command line arguments,
+                               -1 means unset */
+    wchar_t **argv;         /* Command line arguments */
+    wchar_t *program;       /* argv[0] or "" */
+
+    int nxoption;           /* Number of -X options */
+    wchar_t **xoptions;     /* -X options */
+
+    int nwarnoption;        /* Number of warnings options */
+    wchar_t **warnoptions;  /* Warnings options */
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT {0, -1, 0, 0}
+#define _PyCoreConfig_INIT \
+    (_PyCoreConfig){ \
+        .install_signal_handlers = -1, \
+        .use_hash_seed = -1, \
+        .coerce_c_locale = -1, \
+        .utf8_mode = -1, \
+        .argc = -1}
+/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
- *
- * For the moment, just handle the args to _Py_InitializeEx
  */
 typedef struct {
-    int install_signal_handlers;
+    int install_signal_handlers;   /* Install signal handlers? -1 means unset */
+    PyObject *argv;                /* sys.argv list, can be NULL */
+    PyObject *executable;          /* sys.executable str */
+    PyObject *prefix;              /* sys.prefix str */
+    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
+    PyObject *exec_prefix;         /* sys.exec_prefix str */
+    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
+    PyObject *module_search_path;  /* sys.path list */
 } _PyMainInterpreterConfig;
 
-#define _PyMainInterpreterConfig_INIT {-1}
+#define _PyMainInterpreterConfig_INIT \
+    (_PyMainInterpreterConfig){.install_signal_handlers = -1}
+/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
 typedef struct _is {
 
@@ -52,10 +98,22 @@ typedef struct _is {
 
     int64_t id;
 
+    PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
     PyObject *builtins;
     PyObject *importlib;
+
+    /* Used in Python/sysmodule.c. */
+    int check_interval;
+
+    /* Used in Modules/_threadmodule.c. */
+    long num_threads;
+    /* Support for runtime thread stack size tuning.
+       A value of 0 means using the platform's default stack size
+       or the size specified by the THREAD_STACK_SIZE macro. */
+    /* Used in Python/thread.c. */
+    size_t pythread_stacksize;
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
@@ -82,8 +140,11 @@ typedef struct _is {
     PyObject *after_forkers_parent;
     PyObject *after_forkers_child;
 #endif
+    /* AtExit module */
+    void (*pyexitfunc)(PyObject *);
+    PyObject *pyexitmodule;
 } PyInterpreterState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* State unique per thread */
@@ -92,7 +153,11 @@ typedef struct _is {
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
 typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 
-/* The following values are used for 'what' for tracefunc functions: */
+/* The following values are used for 'what' for tracefunc functions
+ *
+ * To add a new kind of trace event, also update "trace_init" in
+ * Python/sysmodule.c to define the Python level event name
+ */
 #define PyTrace_CALL 0
 #define PyTrace_EXCEPTION 1
 #define PyTrace_LINE 2
@@ -100,11 +165,27 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_CALL 4
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
-#endif
+#define PyTrace_OPCODE 7
+#endif   /* Py_LIMITED_API */
 
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
 #else
+
+typedef struct _err_stackitem {
+    /* This struct represents an entry on the exception stack, which is a
+     * per-coroutine state. (Coroutine in the computer science sense,
+     * including the thread and generators).
+     * This ensures that the exception state is not impacted by "yields"
+     * from an except handler.
+     */
+    PyObject *exc_type, *exc_value, *exc_traceback;
+
+    struct _err_stackitem *previous_item;
+
+} _PyErr_StackItem;
+
+
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -118,6 +199,8 @@ typedef struct _ts {
                         to handle the runtime error. */
     char recursion_critical; /* The current calls must not cause
                                 a stack overflow. */
+    int stackcheck_counter;
+
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
@@ -129,13 +212,19 @@ typedef struct _ts {
     PyObject *c_profileobj;
     PyObject *c_traceobj;
 
+    /* The exception currently being raised */
     PyObject *curexc_type;
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_traceback;
+    /* The exception currently being handled, if no coroutines/generators
+     * are present. Always last element on the stack referred to be exc_info.
+     */
+    _PyErr_StackItem exc_state;
+
+    /* Pointer to the top of the stack of the exceptions currently
+     * being handled */
+    _PyErr_StackItem *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
 
@@ -182,12 +271,9 @@ typedef struct _ts {
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyInterpreterState_Init(void);
-#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
@@ -218,12 +304,10 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 #endif /* !Py_LIMITED_API */
-#ifdef WITH_THREAD
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
 #endif /* !Py_LIMITED_API */
-#endif
 
 /* Return the current thread state. The global interpreter lock must be held.
  * When the current thread state is NULL, this issues a fatal error (so that
@@ -246,7 +330,7 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
 #ifdef Py_BUILD_CORE
-PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
+#  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
 #  define PyThreadState_GET() \
              ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
 #else
@@ -257,7 +341,6 @@ typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}
         PyGILState_STATE;
 
-#ifdef WITH_THREAD
 
 /* Ensure that the current thread is ready to call the Python
    C API, regardless of the current state of Python, or of its
@@ -301,10 +384,6 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 #ifndef Py_LIMITED_API
-/* Issue #26558: Flag to disable PyGILState_Check().
-   If set to non-zero, PyGILState_Check() always return 1. */
-PyAPI_DATA(int) _PyGILState_check_enabled;
-
 /* Helper/diagnostic function - return 1 if the current thread
    currently holds the GIL, 0 otherwise.
 
@@ -317,9 +396,8 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
    is called. */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-#endif
+#endif   /* !Py_LIMITED_API */
 
-#endif   /* #ifdef WITH_THREAD */
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
    thread id to that thread's current frame.
@@ -338,11 +416,6 @@ PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
-#endif
-
-/* hook for PyEval_GetFrame(), requested for Psyco */
-#ifndef Py_LIMITED_API
-PyAPI_DATA(PyThreadFrameGetter) _PyThreadState_GetFrame;
 #endif
 
 #ifdef __cplusplus

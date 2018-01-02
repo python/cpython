@@ -805,6 +805,80 @@ class GrammarTests(unittest.TestCase):
         x = g2()
         check_syntax_error(self, "class foo:return 1")
 
+    def test_break_in_finally(self):
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                1/0
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                1/0
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+    def test_return_in_finally(self):
+        def g1():
+            try:
+                pass
+            finally:
+                return 1
+        self.assertEqual(g1(), 1)
+
+        def g2():
+            try:
+                return 2
+            finally:
+                return 3
+        self.assertEqual(g2(), 3)
+
+        def g3():
+            try:
+                1/0
+            finally:
+                return 4
+        self.assertEqual(g3(), 4)
+
     def test_yield(self):
         # Allowed as standalone statement
         def g(): yield 1
@@ -840,6 +914,41 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "class foo:yield from ()")
         # Check annotation refleak on SyntaxError
         check_syntax_error(self, "def g(a:(yield)): pass")
+
+    def test_yield_in_comprehensions(self):
+        # Check yield in comprehensions
+        def g(): [x for x in [(yield 1)]]
+        def g(): [x for x in [(yield from ())]]
+
+        def check(code, warntext):
+            with self.assertWarnsRegex(DeprecationWarning, warntext):
+                compile(code, '<test string>', 'exec')
+            import warnings
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=DeprecationWarning)
+                with self.assertRaisesRegex(SyntaxError, warntext):
+                    compile(code, '<test string>', 'exec')
+
+        check("def g(): [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("def g(): [x for x in () if not (yield x)]",
+              "'yield' inside list comprehension")
+        check("def g(): [y for x in () for y in [(yield x)]]",
+              "'yield' inside list comprehension")
+        check("def g(): {(yield x) for x in ()}",
+              "'yield' inside set comprehension")
+        check("def g(): {(yield x): x for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): {x: (yield x) for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        check("def g(): [(yield from x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("class C: [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("[(yield x) for x in ()]",
+              "'yield' inside list comprehension")
 
     def test_raise(self):
         # 'raise' test [',' test]

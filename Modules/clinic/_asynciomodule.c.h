@@ -86,7 +86,7 @@ _asyncio_Future_exception(FutureObj *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_asyncio_Future_set_result__doc__,
-"set_result($self, res, /)\n"
+"set_result($self, result, /)\n"
 "--\n"
 "\n"
 "Mark the future done and set its result.\n"
@@ -194,6 +194,24 @@ _asyncio_Future_done(FutureObj *self, PyObject *Py_UNUSED(ignored))
     return _asyncio_Future_done_impl(self);
 }
 
+PyDoc_STRVAR(_asyncio_Future_get_loop__doc__,
+"get_loop($self, /)\n"
+"--\n"
+"\n"
+"Return the event loop the Future is bound to.");
+
+#define _ASYNCIO_FUTURE_GET_LOOP_METHODDEF    \
+    {"get_loop", (PyCFunction)_asyncio_Future_get_loop, METH_NOARGS, _asyncio_Future_get_loop__doc__},
+
+static PyObject *
+_asyncio_Future_get_loop_impl(FutureObj *self);
+
+static PyObject *
+_asyncio_Future_get_loop(FutureObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Future_get_loop_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Future__repr_info__doc__,
 "_repr_info($self, /)\n"
 "--\n"
@@ -273,7 +291,7 @@ static PyObject *
 _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_current_task(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_current_task(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -305,7 +323,7 @@ static PyObject *
 _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop);
 
 static PyObject *
-_asyncio_Task_all_tasks(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_all_tasks(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
@@ -405,7 +423,7 @@ static PyObject *
 _asyncio_Task_get_stack_impl(TaskObj *self, PyObject *limit);
 
 static PyObject *
-_asyncio_Task_get_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_get_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", NULL};
@@ -442,7 +460,7 @@ _asyncio_Task_print_stack_impl(TaskObj *self, PyObject *limit,
                                PyObject *file);
 
 static PyObject *
-_asyncio_Task_print_stack(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_print_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", "file", NULL};
@@ -472,7 +490,7 @@ static PyObject *
 _asyncio_Task__step_impl(TaskObj *self, PyObject *exc);
 
 static PyObject *
-_asyncio_Task__step(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__step(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc", NULL};
@@ -501,7 +519,7 @@ static PyObject *
 _asyncio_Task__wakeup_impl(TaskObj *self, PyObject *fut);
 
 static PyObject *
-_asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task__wakeup(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fut", NULL};
@@ -517,4 +535,232 @@ _asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b92f9cd2b9fb37ef input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_asyncio_Task_set_result__doc__,
+"set_result($self, result, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK_SET_RESULT_METHODDEF    \
+    {"set_result", (PyCFunction)_asyncio_Task_set_result, METH_O, _asyncio_Task_set_result__doc__},
+
+PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
+"set_exception($self, exception, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF    \
+    {"set_exception", (PyCFunction)_asyncio_Task_set_exception, METH_O, _asyncio_Task_set_exception__doc__},
+
+PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
+"_get_running_loop($module, /)\n"
+"--\n"
+"\n"
+"Return the running event loop or None.\n"
+"\n"
+"This is a low-level function intended to be used by event loops.\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO__GET_RUNNING_LOOP_METHODDEF    \
+    {"_get_running_loop", (PyCFunction)_asyncio__get_running_loop, METH_NOARGS, _asyncio__get_running_loop__doc__},
+
+static PyObject *
+_asyncio__get_running_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio__get_running_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio__get_running_loop_impl(module);
+}
+
+PyDoc_STRVAR(_asyncio__set_running_loop__doc__,
+"_set_running_loop($module, loop, /)\n"
+"--\n"
+"\n"
+"Set the running event loop.\n"
+"\n"
+"This is a low-level function intended to be used by event loops.\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO__SET_RUNNING_LOOP_METHODDEF    \
+    {"_set_running_loop", (PyCFunction)_asyncio__set_running_loop, METH_O, _asyncio__set_running_loop__doc__},
+
+PyDoc_STRVAR(_asyncio_get_event_loop__doc__,
+"get_event_loop($module, /)\n"
+"--\n"
+"\n"
+"Return an asyncio event loop.\n"
+"\n"
+"When called from a coroutine or a callback (e.g. scheduled with\n"
+"call_soon or similar API), this function will always return the\n"
+"running event loop.\n"
+"\n"
+"If there is no running event loop set, the function will return\n"
+"the result of `get_event_loop_policy().get_event_loop()` call.");
+
+#define _ASYNCIO_GET_EVENT_LOOP_METHODDEF    \
+    {"get_event_loop", (PyCFunction)_asyncio_get_event_loop, METH_NOARGS, _asyncio_get_event_loop__doc__},
+
+static PyObject *
+_asyncio_get_event_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio_get_event_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_get_event_loop_impl(module);
+}
+
+PyDoc_STRVAR(_asyncio_get_running_loop__doc__,
+"get_running_loop($module, /)\n"
+"--\n"
+"\n"
+"Return the running event loop.  Raise a RuntimeError if there is none.\n"
+"\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO_GET_RUNNING_LOOP_METHODDEF    \
+    {"get_running_loop", (PyCFunction)_asyncio_get_running_loop, METH_NOARGS, _asyncio_get_running_loop__doc__},
+
+static PyObject *
+_asyncio_get_running_loop_impl(PyObject *module);
+
+static PyObject *
+_asyncio_get_running_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_get_running_loop_impl(module);
+}
+
+PyDoc_STRVAR(_asyncio__register_task__doc__,
+"_register_task($module, /, task)\n"
+"--\n"
+"\n"
+"Register a new task in asyncio as executed by loop.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__REGISTER_TASK_METHODDEF    \
+    {"_register_task", (PyCFunction)_asyncio__register_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__register_task__doc__},
+
+static PyObject *
+_asyncio__register_task_impl(PyObject *module, PyObject *task);
+
+static PyObject *
+_asyncio__register_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"task", NULL};
+    static _PyArg_Parser _parser = {"O:_register_task", _keywords, 0};
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__register_task_impl(module, task);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_asyncio__unregister_task__doc__,
+"_unregister_task($module, /, task)\n"
+"--\n"
+"\n"
+"Unregister a task.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__UNREGISTER_TASK_METHODDEF    \
+    {"_unregister_task", (PyCFunction)_asyncio__unregister_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__unregister_task__doc__},
+
+static PyObject *
+_asyncio__unregister_task_impl(PyObject *module, PyObject *task);
+
+static PyObject *
+_asyncio__unregister_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"task", NULL};
+    static _PyArg_Parser _parser = {"O:_unregister_task", _keywords, 0};
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__unregister_task_impl(module, task);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_asyncio__enter_task__doc__,
+"_enter_task($module, /, loop, task)\n"
+"--\n"
+"\n"
+"Enter into task execution or resume suspended task.\n"
+"\n"
+"Task belongs to loop.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__ENTER_TASK_METHODDEF    \
+    {"_enter_task", (PyCFunction)_asyncio__enter_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__enter_task__doc__},
+
+static PyObject *
+_asyncio__enter_task_impl(PyObject *module, PyObject *loop, PyObject *task);
+
+static PyObject *
+_asyncio__enter_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"loop", "task", NULL};
+    static _PyArg_Parser _parser = {"OO:_enter_task", _keywords, 0};
+    PyObject *loop;
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &loop, &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__enter_task_impl(module, loop, task);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_asyncio__leave_task__doc__,
+"_leave_task($module, /, loop, task)\n"
+"--\n"
+"\n"
+"Leave task execution or suspend a task.\n"
+"\n"
+"Task belongs to loop.\n"
+"\n"
+"Returns None.");
+
+#define _ASYNCIO__LEAVE_TASK_METHODDEF    \
+    {"_leave_task", (PyCFunction)_asyncio__leave_task, METH_FASTCALL|METH_KEYWORDS, _asyncio__leave_task__doc__},
+
+static PyObject *
+_asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task);
+
+static PyObject *
+_asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"loop", "task", NULL};
+    static _PyArg_Parser _parser = {"OO:_leave_task", _keywords, 0};
+    PyObject *loop;
+    PyObject *task;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &loop, &task)) {
+        goto exit;
+    }
+    return_value = _asyncio__leave_task_impl(module, loop, task);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=616e814431893dcc input=a9049054013a1b77]*/

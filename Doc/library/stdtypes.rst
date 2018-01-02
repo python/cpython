@@ -973,9 +973,9 @@ Notes:
 
 (8)
    ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   When supported, the additional arguments to the index method allow
-   efficient searching of subsections of the sequence. Passing the extra
-   arguments is roughly equivalent to using ``s[i:j].index(x)``, only
+   Not all implementations support passing the additional arguments *i* and *j*.
+   These arguments allow efficient searching of subsections of the sequence. Passing
+   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
@@ -2573,8 +2573,9 @@ arbitrary binary data.
             bytearray.partition(sep)
 
    Split the sequence at the first occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
+   containing the part before the separator, the separator itself or its
+   bytearray copy, and the part after the separator.
+   If the separator is not found, return a 3-tuple
    containing a copy of the original sequence, followed by two empty bytes or
    bytearray objects.
 
@@ -2629,8 +2630,9 @@ arbitrary binary data.
             bytearray.rpartition(sep)
 
    Split the sequence at the last occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
+   containing the part before the separator, the separator itself or its
+   bytearray copy, and the part after the separator.
+   If the separator is not found, return a 3-tuple
    containing a copy of the original sequence, followed by two empty bytes or
    bytearray objects.
 

@@ -5,14 +5,11 @@ import socket
 import statistics
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, spawn_python
-try:
-    import threading
-except ImportError:
-    threading = None
 try:
     import _testcapi
 except ImportError:
@@ -21,7 +18,6 @@ except ImportError:
 
 class GenericTests(unittest.TestCase):
 
-    @unittest.skipIf(threading is None, "test needs threading module")
     def test_enums(self):
         for name in dir(signal):
             sig = getattr(signal, name)
@@ -94,6 +90,15 @@ class WindowsSignalTests(unittest.TestCase):
 
 
 class WakeupFDTests(unittest.TestCase):
+
+    def test_invalid_call(self):
+        # First parameter is positional-only
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signum=signal.SIGINT)
+
+        # warn_on_full_buffer is a keyword-only parameter
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signal.SIGINT, False)
 
     def test_invalid_fd(self):
         fd = support.make_bad_fd()
@@ -424,6 +429,89 @@ class WakeupSocketSignalTests(unittest.TestCase):
         if ('Exception ignored when trying to {action} to the signal wakeup fd'
             not in err):
             raise AssertionError(err)
+        """.format(action=action)
+        assert_python_ok('-c', code)
+
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    def test_warn_on_full_buffer(self):
+        # Use a subprocess to have only one thread.
+        if os.name == 'nt':
+            action = 'send'
+        else:
+            action = 'write'
+        code = """if 1:
+        import errno
+        import signal
+        import socket
+        import sys
+        import time
+        import _testcapi
+        from test.support import captured_stderr
+
+        signum = signal.SIGINT
+
+        # This handler will be called, but we intentionally won't read from
+        # the wakeup fd.
+        def handler(signum, frame):
+            pass
+
+        signal.signal(signum, handler)
+
+        read, write = socket.socketpair()
+        read.setblocking(False)
+        write.setblocking(False)
+
+        # Fill the send buffer
+        try:
+            while True:
+                write.send(b"x")
+        except BlockingIOError:
+            pass
+
+        # By default, we get a warning when a signal arrives
+        signal.set_wakeup_fd(write.fileno())
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+            not in err):
+            raise AssertionError(err)
+
+        # And also if warn_on_full_buffer=True
+        signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=True)
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+            not in err):
+            raise AssertionError(err)
+
+        # But not if warn_on_full_buffer=False
+        signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=False)
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if err != "":
+            raise AssertionError("got unexpected output %r" % (err,))
+
+        # And then check the default again, to make sure warn_on_full_buffer
+        # settings don't leak across calls.
+        signal.set_wakeup_fd(write.fileno())
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+            not in err):
+            raise AssertionError(err)
+
         """.format(action=action)
         assert_python_ok('-c', code)
 
@@ -807,7 +895,6 @@ class PendingSignalsTests(unittest.TestCase):
                          'need signal.sigwait()')
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
-    @unittest.skipIf(threading is None, "test needs threading module")
     def test_sigwait_thread(self):
         # Check that calling sigwait() from a thread doesn't suspend the whole
         # process. A new interpreter is spawned to avoid problems when mixing

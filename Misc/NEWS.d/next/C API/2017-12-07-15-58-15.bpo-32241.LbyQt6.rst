@@ -1,0 +1,2 @@
+:c:func:`Py_SetProgramName` and :c:func:`Py_SetPythonHome` now take the
+``const wchar *`` arguments instead of ``wchar *``.

@@ -1,1 +1,0 @@
-Fix C implemented asyncio.Future didn't work on Windows.
