@@ -2265,7 +2265,7 @@ _asyncio_Task_set_exception(TaskObj *self, PyObject *exception)
 /*[clinic end generated code: output=bc377fc28067303d input=9a8f65c83dcf893a]*/
 {
     PyErr_SetString(PyExc_RuntimeError,
-                    "Task doed not support set_exception operation");
+                    "Task does not support set_exception operation");
     return NULL;
 }
 

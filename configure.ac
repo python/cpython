@@ -2681,6 +2681,9 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
+# checks for uuid.h location
+AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
+
 AC_MSG_CHECKING(for uuid_generate_time_safe)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
 #ifndef uuid_generate_time_safe
@@ -2688,6 +2691,18 @@ void *x = uuid_generate_time_safe
 #endif
 ]])],
   [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
+AC_MSG_CHECKING(for RFC4122 - uuid support on AIX)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+#ifndef uuid_create
+void *x = uuid_create
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists. AIX support for uuid:RFC4122)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )
