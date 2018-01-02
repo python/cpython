@@ -1015,10 +1015,10 @@ new_buffersize(PyFileObject *f, size_t currentsize)
     off_t pos, end;
     struct stat st;
     int res;
+    size_t bufsize = 0;
 
-    Py_BEGIN_ALLOW_THREADS
+    FILE_BEGIN_ALLOW_THREADS(f)
     res = fstat(fileno(f->f_fp), &st);
-    Py_END_ALLOW_THREADS
 
     if (res == 0) {
         end = st.st_size;
@@ -1032,9 +1032,7 @@ new_buffersize(PyFileObject *f, size_t currentsize)
            need to take the amount of buffered data into account.
            (Yet another reason why stdio stinks. :-) */
 
-        Py_BEGIN_ALLOW_THREADS
         pos = lseek(fileno(f->f_fp), 0L, SEEK_CUR);
-        Py_END_ALLOW_THREADS
 
         if (pos >= 0) {
             pos = ftell(f->f_fp);
@@ -1042,9 +1040,12 @@ new_buffersize(PyFileObject *f, size_t currentsize)
         if (pos < 0)
             clearerr(f->f_fp);
         if (end > pos && pos >= 0)
-            return currentsize + end - pos + 1;
+            bufsize = currentsize + end - pos + 1;
         /* Add 1 so if the file were to grow we'd notice. */
     }
+    FILE_END_ALLOW_THREADS(f)
+    if (bufsize != 0)
+        return bufsize;
 #endif
     /* Expand the buffer by an amount proportional to the current size,
        giving us amortized linear-time behavior. Use a less-than-double
