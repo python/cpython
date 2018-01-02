@@ -430,9 +430,11 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
             self.closed = False
             self.data = bytearray()
             self.fut = loop.create_future()
+            self.transport = None
 
         def connection_made(self, transport):
             self.started = True
+            self.transport = transport
 
         def data_received(self, data):
             self.data.extend(data)
@@ -480,6 +482,9 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 
         def cleanup():
+            proto.transport.close()
+            self.run_loop(proto.wait_closed())
+
             server.close()
             self.run_loop(server.wait_closed())
 

@@ -328,13 +328,13 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             return 0  # empty file
 
         fut = self.create_future()
-        fd = sock.fileno()
-        self._sock_sendfile_native_impl(fut, None, fd, fileno,
+        self._sock_sendfile_native_impl(fut, None, sock, fileno,
                                         offset, count, blocksize, 0)
         return await fut
 
-    def _sock_sendfile_native_impl(self, fut, registered_fd, fd, fileno,
+    def _sock_sendfile_native_impl(self, fut, registered_fd, sock, fileno,
                                    offset, count, blocksize, total_sent):
+        fd = sock.fileno()
         if registered_fd is not None:
             # Remove the callback early.  It should be rare that the
             # selector says the fd is ready but the call still returns
@@ -354,8 +354,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             sent = os.sendfile(fd, fileno, offset, blocksize)
         except (BlockingIOError, InterruptedError):
-            self.add_writer(fd, self._sock_sendfile_native_impl, fut, fd, fd,
-                            fileno, offset, count, blocksize. total_sent)
+            if registered_fd is None:
+                self._sock_add_cancellation_callback(fut, sock)
+            self.add_writer(fd, self._sock_sendfile_native_impl, fut,
+                            fd, sock, fileno,
+                            offset, count, blocksize. total_sent)
         except OSError as exc:
             if total_sent == 0:
                 # We can get here for different reasons, the main
@@ -380,13 +383,23 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             else:
                 offset += sent
                 total_sent += sent
+                if registered_fd is None:
+                    self._sock_add_cancellation_callback(fut, sock)
                 self.add_writer(fd, self._sock_sendfile_native_impl, fut,
-                                fd, fd, fileno,
+                                fd, sock, fileno,
                                 offset, count, blocksize, total_sent)
 
     def _sock_sendfile_update_filepos(self, fileno, offset, total_sent):
         if total_sent > 0:
             os.lseek(fileno, offset, os.SEEK_SET)
+
+    def _sock_add_cancellation_callback(self, fut, sock):
+        def cb(fut):
+            if fut.cancelled():
+                fd = sock.fileno()
+                if fd!= -1:
+                    self.remove_writer(fd)
+        fut.add_done_callback(cb)
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):
