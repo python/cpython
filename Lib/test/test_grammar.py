@@ -805,6 +805,80 @@ class GrammarTests(unittest.TestCase):
         x = g2()
         check_syntax_error(self, "class foo:return 1")
 
+    def test_break_in_finally(self):
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                1/0
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                1/0
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+    def test_return_in_finally(self):
+        def g1():
+            try:
+                pass
+            finally:
+                return 1
+        self.assertEqual(g1(), 1)
+
+        def g2():
+            try:
+                return 2
+            finally:
+                return 3
+        self.assertEqual(g2(), 3)
+
+        def g3():
+            try:
+                1/0
+            finally:
+                return 4
+        self.assertEqual(g3(), 4)
+
     def test_yield(self):
         # Allowed as standalone statement
         def g(): yield 1
