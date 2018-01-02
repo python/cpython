@@ -659,12 +659,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except _SendfileNotAvailable:
+        except _SendfileNotAvailable as exc:
             if fallback:
                 return await self._sock_sendfile_fallback(sock, file,
                                                           offset, count)
             else:
-                raise
+                raise RuntimeError(exc.args[0]) from None
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
         raise _SendfileNotAvailable("Fast sendfile is not available")

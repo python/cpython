@@ -1871,7 +1871,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_no_fallback(self):
         sock, proto = self.prepare()
 
-        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
+        with self.assertRaisesRegex(RuntimeError,
                                     "Fast sendfile is not available"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                   fallback=False))
