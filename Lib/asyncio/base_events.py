@@ -154,7 +154,7 @@ def _run_until_complete_cb(fut):
     futures._get_loop(fut).stop()
 
 
-class _SendfileNotAvailable(Exception):
+class _SendfileNotAvailable(RuntimeError):
     pass
 
 
