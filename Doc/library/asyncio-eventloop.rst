@@ -703,7 +703,7 @@ Low-level socket operations
 
 .. coroutinemethod:: AbstractEventLoop.sock_sendfile(sock, file, \
                                                      offset=0, count=None, \
-                                                     *, fallback=True)
+                                                     *, fallback=None)
 
    Send a file using high-performance :mod:`os.sendfile` if possible
    and return the total number of bytes which were sent.
@@ -722,12 +722,14 @@ Low-level socket operations
    <io.IOBase.tell>` can be used to figure out the number of bytes
    which were sent.
 
-   *fallback* set to ``True`` makes asyncio to manually read and send
-   the file when the platform does not support the sendfile syscall
-   (e.g. Windows or SSL socket on Unix).
+   *fallback* set to ``None`` makes asyncio to manually read and send
+   the file when the platform does not support the :func:`os.sendfile`
+   syscall (e.g. Windows or SSL socket on Unix).
 
    Raise :exc:`RuntimeError` if the system does not support
    *sendfile* syscall and *fallback* is ``False``.
+
+   Never try to use :func:`os.sendfile` if *fallback* is ``True``.
 
    .. versionadded:: 3.7
 
