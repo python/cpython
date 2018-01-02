@@ -561,6 +561,20 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.file.tell(), 0)
 
+    def test_mix_sendfile_and_regular_send(self):
+        buf = b'1234567890' * 1024 * 1024  # 10 MB
+        sock, proto = self.prepare()
+        self.run_loop(self.loop.sock_sendall(sock, buf))
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        self.run_loop(self.loop.sock_sendall(sock, buf))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        expected = buf + self.DATA + buf
+        self.assertEqual(proto.data, expected)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
 
 class UnixReadPipeTransportTests(test_utils.TestCase):
 
