@@ -675,7 +675,7 @@ class FileThreadingTests(unittest.TestCase):
                     for l in f:
                         pass
                 else:
-                    for i in range(100):
+                    for i in xrange(100):
                         f.seek(i*100, 0)
             self._run_workers(iterate, 10)
 
