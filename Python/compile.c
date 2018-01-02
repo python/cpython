@@ -68,8 +68,12 @@ typedef struct basicblock_ {
     unsigned b_seen : 1;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
+    /* b_finally is true if block is entry to a `finally` section */
+    unsigned b_finally : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
+    /* max  relative stack depth for this `finally` subgraph */
+    int b_finallydepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
     int b_offset;
 } basicblock;
@@ -792,6 +796,13 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     return block;
 }
 
+static void
+compiler_starts_finally(basicblock *block)
+{
+    assert(block != NULL);
+    block->b_finally = 1;
+}
+
 /* Returns the offset of the next instruction in the current block's
    b_instr array.  Resizes the b_instr as necessary.
    Returns -1 on failure.
@@ -863,8 +874,8 @@ compiler_set_lineno(struct compiler *c, int off)
     b->b_instr[off].i_lineno = c->u->u_lineno;
 }
 
-int
-PyCompile_OpcodeStackEffect(int opcode, int oparg)
+static int
+inline_delta(int opcode, int oparg)
 {
     switch (opcode) {
         case POP_TOP:
@@ -937,7 +948,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case INPLACE_OR:
             return -1;
         case WITH_EXCEPT_START:
-            return 2;
+            return 1;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -951,7 +962,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
-            return 0;  /* -3 except if bad bytecode */
+            return -3;
         case RERAISE:
             return -3;
 
@@ -964,7 +975,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case UNPACK_EX:
             return (oparg&0xFF) + (oparg>>8);
         case FOR_ITER:
-            return 1; /* or -1, at end of iterator */
+            return 1;
 
         case STORE_ATTR:
             return -2;
@@ -1003,13 +1014,16 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case IMPORT_FROM:
             return 1;
 
-        case JUMP_FORWARD:
-        case JUMP_IF_TRUE_OR_POP:  /* -1 if jump not taken */
-        case JUMP_IF_FALSE_OR_POP:  /*  "" */
+        case JUMP_FORWARD: /* These always branch, so this value is meaningless. */
         case JUMP_ABSOLUTE:
         case END_ITER:
+            return 0;
         case JUMP_FINALLY:
             return 0;
+
+        case JUMP_IF_TRUE_OR_POP:  /* 0 if jump taken */
+        case JUMP_IF_FALSE_OR_POP: /*  "" */
+            return -1;
 
         case LOAD_ADDR:
             return 1;
@@ -1022,12 +1036,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 1;
 
         case SETUP_EXCEPT:
-            return 6; /* can push 3 values for the new exception
-                        + 3 others for the previous exception state */
         case SETUP_WITH:
-            return 5; /* can push 3 values for the new exception
-                        + 3 others for the previous exception state
-                        -1 for the context manager. */
+            return 0;
 
         case BEFORE_WITH:
             return 1;
@@ -1091,6 +1101,56 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return PY_INVALID_STACK_EFFECT;
     }
     return PY_INVALID_STACK_EFFECT; /* not reachable */
+}
+
+static int
+branch_delta(int opcode) {
+    switch(opcode) {
+        case POP_JUMP_IF_FALSE:
+        case POP_JUMP_IF_TRUE:
+            return -1;
+        case FOR_ITER:
+            return -1;
+        case JUMP_FORWARD:
+        case END_ITER:
+        case JUMP_ABSOLUTE:
+        case LOAD_ADDR:
+        case JUMP_IF_TRUE_OR_POP:  /* -1 if jump not taken */
+        case JUMP_IF_FALSE_OR_POP: /*  "" */
+            return 0;
+        case JUMP_FINALLY:
+            return 1;
+        case SETUP_EXCEPT:
+            return 6; /* can push 3 values for the new exception
+                        + 3 others for the previous exception state */
+        case SETUP_WITH:
+            return 5; /* can push 3 values for the new exception
+                        + 3 others for the previous exception state
+                        -1 for the context manager. */
+        default:
+            return PY_INVALID_STACK_EFFECT;
+    }
+}
+
+static int
+is_terminator(int opcode) {
+    switch(opcode) {
+        case RETURN_VALUE:
+        case RAISE_VARARGS:
+        case RERAISE:
+        case JUMP_ABSOLUTE:
+        case JUMP_FORWARD:
+        case END_FINALLY:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int
+PyCompile_OpcodeStackEffect(int opcode, int oparg)
+{
+    return inline_delta(opcode, oparg);
 }
 
 /* Add an opcode with no argument.
@@ -2753,6 +2813,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     if (!compiler_push_finally_end(c, finalbody))
         return 0;
     compiler_use_next_block(c, finalbody);
+    compiler_starts_finally(finalbody);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, END_FINALLY);
     compiler_pop_fblock(c, FINALLY_END, finalbody);
@@ -5173,54 +5234,69 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 }
 
 static int
-stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
+stackdepth_walk(struct compiler *c, basicblock *b, int start_depth, int input_maxdepth)
 {
-    int i, target_depth, effect;
+    int i, depth, effect, maxdepth;
     struct instr *instr;
-    if (b->b_seen || b->b_startdepth >= depth)
+    depth = start_depth;
+    maxdepth = input_maxdepth;
+    if (b->b_finally) {
+        /* Finally blocks are special. We treat them as a separate CFG, computing their
+         * max-depth from 0. Then we add that to the stack depth for each jump to
+         * the finally block. */
+        if (b->b_seen) {
+            int total = start_depth + b->b_finallydepth;
+            return total > input_maxdepth ? total : input_maxdepth;
+        }
+        b->b_finallydepth = 0;
+        depth = 0;
+        maxdepth = 0;
+    }
+    else if (b->b_seen || b->b_startdepth >= depth) {
         return maxdepth;
+    }
     b->b_seen = 1;
     b->b_startdepth = depth;
+    if (depth > maxdepth)
+        maxdepth = depth;
     for (i = 0; i < b->b_iused; i++) {
         instr = &b->b_instr[i];
-        effect = PyCompile_OpcodeStackEffect(instr->i_opcode, instr->i_oparg);
+        effect = inline_delta(instr->i_opcode, instr->i_oparg);
         if (effect == PY_INVALID_STACK_EFFECT) {
             fprintf(stderr, "opcode = %d\n", instr->i_opcode);
             Py_FatalError("PyCompile_OpcodeStackEffect()");
         }
+        if (instr->i_jrel || instr->i_jabs) {
+            int branch_effect = branch_delta(instr->i_opcode);
+            if (branch_effect == PY_INVALID_STACK_EFFECT) {
+                fprintf(stderr, "opcode = %d\n", instr->i_opcode);
+                Py_FatalError("branch_delta()");
+            }
+            b->b_finallydepth = maxdepth;
+            maxdepth = stackdepth_walk(c, instr->i_target,
+                                        depth + branch_effect, maxdepth);
+        }
         depth += effect;
-
         if (depth > maxdepth)
             maxdepth = depth;
         assert(depth >= 0); /* invalid code or bug in stackdepth() */
-        if (instr->i_jrel || instr->i_jabs) {
-            target_depth = depth;
-            if (instr->i_opcode == FOR_ITER) {
-                target_depth = depth-2;
-            }
-            else if (instr->i_opcode == SETUP_EXCEPT ||
-                     instr->i_opcode == SETUP_WITH) {
-                target_depth = depth+3;
-                if (target_depth > maxdepth)
-                    maxdepth = target_depth;
-            }
-            else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
-                     instr->i_opcode == JUMP_IF_FALSE_OR_POP)
-                depth = depth - 1;
-            maxdepth = stackdepth_walk(c, instr->i_target,
-                                       target_depth, maxdepth);
-            if (instr->i_opcode == JUMP_ABSOLUTE ||
-                instr->i_opcode == JUMP_FORWARD ||
-                instr->i_opcode == END_ITER) {
-                goto out; /* remaining code is dead */
-            }
+        if (is_terminator(instr->i_opcode)) {
+            goto out; /* remaining code is dead */
         }
     }
-    if (b->b_next)
+    if (b->b_next) {
+        b->b_finallydepth = maxdepth;
         maxdepth = stackdepth_walk(c, b->b_next, depth, maxdepth);
+    }
 out:
-    b->b_seen = 0;
-    return maxdepth;
+    if (b->b_finally) {
+        b->b_finallydepth = maxdepth;
+        int total = start_depth + maxdepth;
+        return total > input_maxdepth ? total : input_maxdepth;
+    } else {
+        b->b_seen = 0;
+        return maxdepth;
+    }
 }
 
 /* Find the flow path that needs the largest stack.  We assume that
