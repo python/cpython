@@ -1,6 +1,7 @@
 """Tests for unix_events.py."""
 
 import collections
+import contextlib
 import errno
 import io
 import os
@@ -579,6 +580,93 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         expected = buf + self.DATA + buf
         self.assertEqual(proto.data, expected)
         self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_cancel1(self):
+        sock, proto = self.prepare()
+
+        fut = self.loop.create_future()
+        fileno = self.file.fileno()
+        self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                             0, None, len(self.DATA), 0)
+        fut.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            self.run_loop(fut)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+
+    def test_cancel2(self):
+        sock, proto = self.prepare()
+
+        fut = self.loop.create_future()
+        fileno = self.file.fileno()
+        self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                             0, None, len(self.DATA), 0)
+        fut.cancel()
+        self.loop._sock_sendfile_native_impl(fut, sock.fileno(), sock, fileno,
+                                             0, None, len(self.DATA), 0)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+
+    def test_blocking_error(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = mock.Mock()
+        fut.cancelled.return_value = False
+        with mock.patch('os.sendfile', side_effect=BlockingIOError()):
+            self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                                 0, None, len(self.DATA), 0)
+        key = self.loop._selector.get_key(sock)
+        self.assertIsNotNone(key)
+        fut.add_done_callback.assert_called_once_with(mock.ANY)
+
+    def test_os_error_first_call(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = self.loop.create_future()
+        with mock.patch('os.sendfile', side_effect=OSError()):
+            self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                                 0, None, len(self.DATA), 0)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+        exc = fut.exception()
+        self.assertIsInstance(exc, base_events._SendfileNotAvailable)
+        self.assertEqual(0, self.file.tell())
+
+    def test_os_error_next_call(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = self.loop.create_future()
+        err = OSError()
+        with mock.patch('os.sendfile', side_effect=err):
+            self.loop._sock_sendfile_native_impl(fut, sock.fileno(),
+                                                 sock, fileno,
+                                                 1000, None, len(self.DATA),
+                                                 1000)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+        exc = fut.exception()
+        self.assertIs(exc, err)
+        self.assertEqual(1000, self.file.tell())
+
+    def test_exception(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = self.loop.create_future()
+        err = RuntimeError()
+        with mock.patch('os.sendfile', side_effect=err):
+            self.loop._sock_sendfile_native_impl(fut, sock.fileno(),
+                                                 sock, fileno,
+                                                 1000, None, len(self.DATA),
+                                                 1000)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+        exc = fut.exception()
+        self.assertIs(exc, err)
+        self.assertEqual(1000, self.file.tell())
 
 
 class UnixReadPipeTransportTests(test_utils.TestCase):

@@ -358,7 +358,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 self._sock_add_cancellation_callback(fut, sock)
             self.add_writer(fd, self._sock_sendfile_native_impl, fut,
                             fd, sock, fileno,
-                            offset, count, blocksize. total_sent)
+                            offset, count, blocksize, total_sent)
         except OSError as exc:
             if total_sent == 0:
                 # We can get here for different reasons, the main
