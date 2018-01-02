@@ -653,18 +653,15 @@ class FileThreadingTests(unittest.TestCase):
         self._test_close_open_io(io_func)
 
     def test_iteration_torture(self):
-        # bpo-31530: Crash when concurrently iterate over a file.
+        # bpo-31530
         with open(self.filename, "wb") as fp:
             for i in xrange(2**20):
                 fp.write(b"0"*50 + b"\n")
         with open(self.filename, "rb") as f:
-            def iterate():
-                try:
-                    for l in f:
-                        pass
-                except IOError:
+            def it():
+                for l in f:
                     pass
-            self._run_workers(iterate, 10)
+            self._run_workers(it, 10)
 
     def test_iteration_seek(self):
         # bpo-31530: Crash when concurrently seek and iterate over a file.
@@ -674,16 +671,14 @@ class FileThreadingTests(unittest.TestCase):
         with open(self.filename, "rb") as f:
             it = iter([1] + [0]*10)  # one thread reads, others seek
             def iterate():
-                try:
-                    if next(it):
-                        for l in f:
-                            pass
-                    else:
-                        for i in range(100):
-                            f.seek(i*100, 0)
-                except IOError:
-                    pass
+                if next(it):
+                    for l in f:
+                        pass
+                else:
+                    for i in xrange(100):
+                        f.seek(i*100, 0)
             self._run_workers(iterate, 10)
+
 
 @unittest.skipUnless(os.name == 'posix', 'test requires a posix system.')
 class TestFileSignalEINTR(unittest.TestCase):
