@@ -173,6 +173,8 @@ class ABCMeta(type):
         for name in sorted(cls.__dict__.keys()):
             if name.startswith("_abc_"):
                 value = getattr(cls, name)
+                if isinstance(value, WeakSet):
+                    value = set(value)
                 print("%s: %r" % (name, value), file=file)
 
     def __instancecheck__(cls, instance):
