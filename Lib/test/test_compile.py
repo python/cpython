@@ -772,8 +772,6 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet)
 
-    # This one unfortunately "leaks" a few stack slots for each snippet
-    @unittest.expectedFailure
     def test_try_except_as(self):
         snippet = """
             try:
@@ -837,6 +835,53 @@ class TestStackSizeStability(unittest.TestCase):
                     continue
                 else:
                     a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for_break_continue_inside_try_finally_block(self):
+        snippet = """
+            for x in y:
+                try:
+                    if z:
+                        break
+                    elif u:
+                        continue
+                    else:
+                        a
+                finally:
+                    f
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for_break_inside_finally_block(self):
+        snippet = """
+            for x in y:
+                try:
+                    t
+                finally:
+                    if z:
+                        break
+                    else:
+                        a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for_break_continue_inside_with_block(self):
+        snippet = """
+            for x in y:
+                with c:
+                    if z:
+                        break
+                    elif u:
+                        continue
+                    else:
+                        a
             else:
                 b
             """

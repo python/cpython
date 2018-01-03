@@ -853,6 +853,12 @@ compiler_set_lineno(struct compiler *c, int off)
     b->b_instr[off].i_lineno = c->u->u_lineno;
 }
 
+/* Return the stack effect of opcode with argument oparg.
+
+   If the stack effect depends on the values on the stack return
+   the stack effect for the worst case.  stackdepth_walk() will correct
+   it for an alternate case.
+ */
 int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
@@ -931,13 +937,15 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
 
         case SETUP_WITH:
-            /* Replace TOP with __exit__, reserve 6 entries for an exception,
-             * and push the result of __enter__() */
-            return 7;
+            /* 1 in the normal flow.
+             * Restore the stack position and push 6 values before jumping to
+             * the handler if an exception be raised. */
+            return 6;
         case WITH_CLEANUP_START:
-            return 2;
+            return 2; /* or 1, depending on TOS */
         case WITH_CLEANUP_FINISH:
-            /* Pop 2 values pushed by WITH_CLEANUP_START and pop __exit__ */
+            /* Pop the variable number of values pushed by WITH_CLEANUP_START
+             * + __exit__ or __aexit__. */
             return -3;
         case RETURN_VALUE:
             return -1;
@@ -955,9 +963,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case POP_EXCEPT:
             return -3;
         case END_FINALLY:
-            /* Pops the 3 values of the pushed exception
-             * + the 3 values of the saved exception state
-             */
+        case POP_FINALLY:
+            /* Pop 6 values when an exception was raised. */
             return -6;
 
         case STORE_NAME:
@@ -1010,12 +1017,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
         /* Jumps */
         case JUMP_FORWARD:
+        case JUMP_IF_TRUE_OR_POP:  /* -1 if jump not taken */
+        case JUMP_IF_FALSE_OR_POP:  /*  "" */
         case JUMP_ABSOLUTE:
             return 0;
-        case JUMP_IF_FALSE_OR_POP:
-        case JUMP_IF_TRUE_OR_POP:
-            /* 0 if jumped */
-            return -1;
+
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
             return -1;
@@ -1025,19 +1031,15 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
         /* Exception handling */
         case SETUP_FINALLY:
-            /* Reserve 3 entries for the new exception
-             * + 3 others for the previous exception state */
+            /* 0 in the normal flow.
+             * Restore the stack position and push 6 values before jumping to
+             * the handler if an exception be raised. */
             return 6;
         case BEGIN_FINALLY:
             /* The stack has been reserved by SETUP_FINALLY */
-            return 0;
+            return 6;
         case CALL_FINALLY:
             return 0;
-        case POP_FINALLY:
-            /* Pops the 3 values of the pushed exception
-             * + the 3 values of the saved exception state
-             */
-            return -6;
 
         case LOAD_FAST:
             return 1;
@@ -1084,8 +1086,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case GET_AWAITABLE:
             return 0;
         case SETUP_ASYNC_WITH:
-            /* Reserve 6 entries for an exception */
-            return 6;
+            /* 0 in the normal flow.
+             * Restore the stack position to the position before __aexit__
+             * and push 6 values before jumping to the handler if an
+             * exception be raised. */
+            return -1 + 6;
         case BEFORE_ASYNC_WITH:
             return 1;
         case GET_AITER:
@@ -2761,7 +2766,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* second # body */
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             ADDOP(c, POP_BLOCK);
-            ADDOP(c, POP_EXCEPT);
             ADDOP(c, BEGIN_FINALLY);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
 
@@ -2776,6 +2780,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
             ADDOP(c, END_FINALLY);
+            ADDOP(c, POP_EXCEPT);
             compiler_pop_fblock(c, FINALLY_END, cleanup_end);
         }
         else {
@@ -4994,15 +4999,13 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 }
 
 static int
-stackdepth_walk(struct compiler *c, basicblock *b, int depth)
+stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
-    int i, target_depth, maxdepth, effect;
+    int i, target_depth, effect;
     struct instr *instr;
-
-    if (b->b_seen || b->b_startdepth >= depth) {
-        return 0;
-    }
-    maxdepth = depth;
+//     assert(!b->b_seen || b->b_startdepth == depth);
+    if (b->b_seen || b->b_startdepth >= depth)
+        return maxdepth;
     /* Guard against infinite recursion */
     b->b_seen = 1;
     b->b_startdepth = depth;
@@ -5017,40 +5020,46 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
 
         if (depth > maxdepth)
             maxdepth = depth;
+        if (depth < 0)
+            return maxdepth;
         assert(depth >= 0); /* invalid code or bug in stackdepth() */
-        if ((instr->i_jrel || instr->i_jabs) &&
-            instr->i_opcode != CALL_FINALLY)
-        {
+        if (instr->i_jrel || instr->i_jabs) {
             /* Recursively inspect jump target */
             target_depth = depth;
+            if (instr->i_opcode == CALL_FINALLY) {
+                continue;
+            }
             if (instr->i_opcode == FOR_ITER) {
                 target_depth = depth - 2;
             }
-            else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
-                     instr->i_opcode == JUMP_IF_FALSE_OR_POP) {
-                target_depth = depth + 1;
+            else if (instr->i_opcode == SETUP_FINALLY)
+            {
+                depth = depth - 6;
             }
             else if (instr->i_opcode == SETUP_WITH ||
-                     instr->i_opcode == SETUP_ASYNC_WITH) {
-                target_depth = depth - 1;
+                     instr->i_opcode == SETUP_ASYNC_WITH)
+            {
+                depth = depth - 5;
             }
-            target_depth = stackdepth_walk(c, instr->i_target, target_depth);
-            if (target_depth > maxdepth)
-                maxdepth = target_depth;
+            else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
+                     instr->i_opcode == JUMP_IF_FALSE_OR_POP)
+            {
+                depth = depth - 1;
+            }
+            maxdepth = stackdepth_walk(c, instr->i_target,
+                                       target_depth, maxdepth);
         }
         if (instr->i_opcode == JUMP_ABSOLUTE ||
             instr->i_opcode == JUMP_FORWARD ||
             instr->i_opcode == RETURN_VALUE ||
-            instr->i_opcode == RAISE_VARARGS) {
+            instr->i_opcode == RAISE_VARARGS)
+        {
             goto out; /* remaining code is dead */
         }
     }
 
-    if (b->b_next) {
-        depth = stackdepth_walk(c, b->b_next, depth);
-        if (depth > maxdepth)
-            maxdepth = depth;
-    }
+    if (b->b_next)
+        maxdepth = stackdepth_walk(c, b->b_next, depth, maxdepth);
 out:
     b->b_seen = 0;
     return maxdepth;
@@ -5071,7 +5080,7 @@ stackdepth(struct compiler *c)
     }
     if (!entryblock)
         return 0;
-    return stackdepth_walk(c, entryblock, 0);
+    return stackdepth_walk(c, entryblock, 0, 0);
 }
 
 static int
