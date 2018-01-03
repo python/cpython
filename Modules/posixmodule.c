@@ -9288,16 +9288,6 @@ os_WSTOPSIG_impl(PyObject *module, int status)
    needed definitions in sys/statvfs.h */
 #define _SVID3
 #endif
-/* Issue #32390: On AIX platform, _ALL_SOURCE is defined by default.
-   When _ALL_SOURCE is defined the AIX system headers needed for
-   os.statvfs(path) define (typedef) f_fsid member of the statvfs structure
-   in a way that is not compatible with the PyStructSequence_SET_ITEM() statement.
-   With _ALL_SOURCE undefined the AIX system headers provide equivalent definitions
-   and the code works asis
- */
-#if defined(_AIX) && defined(_ALL_SOURCE)
-#undef _ALL_SOURCE
-#endif
 #include <sys/statvfs.h>
 
 static PyObject*
@@ -9335,7 +9325,16 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
+/* Issue #32390: On AIX platform, _ALL_SOURCE is defined by default.
+   When _ALL_SOURCE is defined the AIX system headers define f_fsid
+   in a way that is not compatible with the PyStructSequence_SET_ITEM() statement.
+   This change makes os.statvfs(path) work on AIX
+ */
+#if defined(_AIX) && defined(_ALL_SOURCE)
+    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+#else
     PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
+#endif
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;
