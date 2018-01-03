@@ -151,11 +151,17 @@ might try the following sort calls::
    p.sort_stats('name')
    p.print_stats()
 
+   p.sort_stats(SortKey.name)
+   p.print_stats()
+
 The first call will actually sort the list by function name, and the second call
-will print out the statistics.  The following are some interesting calls to
-experiment with::
+will print out the statistics.  The next two calls perform the same function, but
+the call to :meth:`~pstats.Stats.sort_stats` uses SortKey enum argument which is
+less error prone than the string version. The following are some interesting calls
+to experiment with::
 
    p.sort_stats('cumulative').print_stats(10)
+   p.sort_stats(SortKey.cumulative).print_stats(10)
 
 This sorts the profile by cumulative time in a function, and then only prints
 the ten most significant lines.  If you want to understand what algorithms are
@@ -165,6 +171,7 @@ If you were looking to see what functions were looping a lot, and taking a lot
 of time, you would do::
 
    p.sort_stats('time').print_stats(10)
+   p.sort_stats(SortKey.time).print_stats(10)
 
 to sort according to time spent within each function, and then print the
 statistics for the top ten functions.
@@ -172,12 +179,14 @@ statistics for the top ten functions.
 You might also try::
 
    p.sort_stats('file').print_stats('__init__')
+   p.sort_stats(SortKey.file).print_stats('__init__')
 
 This will sort all the statistics by file name, and then print out statistics
 for only the class init methods (since they are spelled with ``__init__`` in
 them).  As one final example, you could try::
 
    p.sort_stats('time', 'cumulative').print_stats(.5, 'init')
+   p.sort_stats(SortKey.time, SortKey.cumulative).print_stats(.5, 'init')
 
 This line sorts statistics with a primary key of time, and a secondary key of
 cumulative time, and then prints out some of the statistics. To be specific, the
@@ -255,7 +264,7 @@ functions:
       # ... do something ...
       pr.disable()
       s = io.StringIO()
-      sortby = 'cumulative'
+      sortby = SortKey.cumulative
       ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
       ps.print_stats()
       print(s.getvalue())
@@ -361,60 +370,64 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
    .. method:: sort_stats(*keys)
 
       This method modifies the :class:`Stats` object by sorting it according to
-      the supplied criteria.  The argument is typically a string identifying the
-      basis of a sort (example: ``'time'`` or ``'name'``).
+      the supplied criteria.  The argument can be either a string or a SortKey
+      enums identifying the basis of a sort (example: ``'time'``, ``'name'``,
+      ``SortKey.time`` or ``SortKey.name``). The SortKey enums argument have
+      advantage over the string argument in that it is more robust and less
+      error prone.
 
       When more than one key is provided, then additional keys are used as
       secondary criteria when there is equality in all keys selected before
-      them.  For example, ``sort_stats('name', 'file')`` will sort all the
-      entries according to their function name, and resolve all ties (identical
-      function names) by sorting by file name.
+      them.  For example, ``sort_stats(SortKey.name, SortKey.file)`` will sort
+      all the entries according to their function name, and resolve all ties
+      (identical function names) by sorting by file name.
 
-      Abbreviations can be used for any key names, as long as the abbreviation
-      is unambiguous.  The following are the keys currently defined:
+      For the string argument, abbreviations can be used for any key names, as
+      long as the abbreviation is unambiguous.  The following are the keys
+      currently defined:
 
-      +------------------+----------------------+
-      | Valid Arg        | Meaning              |
-      +==================+======================+
-      | ``'calls'``      | call count           |
-      +------------------+----------------------+
-      | ``'cumulative'`` | cumulative time      |
-      +------------------+----------------------+
-      | ``'cumtime'``    | cumulative time      |
-      +------------------+----------------------+
-      | ``'file'``       | file name            |
-      +------------------+----------------------+
-      | ``'filename'``   | file name            |
-      +------------------+----------------------+
-      | ``'module'``     | file name            |
-      +------------------+----------------------+
-      | ``'ncalls'``     | call count           |
-      +------------------+----------------------+
-      | ``'pcalls'``     | primitive call count |
-      +------------------+----------------------+
-      | ``'line'``       | line number          |
-      +------------------+----------------------+
-      | ``'name'``       | function name        |
-      +------------------+----------------------+
-      | ``'nfl'``        | name/file/line       |
-      +------------------+----------------------+
-      | ``'stdname'``    | standard name        |
-      +------------------+----------------------+
-      | ``'time'``       | internal time        |
-      +------------------+----------------------+
-      | ``'tottime'``    | internal time        |
-      +------------------+----------------------+
+      +------------------+---------------------+----------------------+
+      | Valid String Arg | Valid enum Arg      | Meaning              |
+      +==================+=====================+======================+
+      | ``'calls'``      | SortKey.calls       | call count           |
+      +------------------+---------------------+----------------------+
+      | ``'cumulative'`` | SortKey.cumulative  | cumulative time      |
+      +------------------+---------------------+----------------------+
+      | ``'cumtime'``    | SortKey.cumtime     | cumulative time      |
+      +------------------+---------------------+----------------------+
+      | ``'file'``       | SortKey.file        | file name            |
+      +------------------+---------------------+----------------------+
+      | ``'filename'``   | SortKey.filename    | file name            |
+      +------------------+---------------------+----------------------+
+      | ``'module'``     | SortKey.module      | file name            |
+      +------------------+---------------------+----------------------+
+      | ``'ncalls'``     | SortKey.ncalls      | call count           |
+      +------------------+---------------------+----------------------+
+      | ``'pcalls'``     | SortKey.pcalls      | primitive call count |
+      +------------------+---------------------+----------------------+
+      | ``'line'``       | SortKey.line        | line number          |
+      +------------------+---------------------+----------------------+
+      | ``'name'``       | SortKey.name        | function name        |
+      +------------------+---------------------+----------------------+
+      | ``'nfl'``        | SortKey.nfl         | name/file/line       |
+      +------------------+---------------------+----------------------+
+      | ``'stdname'``    | SortKey.stdname     | standard name        |
+      +------------------+---------------------+----------------------+
+      | ``'time'``       | SortKey.time        | internal time        |
+      +------------------+---------------------+----------------------+
+      | ``'tottime'``    | SortKey.tottime     | internal time        |
+      +------------------+---------------------+----------------------+
 
       Note that all sorts on statistics are in descending order (placing most
       time consuming items first), where as name, file, and line number searches
       are in ascending order (alphabetical). The subtle distinction between
-      ``'nfl'`` and ``'stdname'`` is that the standard name is a sort of the
-      name as printed, which means that the embedded line numbers get compared
-      in an odd way.  For example, lines 3, 20, and 40 would (if the file names
-      were the same) appear in the string order 20, 3 and 40.  In contrast,
-      ``'nfl'`` does a numeric compare of the line numbers.  In fact,
-      ``sort_stats('nfl')`` is the same as ``sort_stats('name', 'file',
-      'line')``.
+      ``SortKey.nfl`` and ``SortKey.stdname`` is that the standard name is a
+      sort of the name as printed, which means that the embedded line numbers
+      get compared in an odd way.  For example, lines 3, 20, and 40 would (if
+      the file names were the same) appear in the string order 20, 3 and 40.
+      In contrast, ``SortKey.nfl`` does a numeric compare of the line numbers.
+      In fact, ``sort_stats(SortKey.nfl)`` is the same as
+      ``sort_stats(SortKey.name, SortKey.file, SortKey.line)``.
 
       For backward-compatibility reasons, the numeric arguments ``-1``, ``0``,
       ``1``, and ``2`` are permitted.  They are interpreted as ``'stdname'``,
@@ -424,6 +437,8 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
 
       .. For compatibility with the old profiler.
 
+      .. versionadded:: 3.7
+         Added the SortKey enums.
 
    .. method:: reverse_order()
 

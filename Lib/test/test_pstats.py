@@ -2,6 +2,7 @@ import unittest
 from test import support
 from io import StringIO
 import pstats
+from pstats import SortKey
 
 
 
@@ -32,6 +33,41 @@ class StatsTestCase(unittest.TestCase):
         stream = StringIO()
         stats = pstats.Stats(stream=stream)
         stats.add(self.stats, self.stats)
+
+    def test_sort_stats_int(self):
+        valid_args = {-1: 'stdname',
+                      0: 'calls',
+                      1: 'time',
+                      2: 'cumulative'}
+        for arg_int, arg_str in valid_args.items():
+            self.stats.sort_stats(arg_int)
+            self.assertEqual(self.stats.sort_type,
+                             self.stats.sort_arg_dict_default[arg_str][-1])
+
+    def test_sort_stats_string(self):
+        for arg in SortKey:
+            arg = arg.name
+            # 'file' sorting criteria will not work because it creates
+            # ambiquity with 'filename'
+            if arg == 'file':
+                continue
+            self.stats.sort_stats(arg)
+            self.assertEqual(self.stats.sort_type,
+                             self.stats.sort_arg_dict_default[arg][-1])
+
+    def test_sort_stats_enum(self):
+        for arg in SortKey:
+            self.stats.sort_stats(arg)
+            self.assertEqual(self.stats.sort_type,
+                             self.stats.sort_arg_dict_default[arg][-1])
+
+    def test_sort_starts_mix(self):
+        self.assertRaises(TypeError, self.stats.sort_stats,
+                          'calls',
+                          SortKey.time)
+        self.assertRaises(TypeError, self.stats.sort_stats,
+                          SortKey.time,
+                          'calls')
 
 
 if __name__ == "__main__":
