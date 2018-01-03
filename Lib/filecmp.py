@@ -191,7 +191,7 @@ class dircmp:
         for x in self.common_dirs:
             a_x = os.path.join(self.left, x)
             b_x = os.path.join(self.right, x)
-            self.subdirs[x]  = dircmp(a_x, b_x, self.ignore, self.hide)
+            self.subdirs[x] = type(self)(a_x, b_x, self.ignore, self.hide)
 
     def phase4_closure(self): # Recursively call phase4() on subdirectories
         self.phase4()
