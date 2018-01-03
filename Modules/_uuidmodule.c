@@ -1,22 +1,33 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
+#endif
+#ifdef HAVE_UUID_H
+#include <uuid.h>
+#endif
 
 
 static PyObject *
 py_uuid_generate_time_safe(void)
 {
+    uuid_t uuid;
 #ifdef HAVE_UUID_GENERATE_TIME_SAFE
-    uuid_t out;
     int res;
 
-    res = uuid_generate_time_safe(out);
-    return Py_BuildValue("y#i", (const char *) out, sizeof(out), res);
+    res = uuid_generate_time_safe(uuid);
+    return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
+#elif HAVE_UUID_CREATE
+/*
+ * AIX support for uuid - RFC4122
+ */
+    unsigned32 status;
+    uuid_create(&uuid, &status);
+    return Py_BuildValue("y#i", (const char *) &uuid, sizeof(uuid), (int) status);
 #else
-    uuid_t out;
-    uuid_generate_time(out);
-    return Py_BuildValue("y#O", (const char *) out, sizeof(out), Py_None);
+    uuid_generate_time(uuid);
+    return Py_BuildValue("y#O", (const char *) uuid, sizeof(uuid), Py_None);
 #endif
 }
 
