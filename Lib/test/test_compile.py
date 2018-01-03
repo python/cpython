@@ -872,6 +872,23 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet)
 
+    def test_for_break_continue_inside_except_block(self):
+        snippet = """
+            for x in y:
+                try:
+                    t
+                except:
+                    if z:
+                        break
+                    elif u:
+                        continue
+                    else:
+                        a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
     def test_for_break_continue_inside_with_block(self):
         snippet = """
             for x in y:
@@ -884,6 +901,52 @@ class TestStackSizeStability(unittest.TestCase):
                         a
             else:
                 b
+            """
+        self.check_stack_size(snippet)
+
+    def test_return_inside_try_finally_block(self):
+        snippet = """
+            try:
+                if z:
+                    return
+                else:
+                    a
+            finally:
+                f
+            """
+        self.check_stack_size(snippet)
+
+    def test_return_inside_finally_block(self):
+        snippet = """
+            try:
+                t
+            finally:
+                if z:
+                    return
+                else:
+                    a
+            """
+        self.check_stack_size(snippet)
+
+    def test_return_inside_except_block(self):
+        snippet = """
+            try:
+                t
+            except:
+                if z:
+                    return
+                else:
+                    a
+            """
+        self.check_stack_size(snippet)
+
+    def test_return_inside_with_block(self):
+        snippet = """
+            with c:
+                if z:
+                    return
+                else:
+                    a
             """
         self.check_stack_size(snippet)
 
@@ -907,6 +970,31 @@ class TestStackSizeStability(unittest.TestCase):
                 a
             else:
                 b
+            """
+        self.check_stack_size(snippet, async_=True)
+
+    def test_for_break_continue_inside_async_with_block(self):
+        snippet = """
+            for x in y:
+                async with c:
+                    if z:
+                        break
+                    elif u:
+                        continue
+                    else:
+                        a
+            else:
+                b
+            """
+        self.check_stack_size(snippet, async_=True)
+
+    def test_return_inside_async_with_block(self):
+        snippet = """
+            async with c:
+                if z:
+                    return
+                else:
+                    a
             """
         self.check_stack_size(snippet, async_=True)
 
