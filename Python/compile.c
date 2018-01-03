@@ -958,8 +958,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case YIELD_FROM:
             return -1;
         case POP_BLOCK:
-            /* Adjust 6 entries reserved by SETUP_FINALLY */
-            return -6;
+            return 0;
         case POP_EXCEPT:
             return -3;
         case END_FINALLY:
@@ -1036,10 +1035,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
              * the handler if an exception be raised. */
             return 6;
         case BEGIN_FINALLY:
-            /* The stack has been reserved by SETUP_FINALLY */
+            /* Actually pushes 1 value, but count 6 for balancing with
+             * END_FINALLY and POP_FINALLY. */
             return 6;
         case CALL_FINALLY:
-            return 0;
+            return 1;
 
         case LOAD_FAST:
             return 1;
@@ -1509,7 +1509,15 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             ADDOP(c, POP_BLOCK);
             if (preserve_tos)
                 ADDOP(c, ROT_TWO);
-            ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+            ADDOP(c, BEGIN_FINALLY);
+            ADDOP(c, WITH_CLEANUP_START);
+            if (info->fb_type == ASYNC_WITH) {
+                ADDOP(c, GET_AWAITABLE);
+                ADDOP_O(c, LOAD_CONST, Py_None, consts);
+                ADDOP(c, YIELD_FROM);
+            }
+            ADDOP(c, WITH_CLEANUP_FINISH);
+            ADDOP_I(c, POP_FINALLY, 0);
             return 1;
 
         case HANDLER_CLEANUP:
@@ -5003,7 +5011,7 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
     int i, target_depth, effect;
     struct instr *instr;
-//     assert(!b->b_seen || b->b_startdepth == depth);
+    assert(!b->b_seen || b->b_startdepth == depth);
     if (b->b_seen || b->b_startdepth >= depth)
         return maxdepth;
     /* Guard against infinite recursion */
@@ -5020,13 +5028,12 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 
         if (depth > maxdepth)
             maxdepth = depth;
-        if (depth < 0)
-            return maxdepth;
         assert(depth >= 0); /* invalid code or bug in stackdepth() */
         if (instr->i_jrel || instr->i_jabs) {
             /* Recursively inspect jump target */
             target_depth = depth;
             if (instr->i_opcode == CALL_FINALLY) {
+                depth = depth - 1;
                 continue;
             }
             if (instr->i_opcode == FOR_ITER) {
