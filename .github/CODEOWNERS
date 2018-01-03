@@ -14,8 +14,13 @@
 **/*hashlib*                  @python/crypto-team
 **/*pyhash*                   @python/crypto-team
 
-# Import (including importlib)
-**/*import*                   @python/import-team
+# Import (including importlib).
+# Ignoring importlib.h so as to not get flagged on
+# all pull requests that change the the emitted
+# bytecode.
+**/*import*.c                 @python/import-team
+**/*import*.py                @python/import-team
+
 
 # SSL
 **/*ssl*                      @python/crypto-team
