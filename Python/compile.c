@@ -4959,21 +4959,26 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
                 goto out; /* remaining code is dead */
             }
             if (instr->i_opcode == FOR_ITER) {
+                /* -1 if jump, 1 if not jump */
                 target_depth = depth - 2;
             }
             else if (instr->i_opcode == SETUP_FINALLY ||
                      instr->i_opcode == SETUP_EXCEPT)
             {
+                /* 6 if jump, 0 if not jump */
                 depth = depth - 6;
             }
             else if (instr->i_opcode == SETUP_WITH ||
                      instr->i_opcode == SETUP_ASYNC_WITH)
             {
+                /* SETUP_WITH: 6 if jump, 1 if not jump
+                 * SETUP_ASYNC_WITH: 5 if jump, 0 if not jump */
                 depth = depth - 5;
             }
             else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
                      instr->i_opcode == JUMP_IF_FALSE_OR_POP)
             {
+                /* -1 if jump, 0 if not jump */
                 depth = depth - 1;
             }
             maxdepth = stackdepth_walk(c, instr->i_target,
