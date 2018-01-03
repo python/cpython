@@ -681,8 +681,8 @@ iterations of the loop.
      used to restore the exception state.  An exception handler block is
      removed from the block stack.
 
-   It is similar to :opcode:`END_FINALLY`, but neither change the bytecode
-   counter nor raises an exception.  Used for implementing :keyword:`break`
+   It is similar to :opcode:`END_FINALLY`, but doesn't change the bytecode
+   counter nor raise an exception.  Used for implementing :keyword:`break`
    and :keyword:`return` in the :keyword:`finally` block.
 
    .. versionadded:: 3.7
@@ -690,8 +690,9 @@ iterations of the loop.
 
 .. opcode:: BEGIN_FINALLY
 
-   Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY`.
-   Starts the :keyword:`finally` block.
+   Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY`,
+   :opcode:`POP_FINALLY`, :opcode:`WITH_CLEANUP_START` and
+   :opcode:`WITH_CLEANUP_FINISH`.  Starts the :keyword:`finally` block.
 
    .. versionadded:: 3.7
 

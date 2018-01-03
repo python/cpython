@@ -1036,7 +1036,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 6;
         case BEGIN_FINALLY:
             /* Actually pushes 1 value, but count 6 for balancing with
-             * END_FINALLY and POP_FINALLY. */
+             * END_FINALLY and POP_FINALLY.
+             * This is the main reason of using this opcode instead of
+             * "LOAD_CONST None". */
             return 6;
         case CALL_FINALLY:
             return 1;

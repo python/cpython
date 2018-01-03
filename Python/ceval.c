@@ -1899,6 +1899,16 @@ main_loop:
         }
 
         TARGET(POP_FINALLY) {
+            /* If oparg is 0 at the top of the stack are 1 or 6 values:
+               Either:
+                - TOP = NULL or an integer
+               or:
+                - (TOP, SECOND, THIRD) = exc_info()
+                - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
+
+               If oparg is 1 the value for 'return' was additionally pushed
+               at the top of the stack.
+            */
             PyObject *res = NULL;
             if (oparg) {
                 res = POP();
@@ -1950,6 +1960,9 @@ main_loop:
         }
 
         TARGET(BEGIN_FINALLY) {
+            /* Push NULL onto the stack for using it in END_FINALLY,
+               POP_FINALLY, WITH_CLEANUP_START and WITH_CLEANUP_FINISH.
+             */
             PUSH(NULL);
             FAST_DISPATCH();
         }
@@ -1958,7 +1971,7 @@ main_loop:
         TARGET(END_FINALLY) {
             /* At the top of the stack are 1 or 6 values:
                Either:
-                - NULL or an integer
+                - TOP = NULL or an integer
                or:
                 - (TOP, SECOND, THIRD) = exc_info()
                 - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
