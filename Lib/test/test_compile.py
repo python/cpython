@@ -862,7 +862,7 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet)
 
-    def test_for_break_inside_finally_block(self):
+    def test_for_break_continue_inside_finally_block(self):
         snippet = """
             for x in y:
                 try:
@@ -870,6 +870,8 @@ class TestStackSizeStability(unittest.TestCase):
                 finally:
                     if z:
                         break
+                    elif u:
+                        continue
                     else:
                         a
             else:
