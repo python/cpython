@@ -218,6 +218,8 @@ PyAPI_FUNC(PyObject *) PyErr_NewException(
     const char *name, PyObject *base, PyObject *dict);
 PyAPI_FUNC(PyObject *) PyErr_NewExceptionWithDoc(
     const char *name, const char *doc, PyObject *base, PyObject *dict);
+PyAPI_FUNC(int) PyErr_PrepareStaticException(
+    PyTypeObject **err, const char *name, const char *doc, PyObject *base);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
 

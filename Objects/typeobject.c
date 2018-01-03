@@ -2927,8 +2927,6 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     }
     res->ht_module = module;
 
-
-
     /* Adjust for empty tuple bases */
     if (!bases) {
         base = &PyBaseObject_Type;
@@ -3344,6 +3342,13 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             type->tp_name);
         return -1;
     }
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAP_IMMUTABLE)) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "can't set attributes of immutable type '%s'",
+            type->tp_name);
+        return -1;
+    }
     if (PyUnicode_Check(name)) {
         if (PyUnicode_CheckExact(name)) {
             if (PyUnicode_READY(name) == -1)
@@ -3668,6 +3673,9 @@ type_clear(PyTypeObject *type)
         PyDict_Clear(type->tp_dict);
     }
     Py_CLEAR(((PyHeapTypeObject *)type)->ht_module);
+    if (((PyHeapTypeObject *)type)->ht_moduleptr) {
+        *((PyHeapTypeObject *)type)->ht_moduleptr = NULL;
+    }
 
     Py_CLEAR(type->tp_mro);
 

@@ -4,6 +4,10 @@
 
 #include "Python.h"
 
+static PyObject *staterr = NULL;
+static const char *staterr_name = "_testmultiphase.StaticError";
+static const char *staterr_doc = "Pseudo-static exception on heap initialized during runtime.";
+
 /* Example objects */
 typedef struct {
     PyObject_HEAD
@@ -43,7 +47,7 @@ Example_demo(ExampleObject *self, PyObject *args)
 }
 
 static PyObject *
-Example_meth_method(ExampleObject *self, PyTypeObject *cls,
+Example_get_defining_module(ExampleObject *self, PyTypeObject *cls,
             PyObject *args, PyObject *kwargs) {
     PyObject *retval;
     retval = PyType_GetModule(cls);
@@ -57,7 +61,7 @@ Example_meth_method(ExampleObject *self, PyTypeObject *cls,
 static PyMethodDef Example_methods[] = {
     {"demo",            (PyCFunction)Example_demo,  METH_VARARGS,
         PyDoc_STR("demo() -> None")},
-    {"meth_method",     (PyCFunction)Example_meth_method, METH_METHOD,
+    {"get_defining_module",     (PyCFunction)Example_get_defining_module, METH_METHOD,
         PyDoc_STR("Test new method call.")},
     {NULL,              NULL}           /* sentinel */
 };
@@ -111,7 +115,7 @@ static PyType_Spec Example_Type_spec = {
     "_testimportexec.Example",
     sizeof(ExampleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAP_IMMUTABLE,
     Example_Type_slots
 };
 
@@ -206,30 +210,46 @@ static int execfunc(PyObject *m)
 
     /* Add a custom type */
     temp = PyType_FromModuleAndSpec(m, &Example_Type_spec, NULL);
-    if (temp == NULL)
+    if (temp == NULL) {
         goto fail;
-    if (PyModule_AddObject(m, "Example", temp) != 0)
+    }
+    if (PyModule_AddObject(m, "Example", temp) != 0) {
         goto fail;
+    }
+
+    if (PyErr_PrepareStaticException((PyTypeObject **)&staterr, staterr_name, staterr_doc, NULL)) {
+        goto fail;
+    }
+
+    if (PyModule_AddObject(m, "StaticError", staterr) != 0) {
+        goto fail;
+    }
 
     /* Add an exception type */
     temp = PyErr_NewException("_testimportexec.error", NULL, NULL);
-    if (temp == NULL)
+    if (temp == NULL) {
         goto fail;
-    if (PyModule_AddObject(m, "error", temp) != 0)
+    }
+    if (PyModule_AddObject(m, "error", temp) != 0) {
         goto fail;
+    }
 
     /* Add Str */
     temp = PyType_FromSpec(&Str_Type_spec);
-    if (temp == NULL)
+    if (temp == NULL) {
         goto fail;
-    if (PyModule_AddObject(m, "Str", temp) != 0)
+    }
+    if (PyModule_AddObject(m, "Str", temp) != 0) {
         goto fail;
+    }
 
-    if (PyModule_AddIntConstant(m, "int_const", 1969) != 0)
+    if (PyModule_AddIntConstant(m, "int_const", 1969) != 0) {
         goto fail;
+    }
 
-    if (PyModule_AddStringConstant(m, "str_const", "something different") != 0)
+    if (PyModule_AddStringConstant(m, "str_const", "something different") != 0) {
         goto fail;
+    }
 
     return 0;
  fail:
@@ -679,6 +699,32 @@ static PyModuleDef def_with_bad_traverse = TEST_MODULE_DEF_EX(
 PyMODINIT_FUNC
 PyInit__testmultiphase_with_bad_traverse(PyObject *spec) {
     return PyModuleDef_Init(&def_with_bad_traverse);
+}
+
+PyDoc_STRVAR(check_staterr_doc,
+"Check that staterr is NULL");
+
+static PyObject *
+check_staterr_null_impl(PyObject *self) {
+    if (staterr == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyErr_SetString(PyExc_Exception,
+                    "Staterr is not NULL");
+    return NULL;
+}
+
+static PyMethodDef check_staterr_methods[] = {
+    {"check_staterr_null", (PyCFunction) check_staterr_null_impl, METH_NOARGS, check_staterr_doc},
+    {NULL, NULL}           /* sentinel */
+};
+
+static PyModuleDef check_staterr = TEST_MODULE_DEF(
+    "_testmultiphase_check_staterr", NULL, check_staterr_methods);
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_check_staterr(PyObject *spec) {
+    return PyModuleDef_Init(&check_staterr);
 }
 
 /*** Helper for imp test ***/

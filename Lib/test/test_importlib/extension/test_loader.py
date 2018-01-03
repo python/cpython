@@ -9,7 +9,9 @@ import types
 import unittest
 import importlib.util
 import importlib
+import gc
 from test.support.script_helper import assert_python_failure
+
 
 class LoaderTests(abc.LoaderTests):
 
@@ -289,6 +291,56 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                     # (We are testing for a crash in C-code)
                     pass"""
         assert_python_failure("-c", script)
+
+    def test_pseudostatic_exception(self):
+        mod_name = "_testmultiphase"
+
+        a = self.load_module_by_name(mod_name)
+        b = self.load_module_by_name(mod_name)
+
+        # Static errors should be shared between different instances
+        self.assertIsNot(a, b)
+        self.assertIs(a.StaticError, b.StaticError)
+
+
+        # test the opposite instances' exceptions catching
+        expected_catch = 2
+        catch = 0
+        try:
+            raise(a.StaticError)
+        except b.StaticError:
+            catch += 1
+
+        try:
+            raise(b.StaticError)
+        except a.StaticError:
+            catch += 1
+
+        self.assertEqual(catch, expected_catch)
+
+        # make sure the exception exists as long as there are
+        # any (even not from module) references to it
+        a_Example = a.Example
+        b_Example = b.Example
+        del a
+        del b
+        gc.collect()
+        a_ex = a_Example()
+        b_ex = b_Example()
+        a_module = a_ex.get_defining_module()
+        b_module = a_ex.get_defining_module()
+
+        self.assertIs(a_module, b_module)
+
+    def test_subclass_get_module(self):
+        testmultiphase = self.load_module_by_name("_testmultiphase")
+
+        class Example_Subclass(testmultiphase.Example):
+            pass
+
+        ex = Example_Subclass()
+
+        self.assertIs(ex.get_defining_module(), testmultiphase)
 
 
 (Frozen_MultiPhaseExtensionModuleTests,
