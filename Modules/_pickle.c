@@ -951,6 +951,13 @@ _Pickler_OpcodeBoundary(PicklerObject *self)
         if(_Pickler_CommitFrame(self)) {
             return -1;
         }
+        /* Flush the content of the commited frame to the underlying
+         * file and reuse the pickler buffer for the next frame so as
+         * to limit memory usage when dumping large complex objects to
+         * a file.
+         *
+         * self-write is NULL when called via dumps.
+         */
         if (self->write != NULL) {
             if (_Pickler_FlushToFile(self) < 0) {
                 return -1;
