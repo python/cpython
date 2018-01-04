@@ -4274,7 +4274,7 @@ An example of dictionary view usage::
 
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
-   {'bacon'}
+   {'eggs', 'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
 
