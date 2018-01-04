@@ -1026,9 +1026,9 @@ type objects) *must* have the :attr:`ob_size` field.
    .. seealso:: "Safe object finalization" (:pep:`442`)
 
 
-.. c:member:: PyObject* PyTypeObject.tp_cache
+.. c:member:: PyObject* PyTypeObject.tp_defined_slots
 
-   Unused.  Not inherited.  Internal use only.
+   Not inherited.  Internal use only.
 
 
 .. c:member:: PyObject* PyTypeObject.tp_subclasses

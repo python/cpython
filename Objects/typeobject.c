@@ -253,8 +253,7 @@ PyType_Modified(PyTypeObject *type)
     PyObject *raw, *ref;
     Py_ssize_t i;
 
-    if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_DEFINED_SLOTS))
-        Py_CLEAR(type->tp_defined_slots);
+    Py_CLEAR(type->tp_defined_slots);
 
     if (!PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
         return;
@@ -3271,7 +3270,6 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(type->tp_dict);
     Py_XDECREF(type->tp_bases);
     Py_XDECREF(type->tp_mro);
-    Py_XDECREF(type->tp_cache);
     Py_XDECREF(type->tp_subclasses);
     Py_XDECREF(type->tp_defined_slots);
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
@@ -3466,7 +3464,6 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
     }
 
     Py_VISIT(type->tp_dict);
-    Py_VISIT(type->tp_cache);
     Py_VISIT(type->tp_defined_slots);
     Py_VISIT(type->tp_mro);
     Py_VISIT(type->tp_bases);
@@ -3498,9 +3495,6 @@ type_clear(PyTypeObject *type)
        tp_clear handler).  None of the other fields need to be
        cleared, and here's why:
 
-       tp_cache:
-           Not used; if it were, it would be a dict.
-
        tp_bases, tp_base:
            If these are involved in a cycle, there must be at least
            one other, mutable object in the cycle, e.g. a base
@@ -3523,6 +3517,7 @@ type_clear(PyTypeObject *type)
     if (type->tp_dict)
         PyDict_Clear(type->tp_dict);
     Py_CLEAR(type->tp_mro);
+    Py_CLEAR(type->tp_defined_slots);
 
     return 0;
 }
@@ -7061,8 +7056,7 @@ get_tp_defined_slots(PyTypeObject *type)
 {
     PyObject *lst, *res;
 
-    if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_DEFINED_SLOTS)
-            && type->tp_defined_slots != NULL) {
+    if (type->tp_defined_slots != NULL) {
         res = type->tp_defined_slots;
         assert(PyTuple_CheckExact(res));
         Py_INCREF(res);
@@ -7097,11 +7091,9 @@ get_tp_defined_slots(PyTypeObject *type)
         Py_DECREF(tup);
     }
     res = PyList_AsTuple(lst);
+    Py_INCREF(res);
     Py_DECREF(lst);
-    if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_DEFINED_SLOTS)) {
-        Py_INCREF(res);
-        type->tp_defined_slots = res;
-    }
+    type->tp_defined_slots = res;
     return res;
 
 error:
