@@ -881,8 +881,9 @@ Changes in the Python API
 * The result of splitting a string on a :mod:`regular expression <re>`
   that could match an empty string has been changed.  For example
   splitting on ``r'\s*'`` will now split not only on whitespaces as it
-  did previously, but also between any pair of non-whitespace
-  characters.  The previous behavior can be restored by changing the pattern
+  did previously, but also on empty strings before all non-whitespace
+  characters and just before the end of the string.
+  The previous behavior can be restored by changing the pattern
   to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
   Python 3.5.
 
@@ -893,7 +894,13 @@ Changes in the Python API
   positions 2--3.  To match only blank lines, the pattern should be rewritten
   as ``r'(?m)^[^\S\n]*$'``.
 
-  (Contributed by Serhiy Storchaka in :issue:`25054`.)
+  :func:`re.sub()` now replaces empty matches adjacent to a previous
+  non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
+  ``'-a-b--d-'`` instead of ``'-a-b--d-'`` (the first minus between 'b' and
+  'd' replaces 'x', and the second minus replaces an empty string between
+  'x' and 'd').
+
+  (Contributed by Serhiy Storchaka in :issue:`25054` and :issue:`32308`.)
 
 * :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
   recent to be more consistent with :mod:`traceback`.
