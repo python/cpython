@@ -670,7 +670,7 @@ def astuple(obj, *, tuple_factory=tuple):
           y: int
 
     c = C(1, 2)
-    assert asdtuple(c) == (1, 2)
+    assert astuple(c) == (1, 2)
 
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
