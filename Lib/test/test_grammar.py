@@ -575,6 +575,10 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(f(spam='fried', **{'eggs':'scrambled'}),
                          ((), {'eggs':'scrambled', 'spam':'fried'}))
 
+        # Check ast errors in *args and *kwargs
+        check_syntax_error(self, "f(*g(1=2))")
+        check_syntax_error(self, "f(**g(1=2))")
+
         # argument annotation tests
         def f(x) -> list: pass
         self.assertEqual(f.__annotations__, {'return': list})
@@ -615,10 +619,6 @@ class GrammarTests(unittest.TestCase):
         def f(x=1): return closure
         def f(*, k=1): return closure
         def f() -> int: return closure
-
-        # Check ast errors in *args and *kwargs
-        check_syntax_error(self, "f(*g(1=2))")
-        check_syntax_error(self, "f(**g(1=2))")
 
         # Check trailing commas are permitted in funcdef argument list
         def f(a,): pass
@@ -1091,7 +1091,6 @@ class GrammarTests(unittest.TestCase):
         try: 1/0
         except EOFError: pass
         except TypeError as msg: pass
-        except RuntimeError as msg: pass
         except: pass
         else: pass
         try: 1/0
@@ -1200,7 +1199,7 @@ class GrammarTests(unittest.TestCase):
         d[1,2] = 3
         d[1,2,3] = 4
         L = list(d)
-        L.sort(key=lambda x: x if isinstance(x, tuple) else ())
+        L.sort(key=lambda x: (type(x).__name__, x))
         self.assertEqual(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
 
     def test_atoms(self):
