@@ -2372,7 +2372,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         }
 
         /* SF bug 475327 -- if that didn't trigger, we need 3
-           arguments. but PyArg_ParseTupleAndKeywords below may give
+           arguments. but PyArg_ParseTuple below may give
            a msg saying type() needs exactly 3. */
         if (nargs != 3) {
             PyErr_SetString(PyExc_TypeError,
