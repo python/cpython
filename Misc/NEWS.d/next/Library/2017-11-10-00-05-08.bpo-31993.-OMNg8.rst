@@ -5,3 +5,10 @@ directly streamed into the underlying file object.
 Previously the C implementation would buffer all content and issue a
 single call to ``file.write`` at the end of the dump. With protocol 4
 this behavior has changed to issue one call to ``file.write`` per frame.
+
+The Python pickler with protocol 4 now dump each frame content as a
+memoryview to an IOBytes instance that will never be reused and the
+memoryview is no longer released after the call to write. This makes it
+possible for the file object to delay access to the memoryview of
+previous frames without forcing any additional memory copy as was
+already possible with the C pickler.
