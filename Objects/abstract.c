@@ -169,11 +169,11 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     }
 
     if (PyType_Check(o)) {
-        PyObject *meth, *result, *stack[2] = {o, key};
+        PyObject *meth, *result, *stack[1] = {key};
         _Py_IDENTIFIER(__class_getitem__);
         meth = _PyObject_GetAttrId(o, &PyId___class_getitem__);
         if (meth) {
-            result = _PyObject_FastCall(meth, stack, 2);
+            result = _PyObject_FastCall(meth, stack, 1);
             Py_DECREF(meth);
             return result;
         }
