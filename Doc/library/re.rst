@@ -719,14 +719,21 @@ form.
       Splitting on a pattern that could match an empty string now raises
       a warning.  Patterns that can only match empty strings are now rejected.
 
+
 .. function:: findall(pattern, string, flags=0)
 
    Return all non-overlapping matches of *pattern* in *string*, as a list of
    strings.  The *string* is scanned left-to-right, and matches are returned in
    the order found.  If one or more groups are present in the pattern, return a
    list of groups; this will be a list of tuples if the pattern has more than
-   one group.  Empty matches are included in the result unless they touch the
-   beginning of another match.
+   one group.  Empty matches are included in the result.
+
+   .. note::
+
+      Due to the limitation of the current implementation the character
+      following an empty match is not included in a next match, so
+      ``findall(r'^|\w+', 'two words')`` returns ``['', 'wo', 'words']``
+      (note missed "t").  This is changed in Python 3.7.
 
 
 .. function:: finditer(pattern, string, flags=0)
@@ -734,8 +741,7 @@ form.
    Return an :term:`iterator` yielding :ref:`match objects <match-objects>` over
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
    is scanned left-to-right, and matches are returned in the order found.  Empty
-   matches are included in the result unless they touch the beginning of another
-   match.
+   matches are included in the result.  See also the note about :func:`findall`.
 
 
 .. function:: sub(pattern, repl, string, count=0, flags=0)
