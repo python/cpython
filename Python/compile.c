@@ -859,12 +859,17 @@ compiler_set_lineno(struct compiler *c, int off)
 
 /* Return the stack effect of opcode with argument oparg.
 
-   If the stack effect depends on the values on the stack return
-   the stack effect for the worst case.  stackdepth_walk() will correct
-   it for an alternate case.
+   Some opcodes have different stack effect when jump to the target and
+   when not jump. The 'jump' parameter specifies the case:
+
+   * 0 -- when not jump
+   * 1 -- when jump
+   * -1 -- maximal
  */
+/* XXX Make the stack effect of WITH_CLEANUP_START and
+   WITH_CLEANUP_FINISH deterministic. */
 int
-PyCompile_OpcodeStackEffect(int opcode, int oparg)
+stack_effect(int opcode, int oparg, int jump)
 {
     switch (opcode) {
         /* Stack manipulation */
@@ -944,11 +949,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             /* 1 in the normal flow.
              * Restore the stack position and push 6 values before jumping to
              * the handler if an exception be raised. */
-            return 6;
+            return jump ? 6 : 1;
         case WITH_CLEANUP_START:
             return 2; /* or 1, depending on TOS */
         case WITH_CLEANUP_FINISH:
-            /* Pop the variable number of values pushed by WITH_CLEANUP_START
+            /* Pop a variable number of values pushed by WITH_CLEANUP_START
              * + __exit__ or __aexit__. */
             return -3;
         case RETURN_VALUE:
@@ -978,7 +983,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case UNPACK_EX:
             return (oparg&0xFF) + (oparg>>8);
         case FOR_ITER:
-            return 1; /* or -1, at end of iterator */
+            /* -1 at end of iterator, 1 if continue iterating. */
+            return jump > 0 ? -1 : 1;
 
         case STORE_ATTR:
             return -2;
@@ -1019,10 +1025,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
         /* Jumps */
         case JUMP_FORWARD:
-        case JUMP_IF_TRUE_OR_POP:  /* -1 if jump not taken */
-        case JUMP_IF_FALSE_OR_POP:  /*  "" */
         case JUMP_ABSOLUTE:
             return 0;
+
+        case JUMP_IF_TRUE_OR_POP:
+        case JUMP_IF_FALSE_OR_POP:
+            return jump ? 0 : -1;
 
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
@@ -1040,7 +1048,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             /* 0 in the normal flow.
              * Restore the stack position and push 6 values before jumping to
              * the handler if an exception be raised. */
-            return 6;
+            return jump ? 6 : 0;
 
         case LOAD_FAST:
             return 1;
@@ -1088,10 +1096,10 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 0;
         case SETUP_ASYNC_WITH:
             /* 0 in the normal flow.
-             * Restore the stack position to the position before __aexit__
-             * and push 6 values before jumping to the handler if an
-             * exception be raised. */
-            return -1 + 6;
+             * Restore the stack position to the position before the result
+             * of __aenter__ and push 6 values before jumping to the handler
+             * if an exception be raised. */
+            return jump ? -1 + 6 : 0;
         case BEFORE_ASYNC_WITH:
             return 1;
         case GET_AITER:
@@ -1110,6 +1118,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return PY_INVALID_STACK_EFFECT;
     }
     return PY_INVALID_STACK_EFFECT; /* not reachable */
+}
+
+int
+PyCompile_OpcodeStackEffect(int opcode, int oparg)
+{
+    return stack_effect(opcode, oparg, -1);
 }
 
 /* Add an opcode with no argument.
@@ -4927,7 +4941,7 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 static int
 stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
-    int i, target_depth, effect;
+    int i, new_depth, target_depth, effect;
     struct instr *instr;
     assert(!b->b_seen || b->b_startdepth == depth);
     if (b->b_seen || b->b_startdepth >= depth)
@@ -4937,53 +4951,35 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
     b->b_startdepth = depth;
     for (i = 0; i < b->b_iused; i++) {
         instr = &b->b_instr[i];
-        effect = PyCompile_OpcodeStackEffect(instr->i_opcode, instr->i_oparg);
+        effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
         if (effect == PY_INVALID_STACK_EFFECT) {
             fprintf(stderr, "opcode = %d\n", instr->i_opcode);
             Py_FatalError("PyCompile_OpcodeStackEffect()");
         }
-        depth += effect;
-
-        if (depth > maxdepth)
-            maxdepth = depth;
-        assert(depth >= 0); /* invalid code or bug in stackdepth() */
+        new_depth = depth + effect;
+        if (new_depth > maxdepth)
+            maxdepth = new_depth;
+        assert(new_depth >= 0); /* invalid code or bug in stackdepth() */
         if (instr->i_jrel || instr->i_jabs) {
             /* Recursively inspect jump target */
-            target_depth = depth;
+            effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
+            assert(effect != PY_INVALID_STACK_EFFECT);
+            target_depth = depth + effect;
+            if (target_depth > maxdepth)
+                maxdepth = target_depth;
+            assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
             if (instr->i_opcode == CONTINUE_LOOP) {
-                /* Pops variable number of values from the stack,
+                /* Pops a variable number of values from the stack,
                  * but the target should be already proceeding.
                  */
                 assert(instr->i_target->b_seen);
                 assert(instr->i_target->b_startdepth <= depth);
                 goto out; /* remaining code is dead */
             }
-            if (instr->i_opcode == FOR_ITER) {
-                /* -1 if jump, 1 if not jump */
-                target_depth = depth - 2;
-            }
-            else if (instr->i_opcode == SETUP_FINALLY ||
-                     instr->i_opcode == SETUP_EXCEPT)
-            {
-                /* 6 if jump, 0 if not jump */
-                depth = depth - 6;
-            }
-            else if (instr->i_opcode == SETUP_WITH ||
-                     instr->i_opcode == SETUP_ASYNC_WITH)
-            {
-                /* SETUP_WITH: 6 if jump, 1 if not jump
-                 * SETUP_ASYNC_WITH: 5 if jump, 0 if not jump */
-                depth = depth - 5;
-            }
-            else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
-                     instr->i_opcode == JUMP_IF_FALSE_OR_POP)
-            {
-                /* -1 if jump, 0 if not jump */
-                depth = depth - 1;
-            }
             maxdepth = stackdepth_walk(c, instr->i_target,
                                        target_depth, maxdepth);
         }
+        depth = new_depth;
         if (instr->i_opcode == JUMP_ABSOLUTE ||
             instr->i_opcode == JUMP_FORWARD ||
             instr->i_opcode == RETURN_VALUE ||
