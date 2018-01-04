@@ -100,9 +100,10 @@ The following function sets are wrappers to the system allocator. These
 functions are thread-safe, the :term:`GIL <global interpreter lock>` does not
 need to be held.
 
-The default raw memory block allocator uses the following functions:
-:c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`; call
-``malloc(1)`` (or ``calloc(1, 1)``) when requesting zero bytes.
+The :ref:`default raw memory allocator <default-memory-allocators>` uses
+the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
+and :c:func:`free`; call ``malloc(1)`` (or ``calloc(1, 1)``) when requesting
+zero bytes.
 
 .. versionadded:: 3.4
 
@@ -150,7 +151,7 @@ The default raw memory block allocator uses the following functions:
 
    Frees the memory block pointed to by *p*, which must have been returned by a
    previous call to :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc` or
-   :c:func:`PyMem_RawCalloc`.  Otherwise, or if ``PyMem_Free(p)`` has been
+   :c:func:`PyMem_RawCalloc`.  Otherwise, or if ``PyMem_RawFree(p)`` has been
    called before, undefined behavior occurs.
 
    If *p* is *NULL*, no operation is performed.
@@ -165,7 +166,8 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
-By default, these functions use :ref:`pymalloc memory allocator <pymalloc>`.
+The :ref:`default memory allocator <default-memory-allocators>` uses the
+:ref:`pymalloc memory allocator <pymalloc>`.
 
 .. warning::
 
@@ -261,6 +263,95 @@ versions and is therefore deprecated in extension modules.
 * ``PyMem_RESIZE(ptr, type, size)``
 * ``PyMem_FREE(ptr)``
 * ``PyMem_DEL(ptr)``
+
+
+Object allocators
+=================
+
+The following function sets, modeled after the ANSI C standard, but specifying
+behavior when requesting zero bytes, are available for allocating and releasing
+memory from the Python heap.
+
+The :ref:`default object allocator <default-memory-allocators>` uses the
+:ref:`pymalloc memory allocator <pymalloc>`.
+
+.. warning::
+
+   The :term:`GIL <global interpreter lock>` must be held when using these
+   functions.
+
+.. c:function:: void* PyObject_Malloc(size_t n)
+
+   Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
+   allocated memory, or *NULL* if the request fails.
+
+   Requesting zero bytes returns a distinct non-*NULL* pointer if possible, as
+   if ``PyObject_Malloc(1)`` had been called instead. The memory will not have
+   been initialized in any way.
+
+
+.. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
+
+   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   a pointer of type :c:type:`void\*` to the allocated memory, or *NULL* if the
+   request fails. The memory is initialized to zeros.
+
+   Requesting zero elements or elements of size zero bytes returns a distinct
+   non-*NULL* pointer if possible, as if ``PyObject_Calloc(1, 1)`` had been called
+   instead.
+
+   .. versionadded:: 3.5
+
+
+.. c:function:: void* PyObject_Realloc(void *p, size_t n)
+
+   Resizes the memory block pointed to by *p* to *n* bytes. The contents will be
+   unchanged to the minimum of the old and the new sizes.
+
+   If *p* is *NULL*, the call is equivalent to ``PyObject_Malloc(n)``; else if *n*
+   is equal to zero, the memory block is resized but is not freed, and the
+   returned pointer is non-*NULL*.
+
+   Unless *p* is *NULL*, it must have been returned by a previous call to
+   :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc` or :c:func:`PyObject_Calloc`.
+
+   If the request fails, :c:func:`PyObject_Realloc` returns *NULL* and *p* remains
+   a valid pointer to the previous memory area.
+
+
+.. c:function:: void PyObject_Free(void *p)
+
+   Frees the memory block pointed to by *p*, which must have been returned by a
+   previous call to :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc` or
+   :c:func:`PyObject_Calloc`.  Otherwise, or if ``PyObject_Free(p)`` has been called
+   before, undefined behavior occurs.
+
+   If *p* is *NULL*, no operation is performed.
+
+
+.. _default-memory-allocators:
+
+Default Memory Allocators
+=========================
+
+Default memory allocators:
+
+===============================  ====================  ==================  =====================  ====================
+Configuration                    Name                  PyMem_RawMalloc     PyMem_Malloc           PyObject_Malloc
+===============================  ====================  ==================  =====================  ====================
+Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
+Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
+Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
+Release build, without pymalloc  ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
+===============================  ====================  ==================  =====================  ====================
+
+Legend:
+
+* Name: value for :envvar:`PYTHONMALLOC` environment variable
+* ``malloc``: system allocators from the standard C library, C functions:
+  :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`
+* ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`
+* "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`
 
 
 Customize Memory Allocators
@@ -368,7 +459,8 @@ Customize Memory Allocators
    displayed if :mod:`tracemalloc` is tracing Python memory allocations and the
    memory block was traced.
 
-   These hooks are installed by default if Python is compiled in debug
+   These hooks are :ref:`installed by default <default-memory-allocators>` if
+   Python is compiled in debug
    mode. The :envvar:`PYTHONMALLOC` environment variable can be used to install
    debug hooks on a Python compiled in release mode.
 
@@ -387,12 +479,12 @@ The pymalloc allocator
 
 Python has a *pymalloc* allocator optimized for small objects (smaller or equal
 to 512 bytes) with a short lifetime. It uses memory mappings called "arenas"
-with a fixed size of 256 KB. It falls back to :c:func:`PyMem_RawMalloc` and
+with a fixed size of 256 KiB. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
-*pymalloc* is the default allocator of the :c:data:`PYMEM_DOMAIN_MEM` (ex:
-:c:func:`PyMem_Malloc`) and :c:data:`PYMEM_DOMAIN_OBJ` (ex:
-:c:func:`PyObject_Malloc`) domains.
+*pymalloc* is the :ref:`default allocator <default-memory-allocators>` of the
+:c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) and
+:c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) domains.
 
 The arena allocator uses the following functions:
 

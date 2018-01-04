@@ -62,6 +62,12 @@ _equivalences = (
 _ignorecase_fixes = {i: tuple(j for j in t if i != j)
                      for t in _equivalences for i in t}
 
+def _combine_flags(flags, add_flags, del_flags,
+                   TYPE_FLAGS=sre_parse.TYPE_FLAGS):
+    if add_flags & TYPE_FLAGS:
+        flags &= ~TYPE_FLAGS
+    return (flags | add_flags) & ~del_flags
+
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
     emit = code.append
@@ -87,15 +93,21 @@ def _compile(code, pattern, flags):
                 emit(op)
                 emit(av)
             elif flags & SRE_FLAG_LOCALE:
-                emit(OP_LOC_IGNORE[op])
+                emit(OP_LOCALE_IGNORE[op])
                 emit(av)
             elif not iscased(av):
                 emit(op)
                 emit(av)
             else:
                 lo = tolower(av)
-                if fixes and lo in fixes:
-                    emit(IN_IGNORE)
+                if not fixes:  # ascii
+                    emit(OP_IGNORE[op])
+                    emit(lo)
+                elif lo not in fixes:
+                    emit(OP_UNICODE_IGNORE[op])
+                    emit(lo)
+                else:
+                    emit(IN_UNI_IGNORE)
                     skip = _len(code); emit(0)
                     if op is NOT_LITERAL:
                         emit(NEGATE)
@@ -104,17 +116,16 @@ def _compile(code, pattern, flags):
                         emit(k)
                     emit(FAILURE)
                     code[skip] = _len(code) - skip
-                else:
-                    emit(OP_IGNORE[op])
-                    emit(lo)
         elif op is IN:
             charset, hascased = _optimize_charset(av, iscased, tolower, fixes)
             if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
                 emit(IN_LOC_IGNORE)
-            elif hascased:
+            elif not hascased:
+                emit(IN)
+            elif not fixes:  # ascii
                 emit(IN_IGNORE)
             else:
-                emit(IN)
+                emit(IN_UNI_IGNORE)
             skip = _len(code); emit(0)
             _compile_charset(charset, flags, code)
             code[skip] = _len(code) - skip
@@ -153,8 +164,8 @@ def _compile(code, pattern, flags):
             if group:
                 emit(MARK)
                 emit((group-1)*2)
-            # _compile_info(code, p, (flags | add_flags) & ~del_flags)
-            _compile(code, p, (flags | add_flags) & ~del_flags)
+            # _compile_info(code, p, _combine_flags(flags, add_flags, del_flags))
+            _compile(code, p, _combine_flags(flags, add_flags, del_flags))
             if group:
                 emit(MARK)
                 emit((group-1)*2+1)
@@ -210,10 +221,14 @@ def _compile(code, pattern, flags):
                 av = CH_UNICODE[av]
             emit(av)
         elif op is GROUPREF:
-            if flags & SRE_FLAG_IGNORECASE:
-                emit(OP_IGNORE[op])
-            else:
+            if not flags & SRE_FLAG_IGNORECASE:
                 emit(op)
+            elif flags & SRE_FLAG_LOCALE:
+                emit(GROUPREF_LOC_IGNORE)
+            elif not fixes:  # ascii
+                emit(GROUPREF_IGNORE)
+            else:
+                emit(GROUPREF_UNI_IGNORE)
             emit(av-1)
         elif op is GROUPREF_EXISTS:
             emit(op)
@@ -240,7 +255,7 @@ def _compile_charset(charset, flags, code):
             pass
         elif op is LITERAL:
             emit(av)
-        elif op is RANGE or op is RANGE_IGNORE:
+        elif op is RANGE or op is RANGE_UNI_IGNORE:
             emit(av[0])
             emit(av[1])
         elif op is CHARSET:
@@ -309,9 +324,9 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                     hascased = True
                     # There are only two ranges of cased non-BMP characters:
                     # 10400-1044F (Deseret) and 118A0-118DF (Warang Citi),
-                    # and for both ranges RANGE_IGNORE works.
+                    # and for both ranges RANGE_UNI_IGNORE works.
                     if op is RANGE:
-                        op = RANGE_IGNORE
+                        op = RANGE_UNI_IGNORE
                 tail.append((op, av))
             break
 
@@ -456,7 +471,7 @@ def _get_literal_prefix(pattern, flags):
             prefixappend(av)
         elif op is SUBPATTERN:
             group, add_flags, del_flags, p = av
-            flags1 = (flags | add_flags) & ~del_flags
+            flags1 = _combine_flags(flags, add_flags, del_flags)
             if flags1 & SRE_FLAG_IGNORECASE and flags1 & SRE_FLAG_LOCALE:
                 break
             prefix1, prefix_skip1, got_all = _get_literal_prefix(p, flags1)
@@ -482,7 +497,7 @@ def _get_charset_prefix(pattern, flags):
         if op is not SUBPATTERN:
             break
         group, add_flags, del_flags, pattern = av
-        flags = (flags | add_flags) & ~del_flags
+        flags = _combine_flags(flags, add_flags, del_flags)
         if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
             return None
 
@@ -631,6 +646,7 @@ def dis(code):
                 print_(op)
             elif op in (LITERAL, NOT_LITERAL,
                         LITERAL_IGNORE, NOT_LITERAL_IGNORE,
+                        LITERAL_UNI_IGNORE, NOT_LITERAL_UNI_IGNORE,
                         LITERAL_LOC_IGNORE, NOT_LITERAL_LOC_IGNORE):
                 arg = code[i]
                 i += 1
@@ -647,12 +663,12 @@ def dis(code):
                 arg = str(CHCODES[arg])
                 assert arg[:9] == 'CATEGORY_'
                 print_(op, arg[9:])
-            elif op in (IN, IN_IGNORE, IN_LOC_IGNORE):
+            elif op in (IN, IN_IGNORE, IN_UNI_IGNORE, IN_LOC_IGNORE):
                 skip = code[i]
                 print_(op, skip, to=i+skip)
                 dis_(i+1, i+skip)
                 i += skip
-            elif op in (RANGE, RANGE_IGNORE):
+            elif op in (RANGE, RANGE_UNI_IGNORE):
                 lo, hi = code[i: i+2]
                 i += 2
                 print_(op, '%#02x %#02x (%r-%r)' % (lo, hi, chr(lo), chr(hi)))
@@ -671,7 +687,8 @@ def dis(code):
                     print_2(_hex_code(code[i: i + 256//_CODEBITS]))
                     i += 256//_CODEBITS
                 level -= 1
-            elif op in (MARK, GROUPREF, GROUPREF_IGNORE):
+            elif op in (MARK, GROUPREF, GROUPREF_IGNORE, GROUPREF_UNI_IGNORE,
+                        GROUPREF_LOC_IGNORE):
                 arg = code[i]
                 i += 1
                 print_(op, arg)

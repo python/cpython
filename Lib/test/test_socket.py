@@ -1444,7 +1444,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.gethostbyname(domain)
         socket.gethostbyname_ex(domain)
         socket.getaddrinfo(domain,0,socket.AF_UNSPEC,socket.SOCK_STREAM)
-        # this may not work if the forward lookup choses the IPv6 address, as that doesn't
+        # this may not work if the forward lookup chooses the IPv6 address, as that doesn't
         # have a reverse entry yet
         # socket.gethostbyaddr('испытание.python.org')
 
@@ -1577,6 +1577,22 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(str(s.family), 'AddressFamily.AF_INET')
             self.assertEqual(str(s.type), 'SocketKind.SOCK_STREAM')
 
+    def test_socket_consistent_sock_type(self):
+        SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
+        SOCK_CLOEXEC = getattr(socket, 'SOCK_CLOEXEC', 0)
+        sock_type = socket.SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC
+
+        with socket.socket(socket.AF_INET, sock_type) as s:
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+            s.settimeout(1)
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+            s.settimeout(0)
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+            s.setblocking(True)
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+            s.setblocking(False)
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+
     @unittest.skipIf(os.name == 'nt', 'Will not work on Windows')
     def test_uknown_socket_family_repr(self):
         # Test that when created with a family that's not one of the known
@@ -1589,9 +1605,18 @@ class GeneralModuleTests(unittest.TestCase):
         # On Windows this trick won't work, so the test is skipped.
         fd, path = tempfile.mkstemp()
         self.addCleanup(os.unlink, path)
-        with socket.socket(family=42424, type=13331, fileno=fd) as s:
-            self.assertEqual(s.family, 42424)
-            self.assertEqual(s.type, 13331)
+        unknown_family = max(socket.AddressFamily.__members__.values()) + 1
+
+        unknown_type = max(
+            kind
+            for name, kind in socket.SocketKind.__members__.items()
+            if name not in {'SOCK_NONBLOCK', 'SOCK_CLOEXEC'}
+        ) + 1
+
+        with socket.socket(
+                family=unknown_family, type=unknown_type, fileno=fd) as s:
+            self.assertEqual(s.family, unknown_family)
+            self.assertEqual(s.type, unknown_type)
 
     @unittest.skipUnless(hasattr(os, 'sendfile'), 'test needs os.sendfile()')
     def test__sendfile_use_sendfile(self):
@@ -4399,7 +4424,7 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.write_file.write(self.write_msg)
         self.write_file.flush()
         self.evt2.set()
-        # Avoid cloding the socket before the server test has finished,
+        # Avoid closing the socket before the server test has finished,
         # otherwise system recv() will return 0 instead of EWOULDBLOCK.
         self.serv_finished.wait(5.0)
 
@@ -4533,6 +4558,10 @@ class NetworkConnectionNoServer(unittest.TestCase):
         expected_errnos = [ errno.ECONNREFUSED, ]
         if hasattr(errno, 'ENETUNREACH'):
             expected_errnos.append(errno.ENETUNREACH)
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # bpo-31910: socket.create_connection() fails randomly
+            # with EADDRNOTAVAIL on Travis CI
+            expected_errnos.append(errno.EADDRNOTAVAIL)
 
         self.assertIn(cm.exception.errno, expected_errnos)
 
@@ -4671,7 +4700,7 @@ class TCPTimeoutTest(SocketTCPTest):
                          'test needs signal.alarm()')
     def testInterruptedTimeout(self):
         # XXX I don't know how to do this test on MSWindows or any other
-        # plaform that doesn't support signal.alarm() or os.kill(), though
+        # platform that doesn't support signal.alarm() or os.kill(), though
         # the bug should have existed on all platforms.
         self.serv.settimeout(5.0)   # must be longer than alarm
         class Alarm(Exception):
@@ -5080,7 +5109,7 @@ class InheritanceTest(unittest.TestCase):
     def test_SOCK_CLOEXEC(self):
         with socket.socket(socket.AF_INET,
                            socket.SOCK_STREAM | socket.SOCK_CLOEXEC) as s:
-            self.assertTrue(s.type & socket.SOCK_CLOEXEC)
+            self.assertEqual(s.type, socket.SOCK_STREAM)
             self.assertFalse(s.get_inheritable())
 
     def test_default_inheritable(self):
@@ -5132,8 +5161,6 @@ class InheritanceTest(unittest.TestCase):
                              0)
 
 
-    @unittest.skipUnless(hasattr(socket, "socketpair"),
-                         "need socket.socketpair()")
     def test_socketpair(self):
         s1, s2 = socket.socketpair()
         self.addCleanup(s1.close)
@@ -5147,11 +5174,15 @@ class InheritanceTest(unittest.TestCase):
 class NonblockConstantTest(unittest.TestCase):
     def checkNonblock(self, s, nonblock=True, timeout=0.0):
         if nonblock:
-            self.assertTrue(s.type & socket.SOCK_NONBLOCK)
+            self.assertEqual(s.type, socket.SOCK_STREAM)
             self.assertEqual(s.gettimeout(), timeout)
+            self.assertTrue(
+                fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
         else:
-            self.assertFalse(s.type & socket.SOCK_NONBLOCK)
+            self.assertEqual(s.type, socket.SOCK_STREAM)
             self.assertEqual(s.gettimeout(), None)
+            self.assertFalse(
+                fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
 
     @support.requires_linux_version(2, 6, 28)
     def test_SOCK_NONBLOCK(self):
@@ -5295,7 +5326,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     Test the send() implementation of socket.sendfile().
     """
 
-    FILESIZE = (10 * 1024 * 1024)  # 10MB
+    FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
     TIMEOUT = 2
@@ -5571,6 +5602,9 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
         else:
             return sock
 
+    # bpo-31705: On kernel older than 4.5, sendto() failed with ENOKEY,
+    # at least on ppc64le architecture
+    @support.requires_linux_version(4, 5)
     def test_sha256(self):
         expected = bytes.fromhex("ba7816bf8f01cfea414140de5dae2223b00361a396"
                                  "177a9cb410ff61f20015ad")

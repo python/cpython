@@ -885,7 +885,6 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_MSG_CHECKING([for the Android API level])
 cat >> conftest.c <<EOF
 #ifdef __ANDROID__
-#include <android/api-level.h>
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
 #else
@@ -897,6 +896,10 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ANDROID_API_LEVEL=`sed -n -e '/__ANDROID_API__/d' -e 's/^android_api = //p' conftest.out`
   _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   AC_MSG_RESULT([$ANDROID_API_LEVEL])
+  if test -z "$ANDROID_API_LEVEL"; then
+    echo 'Fatal: you must define __ANDROID_API__'
+    exit 1
+  fi
   AC_DEFINE_UNQUOTED(ANDROID_API_LEVEL, $ANDROID_API_LEVEL, [The Android API level.])
 
   AC_MSG_CHECKING([for the Android arm ABI])
@@ -2439,7 +2442,8 @@ then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED='ld -b'
+			LDSHARED='$(CC) -b'
+			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
@@ -2677,12 +2681,36 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
-# only check for sem_init if thread support is requested
-if test "$with_threads" = "yes" -o -z "$with_threads"; then
-    AC_SEARCH_LIBS(sem_init, pthread rt posix4) # 'Real Time' functions on Solaris
-						# posix4 on Solaris 2.6
-						# pthread (first!) on Linux
-fi
+# checks for uuid.h location
+AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
+
+AC_MSG_CHECKING(for uuid_generate_time_safe)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
+#ifndef uuid_generate_time_safe
+void *x = uuid_generate_time_safe
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
+AC_MSG_CHECKING(for RFC4122 - uuid support on AIX)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+#ifndef uuid_create
+void *x = uuid_create
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists. AIX support for uuid:RFC4122)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# 'Real Time' functions on Solaris
+# posix4 on Solaris 2.6
+# pthread (first!) on Linux
+AC_SEARCH_LIBS(sem_init, pthread rt posix4)
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
@@ -2926,9 +2954,6 @@ then
     fi
     posix_threads=yes
 else
-    if test ! -z "$with_threads" -a -d "$with_threads"
-    then LDFLAGS="$LDFLAGS -L$with_threads"
-    fi
     if test ! -z "$withval" -a -d "$withval"
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
@@ -3043,7 +3068,6 @@ if test "$posix_threads" = "yes"; then
             [Define if pthread_sigmask() does not work on your system.])
             ;;
         esac])
-      AC_CHECK_FUNCS(pthread_atfork)
       AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
@@ -3364,8 +3388,6 @@ then
 	fi
 	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
-	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
-	Darwin/@<:@0156@:>@\..*) DYNLOADFILE="dynload_next.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading
@@ -3406,7 +3428,8 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
+ if_nameindex \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
@@ -3753,40 +3776,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   AC_MSG_RESULT(yes)
 ],[
   AC_MSG_RESULT(no)
-])
-
-# On Android API level 24 with android-ndk-r13, if_nameindex() is available,
-# but the if_nameindex structure is not defined.
-AC_MSG_CHECKING(for if_nameindex)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_NET_IF_H
-# include <net/if.h>
-#endif
-]], [[struct if_nameindex *ni = if_nameindex(); int x = ni[0].if_index;]])],
-  [AC_DEFINE(HAVE_IF_NAMEINDEX, 1, Define to 1 if you have the 'if_nameindex' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-
-# Issue #28762: lockf() is available on Android API level 24, but the F_LOCK
-# macro is not defined in android-ndk-r13.
-AC_MSG_CHECKING(for lockf)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h> ]],[[lockf(0, F_LOCK, 0);]])],
-  [AC_DEFINE(HAVE_LOCKF, 1, Define to 1 if you have the 'lockf' function and the F_LOCK macro.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
@@ -4504,7 +4493,7 @@ then
   [define to 1 if your sem_getvalue is broken.])
 fi
 
-AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND], [], [], [[#include <dlfcn.h>]])
+AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
@@ -4956,9 +4945,16 @@ then
   [Define if mvwdelch in curses.h is an expression.])
 fi
 
+# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+# structs since version 5.7.  If the macro is defined as zero before including
+# [n]curses.h, ncurses will expose fields of the structs regardless of the
+# configuration.
 AC_MSG_CHECKING(whether WINDOW has _flags)
 AC_CACHE_VAL(ac_cv_window_has_flags,
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+  #define NCURSES_OPAQUE 0
+  #include <curses.h>
+]], [[
   WINDOW *w;
   w->_flags = 0;
 ]])],
@@ -4972,6 +4968,17 @@ then
   AC_DEFINE(WINDOW_HAS_FLAGS, 1,
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
+
+AC_MSG_CHECKING(for is_pad)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef is_pad
+void *x=is_pad
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_IS_PAD, 1, Define if you have the 'is_pad' function or macro.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
 
 AC_MSG_CHECKING(for is_term_resized)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=is_term_resized]])],
@@ -4990,6 +4997,83 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resize_ter
 AC_MSG_CHECKING(for resizeterm)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resizeterm]])],
   [AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, Define if you have the 'resizeterm' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for immedok)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef immedok
+void *x=immedok
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_IMMEDOK, 1, Define if you have the 'immedok' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for syncok)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef syncok
+void *x=syncok
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_SYNCOK, 1, Define if you have the 'syncok' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for wchgat)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef wchgat
+void *x=wchgat
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_WCHGAT, 1, Define if you have the 'wchgat' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for filter)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef filter
+void *x=filter
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_FILTER, 1, Define if you have the 'filter' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for has_key)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef has_key
+void *x=has_key
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_HAS_KEY, 1, Define if you have the 'has_key' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for typeahead)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef typeahead
+void *x=typeahead
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_TYPEAHEAD, 1, Define if you have the 'typeahead' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for use_env)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef use_env
+void *x=use_env
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_USE_ENV, 1, Define if you have the 'use_env' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )

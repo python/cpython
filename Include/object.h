@@ -604,7 +604,7 @@ introducing new functionality between major revisions (to avoid mid-version
 changes in the PYTHON_API_VERSION).
 
 Arbitration of the flag bit positions will need to be coordinated among
-all extension writers who publically release their extensions (this will
+all extension writers who publicly release their extensions (this will
 be fewer than you might expect!)..
 
 Most flags were removed as of Python 3.0 to make room for new flags.  (Some
@@ -728,7 +728,6 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 /* Py_REF_DEBUG also controls the display of refcounts and memory block
  * allocations at the interactive prompt and at interpreter shutdown
  */
-PyAPI_FUNC(PyObject *) _PyDebug_XOptionShowRefCount(void);
 PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #else
 #define _Py_INC_REFTOTAL
@@ -930,6 +929,25 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NE 3
 #define Py_GT 4
 #define Py_GE 5
+
+/*
+ * Macro for implementing rich comparisons
+ *
+ * Needs to be a macro because any C-comparable type can be used.
+ */
+#define Py_RETURN_RICHCOMPARE(val1, val2, op)                               \
+    do {                                                                    \
+        switch (op) {                                                       \
+        case Py_EQ: if ((val1) == (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        case Py_NE: if ((val1) != (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        case Py_LT: if ((val1) < (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;   \
+        case Py_GT: if ((val1) > (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;   \
+        case Py_LE: if ((val1) <= (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        case Py_GE: if ((val1) >= (val2)) Py_RETURN_TRUE; Py_RETURN_FALSE;  \
+        default:                                                            \
+            Py_UNREACHABLE();                                               \
+        }                                                                   \
+    } while (0)
 
 #ifndef Py_LIMITED_API
 /* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.

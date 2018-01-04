@@ -134,13 +134,17 @@ def main(del_exitfunc=False):
                     # exiting but got an extra KBI? Try again!
                     continue
             try:
-                seq, request = rpc.request_queue.get(block=True, timeout=0.05)
+                request = rpc.request_queue.get(block=True, timeout=0.05)
             except queue.Empty:
+                request = None
+                # Issue 32207: calling handle_tk_events here adds spurious
+                # queue.Empty traceback to event handling exceptions.
+            if request:
+                seq, (method, args, kwargs) = request
+                ret = method(*args, **kwargs)
+                rpc.response_queue.put((seq, ret))
+            else:
                 handle_tk_events()
-                continue
-            method, args, kwargs = request
-            ret = method(*args, **kwargs)
-            rpc.response_queue.put((seq, ret))
         except KeyboardInterrupt:
             if quitting:
                 exit_now = True
@@ -203,16 +207,16 @@ def print_exception():
     seen = set()
 
     def print_exc(typ, exc, tb):
-        seen.add(exc)
+        seen.add(id(exc))
         context = exc.__context__
         cause = exc.__cause__
-        if cause is not None and cause not in seen:
+        if cause is not None and id(cause) not in seen:
             print_exc(type(cause), cause, cause.__traceback__)
             print("\nThe above exception was the direct cause "
                   "of the following exception:\n", file=efile)
         elif (context is not None and
               not exc.__suppress_context__ and
-              context not in seen):
+              id(context) not in seen):
             print_exc(type(context), context, context.__traceback__)
             print("\nDuring handling of the above exception, "
                   "another exception occurred:\n", file=efile)
