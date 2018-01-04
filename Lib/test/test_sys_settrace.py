@@ -619,7 +619,7 @@ class JumpTestCase(unittest.TestCase):
     def test_jump_in_nested_finally_2(output):
         try:
             output.append(2)
-            1/0
+            1.0/0.0
             return
         finally:
             output.append(6)
@@ -630,7 +630,7 @@ class JumpTestCase(unittest.TestCase):
     def test_jump_in_nested_finally_3(output):
         try:
             output.append(2)
-            1/0
+            1.0/0.0
             return
         finally:
             output.append(6)
@@ -697,7 +697,7 @@ class JumpTestCase(unittest.TestCase):
     @jump_test(5, 7, [4, 7, 8])
     def test_jump_between_except_blocks(output):
         try:
-            1/0
+            1.0/0.0
         except ZeroDivisionError:
             output.append(4)
             output.append(5)
@@ -708,7 +708,7 @@ class JumpTestCase(unittest.TestCase):
     @jump_test(5, 6, [4, 6, 7])
     def test_jump_within_except_block(output):
         try:
-            1/0
+            1.0/0.0
         except:
             output.append(4)
             output.append(5)
