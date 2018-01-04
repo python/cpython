@@ -2080,7 +2080,7 @@ done:
 static int
 _Pickler_write_large_bytes(
     PicklerObject *self, const char *header, Py_ssize_t header_size,
-    PyObject *payload, Py_ssize_t payload_size)
+    PyObject *payload)
 {
     assert(self->output_buffer != NULL);
     assert(self->write != NULL);
@@ -2209,7 +2209,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
         else {
             /* Bypass the in-memory buffer to directly stream large data
                into the underlying file object. */
-            if (_Pickler_write_large_bytes(self, header, len, obj, size) < 0) {
+            if (_Pickler_write_large_bytes(self, header, len, obj) < 0) {
                 return -1;
             }
         }
@@ -2339,7 +2339,7 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
         if (mem == NULL) {
             return -1;
         }
-        if (_Pickler_write_large_bytes(self, header, len, mem, size) < 0) {
+        if (_Pickler_write_large_bytes(self, header, len, mem) < 0) {
             Py_DECREF(mem);
             return -1;
         }
