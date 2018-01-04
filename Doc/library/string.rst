@@ -755,19 +755,14 @@ attributes:
 
 * *idpattern* -- This is the regular expression describing the pattern for
   non-braced placeholders.  The default value is the regular expression
-  ``(?a:[_a-zA-Z][_a-zA-Z0-9]*)``.  If this is given and *braceidpattern* is
+  ``(?a:[_a-z][_a-z0-9]*)``.  If this is given and *braceidpattern* is
   ``None`` this pattern will also apply to braced placeholders.
 
   .. note::
 
      Since default *flags* is ``re.IGNORECASE``, pattern ``[a-z]`` can match
      with some non-ASCII characters. That's why we use the local ``a`` flag
-     here.  Further, with the default *flags* value, including ``A-Z`` in the
-     ranges is redundant, but required for backward compatibility.
-
-     While *flags* is kept to ``re.IGNORECASE`` for backward compatibility,
-     you can override it to ``0`` or ``re.IGNORECASE | re.ASCII`` when
-     subclassing.
+     here.
 
   .. versionchanged:: 3.7
      *braceidpattern* can be used to define separate patterns used inside and
