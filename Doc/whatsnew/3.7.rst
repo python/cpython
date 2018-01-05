@@ -813,6 +813,12 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* :meth:`datetime.strptime` now accepts an optional 3rd parameter
+  `tzname_to_tzinfo`. It accepts a callable that converts a timezone name to a
+  tzinfo object. For example ``datetime.strptime("2018-01-05 13:10:00 CET",
+  "%Y-%m-%d %H:%M:%S %Z", pytz.timezone)``. It is used to interpret the
+  timezone name given by `%Z`.
+
 * The ``asyncio.windows_utils.socketpair()`` function has been
   removed: use directly :func:`socket.socketpair` which is available on all
   platforms since Python 3.5 (before, it wasn't available on Windows).
