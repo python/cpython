@@ -938,12 +938,14 @@ def test_pdb_issue_20766():
     pdb 2: <built-in function default_int_handler>
     """
 
-class PdbBaseTestCase(unittest.TestCase):
+
+class PdbTestCase(unittest.TestCase):
+    def tearDown(self):
+        support.unlink(support.TESTFN)
+
     def _run_pdb(self, pdb_args, commands):
-        """Run 'script' lines with pdb and the pdb 'commands'."""
         self.addCleanup(support.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
-        stdout = stderr = None
         with subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -955,8 +957,27 @@ class PdbBaseTestCase(unittest.TestCase):
         stderr = stderr and bytes.decode(stderr)
         return stdout, stderr
 
+    def run_pdb_script(self, script, commands):
+        """Run 'script' lines with pdb and the pdb 'commands'."""
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(support.unlink, filename)
+        return self._run_pdb([filename], commands)
 
-class PdbScriptTestCase(PdbBaseTestCase):
+    def run_pdb_module(self, script, commands):
+        """Runs the script code as part of a module"""
+        self.module_name = 't_main'
+        support.rmtree(self.module_name)
+        main_file = self.module_name + '/__main__.py'
+        init_file = self.module_name + '/__init__.py'
+        os.mkdir(self.module_name)
+        with open(init_file, 'w') as f:
+            pass
+        with open(main_file, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(support.rmtree, self.module_name)
+        return self._run_pdb(['-m', self.module_name], commands)
 
     def _assert_find_function(self, file_content, func_name, expected):
         file_content = textwrap.dedent(file_content)
@@ -968,13 +989,6 @@ class PdbScriptTestCase(PdbBaseTestCase):
             expected[0], support.TESTFN, expected[1])
         self.assertEqual(
             expected, pdb.find_function(func_name, support.TESTFN))
-
-    def run_pdb(self, script, commands):
-        filename = 'main.py'
-        with open(filename, 'w') as f:
-            f.write(textwrap.dedent(script))
-        self.addCleanup(support.unlink, filename)
-        return self._run_pdb([filename], commands)
 
     def test_find_function_empty_file(self):
         self._assert_find_function('', 'foo', None)
@@ -1041,7 +1055,7 @@ class PdbScriptTestCase(PdbBaseTestCase):
         with open('bar.py', 'w') as f:
             f.write(textwrap.dedent(bar))
         self.addCleanup(support.unlink, 'bar.py')
-        stdout, stderr = self.run_pdb(script, commands)
+        stdout, stderr = self.run_pdb_script(script, commands)
         self.assertTrue(
             any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
             'Fail to step into the caller after a return')
@@ -1078,7 +1092,7 @@ class PdbScriptTestCase(PdbBaseTestCase):
         script = "def f: pass\n"
         commands = ''
         expected = "SyntaxError:"
-        stdout, stderr = self.run_pdb(script, commands)
+        stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn(expected, stdout,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
@@ -1126,33 +1140,13 @@ class PdbScriptTestCase(PdbBaseTestCase):
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
-    def tearDown(self):
-        support.unlink(support.TESTFN)
-
-
-class PdbModuleTestCase(PdbBaseTestCase):
-    """Re-runs all tests used for a script but using a module"""
-
-    def run_pdb(self, script, commands):
-        self.module_name = 't_main'
-        support.rmtree(self.module_name)
-        main_file = self.module_name + '/__main__.py'
-        init_file = self.module_name + '/__init__.py'
-        os.mkdir(self.module_name)
-        with open(init_file, 'w') as f:
-            pass
-        with open(main_file, 'w') as f:
-            f.write(textwrap.dedent(script))
-        self.addCleanup(support.rmtree, self.module_name)
-        return self._run_pdb(['-m', self.module_name], commands)
-
     def test_run_module(self):
         script = """print("SUCCESS")"""
         commands = """
             continue
             quit
         """
-        stdout, stderr = self.run_pdb(script, commands)
+        stdout, stderr = self.run_pdb_module(script, commands)
         self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
 
     def test_module_is_run_as_main(self):
@@ -1164,7 +1158,7 @@ class PdbModuleTestCase(PdbBaseTestCase):
             continue
             quit
         """
-        stdout, stderr = self.run_pdb(script, commands)
+        stdout, stderr = self.run_pdb_module(script, commands)
         self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
 
     def test_breakpoint(self):
@@ -1174,16 +1168,16 @@ class PdbModuleTestCase(PdbBaseTestCase):
                 print("SUCCESS")
                 pass
         """
-        commands = f"""
+        commands = """
             b 3
             quit
         """
-        stdout, stderr = self.run_pdb(script, commands)
+        stdout, stderr = self.run_pdb_module(script, commands)
         self.assertTrue(any("Breakpoint 1 at" in l for l in stdout.splitlines()), stdout)
         self.assertTrue(all("SUCCESS" not in l for l in stdout.splitlines()), stdout)
 
-    def test_run_pdb(self):
-        commands = f"""
+    def test_run_pdb_with_pdb(self):
+        commands = """
             c
             quit
         """
@@ -1208,11 +1202,11 @@ class PdbModuleTestCase(PdbBaseTestCase):
 
                 print("SUCCESS")
         """
-        commands = f"""
+        commands = """
             quit
         """
-        stdout, stderr = self.run_pdb(script, commands)
-        self.assertTrue(any(f"__main__.py(4)<module>()"
+        stdout, stderr = self.run_pdb_module(script, commands)
+        self.assertTrue(any("__main__.py(4)<module>()"
                             in l for l in stdout.splitlines()), stdout)
 
     def test_relative_imports(self):
@@ -1239,7 +1233,7 @@ class PdbModuleTestCase(PdbBaseTestCase):
                 var = "VAR from module"
                 var2 = "second var"
             """))
-        commands = f"""
+        commands = """
             b 5
             c
             p top_var
@@ -1248,16 +1242,15 @@ class PdbModuleTestCase(PdbBaseTestCase):
             quit
         """
         stdout, _ = self._run_pdb(['-m', self.module_name], commands)
-        self.assertTrue(any(f"VAR from module" in l for l in stdout.splitlines()))
-        self.assertTrue(any(f"VAR from top" in l for l in stdout.splitlines()))
-        self.assertTrue(any(f"second var" in l for l in stdout.splitlines()))
+        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()))
+        self.assertTrue(any("VAR from top" in l for l in stdout.splitlines()))
+        self.assertTrue(any("second var" in l for l in stdout.splitlines()))
 
 
 def load_tests(*args):
     from test import test_pdb
     suites = [
-        unittest.makeSuite(PdbScriptTestCase),
-        unittest.makeSuite(PdbModuleTestCase),
+        unittest.makeSuite(PdbTestCase),
         doctest.DocTestSuite(test_pdb)
     ]
     return unittest.TestSuite(suites)
