@@ -203,7 +203,7 @@ class _Framer:
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
                 data = f.getbuffer()
                 write = self.file_write
-                # Issue a single call to the write nethod of the underlying
+                # Issue a single call to the write method of the underlying
                 # file object for the frame opcode with the size of the
                 # frame. The concatenation is expected to be less expensive
                 # than issuing an additional call to write.

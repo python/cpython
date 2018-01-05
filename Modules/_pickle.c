@@ -956,7 +956,7 @@ _Pickler_OpcodeBoundary(PicklerObject *self)
          * to limit memory usage when dumping large complex objects to
          * a file.
          *
-         * self-write is NULL when called via dumps.
+         * self->write is NULL when called via dumps.
          */
         if (self->write != NULL) {
             if (_Pickler_FlushToFile(self) < 0) {
