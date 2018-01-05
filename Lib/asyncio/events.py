@@ -17,7 +17,6 @@ import subprocess
 import sys
 import threading
 
-from . import constants
 from . import format_helpers
 
 
@@ -150,11 +149,15 @@ class AbstractServer:
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
-        return NotImplemented
+        raise NotImplementedError
 
     async def wait_closed(self):
         """Coroutine to wait until service is closed."""
-        return NotImplemented
+        raise NotImplementedError
+
+    def get_loop(self):
+        """ Get the event loop the Server object is attached to."""
+        raise NotImplementedError
 
 
 class AbstractEventLoop:
@@ -250,16 +253,20 @@ class AbstractEventLoop:
     async def getnameinfo(self, sockaddr, flags=0):
         raise NotImplementedError
 
-    async def create_connection(self, protocol_factory, host=None, port=None,
-                                *, ssl=None, family=0, proto=0,
-                                flags=0, sock=None, local_addr=None,
-                                server_hostname=None):
+    async def create_connection(
+            self, protocol_factory, host=None, port=None,
+            *, ssl=None, family=0, proto=0,
+            flags=0, sock=None, local_addr=None,
+            server_hostname=None,
+            ssl_handshake_timeout=None):
         raise NotImplementedError
 
-    async def create_server(self, protocol_factory, host=None, port=None,
-                            *, family=socket.AF_UNSPEC,
-                            flags=socket.AI_PASSIVE, sock=None, backlog=100,
-                            ssl=None, reuse_address=None, reuse_port=None):
+    async def create_server(
+            self, protocol_factory, host=None, port=None,
+            *, family=socket.AF_UNSPEC,
+            flags=socket.AI_PASSIVE, sock=None, backlog=100,
+            ssl=None, reuse_address=None, reuse_port=None,
+            ssl_handshake_timeout=None):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -294,16 +301,36 @@ class AbstractEventLoop:
         the same port as other existing endpoints are bound to, so long as
         they all set this flag when being created. This option is not
         supported on Windows.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for completion of the SSL handshake before aborting the
+        connection. Default is 10s, longer timeouts may increase vulnerability
+        to DoS attacks (see https://support.f5.com/csp/article/K13834)
         """
         raise NotImplementedError
 
-    async def create_unix_connection(self, protocol_factory, path=None, *,
-                                     ssl=None, sock=None,
-                                     server_hostname=None):
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade a transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
+        """
         raise NotImplementedError
 
-    async def create_unix_server(self, protocol_factory, path=None, *,
-                                 sock=None, backlog=100, ssl=None):
+    async def create_unix_connection(
+            self, protocol_factory, path=None, *,
+            ssl=None, sock=None,
+            server_hostname=None,
+            ssl_handshake_timeout=None):
+        raise NotImplementedError
+
+    async def create_unix_server(
+            self, protocol_factory, path=None, *,
+            sock=None, backlog=100, ssl=None,
+            ssl_handshake_timeout=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop
@@ -320,6 +347,9 @@ class AbstractEventLoop:
 
         ssl can be set to an SSLContext to enable SSL over the
         accepted connections.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for the SSL handshake to complete (defaults to 10s).
         """
         raise NotImplementedError
 
