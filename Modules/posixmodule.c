@@ -9336,11 +9336,8 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
-/* Issue #32390: On AIX platform, _ALL_SOURCE is defined by default.
-   When _ALL_SOURCE is defined the AIX system headers define f_fsid
-   in a way that is not compatible with the PyStructSequence_SET_ITEM() statement.
-   This change makes os.statvfs(path) work on AIX
- */
+/* The _ALL_SOURCE feature test macro defines f_fsid as a structure
+ * (issue #32390). */
 #if defined(_AIX) && defined(_ALL_SOURCE)
     PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
 #else

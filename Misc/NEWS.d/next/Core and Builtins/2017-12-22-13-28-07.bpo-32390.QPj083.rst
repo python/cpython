@@ -1,4 +1,1 @@
-Fix os.statvfs(path) on AIX
-when _ALL_SOURCE is defined f_fsid member of the statvfs structure is a structure instead of unsigned long.
-when _ALL_SOURCE is not defined f_fsid member of the statvfs structure is nearly identical to Linux
-Error message: 1506-280 (S) Function argument assignment between types "unsigned long" and "struct fsid_t" is not allowed.
+Fix the compilation failure on AIX after the f_fsid field has been added to the object returned by os.statvfs() (issue #32143). Original patch by Michael Felt.
