@@ -1162,7 +1162,7 @@ class EnvironmentVariableTests(BaseTest):
                 ('ignore', None, ImportWarning, None, 0),
                 ('ignore', None, ResourceWarning, None, 0),
             ]
-        expected_output = "".join(str(f) + "\n" for f in expected_default_filters)
+        expected_output = [str(f).encode() for f in expected_default_filters]
 
         if pure_python_api:
             # Disable the warnings acceleration module in the subprocess
@@ -1172,8 +1172,9 @@ class EnvironmentVariableTests(BaseTest):
         code += "import warnings; [print(f) for f in warnings.filters]"
 
         rc, stdout, stderr = assert_python_ok("-c", code, __isolated=True)
+        stdout_lines = [line.strip() for line in stdout.splitlines()]
         self.maxDiff = None
-        self.assertEqual(stdout.decode(), expected_output)
+        self.assertEqual(stdout_lines, expected_output)
 
 
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
