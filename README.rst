@@ -14,7 +14,7 @@ This is Python version 3.6.4
    :target: https://codecov.io/gh/python/cpython
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
+2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
 reserved.
 
 See the end of this file for further copyright and license information.
@@ -232,7 +232,7 @@ Copyright and License Information
 ---------------------------------
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
+2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
 reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
