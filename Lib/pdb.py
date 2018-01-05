@@ -1532,7 +1532,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         __main__.__dict__.update({
             "__name__": "__main__",
             "__file__": self.mainpyfile,
-#            "__package__": module_name,  # Not needed, will rely on __spec__.parent
+            "__package__": module_name,
             "__loader__": mod_spec.loader,
             "__spec__": mod_spec,
             "__builtins__": __builtins__,
