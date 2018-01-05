@@ -568,7 +568,7 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     tt = _strptime(data_string, format)[0]
     return time.struct_time(tt[:time._STRUCT_TM_ITEMS])
 
-def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
+def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y", tzname_to_tzinfo=None):
     """Return a class cls instance based on the input string and the
     format string."""
     tt, fraction, gmtoff_fraction = _strptime(data_string, format)
@@ -581,5 +581,9 @@ def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
         else:
             tz = datetime_timezone(tzdelta)
         args += (tz,)
+    elif tzname is not None and tzname_to_tzinfo:
+        tz = tzname_to_tzinfo(tzname)
+        if tz:
+            args += (tz,)
 
     return cls(*args)

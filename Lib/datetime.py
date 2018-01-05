@@ -1855,10 +1855,10 @@ class datetime(date):
         return self.isoformat(sep=' ')
 
     @classmethod
-    def strptime(cls, date_string, format):
+    def strptime(cls, date_string, format, tzname_to_tzinfo=None):
         'string, format -> new datetime parsed from a string (like time.strptime()).'
         import _strptime
-        return _strptime._strptime_datetime(cls, date_string, format)
+        return _strptime._strptime_datetime(cls, date_string, format, tzname_to_tzinfo)
 
     def utcoffset(self):
         """Return the timezone offset as timedelta positive east of UTC (negative west of
