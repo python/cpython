@@ -70,11 +70,13 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     package = _get_package(package)
     reader = _get_resource_reader(package)
     if reader is not None:
+        print('====> is a resource')
         return reader.open_resource(resource)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
+        print('====>', builtins_open)
         return builtins_open(full_path, mode='rb')
     except OSError:
         # Just assume the loader is a resource loader; all the relevant

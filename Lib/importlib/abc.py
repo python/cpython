@@ -378,3 +378,6 @@ class ResourceReader(Loader):
     def contents(self):
         """Return an iterator of strings over the contents of the package."""
         return iter([])
+
+
+_register(ResourceReader, machinery.SourceFileLoader)
