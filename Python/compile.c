@@ -868,7 +868,7 @@ compiler_set_lineno(struct compiler *c, int off)
  */
 /* XXX Make the stack effect of WITH_CLEANUP_START and
    WITH_CLEANUP_FINISH deterministic. */
-int
+static int
 stack_effect(int opcode, int oparg, int jump)
 {
     switch (opcode) {
