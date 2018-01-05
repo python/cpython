@@ -198,7 +198,8 @@ they're applied left-to-right, and the most recently applied filters take
 precedence over earlier ones).
 
 Commonly used warning filters apply to either all warnings, warnings in a
-particular category, or warnings raised by particular modules or packages::
+particular category, or warnings raised by particular modules or packages.
+Some examples::
 
    default                      # Show all warnings (even those ignored by default)
    ignore                       # Ignore all warnings
