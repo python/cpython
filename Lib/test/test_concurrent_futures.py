@@ -95,7 +95,6 @@ class BaseTestCase(unittest.TestCase):
 
 
 class ExecutorMixin:
-    timeout = 30
     worker_count = 5
     executor_kwargs = {}
 
@@ -118,8 +117,6 @@ class ExecutorMixin:
         self._prime_executor()
 
     def tearDown(self):
-        # Remove the reference to self.timer to avoid the thread_cleanup
-        # warnings, as this class is re-used for multiple tests.
         self.executor.shutdown(wait=True)
         self.executor = None
 
@@ -376,14 +373,12 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         queue_management_thread = executor._queue_management_thread
         del executor
 
+        # Make sure that all the executor ressources were properly cleaned by
+        # the shutdown process
         queue_management_thread.join()
         for p in processes.values():
             p.join()
-        # Make sure that the queue management thread was properly finished
-        # and the queue was closed by the shutdown process
-        queue_management_thread.join()
         call_queue.join_thread()
-
 
 
 create_executor_tests(ProcessPoolShutdownTest,
@@ -768,7 +763,7 @@ create_executor_tests(ProcessPoolExecutorTest,
 
 def hide_process_stderr():
     import io
-    setattr(sys, "stderr", io.StringIO())
+    sys.stderr = io.StringIO()
 
 
 def _crash(delay=None):
@@ -810,7 +805,7 @@ class CrashAtUnpickle(object):
 
 
 class ExitAtPickle(object):
-    """Bad object that triggers a segfault at pickling time."""
+    """Bad object that triggers a process exit at pickling time."""
     def __reduce__(self):
         _exit()
 
@@ -822,23 +817,20 @@ class ExitAtUnpickle(object):
 
 
 class ErrorAtPickle(object):
-    """Bad object that triggers a segfault at pickling time."""
+    """Bad object that triggers an error at pickling time."""
     def __reduce__(self):
         from pickle import PicklingError
         raise PicklingError("Error in pickle")
 
 
 class ErrorAtUnpickle(object):
-    """Bad object that triggers a process exit at unpickling time."""
+    """Bad object that triggers an error at unpickling time."""
     def __reduce__(self):
         from pickle import UnpicklingError
         return _raise_error, (UnpicklingError, )
 
 
 class ExecutorDeadlockTest:
-    # If ExecutorDeadlockTest takes more than 100secs to complete, it is very
-    # likely caught in a deadlock. As there is no easy way to detect it,
-    # faulthandler will print the traceback and exit.
     TIMEOUT = 15
 
     @classmethod
@@ -916,11 +908,6 @@ class ExecutorDeadlockTest:
                             # consider that the executor is in a deadlock state
                             self._fail_on_deadlock(executor)
                     executor.shutdown(wait=True)
-
-    @classmethod
-    def _test_getpid(cls, a):
-        time.sleep(.01)
-        return os.getpid()
 
     def test_shutdown_deadlock(self):
         # Test that the pool calling shutdown do not cause deadlock
