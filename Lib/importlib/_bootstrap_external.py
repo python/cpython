@@ -912,11 +912,15 @@ class FileLoader:
 
     # ResourceReader ABC API.
 
-    ## def open_resource(self, resource):
-    ##     if not self.is_package(self.name):
-    ##         raise FileNotFoundError
-    ##     path = _path_join(_path_split(self.path)[0], resource)
-    ##     return _io.FileIO(path, 'r')
+    @_check_name
+    def get_resource_reader(self, module):
+        if not self.is_package(module):
+            return None
+        return self
+
+    def open_resource(self, resource):
+        path = _path_join(_path_split(self.path)[0], resource)
+        return _io.FileIO(path, 'r')
 
     def resource_path(self, resource):
         if not self.is_resource(resource):
@@ -925,16 +929,12 @@ class FileLoader:
         return path
 
     def is_resource(self, name):
-        if not self.is_package(self.name):
-            raise FileNotFoundError
         if path_sep in name:
             return False
         path = _path_join(_path_split(self.path)[0], name)
         return _path_isfile(path)
 
     def contents(self):
-        if not self.is_package(self.name):
-            raise FileNotFoundError
         return iter(_os.listdir(_path_split(self.path)[0]))
 
 

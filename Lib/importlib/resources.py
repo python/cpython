@@ -59,8 +59,10 @@ def _get_resource_reader(
     # hook wants to create a weak reference to the object, but
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
-    if hasattr(package.__spec__.loader, 'open_resource'):
-        return cast(resources_abc.ResourceReader, package.__spec__.loader)
+    spec = package.__spec__
+    if hasattr(spec.loader, 'get_resource_reader'):
+        return cast(resources_abc.ResourceReader,
+                    spec.loader.get_resource_reader(spec.name))
     return None
 
 
@@ -70,13 +72,11 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     package = _get_package(package)
     reader = _get_resource_reader(package)
     if reader is not None:
-        print('====> is a resource')
         return reader.open_resource(resource)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
-        print('====>', builtins_open)
         return builtins_open(full_path, mode='rb')
     except OSError:
         # Just assume the loader is a resource loader; all the relevant
