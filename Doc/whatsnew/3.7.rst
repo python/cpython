@@ -426,6 +426,10 @@ pdb
 argument.  If given, this is printed to the console just before debugging
 begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
+pdb command line now accepts `-m module_name` as an alternative to
+script file. (Contributed by Mario Corchero in :issue:`32206`.)
+
+
 re
 --
 

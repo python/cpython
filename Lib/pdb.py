@@ -1521,6 +1521,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
+    def _runmodule(self, module_name):
+        self._wait_for_mainpyfile = True
+        self._user_requested_quit = False
+        import runpy
+        mod_name, mod_spec, code = runpy._get_module_details(module_name)
+        self.mainpyfile = self.canonic(code.co_filename)
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({
+            "__name__": "__main__",
+            "__file__": self.mainpyfile,
+            "__package__": module_name,
+            "__loader__": mod_spec.loader,
+            "__spec__": mod_spec,
+            "__builtins__": __builtins__,
+        })
+        self.run(code)
+
     def _runscript(self, filename):
         # The script has to run in __main__ namespace (or imports from
         # __main__ will break).
@@ -1635,29 +1653,33 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import getopt
 
-    opts, args = getopt.getopt(sys.argv[1:], 'hc:', ['--help', '--command='])
+    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['--help', '--command='])
 
     if not args:
         print(_usage)
         sys.exit(2)
 
     commands = []
+    run_as_module = False
     for opt, optarg in opts:
         if opt in ['-h', '--help']:
             print(_usage)
             sys.exit()
         elif opt in ['-c', '--command']:
             commands.append(optarg)
+        elif opt in ['-m']:
+            run_as_module = True
 
     mainpyfile = args[0]     # Get script filename
-    if not os.path.exists(mainpyfile):
+    if not run_as_module and not os.path.exists(mainpyfile):
         print('Error:', mainpyfile, 'does not exist')
         sys.exit(1)
 
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
 
     # Replace pdb's dir with script's dir in front of module search path.
-    sys.path[0] = os.path.dirname(mainpyfile)
+    if not run_as_module:
+        sys.path[0] = os.path.dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -1667,7 +1689,10 @@ def main():
     pdb.rcLines.extend(commands)
     while True:
         try:
-            pdb._runscript(mainpyfile)
+            if run_as_module:
+                pdb._runmodule(mainpyfile)
+            else:
+                pdb._runscript(mainpyfile)
             if pdb._user_requested_quit:
                 break
             print("The program finished and will be restarted")
