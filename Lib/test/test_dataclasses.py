@@ -2033,6 +2033,23 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C.y, 10)
         self.assertEqual(C.z, 20)
 
+    def test_helper_make_dataclass_other_params(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', ClassVar[int], 10),
+                            ('z', ClassVar[int], field(default=20)),
+                            ],
+                           init=False)
+        # Make sure we have a repr, but no init.
+        self.assertNotIn('__init__', vars(C))
+        self.assertIn('__repr__', vars(C))
+
+        # Make sure random other params don't work.
+        with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
+            C = make_dataclass('C',
+                               [],
+                               xxinit=False)
+
     def test_helper_make_dataclass_no_types(self):
         C = make_dataclass('Point', ['x', 'y', 'z'])
         c = C(1, 2, 3)
