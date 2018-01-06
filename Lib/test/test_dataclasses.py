@@ -2033,6 +2033,20 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C.y, 10)
         self.assertEqual(C.z, 20)
 
+    def test_helper_make_dataclass_no_types(self):
+        C = make_dataclass('Point', ['x', 'y', 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': 'typing.Any',
+                                             'z': 'typing.Any'})
+
+        C = make_dataclass('Point', ['x', ('y', int), 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': int,
+                                             'z': 'typing.Any'})
 
 class TestDocString(unittest.TestCase):
     def assertDocStrEqual(self, a, b):
