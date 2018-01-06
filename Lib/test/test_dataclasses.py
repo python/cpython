@@ -1,6 +1,6 @@
 from dataclasses import (
     dataclass, field, FrozenInstanceError, fields, asdict, astuple,
-    make_dataclass, replace, InitVar, Field, MISSING
+    make_dataclass, replace, InitVar, Field, MISSING, is_dataclass,
 )
 
 import pickle
@@ -1365,27 +1365,32 @@ class TestCase(unittest.TestCase):
 
         self.assertIs(C().x, int)
 
-    def test_isdataclass(self):
-        # There is no isdataclass() helper any more, but the PEP
-        #  describes how to write it, so make sure that works.  Note
-        #  that this version returns True for both classes and
-        #  instances.
-        def isdataclass(obj):
-            try:
-                fields(obj)
-                return True
-            except TypeError:
-                return False
+    def test_is_dataclass(self):
+        class NotDataClass:
+            pass
 
-        self.assertFalse(isdataclass(0))
-        self.assertFalse(isdataclass(int))
+        self.assertFalse(is_dataclass(0))
+        self.assertFalse(is_dataclass(int))
+        self.assertFalse(is_dataclass(NotDataClass))
+        self.assertFalse(is_dataclass(NotDataClass()))
 
         @dataclass
         class C:
             x: int
 
-        self.assertTrue(isdataclass(C))
-        self.assertTrue(isdataclass(C(0)))
+        @dataclass
+        class D:
+            d: C
+            e: int
+
+        c = C(10)
+        d = D(c, 4)
+
+        self.assertTrue(is_dataclass(C))
+        self.assertTrue(is_dataclass(c))
+        self.assertFalse(is_dataclass(c.x))
+        self.assertTrue(is_dataclass(d.d))
+        self.assertFalse(is_dataclass(d.e))
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
