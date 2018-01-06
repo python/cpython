@@ -2408,7 +2408,7 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
         return -1;
     }
 
-    if (size < FRAME_SIZE_TARGET || self->write == NULL) {
+    if (size < FRAME_SIZE_TARGET) {
         if (_Pickler_Write(self, header, len) < 0) {
             return -1;
         }
