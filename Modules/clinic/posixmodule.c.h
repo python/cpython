@@ -1721,39 +1721,6 @@ exit:
 
 #endif /* defined(HAVE_EXECV) */
 
-PyDoc_STRVAR(os_blech__doc__,
-"blech($module, /, mode)\n"
-"--\n"
-"\n"
-"Obtain the blech\n"
-"\n"
-"  mode\n"
-"    Mode of process creation.");
-
-#define OS_BLECH_METHODDEF    \
-    {"blech", (PyCFunction)os_blech, METH_FASTCALL|METH_KEYWORDS, os_blech__doc__},
-
-static PyObject *
-os_blech_impl(PyObject *module, int mode);
-
-static PyObject *
-os_blech(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"mode", NULL};
-    static _PyArg_Parser _parser = {"i:blech", _keywords, 0};
-    int mode;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &mode)) {
-        goto exit;
-    }
-    return_value = os_blech_impl(module, mode);
-
-exit:
-    return return_value;
-}
-
 #if defined(HAVE_POSIXSPAWN)
 
 PyDoc_STRVAR(os_posixspawn__doc__,
@@ -6613,4 +6580,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=cbd18f7a5d3c1d09 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2337d5dd34318f86 input=a9049054013a1b77]*/

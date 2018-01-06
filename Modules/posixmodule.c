@@ -5102,33 +5102,6 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 
 #endif /* HAVE_EXECV */
 
-/*[clinic input]
-os.blech
-
-    mode: int
-        Mode of process creation.
-
-Obtain the blech
-[clinic start generated code]*/
-
-static PyObject *
-os_blech_impl(PyObject *module, int mode)
-/*[clinic end generated code: output=62ed91ef21700cfc input=0c4595b146d42476]*/
-{
-    return PyLong_FromLong(mode);
-}
-
-static void reprint(PyObject *obj) {
-    PyObject* repr = PyObject_Repr(obj);
-    PyObject* str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
-    const char *bytes = PyBytes_AS_STRING(str);
-
-    printf("REPR: %s\n", bytes);
-
-    Py_XDECREF(repr);
-    Py_XDECREF(str);
-}
-
 #ifdef HAVE_POSIXSPAWN
 /*[clinic input]
 os.posixspawn
@@ -5203,7 +5176,7 @@ os_posixspawn_impl(PyObject *module, path_t *path, PyObject *argv,
 
         file_actionsp = &_file_actions;
 
-        PyObject* open_action = PyObject_GetAttrString(file_actions, "open_action");
+        PyObject* open_action = PyObject_GetAttrString(file_actions, "_open_action");
         if (open_action != Py_None){
             long open_fd = PyLong_AsLong(PyTuple_GetItem(open_action, 0));
             char* open_path = PyBytes_AsString(PyTuple_GetItem(open_action, 1));
@@ -5212,13 +5185,13 @@ os_posixspawn_impl(PyObject *module, path_t *path, PyObject *argv,
             posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode);
         }
 
-        PyObject* close_action = PyObject_GetAttrString(file_actions, "close_action");
+        PyObject* close_action = PyObject_GetAttrString(file_actions, "_close_action");
         if (close_action != Py_None){
             long close_fd = PyLong_AsLong(PyTuple_GetItem(close_action, 0));
             posix_spawn_file_actions_addclose(file_actionsp, close_fd);
         }
 
-        PyObject* dup2_action = PyObject_GetAttrString(file_actions, "dup2_action");
+        PyObject* dup2_action = PyObject_GetAttrString(file_actions, "_dup2_action");
         if (dup2_action != Py_None){
             long fd1 = PyLong_AsLong(PyTuple_GetItem(dup2_action, 0));
             long fd2 = PyLong_AsLong(PyTuple_GetItem(dup2_action, 1));
@@ -5233,8 +5206,6 @@ os_posixspawn_impl(PyObject *module, path_t *path, PyObject *argv,
         posix_spawn(&pid, path->narrow, file_actionsp, NULL, argvlist, envlist);
         return PyLong_FromPid(pid);
     _Py_END_SUPPRESS_IPH
-
-    /* If we get here it's definitely an error */
 
     path_error(path);
 
@@ -12760,7 +12731,6 @@ static PyMethodDef posix_methods[] = {
     OS_NICE_METHODDEF
     OS_GETPRIORITY_METHODDEF
     OS_SETPRIORITY_METHODDEF
-    OS_BLECH_METHODDEF
     OS_POSIXSPAWN_METHODDEF
 #ifdef HAVE_READLINK
     {"readlink",        (PyCFunction)posix_readlink,
