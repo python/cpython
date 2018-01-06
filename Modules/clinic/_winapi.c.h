@@ -102,7 +102,7 @@ _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped);
 
 static PyObject *
-_winapi_ConnectNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_ConnectNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "overlapped", NULL};
@@ -138,7 +138,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
                         DWORD flags_and_attributes, HANDLE template_file);
 
 static PyObject *
-_winapi_CreateFile(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPCTSTR file_name;
@@ -180,7 +180,7 @@ _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
                             LPWSTR dst_path);
 
 static PyObject *
-_winapi_CreateJunction(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPWSTR src_path;
@@ -214,7 +214,7 @@ _winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
                              LPSECURITY_ATTRIBUTES security_attributes);
 
 static PyObject *
-_winapi_CreateNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPCTSTR name;
@@ -262,7 +262,7 @@ static PyObject *
 _winapi_CreatePipe_impl(PyObject *module, PyObject *pipe_attrs, DWORD size);
 
 static PyObject *
-_winapi_CreatePipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_CreatePipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pipe_attrs;
@@ -306,7 +306,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                            PyObject *startup_info);
 
 static PyObject *
-_winapi_CreateProcess(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *application_name;
@@ -352,7 +352,7 @@ _winapi_DuplicateHandle_impl(PyObject *module, HANDLE source_process_handle,
                              DWORD options);
 
 static PyObject *
-_winapi_DuplicateHandle(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_DuplicateHandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE source_process_handle;
@@ -611,7 +611,7 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
                          BOOL inherit_handle, DWORD process_id);
 
 static PyObject *
-_winapi_OpenProcess(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_OpenProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     DWORD desired_access;
@@ -648,7 +648,7 @@ static PyObject *
 _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size);
 
 static PyObject *
-_winapi_PeekNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_PeekNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -677,7 +677,7 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped);
 
 static PyObject *
-_winapi_ReadFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
@@ -712,7 +712,7 @@ _winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
                                      PyObject *collect_data_timeout);
 
 static PyObject *
-_winapi_SetNamedPipeHandleState(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_SetNamedPipeHandleState(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE named_pipe;
@@ -744,7 +744,7 @@ _winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
                               UINT exit_code);
 
 static PyObject *
-_winapi_TerminateProcess(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_TerminateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -772,7 +772,7 @@ static PyObject *
 _winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout);
 
 static PyObject *
-_winapi_WaitNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_WaitNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPCTSTR name;
@@ -802,7 +802,7 @@ _winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
                                     BOOL wait_flag, DWORD milliseconds);
 
 static PyObject *
-_winapi_WaitForMultipleObjects(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_WaitForMultipleObjects(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *handle_seq;
@@ -837,7 +837,7 @@ _winapi_WaitForSingleObject_impl(PyObject *module, HANDLE handle,
                                  DWORD milliseconds);
 
 static PyObject *
-_winapi_WaitForSingleObject(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_winapi_WaitForSingleObject(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -871,7 +871,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped);
 
 static PyObject *
-_winapi_WriteFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
@@ -889,4 +889,56 @@ _winapi_WriteFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fba2ad7bf1a87e4a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_GetACP__doc__,
+"GetACP($module, /)\n"
+"--\n"
+"\n"
+"Get the current Windows ANSI code page identifier.");
+
+#define _WINAPI_GETACP_METHODDEF    \
+    {"GetACP", (PyCFunction)_winapi_GetACP, METH_NOARGS, _winapi_GetACP__doc__},
+
+static PyObject *
+_winapi_GetACP_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetACP_impl(module);
+}
+
+PyDoc_STRVAR(_winapi_GetFileType__doc__,
+"GetFileType($module, /, handle)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_GETFILETYPE_METHODDEF    \
+    {"GetFileType", (PyCFunction)_winapi_GetFileType, METH_FASTCALL|METH_KEYWORDS, _winapi_GetFileType__doc__},
+
+static DWORD
+_winapi_GetFileType_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"handle", NULL};
+    static _PyArg_Parser _parser = {"" F_HANDLE ":GetFileType", _keywords, 0};
+    HANDLE handle;
+    DWORD _return_value;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &handle)) {
+        goto exit;
+    }
+    _return_value = _winapi_GetFileType_impl(module, handle);
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = Py_BuildValue("k", _return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ec7f36eb7efc9d00 input=a9049054013a1b77]*/

@@ -159,6 +159,24 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 562: Customization of access to module attributes
+-----------------------------------------------------
+
+It is sometimes convenient to customize or otherwise have control over access
+to module attributes. A typical example is managing deprecation warnings.
+Typical workarounds are assigning ``__class__`` of a module object to
+a custom subclass of :class:`types.ModuleType` or replacing the ``sys.modules``
+item with a custom wrapper instance. This procedure is now simplified by
+recognizing ``__getattr__`` defined directly in a module that would act like
+a normal ``__getattr__`` method, except that it will be defined on module
+*instances*.
+
+.. seealso::
+
+    :pep:`562` -- Module ``__getattr__`` and ``__dir__``
+       PEP written and implemented by Ivan Levkivskyi
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
@@ -183,6 +201,60 @@ resolution on Linux and Windows.
 
     :pep:`564` -- Add new time functions with nanosecond resolution
        PEP written and implemented by Victor Stinner
+
+
+PEP 540: Add a new UTF-8 mode
+-----------------------------
+
+Add a new UTF-8 mode to ignore the locale, use the UTF-8 encoding, and change
+:data:`sys.stdin` and :data:`sys.stdout` error handlers to ``surrogateescape``.
+This mode is enabled by default in the POSIX locale, but otherwise disabled by
+default.
+
+The new :option:`-X` ``utf8`` command line option and :envvar:`PYTHONUTF8`
+environment variable are added to control the UTF-8 mode.
+
+.. seealso::
+
+    :pep:`540` -- Add a new UTF-8 mode
+       PEP written and implemented by Victor Stinner
+
+
+New Development Mode: -X dev
+----------------------------
+
+Add a new "development mode": :option:`-X` ``dev`` command line option and
+:envvar:`PYTHONDEVMODE` environment variable to enable CPython's "development
+mode", introducing additional runtime checks which are too expensive to be
+enabled by default. See :option:`-X` ``dev`` documentation for the effects of
+the development mode.
+
+Hash-based pycs
+---------------
+
+Python has traditionally checked the up-to-dateness of bytecode cache files
+(i.e., ``.pyc`` files) by comparing the source metadata (last-modified timestamp
+and size) with source metadata saved in the cache file header when it was
+generated. While effective, this invalidation method has its drawbacks. When
+filesystem timestamps are too coarse, Python can miss source updates, leading to
+user confusion. Additionally, having a timestamp in the cache file is
+problematic for `build reproduciblity <https://reproducible-builds.org/>`_ and
+content-based build systems.
+
+:pep:`552` extends the pyc format to allow the hash of the source file to be
+used for invalidation instead of the source timestamp. Such ``.pyc`` files are
+called "hash-based". By default, Python still uses timestamp-based invalidation
+and does not generate hash-based ``.pyc`` files at runtime. Hash-based ``.pyc``
+files may be generated with :mod:`py_compile` or :mod:`compileall`.
+
+Hash-based ``.pyc`` files come in two variants: checked and unchecked. Python
+validates checked hash-based ``.pyc`` files against the corresponding source
+files at runtime but doesn't do so for unchecked hash-based pycs. Unchecked
+hash-based ``.pyc`` files are a useful performance optimization for environments
+where a system external to Python (e.g., the build system) is responsible for
+keeping ``.pyc`` files up-to-date.
+
+See :ref:`pyc-invalidation` for more information.
 
 
 Other Language Changes
@@ -210,7 +282,14 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+importlib.resources
+-------------------
+
+This module provides several new APIs and one new ABC for access to, opening,
+and reading *resources* inside packages.  Resources are roughly akin to files
+inside of packages, but they needn't be actual files on the physical file
+system.  Module loaders can implement the
+:class:`importlib.abc.ResourceReader` ABC to support this new module's API.
 
 
 Improved Modules
@@ -252,14 +331,24 @@ is a list of strings, not bytes.
 contextlib
 ----------
 
-:func:`contextlib.asynccontextmanager` has been added. (Contributed by
-Jelle Zijlstra in :issue:`29679`.)
+:func:`~contextlib.asynccontextmanager` and
+:class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
+by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
+
+cProfile
+--------
+
+cProfile command line now accepts `-m module_name` as an alternative to
+script path. (Contributed by Sanyam Khurana in :issue:`21862`.)
 
 crypt
 -----
 
 Added support for the Blowfish method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
+
+The :func:`~crypt.mksalt` function now allows to specify the number of rounds
+for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
 dis
 ---
@@ -275,6 +364,17 @@ distutils
 README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
+
+:class:`distutils.core.setup` now warns if the ``classifiers``, ``keywords``
+and ``platforms`` fields are not specified as a list or a string.
+(Contributed by Berker Peksag in :issue:`19610`.)
+
+http.client
+-----------
+
+Add Configurable *blocksize* to ``HTTPConnection`` and
+``HTTPSConnection`` for improved upload throughput.
+(Contributed by Nir Soffer in :issue:`31945`.)
 
 http.server
 -----------
@@ -295,6 +395,10 @@ locale
 Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
+The :func:`locale.getpreferredencoding` function now always returns ``'UTF-8'``
+on Android or in the UTF-8 mode  (:option:`-X` ``utf8`` option), the locale and
+the *do_setlocale* argument are ignored.
 
 math
 ----
@@ -322,6 +426,10 @@ pdb
 argument.  If given, this is printed to the console just before debugging
 begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
+pdb command line now accepts `-m module_name` as an alternative to
+script file. (Contributed by Mario Corchero in :issue:`32206`.)
+
+
 re
 --
 
@@ -329,12 +437,32 @@ The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
 can be set within the scope of a group.
 (Contributed by Serhiy Storchaka in :issue:`31690`.)
 
+:func:`re.split` now supports splitting on a pattern like ``r'\b'``,
+``'^$'`` or ``(?=-)`` that matches an empty string.
+(Contributed by Serhiy Storchaka in :issue:`25054`.)
+
 string
 ------
 
 :class:`string.Template` now lets you to optionally modify the regular
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+subprocess
+----------
+
+On Windows the default for *close_fds* was changed from :const:`False` to
+:const:`True` when redirecting the standard handles. It's now possible to set
+*close_fds* to :const:`True` when redirecting the standard handles. See
+:class:`subprocess.Popen`.
+
+This means that *close_fds* now defaults to :const:`True` on all supported
+platforms.
+
+sys
+---
+
+Added :attr:`sys.flags.dev_mode` flag for the new development mode.
 
 time
 ----
@@ -358,6 +486,19 @@ Add new clock identifiers:
 * :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
   the time the system has been running and not suspended, providing accurate
   uptime measurement, both absolute and interval.
+
+Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
+to get per-thread CPU time measurements.
+(Contributed by Antoine Pitrou in :issue:`32025`.)
+
+
+unittest
+--------
+Added new command-line option ``-k`` to filter tests to run with a substring or
+Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
+tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
+but not ``bar_tests.FooTest.test_something``.
+
 
 unittest.mock
 -------------
@@ -399,6 +540,29 @@ Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
+warnings
+--------
+
+The initialization of the default warnings filters has changed as follows:
+
+* warnings enabled via command line options (including those for :option:`-b`
+  and the new CPython-specific ``-X dev`` option) are always passed to the
+  warnings machinery via the ``sys.warnoptions`` attribute.
+* warnings filters enabled via the command line or the environment now have the
+  following precedence order:
+
+     * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
+     * any filters specified with :option:`-W`
+     * any filters specified with :envvar:`PYTHONWARNINGS`
+     * any other CPython specific filters (e.g. the ``default`` filter added
+       for the new ``-X dev`` mode)
+     * any implicit filters defined directly by the warnings machinery
+* in CPython debug builds, all warnings are now displayed by default (the
+  implicit filter list is empty)
+
+(Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
+:issue:`32043`, and :issue:`32230`)
+
 xml.etree
 ---------
 
@@ -428,8 +592,8 @@ Optimizations
   INADA Naoki in :issue:`26110`.)
 
 * Searching some unlucky Unicode characters (like Ukrainian capital "Є")
-  in a string was to 25 times slower than searching other characters.
-  Now it is slower only by 3 times in worst case.
+  in a string was up to 25 times slower than searching other characters.
+  Now it is slower only by 3 times in the worst case.
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
@@ -450,12 +614,15 @@ Optimizations
 
 * :func:`re.compile` now converts ``flags`` parameter to int object if
   it is ``RegexFlag``.  It is now as fast as Python 3.5, and faster than
-  Python 3.6 about 10% depending on the pattern.
+  Python 3.6 by about 10% depending on the pattern.
   (Contributed by INADA Naoki in :issue:`31671`.)
 
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
   and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
   heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
+
+* Constant folding is moved from peephole optimizer to new AST optimizer.
+  (Contributed by Eugene Toder and INADA Naoki in :issue:`29469`)
 
 Build and C API Changes
 =======================
@@ -516,6 +683,18 @@ Other CPython Implementation Changes
 
 Deprecated
 ==========
+
+* Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
+  in comprehensions and generator expressions (aside from the iterable expression
+  in the leftmost :keyword:`for` clause). This ensures that comprehensions
+  always immediately return a container of the appropriate type (rather than
+  potentially returning a :term:`generator iterator` object), while generator
+  expressions won't attempt to interleave their implicit output with the output
+  from any explicit yield expressions.
+
+  In Python 3.7, such expressions emit :exc:`DeprecationWarning` when compiled,
+  in Python 3.8+ they will emit :exc:`SyntaxError`. (Contributed by Serhiy
+  Storchaka in :issue:`10544`.)
 
 - Function :c:func:`PySlice_GetIndicesEx` is deprecated and replaced with
   a macro if ``Py_LIMITED_API`` is not set or set to the value between
@@ -617,8 +796,37 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in Python behavior
+--------------------------
+
+* Due to an oversight, earlier Python versions erroneously accepted the
+  following syntax::
+
+      f(1 for x in [1],)
+
+      class C(1 for x in [1]):
+          pass
+
+  Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
+  expression always needs to be directly inside a set of parentheses
+  and cannot have a comma on either side, and the duplication of the
+  parentheses can be omitted only on calls.
+  (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
+
+
 Changes in the Python API
 -------------------------
+
+* The ``asyncio.windows_utils.socketpair()`` function has been
+  removed: use directly :func:`socket.socketpair` which is available on all
+  platforms since Python 3.5 (before, it wasn't available on Windows).
+  ``asyncio.windows_utils.socketpair()`` was just an alias to
+  ``socket.socketpair`` on Python 3.5 and newer.
+
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
 
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in
@@ -665,6 +873,60 @@ Changes in the Python API
   argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
   is failed.
 
+* Support of nested sets and set operations in regular expressions as in
+  `Unicode Technical Standard #18`_ might be added in the future.  This would
+  change the syntax, so to facilitate this change a :exc:`FutureWarning` will
+  be raised in ambiguous cases for the time being.
+  That include sets starting with a literal ``'['`` or containing literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+  avoid a warning escape them with a backslash.
+  (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
+* The result of splitting a string on a :mod:`regular expression <re>`
+  that could match an empty string has been changed.  For example
+  splitting on ``r'\s*'`` will now split not only on whitespaces as it
+  did previously, but also on empty strings before all non-whitespace
+  characters and just before the end of the string.
+  The previous behavior can be restored by changing the pattern
+  to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
+  Python 3.5.
+
+  For patterns that match both empty and non-empty strings, the result of
+  searching for all matches may also be changed in other cases.  For example
+  in the string ``'a\n\n'``, the pattern ``r'(?m)^\s*?$'`` will not only
+  match empty strings at positions 2 and 3, but also the string ``'\n'`` at
+  positions 2--3.  To match only blank lines, the pattern should be rewritten
+  as ``r'(?m)^[^\S\n]*$'``.
+
+  :func:`re.sub()` now replaces empty matches adjacent to a previous
+  non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
+  ``'-a-b--d-'`` instead of ``'-a-b--d-'`` (the first minus between 'b' and
+  'd' replaces 'x', and the second minus replaces an empty string between
+  'x' and 'd').
+
+  (Contributed by Serhiy Storchaka in :issue:`25054` and :issue:`32308`.)
+
+* :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
+  recent to be more consistent with :mod:`traceback`.
+  (Contributed by Jesse Bakker in :issue:`32121`.)
+
+* On OSes that support :const:`socket.SOCK_NONBLOCK` or
+  :const:`socket.SOCK_CLOEXEC` bit flags, the
+  :attr:`socket.type <socket.socket.type>` no longer has them applied.
+  Therefore, checks like ``if sock.type == socket.SOCK_STREAM``
+  work as expected on all platforms.
+  (Contributed by Yury Selivanov in :issue:`32331`.)
+
+.. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+* On Windows the default for the *close_fds* argument of
+  :class:`subprocess.Popen` was changed from :const:`False` to :const:`True`
+  when redirecting the standard handles. If you previously depended on handles
+  being inherited when using :class:`subprocess.Popen` with standard io
+  redirection, you will have to pass ``close_fds=False`` to preserve the
+  previous behaviour, or use
+  :attr:`STARTUPINFO.lpAttributeList <subprocess.STARTUPINFO.lpAttributeList>`.
+
 
 Changes in the C API
 --------------------
@@ -686,6 +948,26 @@ CPython bytecode changes
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
 
+Other CPython implementation changes
+------------------------------------
+
+* In preparation for potential future changes to the public CPython runtime
+  initialization API (see :pep:`432` for details), CPython's internal startup
+  and configuration management logic has been significantly refactored. While
+  these updates are intended to be entirely transparent to both embedding
+  applications and users of the regular CPython CLI, they're being mentioned
+  here as the refactoring changes the internal order of various operations
+  during interpreter startup, and hence may uncover previously latent defects,
+  either in embedding applications, or in CPython itself.
+  (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
+
+* Due to changes in the way the default warnings filters are configured,
+  setting ``Py_BytesWarningFlag`` to a value greater than one is no longer
+  sufficient to both emit ``BytesWarning`` messages and have them converted
+  to exceptions. Instead, the flag must be set (to cause the warnings to be
+  emitted in the first place), and an explicit ``error::BytesWarning``
+  warnings filter added to convert them to exceptions.
+
 Documentation
 =============
 
@@ -697,11 +979,11 @@ PEP 545: Python Documentation Translations
 :pep:`545` describes the process to translate Python documentation,
 and two translations have been added:
 
-- Japanese: https://docs.python.org/ja/ and associated github
+- Japanese: https://docs.python.org/ja/ and associated GitHub
   repository: https://github.com/python/python-docs-ja
 
-- French: https://docs.python.org/fr/ and associated github
+- French: https://docs.python.org/fr/ and associated GitHub
   repository: https://github.com/python/python-docs-fr
 
 (Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
-:issue:`issue26546`.)
+:issue:`26546`.)

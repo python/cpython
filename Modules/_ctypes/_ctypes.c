@@ -116,10 +116,10 @@ bytes(cdata)
 #endif
 #include "ctypes.h"
 
-PyObject *PyExc_ArgError;
+PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */
-PyObject *_ctypes_ptrtype_cache;
+PyObject *_ctypes_ptrtype_cache = NULL;
 
 static PyTypeObject Simple_Type;
 
@@ -3745,7 +3745,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
-               the array instance itself. Then, we cannot retrive
+               the array instance itself. Then, we cannot retrieve
                the result from the PyCArgObject.
             */
             if (ob == NULL)

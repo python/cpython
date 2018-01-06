@@ -85,7 +85,7 @@ static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
 
 static PyObject *
-gc_collect(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
@@ -325,4 +325,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4f41ec4588154f2b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f9ee4d8dd1f36c1 input=a9049054013a1b77]*/
