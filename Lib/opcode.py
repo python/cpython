@@ -84,10 +84,13 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
+def_op('RERAISE', 48)
+
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
 def_op('BEGIN_FINALLY', 53)
+def_op('WITH_EXCEPT_START', 54)
 
 def_op('INPLACE_ADD', 55)
 def_op('INPLACE_SUBTRACT', 56)

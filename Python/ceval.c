@@ -1844,6 +1844,15 @@ main_loop:
             DISPATCH();
         }
 
+        TARGET(RERAISE) {
+            PyObject *exc = POP();
+            PyObject *val = POP();
+            PyObject *tb = POP();
+            assert(PyExceptionClass_Check(exc));
+            PyErr_Restore(exc, val, tb);
+            goto exception_unwind;
+        }
+
         TARGET(POP_FINALLY) {
             /* If oparg is 0 at the top of the stack are 1 or 6 values:
                Either:
@@ -2949,6 +2958,37 @@ main_loop:
                of __enter__ on the stack. */
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
+
+            PUSH(res);
+            DISPATCH();
+        }
+
+        TARGET(WITH_EXCEPT_START) {
+            /* At the top of the stack are 7 values:
+               - (TOP, SECOND, THIRD) = exc_info()
+               - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
+               - SEVENTH: the context.__exit__ bound method
+               We call SEVENTH(TOP, SECOND, THIRD).
+               Then we push again the TOP exception and the __exit__
+               return value.
+            */
+            PyObject *exit_func;
+            PyObject *exit_stack[3];
+            PyObject *exc, *val, *tb, *res;
+
+            exc = TOP();
+            val = SECOND();
+            tb = THIRD();
+            assert(exc != Py_None);
+            assert(!PyLong_Check(exc));
+
+            exit_func = PEEK(7);
+            exit_stack[0] = exc;
+            exit_stack[1] = val;
+            exit_stack[2] = tb;
+            res = _PyObject_FastCall(exit_func, exit_stack, 3);
+            if (res == NULL)
+                goto error;
 
             PUSH(res);
             DISPATCH();
