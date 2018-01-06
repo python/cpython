@@ -2142,32 +2142,33 @@ done:
     return 0;
 }
 
-/* No-copy code-path to write large contiguous data directly into the
-   underlying file object, bypassing the output_buffer of the Pickler. */
+/* Write large contiguous data directly into the underlying file object,
+   bypassing the output_buffer of the Pickler. */
 static int
-_Pickler_write_large_bytes(
-    PicklerObject *self, const char *header, Py_ssize_t header_size,
-    const char *data, Py_ssize_t data_size, PyObject *payload)
+_Pickler_write_bytes(PicklerObject *self,
+                     const char *header, Py_ssize_t header_size,
+                     const char *data, Py_ssize_t data_size,
+                     PyObject *payload)
 {
-    assert(self->output_buffer != NULL);
+    int bypass_framing = (self->framing && data_size >= FRAME_SIZE_TARGET);
 
-    /* Commit the previous frame. */
-    if (_Pickler_CommitFrame(self)) {
-        return -1;
+    if (bypass_framing) {
+        assert(self->output_buffer != NULL);
+        /* Commit the previous frame. */
+        if (_Pickler_CommitFrame(self)) {
+            return -1;
+        }
+        /* Disable frameing temporarily */
+        self->framing = 0;
     }
-    /* Disable frameing temporarily */
-    self->framing = 0;
 
     if (_Pickler_Write(self, header, header_size) < 0) {
         return -1;
     }
 
-    if (self->write == NULL) {
-        if (_Pickler_Write(self, data, data_size) < 0) {
-            return -1;
-        }
-    }
-    else {
+    if (bypass_framing && self->write != NULL) {
+        /* Bypass the in-memory buffer to directly stream large data
+           into the underlying file object. */
         PyObject *result, *mem = NULL;
         /* Dump the output buffer to the file. */
         if (_Pickler_FlushToFile(self) < 0) {
@@ -2195,9 +2196,16 @@ _Pickler_write_large_bytes(
             return -1;
         }
     }
+    else {
+        if (_Pickler_Write(self, data, data_size) < 0) {
+            return -1;
+        }
+    }
 
-    /* Re-enable framing for subsequent calls to _Pickler_Write. */
-    self->framing = 1;
+    if (bypass_framing) {
+        /* Re-enable framing for subsequent calls to _Pickler_Write. */
+        self->framing = 1;
+    }
 
     return 0;
 }
@@ -2280,23 +2288,10 @@ save_bytes(PicklerObject *self, PyObject *obj)
             return -1;          /* string too large */
         }
 
-        if (size < FRAME_SIZE_TARGET) {
-            if (_Pickler_Write(self, header, len) < 0) {
-                return -1;
-            }
-            if (_Pickler_Write(self, PyBytes_AS_STRING(obj), size) < 0) {
-                return -1;
-            }
-        }
-        else {
-            /* Bypass the in-memory buffer to directly stream large data
-               into the underlying file object. */
-            if (_Pickler_write_large_bytes(self, header, len,
-                                           PyBytes_AS_STRING(obj), size,
-                                           obj) < 0)
-            {
-                return -1;
-            }
+        if (_Pickler_write_bytes(self, header, len,
+                                 PyBytes_AS_STRING(obj), size, obj) < 0)
+        {
+            return -1;
         }
 
         if (memo_put(self, obj) < 0)
@@ -2408,20 +2403,8 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
         return -1;
     }
 
-    if (size < FRAME_SIZE_TARGET) {
-        if (_Pickler_Write(self, header, len) < 0) {
-            return -1;
-        }
-        if (_Pickler_Write(self, data, size) < 0) {
-            return -1;
-        }
-    }
-    else {
-        /* Bypass the in-memory buffer to directly stream large data
-           into the underlying file object. */
-        if (_Pickler_write_large_bytes(self, header, len, data, size, NULL) < 0) {
-            return -1;
-        }
+    if (_Pickler_write_bytes(self, header, len, data, size, NULL) < 0) {
+        return -1;
     }
     return 0;
 }
