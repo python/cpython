@@ -1076,3 +1076,48 @@ class PathLike(abc.ABC):
     @classmethod
     def __subclasshook__(cls, subclass):
         return hasattr(subclass, '__fspath__')
+
+class FileActions(object):
+    def __init__(self):
+        self.open_action = None
+        self.close_action = None
+        self.dup2_action = None
+
+    def add_open(self, fd, path, oflag, mode):
+        if not isinstance(fd, int):
+            raise TypeError(
+                "fd must be an int not {0}.".format(type(fd).__name__))
+
+        if not isinstance(path, str):
+            raise TypeError(
+                "path must be bytes not {0}.".format(type(path).__name__))
+
+        if not isinstance(oflag, int):
+            raise TypeError(
+                "oflag must be an int not {0}.".format(type(oflag.__name__)))
+
+        if not isinstance(mode, int):
+            raise TypeError(
+                "mode must be int not {0}.".format(type(mode).__name__))
+
+        self.open_action = (fd, path.encode(), oflag, mode)
+
+    def add_close(self, fd):
+        if not isinstance(fd, int):
+            raise TypeError(
+                "fd must be an int not {0}.".format(type(fd).__name__))
+
+        self.close_action = (fd,)
+
+
+    def add_dup2(self, fd, new_fd):
+        if not isinstance(fd, int):
+            raise TypeError(
+                "fd must be an int not {0}.".format(type(fd).__name__))
+
+        if not isinstance(new_fd, int):
+            raise TypeError(
+                "new_fd must be an int not {0}.".format(type(new_fd).__name__))
+
+        self.dup2_action = (fd, new_fd)
+

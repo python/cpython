@@ -176,6 +176,7 @@ corresponding Unix manual entries for more information on calls.");
 #else
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
+#define HAVE_POSIXSPAWN 1
 #define HAVE_FORK       1
 #if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
 #define HAVE_FORK1      1
@@ -245,6 +246,10 @@ extern int lstat(const char *, struct stat *);
 #endif /* !HAVE_UNISTD_H */
 
 #endif /* !_MSC_VER */
+
+#ifdef HAVE_POSIXSPAWN
+#include <spawn.h>
+#endif
 
 #ifdef HAVE_UTIME_H
 #include <utime.h>
@@ -5097,6 +5102,152 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 
 #endif /* HAVE_EXECV */
 
+/*[clinic input]
+os.blech
+
+    mode: int
+        Mode of process creation.
+
+Obtain the blech
+[clinic start generated code]*/
+
+static PyObject *
+os_blech_impl(PyObject *module, int mode)
+/*[clinic end generated code: output=62ed91ef21700cfc input=0c4595b146d42476]*/
+{
+    return PyLong_FromLong(mode);
+}
+
+static void reprint(PyObject *obj) {
+    PyObject* repr = PyObject_Repr(obj);
+    PyObject* str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
+    const char *bytes = PyBytes_AS_STRING(str);
+
+    printf("REPR: %s\n", bytes);
+
+    Py_XDECREF(repr);
+    Py_XDECREF(str);
+}
+
+#ifdef HAVE_POSIXSPAWN
+/*[clinic input]
+os.posixspawn
+    path: path_t
+        Path of executable file.
+    argv: object
+        Tuple or list of strings.
+    env: object
+        Dictionary of strings mapping to strings.
+    file_actions: object = None
+        FileActions object.
+    /
+
+Execute the program specified by path in a new process.
+[clinic start generated code]*/
+
+static PyObject *
+os_posixspawn_impl(PyObject *module, path_t *path, PyObject *argv,
+                   PyObject *env, PyObject *file_actions)
+/*[clinic end generated code: output=62379d0eb449d090 input=6b434e4240ef3050]*/
+{
+
+    EXECV_CHAR **argvlist = NULL;
+    EXECV_CHAR **envlist;
+    Py_ssize_t argc, envc;
+
+    /* posix_spawn has three arguments: (path, argv, env), where
+       argv is a list or tuple of strings and env is a dictionary
+       like posix.environ. */
+
+    if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "posix_spawn: argv must be a tuple or list");
+        goto fail;
+    }
+    argc = PySequence_Size(argv);
+    if (argc < 1) {
+        PyErr_SetString(PyExc_ValueError, "posix_spawn: argv must not be empty");
+        return NULL;
+    }
+
+    if (!PyMapping_Check(env)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "posix_spawn: environment must be a mapping object");
+        goto fail;
+    }
+
+    argvlist = parse_arglist(argv, &argc);
+    if (argvlist == NULL) {
+        goto fail;
+    }
+    if (!argvlist[0][0]) {
+        PyErr_SetString(PyExc_ValueError,
+            "posix_spawn: argv first element cannot be empty");
+        goto fail;
+    }
+
+    envlist = parse_envlist(env, &envc);
+    if (envlist == NULL)
+        goto fail;
+
+    pid_t pid;
+    posix_spawn_file_actions_t *file_actionsp = NULL;
+    if (file_actions  != NULL && file_actions != Py_None){
+        posix_spawn_file_actions_t _file_actions;
+        if(posix_spawn_file_actions_init(&_file_actions) != 0){
+            PyErr_SetString(PyExc_TypeError,
+                            "Error initializing file actions");
+            goto fail;
+        }
+
+
+        file_actionsp = &_file_actions;
+
+        PyObject* open_action = PyObject_GetAttrString(file_actions, "open_action");
+        if (open_action != Py_None){
+            long open_fd = PyLong_AsLong(PyTuple_GetItem(open_action, 0));
+            char* open_path = PyBytes_AsString(PyTuple_GetItem(open_action, 1));
+            long open_oflag = PyLong_AsLong(PyTuple_GetItem(open_action, 2));
+            long open_mode = PyLong_AsLong(PyTuple_GetItem(open_action, 3));
+            posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode);
+        }
+
+        PyObject* close_action = PyObject_GetAttrString(file_actions, "close_action");
+        if (close_action != Py_None){
+            long close_fd = PyLong_AsLong(PyTuple_GetItem(close_action, 0));
+            posix_spawn_file_actions_addclose(file_actionsp, close_fd);
+        }
+
+        PyObject* dup2_action = PyObject_GetAttrString(file_actions, "dup2_action");
+        if (dup2_action != Py_None){
+            long fd1 = PyLong_AsLong(PyTuple_GetItem(dup2_action, 0));
+            long fd2 = PyLong_AsLong(PyTuple_GetItem(dup2_action, 1));
+            posix_spawn_file_actions_adddup2(file_actionsp, fd1, fd2);
+        }
+
+    }
+
+
+
+    _Py_BEGIN_SUPPRESS_IPH
+        posix_spawn(&pid, path->narrow, file_actionsp, NULL, argvlist, envlist);
+        return PyLong_FromPid(pid);
+    _Py_END_SUPPRESS_IPH
+
+    /* If we get here it's definitely an error */
+
+    path_error(path);
+
+    free_string_array(envlist, envc);
+  fail:
+    if (argvlist)
+        free_string_array(argvlist, argc);
+    return NULL;
+
+
+}
+#endif
+
 
 #if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
 /*[clinic input]
@@ -5188,7 +5339,6 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     else
         return Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 }
-
 
 /*[clinic input]
 os.spawnve
@@ -12610,6 +12760,8 @@ static PyMethodDef posix_methods[] = {
     OS_NICE_METHODDEF
     OS_GETPRIORITY_METHODDEF
     OS_SETPRIORITY_METHODDEF
+    OS_BLECH_METHODDEF
+    OS_POSIXSPAWN_METHODDEF
 #ifdef HAVE_READLINK
     {"readlink",        (PyCFunction)posix_readlink,
                         METH_VARARGS | METH_KEYWORDS,

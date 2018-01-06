@@ -1721,6 +1721,87 @@ exit:
 
 #endif /* defined(HAVE_EXECV) */
 
+PyDoc_STRVAR(os_blech__doc__,
+"blech($module, /, mode)\n"
+"--\n"
+"\n"
+"Obtain the blech\n"
+"\n"
+"  mode\n"
+"    Mode of process creation.");
+
+#define OS_BLECH_METHODDEF    \
+    {"blech", (PyCFunction)os_blech, METH_FASTCALL|METH_KEYWORDS, os_blech__doc__},
+
+static PyObject *
+os_blech_impl(PyObject *module, int mode);
+
+static PyObject *
+os_blech(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"mode", NULL};
+    static _PyArg_Parser _parser = {"i:blech", _keywords, 0};
+    int mode;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &mode)) {
+        goto exit;
+    }
+    return_value = os_blech_impl(module, mode);
+
+exit:
+    return return_value;
+}
+
+#if defined(HAVE_POSIXSPAWN)
+
+PyDoc_STRVAR(os_posixspawn__doc__,
+"posixspawn($module, path, argv, env, file_actions=None, /)\n"
+"--\n"
+"\n"
+"Execute the program specified by path in a new process.\n"
+"\n"
+"  path\n"
+"    Path of executable file.\n"
+"  argv\n"
+"    Tuple or list of strings.\n"
+"  env\n"
+"    Dictionary of strings mapping to strings.\n"
+"  file_actions\n"
+"    FileActions object.");
+
+#define OS_POSIXSPAWN_METHODDEF    \
+    {"posixspawn", (PyCFunction)os_posixspawn, METH_FASTCALL, os_posixspawn__doc__},
+
+static PyObject *
+os_posixspawn_impl(PyObject *module, path_t *path, PyObject *argv,
+                   PyObject *env, PyObject *file_actions);
+
+static PyObject *
+os_posixspawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    path_t path = PATH_T_INITIALIZE("posixspawn", "path", 0, 0);
+    PyObject *argv;
+    PyObject *env;
+    PyObject *file_actions = Py_None;
+
+    if (!_PyArg_ParseStack(args, nargs, "O&OO|O:posixspawn",
+        path_converter, &path, &argv, &env, &file_actions)) {
+        goto exit;
+    }
+    return_value = os_posixspawn_impl(module, &path, argv, env, file_actions);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_POSIXSPAWN) */
+
 #if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
 
 PyDoc_STRVAR(os_spawnv__doc__,
@@ -6137,6 +6218,10 @@ exit:
     #define OS_EXECVE_METHODDEF
 #endif /* !defined(OS_EXECVE_METHODDEF) */
 
+#ifndef OS_POSIXSPAWN_METHODDEF
+    #define OS_POSIXSPAWN_METHODDEF
+#endif /* !defined(OS_POSIXSPAWN_METHODDEF) */
+
 #ifndef OS_SPAWNV_METHODDEF
     #define OS_SPAWNV_METHODDEF
 #endif /* !defined(OS_SPAWNV_METHODDEF) */
@@ -6528,4 +6613,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=06ace805893aa10c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cbd18f7a5d3c1d09 input=a9049054013a1b77]*/
