@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{11367E76-3337-4602-8F1E-77DB4F370D7E}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>lib</OutputName>
+        <OutputType>Package</OutputType>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="ucrt.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    <ItemGroup>
+        <InstallFiles Include="$(CRTRedist)\$(Platform)\ucrt\*.dll">
+            <SourceBase>$(CRTRedist)\$(Platform)\ucrt</SourceBase>
+            <Source>!(bindpath.redist)$(Platform)\ucrt\</Source>
+            <TargetBase>$(CRTRedist)\$(Platform)\ucrt</TargetBase>
+            <Target_></Target_>
+            <Group>ucrt</Group>
+            <IncludeInCat>false</IncludeInCat>
+        </InstallFiles>
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
+</Project>
