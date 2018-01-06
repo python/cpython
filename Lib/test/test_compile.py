@@ -671,6 +671,18 @@ if 1:
 
         compile("42", PathLike("test_compile_pathlike"), "single")
 
+    def test_unwinding_in_nested_finallys(self):
+        code = """
+def foo():
+    try:
+        a
+    finally:
+        try:
+            b
+        finally:
+            return
+"""
+        compile(code, "<test>", "exec")
 
 class TestStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

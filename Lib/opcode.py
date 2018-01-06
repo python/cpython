@@ -60,6 +60,7 @@ def_op('ROT_TWO', 2)
 def_op('ROT_THREE', 3)
 def_op('DUP_TOP', 4)
 def_op('DUP_TOP_TWO', 5)
+def_op('ROT_FOUR', 6)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -83,9 +84,12 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
+def_op('WITH_EXCEPT_START', 42)
+
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
+def_op('BEFORE_WITH', 53)
 
 def_op('INPLACE_ADD', 55)
 def_op('INPLACE_SUBTRACT', 56)
@@ -107,22 +111,20 @@ def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
 def_op('YIELD_FROM', 72)
 def_op('GET_AWAITABLE', 73)
+def_op('END_FINALLY', 74)
 
 def_op('INPLACE_LSHIFT', 75)
 def_op('INPLACE_RSHIFT', 76)
 def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
-def_op('BREAK_LOOP', 80)
-def_op('WITH_CLEANUP_START', 81)
-def_op('WITH_CLEANUP_FINISH', 82)
+def_op('RERAISE', 80)
 
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
 def_op('POP_BLOCK', 87)
-def_op('END_FINALLY', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
@@ -158,10 +160,10 @@ jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 
-jabs_op('CONTINUE_LOOP', 119)   # Target address
-jrel_op('SETUP_LOOP', 120)      # Distance to target address
-jrel_op('SETUP_EXCEPT', 121)    # ""
-jrel_op('SETUP_FINALLY', 122)   # ""
+jabs_op('END_ITER', 117)        # Target byte offset from beginning of code
+
+jrel_op('SETUP_EXCEPT', 121)    # Distance to target address
+jrel_op('SETUP_WITH', 123)   # ""
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
@@ -187,8 +189,6 @@ hasfree.append(138)
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
-jrel_op('SETUP_WITH', 143)
-
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
@@ -205,8 +205,6 @@ def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
 def_op('BUILD_TUPLE_UNPACK', 152)
 def_op('BUILD_SET_UNPACK', 153)
 
-jrel_op('SETUP_ASYNC_WITH', 154)
-
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
@@ -214,5 +212,8 @@ def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
+
+jrel_op('JUMP_FINALLY', 162)
+jrel_op('LOAD_ADDR', 163)
 
 del def_op, name_op, jrel_op, jabs_op
