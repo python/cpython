@@ -201,20 +201,45 @@ class _Framer:
         if self.current_frame:
             f = self.current_frame
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
-                with f.getbuffer() as data:
-                    n = len(data)
-                    write = self.file_write
-                    write(FRAME)
-                    write(pack("<Q", n))
-                    write(data)
-                f.seek(0)
-                f.truncate()
+                data = f.getbuffer()
+                write = self.file_write
+                # Issue a single call to the write method of the underlying
+                # file object for the frame opcode with the size of the
+                # frame. The concatenation is expected to be less expensive
+                # than issuing an additional call to write.
+                write(FRAME + pack("<Q", len(data)))
+
+                # Issue a separate call to write to append the frame
+                # contents without concatenation to the above to avoid a
+                # memory copy.
+                write(data)
+
+                # Start the new frame with a new io.BytesIO instance so that
+                # the file object can have delayed access to the previous frame
+                # contents via an unreleased memoryview of the previous
+                # io.BytesIO instance.
+                self.current_frame = io.BytesIO()
 
     def write(self, data):
         if self.current_frame:
             return self.current_frame.write(data)
         else:
             return self.file_write(data)
+
+    def write_large_bytes(self, header, payload):
+        write = self.file_write
+        if self.current_frame:
+            # Terminate the current frame and flush it to the file.
+            self.commit_frame(force=True)
+
+        # Perform direct write of the header and payload of the large binary
+        # object. Be careful not to concatenate the header and the payload
+        # prior to calling 'write' as we do not want to allocate a large
+        # temporary bytes object.
+        # We intentionally do not insert a protocol 4 frame opcode to make
+        # it possible to optimize file.read calls in the loader.
+        write(header)
+        write(payload)
 
 
 class _Unframer:
@@ -379,6 +404,7 @@ class _Pickler:
             raise TypeError("file must have a 'write' attribute")
         self.framer = _Framer(self._file_write)
         self.write = self.framer.write
+        self._write_large_bytes = self.framer.write_large_bytes
         self.memo = {}
         self.proto = int(protocol)
         self.bin = protocol >= 1
@@ -699,7 +725,9 @@ class _Pickler:
         if n <= 0xff:
             self.write(SHORT_BINBYTES + pack("<B", n) + obj)
         elif n > 0xffffffff and self.proto >= 4:
-            self.write(BINBYTES8 + pack("<Q", n) + obj)
+            self._write_large_bytes(BINBYTES8 + pack("<Q", n), obj)
+        elif n >= self.framer._FRAME_SIZE_TARGET:
+            self._write_large_bytes(BINBYTES + pack("<I", n), obj)
         else:
             self.write(BINBYTES + pack("<I", n) + obj)
         self.memoize(obj)
@@ -712,7 +740,9 @@ class _Pickler:
             if n <= 0xff and self.proto >= 4:
                 self.write(SHORT_BINUNICODE + pack("<B", n) + encoded)
             elif n > 0xffffffff and self.proto >= 4:
-                self.write(BINUNICODE8 + pack("<Q", n) + encoded)
+                self._write_large_bytes(BINUNICODE8 + pack("<Q", n), encoded)
+            elif n >= self.framer._FRAME_SIZE_TARGET:
+                self._write_large_bytes(BINUNICODE + pack("<I", n), encoded)
             else:
                 self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
