@@ -2033,6 +2033,13 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C.y, 10)
         self.assertEqual(C.z, 20)
 
+    def test_helper_make_dataclass_other_params(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', ClassVar[int], 10),
+                            ('z', ClassVar[int], field(default=20)),
+                            ],
+                           init=False)
 
 class TestDocString(unittest.TestCase):
     def assertDocStrEqual(self, a, b):

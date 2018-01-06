@@ -705,7 +705,8 @@ def _astuple_inner(obj, tuple_factory):
         return deepcopy(obj)
 
 
-def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
+def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
+                   repr=True, eq=True, order=False, hash=None, frozen=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an interable
@@ -722,6 +723,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
           b: int = field(init=False)
 
     For the bases and namespace paremeters, see the builtin type() function.
+
+    The parameters init, repr, eq, order, hash, and frozen are passed to
+    dataclass().
     """
 
     if namespace is None:
@@ -737,8 +741,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
             name, tp, spec = item
             namespace[name] = spec
     cls = type(cls_name, bases, namespace)
-    return dataclass(cls)
-
+    return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
+                     hash=hash, frozen=frozen)
 
 def replace(obj, **changes):
     """Return a new object replacing specified fields with new values.
