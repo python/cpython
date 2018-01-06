@@ -709,9 +709,10 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, hash=None, frozen=False):
     """Return a new dynamically created dataclass.
 
-    The dataclass name will be 'cls_name'.  'fields' is an interable
-    of either (name, type) or (name, type, Field) objects. Field
-    objects are created by calling 'field(name, type [, Field])'.
+    The dataclass name will be 'cls_name'.  'fields' is an iterable
+    of either (name), (name, type) or (name, type, Field) objects. If type is
+    omitted, use the string 'typing.Any'.  Field objects are created by
+    calling 'field(name, type [, Field])'.
 
       C = make_class('C', [('a', int', ('b', int, Field(init=False))], bases=Base)
 
@@ -734,12 +735,19 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         # Copy namespace since we're going to mutate it.
         namespace = namespace.copy()
 
-    anns = collections.OrderedDict((name, tp) for name, tp, *_ in fields)
-    namespace['__annotations__'] = anns
+    anns = collections.OrderedDict()
     for item in fields:
-        if len(item) == 3:
+        if isinstance(item, str):
+            name = item
+            tp = 'typing.Any'
+        elif len(item) == 2:
+            name, tp, = item
+        elif len(item) == 3:
             name, tp, spec = item
             namespace[name] = spec
+        anns[name] = tp
+
+    namespace['__annotations__'] = anns
     cls = type(cls_name, bases, namespace)
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
                      hash=hash, frozen=frozen)
