@@ -24,4 +24,3 @@ overview:
    gc.rst
    inspect.rst
    site.rst
-   fpectl.rst

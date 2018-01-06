@@ -4135,20 +4135,6 @@ AC_CHECK_FUNC(__fpu_control,
   [AC_CHECK_LIB(ieee, __fpu_control)
 ])
 
-# Check for --with-fpectl
-AC_MSG_CHECKING(for --with-fpectl)
-AC_ARG_WITH(fpectl,
-            AS_HELP_STRING([--with-fpectl], [enable SIGFPE catching]),
-[
-if test "$withval" != no
-then
-  AC_DEFINE(WANT_SIGFPE_HANDLER, 1,
-  [Define if you want SIGFPE handled (see Include/pyfpe.h).])
-  AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
-
 # check for --with-libm=...
 AC_SUBST(LIBM)
 case $ac_sys_system in

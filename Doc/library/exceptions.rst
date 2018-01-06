@@ -154,10 +154,7 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: FloatingPointError
 
-   Raised when a floating point operation fails.  This exception is always defined,
-   but can only be raised when Python is configured with the
-   ``--with-fpectl`` option, or the :const:`WANT_SIGFPE_HANDLER` symbol is
-   defined in the :file:`pyconfig.h` file.
+   Not currently used.
 
 
 .. exception:: GeneratorExit
