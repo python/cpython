@@ -148,17 +148,12 @@ entries according to the standard module/line/name string that is printed. The
 :meth:`~pstats.Stats.print_stats` method printed out all the statistics.  You
 might try the following sort calls::
 
-   p.sort_stats('name')
-   p.print_stats()
-
    p.sort_stats(SortKey.name)
    p.print_stats()
 
 The first call will actually sort the list by function name, and the second call
-will print out the statistics.  The next two calls perform the same function, but
-the call to :meth:`~pstats.Stats.sort_stats` uses SortKey enum argument which is
-less error prone than the string version. The following are some interesting calls
-to experiment with::
+will print out the statistics.  The following are some interesting calls to
+experiment with::
 
    p.sort_stats('cumulative').print_stats(10)
    p.sort_stats(SortKey.cumulative).print_stats(10)

@@ -32,20 +32,20 @@ __all__ = ["Stats", "SortKey"]
 
 
 class SortKey(str, Enum):
-    calls = 'calls'
-    ncalls = 'ncalls'
-    cumtime = 'cumtime'
-    cumulative = 'cumulative'
-    file = 'file'
-    filename = 'filename'
-    line = 'line'
-    module = 'module'
-    name = 'name'
-    nfl = 'nfl'
-    pcalls = 'pcalls'
-    stdname = 'stdname'
-    time = 'time'
-    tottime = 'tottime'
+    CALLS = 'calls'
+    NCALLS = 'ncalls'
+    CUMULATIVE = 'cumulative'
+    CUMTIME = 'cumtime'
+    MODULE = 'module'
+    FILE = 'file'
+    FILENAME = 'filename'
+    LINE = 'line'
+    NAME = 'name'
+    NFL = 'nfl'
+    PCALLS = 'pcalls'
+    STDNAME = 'stdname'
+    TIME = 'time'
+    TOTTIME = 'tottime'
 
 
 class Stats:
@@ -72,8 +72,8 @@ class Stats:
     arbitrary number of quoted strings or SortKey enum to select the sort
     order.
 
-    For example sort_stats('time', 'name') or sort_stats(SortKey.time,
-    SortKey.name) sorts on the major key of 'internal function time', and on
+    For example sort_stats('time', 'name') or sort_stats(SortKey.TIME,
+    SortKey.NAME) sorts on the major key of 'internal function time', and on
     the minor key of 'the name of the function'.  Look at the two tables in
     sort_stats() and get_sort_arg_defs(self) for more examples.
 
@@ -177,20 +177,20 @@ class Stats:
     # list the tuple indices and directions for sorting,
     # along with some printable description
     sort_arg_dict_default = {
-              SortKey.calls     : (((1,-1),              ), "call count"),
-              SortKey.ncalls    : (((1,-1),              ), "call count"),
-              SortKey.cumtime   : (((3,-1),              ), "cumulative time"),
-              SortKey.cumulative: (((3,-1),              ), "cumulative time"),
-              SortKey.file      : (((4, 1),              ), "file name"),
-              SortKey.filename  : (((4, 1),              ), "file name"),
-              SortKey.line      : (((5, 1),              ), "line number"),
-              SortKey.module    : (((4, 1),              ), "file name"),
-              SortKey.name      : (((6, 1),              ), "function name"),
-              SortKey.nfl       : (((6, 1),(4, 1),(5, 1),), "name/file/line"),
-              SortKey.pcalls    : (((0,-1),              ), "primitive call count"),
-              SortKey.stdname   : (((7, 1),              ), "standard name"),
-              SortKey.time      : (((2,-1),              ), "internal time"),
-              SortKey.tottime   : (((2,-1),              ), "internal time"),
+              SortKey.CALLS     : (((1,-1),              ), "call count"),
+              SortKey.NCALLS    : (((1,-1),              ), "call count"),
+              SortKey.CUMTIME   : (((3,-1),              ), "cumulative time"),
+              SortKey.CUMULATIVE: (((3,-1),              ), "cumulative time"),
+              SortKey.FILE      : (((4, 1),              ), "file name"),
+              SortKey.FILENAME  : (((4, 1),              ), "file name"),
+              SortKey.LINE      : (((5, 1),              ), "line number"),
+              SortKey.MODULE    : (((4, 1),              ), "file name"),
+              SortKey.NAME      : (((6, 1),              ), "function name"),
+              SortKey.NFL       : (((6, 1),(4, 1),(5, 1),), "name/file/line"),
+              SortKey.PCALLS    : (((0,-1),              ), "primitive call count"),
+              SortKey.STDNAME   : (((7, 1),              ), "standard name"),
+              SortKey.TIME      : (((2,-1),              ), "internal time"),
+              SortKey.TOTTIME   : (((2,-1),              ), "internal time"),
               }
 
     def get_sort_arg_defs(self):

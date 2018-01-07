@@ -64,9 +64,9 @@ class StatsTestCase(unittest.TestCase):
     def test_sort_starts_mix(self):
         self.assertRaises(TypeError, self.stats.sort_stats,
                           'calls',
-                          SortKey.time)
+                          SortKey.TIME)
         self.assertRaises(TypeError, self.stats.sort_stats,
-                          SortKey.time,
+                          SortKey.TIME,
                           'calls')
 
 
