@@ -1523,8 +1523,9 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
         case WITH:
         case ASYNC_WITH:
             ADDOP(c, POP_BLOCK);
-            if (preserve_tos)
+            if (preserve_tos) {
                 ADDOP(c, ROT_TWO);
+            }
             ADDOP(c, BEGIN_FINALLY);
             ADDOP(c, WITH_CLEANUP_START);
             if (info->fb_type == ASYNC_WITH) {
@@ -1537,8 +1538,9 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             return 1;
 
         case HANDLER_CLEANUP:
-            if (preserve_tos)
+            if (preserve_tos) {
                 ADDOP(c, ROT_FOUR);
+            }
             if (info->fb_exit) {
                 ADDOP(c, POP_BLOCK);
                 ADDOP(c, POP_EXCEPT);
