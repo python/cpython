@@ -2935,6 +2935,7 @@ main_loop:
             DISPATCH();
         }
 
+        TARGET(SETUP_EXCEPT)
         TARGET(SETUP_FINALLY) {
             /* NOTE: If you add any new block-setup opcodes that
                are not try/except/finally handlers, you may need

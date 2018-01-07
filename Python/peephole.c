@@ -185,6 +185,7 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_ABSOLUTE:
+            case SETUP_EXCEPT:
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
@@ -400,12 +401,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 h = i + 1;
                 /* END_FINALLY should be kept since it denotes the end of
                    the 'finally' block in frame_setlineno() in frameobject.c.
-                   SETUP_FINALLY should be kept for balancing.
+                   SETUP_FINALLY and SETUP_EXCEPT should be kept for balancing.
                  */
                 while (h < codelen && ISBASICBLOCK(blocks, i, h) &&
                        _Py_OPCODE(codestr[h]) != END_FINALLY)
                 {
-                    if (_Py_OPCODE(codestr[h]) == SETUP_FINALLY) {
+                    if (_Py_OPCODE(codestr[h]) == SETUP_FINALLY ||
+                        _Py_OPCODE(codestr[h]) == SETUP_EXCEPT)
+                    {
                         while (h > i + 1 &&
                                _Py_OPCODE(codestr[h - 1]) == EXTENDED_ARG)
                         {
@@ -466,6 +469,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
             case FOR_ITER:
             case JUMP_FORWARD:
+            case SETUP_EXCEPT:
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:

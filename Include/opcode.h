@@ -93,6 +93,7 @@ extern "C" {
 #define POP_JUMP_IF_FALSE       114
 #define POP_JUMP_IF_TRUE        115
 #define LOAD_GLOBAL             116
+#define SETUP_EXCEPT            121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
 #define STORE_FAST              125

@@ -201,6 +201,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
+        case SETUP_EXCEPT:
         case SETUP_FINALLY:
         case SETUP_WITH:
         case SETUP_ASYNC_WITH:

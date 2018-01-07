@@ -998,10 +998,16 @@ All of the following opcodes use their arguments.
    Loads the global named ``co_names[namei]`` onto the stack.
 
 
+.. opcode:: SETUP_EXCEPT (delta)
+
+   Pushes a try block from a try-except clause onto the block stack. *delta*
+   points to the first except block.
+
+
 .. opcode:: SETUP_FINALLY (delta)
 
-   Pushes a try block from a try-finally or try-except clause onto the block
-   stack.  *delta* points to the finally block or the first except block.
+   Pushes a try block from a try-finally clause onto the block stack. *delta*
+   points to the finally block.
 
 
 .. opcode:: CALL_FINALLY (delta)

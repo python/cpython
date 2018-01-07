@@ -263,7 +263,7 @@ dis_compound_stmt_str = """\
 """
 
 dis_traceback = """\
-%3d           0 SETUP_FINALLY           12 (to 14)
+%3d           0 SETUP_EXCEPT            12 (to 14)
 
 %3d           2 LOAD_CONST               1 (1)
               4 LOAD_CONST               2 (0)
@@ -963,7 +963,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='CALL_FUNCTION', opcode=131, arg=1, argval=1, argrepr='', offset=98, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=100, starts_line=None, is_jump_target=False),
   Instruction(opname='SETUP_FINALLY', opcode=122, arg=70, argval=174, argrepr='to 174', offset=102, starts_line=20, is_jump_target=True),
-  Instruction(opname='SETUP_FINALLY', opcode=122, arg=12, argval=118, argrepr='to 118', offset=104, starts_line=None, is_jump_target=False),
+  Instruction(opname='SETUP_EXCEPT', opcode=121, arg=12, argval=118, argrepr='to 118', offset=104, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=5, argval=1, argrepr='1', offset=106, starts_line=21, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=7, argval=0, argrepr='0', offset=108, starts_line=None, is_jump_target=False),
   Instruction(opname='BINARY_TRUE_DIVIDE', opcode=27, arg=None, argval=None, argrepr='', offset=110, starts_line=None, is_jump_target=False),
