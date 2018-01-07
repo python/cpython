@@ -117,7 +117,7 @@ The IDE
 
 MacPython ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
-https://hkn.eecs.berkeley.edu/~dyoo/python/idle_intro/index.html.
+http://www.hashcollision.org/hkn/python/idle_intro/index.html.
 
 
 .. _mac-package-manager:

@@ -307,11 +307,11 @@ key features:
 `ActivePython <https://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Anaconda <https://www.continuum.io/downloads/>`_
+`Anaconda <https://www.anaconda.com/download/>`_
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Canopy <https://www.enthought.com/products/canopy/>`_
+`Canopy <https://www.enthought.com/product/canopy/>`_
     A "comprehensive Python analysis environment" with editors and other
     development tools.
 

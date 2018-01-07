@@ -65,7 +65,7 @@ PyQt is currently more mature than PySide, but you must buy a PyQt license from
 if you want to write proprietary applications.  PySide is free for all applications.
 
 Qt 4.5 upwards is licensed under the LGPL license; also, commercial licenses
-are available from `The Qt Company <https://www.qt.io/licensing/>`_.
+are available from `The Qt Company <https://www1.qt.io/licensing/>`_.
 
 Gtk+
 ----

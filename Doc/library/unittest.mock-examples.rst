@@ -1251,7 +1251,7 @@ With a bit of tweaking you could have the comparison function raise the
 :exc:`AssertionError` directly and provide a more useful failure message.
 
 As of version 1.5, the Python testing library `PyHamcrest
-<https://pyhamcrest.readthedocs.org/>`_ provides similar functionality,
+<https://pyhamcrest.readthedocs.io/>`_ provides similar functionality,
 that may be useful here, in the form of its equality matcher
 (`hamcrest.library.integration.match_equality
 <https://pyhamcrest.readthedocs.io/en/release-1.8/integration/#module-hamcrest.library.integration.match_equality>`_).

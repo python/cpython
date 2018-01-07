@@ -214,7 +214,7 @@ difficult reading.  `A chronology <http://www.unicode.org/history/>`_ of the
 origin and development of Unicode is also available on the site.
 
 To help understand the standard, Jukka Korpela has written `an introductory
-guide <https://www.cs.tut.fi/~jkorpela/unicode/guide.html>`_ to reading the
+guide <http://jkorpela.fi/unicode/guide.html>`_ to reading the
 Unicode character tables.
 
 Another `good introductory article <https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/>`_
