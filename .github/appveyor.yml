@@ -1,4 +1,4 @@
-version: 3.6.1+.{build}
+version: 3.6build{build}
 clone_depth: 5
 branches:
   only:
