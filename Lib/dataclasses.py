@@ -712,9 +712,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     The dataclass name will be 'cls_name'.  'fields' is an iterable
     of either (name), (name, type) or (name, type, Field) objects. If type is
     omitted, use the string 'typing.Any'.  Field objects are created by
-    calling 'field(name, type [, Field])'.
+    the equivalent of calling 'field(name, type [, Field-info])'.
 
-      C = make_class('C', [('a', int', ('b', int, Field(init=False))], bases=Base)
+      C = make_class('C', ['x', ('y', int'), ('z', int, Field(init=False))], bases=[Base])
 
     is equivalent to:
 
