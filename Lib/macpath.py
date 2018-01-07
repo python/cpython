@@ -1,5 +1,17 @@
 """Pathname and path-related operations for the Macintosh."""
 
+# strings representing various path-related bits and pieces
+# These are primarily for export; internally, they are hardcoded.
+# Should be set before imports for resolving cyclic dependency.
+curdir = ':'
+pardir = '::'
+extsep = '.'
+sep = ':'
+pathsep = '\n'
+defpath = ':'
+altsep = None
+devnull = 'Dev:Null'
+
 import os
 from stat import *
 import genericpath
@@ -15,17 +27,6 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "expanduser","expandvars","normpath","abspath",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames"]
-
-# strings representing various path-related bits and pieces
-# These are primarily for export; internally, they are hardcoded.
-curdir = ':'
-pardir = '::'
-extsep = '.'
-sep = ':'
-pathsep = '\n'
-defpath = ':'
-altsep = None
-devnull = 'Dev:Null'
 
 def _get_colon(path):
     if isinstance(path, bytes):
