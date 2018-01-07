@@ -46,7 +46,7 @@ class StatsTestCase(unittest.TestCase):
 
     def test_sort_stats_string(self):
         for arg in SortKey:
-            arg = arg.name
+            arg = arg.value
             # 'file' sorting criteria will not work because it creates
             # ambiquity with 'filename'
             if arg == 'file':
