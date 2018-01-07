@@ -26,13 +26,56 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import base_events
-from . import events
-from . import futures
-from . import tasks
-from .coroutines import coroutine
-from .log import logger
+from asyncio import base_events
+from asyncio import events
+from asyncio import format_helpers
+from asyncio import futures
+from asyncio import tasks
+from asyncio.log import logger
 from test import support
+
+
+def data_file(filename):
+    if hasattr(support, 'TEST_HOME_DIR'):
+        fullname = os.path.join(support.TEST_HOME_DIR, filename)
+        if os.path.isfile(fullname):
+            return fullname
+    fullname = os.path.join(os.path.dirname(__file__), filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(filename)
+
+
+ONLYCERT = data_file('ssl_cert.pem')
+ONLYKEY = data_file('ssl_key.pem')
+SIGNED_CERTFILE = data_file('keycert3.pem')
+SIGNING_CA = data_file('pycacert.pem')
+PEERCERT = {'serialNumber': 'B09264B1F2DA21D1',
+            'version': 1,
+            'subject': ((('countryName', 'XY'),),
+                    (('localityName', 'Castle Anthrax'),),
+                    (('organizationName', 'Python Software Foundation'),),
+                    (('commonName', 'localhost'),)),
+            'issuer': ((('countryName', 'XY'),),
+                    (('organizationName', 'Python Software Foundation CA'),),
+                    (('commonName', 'our-ca-server'),)),
+            'notAfter': 'Nov 13 19:47:07 2022 GMT',
+            'notBefore': 'Jan  4 19:47:07 2013 GMT'}
+
+
+def simple_server_sslcontext():
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(ONLYCERT, ONLYKEY)
+    server_context.check_hostname = False
+    server_context.verify_mode = ssl.CERT_NONE
+    return server_context
+
+
+def simple_client_sslcontext():
+    client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_context.check_hostname = False
+    client_context.verify_mode = ssl.CERT_NONE
+    return client_context
 
 
 def dummy_ssl_context():
@@ -43,8 +86,7 @@ def dummy_ssl_context():
 
 
 def run_briefly(loop):
-    @coroutine
-    def once():
+    async def once():
         pass
     gen = once()
     t = loop.create_task(gen)
@@ -328,12 +370,19 @@ class TestLoop(base_events.BaseEventLoop):
             return False
 
     def assert_reader(self, fd, callback, *args):
-        assert fd in self.readers, 'fd {} is not registered'.format(fd)
+        if fd not in self.readers:
+            raise AssertionError(f'fd {fd} is not registered')
         handle = self.readers[fd]
-        assert handle._callback == callback, '{!r} != {!r}'.format(
-            handle._callback, callback)
-        assert handle._args == args, '{!r} != {!r}'.format(
-            handle._args, args)
+        if handle._callback != callback:
+            raise AssertionError(
+                f'unexpected callback: {handle._callback} != {callback}')
+        if handle._args != args:
+            raise AssertionError(
+                f'unexpected callback args: {handle._args} != {args}')
+
+    def assert_no_reader(self, fd):
+        if fd in self.readers:
+            raise AssertionError(f'fd {fd} is registered')
 
     def _add_writer(self, fd, callback, *args):
         self.writers[fd] = events.Handle(callback, args, self)
@@ -431,7 +480,7 @@ class MockPattern(str):
 
 
 def get_function_source(func):
-    source = events._get_function_source(func)
+    source = format_helpers._get_function_source(func)
     if source is None:
         raise ValueError("unable to get the source of %r" % (func,))
     return source

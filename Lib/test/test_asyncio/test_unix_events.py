@@ -21,8 +21,8 @@ if sys.platform == 'win32':
 
 import asyncio
 from asyncio import log
-from asyncio import test_utils
 from asyncio import unix_events
+from test.test_asyncio import utils as test_utils
 
 
 MOCK_ANY = mock.ANY
@@ -77,9 +77,8 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     def test_add_signal_handler_coroutine_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
 
-        @asyncio.coroutine
-        def simple_coroutine():
-            yield from []
+        async def simple_coroutine():
+            pass
 
         # callback must not be a coroutine function
         coro_func = simple_coroutine
@@ -230,6 +229,23 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertEqual(len(self.loop._signal_handlers), 0)
         m_signal.set_wakeup_fd.assert_called_once_with(-1)
 
+    @mock.patch('asyncio.unix_events.sys')
+    @mock.patch('asyncio.unix_events.signal')
+    def test_close_on_finalizing(self, m_signal, m_sys):
+        m_signal.NSIG = signal.NSIG
+        self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
+
+        self.assertEqual(len(self.loop._signal_handlers), 1)
+        m_sys.is_finalizing.return_value = True
+        m_signal.signal.reset_mock()
+
+        with self.assertWarnsRegex(ResourceWarning,
+                                   "skipping signal handlers removal"):
+            self.loop.close()
+
+        self.assertEqual(len(self.loop._signal_handlers), 0)
+        self.assertFalse(m_signal.signal.called)
+
 
 @unittest.skipUnless(hasattr(socket, 'AF_UNIX'),
                      'UNIX Sockets are not supported')
@@ -328,6 +344,14 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         finally:
             os.unlink(fn)
 
+    def test_create_unix_server_ssl_timeout_with_plain_sock(self):
+        coro = self.loop.create_unix_server(lambda: None, path='spam',
+                                            ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
+
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()
         with sock:
@@ -383,6 +407,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             ValueError, 'you have to pass server_hostname when using ssl'):
 
             self.loop.run_until_complete(coro)
+
+    def test_create_unix_connection_ssl_timeout_with_plain_sock(self):
+        coro = self.loop.create_unix_connection(lambda: None, path='spam',
+                                            ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
+
 
 
 class UnixReadPipeTransportTests(test_utils.TestCase):

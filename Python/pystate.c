@@ -153,6 +153,8 @@ PyInterpreterState_New(void)
     interp->after_forkers_parent = NULL;
     interp->after_forkers_child = NULL;
 #endif
+    interp->pyexitfunc = NULL;
+    interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
     interp->next = _PyRuntime.interpreters.head;
@@ -183,6 +185,8 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     for (p = interp->tstate_head; p != NULL; p = p->next)
         PyThreadState_Clear(p);
     HEAD_UNLOCK();
+    _PyCoreConfig_Clear(&interp->core_config);
+    _PyMainInterpreterConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);

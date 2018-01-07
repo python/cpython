@@ -210,6 +210,10 @@
    don't. */
 #undef HAVE_DECL_RTLD_LOCAL
 
+/* Define to 1 if you have the declaration of `RTLD_MEMBER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_MEMBER
+
 /* Define to 1 if you have the declaration of `RTLD_NODELETE', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_NODELETE
@@ -496,7 +500,7 @@
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
-/* Define to 1 if you have the 'if_nameindex' function. */
+/* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
 /* Define if you have the 'inet_aton' function. */
@@ -1187,8 +1191,17 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
+/* Define if uuid_create() exists. AIX support for uuid:RFC4122 */
+#undef HAVE_UUID_CREATE
+
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
+
+/* Define to 1 if you have the <uuid.h> header file. */
+#undef HAVE_UUID_H
+
+/* Define to 1 if you have the <uuid/uuid.h> header file. */
+#undef HAVE_UUID_UUID_H
 
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
@@ -1399,9 +1412,6 @@
 # undef __EXTENSIONS__
 #endif
 
-
-/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
-#undef WANT_SIGFPE_HANDLER
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS

@@ -1664,7 +1664,11 @@ to speed up repeated connections from the same clients.
 
    Get statistics about the SSL sessions created or managed by this context.
    A dictionary is returned which maps the names of each `piece of information
+<<<<<<< HEAD
    <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_sess_number.html>`_ to their
+=======
+   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_sess_number.html>`_ to their
+>>>>>>> master
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 

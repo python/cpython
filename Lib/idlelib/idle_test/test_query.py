@@ -162,7 +162,7 @@ class HelpsourceBrowsefileTest(unittest.TestCase):
         # Path is widget entry, either '' or something.
         # Func return is file dialog return, either '' or something.
         # Func return should override widget entry.
-        # We need all 4 combination to test all (most) code paths.
+        # We need all 4 combinations to test all (most) code paths.
         for path, func, result in (
                 ('', lambda a,b,c:'', ''),
                 ('', lambda a,b,c: __file__, __file__),

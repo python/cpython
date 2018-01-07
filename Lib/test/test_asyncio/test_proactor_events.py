@@ -9,7 +9,7 @@ from asyncio.proactor_events import BaseProactorEventLoop
 from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
 def close_transport(transport):
@@ -334,25 +334,35 @@ class ProactorSocketTransportTests(test_utils.TestCase):
             f = asyncio.Future(loop=self.loop)
             f.set_result(msg)
             futures.append(f)
+
         self.loop._proactor.recv.side_effect = futures
         self.loop._run_once()
         self.assertFalse(tr._paused)
+        self.assertTrue(tr.is_reading())
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data1')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data2')
+
+        tr.pause_reading()
         tr.pause_reading()
         self.assertTrue(tr._paused)
+        self.assertFalse(tr.is_reading())
         for i in range(10):
             self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data2')
+
+        tr.resume_reading()
         tr.resume_reading()
         self.assertFalse(tr._paused)
+        self.assertTrue(tr.is_reading())
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data3')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data4')
         tr.close()
+
+        self.assertFalse(tr.is_reading())
 
 
     def pause_writing_transport(self, high):
@@ -423,7 +433,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
     def test_dont_pause_writing(self):
         tr = self.pause_writing_transport(high=4)
 
-        # write a large chunk which completes immedialty,
+        # write a large chunk which completes immediately,
         # it should not pause writing
         fut = asyncio.Future(loop=self.loop)
         fut.set_result(None)
@@ -482,27 +492,6 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop._close_self_pipe.reset_mock()
         self.loop.close()
         self.assertFalse(self.loop._close_self_pipe.called)
-
-    def test_sock_recv(self):
-        self.loop.sock_recv(self.sock, 1024)
-        self.proactor.recv.assert_called_with(self.sock, 1024)
-
-    def test_sock_recv_into(self):
-        buf = bytearray(10)
-        self.loop.sock_recv_into(self.sock, buf)
-        self.proactor.recv_into.assert_called_with(self.sock, buf)
-
-    def test_sock_sendall(self):
-        self.loop.sock_sendall(self.sock, b'data')
-        self.proactor.send.assert_called_with(self.sock, b'data')
-
-    def test_sock_connect(self):
-        self.loop.sock_connect(self.sock, ('1.2.3.4', 123))
-        self.proactor.connect.assert_called_with(self.sock, ('1.2.3.4', 123))
-
-    def test_sock_accept(self):
-        self.loop.sock_accept(self.sock)
-        self.proactor.accept.assert_called_with(self.sock)
 
     def test_make_socket_transport(self):
         tr = self.loop._make_socket_transport(self.sock, asyncio.Protocol())
@@ -578,10 +567,21 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.sock.close.called)
 
     def test_stop_serving(self):
-        sock = mock.Mock()
-        self.loop._stop_serving(sock)
-        self.assertTrue(sock.close.called)
-        self.proactor._stop_serving.assert_called_with(sock)
+        sock1 = mock.Mock()
+        future1 = mock.Mock()
+        sock2 = mock.Mock()
+        future2 = mock.Mock()
+        self.loop._accept_futures = {
+            sock1.fileno(): future1,
+            sock2.fileno(): future2
+        }
+
+        self.loop._stop_serving(sock1)
+        self.assertTrue(sock1.close.called)
+        self.assertTrue(future1.cancel.called)
+        self.proactor._stop_serving.assert_called_with(sock1)
+        self.assertFalse(sock2.close.called)
+        self.assertFalse(future2.cancel.called)
 
 
 if __name__ == '__main__':

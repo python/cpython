@@ -118,16 +118,30 @@ ReadTransport
 
    Interface for read-only transports.
 
+   .. method:: is_reading()
+
+      Return ``True`` if the transport is receiving new data.
+
+      .. versionadded:: 3.7
+
    .. method:: pause_reading()
 
       Pause the receiving end of the transport.  No data will be passed to
       the protocol's :meth:`data_received` method until :meth:`resume_reading`
       is called.
 
+      .. versionchanged:: 3.7
+         The method is idempotent, i.e. it can be called when the
+         transport is already paused or closed.
+
    .. method:: resume_reading()
 
       Resume the receiving end.  The protocol's :meth:`data_received` method
       will be called once again if some data is available for reading.
+
+      .. versionchanged:: 3.7
+         The method is idempotent, i.e. it can be called when the
+         transport is already reading.
 
 
 WriteTransport
@@ -488,8 +502,9 @@ Coroutines can be scheduled in a protocol method using :func:`ensure_future`,
 but there is no guarantee made about the execution order.  Protocols are not
 aware of coroutines created in protocol methods and so will not wait for them.
 
-To have a reliable execution order, use :ref:`stream objects <asyncio-streams>` in a
-coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
+To have a reliable execution order,
+use :ref:`stream objects <asyncio-streams>` in a
+coroutine with ``await``. For example, the :meth:`StreamWriter.drain`
 coroutine can be used to wait until the write buffer is flushed.
 
 
@@ -589,7 +604,7 @@ received data and close the connection::
 
 :meth:`Transport.close` can be called immediately after
 :meth:`WriteTransport.write` even if data are not sent yet on the socket: both
-methods are asynchronous. ``yield from`` is not needed because these transport
+methods are asynchronous. ``await`` is not needed because these transport
 methods are not coroutines.
 
 .. seealso::

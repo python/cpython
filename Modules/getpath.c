@@ -112,7 +112,7 @@ extern "C" {
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     ((LEN) == (size_t)-2) \
-     ? _Py_INIT_USER_ERR("cannot decode " #NAME) \
+     ? _Py_INIT_USER_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY()
 
 typedef struct {
@@ -140,13 +140,13 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
     char *fname;
-    fname = Py_EncodeLocale(path, NULL);
+    fname = _Py_EncodeLocaleRaw(path, NULL);
     if (fname == NULL) {
         errno = EINVAL;
         return -1;
     }
     err = stat(fname, buf);
-    PyMem_Free(fname);
+    PyMem_RawFree(fname);
     return err;
 }
 
@@ -296,75 +296,19 @@ absolutize(wchar_t *path)
 }
 
 
-/* search for a prefix value in an environment file. If found, copy it
-   to the provided buffer, which is expected to be no more than MAXPATHLEN
-   bytes long.
-*/
-static int
-find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
-{
-    int result = 0; /* meaning not found */
-    char buffer[MAXPATHLEN*2+1];  /* allow extra for key, '=', etc. */
-
-    fseek(env_file, 0, SEEK_SET);
-    while (!feof(env_file)) {
-        char * p = fgets(buffer, MAXPATHLEN*2, env_file);
-        wchar_t tmpbuffer[MAXPATHLEN*2+1];
-        PyObject * decoded;
-        int n;
-
-        if (p == NULL) {
-            break;
-        }
-        n = strlen(p);
-        if (p[n - 1] != '\n') {
-            /* line has overflowed - bail */
-            break;
-        }
-        if (p[0] == '#') {
-            /* Comment - skip */
-            continue;
-        }
-        decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
-        if (decoded != NULL) {
-            Py_ssize_t k;
-            wchar_t * state;
-            k = PyUnicode_AsWideChar(decoded,
-                                     tmpbuffer, MAXPATHLEN * 2);
-            Py_DECREF(decoded);
-            if (k >= 0) {
-                wchar_t * tok = wcstok(tmpbuffer, L" \t\r\n", &state);
-                if ((tok != NULL) && !wcscmp(tok, key)) {
-                    tok = wcstok(NULL, L" \t", &state);
-                    if ((tok != NULL) && !wcscmp(tok, L"=")) {
-                        tok = wcstok(NULL, L"\r\n", &state);
-                        if (tok != NULL) {
-                            wcsncpy(value, tok, MAXPATHLEN);
-                            result = 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return result;
-}
-
-
 /* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
    bytes long.
 */
 static int
-search_for_prefix(const _PyMainInterpreterConfig *main_config,
+search_for_prefix(const _PyCoreConfig *core_config,
                   PyCalculatePath *calculate, wchar_t *prefix)
 {
     size_t n;
     wchar_t *vpath;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
-    if (main_config->home) {
-        wcsncpy(prefix, main_config->home, MAXPATHLEN);
+    if (core_config->home) {
+        wcsncpy(prefix, core_config->home, MAXPATHLEN);
         prefix[MAXPATHLEN] = L'\0';
         wchar_t *delim = wcschr(prefix, DELIM);
         if (delim) {
@@ -423,10 +367,10 @@ search_for_prefix(const _PyMainInterpreterConfig *main_config,
 
 
 static void
-calculate_prefix(const _PyMainInterpreterConfig *main_config,
+calculate_prefix(const _PyCoreConfig *core_config,
                  PyCalculatePath *calculate, wchar_t *prefix)
 {
-    calculate->prefix_found = search_for_prefix(main_config, calculate, prefix);
+    calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
     if (!calculate->prefix_found) {
         if (!Py_FrozenFlag) {
             fprintf(stderr,
@@ -468,19 +412,19 @@ calculate_reduce_prefix(PyCalculatePath *calculate, wchar_t *prefix)
    MAXPATHLEN bytes long.
 */
 static int
-search_for_exec_prefix(const _PyMainInterpreterConfig *main_config,
+search_for_exec_prefix(const _PyCoreConfig *core_config,
                        PyCalculatePath *calculate, wchar_t *exec_prefix)
 {
     size_t n;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
-    if (main_config->home) {
-        wchar_t *delim = wcschr(main_config->home, DELIM);
+    if (core_config->home) {
+        wchar_t *delim = wcschr(core_config->home, DELIM);
         if (delim) {
             wcsncpy(exec_prefix, delim+1, MAXPATHLEN);
         }
         else {
-            wcsncpy(exec_prefix, main_config->home, MAXPATHLEN);
+            wcsncpy(exec_prefix, core_config->home, MAXPATHLEN);
         }
         exec_prefix[MAXPATHLEN] = L'\0';
         joinpath(exec_prefix, calculate->lib_python);
@@ -501,24 +445,17 @@ search_for_exec_prefix(const _PyMainInterpreterConfig *main_config,
         }
         else {
             char buf[MAXPATHLEN+1];
-            PyObject *decoded;
-            wchar_t rel_builddir_path[MAXPATHLEN+1];
+            wchar_t *rel_builddir_path;
             n = fread(buf, 1, MAXPATHLEN, f);
             buf[n] = '\0';
             fclose(f);
-            decoded = PyUnicode_DecodeUTF8(buf, n, "surrogateescape");
-            if (decoded != NULL) {
-                Py_ssize_t k;
-                k = PyUnicode_AsWideChar(decoded,
-                                         rel_builddir_path, MAXPATHLEN);
-                Py_DECREF(decoded);
-                if (k >= 0) {
-                    rel_builddir_path[k] = L'\0';
-                    wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
-                    exec_prefix[MAXPATHLEN] = L'\0';
-                    joinpath(exec_prefix, rel_builddir_path);
-                    return -1;
-                }
+            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n, NULL);
+            if (rel_builddir_path != NULL) {
+                wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
+                exec_prefix[MAXPATHLEN] = L'\0';
+                joinpath(exec_prefix, rel_builddir_path);
+                PyMem_RawFree(rel_builddir_path );
+                return -1;
             }
         }
     }
@@ -551,10 +488,10 @@ search_for_exec_prefix(const _PyMainInterpreterConfig *main_config,
 
 
 static void
-calculate_exec_prefix(const _PyMainInterpreterConfig *main_config,
+calculate_exec_prefix(const _PyCoreConfig *core_config,
                       PyCalculatePath *calculate, wchar_t *exec_prefix)
 {
-    calculate->exec_prefix_found = search_for_exec_prefix(main_config,
+    calculate->exec_prefix_found = search_for_exec_prefix(core_config,
                                                           calculate,
                                                           exec_prefix);
     if (!calculate->exec_prefix_found) {
@@ -587,7 +524,7 @@ calculate_reduce_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
 
 
 static _PyInitError
-calculate_program_full_path(const _PyMainInterpreterConfig *main_config,
+calculate_program_full_path(const _PyCoreConfig *core_config,
                             PyCalculatePath *calculate, _PyPathConfig *config)
 {
     wchar_t program_full_path[MAXPATHLEN+1];
@@ -607,8 +544,8 @@ calculate_program_full_path(const _PyMainInterpreterConfig *main_config,
      * other way to find a directory to start the search from.  If
      * $PATH isn't exported, you lose.
      */
-    if (wcschr(main_config->program_name, SEP)) {
-        wcsncpy(program_full_path, main_config->program_name, MAXPATHLEN);
+    if (wcschr(core_config->program_name, SEP)) {
+        wcsncpy(program_full_path, core_config->program_name, MAXPATHLEN);
     }
 #ifdef __APPLE__
      /* On Mac OS X, if a script uses an interpreter of the form
@@ -650,7 +587,7 @@ calculate_program_full_path(const _PyMainInterpreterConfig *main_config,
                 wcsncpy(program_full_path, path, MAXPATHLEN);
             }
 
-            joinpath(program_full_path, main_config->program_name);
+            joinpath(program_full_path, core_config->program_name);
             if (isxfile(program_full_path)) {
                 break;
             }
@@ -784,7 +721,7 @@ calculate_read_pyenv(PyCalculatePath *calculate)
     }
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
-    if (find_env_config_value(env_file, L"home", tmpbuffer)) {
+    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, MAXPATHLEN)) {
         wcscpy(calculate->argv0_path, tmpbuffer);
     }
     fclose(env_file);
@@ -815,15 +752,15 @@ calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix)
 
 
 static _PyInitError
-calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
+calculate_module_search_path(const _PyCoreConfig *core_config,
                              PyCalculatePath *calculate,
                              const wchar_t *prefix, const wchar_t *exec_prefix,
                              _PyPathConfig *config)
 {
     /* Calculate size of return buffer */
     size_t bufsz = 0;
-    if (main_config->module_search_path_env != NULL) {
-        bufsz += wcslen(main_config->module_search_path_env) + 1;
+    if (core_config->module_search_path_env != NULL) {
+        bufsz += wcslen(core_config->module_search_path_env) + 1;
     }
 
     wchar_t *defpath = calculate->pythonpath;
@@ -857,8 +794,8 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
     buf[0] = '\0';
 
     /* Run-time value of $PYTHONPATH goes first */
-    if (main_config->module_search_path_env) {
-        wcscpy(buf, main_config->module_search_path_env);
+    if (core_config->module_search_path_env) {
+        wcscpy(buf, core_config->module_search_path_env);
         wcscat(buf, delimiter);
     }
 
@@ -907,10 +844,10 @@ calculate_module_search_path(const _PyMainInterpreterConfig *main_config,
 
 static _PyInitError
 calculate_init(PyCalculatePath *calculate,
-               const _PyMainInterpreterConfig *main_config)
+               const _PyCoreConfig *core_config)
 {
     size_t len;
-    char *path = getenv("PATH");
+    const char *path = getenv("PATH");
     if (path) {
         calculate->path_env = Py_DecodeLocale(path, &len);
         if (!calculate->path_env) {
@@ -950,12 +887,12 @@ calculate_free(PyCalculatePath *calculate)
 
 
 static _PyInitError
-calculate_path_impl(const _PyMainInterpreterConfig *main_config,
+calculate_path_impl(const _PyCoreConfig *core_config,
                     PyCalculatePath *calculate, _PyPathConfig *config)
 {
     _PyInitError err;
 
-    err = calculate_program_full_path(main_config, calculate, config);
+    err = calculate_program_full_path(core_config, calculate, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -969,13 +906,13 @@ calculate_path_impl(const _PyMainInterpreterConfig *main_config,
 
     wchar_t prefix[MAXPATHLEN+1];
     memset(prefix, 0, sizeof(prefix));
-    calculate_prefix(main_config, calculate, prefix);
+    calculate_prefix(core_config, calculate, prefix);
 
     calculate_zip_path(calculate, prefix);
 
     wchar_t exec_prefix[MAXPATHLEN+1];
     memset(exec_prefix, 0, sizeof(exec_prefix));
-    calculate_exec_prefix(main_config, calculate, exec_prefix);
+    calculate_exec_prefix(core_config, calculate, exec_prefix);
 
     if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
         !Py_FrozenFlag)
@@ -984,7 +921,7 @@ calculate_path_impl(const _PyMainInterpreterConfig *main_config,
                 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
     }
 
-    err = calculate_module_search_path(main_config, calculate,
+    err = calculate_module_search_path(core_config, calculate,
                                        prefix, exec_prefix, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -1009,18 +946,17 @@ calculate_path_impl(const _PyMainInterpreterConfig *main_config,
 
 
 _PyInitError
-_PyPathConfig_Calculate(_PyPathConfig *config,
-                        const _PyMainInterpreterConfig *main_config)
+_PyPathConfig_Calculate(_PyPathConfig *config, const _PyCoreConfig *core_config)
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
-    _PyInitError err = calculate_init(&calculate, main_config);
+    _PyInitError err = calculate_init(&calculate, core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = calculate_path_impl(main_config, &calculate, config);
+    err = calculate_path_impl(core_config, &calculate, config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

@@ -4,7 +4,7 @@ A proactor is a "notify-on-completion" multiplexer.  Currently a
 proactor is only implemented on Windows with IOCP.
 """
 
-__all__ = ['BaseProactorEventLoop']
+__all__ = 'BaseProactorEventLoop',
 
 import socket
 import warnings
@@ -50,17 +50,16 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         elif self._closing:
             info.append('closing')
         if self._sock is not None:
-            info.append('fd=%s' % self._sock.fileno())
+            info.append(f'fd={self._sock.fileno()}')
         if self._read_fut is not None:
-            info.append('read=%s' % self._read_fut)
+            info.append(f'read={self._read_fut!r}')
         if self._write_fut is not None:
-            info.append("write=%r" % self._write_fut)
+            info.append(f'write={self._write_fut!r}')
         if self._buffer:
-            bufsize = len(self._buffer)
-            info.append('write_bufsize=%s' % bufsize)
+            info.append(f'write_bufsize={len(self._buffer)}')
         if self._eof_written:
             info.append('EOF written')
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def _set_extra(self, sock):
         self._extra['pipe'] = sock
@@ -87,7 +86,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def __del__(self):
         if self._sock is not None:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self.close()
 
@@ -153,21 +152,20 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         self._paused = False
         self._loop.call_soon(self._loop_reading)
 
+    def is_reading(self):
+        return not self._paused and not self._closing
+
     def pause_reading(self):
-        if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
+        if self._closing or self._paused:
+            return
         self._paused = True
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
-        if self._closing:
+        if self._closing or not self._paused:
             return
+        self._paused = False
         self._loop.call_soon(self._loop_reading, self._read_fut)
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
@@ -225,11 +223,13 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                                       transports.WriteTransport):
     """Transport for write pipes."""
 
+    _start_tls_compatible = True
+
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            msg = ("data argument must be a bytes-like object, not '%s'" %
-                   type(data).__name__)
-            raise TypeError(msg)
+            raise TypeError(
+                f"data argument must be a bytes-like object, "
+                f"not {type(data).__name__}")
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
 
@@ -347,12 +347,14 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
 
     def _set_extra(self, sock):
         self._extra['socket'] = sock
+
         try:
             self._extra['sockname'] = sock.getsockname()
         except (socket.error, AttributeError):
             if self._loop.get_debug():
-                logger.warning("getsockname() failed on %r",
-                             sock, exc_info=True)
+                logger.warning(
+                    "getsockname() failed on %r", sock, exc_info=True)
+
         if 'peername' not in self._extra:
             try:
                 self._extra['peername'] = sock.getpeername()
@@ -389,11 +391,15 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return _ProactorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
-    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
-                            *, server_side=False, server_hostname=None,
-                            extra=None, server=None):
-        ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
-                                            server_side, server_hostname)
+    def _make_ssl_transport(
+            self, rawsock, protocol, sslcontext, waiter=None,
+            *, server_side=False, server_hostname=None,
+            extra=None, server=None,
+            ssl_handshake_timeout=None):
+        ssl_protocol = sslproto.SSLProtocol(
+                self, protocol, sslcontext, waiter,
+                server_side, server_hostname,
+                ssl_handshake_timeout=ssl_handshake_timeout)
         _ProactorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -431,20 +437,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         # Close the event loop
         super().close()
 
-    def sock_recv(self, sock, n):
-        return self._proactor.recv(sock, n)
+    async def sock_recv(self, sock, n):
+        return await self._proactor.recv(sock, n)
 
-    def sock_recv_into(self, sock, buf):
-        return self._proactor.recv_into(sock, buf)
+    async def sock_recv_into(self, sock, buf):
+        return await self._proactor.recv_into(sock, buf)
 
-    def sock_sendall(self, sock, data):
-        return self._proactor.send(sock, data)
+    async def sock_sendall(self, sock, data):
+        return await self._proactor.send(sock, data)
 
-    def sock_connect(self, sock, address):
-        return self._proactor.connect(sock, address)
+    async def sock_connect(self, sock, address):
+        return await self._proactor.connect(sock, address)
 
-    def sock_accept(self, sock):
-        return self._proactor.accept(sock)
+    async def sock_accept(self, sock):
+        return await self._proactor.accept(sock)
 
     def _close_self_pipe(self):
         if self._self_reading_future is not None:
@@ -486,7 +492,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._csock.send(b'\0')
 
     def _start_serving(self, protocol_factory, sock,
-                       sslcontext=None, server=None, backlog=100):
+                       sslcontext=None, server=None, backlog=100,
+                       ssl_handshake_timeout=None):
 
         def loop(f=None):
             try:
@@ -499,7 +506,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     if sslcontext is not None:
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
-                            extra={'peername': addr}, server=server)
+                            extra={'peername': addr}, server=server,
+                            ssl_handshake_timeout=ssl_handshake_timeout)
                     else:
                         self._make_socket_transport(
                             conn, protocol,
@@ -536,6 +544,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._accept_futures.clear()
 
     def _stop_serving(self, sock):
-        self._stop_accept_futures()
+        future = self._accept_futures.pop(sock.fileno(), None)
+        if future:
+            future.cancel()
         self._proactor._stop_serving(sock)
         sock.close()

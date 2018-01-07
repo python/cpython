@@ -1,6 +1,6 @@
 from dataclasses import (
     dataclass, field, FrozenInstanceError, fields, asdict, astuple,
-    make_dataclass, replace, InitVar, Field
+    make_dataclass, replace, InitVar, Field, MISSING, is_dataclass,
 )
 
 import pickle
@@ -866,7 +866,7 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(Point3D(1, 2, 3), (1, 2, 3))
 
         # Make sure we can't unpack
-        with self.assertRaisesRegex(TypeError, 'is not iterable'):
+        with self.assertRaisesRegex(TypeError, 'unpack'):
             x, y, z = Point3D(4, 5, 6)
 
         # Maka sure another class with the same field names isn't
@@ -917,12 +917,12 @@ class TestCase(unittest.TestCase):
             param = next(params)
             self.assertEqual(param.name, 'k')
             self.assertIs   (param.annotation, F)
-            # Don't test for the default, since it's set to _MISSING
+            # Don't test for the default, since it's set to MISSING
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'l')
             self.assertIs   (param.annotation, float)
-            # Don't test for the default, since it's set to _MISSING
+            # Don't test for the default, since it's set to MISSING
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             self.assertRaises(StopIteration, next, params)
 
@@ -947,6 +947,52 @@ class TestCase(unittest.TestCase):
             z: complex=field(default=3+4j, init=False)
 
         validate_class(C)
+
+    def test_missing_default(self):
+        # Test that MISSING works the same as a default not being
+        #  specified.
+        @dataclass
+        class C:
+            x: int=field(default=MISSING)
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            C()
+        self.assertNotIn('x', C.__dict__)
+
+        @dataclass
+        class D:
+            x: int
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            D()
+        self.assertNotIn('x', D.__dict__)
+
+    def test_missing_default_factory(self):
+        # Test that MISSING works the same as a default factory not
+        #  being specified (which is really the same as a default not
+        #  being specified, too).
+        @dataclass
+        class C:
+            x: int=field(default_factory=MISSING)
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            C()
+        self.assertNotIn('x', C.__dict__)
+
+        @dataclass
+        class D:
+            x: int=field(default=MISSING, default_factory=MISSING)
+        with self.assertRaisesRegex(TypeError,
+                                    r'__init__\(\) missing 1 required '
+                                    'positional argument'):
+            D()
+        self.assertNotIn('x', D.__dict__)
+
+    def test_missing_repr(self):
+        self.assertIn('MISSING_TYPE object', repr(MISSING))
 
     def test_dont_include_other_annotations(self):
         @dataclass
@@ -998,7 +1044,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C().x, 0)
         self.assertEqual(C(2).x, 4)
 
-        # Make sure that if we'r frozen, post-init can't set
+        # Make sure that if we're frozen, post-init can't set
         #  attributes.
         @dataclass(frozen=True)
         class C:
@@ -1319,27 +1365,32 @@ class TestCase(unittest.TestCase):
 
         self.assertIs(C().x, int)
 
-    def test_isdataclass(self):
-        # There is no isdataclass() helper any more, but the PEP
-        #  describes how to write it, so make sure that works.  Note
-        #  that this version returns True for both classes and
-        #  instances.
-        def isdataclass(obj):
-            try:
-                fields(obj)
-                return True
-            except TypeError:
-                return False
+    def test_is_dataclass(self):
+        class NotDataClass:
+            pass
 
-        self.assertFalse(isdataclass(0))
-        self.assertFalse(isdataclass(int))
+        self.assertFalse(is_dataclass(0))
+        self.assertFalse(is_dataclass(int))
+        self.assertFalse(is_dataclass(NotDataClass))
+        self.assertFalse(is_dataclass(NotDataClass()))
 
         @dataclass
         class C:
             x: int
 
-        self.assertTrue(isdataclass(C))
-        self.assertTrue(isdataclass(C(0)))
+        @dataclass
+        class D:
+            d: C
+            e: int
+
+        c = C(10)
+        d = D(c, 4)
+
+        self.assertTrue(is_dataclass(C))
+        self.assertTrue(is_dataclass(c))
+        self.assertFalse(is_dataclass(c.x))
+        self.assertTrue(is_dataclass(d.d))
+        self.assertFalse(is_dataclass(d.e))
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
@@ -1831,7 +1882,7 @@ class TestCase(unittest.TestCase):
         #  if we're also replacing one that does exist.  Test this
         #  here, because setting attributes on frozen instances is
         #  handled slightly differently from non-frozen ones.
-        with self.assertRaisesRegex(TypeError, "__init__\(\) got an unexpected "
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
                                              "keyword argument 'a'"):
             c1 = replace(c, x=20, a=5)
 
@@ -1842,7 +1893,7 @@ class TestCase(unittest.TestCase):
             y: int
 
         c = C(1, 2)
-        with self.assertRaisesRegex(TypeError, "__init__\(\) got an unexpected "
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
                                     "keyword argument 'z'"):
             c1 = replace(c, z=3)
 
@@ -1982,6 +2033,37 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C.y, 10)
         self.assertEqual(C.z, 20)
 
+    def test_helper_make_dataclass_other_params(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', ClassVar[int], 10),
+                            ('z', ClassVar[int], field(default=20)),
+                            ],
+                           init=False)
+        # Make sure we have a repr, but no init.
+        self.assertNotIn('__init__', vars(C))
+        self.assertIn('__repr__', vars(C))
+
+        # Make sure random other params don't work.
+        with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
+            C = make_dataclass('C',
+                               [],
+                               xxinit=False)
+
+    def test_helper_make_dataclass_no_types(self):
+        C = make_dataclass('Point', ['x', 'y', 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': 'typing.Any',
+                                             'z': 'typing.Any'})
+
+        C = make_dataclass('Point', ['x', ('y', int), 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': int,
+                                             'z': 'typing.Any'})
 
 class TestDocString(unittest.TestCase):
     def assertDocStrEqual(self, a, b):

@@ -234,7 +234,7 @@
     <ClInclude Include="..\Include\pyfpe.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pygetopt.h">
+    <ClInclude Include="..\Include\internal\pygetopt.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pylifecycle.h">
@@ -822,6 +822,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\ast_opt.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\bltinmodule.c">

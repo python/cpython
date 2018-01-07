@@ -289,7 +289,7 @@ class Test_TextTestRunner(unittest.TestCase):
         at_msg = b'Please use assertTrue instead.'
 
         # no args -> all the warnings are printed, unittest warnings only once
-        p = subprocess.Popen([sys.executable, '_test_warnings.py'], **opts)
+        p = subprocess.Popen([sys.executable, '-E', '_test_warnings.py'], **opts)
         with p:
             out, err = get_parse_out_err(p)
         self.assertIn(b'OK', err)

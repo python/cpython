@@ -778,6 +778,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -831,7 +832,6 @@ with_c_locale_coercion
 with_c_locale_warning
 with_valgrind
 with_dtrace
-with_fpectl
 with_libm
 with_libc
 enable_big_digits
@@ -889,6 +889,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1141,6 +1142,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1278,7 +1288,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1431,6 +1441,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1527,7 +1538,6 @@ Optional Packages:
                           locale
   --with-valgrind         Enable Valgrind support
   --with(out)-dtrace      disable/enable DTrace support
-  --with-fpectl           enable SIGFPE catching
   --with-libm=STRING      math library
   --with-libc=STRING      C library
   --with(out)-computed-gotos
@@ -9124,7 +9134,8 @@ then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED='ld -b'
+			LDSHARED='$(CC) -b'
+			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
@@ -9503,6 +9514,21 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
+# checks for uuid.h location
+for ac_header in uuid/uuid.h uuid.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
 $as_echo_n "checking for uuid_generate_time_safe... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -9523,6 +9549,37 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for RFC4122 - uuid support on AIX" >&5
+$as_echo_n "checking for RFC4122 - uuid support on AIX... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <uuid.h>
+int
+main ()
+{
+
+#ifndef uuid_create
+void *x = uuid_create
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_UUID_CREATE 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -11099,8 +11156,6 @@ then
 	fi
 	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
-	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
-	Darwin/[0156]\..*) DYNLOADFILE="dynload_next.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading
@@ -13634,29 +13689,6 @@ fi
 fi
 
 
-# Check for --with-fpectl
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-fpectl" >&5
-$as_echo_n "checking for --with-fpectl... " >&6; }
-
-# Check whether --with-fpectl was given.
-if test "${with_fpectl+set}" = set; then :
-  withval=$with_fpectl;
-if test "$withval" != no
-then
-
-$as_echo "#define WANT_SIGFPE_HANDLER 1" >>confdefs.h
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
 # check for --with-libm=...
 
 case $ac_sys_system in
@@ -14358,6 +14390,17 @@ fi
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_RTLD_DEEPBIND $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_MEMBER" "ac_cv_have_decl_RTLD_MEMBER" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_MEMBER" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_MEMBER $ac_have_decl
 _ACEOF
 
 
