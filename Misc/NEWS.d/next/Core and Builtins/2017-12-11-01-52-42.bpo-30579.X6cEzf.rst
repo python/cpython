@@ -1,0 +1,2 @@
+Implement TracebackType.__new__ to allow Python-level creation of
+traceback objects, and make TracebackType.tb_next mutable.
