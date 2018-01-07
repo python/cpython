@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg height="583" version="1.1" width="1108" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#ffffff" height="59" stroke="#ffffff" stroke-width="1" width="80" x="281" y="102"/>
+<rect fill="none" height="59" stroke="#000000" stroke-width="1" width="80" x="281" y="102"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="293" y="113">
+Iterator</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="80" x="281" y="124"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="285" y="136">
+__next__()</text>
+<text font-family="Lucida Console" font-size="12" x="285" y="150">
+__iter__()</text>
+<polyline fill="none" points="360,102 385,58" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="385,58 385,71 372,64" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="385,58 385,71 372,64" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="45" stroke="#ffffff" stroke-width="1" width="80" x="385" y="14"/>
+<rect fill="none" height="45" stroke="#000000" stroke-width="1" width="80" x="385" y="14"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="397" y="25">
+Iterable</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="80" x="385" y="36"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="389" y="48">
+__iter__()</text>
+<rect fill="#ffffff" height="101" stroke="#ffffff" stroke-width="1" width="80" x="281" y="198"/>
+<rect fill="none" height="101" stroke="#000000" stroke-width="1" width="80" x="281" y="198"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="289" y="209">
+Generator</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="80" x="281" y="220"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="285" y="232">
+send()</text>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="285" y="246">
+throw()</text>
+<text font-family="Lucida Console" font-size="12" x="285" y="260">
+__iter__()</text>
+<text font-family="Lucida Console" font-size="12" x="285" y="274">
+__next__()</text>
+<text font-family="Lucida Console" font-size="12" x="285" y="288">
+close()</text>
+<polyline fill="none" points="313,198 313,160" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="313,160 320,172 306,172" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="313,160 320,172 306,172" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="45" stroke="#ffffff" stroke-width="1" width="109" x="377" y="102"/>
+<rect fill="none" height="45" stroke="#000000" stroke-width="1" width="109" x="377" y="102"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="396" y="113">
+Reversible</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="109" x="377" y="124"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="381" y="136">
+__reversed__()</text>
+<polyline fill="none" points="425,102 425,58" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="425,58 432,70 418,70" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="425,58 432,70 418,70" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="115" stroke="#ffffff" stroke-width="1" width="112" x="377" y="198"/>
+<rect fill="none" height="115" stroke="#000000" stroke-width="1" width="112" x="377" y="198"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="405" y="209">
+Sequence</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="112" x="377" y="220"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="381" y="232">
+__getitem__()</text>
+<text font-family="Lucida Console" font-size="12" x="381" y="246">
+__contains__()</text>
+<text font-family="Lucida Console" font-size="12" x="381" y="260">
+__iter__()</text>
+<text font-family="Lucida Console" font-size="12" x="381" y="274">
+__reversed__()</text>
+<text font-family="Lucida Console" font-size="12" x="381" y="288">
+count()</text>
+<text font-family="Lucida Console" font-size="12" x="381" y="302">
+index()</text>
+<polyline fill="none" points="425,198 425,146" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="425,146 432,158 418,158" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="425,146 432,158 418,158" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="24" stroke="#ffffff" stroke-width="1" width="82" x="513" y="102"/>
+<rect fill="none" height="24" stroke="#000000" stroke-width="1" width="82" x="513" y="102"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="519" y="113">
+Collection</text>
+<polyline fill="none" points="513,102 464,58" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="464,58 477,60 468,71" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="464,58 477,60 468,71" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="45" stroke="#ffffff" stroke-width="1" width="109" x="506" y="14"/>
+<rect fill="none" height="45" stroke="#000000" stroke-width="1" width="109" x="506" y="14"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="529" y="25">
+Container</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="109" x="506" y="36"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="510" y="48">
+__contains__()</text>
+<rect fill="#ffffff" height="45" stroke="#ffffff" stroke-width="1" width="73" x="641" y="14"/>
+<rect fill="none" height="45" stroke="#000000" stroke-width="1" width="73" x="641" y="14"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="660" y="25">
+Sized</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="73" x="641" y="36"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="645" y="48">
+__len__()</text>
+<polyline fill="none" points="553,102 553,58" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="553,58 560,70 546,70" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="553,58 560,70 546,70" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="594,102 641,58" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="641,58 637,71 627,61" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="641,58 637,71 627,61" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="129" stroke="#ffffff" stroke-width="1" width="109" x="505" y="198"/>
+<rect fill="none" height="129" stroke="#000000" stroke-width="1" width="109" x="505" y="198"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="535" y="209">
+Mapping</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="109" x="505" y="220"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="509" y="232">
+__getitem__()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="246">
+__contains__()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="260">
+__eq__()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="274">
+get()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="288">
+keys()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="302">
+item()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="316">
+values()</text>
+<polyline fill="none" points="553,198 553,125" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="553,125 560,137 546,137" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="553,125 560,137 546,137" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="171" stroke="#ffffff" stroke-width="1" width="96" x="633" y="198"/>
+<rect fill="none" height="171" stroke="#000000" stroke-width="1" width="96" x="633" y="198"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="670" y="209">
+Set</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="96" x="633" y="220"/>
+<text font-family="Lucida Console" font-size="12" x="637" y="232">
+__le__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="246">
+__lt__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="260">
+__eq__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="274">
+__gt__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="288">
+__ge__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="302">
+__and__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="316">
+__or__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="330">
+__sub__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="344">
+__xor__()</text>
+<text font-family="Lucida Console" font-size="12" x="637" y="358">
+isdisjoint()</text>
+<rect fill="#ffffff" height="45" stroke="#ffffff" stroke-width="1" width="90" x="873" y="102"/>
+<rect fill="none" height="45" stroke="#000000" stroke-width="1" width="90" x="873" y="102"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="879" y="113">
+MappingView</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="90" x="873" y="124"/>
+<text font-family="Lucida Console" font-size="12" x="877" y="136">
+__len__()</text>
+<polyline fill="none" points="873,102 713,58" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="713,58 726,54 722,67" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="713,58 726,54 722,67" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="59" stroke="#ffffff" stroke-width="1" width="109" x="745" y="398"/>
+<rect fill="none" height="59" stroke="#000000" stroke-width="1" width="109" x="745" y="398"/>
+<text font-family="Lucida Console" font-size="12" x="771" y="409">
+KeysView</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="109" x="745" y="420"/>
+<text font-family="Lucida Console" font-size="12" x="749" y="432">
+__contains__()</text>
+<text font-family="Lucida Console" font-size="12" x="749" y="446">
+__iter__()</text>
+<rect fill="#ffffff" height="59" stroke="#ffffff" stroke-width="1" width="109" x="865" y="398"/>
+<rect fill="none" height="59" stroke="#000000" stroke-width="1" width="109" x="865" y="398"/>
+<text font-family="Lucida Console" font-size="12" x="888" y="409">
+ItemsView</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="109" x="865" y="420"/>
+<text font-family="Lucida Console" font-size="12" x="869" y="432">
+__contains__()</text>
+<text font-family="Lucida Console" font-size="12" x="869" y="446">
+__iter__()</text>
+<polyline fill="none" points="865,398 809,350 728,350" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="728,350 740,343 740,357" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="728,350 740,343 740,357" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="59" stroke="#ffffff" stroke-width="1" width="109" x="985" y="398"/>
+<rect fill="none" height="59" stroke="#000000" stroke-width="1" width="109" x="985" y="398"/>
+<text font-family="Lucida Console" font-size="12" x="1004" y="409">
+ValuesView</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="109" x="985" y="420"/>
+<text font-family="Lucida Console" font-size="12" x="989" y="432">
+__contains__()</text>
+<text font-family="Lucida Console" font-size="12" x="989" y="446">
+__iter__()</text>
+<rect fill="#ffffff" height="157" stroke="#ffffff" stroke-width="1" width="82" x="641" y="398"/>
+<rect fill="none" height="157" stroke="#000000" stroke-width="1" width="82" x="641" y="398"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="647" y="409">
+MutableSet</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="82" x="641" y="420"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="645" y="432">
+add()</text>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="645" y="446">
+discard()</text>
+<text font-family="Lucida Console" font-size="12" x="645" y="460">
+__ior__()</text>
+<text font-family="Lucida Console" font-size="12" x="645" y="474">
+__iand__()</text>
+<text font-family="Lucida Console" font-size="12" x="645" y="488">
+__isub__()</text>
+<text font-family="Lucida Console" font-size="12" x="645" y="502">
+__ixor__()</text>
+<text font-family="Lucida Console" font-size="12" x="645" y="516">
+clear()</text>
+<text font-family="Lucida Console" font-size="12" x="645" y="530">
+pop()</text>
+<text font-family="Lucida Console" font-size="12" x="645" y="544">
+remove()</text>
+<polyline fill="none" points="681,398 681,368" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="681,368 688,380 674,380" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="681,368 688,380 674,380" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="129" stroke="#ffffff" stroke-width="1" width="111" x="505" y="398"/>
+<rect fill="none" height="129" stroke="#000000" stroke-width="1" width="111" x="505" y="398"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="511" y="409">
+MutableMapping</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="111" x="505" y="420"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="509" y="432">
+__setitem__()</text>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="509" y="446">
+__delitem__()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="460">
+pop()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="474">
+popitem()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="488">
+clear()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="502">
+update()</text>
+<text font-family="Lucida Console" font-size="12" x="509" y="516">
+setdefault()</text>
+<polyline fill="none" points="553,398 553,326" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="553,326 560,338 546,338" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="553,326 560,338 546,338" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="24" stroke="#ffffff" stroke-width="1" width="82" x="273" y="398"/>
+<rect fill="none" height="24" stroke="#000000" stroke-width="1" width="82" x="273" y="398"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="279" y="409">
+ByteString</text>
+<polyline fill="none" points="354,398 377,312" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="377,312 380,325 367,321" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="377,312 380,325 367,321" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="171" stroke="#ffffff" stroke-width="1" width="118" x="369" y="398"/>
+<rect fill="none" height="171" stroke="#000000" stroke-width="1" width="118" x="369" y="398"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="375" y="409">
+MutableSequence</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="118" x="369" y="420"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="373" y="432">
+__setitem__()</text>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="373" y="446">
+__delitem__()</text>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="373" y="460">
+insert()</text>
+<text font-family="Lucida Console" font-size="12" x="373" y="474">
+__iadd__()</text>
+<text font-family="Lucida Console" font-size="12" x="373" y="488">
+append()</text>
+<text font-family="Lucida Console" font-size="12" x="373" y="502">
+clear()</text>
+<text font-family="Lucida Console" font-size="12" x="373" y="516">
+extend()</text>
+<text font-family="Lucida Console" font-size="12" x="373" y="530">
+pop()</text>
+<text font-family="Lucida Console" font-size="12" x="373" y="544">
+reverse()</text>
+<text font-family="Lucida Console" font-size="12" x="373" y="558">
+remove()</text>
+<polyline fill="none" points="425,398 425,312" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="425,312 432,324 418,324" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="425,312 432,324 418,324" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="985,398 681,118 594,118" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="594,118 606,111 606,125" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="594,118 606,111 606,125" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="745,398 728,368" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="728,368 740,374 727,381" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="728,368 740,374 727,381" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="853,398 921,278 921,146" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="921,146 928,158 914,158" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="921,146 928,158 914,158" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="921,398 921,146" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="921,146 928,158 914,158" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="921,146 928,158 914,158" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="985,398 921,278 921,146" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="921,146 928,158 914,158" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="921,146 928,158 914,158" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="488,198 513,125" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="513,125 515,138 502,134" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="513,125 515,138 502,134" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="633,198 594,125" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="594,125 605,132 593,138" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="594,125 605,132 593,138" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="45" stroke="#ffffff" stroke-width="1" width="80" x="873" y="14"/>
+<rect fill="none" height="45" stroke="#000000" stroke-width="1" width="80" x="873" y="14"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="885" y="25">
+Callable</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="80" x="873" y="36"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="877" y="48">
+__call__()</text>
+<rect fill="#ffffff" height="48" stroke="#ffffff" stroke-width="1" width="78" x="761" y="14"/>
+<rect fill="none" height="48" stroke="#000000" stroke-width="1" width="78" x="761" y="14"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="772" y="25">
+Hashable</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="78" x="761" y="36"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="765" y="48">
+__hash__()</text>
+<rect fill="#ffffff" height="59" stroke="#ffffff" stroke-width="1" width="106" x="153" y="14"/>
+<rect fill="none" height="59" stroke="#000000" stroke-width="1" width="106" x="153" y="14"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="160" y="25">
+AsyncIterable</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="106" x="153" y="36"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="157" y="48">
+__aiter__()</text>
+<text font-family="Lucida Console" font-size="12" x="157" y="62">
+newOperation()</text>
+<rect fill="#ffffff" height="45" stroke="#ffffff" stroke-width="1" width="88" x="49" y="14"/>
+<rect fill="none" height="45" stroke="#000000" stroke-width="1" width="88" x="49" y="14"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="61" y="25">
+Awaitable</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="88" x="49" y="36"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="53" y="48">
+__await__()</text>
+<rect fill="#ffffff" height="64" stroke="#ffffff" stroke-width="1" width="103" x="153" y="102"/>
+<rect fill="none" height="64" stroke="#000000" stroke-width="1" width="103" x="153" y="102"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="159" y="113">
+AsyncIterator</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="103" x="153" y="124"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="157" y="136">
+__anext__()</text>
+<text font-family="Lucida Console" font-size="12" x="157" y="150">
+__aiter__()</text>
+<polyline fill="none" points="201,102 201,72" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="201,72 208,84 194,84" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="201,72 208,84 194,84" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="101" stroke="#ffffff" stroke-width="1" width="111" x="153" y="198"/>
+<rect fill="none" height="101" stroke="#000000" stroke-width="1" width="111" x="153" y="198"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="159" y="209">
+AsyncGenerator</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="111" x="153" y="220"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="157" y="232">
+asend()</text>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="157" y="246">
+athrow()</text>
+<text font-family="Lucida Console" font-size="12" x="157" y="260">
+__aiter__()</text>
+<text font-family="Lucida Console" font-size="12" x="157" y="274">
+__anext__()</text>
+<text font-family="Lucida Console" font-size="12" x="157" y="288">
+close()</text>
+<polyline fill="none" points="202,198 202,165" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="202,165 209,177 195,177" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="202,165 209,177 195,177" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="73" stroke="#ffffff" stroke-width="1" width="75" x="57" y="198"/>
+<rect fill="none" height="73" stroke="#000000" stroke-width="1" width="75" x="57" y="198"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="63" y="209">
+Coroutine</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="75" x="57" y="220"/>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="61" y="232">
+send()</text>
+<text font-family="Lucida Console" font-size="12" font-style="italic" x="61" y="246">
+throw()</text>
+<text font-family="Lucida Console" font-size="12" x="61" y="260">
+close()</text>
+<polyline fill="none" points="89,198 89,58" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="89,58 96,70 82,70" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="89,58 96,70 82,70" stroke="#000000" stroke-width="1"/>
+</svg>

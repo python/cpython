@@ -96,6 +96,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`AsyncGenerator`    :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
 ========================== ====================== ======================= ====================================================
 
+.. image:: collections.abc.svg
 
 .. class:: Container
            Hashable

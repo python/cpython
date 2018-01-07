@@ -1,0 +1,1 @@
+Add a class diagram to the collections.abc documentation page.
