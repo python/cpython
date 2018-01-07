@@ -62,7 +62,6 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>cabinet.lib;msi.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <BaseAddress>0x1D160000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
