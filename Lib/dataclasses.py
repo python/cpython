@@ -1,7 +1,6 @@
 import sys
 import types
 from copy import deepcopy
-import collections
 import inspect
 
 __all__ = ['dataclass',
@@ -448,11 +447,11 @@ def _set_attribute(cls, name, value):
 
 
 def _process_class(cls, repr, eq, order, hash, init, frozen):
-    # Use an OrderedDict because:
-    #  - Order matters!
-    #  - Derived class fields overwrite base class fields, but the
-    #    order is defined by the base class, which is found first.
-    fields = collections.OrderedDict()
+    # Now that dicts retain insertion order, there's no reason to use
+    #  an ordered dict.  I am leveraging that ordering here, because
+    #  derived class fields overwrite base class fields, but the order
+    #  is defined by the base class, which is found first.
+    fields = {}
 
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
@@ -612,7 +611,8 @@ def fields(class_or_instance):
     except AttributeError:
         raise TypeError('must be called with a dataclass type or instance')
 
-    # Exclude pseudo-fields.
+    # Exclude pseudo-fields.  Note that fields is sorted by insertion
+    #  order, so the order of the tuple is as the fields were defined.
     return tuple(f for f in fields.values() if f._field_type is _FIELD)
 
 
@@ -735,7 +735,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         # Copy namespace since we're going to mutate it.
         namespace = namespace.copy()
 
-    anns = collections.OrderedDict()
+    anns = {}
     for item in fields:
         if isinstance(item, str):
             name = item
