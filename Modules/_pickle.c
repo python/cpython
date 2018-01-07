@@ -2142,17 +2142,23 @@ done:
     return 0;
 }
 
-/* Write large contiguous data directly into the underlying file object,
-   bypassing the output_buffer of the Pickler. */
+/* Perform direct write of the header and payload of the binary object.
+
+   The large contiguous data is written directly into the underlying file
+   object, bypassing the output_buffer of the Pickler.  We intentionally
+   do not insert a protocol 4 frame opcode to make it possible to optimize
+   file.read calls in the loader.
+ */
 static int
 _Pickler_write_bytes(PicklerObject *self,
                      const char *header, Py_ssize_t header_size,
                      const char *data, Py_ssize_t data_size,
                      PyObject *payload)
 {
-    int bypass_framing = (self->framing && data_size >= FRAME_SIZE_TARGET);
+    int bypass_buffer = (data_size >= FRAME_SIZE_TARGET);
+    int framing = self->framing;
 
-    if (bypass_framing) {
+    if (bypass_buffer) {
         assert(self->output_buffer != NULL);
         /* Commit the previous frame. */
         if (_Pickler_CommitFrame(self)) {
@@ -2166,7 +2172,7 @@ _Pickler_write_bytes(PicklerObject *self,
         return -1;
     }
 
-    if (bypass_framing && self->write != NULL) {
+    if (bypass_buffer && self->write != NULL) {
         /* Bypass the in-memory buffer to directly stream large data
            into the underlying file object. */
         PyObject *result, *mem = NULL;
@@ -2178,8 +2184,7 @@ _Pickler_write_bytes(PicklerObject *self,
         /* Stream write the payload into the file without going through the
            output buffer. */
         if (payload == NULL) {
-            payload = mem = PyMemoryView_FromMemory((char *) data, data_size,
-                                                    PyBUF_READ);
+            payload = mem = PyBytes_FromStringAndSize(data, data_size);
             if (payload == NULL) {
                 return -1;
             }
@@ -2202,10 +2207,8 @@ _Pickler_write_bytes(PicklerObject *self,
         }
     }
 
-    if (bypass_framing) {
-        /* Re-enable framing for subsequent calls to _Pickler_Write. */
-        self->framing = 1;
-    }
+    /* Re-enable framing for subsequent calls to _Pickler_Write. */
+    self->framing = framing;
 
     return 0;
 }
@@ -2373,10 +2376,29 @@ error:
 }
 
 static int
-write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
+write_unicode_binary(PicklerObject *self, PyObject *obj)
 {
     char header[9];
     Py_ssize_t len;
+    PyObject *encoded = NULL;
+    Py_ssize_t size;
+    const char *data;
+
+    if (PyUnicode_READY(obj))
+        return -1;
+
+    data = PyUnicode_AsUTF8AndSize(obj, &size);
+    if (data == NULL) {
+        /* Issue #8383: for strings with lone surrogates, fallback on the
+           "surrogatepass" error handler. */
+        PyErr_Clear();
+        encoded = PyUnicode_AsEncodedString(obj, "utf-8", "surrogatepass");
+        if (encoded == NULL)
+            return -1;
+
+        data = PyBytes_AS_STRING(encoded);
+        size = PyBytes_GET_SIZE(encoded);
+    }
 
     assert(size >= 0);
     if (size <= 0xff && self->proto >= 4) {
@@ -2400,41 +2422,16 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
     else {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot serialize a string larger than 4GiB");
+        Py_XDECREF(encoded);
         return -1;
     }
 
-    if (_Pickler_write_bytes(self, header, len, data, size, NULL) < 0) {
+    if (_Pickler_write_bytes(self, header, len, data, size, encoded) < 0) {
+        Py_XDECREF(encoded);
         return -1;
     }
+    Py_XDECREF(encoded);
     return 0;
-}
-
-static int
-write_unicode_binary(PicklerObject *self, PyObject *obj)
-{
-    PyObject *encoded = NULL;
-    Py_ssize_t size;
-    const char *data;
-    int r;
-
-    if (PyUnicode_READY(obj))
-        return -1;
-
-    data = PyUnicode_AsUTF8AndSize(obj, &size);
-    if (data != NULL)
-        return write_utf8(self, data, size);
-
-    /* Issue #8383: for strings with lone surrogates, fallback on the
-       "surrogatepass" error handler. */
-    PyErr_Clear();
-    encoded = PyUnicode_AsEncodedString(obj, "utf-8", "surrogatepass");
-    if (encoded == NULL)
-        return -1;
-
-    r = write_utf8(self, PyBytes_AS_STRING(encoded),
-                   PyBytes_GET_SIZE(encoded));
-    Py_DECREF(encoded);
-    return r;
 }
 
 static int
