@@ -4944,8 +4944,9 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
     int i, new_depth, target_depth, effect;
     struct instr *instr;
     assert(!b->b_seen || b->b_startdepth == depth);
-    if (b->b_seen || b->b_startdepth >= depth)
+    if (b->b_seen || b->b_startdepth >= depth) {
         return maxdepth;
+    }
     /* Guard against infinite recursion */
     b->b_seen = 1;
     b->b_startdepth = depth;
@@ -4957,16 +4958,18 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
             Py_FatalError("PyCompile_OpcodeStackEffect()");
         }
         new_depth = depth + effect;
-        if (new_depth > maxdepth)
+        if (new_depth > maxdepth) {
             maxdepth = new_depth;
+        }
         assert(new_depth >= 0); /* invalid code or bug in stackdepth() */
         if (instr->i_jrel || instr->i_jabs) {
             /* Recursively inspect jump target */
             effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
             assert(effect != PY_INVALID_STACK_EFFECT);
             target_depth = depth + effect;
-            if (target_depth > maxdepth)
+            if (target_depth > maxdepth) {
                 maxdepth = target_depth;
+            }
             assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
             if (instr->i_opcode == CONTINUE_LOOP) {
                 /* Pops a variable number of values from the stack,
