@@ -8,6 +8,7 @@ import sys
 import unittest
 import warnings
 from test import support
+from test.support.script_helper import assert_python_ok
 
 
 def create_file(filename, data=b'foo'):
@@ -487,8 +488,7 @@ class CommonTest(GenericTest):
                 self.pathmodule.relpath(bytearray(b'foo'), bytearray(b'bar'))
 
     def test_import(self):
-        support.script_helper.assert_python_ok(
-                '-S', '-c', 'import ' + self.pathmodule.__name__)
+        assert_python_ok('-S', '-c', 'import ' + self.pathmodule.__name__)
 
 
 class PathLikeTests(unittest.TestCase):
