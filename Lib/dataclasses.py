@@ -16,6 +16,7 @@ __all__ = ['dataclass',
            'astuple',
            'make_dataclass',
            'replace',
+           'is_dataclass',
            ]
 
 # Raised when an attempt is made to modify a frozen class.
@@ -615,9 +616,15 @@ def fields(class_or_instance):
     return tuple(f for f in fields.values() if f._field_type is _FIELD)
 
 
-def _isdataclass(obj):
+def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
     return not isinstance(obj, type) and hasattr(obj, _MARKER)
+
+
+def is_dataclass(obj):
+    """Returns True if obj is a dataclass or an instance of a
+    dataclass."""
+    return hasattr(obj, _MARKER)
 
 
 def asdict(obj, *, dict_factory=dict):
@@ -639,12 +646,12 @@ def asdict(obj, *, dict_factory=dict):
     dataclass instances. This will also look into built-in containers:
     tuples, lists, and dicts.
     """
-    if not _isdataclass(obj):
+    if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
     return _asdict_inner(obj, dict_factory)
 
 def _asdict_inner(obj, dict_factory):
-    if _isdataclass(obj):
+    if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
@@ -678,12 +685,12 @@ def astuple(obj, *, tuple_factory=tuple):
     tuples, lists, and dicts.
     """
 
-    if not _isdataclass(obj):
+    if not _is_dataclass_instance(obj):
         raise TypeError("astuple() should be called on dataclass instances")
     return _astuple_inner(obj, tuple_factory)
 
 def _astuple_inner(obj, tuple_factory):
-    if _isdataclass(obj):
+    if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _astuple_inner(getattr(obj, f.name), tuple_factory)
@@ -698,14 +705,16 @@ def _astuple_inner(obj, tuple_factory):
         return deepcopy(obj)
 
 
-def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
+def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
+                   repr=True, eq=True, order=False, hash=None, frozen=False):
     """Return a new dynamically created dataclass.
 
-    The dataclass name will be 'cls_name'.  'fields' is an interable
-    of either (name, type) or (name, type, Field) objects. Field
-    objects are created by calling 'field(name, type [, Field])'.
+    The dataclass name will be 'cls_name'.  'fields' is an iterable
+    of either (name), (name, type) or (name, type, Field) objects. If type is
+    omitted, use the string 'typing.Any'.  Field objects are created by
+    the equivalent of calling 'field(name, type [, Field-info])'.
 
-      C = make_class('C', [('a', int', ('b', int, Field(init=False))], bases=Base)
+      C = make_class('C', ['x', ('y', int'), ('z', int, Field(init=False))], bases=[Base])
 
     is equivalent to:
 
@@ -715,6 +724,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
           b: int = field(init=False)
 
     For the bases and namespace paremeters, see the builtin type() function.
+
+    The parameters init, repr, eq, order, hash, and frozen are passed to
+    dataclass().
     """
 
     if namespace is None:
@@ -723,15 +735,22 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
         # Copy namespace since we're going to mutate it.
         namespace = namespace.copy()
 
-    anns = collections.OrderedDict((name, tp) for name, tp, *_ in fields)
-    namespace['__annotations__'] = anns
+    anns = collections.OrderedDict()
     for item in fields:
-        if len(item) == 3:
+        if isinstance(item, str):
+            name = item
+            tp = 'typing.Any'
+        elif len(item) == 2:
+            name, tp, = item
+        elif len(item) == 3:
             name, tp, spec = item
             namespace[name] = spec
-    cls = type(cls_name, bases, namespace)
-    return dataclass(cls)
+        anns[name] = tp
 
+    namespace['__annotations__'] = anns
+    cls = type(cls_name, bases, namespace)
+    return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
+                     hash=hash, frozen=frozen)
 
 def replace(obj, **changes):
     """Return a new object replacing specified fields with new values.
@@ -751,7 +770,7 @@ def replace(obj, **changes):
     # We're going to mutate 'changes', but that's okay because it's a new
     #  dict, even if called with 'replace(obj, **my_changes)'.
 
-    if not _isdataclass(obj):
+    if not _is_dataclass_instance(obj):
         raise TypeError("replace() should be called on dataclass instances")
 
     # It's an error to have init=False fields in 'changes'.

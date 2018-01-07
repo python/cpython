@@ -9336,7 +9336,13 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
+/* The _ALL_SOURCE feature test macro defines f_fsid as a structure
+ * (issue #32390). */
+#if defined(_AIX) && defined(_ALL_SOURCE)
+    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+#else
     PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
+#endif
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;

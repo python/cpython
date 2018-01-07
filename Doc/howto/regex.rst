@@ -1140,12 +1140,12 @@ new string value and the number of replacements  that were performed::
    >>> p.subn('colour', 'no colours at all')
    ('no colours at all', 0)
 
-Empty matches are replaced only when they're not adjacent to a previous match.
+Empty matches are replaced only when they're not adjacent to a previous empty match.
 ::
 
    >>> p = re.compile('x*')
    >>> p.sub('-', 'abxd')
-   '-a-b-d-'
+   '-a-b--d-'
 
 If *replacement* is a string, any backslash escapes in it are processed.  That
 is, ``\n`` is converted to a single newline character, ``\r`` is converted to a
