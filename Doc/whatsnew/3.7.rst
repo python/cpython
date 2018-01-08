@@ -70,6 +70,7 @@ Summary -- Release highlights
 New Features
 ============
 
+
 .. _whatsnew37-pep538:
 
 PEP 538: Legacy C Locale Coercion
@@ -106,6 +107,7 @@ locale remains active when the core interpreter is initialized.
 
     :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
        PEP written and implemented by Nick Coghlan.
+
 
 .. _whatsnew37-pep553:
 
@@ -201,6 +203,44 @@ resolution on Linux and Windows.
 
     :pep:`564` -- Add new time functions with nanosecond resolution
        PEP written and implemented by Victor Stinner
+
+
+.. _whatsnew37-pep565:
+
+PEP 565: Show DeprecationWarning in ``__main__``
+------------------------------------------------
+
+The default handling of :exc:`DeprecationWarning` has been changed such that
+these warnings are once more shown by default, but only when the code
+triggering them is running directly in the ``__main__`` module. As a result,
+developers of single file scripts and those using Python interactively should
+once again start seeing deprecation warnings for the APIs they use, but
+deprecation warnings triggered by imported application, library and framework
+modules will continue to be hidden by default.
+
+As a result of this change, the standard library now allows developers to choose
+between three different deprecation warning behaviours:
+
+* :exc:`FutureWarning`: always displayed by default, recommended for warnings
+  intended to be seen by application end users (e.g. for deprecated application
+  configuration settings).
+* :exc:`DeprecationWarning`: displayed by default only in ``__main__`` and when
+  running tests, recommended for warnings intended to be seen by other Python
+  developers where a version upgrade may result in changed behaviour or an
+  error.
+* :exc:`PendingDeprecationWarning`: displayed by default only when running
+  tests, intended for cases where a future version upgrade will change the
+  warning category to :exc:`DeprecationWarning` or :exc:`FutureWarning`.
+
+Previously both :exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`
+were only visible when running tests, which meant that developers primarily
+writing single file scripts or using Python interactively could be surprised
+by breaking changes in the APIs they used.
+
+.. seealso::
+
+    :pep:`565` -- Show DeprecationWarning in ``__main__``
+      PEP written and implemented by Nick Coghlan
 
 
 PEP 540: Add a new UTF-8 mode
