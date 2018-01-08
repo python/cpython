@@ -500,7 +500,7 @@
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
-/* Define to 1 if you have the 'if_nameindex' function. */
+/* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
 /* Define if you have the 'inet_aton' function. */
@@ -1191,7 +1191,7 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
-/* Define if uuid_create() exists. AIX support for uuid:RFC4122 */
+/* Define if uuid_create() exists. */
 #undef HAVE_UUID_CREATE
 
 /* Define if uuid_generate_time_safe() exists. */

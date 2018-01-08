@@ -19,9 +19,6 @@ py_uuid_generate_time_safe(void)
     res = uuid_generate_time_safe(uuid);
     return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
 #elif HAVE_UUID_CREATE
-/*
- * AIX support for uuid - RFC4122
- */
     uint32_t status;
     uuid_create(&uuid, &status);
     return Py_BuildValue("y#i", (const char *) &uuid, sizeof(uuid), (int) status);
