@@ -50,6 +50,54 @@ def _running(interp):
     t.join()
 
 
+class IsShareableTests(unittest.TestCase):
+
+    def test_default_shareables(self):
+        shareables = [
+                # builtin objects
+                b'spam',
+                ]
+        for obj in shareables:
+            with self.subTest(obj):
+                self.assertTrue(
+                    interpreters.is_shareable(obj))
+
+    def test_not_shareable(self):
+        class Cheese:
+            def __init__(self, name):
+                self.name = name
+            def __str__(self):
+                return self.name
+
+        class SubBytes(bytes):
+            """A subclass of a shareable type."""
+
+        not_shareables = [
+                # singletons
+                None,
+                True,
+                False,
+                NotImplemented,
+                ...,
+                # builtin types and objects
+                type,
+                object,
+                object(),
+                Exception(),
+                42,
+                100.0,
+                'spam',
+                # user-defined types and objects
+                Cheese,
+                Cheese('Wensleydale'),
+                SubBytes(b'spam'),
+                ]
+        for obj in not_shareables:
+            with self.subTest(obj):
+                self.assertFalse(
+                    interpreters.is_shareable(obj))
+
+
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
@@ -506,7 +554,82 @@ class RunStringTests(TestBase):
                 sys.exit(42)
                 """))
 
-    def test_main_shared(self):
+    def test_with_shared(self):
+        r, w = os.pipe()
+
+        shared = {
+                'spam': b'ham',
+                'eggs': b'-1',
+                }
+        script = dedent(f"""
+            eggs = int(eggs)
+            spam = 42
+            result = spam + eggs
+
+            ns = dict(vars())
+            del ns['__builtins__']
+            import pickle
+            with open({w}, 'wb') as chan:
+                pickle.dump(ns, chan)
+            """)
+        interpreters.run_string(self.id, script, shared)
+        with open(r, 'rb') as chan:
+            ns = pickle.load(chan)
+
+        self.assertEqual(ns['spam'], 42)
+        self.assertEqual(ns['eggs'], -1)
+        self.assertEqual(ns['result'], 41)
+
+    def test_shared_overwrites(self):
+        interpreters.run_string(self.id, dedent("""
+            spam = 'eggs'
+            ns1 = dict(vars())
+            del ns1['__builtins__']
+            """))
+
+        shared = {'spam': b'ham'}
+        script = dedent(f"""
+            ns2 = dict(vars())
+            del ns2['__builtins__']
+        """)
+        interpreters.run_string(self.id, script, shared)
+
+        r, w = os.pipe()
+        script = dedent(f"""
+            ns = dict(vars())
+            del ns['__builtins__']
+            import pickle
+            with open({w}, 'wb') as chan:
+                pickle.dump(ns, chan)
+            """)
+        interpreters.run_string(self.id, script)
+        with open(r, 'rb') as chan:
+            ns = pickle.load(chan)
+
+        self.assertEqual(ns['ns1']['spam'], 'eggs')
+        self.assertEqual(ns['ns2']['spam'], b'ham')
+        self.assertEqual(ns['spam'], b'ham')
+
+    def test_shared_overwrites_default_vars(self):
+        r, w = os.pipe()
+
+        shared = {'__name__': b'not __main__'}
+        script = dedent(f"""
+            spam = 42
+
+            ns = dict(vars())
+            del ns['__builtins__']
+            import pickle
+            with open({w}, 'wb') as chan:
+                pickle.dump(ns, chan)
+            """)
+        interpreters.run_string(self.id, script, shared)
+        with open(r, 'rb') as chan:
+            ns = pickle.load(chan)
+
+        self.assertEqual(ns['__name__'], b'not __main__')
+
+    def test_main_reused(self):
         r, w = os.pipe()
         interpreters.run_string(self.id, dedent(f"""
             spam = True

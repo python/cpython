@@ -109,11 +109,12 @@ _sharedns_clear(struct _shareditem *shared)
 }
 
 static struct _shareditem *
-_get_shared_ns(PyObject *shareable)
+_get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
 {
     if (shareable == NULL || shareable == Py_None)
         return NULL;
     Py_ssize_t len = PyDict_Size(shareable);
+    *lenp = len;
     if (len == 0)
         return NULL;
 
@@ -280,7 +281,8 @@ _ensure_not_running(PyInterpreterState *interp)
 
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
-            struct _shareditem *shared, struct _shared_exception **exc)
+            struct _shareditem *shared, Py_ssize_t num_shared,
+            struct _shared_exception **exc)
 {
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
     if (main_mod == NULL)
@@ -293,8 +295,9 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 
     // Apply the cross-interpreter data.
     if (shared != NULL) {
-        for (struct _shareditem *item=shared; item->name != NULL; item += 1) {
-            if (_shareditem_apply(shared, ns) != 0) {
+        for (Py_ssize_t i=0; i < num_shared; i++) {
+            struct _shareditem *item = &shared[i];
+            if (_shareditem_apply(item, ns) != 0) {
                 Py_DECREF(ns);
                 goto error;
             }
@@ -320,13 +323,14 @@ error:
 
 static int
 _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
-                           PyObject *shareable)
+                           PyObject *shareables)
 {
     // XXX lock?
     if (_ensure_not_running(interp) < 0)
         return -1;
 
-    struct _shareditem *shared = _get_shared_ns(shareable);
+    Py_ssize_t num_shared;
+    struct _shareditem *shared = _get_shared_ns(shareables, &num_shared);
     if (shared == NULL && PyErr_Occurred())
         return -1;
 
@@ -336,7 +340,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Run the script.
     struct _shared_exception *exc = NULL;
-    int result = _run_script(interp, codestr, shared, &exc);
+    int result = _run_script(interp, codestr, shared, num_shared, &exc);
 
     // Switch back.
     if (save_tstate != NULL)
@@ -613,7 +617,6 @@ static PyMethodDef module_functions[] = {
     {"run_string",              (PyCFunction)interp_run_string,
      METH_VARARGS, run_string_doc},
 
-    // XXX untested
     {"is_shareable",            (PyCFunction)object_is_shareable,
      METH_VARARGS, is_shareable_doc},
 
