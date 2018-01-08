@@ -587,7 +587,10 @@ the original TOS1.
 
 .. opcode:: SETUP_ASYNC_WITH
 
-   Creates a new frame object.
+   Creates a new frame object and pushes ``NULL`` onto the stack.
+
+   .. versionchanged:: 3.7
+      Pushes ``NULL`` onto the stack.
 
 
 
@@ -674,7 +677,8 @@ iterations of the loop.
    ``0`` TOS first is popped from the stack and pushed on the stack after
    perfoming other stack operations:
 
-   * If TOS is ``NULL`` or an integer (pushed by :opcode:`BEGIN_FINALLY`
+   * If TOS is ``NULL`` or an integer (pushed by :opcode:`SETUP_FINALLY`,
+     :opcode:`SETUP_WITH`, :opcode:`SETUP_ASYNC_WITH`
      or :opcode:`CALL_FINALLY`) it is popped from the stack.
    * If TOS is an exception type (pushed when an exception has been raised)
      6 values are popped from the stack, the last three popped values are
@@ -688,22 +692,14 @@ iterations of the loop.
    .. versionadded:: 3.7
 
 
-.. opcode:: BEGIN_FINALLY
-
-   Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY`,
-   :opcode:`POP_FINALLY`, :opcode:`WITH_CLEANUP_START` and
-   :opcode:`WITH_CLEANUP_FINISH`.  Starts the :keyword:`finally` block.
-
-   .. versionadded:: 3.7
-
-
 .. opcode:: END_FINALLY
 
    Terminates a :keyword:`finally` clause.  The interpreter recalls whether the
    exception has to be re-raised or execution has to be continued depending on
    the value of TOS.
 
-   * If TOS is ``NULL`` (pushed by :opcode:`BEGIN_FINALLY`) continue from
+   * If TOS is ``NULL`` (pushed by :opcode:`SETUP_FINALLY`,
+     :opcode:`SETUP_WITH` or :opcode:`SETUP_ASYNC_WITH`) continue from
      the next instruction. TOS is popped.
    * If TOS is an integer (pushed by :opcode:`CALL_FINALLY`), sets the
      bytecode counter to TOS.  TOS is popped.
@@ -725,19 +721,23 @@ iterations of the loop.
    This opcode performs several operations before a with block starts.  First,
    it loads :meth:`~object.__exit__` from the context manager and pushes it onto
    the stack for later use by :opcode:`WITH_CLEANUP_START`.  Then,
-   :meth:`~object.__enter__` is called, and a finally block pointing to *delta*
-   is pushed.  Finally, the result of calling the ``__enter__()`` method is pushed onto
+   :meth:`~object.__enter__` is called, a finally block pointing to *delta*
+   is pushed onto the block stack and ``NULL`` is pushed onto the stack.
+   Finally, the result of calling the ``__enter__()`` method is pushed onto
    the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
    store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
    :opcode:`UNPACK_SEQUENCE`).
+
+   .. versionchanged:: 3.7
+      Pushes ``NULL`` onto the stack.
 
 
 .. opcode:: WITH_CLEANUP_START
 
    Starts cleaning up the stack when a :keyword:`with` statement block exits.
 
-   At the top of the stack are either ``NULL`` (pushed by
-   :opcode:`BEGIN_FINALLY`) or 6 values pushed if an exception has been
+   At the top of the stack are either ``NULL`` (pushed by :opcode:`SETUP_WITH`
+   or :opcode:`SETUP_ASYNC_WITH`), or 6 values pushed if an exception has been
    raised in the with block.  Below is the context manager's
    :meth:`~object.__exit__` or :meth:`~object.__aexit__` bound method.
 
@@ -1006,8 +1006,11 @@ All of the following opcodes use their arguments.
 
 .. opcode:: SETUP_FINALLY (delta)
 
-   Pushes a try block from a try-finally clause onto the block stack. *delta*
-   points to the finally block.
+   Pushes a try block from a try-finally clause onto the block stack and
+   pushes ``NULL`` onto the stack. *delta* points to the finally block.
+
+   .. versionchanged:: 3.7
+      Pushes ``NULL`` onto the stack.
 
 
 .. opcode:: CALL_FINALLY (delta)

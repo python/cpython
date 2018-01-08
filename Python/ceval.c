@@ -1959,14 +1959,6 @@ main_loop:
             FAST_DISPATCH();
         }
 
-        TARGET(BEGIN_FINALLY) {
-            /* Push NULL onto the stack for using it in END_FINALLY,
-               POP_FINALLY, WITH_CLEANUP_START and WITH_CLEANUP_FINISH.
-             */
-            PUSH(NULL);
-            FAST_DISPATCH();
-        }
-
         PREDICTED(END_FINALLY);
         TARGET(END_FINALLY) {
             /* At the top of the stack are 1 or 6 values:
@@ -2935,8 +2927,7 @@ main_loop:
             DISPATCH();
         }
 
-        TARGET(SETUP_EXCEPT)
-        TARGET(SETUP_FINALLY) {
+        TARGET(SETUP_EXCEPT) {
             /* NOTE: If you add any new block-setup opcodes that
                are not try/except/finally handlers, you may need
                to update the PyGen_NeedsFinalizing() function.
@@ -2944,6 +2935,13 @@ main_loop:
 
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
+            DISPATCH();
+        }
+
+        TARGET(SETUP_FINALLY) {
+            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+                               STACK_LEVEL());
+            PUSH(NULL);
             DISPATCH();
         }
 
@@ -2973,10 +2971,11 @@ main_loop:
 
         TARGET(SETUP_ASYNC_WITH) {
             PyObject *res = POP();
-            /* Setup the finally block before pushing the result
+            /* Setup the finally block before pushing NULL and the result
                of __aenter__ on the stack. */
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
+            PUSH(NULL);
             PUSH(res);
             DISPATCH();
         }
@@ -3000,11 +2999,12 @@ main_loop:
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;
-            /* Setup the finally block before pushing the result
+            /* Setup the finally block before pushing NULL and the result
                of __enter__ on the stack. */
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
 
+            PUSH(NULL);
             PUSH(res);
             DISPATCH();
         }

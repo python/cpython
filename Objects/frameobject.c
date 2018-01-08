@@ -264,7 +264,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
         while ((f->f_stacktop - f->f_valuestack) > b->b_level) {
             PyObject *v = (*--f->f_stacktop);
-            Py_DECREF(v);
+            Py_XDECREF(v);
         }
     }
     /* Pop the iterators of any 'for' loop we're jumping out of. */

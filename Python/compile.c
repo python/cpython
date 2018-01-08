@@ -942,10 +942,10 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
 
         case SETUP_WITH:
-            /* 1 in the normal flow.
+            /* 2 in the normal flow.
              * Restore the stack position and push 6 values before jumping to
              * the handler if an exception be raised. */
-            return jump ? 6 : 1;
+            return jump > 0 ? 6 : 7;
         case WITH_CLEANUP_START:
             return 2; /* or 1, depending on TOS */
         case WITH_CLEANUP_FINISH:
@@ -1038,16 +1038,15 @@ stack_effect(int opcode, int oparg, int jump)
 
         /* Exception handling */
         case SETUP_EXCEPT:
-        case SETUP_FINALLY:
             /* 0 in the normal flow.
              * Restore the stack position and push 6 values before jumping to
              * the handler if an exception be raised. */
             return jump ? 6 : 0;
-        case BEGIN_FINALLY:
-            /* Actually pushes 1 value, but count 6 for balancing with
-             * END_FINALLY and POP_FINALLY.
-             * This is the main reason of using this opcode instead of
-             * "LOAD_CONST None". */
+        case SETUP_FINALLY:
+            /* Actually pushes 1 value in the normal flow, but count 6
+             * for balancing with END_FINALLY and POP_FINALLY.
+             * Restore the stack position and push 6 values before jumping to
+             * the handler if an exception be raised. */
             return 6;
         case CALL_FINALLY:
             return jump ? 1 : 0;
@@ -1097,11 +1096,11 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_AWAITABLE:
             return 0;
         case SETUP_ASYNC_WITH:
-            /* 0 in the normal flow.
+            /* 1 in the normal flow.
              * Restore the stack position to the position before the result
              * of __aenter__ and push 6 values before jumping to the handler
              * if an exception be raised. */
-            return jump ? -1 + 6 : 0;
+            return jump > 0 ? -1 + 6 : 6;
         case BEFORE_ASYNC_WITH:
             return 1;
         case GET_AITER:
@@ -1518,6 +1517,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case FINALLY_TRY:
             ADDOP(c, POP_BLOCK);
+            ADDOP_I(c, POP_FINALLY, preserve_tos);
             ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
             return 1;
 
@@ -1525,9 +1525,8 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
         case ASYNC_WITH:
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP(c, ROT_THREE);
             }
-            ADDOP(c, BEGIN_FINALLY);
             ADDOP(c, WITH_CLEANUP_START);
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
@@ -1539,16 +1538,16 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             return 1;
 
         case HANDLER_CLEANUP:
+            if (info->fb_exit) {
+                ADDOP(c, POP_BLOCK);
+                ADDOP_I(c, POP_FINALLY, preserve_tos);
+            }
             if (preserve_tos) {
                 ADDOP(c, ROT_FOUR);
             }
+            ADDOP(c, POP_EXCEPT);
             if (info->fb_exit) {
-                ADDOP(c, POP_BLOCK);
-                ADDOP(c, POP_EXCEPT);
                 ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
-            }
-            else {
-                ADDOP(c, POP_EXCEPT);
             }
             return 1;
     }
@@ -2627,7 +2626,6 @@ compiler_continue(struct compiler *c)
         SETUP_FINALLY           L
         <code for body>
         POP_BLOCK
-        BEGIN_FINALLY
     L:
         <code for finalbody>
         END_FINALLY
@@ -2640,10 +2638,9 @@ compiler_continue(struct compiler *c)
    SETUP_FINALLY:
     Pushes the current value stack level and the label
     onto the block stack.
-   POP_BLOCK:
-    Pops en entry from the block stack.
-   BEGIN_FINALLY
     Pushes NULL onto the value stack.
+   POP_BLOCK:
+    Pops an entry from the block stack.
    END_FINALLY:
     Pops 1 (NULL or int) or 6 entries from the *value* stack and restore
     the raised and the caught exceptions they specify.
@@ -2678,7 +2675,6 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, FINALLY_TRY, body);
 
     /* `finally` block */
@@ -2793,7 +2789,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* second # body */
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             ADDOP(c, POP_BLOCK);
-            ADDOP(c, BEGIN_FINALLY);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
 
             /* finally: */
@@ -4370,7 +4365,6 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, ASYNC_WITH, block);
 
     compiler_use_next_block(c, finally);
@@ -4458,7 +4452,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, WITH, block);
 
     compiler_use_next_block(c, finally);
