@@ -2184,7 +2184,8 @@ _Pickler_write_bytes(PicklerObject *self,
         /* Stream write the payload into the file without going through the
            output buffer. */
         if (payload == NULL) {
-            payload = mem = PyBytes_FromStringAndSize(data, data_size);
+            payload = mem = PyMemoryView_FromMemory((char *) data, data_size,
+                                                    PyBUF_READ);
             if (payload == NULL) {
                 return -1;
             }
