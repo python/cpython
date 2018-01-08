@@ -356,49 +356,27 @@ Miscellaneous options
    :option:`-W` options are ignored (though, a warning message is printed about
    invalid options when the first warning is issued).
 
-   Warnings can also be controlled from within a Python program using the
+   Warnings can also be controlled using the :envvar:`PYTHONWARNINGS`
+   environment variable and from within a Python program using the
    :mod:`warnings` module.
 
-   The simplest form of argument is one of the following action strings (or a
-   unique abbreviation):
+   The simplest settings apply a particular action unconditionally to all
+   warnings emitted by a process (even those that are otherwise ignored by
+   default)::
 
-   ``ignore``
-      Ignore all warnings.
-   ``default``
-      Explicitly request the default behavior (printing each warning once per
-      source line).
-   ``all``
-      Print a warning each time it occurs (this may generate many messages if a
-      warning is triggered repeatedly for the same source line, such as inside a
-      loop).
-   ``module``
-      Print each warning only the first time it occurs in each module.
-   ``once``
-      Print each warning only the first time it occurs in the program.
-   ``error``
-      Raise an exception instead of printing a warning message.
+       -Wdefault  # Warn once per call location
+       -Werror    # Convert to exceptions
+       -Walways   # Warn every time
+       -Wmodule   # Warn once per calling module
+       -Wonce     # Warn once per Python process
+       -Wignore   # Never warn
 
-   The full form of argument is::
+   The action names can be abbreviated as desired (e.g. ``-Wi``, ``-Wd``,
+   ``-Wa``, ``-We``) and the interpreter will resolve them to the appropriate
+   action name.
 
-       action:message:category:module:line
-
-   Here, *action* is as explained above but only applies to messages that match
-   the remaining fields.  Empty fields match all values; trailing empty fields
-   may be omitted.  The *message* field matches the start of the warning message
-   printed; this match is case-insensitive.  The *category* field matches the
-   warning category.  This must be a class name; the match tests whether the
-   actual warning category of the message is a subclass of the specified warning
-   category.  The full class name must be given.  The *module* field matches the
-   (fully-qualified) module name; this match is case-sensitive.  The *line*
-   field matches the line number, where zero matches all line numbers and is
-   thus equivalent to an omitted line number.
-
-   .. seealso::
-      :mod:`warnings` -- the warnings module
-
-      :pep:`230` -- Warning framework
-
-      :envvar:`PYTHONWARNINGS`
+   See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
+   details.
 
 
 .. cmdoption:: -x
@@ -659,7 +637,23 @@ conflict.
 
    This is equivalent to the :option:`-W` option. If set to a comma
    separated string, it is equivalent to specifying :option:`-W` multiple
-   times.
+   times, with filters later in the list taking precedence over those earlier
+   in the list.
+
+   The simplest settings apply a particular action unconditionally to all
+   warnings emitted by a process (even those that are otherwise ignored by
+   default)::
+
+       PYTHONWARNINGS=default  # Warn once per call location
+       PYTHONWARNINGS=error    # Convert to exceptions
+       PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=module   # Warn once per calling module
+       PYTHONWARNINGS=once     # Warn once per Python process
+       PYTHONWARNINGS=ignore   # Never warn
+
+   See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
+   details.
+
 
 .. envvar:: PYTHONFAULTHANDLER
 
