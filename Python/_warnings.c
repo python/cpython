@@ -11,9 +11,10 @@ MODULE_NAME " provides basic warning filtering support.\n"
 
 _Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
+#ifndef Py_DEBUG
+_Py_IDENTIFIER(default);
 _Py_IDENTIFIER(ignore);
-_Py_IDENTIFIER(error);
-_Py_static_string(PyId_default, "default");
+#endif
 
 static int
 check_matched(PyObject *obj, PyObject *arg)
@@ -22,8 +23,20 @@ check_matched(PyObject *obj, PyObject *arg)
     _Py_IDENTIFIER(match);
     int rc;
 
+    /* A 'None' filter always matches */
     if (obj == Py_None)
         return 1;
+
+    /* An internal plain text default filter must match exactly */
+    if (PyUnicode_CheckExact(obj)) {
+        int cmp_result = PyUnicode_Compare(obj, arg);
+        if (cmp_result == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        return !cmp_result;
+    }
+
+    /* Otherwise assume a regex filter and call its match() method */
     result = _PyObject_CallMethodIdObjArgs(obj, &PyId_match, arg, NULL);
     if (result == NULL)
         return -1;
@@ -1156,73 +1169,57 @@ static PyMethodDef warnings_functions[] = {
 };
 
 
+#ifndef Py_DEBUG
 static PyObject *
-create_filter(PyObject *category, _Py_Identifier *id)
+create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
 {
+    PyObject *modname_obj = NULL;
     PyObject *action_str = _PyUnicode_FromId(id);
     if (action_str == NULL) {
         return NULL;
     }
 
+    /* Default to "no module name" for initial filter set */
+    if (modname != NULL) {
+        modname_obj = PyUnicode_InternFromString(modname);
+        if (modname_obj == NULL) {
+            return NULL;
+        }
+    } else {
+        modname_obj = Py_None;
+    }
+
     /* This assumes the line number is zero for now. */
     return PyTuple_Pack(5, action_str, Py_None,
-                        category, Py_None, _PyLong_Zero);
+                        category, modname_obj, _PyLong_Zero);
 }
+#endif
+
 
 static PyObject *
-init_filters(const _PyCoreConfig *config)
+init_filters(void)
 {
-    int dev_mode = config->dev_mode;
-
-    Py_ssize_t count = 2;
-    if (dev_mode) {
-        count++;
-    }
-#ifndef Py_DEBUG
-    if (!dev_mode) {
-        count += 3;
-    }
-#endif
-    PyObject *filters = PyList_New(count);
-    if (filters == NULL)
+#ifdef Py_DEBUG
+    /* Py_DEBUG builds show all warnings by default */
+    return PyList_New(0);
+#else
+    /* Other builds ignore a number of warning categories by default */
+    PyObject *filters = PyList_New(5);
+    if (filters == NULL) {
         return NULL;
+    }
 
     size_t pos = 0;  /* Post-incremented in each use. */
-#ifndef Py_DEBUG
-    if (!dev_mode) {
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_DeprecationWarning, &PyId_ignore));
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_ImportWarning, &PyId_ignore));
-    }
-#endif
-
-    _Py_Identifier *bytes_action;
-    if (Py_BytesWarningFlag > 1)
-        bytes_action = &PyId_error;
-    else if (Py_BytesWarningFlag)
-        bytes_action = &PyId_default;
-    else
-        bytes_action = &PyId_ignore;
-    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
-                    bytes_action));
-
-    _Py_Identifier *resource_action;
-    /* resource usage warnings are enabled by default in pydebug mode */
-#ifdef Py_DEBUG
-    resource_action = &PyId_default;
-#else
-    resource_action = (dev_mode ? &PyId_default: &PyId_ignore);
-#endif
-    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
-                    resource_action));
-
-    if (dev_mode) {
-        PyList_SET_ITEM(filters, pos++,
-                        create_filter(PyExc_Warning, &PyId_default));
-    }
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_DeprecationWarning, &PyId_default, "__main__"));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_DeprecationWarning, &PyId_ignore, NULL));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore, NULL));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ImportWarning, &PyId_ignore, NULL));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ResourceWarning, &PyId_ignore, NULL));
 
     for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {
@@ -1230,8 +1227,8 @@ init_filters(const _PyCoreConfig *config)
             return NULL;
         }
     }
-
     return filters;
+#endif
 }
 
 static struct PyModuleDef warningsmodule = {
@@ -1247,8 +1244,8 @@ static struct PyModuleDef warningsmodule = {
 };
 
 
-PyObject*
-_PyWarnings_InitWithConfig(const _PyCoreConfig *config)
+PyMODINIT_FUNC
+_PyWarnings_Init(void)
 {
     PyObject *m;
 
@@ -1257,7 +1254,7 @@ _PyWarnings_InitWithConfig(const _PyCoreConfig *config)
         return NULL;
 
     if (_PyRuntime.warnings.filters == NULL) {
-        _PyRuntime.warnings.filters = init_filters(config);
+        _PyRuntime.warnings.filters = init_filters();
         if (_PyRuntime.warnings.filters == NULL)
             return NULL;
     }
@@ -1287,13 +1284,4 @@ _PyWarnings_InitWithConfig(const _PyCoreConfig *config)
 
     _PyRuntime.warnings.filters_version = 0;
     return m;
-}
-
-
-PyMODINIT_FUNC
-_PyWarnings_Init(void)
-{
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
-    const _PyCoreConfig *config = &interp->core_config;
-    return _PyWarnings_InitWithConfig(config);
 }

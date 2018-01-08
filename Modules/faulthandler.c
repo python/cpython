@@ -1040,7 +1040,7 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
     }
 
     /* wait until the thread completes: it will never occur, since Py_FatalError()
-       exits the process immedialty. */
+       exits the process immediately. */
     PyThread_acquire_lock(lock, WAIT_LOCK);
     PyThread_release_lock(lock);
     PyThread_free_lock(lock);

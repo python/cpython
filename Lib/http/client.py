@@ -538,7 +538,7 @@ class HTTPResponse(io.BufferedIOBase):
         chunk_left = self.chunk_left
         if not chunk_left: # Can be 0 or None
             if chunk_left is not None:
-                # We are at the end of chunk. dicard chunk end
+                # We are at the end of chunk, discard chunk end
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
             try:
                 chunk_left = self._read_next_chunk_size()

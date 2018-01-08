@@ -5053,6 +5053,77 @@ recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
+/* Test PEP 560 */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *item;
+} PyGenericAliasObject;
+
+static void
+generic_alias_dealloc(PyGenericAliasObject *self)
+{
+    Py_CLEAR(self->item);
+}
+
+static PyObject *
+generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
+{
+    return PyTuple_Pack(1, self->item);
+}
+
+static PyMethodDef generic_alias_methods[] = {
+    {"__mro_entries__", (PyCFunction) generic_alias_mro_entries, METH_O, NULL},
+    {NULL}  /* sentinel */
+};
+
+PyTypeObject GenericAlias_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "GenericAlias",
+    sizeof(PyGenericAliasObject),
+    0,
+    .tp_dealloc = (destructor)generic_alias_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_methods = generic_alias_methods,
+};
+
+static PyObject *
+generic_alias_new(PyObject *item)
+{
+    PyGenericAliasObject *o = PyObject_New(PyGenericAliasObject, &GenericAlias_Type);
+    if (o == NULL) {
+        return NULL;
+    }
+    Py_INCREF(item);
+    o->item = item;
+    return (PyObject*) o;
+}
+
+typedef struct {
+    PyObject_HEAD
+} PyGenericObject;
+
+static PyObject *
+generic_class_getitem(PyObject *type, PyObject *item)
+{
+    return generic_alias_new(item);
+}
+
+static PyMethodDef generic_methods[] = {
+    {"__class_getitem__", generic_class_getitem, METH_O|METH_CLASS, NULL},
+    {NULL}  /* sentinel */
+};
+
+PyTypeObject Generic_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "Generic",
+    sizeof(PyGenericObject),
+    0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_methods = generic_methods,
+};
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -5093,6 +5164,16 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    if (PyType_Ready(&GenericAlias_Type) < 0)
+        return NULL;
+    Py_INCREF(&GenericAlias_Type);
+    PyModule_AddObject(m, "GenericAlias", (PyObject *)&GenericAlias_Type);
+
+    if (PyType_Ready(&Generic_Type) < 0)
+        return NULL;
+    Py_INCREF(&Generic_Type);
+    PyModule_AddObject(m, "Generic", (PyObject *)&Generic_Type);
 
     PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
     if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {

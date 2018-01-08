@@ -2042,21 +2042,40 @@ class AbstractPickleTests(unittest.TestCase):
     def check_frame_opcodes(self, pickled):
         """
         Check the arguments of FRAME opcodes in a protocol 4+ pickle.
+
+        Note that binary objects that are larger than FRAME_SIZE_TARGET are not
+        framed by default and are therefore considered a frame by themselves in
+        the following consistency check.
         """
-        frame_opcode_size = 9
-        last_arg = last_pos = None
+        last_arg = last_pos = last_frame_opcode_size = None
+        frameless_opcode_sizes = {
+            'BINBYTES': 5,
+            'BINUNICODE': 5,
+            'BINBYTES8': 9,
+            'BINUNICODE8': 9,
+        }
         for op, arg, pos in pickletools.genops(pickled):
-            if op.name != 'FRAME':
+            if op.name in frameless_opcode_sizes:
+                if len(arg) > self.FRAME_SIZE_TARGET:
+                    frame_opcode_size = frameless_opcode_sizes[op.name]
+                    arg = len(arg)
+                else:
+                    continue
+            elif op.name == 'FRAME':
+                frame_opcode_size = 9
+            else:
                 continue
+
             if last_pos is not None:
                 # The previous frame's size should be equal to the number
                 # of bytes up to the current frame.
-                frame_size = pos - last_pos - frame_opcode_size
+                frame_size = pos - last_pos - last_frame_opcode_size
                 self.assertEqual(frame_size, last_arg)
             last_arg, last_pos = arg, pos
+            last_frame_opcode_size = frame_opcode_size
         # The last frame's size should be equal to the number of bytes up
         # to the pickle's end.
-        frame_size = len(pickled) - last_pos - frame_opcode_size
+        frame_size = len(pickled) - last_pos - last_frame_opcode_size
         self.assertEqual(frame_size, last_arg)
 
     def test_framing_many_objects(self):
@@ -2076,15 +2095,36 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_framing_large_objects(self):
         N = 1024 * 1024
-        obj = [b'x' * N, b'y' * N, b'z' * N]
+        obj = [b'x' * N, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
-                pickled = self.dumps(obj, proto)
-                unpickled = self.loads(pickled)
-                self.assertEqual(obj, unpickled)
-                n_frames = count_opcode(pickle.FRAME, pickled)
-                self.assertGreaterEqual(n_frames, len(obj))
-                self.check_frame_opcodes(pickled)
+            for fast in [True, False]:
+                with self.subTest(proto=proto, fast=fast):
+                    if hasattr(self, 'pickler'):
+                        buf = io.BytesIO()
+                        pickler = self.pickler(buf, protocol=proto)
+                        pickler.fast = fast
+                        pickler.dump(obj)
+                        pickled = buf.getvalue()
+                    elif fast:
+                        continue
+                    else:
+                        # Fallback to self.dumps when fast=False and
+                        # self.pickler is not available.
+                        pickled = self.dumps(obj, proto)
+                    unpickled = self.loads(pickled)
+                    # More informative error message in case of failure.
+                    self.assertEqual([len(x) for x in obj],
+                                     [len(x) for x in unpickled])
+                    # Perform full equality check if the lengths match.
+                    self.assertEqual(obj, unpickled)
+                    n_frames = count_opcode(pickle.FRAME, pickled)
+                    if not fast:
+                        # One frame per memoize for each large object.
+                        self.assertGreaterEqual(n_frames, len(obj))
+                    else:
+                        # One frame at the beginning and one at the end.
+                        self.assertGreaterEqual(n_frames, 2)
+                    self.check_frame_opcodes(pickled)
 
     def test_optional_frames(self):
         if pickle.HIGHEST_PROTOCOL < 4:
@@ -2124,6 +2164,71 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertLess(count_opcode(pickle.FRAME, some_frames_pickle),
                             count_opcode(pickle.FRAME, pickled))
             self.assertEqual(obj, self.loads(some_frames_pickle))
+
+    def test_framed_write_sizes_with_delayed_writer(self):
+        class ChunkAccumulator:
+            """Accumulate pickler output in a list of raw chunks."""
+
+            def __init__(self):
+                self.chunks = []
+
+            def write(self, chunk):
+                self.chunks.append(chunk)
+
+            def concatenate_chunks(self):
+                # Some chunks can be memoryview instances, we need to convert
+                # them to bytes to be able to call join
+                return b"".join([c.tobytes() if hasattr(c, 'tobytes') else c
+                                 for c in self.chunks])
+
+        small_objects = [(str(i).encode('ascii'), i % 42, {'i': str(i)})
+                         for i in range(int(1e4))]
+
+        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+            # Protocol 4 packs groups of small objects into frames and issues
+            # calls to write only once or twice per frame:
+            # The C pickler issues one call to write per-frame (header and
+            # contents) while Python pickler issues two calls to write: one for
+            # the frame header and one for the frame binary contents.
+            writer = ChunkAccumulator()
+            self.pickler(writer, proto).dump(small_objects)
+
+            # Actually read the binary content of the chunks after the end
+            # of the call to dump: ant memoryview passed to write should not
+            # be released otherwise this delayed access would not be possible.
+            pickled = writer.concatenate_chunks()
+            reconstructed = self.loads(pickled)
+            self.assertEqual(reconstructed, small_objects)
+            self.assertGreater(len(writer.chunks), 1)
+
+            n_frames, remainder = divmod(len(pickled), self.FRAME_SIZE_TARGET)
+            if remainder > 0:
+                n_frames += 1
+
+            # There should be at least one call to write per frame
+            self.assertGreaterEqual(len(writer.chunks), n_frames)
+
+            # but not too many either: there can be one for the proto,
+            # one per-frame header and one per frame for the actual contents.
+            self.assertGreaterEqual(2 * n_frames + 1, len(writer.chunks))
+
+            chunk_sizes = [len(c) for c in writer.chunks[:-1]]
+            large_sizes = [s for s in chunk_sizes
+                           if s >= self.FRAME_SIZE_TARGET]
+            small_sizes = [s for s in chunk_sizes
+                           if s < self.FRAME_SIZE_TARGET]
+
+            # Large chunks should not be too large:
+            for chunk_size in large_sizes:
+                self.assertGreater(2 * self.FRAME_SIZE_TARGET, chunk_size)
+
+            last_chunk_size = len(writer.chunks[-1])
+            self.assertGreater(2 * self.FRAME_SIZE_TARGET, last_chunk_size)
+
+            # Small chunks (if any) should be very small
+            # (only proto and frame headers)
+            for chunk_size in small_sizes:
+                self.assertGreaterEqual(9, chunk_size)
 
     def test_nested_names(self):
         global Nested

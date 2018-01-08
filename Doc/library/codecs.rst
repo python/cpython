@@ -977,10 +977,14 @@ e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
 
    Some common encodings can bypass the codecs lookup machinery to
    improve performance.  These optimization opportunities are only
-   recognized by CPython for a limited set of aliases: utf-8, utf8,
-   latin-1, latin1, iso-8859-1, mbcs (Windows only), ascii, utf-16,
-   and utf-32.  Using alternative spellings for these encodings may
-   result in slower execution.
+   recognized by CPython for a limited set of (case insensitive)
+   aliases: utf-8, utf8, latin-1, latin1, iso-8859-1, iso8859-1, mbcs
+   (Windows only), ascii, us-ascii, utf-16, utf16, utf-32, utf32, and
+   the same using underscores instead of dashes. Using alternative
+   aliases for these encodings may result in slower execution.
+
+   .. versionchanged:: 3.6
+      Optimization opportunity recognized for us-ascii.
 
 Many of the character sets support the same languages. They vary in individual
 characters (e.g. whether the EURO SIGN is supported or not), and in the

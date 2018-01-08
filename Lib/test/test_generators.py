@@ -1458,7 +1458,7 @@ class Knights:
             # If we create a square with one exit, we must visit it next;
             # else somebody else will have to visit it, and since there's
             # only one adjacent, there won't be a way to leave it again.
-            # Finelly, if we create more than one free square with a
+            # Finally, if we create more than one free square with a
             # single exit, we can only move to one of them next, leaving
             # the other one a dead end.
             ne0 = ne1 = 0

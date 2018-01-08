@@ -1,0 +1,1 @@
+Abort asyncio SSLProtocol connection if handshake not complete within 10s

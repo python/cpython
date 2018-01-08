@@ -191,7 +191,7 @@ static void compiler_pop_fblock(struct compiler *, enum fblocktype,
 static int compiler_in_loop(struct compiler *);
 
 static int inplace_binop(struct compiler *, operator_ty);
-static int expr_constant(struct compiler *, expr_ty);
+static int expr_constant(expr_ty);
 
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
@@ -330,6 +330,10 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
     c.c_nestlevel = 0;
+
+    if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
+        goto finally;
+    }
 
     c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
     if (c.c_st == NULL) {
@@ -2208,7 +2212,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(c, s->v.If.test);
+    constant = expr_constant(s->v.If.test);
     /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
@@ -2354,7 +2358,7 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(c, s->v.While.test);
+    int constant = expr_constant(s->v.While.test);
 
     if (constant == 0) {
         if (s->v.While.orelse)
@@ -3085,13 +3089,13 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     PyObject *mangled;
     /* XXX AugStore isn't used anywhere! */
 
-    mangled = _Py_Mangle(c->u->u_private, name);
-    if (!mangled)
-        return 0;
-
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
+
+    mangled = _Py_Mangle(c->u->u_private, name);
+    if (!mangled)
+        return 0;
 
     op = 0;
     optype = OP_NAME;
@@ -3416,35 +3420,32 @@ static int
 compiler_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
-    basicblock *cleanup = NULL;
 
-    /* XXX the logic can be cleaned up for 1 or multiple comparisons */
     VISIT(c, expr, e->v.Compare.left);
-    n = asdl_seq_LEN(e->v.Compare.ops);
-    assert(n > 0);
-    if (n > 1) {
-        cleanup = compiler_new_block(c);
+    assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
+    n = asdl_seq_LEN(e->v.Compare.ops) - 1;
+    if (n == 0) {
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
+        ADDOP_I(c, COMPARE_OP,
+            cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, 0))));
+    }
+    else {
+        basicblock *cleanup = compiler_new_block(c);
         if (cleanup == NULL)
             return 0;
-        VISIT(c, expr,
-            (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
-    }
-    for (i = 1; i < n; i++) {
-        ADDOP(c, DUP_TOP);
-        ADDOP(c, ROT_THREE);
-        ADDOP_I(c, COMPARE_OP,
-            cmpop((cmpop_ty)(asdl_seq_GET(
-                                      e->v.Compare.ops, i - 1))));
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, cleanup);
-        NEXT_BLOCK(c);
-        if (i < (n - 1))
+        for (i = 0; i < n; i++) {
             VISIT(c, expr,
                 (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-    }
-    VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n - 1));
-    ADDOP_I(c, COMPARE_OP,
-           cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, n - 1))));
-    if (n > 1) {
+            ADDOP(c, DUP_TOP);
+            ADDOP(c, ROT_THREE);
+            ADDOP_I(c, COMPARE_OP,
+                cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, i))));
+            ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, cleanup);
+            NEXT_BLOCK(c);
+        }
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+        ADDOP_I(c, COMPARE_OP,
+            cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, n))));
         basicblock *end = compiler_new_block(c);
         if (end == NULL)
             return 0;
@@ -4126,37 +4127,12 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
  */
 
 static int
-expr_constant(struct compiler *c, expr_ty e)
+expr_constant(expr_ty e)
 {
-    const char *id;
-    switch (e->kind) {
-    case Ellipsis_kind:
-        return 1;
-    case Constant_kind:
-        return PyObject_IsTrue(e->v.Constant.value);
-    case Num_kind:
-        return PyObject_IsTrue(e->v.Num.n);
-    case Str_kind:
-        return PyObject_IsTrue(e->v.Str.s);
-    case Name_kind:
-        /* optimize away names that can't be reassigned */
-        id = PyUnicode_AsUTF8(e->v.Name.id);
-        if (id && strcmp(id, "__debug__") == 0)
-            return !c->c_optimize;
-        return -1;
-    case NameConstant_kind: {
-        PyObject *o = e->v.NameConstant.value;
-        if (o == Py_None)
-            return 0;
-        else if (o == Py_True)
-            return 1;
-        else if (o == Py_False)
-            return 0;
+    if (is_const(e)) {
+        return PyObject_IsTrue(get_const_value(e));
     }
-    /* fall through */
-    default:
-        return -1;
-    }
+    return -1;
 }
 
 

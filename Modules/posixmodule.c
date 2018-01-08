@@ -1860,6 +1860,7 @@ static PyStructSequence_Field statvfs_result_fields[] = {
     {"f_favail", },
     {"f_flag",   },
     {"f_namemax",},
+    {"f_fsid",   },
     {0}
 };
 
@@ -2827,6 +2828,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                                                    dir_fd, follow_symlinks);
             else
                 follow_symlinks_specified("chmod", follow_symlinks);
+            return NULL;
         }
         else
 #endif
@@ -7768,7 +7770,7 @@ os_dup_impl(PyObject *module, int fd)
 
 
 /*[clinic input]
-os.dup2
+os.dup2 -> int
     fd: int
     fd2: int
     inheritable: bool=True
@@ -7776,9 +7778,9 @@ os.dup2
 Duplicate file descriptor.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
-/*[clinic end generated code: output=db832a2d872ccc5f input=76e96f511be0352f]*/
+/*[clinic end generated code: output=bc059d34a73404d1 input=c3cddda8922b038d]*/
 {
     int res;
 #if defined(HAVE_DUP3) && \
@@ -7787,8 +7789,10 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     int dup3_works = -1;
 #endif
 
-    if (fd < 0 || fd2 < 0)
-        return posix_error();
+    if (fd < 0 || fd2 < 0) {
+        posix_error();
+        return -1;
+    }
 
     /* dup2() can fail with EINTR if the target FD is already open, because it
      * then has to be closed. See os_close_impl() for why we don't handle EINTR
@@ -7800,13 +7804,16 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     res = dup2(fd, fd2);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
-    if (res < 0)
-        return posix_error();
+    if (res < 0) {
+        posix_error();
+        return -1;
+    }
+    res = fd2; // msvcrt dup2 returns 0 on success.
 
     /* Character files like console cannot be make non-inheritable */
     if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
         close(fd2);
-        return NULL;
+        return -1;
     }
 
 #elif defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC)
@@ -7816,8 +7823,10 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     else
         res = dup2(fd, fd2);
     Py_END_ALLOW_THREADS
-    if (res < 0)
-        return posix_error();
+    if (res < 0) {
+        posix_error();
+        return -1;
+    }
 
 #else
 
@@ -7829,8 +7838,10 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
         if (res < 0) {
             if (dup3_works == -1)
                 dup3_works = (errno != ENOSYS);
-            if (dup3_works)
-                return posix_error();
+            if (dup3_works) {
+                posix_error();
+                return -1;
+            }
         }
     }
 
@@ -7840,12 +7851,14 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
         Py_BEGIN_ALLOW_THREADS
         res = dup2(fd, fd2);
         Py_END_ALLOW_THREADS
-        if (res < 0)
-            return posix_error();
+        if (res < 0) {
+            posix_error();
+            return -1;
+        }
 
         if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
             close(fd2);
-            return NULL;
+            return -1;
         }
 #ifdef HAVE_DUP3
     }
@@ -7853,7 +7866,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 
 #endif
 
-    Py_RETURN_NONE;
+    return res;
 }
 
 
@@ -9322,6 +9335,13 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
                               PyLong_FromLongLong((long long) st.f_favail));
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
+#endif
+/* The _ALL_SOURCE feature test macro defines f_fsid as a structure
+ * (issue #32390). */
+#if defined(_AIX) && defined(_ALL_SOURCE)
+    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+#else
+    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
 #endif
     if (PyErr_Occurred()) {
         Py_DECREF(v);
@@ -13003,6 +13023,9 @@ all_ins(PyObject *m)
 #endif
 #if HAVE_DECL_RTLD_DEEPBIND
     if (PyModule_AddIntMacro(m, RTLD_DEEPBIND)) return -1;
+#endif
+#if HAVE_DECL_RTLD_MEMBER
+    if (PyModule_AddIntMacro(m, RTLD_MEMBER)) return -1;
 #endif
 
 #ifdef HAVE_GETRANDOM_SYSCALL

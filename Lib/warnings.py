@@ -519,34 +519,13 @@ except ImportError:
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    dev_mode = ('dev' in getattr(sys, '_xoptions', {}))
-    py_debug = hasattr(sys, 'gettotalrefcount')
-
-    if not(dev_mode or py_debug):
-        silence = [ImportWarning, PendingDeprecationWarning]
-        silence.append(DeprecationWarning)
-        for cls in silence:
-            simplefilter("ignore", category=cls)
-
-    bytes_warning = sys.flags.bytes_warning
-    if bytes_warning > 1:
-        bytes_action = "error"
-    elif bytes_warning:
-        bytes_action = "default"
-    else:
-        bytes_action = "ignore"
-    simplefilter(bytes_action, category=BytesWarning, append=1)
-
-    # resource usage warnings are enabled by default in pydebug mode
-    if dev_mode or py_debug:
-        resource_action = "default"
-    else:
-        resource_action = "ignore"
-    simplefilter(resource_action, category=ResourceWarning, append=1)
-
-    if dev_mode:
-        simplefilter("default", category=Warning, append=1)
-
-    del py_debug, dev_mode
+    # Several warning categories are ignored by default in regular builds
+    if not hasattr(sys, 'gettotalrefcount'):
+        filterwarnings("default", category=DeprecationWarning,
+                       module="__main__", append=1)
+        simplefilter("ignore", category=DeprecationWarning, append=1)
+        simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+        simplefilter("ignore", category=ImportWarning, append=1)
+        simplefilter("ignore", category=ResourceWarning, append=1)
 
 del _warnings_defaults

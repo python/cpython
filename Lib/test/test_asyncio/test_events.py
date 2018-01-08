@@ -27,24 +27,11 @@ if sys.platform != 'win32':
 
 import asyncio
 from asyncio import coroutines
+from asyncio import events
 from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
-
-
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), filename)
-    if os.path.isfile(fullname):
-        return fullname
-    raise FileNotFoundError(filename)
+from test import support
 
 
 def osx_tiger():
@@ -65,21 +52,18 @@ def _test_get_event_loop_new_process__sub_proc():
     return loop.run_until_complete(doit())
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
-PEERCERT = {'serialNumber': 'B09264B1F2DA21D1',
-            'version': 1,
-            'subject': ((('countryName', 'XY'),),
-                    (('localityName', 'Castle Anthrax'),),
-                    (('organizationName', 'Python Software Foundation'),),
-                    (('commonName', 'localhost'),)),
-            'issuer': ((('countryName', 'XY'),),
-                    (('organizationName', 'Python Software Foundation CA'),),
-                    (('commonName', 'our-ca-server'),)),
-            'notAfter': 'Nov 13 19:47:07 2022 GMT',
-            'notBefore': 'Jan  4 19:47:07 2013 GMT'}
+class CoroLike:
+    def send(self, v):
+        pass
+
+    def throw(self, *exc):
+        pass
+
+    def close(self):
+        pass
+
+    def __await__(self):
+        pass
 
 
 class MyBaseProto(asyncio.Protocol):
@@ -838,18 +822,20 @@ class EventLoopTestsMixin:
                 'SSL not supported with proactor event loops before Python 3.5'
                 )
 
-        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        server_context.load_cert_chain(ONLYCERT, ONLYKEY)
-        if hasattr(server_context, 'check_hostname'):
-            server_context.check_hostname = False
-        server_context.verify_mode = ssl.CERT_NONE
-
-        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        if hasattr(server_context, 'check_hostname'):
-            client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
+        server_context = test_utils.simple_server_sslcontext()
+        client_context = test_utils.simple_client_sslcontext()
 
         self.test_connect_accepted_socket(server_context, client_context)
+
+    def test_connect_accepted_socket_ssl_timeout_for_plain_socket(self):
+        sock = socket.socket()
+        self.addCleanup(sock.close)
+        coro = self.loop.connect_accepted_socket(
+            MyProto, sock, ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
 
     @mock.patch('asyncio.base_events.socket')
     def create_server_multiple_hosts(self, family, hosts, mock_sock):
@@ -1023,7 +1009,7 @@ class EventLoopTestsMixin:
     def test_create_server_ssl(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, ONLYCERT, ONLYKEY)
+            lambda: proto, test_utils.ONLYCERT, test_utils.ONLYKEY)
 
         f_c = self.loop.create_connection(MyBaseProto, host, port,
                                           ssl=test_utils.dummy_ssl_context())
@@ -1056,7 +1042,7 @@ class EventLoopTestsMixin:
     def test_create_unix_server_ssl(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
-            lambda: proto, ONLYCERT, ONLYKEY)
+            lambda: proto, test_utils.ONLYCERT, test_utils.ONLYKEY)
 
         f_c = self.loop.create_unix_connection(
             MyBaseProto, path, ssl=test_utils.dummy_ssl_context(),
@@ -1086,7 +1072,7 @@ class EventLoopTestsMixin:
     def test_create_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
@@ -1116,7 +1102,7 @@ class EventLoopTestsMixin:
     def test_create_unix_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
@@ -1145,13 +1131,13 @@ class EventLoopTestsMixin:
     def test_create_server_ssl_match_failed(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
         sslcontext_client.verify_mode = ssl.CERT_REQUIRED
         sslcontext_client.load_verify_locations(
-            cafile=SIGNING_CA)
+            cafile=test_utils.SIGNING_CA)
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
@@ -1174,12 +1160,12 @@ class EventLoopTestsMixin:
     def test_create_unix_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
         sslcontext_client.verify_mode = ssl.CERT_REQUIRED
-        sslcontext_client.load_verify_locations(cafile=SIGNING_CA)
+        sslcontext_client.load_verify_locations(cafile=test_utils.SIGNING_CA)
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
@@ -1199,12 +1185,12 @@ class EventLoopTestsMixin:
     def test_create_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
         sslcontext_client.verify_mode = ssl.CERT_REQUIRED
-        sslcontext_client.load_verify_locations(cafile=SIGNING_CA)
+        sslcontext_client.load_verify_locations(cafile=test_utils.SIGNING_CA)
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
@@ -1216,7 +1202,7 @@ class EventLoopTestsMixin:
 
         # extra info is available
         self.check_ssl_extra_info(client,peername=(host, port),
-                                  peercert=PEERCERT)
+                                  peercert=test_utils.PEERCERT)
 
         # close connection
         proto.transport.close()
@@ -1701,7 +1687,7 @@ class EventLoopTestsMixin:
     def test_prompt_cancellation(self):
         r, w = socket.socketpair()
         r.setblocking(False)
-        f = self.loop.sock_recv(r, 1)
+        f = self.loop.create_task(self.loop.sock_recv(r, 1))
         ov = getattr(f, 'ov', None)
         if ov is not None:
             self.assertTrue(ov.pending)
@@ -1818,11 +1804,16 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.call_at(self.loop.time() + .0, func)
         with self.assertRaises(RuntimeError):
-            self.loop.run_in_executor(None, func)
-        with self.assertRaises(RuntimeError):
             self.loop.create_task(coro)
         with self.assertRaises(RuntimeError):
             self.loop.add_signal_handler(signal.SIGTERM, func)
+
+        # run_in_executor test is tricky: the method is a coroutine,
+        # but run_until_complete cannot be called on closed loop.
+        # Thus iterate once explicitly.
+        with self.assertRaises(RuntimeError):
+            it = self.loop.run_in_executor(None, func).__await__()
+            next(it)
 
 
 class SubprocessTestsMixin:
@@ -2145,23 +2136,6 @@ else:
             asyncio.set_child_watcher(None)
             super().tearDown()
 
-        def test_get_event_loop_new_process(self):
-            # Issue bpo-32126: The multiprocessing module used by
-            # ProcessPoolExecutor is not functional when the
-            # multiprocessing.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
-            async def main():
-                pool = concurrent.futures.ProcessPoolExecutor()
-                result = await self.loop.run_in_executor(
-                    pool, _test_get_event_loop_new_process__sub_proc)
-                pool.shutdown()
-                return result
-
-            self.unpatch_get_running_loop()
-
-            self.assertEqual(
-                self.loop.run_until_complete(main()),
-                'hello')
 
     if hasattr(selectors, 'KqueueSelector'):
         class KqueueEventLoopTests(UnixEventLoopTestsMixin,
@@ -2370,20 +2344,7 @@ class HandleTests(test_utils.TestCase):
         # collections.abc.Coroutine, but lack cr_core or gi_code attributes
         # (such as ones compiled with Cython).
 
-        class Coro:
-            def send(self, v):
-                pass
-
-            def throw(self, *exc):
-                pass
-
-            def close(self):
-                pass
-
-            def __await__(self):
-                pass
-
-        coro = Coro()
+        coro = CoroLike()
         coro.__name__ = 'AAA'
         self.assertTrue(asyncio.iscoroutine(coro))
         self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
@@ -2394,10 +2355,10 @@ class HandleTests(test_utils.TestCase):
         coro.cr_running = True
         self.assertEqual(coroutines._format_coroutine(coro), 'BBB() running')
 
-        coro = Coro()
+        coro = CoroLike()
         # Some coroutines might not have '__name__', such as
         # built-in async_gen.asend().
-        self.assertEqual(coroutines._format_coroutine(coro), 'Coro()')
+        self.assertEqual(coroutines._format_coroutine(coro), 'CoroLike()')
 
 
 class TimerTests(unittest.TestCase):
@@ -2722,17 +2683,98 @@ class PolicyTests(unittest.TestCase):
         self.assertIs(policy, asyncio.get_event_loop_policy())
         self.assertIsNot(policy, old_policy)
 
+
+class GetEventLoopTestsMixin:
+
+    _get_running_loop_impl = None
+    _set_running_loop_impl = None
+    get_running_loop_impl = None
+    get_event_loop_impl = None
+
+    def setUp(self):
+        self._get_running_loop_saved = events._get_running_loop
+        self._set_running_loop_saved = events._set_running_loop
+        self.get_running_loop_saved = events.get_running_loop
+        self.get_event_loop_saved = events.get_event_loop
+
+        events._get_running_loop = type(self)._get_running_loop_impl
+        events._set_running_loop = type(self)._set_running_loop_impl
+        events.get_running_loop = type(self).get_running_loop_impl
+        events.get_event_loop = type(self).get_event_loop_impl
+
+        asyncio._get_running_loop = type(self)._get_running_loop_impl
+        asyncio._set_running_loop = type(self)._set_running_loop_impl
+        asyncio.get_running_loop = type(self).get_running_loop_impl
+        asyncio.get_event_loop = type(self).get_event_loop_impl
+
+        super().setUp()
+
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+        if sys.platform != 'win32':
+            watcher = asyncio.SafeChildWatcher()
+            watcher.attach_loop(self.loop)
+            asyncio.set_child_watcher(watcher)
+
+    def tearDown(self):
+        try:
+            if sys.platform != 'win32':
+                asyncio.set_child_watcher(None)
+
+            super().tearDown()
+        finally:
+            self.loop.close()
+            asyncio.set_event_loop(None)
+
+            events._get_running_loop = self._get_running_loop_saved
+            events._set_running_loop = self._set_running_loop_saved
+            events.get_running_loop = self.get_running_loop_saved
+            events.get_event_loop = self.get_event_loop_saved
+
+            asyncio._get_running_loop = self._get_running_loop_saved
+            asyncio._set_running_loop = self._set_running_loop_saved
+            asyncio.get_running_loop = self.get_running_loop_saved
+            asyncio.get_event_loop = self.get_event_loop_saved
+
+    if sys.platform != 'win32':
+
+        def test_get_event_loop_new_process(self):
+            # Issue bpo-32126: The multiprocessing module used by
+            # ProcessPoolExecutor is not functional when the
+            # multiprocessing.synchronize module cannot be imported.
+            support.import_module('multiprocessing.synchronize')
+
+            async def main():
+                pool = concurrent.futures.ProcessPoolExecutor()
+                result = await self.loop.run_in_executor(
+                    pool, _test_get_event_loop_new_process__sub_proc)
+                pool.shutdown()
+                return result
+
+            self.assertEqual(
+                self.loop.run_until_complete(main()),
+                'hello')
+
     def test_get_event_loop_returns_running_loop(self):
+        class TestError(Exception):
+            pass
+
         class Policy(asyncio.DefaultEventLoopPolicy):
             def get_event_loop(self):
-                raise NotImplementedError
-
-        loop = None
+                raise TestError
 
         old_policy = asyncio.get_event_loop_policy()
         try:
             asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
+
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+            asyncio.set_event_loop(None)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 self.assertIs(asyncio.get_running_loop(), None)
             self.assertIs(asyncio._get_running_loop(), None)
@@ -2743,6 +2785,15 @@ class PolicyTests(unittest.TestCase):
                 self.assertIs(asyncio._get_running_loop(), loop)
 
             loop.run_until_complete(func())
+
+            asyncio.set_event_loop(loop)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
+            asyncio.set_event_loop(None)
+            with self.assertRaises(TestError):
+                asyncio.get_event_loop()
+
         finally:
             asyncio.set_event_loop_policy(old_policy)
             if loop is not None:
@@ -2752,6 +2803,58 @@ class PolicyTests(unittest.TestCase):
             self.assertIs(asyncio.get_running_loop(), None)
 
         self.assertIs(asyncio._get_running_loop(), None)
+
+
+class TestPyGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
+
+    _get_running_loop_impl = events._py__get_running_loop
+    _set_running_loop_impl = events._py__set_running_loop
+    get_running_loop_impl = events._py_get_running_loop
+    get_event_loop_impl = events._py_get_event_loop
+
+
+try:
+    import _asyncio  # NoQA
+except ImportError:
+    pass
+else:
+
+    class TestCGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
+
+        _get_running_loop_impl = events._c__get_running_loop
+        _set_running_loop_impl = events._c__set_running_loop
+        get_running_loop_impl = events._c_get_running_loop
+        get_event_loop_impl = events._c_get_event_loop
+
+
+class TestServer(unittest.TestCase):
+
+    def test_get_loop(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+        proto = MyProto(loop)
+        server = loop.run_until_complete(loop.create_server(lambda: proto, '0.0.0.0', 0))
+        self.assertEqual(server.get_loop(), loop)
+        server.close()
+        loop.run_until_complete(server.wait_closed())
+
+
+class TestAbstractServer(unittest.TestCase):
+
+    def test_close(self):
+        with self.assertRaises(NotImplementedError):
+            events.AbstractServer().close()
+
+    def test_wait_closed(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        with self.assertRaises(NotImplementedError):
+            loop.run_until_complete(events.AbstractServer().wait_closed())
+
+    def test_get_loop(self):
+        with self.assertRaises(NotImplementedError):
+            events.AbstractServer().get_loop()
 
 
 if __name__ == '__main__':
