@@ -99,7 +99,7 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html"
 def _quote_html(html):
     return html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-class HTTPServer(SocketServer.TCPServer):
+class HTTPServer(SocketServer.ThreadingTCPServer):
 
     allow_reuse_address = 1    # Seems to make sense in testing environment
 
