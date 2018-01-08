@@ -2164,7 +2164,7 @@ _Pickler_write_bytes(PicklerObject *self,
         if (_Pickler_CommitFrame(self)) {
             return -1;
         }
-        /* Disable frameing temporarily */
+        /* Disable framing temporarily */
         self->framing = 0;
     }
 
