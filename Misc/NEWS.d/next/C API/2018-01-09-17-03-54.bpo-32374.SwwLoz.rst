@@ -1,0 +1,2 @@
+Document that m_traverse for multi-phase initialized modules can be called
+with m_state=NULL, and add a sanity check

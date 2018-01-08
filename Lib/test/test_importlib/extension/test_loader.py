@@ -270,6 +270,10 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     @unittest.skipIf(not hasattr(sys, 'gettotalrefcount'),
             '--with-pydebug has to be enabled for this test')
     def test_bad_traverse(self):
+        ''' Issue #32374: Test that traverse fails when accessing per-module
+            state before Py_mod_exec was executed.
+            (Multiphase initialization modules only)
+        '''
         script = """if True:
                 import importlib.util as util
                 spec = util.find_spec('_testmultiphase')
