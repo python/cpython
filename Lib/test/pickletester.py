@@ -2097,20 +2097,18 @@ class AbstractPickleTests(unittest.TestCase):
         N = 1024 * 1024
         obj = [b'x' * N, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
-            for fast in [True, False]:
+            for fast in [True, False, None]:
                 with self.subTest(proto=proto, fast=fast):
-                    if hasattr(self, 'pickler'):
+                    if fast is None:
+                        pickled = self.dumps(obj, proto)
+                    else:
+                        if not hasattr(self, 'pickler'):
+                            continue
                         buf = io.BytesIO()
                         pickler = self.pickler(buf, protocol=proto)
                         pickler.fast = fast
                         pickler.dump(obj)
                         pickled = buf.getvalue()
-                    elif fast:
-                        continue
-                    else:
-                        # Fallback to self.dumps when fast=False and
-                        # self.pickler is not available.
-                        pickled = self.dumps(obj, proto)
                     unpickled = self.loads(pickled)
                     # More informative error message in case of failure.
                     self.assertEqual([len(x) for x in obj],
