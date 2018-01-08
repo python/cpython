@@ -815,7 +815,7 @@ unicodedata.UCD.is_normalized
 
     self: self
     form: unicode
-    unistr as input: object(subclass_of='&PyUnicode_Type')
+    unistr as input: unicode
     /
 
 Return whether the Unicode string unistr is in the normal form 'form'.
@@ -826,7 +826,7 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 static PyObject *
 unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
                                    PyObject *input)
-/*[clinic end generated code: output=11e5a3694e723ca5 input=8117c96615f79ca2]*/
+/*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
 {
     if (PyUnicode_READY(input) == -1) {
         return NULL;

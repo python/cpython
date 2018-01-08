@@ -306,8 +306,8 @@ unicodedata_UCD_is_normalized(PyObject *self, PyObject *const *args, Py_ssize_t 
     PyObject *form;
     PyObject *input;
 
-    if (!_PyArg_ParseStack(args, nargs, "UO!:is_normalized",
-        &form, &PyUnicode_Type, &input)) {
+    if (!_PyArg_ParseStack(args, nargs, "UU:is_normalized",
+        &form, &input)) {
         goto exit;
     }
     return_value = unicodedata_UCD_is_normalized_impl(self, form, input);
@@ -411,4 +411,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d2ce735cfce19f7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2c5fbf597c18f6b8 input=a9049054013a1b77]*/
