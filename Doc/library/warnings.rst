@@ -51,8 +51,17 @@ Warning Categories
 ------------------
 
 There are a number of built-in exceptions that represent warning categories.
-This categorization is useful to be able to filter out groups of warnings.  The
-following warnings category classes are currently defined:
+This categorization is useful to be able to filter out groups of warnings.
+
+While these are technically
+:ref:`built-in exceptions <warning-categories-as-exceptions>`, they are
+documented here, because conceptually they belong to the warnings mechanism.
+
+User code can define additional warning categories by subclassing one of the
+standard warning categories.  A warning category must always be a subclass of
+the :exc:`Warning` class.
+
+The following warnings category classes are currently defined:
 
 .. tabularcolumns:: |l|p{0.6\linewidth}|
 
@@ -66,7 +75,9 @@ following warnings category classes are currently defined:
 | :exc:`UserWarning`               | The default category for :func:`warn`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`DeprecationWarning`        | Base category for warnings about deprecated   |
-|                                  | features (ignored by default).                |
+|                                  | features when those warnings are intended for |
+|                                  | other Python developers (ignored by default,  |
+|                                  | unless triggered by code in ``__main__``).    |
 +----------------------------------+-----------------------------------------------+
 | :exc:`SyntaxWarning`             | Base category for warnings about dubious      |
 |                                  | syntactic features.                           |
@@ -74,8 +85,10 @@ following warnings category classes are currently defined:
 | :exc:`RuntimeWarning`            | Base category for warnings about dubious      |
 |                                  | runtime features.                             |
 +----------------------------------+-----------------------------------------------+
-| :exc:`FutureWarning`             | Base category for warnings about constructs   |
-|                                  | that will change semantically in the future.  |
+| :exc:`FutureWarning`             | Base category for warnings about deprecated   |
+|                                  | features when those warnings are intended for |
+|                                  | end users of applications that are written in |
+|                                  | Python.                                       |
 +----------------------------------+-----------------------------------------------+
 | :exc:`PendingDeprecationWarning` | Base category for warnings about features     |
 |                                  | that will be deprecated in the future         |
@@ -95,13 +108,12 @@ following warnings category classes are currently defined:
 |                                  | resource usage.                               |
 +----------------------------------+-----------------------------------------------+
 
-
-While these are technically built-in exceptions, they are documented here,
-because conceptually they belong to the warnings mechanism.
-
-User code can define additional warning categories by subclassing one of the
-standard warning categories.  A warning category must always be a subclass of
-the :exc:`Warning` class.
+.. versionchanged:: 3.7
+  Previously :exc:`DeprecationWarning` and :exc:`FutureWarning` were
+  distinguished based on whether a feature was being removed entirely or
+  changing its behaviour. They are now distinguished based on their
+  intended audience and the way they're handled by the default warnings
+  filters.
 
 
 .. _warning-filter:
@@ -114,7 +126,7 @@ into errors (raising an exception).
 
 Conceptually, the warnings filter maintains an ordered list of filter
 specifications; any specific warning is matched against each filter
-specification in the list in turn until a match is found; the match determines
+specification in the list in turn until a match is found; the filter determines
 the disposition of the match.  Each entry is a tuple of the form (*action*,
 *message*, *category*, *module*, *lineno*), where:
 
@@ -123,19 +135,19 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
   | Value         | Disposition                                  |
   +===============+==============================================+
+  | ``"default"`` | print the first occurrence of matching       |
+  |               | warnings for each location (module +         |
+  |               | line number) where the warning is issued     |
+  +---------------+----------------------------------------------+
   | ``"error"``   | turn matching warnings into exceptions       |
   +---------------+----------------------------------------------+
   | ``"ignore"``  | never print matching warnings                |
   +---------------+----------------------------------------------+
   | ``"always"``  | always print matching warnings               |
   +---------------+----------------------------------------------+
-  | ``"default"`` | print the first occurrence of matching       |
-  |               | warnings for each location where the warning |
-  |               | is issued                                    |
-  +---------------+----------------------------------------------+
   | ``"module"``  | print the first occurrence of matching       |
   |               | warnings for each module where the warning   |
-  |               | is issued                                    |
+  |               | is issued (regardless of line number)        |
   +---------------+----------------------------------------------+
   | ``"once"``    | print only the first occurrence of matching  |
   |               | warnings, regardless of location             |
@@ -157,32 +169,118 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 Since the :exc:`Warning` class is derived from the built-in :exc:`Exception`
 class, to turn a warning into an error we simply raise ``category(message)``.
 
+If a warning is reported and doesn't match any registered filter then the
+"default" action is applied (hence its name).
+
+
+.. _describing-warning-filters:
+
+Describing Warning Filters
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The warnings filter is initialized by :option:`-W` options passed to the Python
-interpreter command line.  The interpreter saves the arguments for all
-:option:`-W` options without interpretation in ``sys.warnoptions``; the
-:mod:`warnings` module parses these when it is first imported (invalid options
-are ignored, after printing a message to ``sys.stderr``).
+interpreter command line and the :envvar:`PYTHONWARNINGS` environment variable.
+The interpreter saves the arguments for all supplied entries without
+interpretation in ``sys.warnoptions``; the :mod:`warnings` module parses these
+when it is first imported (invalid options are ignored, after printing a
+message to ``sys.stderr``).
+
+Individual warnings filters are specified as a sequence of fields separated by
+colons::
+
+   action:message:category:module:line
+
+The meaning of each of these fields is as described in :ref:`warning-filter`.
+When listing multiple filters on a single line (as for
+:envvar:`PYTHONWARNINGS`), the individual filters are separated by commas,and
+the filters listed later take precedence over those listed before them (as
+they're applied left-to-right, and the most recently applied filters take
+precedence over earlier ones).
+
+Commonly used warning filters apply to either all warnings, warnings in a
+particular category, or warnings raised by particular modules or packages.
+Some examples::
+
+   default                      # Show all warnings (even those ignored by default)
+   ignore                       # Ignore all warnings
+   error                        # Convert all warnings to errors
+   error::ResourceWarning       # Treat ResourceWarning messages as errors
+   default::DeprecationWarning  # Show DeprecationWarning messages
+   ignore,default:::mymodule    # Only report warnings triggered by "mymodule"
+   error:::mymodule[.*]         # Convert warnings to errors in "mymodule"
+                                # and any subpackages of "mymodule"
 
 
-Default Warning Filters
-~~~~~~~~~~~~~~~~~~~~~~~
+.. _default-warning-filter:
+
+Default Warning Filter
+~~~~~~~~~~~~~~~~~~~~~~
 
 By default, Python installs several warning filters, which can be overridden by
-the command-line options passed to :option:`-W` and calls to
-:func:`filterwarnings`.
+the :option:`-W` command-line option, the :envvar:`PYTHONWARNINGS` environment
+variable and calls to :func:`filterwarnings`.
 
-* :exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`, and
-  :exc:`ImportWarning` are ignored.
+In regular release builds, the default warning filter has the following entries
+(in order of precedence)::
 
-* :exc:`BytesWarning` is ignored unless the :option:`-b` option is given once or
-  twice; in this case this warning is either printed (``-b``) or turned into an
-  exception (``-bb``).
+    default::DeprecationWarning:__main__
+    ignore::DeprecationWarning
+    ignore::PendingDeprecationWarning
+    ignore::ImportWarning
+    ignore::ResourceWarning
 
-* :exc:`ResourceWarning` is ignored unless Python was built in debug mode.
+In debug builds, the list of default warning filters is empty.
 
 .. versionchanged:: 3.2
    :exc:`DeprecationWarning` is now ignored by default in addition to
    :exc:`PendingDeprecationWarning`.
+
+.. versionchanged:: 3.7
+  :exc:`DeprecationWarning` is once again shown by default when triggered
+  directly by code in ``__main__``.
+
+.. versionchanged:: 3.7
+  :exc:`BytesWarning` no longer appears in the default filter list and is
+  instead configured via :data:`sys.warnoptions` when :option:`-b` is specified
+  twice.
+
+
+.. _warning-disable:
+
+Overriding the default filter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Developers of applications written in Python may wish to hide *all* Python level
+warnings from their users by default, and only display them when running tests
+or otherwise working on the application. The :data:`sys.warnoptions` attribute
+used to pass filter configurations to the interpreter can be used as a marker to
+indicate whether or not warnings should be disabled::
+
+    import sys
+
+    if not sys.warnoptions:
+        import warnings
+        warnings.simplefilter("ignore")
+
+Developers of test runners for Python code are advised to instead ensure that
+*all* warnings are displayed by default for the code under test, using code
+like::
+
+    import sys
+
+    if not sys.warnoptions:
+        import os, warnings
+        warnings.simplefilter("default") # Change the filter in this process
+        os.environ["PYTHONWARNINGS"] = "default" # Also affect subprocesses
+
+Finally, developers of interactive shells that run user code in a namespace
+other than ``__main__`` are advised to ensure that :exc:`DeprecationWarning`
+messages are made visible by default, using code like the following (where
+``user_ns`` is the module used to execute code entered interactively)::
+
+    import warnings
+    warnings.filterwarnings("default", category=DeprecationWarning,
+                                       module=user_ns.get("__name__"))
 
 
 .. _warning-suppress:
@@ -191,7 +289,8 @@ Temporarily Suppressing Warnings
 --------------------------------
 
 If you are using code that you know will raise a warning, such as a deprecated
-function, but do not want to see the warning, then it is possible to suppress
+function, but do not want to see the warning (even when warnings have been
+explicitly configured via the command line), then it is possible to suppress
 the warning using the :class:`catch_warnings` context manager::
 
     import warnings
@@ -261,38 +360,30 @@ entries from the warnings list before each new operation).
 
 .. _warning-ignored:
 
-Updating Code For New Versions of Python
-----------------------------------------
+Updating Code For New Versions of Dependencies
+----------------------------------------------
 
-Warnings that are only of interest to the developer are ignored by default. As
-such you should make sure to test your code with typically ignored warnings
-made visible. You can do this from the command-line by passing :option:`-Wd <-W>`
-to the interpreter (this is shorthand for :option:`!-W default`).  This enables
-default handling for all warnings, including those that are ignored by default.
-To change what action is taken for encountered warnings you simply change what
-argument is passed to :option:`-W`, e.g. :option:`!-W error`. See the
-:option:`-W` flag for more details on what is possible.
+Warning categories that are primarily of interest to Python developers (rather
+than end users of applications written in Python) are ignored by default.
 
-To programmatically do the same as :option:`!-Wd`, use::
+Notably, this "ignored by default" list includes :exc:`DeprecationWarning`
+(for every module except ``__main__``), which means developers should make sure
+to test their code with typically ignored warnings made visible in order to
+receive timely notifications of future breaking API changes (whether in the
+standard library or third party packages).
 
-  warnings.simplefilter('default')
+In the ideal case, the code will have a suitable test suite, and the test runner
+will take care of implicitly enabling all warnings when running tests
+(the test runner provided by the :mod:`unittest` module does this).
 
-Make sure to execute this code as soon as possible. This prevents the
-registering of what warnings have been raised from unexpectedly influencing how
-future warnings are treated.
-
-Having certain warnings ignored by default is done to prevent a user from
-seeing warnings that are only of interest to the developer. As you do not
-necessarily have control over what interpreter a user uses to run their code,
-it is possible that a new version of Python will be released between your
-release cycles.  The new interpreter release could trigger new warnings in your
-code that were not there in an older interpreter, e.g.
-:exc:`DeprecationWarning` for a module that you are using. While you as a
-developer want to be notified that your code is using a deprecated module, to a
-user this information is essentially noise and provides no benefit to them.
-
-The :mod:`unittest` module has been also updated to use the ``'default'``
-filter while running tests.
+In less ideal cases, applications can be checked for use of deprecated
+interfaces by passing :option:`-Wd <-W>` to the Python interpreter (this is
+shorthand for :option:`!-W default`) or setting ``PYTHONWARNINGS=default`` in
+the environment. This enables default handling for all warnings, including those
+that are ignored by default. To change what action is taken for encountered
+warnings you can change what argument is passed to :option:`-W` (e.g.
+:option:`!-W error`). See the :option:`-W` flag for more details on what is
+possible.
 
 
 .. _warning-functions:
