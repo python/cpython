@@ -737,6 +737,16 @@ regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen
 ############################################################################
 # Special rules for object files
 
+DATE_FMT = %b %d %Y
+TIME_FMT = %H:%M:%S
+ifdef SOURCE_DATE_EPOCH
+	BUILD_DATE ?= $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)"  2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u "+$(DATE_FMT)")
+	BUILD_TIME ?= $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(TIME_FMT)"  2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(TIME_FMT)" 2>/dev/null || date -u "+$(TIME_FMT)")
+else
+	BUILD_DATE ?= $(shell date "+$(DATE_FMT)")
+	BUILD_TIME ?= $(shell date "+$(TIME_FMT)")
+endif
+
 Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(OBJECT_OBJS) \
 		$(PYTHON_OBJS) \
@@ -744,6 +754,8 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(MODOBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
 	$(CC) -c $(PY_CORE_CFLAGS) \
+	      -DDATE="\"$(BUILD_DATE)\"" \
+	      -DTIME="\"$(BUILD_TIME)\"" \
 	      -DGITVERSION="\"`LC_ALL=C $(GITVERSION)`\"" \
 	      -DGITTAG="\"`LC_ALL=C $(GITTAG)`\"" \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \

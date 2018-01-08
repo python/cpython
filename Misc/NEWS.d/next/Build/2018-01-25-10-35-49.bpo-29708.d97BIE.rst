@@ -1,0 +1,4 @@
+Honor the SOURCE_DATE_EPOCH environment variable during build to produce
+reproducible binaries. This means using the SOURCE_DATE_EPOCH value to
+compute values for the DATE and TIME variables, that will be used in
+Modules/getbuildinfo.c
