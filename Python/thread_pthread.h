@@ -530,7 +530,7 @@ _pythread_pthread_set_stacksize(size_t size)
  * The difference here is that instead of using NATIVE_TSS_KEY_T
  * (i.e. pthread_key_t) directly, the Python 2 API uses int for keys.
  * (On many systems, pthread_key_t *is* int, but on some it isn't.)
- * So, we keep an array to mapping these ints to pthread_key_t*.
+ * So, we keep an array mapping these ints to pthread_key_t.
  */
 
 struct _Py_tss_t {
@@ -552,12 +552,11 @@ int
 PyThread_create_key(void)
 {
     unsigned int i;
-    /* Find first unused entry */
     if (next_key == keys_allocated) {
         /* grow array */
         keys_allocated = keys_allocated * 2 + 1;
         /* XXX: this array is never freed.
-        /* The common implementation leaks some memory as well
+         * The common implementation leaks some memory as well
          * (see PyThread_delete_key in thread.c),
          * so let's assume programs don't create/destroy TLS keys en masse
          */
