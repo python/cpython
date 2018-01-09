@@ -1,0 +1,1 @@
+Use native thread-local storage on pthread systems to avoid locking issues around fork()
