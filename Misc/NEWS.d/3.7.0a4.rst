@@ -172,7 +172,7 @@ Add a new UTF-8 mode: implementation of the :pep:`540`.
 .. nonce: G8fqb6
 .. section: Core and Builtins
 
-PEP 560: Add support for __mro_entries__ and __class_getitem__. Implemented
+:pep:`560`: Add support for ``__mro_entries__`` and ``__class_getitem__``. Implemented
 by Ivan Levkivskyi.
 
 ..
@@ -182,7 +182,7 @@ by Ivan Levkivskyi.
 .. nonce: ucKjvw
 .. section: Core and Builtins
 
-PEP 562: Add support for module ``__getattr__`` and ``__dir__``. Implemented
+:pep:`562`: Add support for module ``__getattr__`` and ``__dir__``. Implemented
 by Ivan Levkivskyi.
 
 ..
@@ -201,7 +201,7 @@ The `atexit` module now has its callback stored per interpreter.
 .. nonce: JWf_Im
 .. section: Core and Builtins
 
-Implement PEP 552 (Deterministic pycs). Python now supports invalidating
+Implement :pep:`552` (Deterministic pycs). Python now supports invalidating
 bytecode cache files bashed on a source content hash rather than source
 last-modified time.
 
