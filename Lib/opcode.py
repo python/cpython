@@ -60,6 +60,7 @@ def_op('ROT_TWO', 2)
 def_op('ROT_THREE', 3)
 def_op('DUP_TOP', 4)
 def_op('DUP_TOP_TWO', 5)
+def_op('ROT_FOUR', 6)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -113,10 +114,8 @@ def_op('INPLACE_RSHIFT', 76)
 def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
-def_op('BREAK_LOOP', 80)
 def_op('WITH_CLEANUP_START', 81)
 def_op('WITH_CLEANUP_FINISH', 82)
-
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
@@ -158,9 +157,7 @@ jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 
-jabs_op('CONTINUE_LOOP', 119)   # Target address
-jrel_op('SETUP_LOOP', 120)      # Distance to target address
-jrel_op('SETUP_EXCEPT', 121)    # ""
+jrel_op('SETUP_EXCEPT', 121)    # Distance to target address
 jrel_op('SETUP_FINALLY', 122)   # ""
 
 def_op('LOAD_FAST', 124)        # Local variable number
@@ -214,5 +211,7 @@ def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
+jrel_op('CALL_FINALLY', 162)
+def_op('POP_FINALLY', 163)
 
 del def_op, name_op, jrel_op, jabs_op
