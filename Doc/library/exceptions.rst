@@ -661,11 +661,13 @@ depending on the system error code.
    :pep:`3151` - Reworking the OS and IO exception hierarchy
 
 
+.. _warning-categories-as-exceptions:
+
 Warnings
 --------
 
-The following exceptions are used as warning categories; see the :mod:`warnings`
-module for more information.
+The following exceptions are used as warning categories; see the
+:ref:`warning-categories` documentation for more details.
 
 .. exception:: Warning
 
@@ -679,12 +681,14 @@ module for more information.
 
 .. exception:: DeprecationWarning
 
-   Base class for warnings about deprecated features.
+   Base class for warnings about deprecated features when those warnings are
+   intended for other Python developers.
 
 
 .. exception:: PendingDeprecationWarning
 
-   Base class for warnings about features which will be deprecated in the future.
+   Base class for warnings about features which will be deprecated in the
+   future.
 
 
 .. exception:: SyntaxWarning
@@ -699,8 +703,8 @@ module for more information.
 
 .. exception:: FutureWarning
 
-   Base class for warnings about constructs that will change semantically in the
-   future.
+   Base class for warnings about deprecated features when those warnings are
+   intended for end users of applications that are written in Python.
 
 
 .. exception:: ImportWarning
@@ -720,7 +724,8 @@ module for more information.
 
 .. exception:: ResourceWarning
 
-   Base class for warnings related to resource usage.
+   Base class for warnings related to resource usage. Ignored by the default
+   warning filters.
 
    .. versionadded:: 3.2
 
