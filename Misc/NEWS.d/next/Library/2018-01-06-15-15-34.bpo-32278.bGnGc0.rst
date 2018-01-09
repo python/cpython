@@ -1,2 +1,0 @@
-Make type information optional on dataclasses.make_dataclass(). If omitted,
-the string 'typing.Any' is used.
