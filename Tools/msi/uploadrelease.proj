@@ -21,7 +21,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <File Include="$(OutputPath)\*.msi;$(OutputPath)\*.msu">
+        <File Include="$(OutputPath)\*.msi">
             <CopyTo>$(MSITarget)</CopyTo>
         </File>
         <File Include="$(OutputPath)\*.exe;$(OutputPath)\*.zip">

@@ -60,11 +60,6 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <Link>
-      <BaseAddress>0x1e1F0000</BaseAddress>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_testbuffer.c" />
   </ItemGroup>

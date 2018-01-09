@@ -76,7 +76,6 @@
     <Link>
       <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(PySourcePath)PC\external\$(PlatformToolset)\$(ArchName)</AdditionalLibraryDirectories>
-      <BaseAddress>0x1e000000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -62,7 +62,6 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <BaseAddress>0x1D110000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
