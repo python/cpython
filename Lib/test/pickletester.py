@@ -2097,11 +2097,14 @@ class AbstractPickleTests(unittest.TestCase):
         N = 1024 * 1024
         obj = [b'x' * N, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
-            for fast in [True, False, None]:
+            for fast in [False, True]:
                 with self.subTest(proto=proto, fast=fast):
-                    if fast is None:
+                    if not fast:
+                        # fast=False by default.
+                        # This covers in-memory pickling with pickle.dumps().
                         pickled = self.dumps(obj, proto)
                     else:
+                        # Pickler is required when fast=True.
                         if not hasattr(self, 'pickler'):
                             continue
                         buf = io.BytesIO()
