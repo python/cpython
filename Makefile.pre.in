@@ -1250,9 +1250,26 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/circular_imports/subpkg \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		importlib \
+		test/test_importlib \
+		test/test_importlib/builtin \
+		test/test_importlib/data01 \
+		test/test_importlib/data01/subdirectory \
+		test/test_importlib/data02 \
+		test/test_importlib/data02/one \
+		test/test_importlib/data02/two \
+		test/test_importlib/data03 \
+		test/test_importlib/data03/namespace \
+		test/test_importlib/data03/namespace/portion1 \
+		test/test_importlib/data03/namespace/portion2 \
+		test/test_importlib/extension \
+		test/test_importlib/frozen \
+		test/test_importlib/import_ \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
+		test/test_importlib/namespace_pkgs/module_and_namespace_package \
+		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg/foo \
 		test/test_importlib/namespace_pkgs/portion1 \
@@ -1268,8 +1285,9 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/namespace_pkgs/project3 \
 		test/test_importlib/namespace_pkgs/project3/parent \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
-                test/test_importlib/namespace_pkgs/module_and_namespace_package \
-                test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
+		test/test_importlib/source \
+		test/test_importlib/zipdata01 \
+		test/test_importlib/zipdata02 \
 		asyncio \
 		test/test_asyncio \
 		collections concurrent concurrent/futures encodings \
@@ -1284,9 +1302,6 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		ctypes ctypes/test ctypes/macholib \
 		idlelib idlelib/Icons idlelib/idle_test \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
-		importlib test/test_importlib test/test_importlib/builtin \
-		test/test_importlib/extension test/test_importlib/frozen \
-		test/test_importlib/import_ test/test_importlib/source \
 		test/test_tools test/test_warnings test/test_warnings/data \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
