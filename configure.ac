@@ -2696,13 +2696,14 @@ void *x = uuid_generate_time_safe
 )
 
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-AC_MSG_CHECKING(for RFC4122 - uuid support on AIX)
+# FreeBSD and OpenBSD provides support as well
+AC_MSG_CHECKING(for uuid_create)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
 #ifndef uuid_create
 void *x = uuid_create
 #endif
 ]])],
-  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists. AIX support for uuid:RFC4122)
+  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )
