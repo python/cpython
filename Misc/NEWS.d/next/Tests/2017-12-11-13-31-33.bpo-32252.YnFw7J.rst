@@ -1,2 +1,0 @@
-Fix faulthandler_suppress_crash_report() used to prevent core dump files
-when testing crashes. getrlimit() returns zero on success.

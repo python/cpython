@@ -1,3 +1,0 @@
-The ``fpectl`` library has been removed. It was never enabled by default,
-never worked correctly on x86-64, and it changed the Python ABI in ways that
-caused unexpected breakage of C extensions.

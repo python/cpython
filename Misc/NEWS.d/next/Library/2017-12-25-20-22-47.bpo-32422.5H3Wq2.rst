@@ -1,2 +1,0 @@
-``functools.lru_cache`` uses less memory (3 words for each cached key) and
-takes about 1/3 time for cyclic GC.
