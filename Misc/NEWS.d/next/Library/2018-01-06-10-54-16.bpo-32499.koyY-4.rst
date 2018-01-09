@@ -1,2 +1,0 @@
-Add dataclasses.is_dataclass(obj), which returns True if obj is a dataclass
-or an instance of one.

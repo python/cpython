@@ -1,4 +1,0 @@
-``-b`` and ``-bb`` now inject ``'default::BytesWarning'`` and
-``error::BytesWarning`` entries into ``sys.warnoptions``, ensuring that they
-take precedence over any other warning filters configured via the ``-W``
-option or the ``PYTHONWARNINGS`` environment variable.

@@ -1,1 +1,0 @@
-Fix the compilation failure on AIX after the f_fsid field has been added to the object returned by os.statvfs() (issue #32143). Original patch by Michael Felt.

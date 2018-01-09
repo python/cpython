@@ -1,2 +1,0 @@
-Move constant folding from bytecode layer to AST layer.
-Original patch by Eugene Toder.
