@@ -632,7 +632,6 @@ EXT_SUFFIX
 SOABI
 LIBC
 LIBM
-HAVE_DYNAMIC_LOADING
 HAVE_GETHOSTBYNAME
 HAVE_GETHOSTBYNAME_R
 HAVE_GETHOSTBYNAME_R_3_ARG
@@ -641,6 +640,7 @@ HAVE_GETHOSTBYNAME_R_6_ARG
 LIBOBJS
 TRUE
 MACHDEP_OBJS
+HAVE_DYNAMIC_LOADING
 DYNLOADFILE
 DLINCLDIR
 DTRACE_OBJS
@@ -2927,7 +2927,7 @@ $as_echo_n "checking for python interpreter for cross build... " >&6; }
 	    if $interp -c "import sys;sys.exit(not '.'.join(str(n) for n in sys.version_info[:2]) == '$PACKAGE_VERSION')"; then
 	        break
 	    fi
- 
+            interp=
 	done
         if test x$interp = x; then
 	    as_fn_error $? "python$PACKAGE_VERSION interpreter not found" "$LINENO" 5
@@ -3259,8 +3259,8 @@ then
 		ac_sys_system=Cygwin
 		;;
 	*-*-vxworks*)
-		ac_sys_system=VxWorks
-		;;
+	        ac_sys_system=VxWorks
+	        ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3306,7 +3306,7 @@ if test "$cross_compiling" = yes; then
 		_host_cpu=
 		;;
 	*-*-vxworks*)
-		_host_cpu=
+		_host_cpu=$host_cpu
 		;;
 	*)
 		# for now, limit cross builds to known configurations
@@ -3326,10 +3326,6 @@ fi
 # wildcard, and that the wildcard does not include future systems
 # (which may remove their limitations).
 case $ac_sys_system/$ac_sys_release in
-  # On VxWorks if _XOPEN_SOURCE is defined the socket.h header 
-  # has undefined types.
-  VxWorks* )
-    define_xopen_source=no;;
   # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
   # even though select is a POSIX function. Reported by J. Ribbens.
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
@@ -3401,6 +3397,11 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
+    define_xopen_source=no
+    ;;
+  # On VxWorks, defining _XOPEN_SOURCE causes compile failures
+  # in network headers still using system V types.
+  VxWorks/*)
     define_xopen_source=no
     ;;
 
@@ -6166,7 +6167,7 @@ esac
   fi
 fi
 
-if test "$cross_compiling" = yes && test "$ac_sys_system" != VxWorks ; then
+if test "$cross_compiling" = yes; then
     case "$READELF" in
 	readelf|:)
 	as_fn_error $? "readelf for the host is required for cross builds" "$LINENO" 5
@@ -11186,9 +11187,10 @@ if test "$DYNLOADFILE" != "dynload_stub.o"
 then
 
 $as_echo "#define HAVE_DYNAMIC_LOADING 1" >>confdefs.h
-HAVE_DYNAMIC_LOADING=1
 
+	HAVE_DYNAMIC_LOADING=1
 fi
+
 
 # MACHDEP_OBJS can be set to platform-specific object files needed by Python
 
@@ -13235,7 +13237,9 @@ fi
 
 # checks for compiler characteristics
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether char is unsigned" >&5
+# test results in duplicate def of __CHAR_UNSIGNED__ on VxWorks
+if test "$ac_sys_system" != "VxWorks" ; then
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether char is unsigned" >&5
 $as_echo_n "checking whether char is unsigned... " >&6; }
 if ${ac_cv_c_char_unsigned+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -13263,11 +13267,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_char_unsigned" >&5
 $as_echo "$ac_cv_c_char_unsigned" >&6; }
-if test $ac_cv_c_char_unsigned = yes && test "$GCC" != yes && test "$ac_sys_system" != "VxWorks"  ; then
+if test $ac_cv_c_char_unsigned = yes && test "$GCC" != yes; then
   $as_echo "#define __CHAR_UNSIGNED__ 1" >>confdefs.h
 
 fi
 
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for an ANSI C-conforming const" >&5
 $as_echo_n "checking for an ANSI C-conforming const... " >&6; }
 if ${ac_cv_c_const+:} false; then :
