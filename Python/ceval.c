@@ -3011,23 +3011,23 @@ main_loop:
         TARGET(WITH_CLEANUP_START) {
             /* At the top of the stack are 1 or 6 values indicating
                how/why we entered the finally clause:
-               - TOP = None
-               - TOP = the return address (integer)
+               - TOP = NULL
                - (TOP, SECOND, THIRD) = exc_info()
                  (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-               Below them is EXIT, the context.__exit__ bound method.
-               In the last case, we must call
-                 EXIT(TOP, SECOND, THIRD)
-               otherwise we must call
+               Below them is EXIT, the context.__exit__ or context.__aexit__
+               bound method.
+               In the first case, we must call
                  EXIT(None, None, None)
+               otherwise we must call
+                 EXIT(TOP, SECOND, THIRD)
 
-               In the first two cases, we remove EXIT from the
-               stack, leaving TOP.  In the
-               last case, we shift the bottom 3 values of the
-               stack down, and replace the empty spot with NULL.
+               In the first case, we remove EXIT from the
+               stack, leaving TOP, and push TOP on the stack.
+               Otherwise we shift the bottom 3 values of the
+               stack down, replace the empty spot with NULL, and push
+               None on the stack.
 
-               In the last case we push TOP on the stack, otherwise we push
-               None on the stack. Finally we push the result of the call.
+               Finally we push the result of the call.
             */
             PyObject *stack[3];
             PyObject *exit_func;
@@ -3035,7 +3035,7 @@ main_loop:
 
             val = tb = Py_None;
             exc = TOP();
-            if (exc == NULL || PyLong_CheckExact(exc)) {
+            if (exc == NULL) {
                 STACKADJ(-1);
                 exit_func = TOP();
                 SET_TOP(exc);

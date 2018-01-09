@@ -737,12 +737,11 @@ iterations of the loop.
    Starts cleaning up the stack when a :keyword:`with` statement block exits.
 
    At the top of the stack are either ``NULL`` (pushed by
-   :opcode:`BEGIN_FINALLY`), an integer (pushed by :opcode:`CALL_FINALLY`),
-   or 6 values pushed if an exception has been raised in the with block.
-   Below is the context manager's :meth:`~object.__exit__` or
-   :meth:`~object.__aexit__` bound method.
+   :opcode:`BEGIN_FINALLY`) or 6 values pushed if an exception has been
+   raised in the with block.  Below is the context manager's
+   :meth:`~object.__exit__` or :meth:`~object.__aexit__` bound method.
 
-   If TOS is ``NULL`` or an integer, calls ``SECOND(None, None, None)``,
+   If TOS is ``NULL``, calls ``SECOND(None, None, None)``,
    removes the function from the stack, leaving TOS, and pushes ``None``
    to the stack.  Otherwise calls ``SEVENTH(TOP, SECOND, THIRD)``,
    shifts the bottom 3 values of the stack down, replaces the empty spot
