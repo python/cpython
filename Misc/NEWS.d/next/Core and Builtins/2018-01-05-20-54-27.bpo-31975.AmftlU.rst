@@ -1,4 +1,0 @@
-The default warning filter list now starts with a
-"default::DeprecationWarning:__main__" entry, so deprecation warnings are
-once again shown by default in single-file scripts and at the interactive
-prompt.
