@@ -519,3 +519,147 @@ _pythread_pthread_set_stacksize(size_t size)
 }
 
 #define THREAD_SET_STACKSIZE(x) _pythread_pthread_set_stacksize(x)
+
+
+/* pthread native thread-local storage */
+
+#define Py_HAVE_NATIVE_TLS
+/* See thread.c for semantics of the thread-local storage functions */
+
+/* See Python 3's tyhread_pthread.c for similar implementation.
+ * The difference here is that instead of using NATIVE_TSS_KEY_T
+ * (i.e. pthread_key_t) directly, the Python 2 API uses int for keys.
+ * (On many systems, pthread_key_t *is* int, but on some it isn't.)
+ * So, we keep an array to mapping these ints to pthread_key_t*.
+ */
+
+struct _Py_tss_t {
+    int _is_initialized;
+    pthread_key_t pthread_key;
+};
+
+struct _Py_tss_t *keys = NULL;
+static int next_key = 0;
+static int keys_allocated = 0;
+
+/* Return a new key.  This MUST be called before any other functions in
+ * this family, and callers MUST arrange to serialize calls to this
+ * function.  No violations are detected.
+ *
+ * Note: We avoid re-using keys deleted by PyThread_delete_key.
+ */
+int
+PyThread_create_key(void)
+{
+    unsigned int i;
+    /* Find first unused entry */
+    if (next_key == keys_allocated) {
+        /* grow array */
+        keys_allocated = keys_allocated * 2 + 1;
+        /* XXX: this array is never freed.
+        /* The common implementation leaks some memory as well
+         * (see PyThread_delete_key in thread.c),
+         * so let's assume programs don't create/destroy TLS keys en masse
+         */
+        keys = realloc(keys, sizeof(pthread_key_t)*keys_allocated);
+        if (keys == NULL) {
+            Py_FatalError("PyThread_create_key: cannot allocate key");
+        }
+        /* set newly added part of array */
+        for (i=next_key; i < keys_allocated; i++) {
+            keys[i]._is_initialized = 0;
+        }
+    }
+    assert(!keys[next_key]._is_initialized);
+    keys[next_key]._is_initialized = 1;
+    if (pthread_key_create(&(keys[next_key].pthread_key), NULL) != 0) {
+        Py_FatalError("PyThread_create_key: cannot create pthread key");
+    }
+    return next_key++;
+}
+
+/* internal helper: return pthread_key_t* for given index, or NULL for
+ * an invalid key.
+ * A pointer is returned rather than the value directly, because
+ * pthread_key_t has no defined invalid value.
+ */
+static pthread_key_t*
+_find_pkey(int key) {
+    if (key < 0 || key >= keys_allocated || !keys[key]._is_initialized) {
+        return NULL;
+    }
+    return &(keys[key].pthread_key);
+}
+
+/* Forget the associations for key across *all* threads. */
+void
+PyThread_delete_key(int key)
+{
+    pthread_key_t* pkey = _find_pkey(key);
+    if (pkey == NULL) {
+        Py_FatalError("PyThread_delete_key: called with invalid key");
+    }
+    if (pthread_key_delete(*pkey) != 0) {
+        /* ignore error - leak some memory rather than crash */
+    }
+    keys[key]._is_initialized = 0;
+}
+
+/* Confusing:  If the current thread has an association for key,
+ * value is ignored, and 0 is returned.  Else an attempt is made to create
+ * an association of key to value for the current thread.  0 is returned
+ * if that succeeds, but -1 is returned if there's not enough memory
+ * to create the association.  value must not be NULL.
+ */
+int
+PyThread_set_key_value(int key, void *value)
+{
+    pthread_key_t* pkey = _find_pkey(key);
+    void *previous;
+    if (pkey == NULL) {
+        Py_FatalError("PyThread_set_key_value: called with invalid key");
+    }
+    /* need separate get & set, but there's no race because
+     * we're using thread locals */
+    previous = pthread_getspecific(*pkey);
+    if (previous) {
+        return 0;
+    }
+    if (pthread_setspecific(*pkey, value) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+/* Retrieve the value associated with key in the current thread, or NULL
+ * if the current thread doesn't have an association for key.
+ */
+void *
+PyThread_get_key_value(int key)
+{
+    pthread_key_t* pkey = _find_pkey(key);
+    if (pkey == NULL) {
+        Py_FatalError("PyThread_get_key_value: called with invalid key");
+    }
+    return pthread_getspecific(*pkey);
+}
+
+/* Forget the current thread's association for key, if any. */
+void
+PyThread_delete_key_value(int key)
+{
+    pthread_key_t* pkey = _find_pkey(key);
+    if (pkey == NULL) {
+        Py_FatalError("PyThread_delete_key_value: called with invalid key");
+    }
+    if (pthread_setspecific(*pkey, NULL) != 0) {
+        Py_FatalError("PyThread_delete_key_value: cannot set value to NULL");
+    }
+}
+
+/* reinitialization of TLS is not necessary after fork when using
+ * the native TLS functions.
+ */
+void
+PyThread_ReInitTLS(void)
+{}
