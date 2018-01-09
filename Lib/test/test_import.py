@@ -422,6 +422,21 @@ class ImportTests(unittest.TestCase):
             __import__('encodings', fromlist=[1])
         self.assertIn('must be str, not int', str(cm.exception))
 
+    def test_package_init_with_syntax_error(self):
+        dir_name = os.path.abspath(TESTFN)
+        os.mkdir(dir_name)
+        self.addCleanup(rmtree, dir_name)
+        pkg_dir = os.path.join(dir_name, 'syntax_error')
+        os.mkdir(pkg_dir)
+        with open(os.path.join(pkg_dir, '__init__.py'), 'w') as init_file:
+            init_file.write("spam()spam()")
+        sys.path.insert(0, dir_name)
+        self.addCleanup(sys.path.pop, 0)
+        def do_import():
+            import syntax_error
+        self.assertRaises(SyntaxError, do_import)
+        self.assertRaises(SyntaxError, do_import)
+
 
 class PycRewritingTests(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points

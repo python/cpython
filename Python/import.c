@@ -1193,6 +1193,8 @@ load_package(char *name, char *pathname)
   error:
     m = NULL;
   cleanup:
+    if (!m)
+        remove_module(name);
     if (buf)
         PyMem_FREE(buf);
     Py_XDECREF(path);

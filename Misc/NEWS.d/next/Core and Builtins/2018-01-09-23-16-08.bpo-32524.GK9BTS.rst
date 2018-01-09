@@ -1,0 +1,2 @@
+Don't leak a package's \_\_init__.py module object in ``sys.modules`` on
+``SyntaxError``.  Patch by Segev Finer.
