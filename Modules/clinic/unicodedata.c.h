@@ -408,7 +408,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicodedata_UCD_iter_graphemes__doc__,
-"iter_graphemes($self, unistr, /)\n"
+"iter_graphemes($self, unistr, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Returns an iterator to iterate over grapheme clusters in unistr.\n"
@@ -416,23 +416,27 @@ PyDoc_STRVAR(unicodedata_UCD_iter_graphemes__doc__,
 "It uses extended grapheme cluster rules from TR29.");
 
 #define UNICODEDATA_UCD_ITER_GRAPHEMES_METHODDEF    \
-    {"iter_graphemes", (PyCFunction)unicodedata_UCD_iter_graphemes, METH_O, unicodedata_UCD_iter_graphemes__doc__},
+    {"iter_graphemes", (PyCFunction)unicodedata_UCD_iter_graphemes, METH_FASTCALL, unicodedata_UCD_iter_graphemes__doc__},
 
 static PyObject *
-unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr);
+unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr,
+                                    int start, Py_ssize_t end);
 
 static PyObject *
-unicodedata_UCD_iter_graphemes(PyObject *self, PyObject *arg)
+unicodedata_UCD_iter_graphemes(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *unistr;
+    int start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX - 1;
 
-    if (!PyArg_Parse(arg, "U:iter_graphemes", &unistr)) {
+    if (!_PyArg_ParseStack(args, nargs, "U|in:iter_graphemes",
+        &unistr, &start, &end)) {
         goto exit;
     }
-    return_value = unicodedata_UCD_iter_graphemes_impl(self, unistr);
+    return_value = unicodedata_UCD_iter_graphemes_impl(self, unistr, start, end);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=88c185f6e080eec9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d4b4e2561674e6e input=a9049054013a1b77]*/

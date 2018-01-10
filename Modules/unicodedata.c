@@ -19,6 +19,21 @@
 #include "ucnhash.h"
 #include "structmember.h"
 
+/* helper macro to fixup start/end slice values */
+#define ADJUST_INDICES(start, end, len)         \
+    if (end > len)                              \
+        end = len;                              \
+    else if (end < 0) {                         \
+        end += len;                             \
+        if (end < 0)                            \
+            end = 0;                            \
+    }                                           \
+    if (start < 0) {                            \
+        start += len;                           \
+        if (start < 0)                          \
+            start = 0;                          \
+    }
+
 /*[clinic input]
 module unicodedata
 class unicodedata.UCD 'PreviousDBVersion *' '&UCD_Type'
@@ -1278,6 +1293,7 @@ typedef struct {
     PyObject_HEAD
     PyObject* str;
     Py_ssize_t pos;
+    Py_ssize_t end;
 } GraphemeClusterIterator;
 
 static void
@@ -1308,23 +1324,23 @@ GCI_iternext(GraphemeClusterIterator *self)
 {
     int kind = PyUnicode_KIND(self->str);
     void *pstr = PyUnicode_DATA(self->str);
-    if (PyUnicode_READ(kind, pstr, self->pos)) {
-        int start = self->pos;
-        GCBState s = STATE_sot;
-        while (1) {
-            if (!PyUnicode_READ(kind, pstr, self->pos)) {
-                return PyUnicode_Substring(self->str, start, self->pos);
-            }
-            Py_UCS4 chr = PyUnicode_READ(kind, pstr, self->pos);
-            int prop = _getrecord_ex(chr)->grapheme_cluster_break;
-            s = GRAPH_CLUSTER_AUTOMATON[s][prop];
-            if (s == STATE_BREAK) {
-                return PyUnicode_Substring(self->str, start, self->pos);
-            }
-            ++self->pos;
-        }
-    } else {
+    if (self->pos == self->end) {
         return NULL;
+    }
+
+    int start = self->pos;
+    GCBState s = STATE_sot;
+    while (1) {
+        if (self->pos == self->end) {
+            return PyUnicode_Substring(self->str, start, self->pos);
+        }
+        Py_UCS4 chr = PyUnicode_READ(kind, pstr, self->pos);
+        int prop = _getrecord_ex(chr)->grapheme_cluster_break;
+        s = GRAPH_CLUSTER_AUTOMATON[s][prop];
+        if (s == STATE_BREAK) {
+            return PyUnicode_Substring(self->str, start, self->pos);
+        }
+        ++self->pos;
     }
 }
 
@@ -1346,6 +1362,8 @@ unicodedata.UCD.iter_graphemes
 
     self: self
     unistr: unicode
+    start: int = 0
+    end: Py_ssize_t(c_default="PY_SSIZE_T_MAX - 1") = sys.maxsize
     /
 
 Returns an iterator to iterate over grapheme clusters in unistr.
@@ -1354,8 +1372,9 @@ It uses extended grapheme cluster rules from TR29.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr)
-/*[clinic end generated code: output=92374c1d94db4165 input=59c4794a7f2e6742]*/
+unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr,
+                                    int start, Py_ssize_t end)
+/*[clinic end generated code: output=96aa5bb59138ea9c input=5667e0efb55be68a]*/
 {
     GraphemeClusterIterator *gci = PyObject_GC_New(GraphemeClusterIterator,
             &GraphemeClusterIteratorType);
@@ -1363,10 +1382,13 @@ unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr)
     if (!gci)
         return NULL;
 
+    Py_ssize_t len = PyUnicode_GET_LENGTH(unistr);
+    ADJUST_INDICES(start, end, len);
     gci->str = unistr;
     Py_INCREF(unistr);
     PyObject_GC_Track(gci);
-    gci->pos = 0;
+    gci->pos = start;
+    gci->end = end;
     return (PyObject*)gci;
 }
 
