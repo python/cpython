@@ -1721,10 +1721,10 @@ exit:
 
 #endif /* defined(HAVE_EXECV) */
 
-#if defined(HAVE_POSIXSPAWN)
+#if defined(HAVE_POSIX_SPAWN)
 
-PyDoc_STRVAR(os_posixspawn__doc__,
-"posixspawn($module, path, argv, env, file_actions=None, /)\n"
+PyDoc_STRVAR(os_posix_spawn__doc__,
+"posix_spawn($module, path, argv, env, file_actions=None, /)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1738,27 +1738,27 @@ PyDoc_STRVAR(os_posixspawn__doc__,
 "  file_actions\n"
 "    FileActions object.");
 
-#define OS_POSIXSPAWN_METHODDEF    \
-    {"posixspawn", (PyCFunction)os_posixspawn, METH_FASTCALL, os_posixspawn__doc__},
+#define OS_POSIX_SPAWN_METHODDEF    \
+    {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL, os_posix_spawn__doc__},
 
 static PyObject *
-os_posixspawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                   PyObject *env, PyObject *file_actions);
+os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
+                    PyObject *env, PyObject *file_actions);
 
 static PyObject *
-os_posixspawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("posixspawn", "path", 0, 0);
+    path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
     PyObject *file_actions = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&OO|O:posixspawn",
+    if (!_PyArg_ParseStack(args, nargs, "O&OO|O:posix_spawn",
         path_converter, &path, &argv, &env, &file_actions)) {
         goto exit;
     }
-    return_value = os_posixspawn_impl(module, &path, argv, env, file_actions);
+    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions);
 
 exit:
     /* Cleanup for path */
@@ -1767,7 +1767,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_POSIXSPAWN) */
+#endif /* defined(HAVE_POSIX_SPAWN) */
 
 #if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
 
@@ -6185,9 +6185,9 @@ exit:
     #define OS_EXECVE_METHODDEF
 #endif /* !defined(OS_EXECVE_METHODDEF) */
 
-#ifndef OS_POSIXSPAWN_METHODDEF
-    #define OS_POSIXSPAWN_METHODDEF
-#endif /* !defined(OS_POSIXSPAWN_METHODDEF) */
+#ifndef OS_POSIX_SPAWN_METHODDEF
+    #define OS_POSIX_SPAWN_METHODDEF
+#endif /* !defined(OS_POSIX_SPAWN_METHODDEF) */
 
 #ifndef OS_SPAWNV_METHODDEF
     #define OS_SPAWNV_METHODDEF
@@ -6580,4 +6580,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=2337d5dd34318f86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e5d4a01257b6292 input=a9049054013a1b77]*/
