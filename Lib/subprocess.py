@@ -409,7 +409,8 @@ class CompletedProcess(object):
                                      self.stderr)
 
 
-def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
+def run(*popenargs,
+        input=None, capture_output=False, timeout=None, check=False, **kwargs):
     """Run command with arguments and return a CompletedProcess instance.
 
     The returned instance will have attributes args, returncode, stdout and
@@ -441,6 +442,13 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
         if 'stdin' in kwargs:
             raise ValueError('stdin and input arguments may not both be used.')
         kwargs['stdin'] = PIPE
+
+    if capture_output:
+        if ('stdout' in kwargs) or ('stderr' in kwargs):
+            raise ValueError('stdout and stderr arguments may not be used '
+                             'with capture_output.')
+        kwargs['stdout'] = PIPE
+        kwargs['stderr'] = PIPE
 
     with Popen(*popenargs, **kwargs) as process:
         try:
