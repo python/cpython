@@ -65,7 +65,7 @@ typedef struct basicblock_ {
        block reached by normal control flow. */
     struct basicblock_ *b_next;
     /* b_seen is used to perform a DFS of basicblocks. */
-    unsigned b_seen : 2;
+    unsigned b_seen : 1;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
