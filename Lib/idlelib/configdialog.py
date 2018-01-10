@@ -495,7 +495,7 @@ class FontPage(Frame):
         Changing any of the font vars invokes var_changed_font, which
         adds all 3 font options to changes and calls set_samples.
         Set_samples applies a new font constructed from the font vars to
-        font_sample and to highlight_sample on the hightlight page.
+        font_sample and to highlight_sample on the highlight page.
 
         Tabs: Enable users to change spaces entered for indent tabs.
         Changing indent_scale value with the mouse sets Var space_num,
@@ -646,7 +646,7 @@ class FontPage(Frame):
 
         Called on font initialization and change events.
         Accesses font_name, font_size, and font_bold Variables.
-        Updates font_sample and hightlight page highlight_sample.
+        Updates font_sample and highlight page highlight_sample.
         """
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL

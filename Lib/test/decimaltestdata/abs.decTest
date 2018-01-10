@@ -20,7 +20,7 @@
 version: 2.59
 
 -- This set of tests primarily tests the existence of the operator.
--- Additon, subtraction, rounding, and more overflows are tested
+-- Addition, subtraction, rounding, and more overflows are tested
 -- elsewhere.
 
 precision:   9
@@ -158,4 +158,3 @@ absx527 abs -sNaN33  -> -NaN33 Invalid_operation
 
 -- Null tests
 absx900 abs  # -> NaN Invalid_operation
-

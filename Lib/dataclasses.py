@@ -570,7 +570,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 
 
 # _cls should never be specified by keyword, so start it with an
-#  underscore. The presense of _cls is used to detect if this
+#  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
               hash=None, frozen=False):

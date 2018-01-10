@@ -199,7 +199,7 @@ class TestDiscovery(unittest.TestCase):
                          ['a_directory', 'test_directory', 'test_directory2'])
 
         # load_tests should have been called once with loader, tests and pattern
-        # (but there are no tests in our stub module itself, so thats [] at the
+        # (but there are no tests in our stub module itself, so that's [] at the
         # time of call.
         self.assertEqual(Module.load_tests_args,
                          [(loader, [], 'test*')])

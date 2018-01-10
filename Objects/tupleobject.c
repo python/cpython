@@ -335,7 +335,7 @@ error:
 
 /* The addend 82520, was selected from the range(0, 1000000) for
    generating the greatest number of prime multipliers for tuples
-   upto length eight:
+   up to length eight:
 
      1082527, 1165049, 1082531, 1165057, 1247581, 1330103, 1082533,
      1330111, 1412633, 1165069, 1247599, 1495177, 1577699
