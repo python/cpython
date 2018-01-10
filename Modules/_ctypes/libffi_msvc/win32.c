@@ -2,10 +2,10 @@
    win32.S - Copyright (c) 1996, 1998, 2001, 2002  Red Hat, Inc.
 	     Copyright (c) 2001  John Beniton
 	     Copyright (c) 2002  Ranjit Mathew
-
-
+			
+ 
    X86 Foreign Function Interface
-
+ 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
    ``Software''), to deal in the Software without restriction, including
@@ -13,10 +13,10 @@
    distribute, sublicense, and/or sell copies of the Software, and to
    permit persons to whom the Software is furnished to do so, subject to
    the following conditions:
-
+ 
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
-
+ 
    THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -56,7 +56,7 @@ ffi_call_x86(void (* prepfunc)(char *, extended_cif *), /* 8 */
 // Make room for all of the new args.
 		mov ecx, [ebp+16]
 		sub esp, ecx		// sub esp, bytes
-
+		
 		mov eax, esp
 
 // Place all of the ffi_prep_args in position
@@ -74,7 +74,7 @@ ffi_call_x86(void (* prepfunc)(char *, extended_cif *), /* 8 */
 		mov ecx, [ebp + 12]
 		mov ecx, [ecx]ecif.cif
 		mov ecx, [ecx]ecif.cif.abi
-
+		
 		cmp ecx, FFI_STDCALL
 		je noclean
 // STDCALL: Remove the space we pushed for the args
@@ -90,7 +90,7 @@ noclean:
 
 // If the return value pointer is NULL, assume no return value.
 /*
-  Intel asm is weird. We have to explicitly specify 'DWORD PTR' in the nexr instruction,
+  Intel asm is weird. We have to explicitely specify 'DWORD PTR' in the nexr instruction,
   otherwise only one BYTE will be compared (instead of a DWORD)!
  */
 		cmp DWORD PTR [ebp + 24], 0
