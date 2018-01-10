@@ -70,6 +70,7 @@ Summary -- Release highlights
 New Features
 ============
 
+
 .. _whatsnew37-pep538:
 
 PEP 538: Legacy C Locale Coercion
@@ -106,6 +107,7 @@ locale remains active when the core interpreter is initialized.
 
     :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
        PEP written and implemented by Nick Coghlan.
+
 
 .. _whatsnew37-pep553:
 
@@ -203,6 +205,44 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+.. _whatsnew37-pep565:
+
+PEP 565: Show DeprecationWarning in ``__main__``
+------------------------------------------------
+
+The default handling of :exc:`DeprecationWarning` has been changed such that
+these warnings are once more shown by default, but only when the code
+triggering them is running directly in the ``__main__`` module. As a result,
+developers of single file scripts and those using Python interactively should
+once again start seeing deprecation warnings for the APIs they use, but
+deprecation warnings triggered by imported application, library and framework
+modules will continue to be hidden by default.
+
+As a result of this change, the standard library now allows developers to choose
+between three different deprecation warning behaviours:
+
+* :exc:`FutureWarning`: always displayed by default, recommended for warnings
+  intended to be seen by application end users (e.g. for deprecated application
+  configuration settings).
+* :exc:`DeprecationWarning`: displayed by default only in ``__main__`` and when
+  running tests, recommended for warnings intended to be seen by other Python
+  developers where a version upgrade may result in changed behaviour or an
+  error.
+* :exc:`PendingDeprecationWarning`: displayed by default only when running
+  tests, intended for cases where a future version upgrade will change the
+  warning category to :exc:`DeprecationWarning` or :exc:`FutureWarning`.
+
+Previously both :exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`
+were only visible when running tests, which meant that developers primarily
+writing single file scripts or using Python interactively could be surprised
+by breaking changes in the APIs they used.
+
+.. seealso::
+
+    :pep:`565` -- Show DeprecationWarning in ``__main__``
+      PEP written and implemented by Nick Coghlan
+
+
 PEP 540: Add a new UTF-8 mode
 -----------------------------
 
@@ -282,7 +322,14 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+importlib.resources
+-------------------
+
+This module provides several new APIs and one new ABC for access to, opening,
+and reading *resources* inside packages.  Resources are roughly akin to files
+inside of packages, but they needn't be actual files on the physical file
+system.  Module loaders can implement the
+:class:`importlib.abc.ResourceReader` ABC to support this new module's API.
 
 
 Improved Modules
@@ -418,6 +465,10 @@ pdb
 :func:`~pdb.set_trace` now takes an optional *header* keyword-only
 argument.  If given, this is printed to the console just before debugging
 begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
+
+pdb command line now accepts `-m module_name` as an alternative to
+script file. (Contributed by Mario Corchero in :issue:`32206`.)
+
 
 re
 --
@@ -874,8 +925,9 @@ Changes in the Python API
 * The result of splitting a string on a :mod:`regular expression <re>`
   that could match an empty string has been changed.  For example
   splitting on ``r'\s*'`` will now split not only on whitespaces as it
-  did previously, but also between any pair of non-whitespace
-  characters.  The previous behavior can be restored by changing the pattern
+  did previously, but also on empty strings before all non-whitespace
+  characters and just before the end of the string.
+  The previous behavior can be restored by changing the pattern
   to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
   Python 3.5.
 
@@ -886,7 +938,13 @@ Changes in the Python API
   positions 2--3.  To match only blank lines, the pattern should be rewritten
   as ``r'(?m)^[^\S\n]*$'``.
 
-  (Contributed by Serhiy Storchaka in :issue:`25054`.)
+  :func:`re.sub()` now replaces empty matches adjacent to a previous
+  non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
+  ``'-a-b--d-'`` instead of ``'-a-b--d-'`` (the first minus between 'b' and
+  'd' replaces 'x', and the second minus replaces an empty string between
+  'x' and 'd').
+
+  (Contributed by Serhiy Storchaka in :issue:`25054` and :issue:`32308`.)
 
 * :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
   recent to be more consistent with :mod:`traceback`.
