@@ -5191,7 +5191,6 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         PyObject* file_actions_obj;
         PyObject* mode_obj;
 
-        int mode;
         for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
             file_actions_obj = PySequence_Fast_GET_ITEM(seq, i);
 
@@ -5215,7 +5214,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     }
 
                     long open_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
-                    char* open_path = PyUnicode_AsUTF8(PySequence_GetItem(file_actions_obj, 2));
+                    const char* open_path = PyUnicode_AsUTF8(PySequence_GetItem(file_actions_obj, 2));
                     long open_oflag = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 3));
                     long open_mode = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 4));
                     posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode);
