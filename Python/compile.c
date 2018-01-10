@@ -4948,12 +4948,13 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
 Py_LOCAL_INLINE(void)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
+    /* XXX b->b_startdepth > depth only for the target of SETUP_FINALLY,
+     * SETUP_WITH and SETUP_ASYNC_WITH. */
+    assert(b->b_startdepth < 0 || b->b_startdepth >= depth);
     if (b->b_startdepth < depth) {
+        assert(b->b_startdepth < 0);
         b->b_startdepth = depth;
-        if (!b->b_seen) {
-            b->b_seen = 1;
-            *(*sp)++ = b;
-        }
+        *(*sp)++ = b;
     }
 }
 
@@ -4966,12 +4967,7 @@ stackdepth(struct compiler *c)
     basicblock *b, *entryblock = NULL;
     basicblock **stack, **sp;
     int nblocks = 0, maxdepth = 0;
-    /* b_seen = 0 -- not on the stack;
-       b_seen = 1 -- on the stack, queued for processing;
-       b_seen = 2 -- on the stack, already processed.
-     */
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        b->b_seen = 0;
         b->b_startdepth = INT_MIN;
         entryblock = b;
         nblocks++;
@@ -4987,14 +4983,9 @@ stackdepth(struct compiler *c)
     sp = stack;
     stackdepth_push(&sp, entryblock, 0);
     while (sp != stack) {
-        b = sp[-1];
-        if (b->b_seen == 2) {
-            b->b_seen = 0;
-            --sp;
-            continue;
-        }
-        b->b_seen = 2;
+        b = *--sp;
         int depth = b->b_startdepth;
+        assert(depth >= 0);
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
@@ -5020,7 +5011,7 @@ stackdepth(struct compiler *c)
                     /* Pops a variable number of values from the stack,
                      * but the target should be already proceeding.
                      */
-                    assert(instr->i_target->b_seen == 2);
+                    assert(instr->i_target->b_startdepth >= 0);
                     assert(instr->i_target->b_startdepth <= depth);
                     /* remaining code is dead */
                     next = NULL;
