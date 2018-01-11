@@ -67,6 +67,7 @@ PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
 /* Cross-interpreter data sharing */
 
+struct pyruntimestate;
 struct _cid;
 
 typedef struct _cid {
@@ -78,6 +79,19 @@ typedef struct _cid {
     PyObject *object;
 } _PyCrossInterpreterData;
 
+typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
+
+PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(
+    PyTypeObject *, crossinterpdatafunc);
+PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
+
+struct _cidclass;
+
+struct _cidclass {
+    const char *classname;
+    crossinterpdatafunc getdata;
+    struct _cidclass *next;
+};
 
 /* Full Python runtime state */
 
@@ -100,6 +114,10 @@ typedef struct pyruntimestate {
            using a Python int. */
         int64_t next_id;
     } interpreters;
+    /* For now we use a global registry of shareable classes.  An
+       alternative would be to add a tp_* slot for a class's
+       crossinterpdatafunc. It would be simpler and more efficient. */
+    struct _cidclass *crossinterpclasses;
 
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);

@@ -20,77 +20,31 @@ _get_current(void)
 
 /* cross-interpreter data */
 
-static int
-_PyObject_CheckShareable(PyObject *obj)
+static crossinterpdatafunc
+_lookup_getdata(PyObject *obj)
 {
-    if (PyBytes_CheckExact(obj))
-        return 0;
-    if (obj == Py_None)
-        return 0;
-    PyErr_SetString(PyExc_ValueError,
-                    "obj is not a cross-interpreter shareable type");
-    return 1;
-}
-
-static PyObject *
-_new_bytes_object(_PyCrossInterpreterData *data)
-{
-    return PyBytes_FromString((char *)(data->data));
-}
-
-static int
-_bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
-{
-    data->data = (void *)(PyBytes_AS_STRING(obj));
-    data->new_object = _new_bytes_object;
-    data->free = NULL;
-    return 0;
-}
-
-static PyObject *
-_new_none_object(_PyCrossInterpreterData *data)
-{
-    // XXX Singleton refcounts are problematic across interpreters...
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-static int
-_none_shared(PyObject *obj, _PyCrossInterpreterData *data)
-{
-    data->data = NULL;
-    data->new_object = _new_none_object;
-    data->free = NULL;
-    return 0;
+    crossinterpdatafunc getdata = _PyCrossInterpreterData_Lookup(obj);
+    if (getdata == NULL && PyErr_Occurred() == 0)
+        PyErr_Format(PyExc_ValueError,
+                     "%S is not a cross-interpreter shareable type", obj);
+    return getdata;
 }
 
 static int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
     Py_INCREF(obj);
-
-    if (_PyObject_CheckShareable(obj) != 0) {
+    crossinterpdatafunc getdata = _lookup_getdata(obj);
+    if (getdata == NULL) {
         Py_DECREF(obj);
-        return 1;
+        return -1;
     }
-
-    data->interp = _get_current();
-    data->object = obj;
-
-    if (PyBytes_CheckExact(obj)) {
-        if (_bytes_shared(obj, data) != 0) {
-            Py_DECREF(obj);
-            return 1;
-        }
-    } else if (obj == Py_None) {
-        if (_none_shared(obj, data) != 0) {
-            Py_DECREF(obj);
-            return 1;
-        }
+    int res = getdata(obj, data);
+    if (res != 0) {
+        Py_DECREF(obj);
     }
-
-    return 0;
-};
+    return res;
+}
 
 static void
 _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
@@ -120,6 +74,14 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 
 /* other sharing-specific functions and structs */
 
+static int
+_PyObject_CheckShareable(PyObject *obj)
+{
+    if (_lookup_getdata(obj) == NULL)
+        return -1;
+    return 0;
+}
+
 struct _shareditem {
     Py_UNICODE *name;
     Py_ssize_t namelen;
@@ -145,6 +107,9 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
         return NULL;
 
     struct _shareditem *shared = PyMem_NEW(struct _shareditem, len+1);
+    for (Py_ssize_t i=0; i < len; i++) {
+        *(shared + i) = (struct _shareditem){0};
+    }
     Py_ssize_t pos = 0;
     for (Py_ssize_t i=0; i < len; i++) {
         PyObject *key, *value;

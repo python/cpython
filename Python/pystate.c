@@ -54,8 +54,8 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     if (runtime->interpreters.mutex == NULL) {
         return _Py_INIT_ERR("Can't initialize threads for interpreter");
     }
-
     runtime->interpreters.next_id = -1;
+
     return _Py_INIT_OK();
 }
 
@@ -1021,6 +1021,128 @@ PyGILState_Release(PyGILState_STATE oldstate)
     /* Release the lock if necessary */
     else if (oldstate == PyGILState_UNLOCKED)
         PyEval_SaveThread();
+}
+
+
+/* cross-interpreter data */
+
+static const char *
+_get_qualname(PyObject *obj)
+{
+    PyObject *qualname = PyObject_GetAttrString(obj, "__qualname__");
+    if (qualname == NULL)
+        return NULL;
+    Py_ssize_t name_size;
+    const char *encoded = PyUnicode_AsUTF8AndSize(qualname, &name_size);
+    if (encoded == NULL)
+        return NULL;
+    if (strlen(encoded) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError,
+                        "qualname must not contain null characters");
+        return NULL;
+    }
+    return encoded;
+}
+
+int
+_PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
+                                       crossinterpdatafunc getdata)
+{
+    if (!PyType_Check(cls)) {
+        PyErr_Format(PyExc_ValueError, "only classes may be registered");
+        return -1;
+    }
+    if (getdata == NULL) {
+        PyErr_Format(PyExc_ValueError, "missing 'getdata' func");
+        return -1;
+    }
+    // XXX lock?
+
+    const char *classname = _get_qualname((PyObject *)cls);
+    if (classname == NULL)
+        return -1;
+
+    // XXX Fail if already registered (instead of effectively replacing)?
+    struct _cidclass *newhead = PyMem_NEW(struct _cidclass, 1);
+    newhead->classname = classname;
+    newhead->getdata = getdata;
+    _PyRuntimeState *runtime = &_PyRuntime;
+    newhead->next = runtime->crossinterpclasses;
+    runtime->crossinterpclasses = newhead;
+    return 0;
+}
+
+static void _register_builtins_for_crossinterpreter_data(void);
+
+crossinterpdatafunc
+_PyCrossInterpreterData_Lookup(PyObject *obj)
+{
+    const char *classname = _get_qualname(PyObject_Type(obj));
+    if (classname == NULL)
+        return NULL;
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    struct _cidclass *cur = runtime->crossinterpclasses;
+    if (cur == NULL) {
+        _register_builtins_for_crossinterpreter_data();
+        cur = runtime->crossinterpclasses;
+    }
+    for(; cur != NULL; cur = cur->next) {
+        // XXX Be more strict (e.g. Py*_CheckExact)?
+        if (strcmp(cur->classname, classname) == 0)
+            return cur->getdata;
+    }
+    return NULL;
+}
+
+/* cross-interpreter data for builtin types */
+
+static PyObject *
+_new_bytes_object(_PyCrossInterpreterData *data)
+{
+    return PyBytes_FromString((char *)(data->data));
+}
+
+static int
+_bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    data->data = (void *)(PyBytes_AS_STRING(obj));
+    data->new_object = _new_bytes_object;
+    data->free = NULL;
+    return 0;
+}
+
+static PyObject *
+_new_none_object(_PyCrossInterpreterData *data)
+{
+    // XXX Singleton refcounts are problematic across interpreters...
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static int
+_none_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    data->data = NULL;
+    data->new_object = _new_none_object;
+    data->free = NULL;
+    return 0;
+}
+
+static void
+_register_builtins_for_crossinterpreter_data(void)
+{
+    // None
+    if (_PyCrossInterpreterData_Register_Class(
+        (PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
+        Py_FatalError("could not register None for X-interpreter sharing");
+    }
+
+    // bytes
+    if (_PyCrossInterpreterData_Register_Class(
+        &PyBytes_Type, _bytes_shared) != 0) {
+        Py_FatalError("could not register bytes for X-interpreter sharing");
+    }
 }
 
 
