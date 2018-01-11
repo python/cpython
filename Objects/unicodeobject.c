@@ -3837,6 +3837,12 @@ _PyUnicode_DecodeCurrentLocaleAndSize(const char *str, Py_ssize_t len,
 }
 
 PyObject*
+_PyUnicode_DecodeCurrentLocale(const char *str, const char *errors)
+{
+    return unicode_decode_locale(str, (Py_ssize_t)strlen(str), errors, 1);
+}
+
+PyObject*
 PyUnicode_DecodeLocale(const char *str, const char *errors)
 {
     Py_ssize_t size = (Py_ssize_t)strlen(str);
