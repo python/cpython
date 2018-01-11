@@ -28,9 +28,6 @@ import weakref
 from test import mod_generics_cache
 
 
-PY36 = sys.version_info[:2] >= (3, 6)
-
-
 class BaseTestCase(TestCase):
 
     def assertIsSubclass(self, cls, class_or_tuple, msg=None):
@@ -597,8 +594,9 @@ class GenericTests(BaseTestCase):
         Y[str]
         with self.assertRaises(TypeError):
             Y[str, str]
+        SM1 = SimpleMapping[str, int]
         with self.assertRaises(TypeError):
-            issubclass(SimpleMapping[str, int], SimpleMapping)
+            issubclass(SM1, SimpleMapping)
         self.assertIsInstance(SimpleMapping[str, int](), SimpleMapping)
 
     def test_generic_errors(self):
@@ -629,7 +627,6 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Generic[T, S, T]
 
-    @skipUnless(PY36, "__init_subclass__ support required")
     def test_init_subclass(self):
         class X(typing.Generic[T]):
             def __init_subclass__(cls, **kwargs):
@@ -1538,8 +1535,6 @@ class OverloadTests(BaseTestCase):
         blah()
 
 
-ASYNCIO = sys.version_info[:2] >= (3, 5)
-
 ASYNCIO_TESTS = """
 import asyncio
 
@@ -1577,17 +1572,15 @@ class ACM:
         return None
 """
 
-if ASYNCIO:
-    try:
-        exec(ASYNCIO_TESTS)
-    except ImportError:
-        ASYNCIO = False
+try:
+    exec(ASYNCIO_TESTS)
+except ImportError:
+    ASYNCIO = False  # multithreading is not enabled
 else:
-    # fake names for the sake of static analysis
-    asyncio = None
-    AwaitableWrapper = AsyncIteratorWrapper = ACM = object
+    ASYNCIO = True
 
-PY36_TESTS = """
+# Definitions needed for features introduced in Python 3.6
+
 from test import ann_module, ann_module2, ann_module3
 from typing import AsyncContextManager
 
@@ -1640,15 +1633,6 @@ try:
     g_with(ACM()).send(None)
 except StopIteration as e:
     assert e.args[0] == 42
-"""
-
-if PY36:
-    exec(PY36_TESTS)
-else:
-    # fake names for the sake of static analysis
-    ann_module = ann_module2 = ann_module3 = None
-    A = B = CSub = G = CoolEmployee = CoolEmployeeWithDefault = object
-    XMeth = XRepr = NoneAndForward = object
 
 gth = get_type_hints
 
@@ -1663,14 +1647,12 @@ class GetTypeHintTests(BaseTestCase):
         with self.assertRaises(TypeError):
             gth(None)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_modules(self):
         ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     @expectedFailure
     def test_get_type_hints_modules_forwardref(self):
         # FIXME: This currently exposes a bug in typing. Cached forward references
@@ -1680,7 +1662,6 @@ class GetTypeHintTests(BaseTestCase):
                      'default_b': Optional[mod_generics_cache.B]}
         self.assertEqual(gth(mod_generics_cache), mgc_hints)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_classes(self):
         self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
@@ -1703,7 +1684,6 @@ class GetTypeHintTests(BaseTestCase):
                           'my_inner_a2': mod_generics_cache.B.A,
                           'my_outer_a': mod_generics_cache.A})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_respect_no_type_check(self):
         @no_type_check
         class NoTpCheck:
@@ -1742,7 +1722,6 @@ class GetTypeHintTests(BaseTestCase):
         b.__annotations__ = {'x': 'A'}
         self.assertEqual(gth(b, locals()), {'x': A})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_ClassVar(self):
         self.assertEqual(gth(ann_module2.CV, ann_module2.__dict__),
                          {'var': typing.ClassVar[ann_module2.CV]})
@@ -2041,7 +2020,6 @@ class CollectionsAbcTests(BaseTestCase):
         with self.assertRaises(TypeError):
             typing.Generator[int, int, int]()
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_async_generator(self):
         ns = {}
         exec("async def f():\n"
@@ -2049,7 +2027,6 @@ class CollectionsAbcTests(BaseTestCase):
         g = ns['f']()
         self.assertIsSubclass(type(g), typing.AsyncGenerator)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_no_async_generator_instantiation(self):
         with self.assertRaises(TypeError):
             typing.AsyncGenerator()
@@ -2127,7 +2104,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(G, collections.abc.Iterable)
         self.assertNotIsSubclass(type(g), G)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_subclassing_async_generator(self):
         class G(typing.AsyncGenerator[int, int]):
             def asend(self, value):
@@ -2322,7 +2298,6 @@ class NamedTupleTests(BaseTestCase):
                 class NotYet(NamedTuple):
                     whatever = 0
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage(self):
         tim = CoolEmployee('Tim', 9000)
         self.assertIsInstance(tim, CoolEmployee)
@@ -2335,7 +2310,6 @@ class NamedTupleTests(BaseTestCase):
                          collections.OrderedDict(name=str, cool=int))
         self.assertIs(CoolEmployee._field_types, CoolEmployee.__annotations__)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage_with_default(self):
         jelle = CoolEmployeeWithDefault('Jelle')
         self.assertIsInstance(jelle, CoolEmployeeWithDefault)
@@ -2357,7 +2331,6 @@ class NonDefaultAfterDefault(NamedTuple):
     y: int
 """)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage_with_methods(self):
         self.assertEqual(XMeth(1).double(), 2)
         self.assertEqual(XMeth(42).x, XMeth(42)[0])
@@ -2380,7 +2353,6 @@ class XMethBad2(NamedTuple):
         return 'no chance for this as well'
 """)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
         nick = LocalEmployee('Nick', 25)

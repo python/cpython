@@ -1593,9 +1593,9 @@ class io:
 io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
-Pattern = _GenericAlias(type(stdlib_re.compile('')), AnyStr,
+Pattern = _GenericAlias(stdlib_re.Pattern, AnyStr,
                         name='Pattern', special=True)
-Match = _GenericAlias(type(stdlib_re.match('', '')), AnyStr,
+Match = _GenericAlias(stdlib_re.Match, AnyStr,
                       name='Match', special=True)
 
 class re:
