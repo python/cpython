@@ -72,14 +72,14 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
-class EncodingMissmatchError(UnicodeError):
+class EncodingMismatchError(UnicodeError):
     """Raised when source and destination encoding are not the same."""
 
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
     write = fdst.write
-    if hasattr(fsrc, 'readinto') and length > 0:
+    if hasattr(fsrc, 'readinto') and length > 0:  # Bytes IO
         buf = memoryview(bytearray(length))
         readinto = fsrc.readinto
         while 1:
@@ -89,12 +89,11 @@ def copyfileobj(fsrc, fdst, length=16*1024):
                 write(buf[:recv_len])
                 break
             write(buf)
-    else:
-        # TextIOBase
+    else:  # Text IO
         if hasattr(fsrc, 'encoding') and hasattr(fdst, 'encoding'):
             # check fsrc & fdst encoding matches
             if fsrc.encoding != fdst.encoding:
-                raise EncodingMissmatchError(
+                raise EncodingMismatchError(
                     'fsrc.encoding={!r} and fdst.encoding={!r}'.format(fsrc.encoding, fdst.encoding)
                 )
         read = fsrc.read
