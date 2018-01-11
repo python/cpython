@@ -1,0 +1,1 @@
+Faster list.insert for lists with 32 or more elements in them.  Patch by Jeethu Rao.

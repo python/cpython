@@ -234,6 +234,12 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
     return 0;
 }
 
+
+/* Threshold at which to switch to using
+ * memmove instead of a for loop in ins1
+ */
+#define INS1_MEMMOVE_THRESHOLD 32
+
 static int
 ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 {
@@ -256,12 +262,15 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         where += n;
         if (where < 0)
             where = 0;
-    }
-    if (where > n)
+    } else if (where > n)
         where = n;
     items = self->ob_item;
-    for (i = n; --i >= where; )
-        items[i+1] = items[i];
+    if (n <= INS1_MEMMOVE_THRESHOLD)
+        for (i = n; --i >= where; )
+            items[i+1] = items[i];
+    else
+        memmove(&items[where+1], &items[where],
+                sizeof(PyObject*) * (n - where));
     Py_INCREF(v);
     items[where] = v;
     return 0;
