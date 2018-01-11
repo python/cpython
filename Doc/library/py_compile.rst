@@ -57,8 +57,8 @@ byte-code cache files in the directory containing the source code.
    enum and controls how the generated ``.pyc`` files are invalidated at
    runtime.
 
-   If the SOURCE_DATE_EPOCH environment variable is set, the timestamp entry in
-   the .pyc file header, will be limited to this value.
+   If the :envvar:`SOURCE_DATE_EPOCH` environment variable is set, the timestamp
+   entry in the ``.pyc`` file header will be set to this value.
    See https://reproducible-builds.org/specs/source-date-epoch/ for more info.
 
    .. versionchanged:: 3.2
@@ -75,6 +75,7 @@ byte-code cache files in the directory containing the source code.
 
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added as specified in :pep:`552`.
+      Support for :envvar:`SOURCE_DATE_EPOCH` was also added.
 
 
 .. class:: PycInvalidationMode
