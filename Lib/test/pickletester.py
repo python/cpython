@@ -2169,16 +2169,11 @@ class AbstractPickleTests(unittest.TestCase):
     def test_framed_write_sizes_with_delayed_writer(self):
         class ChunkAccumulator:
             """Accumulate pickler output in a list of raw chunks."""
-
             def __init__(self):
                 self.chunks = []
-
             def write(self, chunk):
                 self.chunks.append(chunk)
-
             def concatenate_chunks(self):
-                # Some chunks can be memoryview instances, we need to convert
-                # them to bytes to be able to call join
                 return b"".join(self.chunks)
 
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -2197,7 +2192,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.pickler(writer, proto).dump(objects)
 
             # Actually read the binary content of the chunks after the end
-            # of the call to dump: and memoryview passed to write should not
+            # of the call to dump: any memoryview passed to write should not
             # be released otherwise this delayed access would not be possible.
             pickled = writer.concatenate_chunks()
             reconstructed = self.loads(pickled)
@@ -2229,7 +2224,9 @@ class AbstractPickleTests(unittest.TestCase):
             for chunk_size in large_sizes:
                 self.assertLess(chunk_size, 2 * self.FRAME_SIZE_TARGET,
                                 chunk_sizes)
-            # There shouldn't bee too much small chunks.
+            # There shouldn't bee too many small chunks: the protocol header,
+            # the frame headers and the large string headers are written
+            # in small chunks.
             self.assertLessEqual(len(small_sizes),
                                  len(large_sizes) + len(medium_sizes) + 3,
                                  chunk_sizes)
