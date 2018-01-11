@@ -931,6 +931,8 @@ field names, the method and attribute names start with an underscore.
         >>> Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
         >>> Account._fields_defaults
         {'balance': 0}
+        >>> Account('premium')
+        Account(type='premium', balance=0)
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
 function:

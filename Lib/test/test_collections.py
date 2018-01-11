@@ -228,6 +228,12 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
 
+        Point = namedtuple('Point', 'x y', defaults=())                     # 0 defaults
+        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point(1, 2), (1, 2))
+        with self.assertRaises(TypeError):
+            Point(1)
+
         with self.assertRaises(TypeError):                                  # catch too few args
             Point()
         with self.assertRaises(TypeError):                                  # catch too many args
@@ -236,6 +242,8 @@ class TestNamedTuple(unittest.TestCase):
             Point = namedtuple('Point', 'x y', defaults=(10, 20, 30))
         with self.assertRaises(TypeError):                                  # non-iterable defaults
             Point = namedtuple('Point', 'x y', defaults=10)
+        with self.assertRaises(TypeError):                                  # another non-iterable default
+            Point = namedtuple('Point', 'x y', defaults=False)
 
         Point = namedtuple('Point', 'x y', defaults=None)                   # default is None
         self.assertEqual(Point._fields_defaults, {})
@@ -250,6 +258,14 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
+
+        Point = namedtuple('Point', 'x y', defaults=iter([10, 20]))         # allow plain iterator
+        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point.__new__.__defaults__, (10, 20))
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+        self.assertEqual(Point(), (10, 20))
+
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
