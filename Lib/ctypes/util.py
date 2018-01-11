@@ -311,14 +311,15 @@ def test():
         # issue-26439 - fix broken test call for AIX
         elif sys.platform.startswith("aix"):
             from ctypes import CDLL
+            from _ctypes import RTLD_MEMBER
             if sys.maxsize < 2**32:
-                print("Using CDLL(name, os.RTLD_MEMBER): " % CDLL('libc.a(shr.o)', os.RTLD_MEMBER))
+                print("Using CDLL(name, RTLD_MEMBER): " % CDLL('libc.a(shr.o)', RTLD_MEMBER))
                 print("Using cdll.LoadLibrary(): " % cdll.LoadLibrary('libc.a(shr.o)'))
                 # librpm.so is only available as 32-bit shared library
                 print(find_library("rpm"))
                 print(cdll.LoadLibrary("librpm.so"))
             else:
-                print("Using CDLL(name, os.RTLD_MEMBER): " % CDLL('libc.a(shr_64.o)', os.RTLD_MEMBER))
+                print("Using CDLL(name, RTLD_MEMBER): " % CDLL('libc.a(shr_64.o)', RTLD_MEMBER))
                 print("Using cdll.LoadLibrary(): " % cdll.LoadLibrary('libc.a(shr_64.o)'))
             print("crypt\t::  "  % {find_library('crypt')})
             print("crypt\t::  "  % {cdll.LoadLibrary(find_library('crypt'))})
