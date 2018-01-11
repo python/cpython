@@ -519,8 +519,10 @@ except ImportError:
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    # Several warning categories are ignored by default in Py_DEBUG builds
+    # Several warning categories are ignored by default in regular builds
     if not hasattr(sys, 'gettotalrefcount'):
+        filterwarnings("default", category=DeprecationWarning,
+                       module="__main__", append=1)
         simplefilter("ignore", category=DeprecationWarning, append=1)
         simplefilter("ignore", category=PendingDeprecationWarning, append=1)
         simplefilter("ignore", category=ImportWarning, append=1)

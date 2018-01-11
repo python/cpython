@@ -558,6 +558,7 @@ class CmdLineTest(unittest.TestCase):
             expected_filters = "default::Warning"
         else:
             expected_filters = ("default::Warning "
+                                "default::DeprecationWarning "
                                 "ignore::DeprecationWarning "
                                 "ignore::PendingDeprecationWarning "
                                 "ignore::ImportWarning "
@@ -626,6 +627,7 @@ class CmdLineTest(unittest.TestCase):
                             "always::UserWarning")
         if not Py_DEBUG:
             expected_filters += (" "
+                                 "default::DeprecationWarning "
                                  "ignore::DeprecationWarning "
                                  "ignore::PendingDeprecationWarning "
                                  "ignore::ImportWarning "
