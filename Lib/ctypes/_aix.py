@@ -50,7 +50,7 @@ import re
 from os import environ, path
 from sys import executable
 from ctypes import c_void_p, sizeof
-from subprocess import Popen, PIPE, DEVNULL
+from subprocess import Popen, PIPE
 
 # Executable bit size - 32 or 64
 # Used to filter the search in an archive by size, e.g., -X64
@@ -106,7 +106,7 @@ def get_ld_headers(file):
     # 3. get info (lines starting with [0-9])
     ldr_headers = []
     p = Popen(["/usr/bin/dump", "-X%{AIX_ABI}", "-H", file],
-        universal_newlines=True, stdout=PIPE, stderr=DEVNULL)
+        universal_newlines=True, stdout=PIPE)
     # be sure to read to the end-of-file - getting all entries
     while True:
         ld_header = get_ld_header(p)
