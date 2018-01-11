@@ -65,12 +65,15 @@ def init(x):
 def get_init_status():
     return INITIALIZER_STATUS
 
-def init_fail(log_queue=None):
+def init_fail(log_queue=None, no_log=False):
+    logger = logging.getLogger('concurrent.futures')
     if log_queue is not None:
-        logger = logging.getLogger('concurrent.futures')
         logger.addHandler(QueueHandler(log_queue))
         logger.setLevel('CRITICAL')
         logger.propagate = False
+    elif no_log:
+        logger.disabled = True
+
     time.sleep(0.1)  # let some futures be scheduled
     raise ValueError('error in initializer')
 
@@ -241,7 +244,7 @@ class FailingInitializerMixin(ExecutorMixin):
                     future.result()
             # At some point, the executor should break
             t1 = time.time()
-            while not self.executor._broken:
+            while not self.executor._flags.broken:
                 if time.time() - t1 > 5:
                     self.fail("executor not broken after 5 s.")
                 time.sleep(0.01)
@@ -1130,6 +1133,42 @@ class IntrospectionTests:
 
         # Make sure the test does not pass because of error in workers
         self.assertTrue(all([f.result() for f in fs]))
+
+    def test_status(self):
+        self.event.clear()
+        fs = self.executor.submit(event_wait)
+        if hasattr(self, 'ctx'):
+            executor_join = [self.executor._queue_management_thread]
+        else:
+            executor_join = self.executor._threads
+        self._wait_for_active(1, self.initial_patience)
+        self.assertEqual(self.executor.stat()["status"], "running")
+
+        self.executor.shutdown(wait=False)
+        self.assertEqual(self.executor.stat()["status"], "shutting_down")
+
+        self.event.set()
+        self.assertTrue(fs.result())
+        for worker in executor_join:
+            worker.join()
+
+        self.assertEqual(self.executor.stat()["status"], "shutdown")
+
+        # Test not_started and broken
+        kwargs = dict(max_workers=2, initializer=init_fail,
+                      initargs=(None, True))
+        if hasattr(self, "ctx"):
+            kwargs["mp_context"] = self.get_context()
+
+        executor = self.executor_type(**kwargs)
+        self.assertEqual(executor.stat()["status"], "not_started")
+
+
+        with self.assertRaises(BrokenExecutor):
+            executor.submit(id, 0).result()
+        self.assertEqual(executor.stat()["status"], "broken")
+
+        executor.shutdown()
 
 
 create_executor_tests(IntrospectionTests)

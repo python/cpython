@@ -280,6 +280,7 @@ def _add_call_item_to_queue(pending_work_items,
 
 
 def _queue_management_worker(executor_reference,
+                             executor_flags,
                              processes,
                              pending_work_items,
                              active_work_items,
@@ -295,6 +296,9 @@ def _queue_management_worker(executor_reference,
         executor_reference: A weakref.ref to the ProcessPoolExecutor that owns
             this thread. Used to determine if the ProcessPoolExecutor has been
             garbage collected and that this function can exit.
+        executor_flags: A _ExecutorFlags object holding internal states of the
+            ProcessPoolExecutor. It permits to know if the executor correctly
+            shutdowned without looking at the thread object.
         process: A list of the ctx.Process instances used as
             workers.
         pending_work_items: A dict mapping work ids to _WorkItems e.g.
@@ -312,11 +316,16 @@ def _queue_management_worker(executor_reference,
     """
     executor = None
 
-    def shutting_down():
+    def is_shutting_down():
+        # No more work items can be added if:
+        #   - The interpreter is shutting down OR
+        #   - The executor that owns this worker has been collected OR
+        #   - The executor that owns this worker has been shutdown.
+        # If the executor is broken, it should be detected in the next loop.
         return (_global_shutdown or executor is None
-                or executor._shutdown_thread)
+                or executor_flags.shutting_down)
 
-    def shutdown_worker():
+    def shutdown_all_workers():
         # This is an upper bound on the number of children alive.
         n_children_alive = sum(p.is_alive() for p in processes.values())
         n_children_to_stop = n_children_alive
@@ -338,6 +347,10 @@ def _queue_management_worker(executor_reference,
         # some ctx.Queue methods may deadlock on Mac OS X.
         for p in processes.values():
             p.join()
+
+        # Flag the executor as shutdown as at this point, all ressources have
+        # been cleaned up.
+        executor_flags.shutdown = True
 
     result_reader = result_queue._reader
     wakeup_reader = thread_wakeup._reader
@@ -371,13 +384,9 @@ def _queue_management_worker(executor_reference,
         thread_wakeup.clear()
         if is_broken:
             # Mark the process pool broken so that submits fail right now.
-            executor = executor_reference()
-            if executor is not None:
-                executor._broken = ('A child process terminated '
-                                    'abruptly, the process pool is not '
-                                    'usable anymore')
-                executor._shutdown_thread = True
-                executor = None
+            executor_flags.flag_as_broken('A child process terminated '
+                                          'abruptly, the process pool is not '
+                                          'usable anymore')
             bpe = BrokenProcessPool("A process in the process pool was "
                                     "terminated abruptly while the future was "
                                     "running or pending.")
@@ -394,16 +403,16 @@ def _queue_management_worker(executor_reference,
             # locks may be in a dirty state and block forever.
             for p in processes.values():
                 p.terminate()
-            shutdown_worker()
+            shutdown_all_workers()
             return
         if isinstance(result_item, int):
             # Clean shutdown of a worker using its PID
             # (avoids marking the executor broken)
-            assert shutting_down()
+            assert is_shutting_down()
             p = processes.pop(result_item)
             p.join()
             if not processes:
-                shutdown_worker()
+                shutdown_all_workers()
                 return
         elif isinstance(result_item, _WorkId):
             active_work_items.add(result_item.work_id)
@@ -428,12 +437,12 @@ def _queue_management_worker(executor_reference,
         #   - The interpreter is shutting down OR
         #   - The executor that owns this worker has been collected OR
         #   - The executor that owns this worker has been shutdown.
-        if shutting_down():
+        if is_shutting_down():
             try:
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not pending_work_items:
-                    shutdown_worker()
+                    shutdown_all_workers()
                     return
             except Full:
                 # This is not a problem: we will eventually be woken up (in
@@ -528,10 +537,8 @@ class ProcessPoolExecutor(_base.Executor):
         # Map of pids to processes
         self._processes = {}
 
-        # Shutdown is a two-step process.
-        self._shutdown_thread = False
-        self._shutdown_lock = threading.Lock()
-        self._broken = False
+        # Internal variables and flags
+        self._flags = _base._ExecutorFlags(exc_class=BrokenProcessPool)
         self._queue_count = 0
         self._pending_work_items = {}
         self._active_work_items = set()
@@ -574,6 +581,7 @@ class ProcessPoolExecutor(_base.Executor):
             self._queue_management_thread = threading.Thread(
                 target=_queue_management_worker,
                 args=(weakref.ref(self, weakref_cb),
+                      self._flags,
                       self._processes,
                       self._pending_work_items,
                       self._active_work_items,
@@ -584,6 +592,7 @@ class ProcessPoolExecutor(_base.Executor):
                 name="QueueManagerThread")
             self._queue_management_thread.daemon = True
             self._queue_management_thread.start()
+            self._flags.started = True
             _threads_wakeups[self._queue_management_thread] = \
                 self._queue_management_thread_wakeup
 
@@ -599,12 +608,9 @@ class ProcessPoolExecutor(_base.Executor):
             self._processes[p.pid] = p
 
     def submit(self, fn, *args, **kwargs):
-        with self._shutdown_lock:
-            if self._broken:
-                raise BrokenProcessPool(self._broken)
-            if self._shutdown_thread:
-                raise RuntimeError('cannot schedule new futures after shutdown')
-
+        # The context in _flags asserts that the executor is running or raise
+        # the correct error.
+        with self._flags:
             f = _base.Future()
             w = _base._WorkItem(f, fn, args, kwargs)
 
@@ -616,6 +622,7 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._start_queue_management_thread()
             return f
+
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):
@@ -648,18 +655,21 @@ class ProcessPoolExecutor(_base.Executor):
         return _chain_from_iterable_of_lists(results)
 
     def shutdown(self, wait=True):
-        with self._shutdown_lock:
-            self._shutdown_thread = True
+        self._flags.flag_as_shutting_down()
         if self._queue_management_thread:
             # Wake up queue management thread
             self._queue_management_thread_wakeup.wakeup()
             if wait:
                 self._queue_management_thread.join()
+        elif self._call_queue is not None:
+            # In this case, the executor has not been started so we need to
+            # manually close the _call_queue.
+            self._call_queue.close()
         # To reduce the risk of opening too many files, remove references to
         # objects that use file descriptors.
         self._queue_management_thread = None
+
         if self._call_queue is not None:
-            self._call_queue.close()
             if wait:
                 self._call_queue.join_thread()
             self._call_queue = None
@@ -672,15 +682,18 @@ class ProcessPoolExecutor(_base.Executor):
                         for t in self._active_work_items}
         waiting_tasks = [t for t in self._pending_work_items.values()
                          if t not in active_tasks]
+        worker_count = len(self._processes) if self._processes else 0
+        status = str(self._flags)
         _stat = dict(
-            worker_count=len(self._processes),
+            worker_count=worker_count,
             active_worker_count=len(active_tasks),
-            idle_worker_count=len(self._processes) - len(active_tasks),
+            idle_worker_count=worker_count - len(active_tasks),
             task_count=len(active_tasks) + len(waiting_tasks),
             active_task_count=len(active_tasks),
             waiting_task_count=len(waiting_tasks),
             active_tasks=active_tasks,
             waiting_tasks=waiting_tasks,
+            status=status
         )
         return _stat
 

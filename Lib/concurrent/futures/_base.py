@@ -635,3 +635,49 @@ class BrokenExecutor(RuntimeError):
     """
     Raised when a executor has become non-functional after a severe failure.
     """
+
+
+class _ExecutorFlags(object):
+    """necessary references to maintain executor states without preventing gc
+
+    It permits to keep the information needed by queue_management_thread
+    and crash_detection_thread to maintain the pool without preventing the
+    garbage collection of unreferenced executors.
+    """
+    def __init__(self, exc_class=BrokenExecutor):
+
+        self.started = False
+        self.shutdown = False
+        self.shutting_down = False
+        self.broken = False
+        self.shutdown_lock = threading.Lock()
+        self._exc_class = exc_class
+
+    def __enter__(self):
+        self.shutdown_lock.acquire()
+        if self.broken:
+            self.shutdown_lock.release()
+            raise self._exc_class(self.broken)
+        if self.shutting_down:
+            self.shutdown_lock.release()
+            raise RuntimeError('cannot schedule new futures after shutdown')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.shutdown_lock.release()
+
+    def __repr__(self):
+        status = "running" if self.started else "not_started"
+        if self.broken:
+            status = "broken"
+        elif self.shutting_down:
+            status = "shutdown" if self.shutdown else "shutting_down"
+        return status
+
+    def flag_as_shutting_down(self):
+        with self.shutdown_lock:
+            self.shutting_down = True
+
+    def flag_as_broken(self, cause):
+        with self.shutdown_lock:
+            self.shutting_down = True
+            self.broken = cause

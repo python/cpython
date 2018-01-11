@@ -59,10 +59,11 @@ class _WorkItem(_base._WorkItem):
 
 class _Worker(threading.Thread):
     """Worker Thread for ThreadPoolExecutor --used for introspection"""
-    def __init__(self, executor_reference, work_queue, initializer, initargs,
-                 name):
+    def __init__(self, executor_reference, executor_flags, work_queue,
+                 initializer, initargs, name):
         super().__init__(name=name)
         self._executor_reference = executor_reference
+        self._flags = executor_flags
         self._work_queue = work_queue
         self._initializer = initializer
         self._initargs = initargs
@@ -92,9 +93,11 @@ class _Worker(threading.Thread):
                 #   - The interpreter is shutting down OR
                 #   - The executor that owns the worker has been collected OR
                 #   - The executor that owns the worker has been shutdown.
-                if _shutdown or executor is None or executor._shutdown:
+                if (_shutdown or executor is None
+                        or self._flags.shutting_down):
                     # Notice other workers
                     self._work_queue.put(None)
+                    self._flags.shutdown += 1
                     return
                 del executor
         except BaseException:
@@ -136,21 +139,16 @@ class ThreadPoolExecutor(_base.Executor):
         self._max_workers = max_workers
         self._work_queue = queue.Queue()
         self._threads = set()
-        self._broken = False
-        self._shutdown = False
-        self._shutdown_lock = threading.Lock()
+        self._flags = _base._ExecutorFlags(exc_class=BrokenThreadPool)
         self._thread_name_prefix = (thread_name_prefix or
                                     ("ThreadPoolExecutor-%d" % self._counter()))
         self._initializer = initializer
         self._initargs = initargs
 
     def submit(self, fn, *args, **kwargs):
-        with self._shutdown_lock:
-            if self._broken:
-                raise BrokenThreadPool(self._broken)
-
-            if self._shutdown:
-                raise RuntimeError('cannot schedule new futures after shutdown')
+        # The context in _flags asserts that the executor is running or raise
+        # the correct error.
+        with self._flags:
 
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
@@ -165,15 +163,23 @@ class ThreadPoolExecutor(_base.Executor):
         with self._work_queue.mutex:
             waiting_tasks = [task for task in self._work_queue.queue
                              if task not in active_tasks]
+        status = str(self._flags)
+        if status == "shutdown" and self._flags.shutdown < len(self._threads):
+            # For ThreadPoolExecutor, we have to verify that all the executor's
+            # threads have shutdowned to correctly flag the executor as
+            # shutdown.
+            status = "shutting_down"
+        worker_count = len(self._threads)
         _stat = dict(
-            worker_count=len(self._threads),
+            worker_count=worker_count,
             active_worker_count=len(active_tasks),
-            idle_worker_count=len(self._threads) - len(active_tasks),
+            idle_worker_count=worker_count - len(active_tasks),
             task_count=len(active_tasks) + len(waiting_tasks),
             active_task_count=len(active_tasks),
             waiting_task_count=len(waiting_tasks),
             active_tasks=active_tasks,
             waiting_tasks=waiting_tasks,
+            status=status
         )
         return _stat
 
@@ -189,30 +195,33 @@ class ThreadPoolExecutor(_base.Executor):
                 self.stat()["idle_worker_count"] < self._work_queue.qsize()):
             thread_name = '%s_%d' % (self._thread_name_prefix or self,
                                      num_threads)
-            t = _Worker(weakref.ref(self, weakref_cb), self._work_queue,
-                        self._initializer, self._initargs, name=thread_name)
+            t = _Worker(weakref.ref(self, weakref_cb), self._flags,
+                        self._work_queue, self._initializer, self._initargs,
+                        name=thread_name)
             t.daemon = True
             t.start()
+            self._flags.started = True
             self._threads.add(t)
             _threads_queues[t] = self._work_queue
 
     def _initializer_failed(self):
-        with self._shutdown_lock:
-            self._broken = ('A thread initializer failed, the thread pool '
-                            'is not usable anymore')
-            # Drain work queue and mark pending futures failed
-            while True:
-                try:
-                    work_item = self._work_queue.get_nowait()
-                except queue.Empty:
-                    break
-                if work_item is not None:
-                    work_item.future.set_exception(BrokenThreadPool(self._broken))
+        self._flags.flag_as_broken('A thread initializer failed, the thread '
+                                   'pool is not usable anymore')
+        while True:
+            try:
+                work_item = self._work_queue.get_nowait()
+            except queue.Empty:
+                break
+            if work_item is not None:
+                work_item.future.set_exception(
+                    BrokenThreadPool(self._flags.broken))
+        # Make sure to wakeup the other threads if
+        # the failure only ocurred in one of them.
+        self._work_queue.put(None)
 
     def shutdown(self, wait=True):
-        with self._shutdown_lock:
-            self._shutdown = True
-            self._work_queue.put(None)
+        self._flags.flag_as_shutting_down()
+        self._work_queue.put(None)
         if wait:
             for t in self._threads:
                 t.join()
