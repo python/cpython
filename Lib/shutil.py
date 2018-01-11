@@ -79,7 +79,7 @@ class EncodingMismatchError(UnicodeError):
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
     write = fdst.write
-    if hasattr(fsrc, 'readinto') and length > 0:  # Bytes IO
+    if hasattr(fsrc, 'readinto') and length > 0:
         buf = memoryview(bytearray(length))
         readinto = fsrc.readinto
         while 1:
@@ -89,7 +89,7 @@ def copyfileobj(fsrc, fdst, length=16*1024):
                 write(buf[:recv_len])
                 break
             write(buf)
-    else:  # Text IO
+    else:
         if hasattr(fsrc, 'encoding') and hasattr(fdst, 'encoding'):
             # check fsrc & fdst encoding matches
             if fsrc.encoding != fdst.encoding:
