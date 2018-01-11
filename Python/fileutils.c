@@ -263,7 +263,7 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
 
 #if !defined(__APPLE__) && !defined(__ANDROID__)
 static wchar_t*
-decode_locale(const char* arg, size_t *size)
+decode_current_locale(const char* arg, size_t *size)
 {
     wchar_t *res;
     size_t argsize;
@@ -380,6 +380,38 @@ oom:
 #endif
 
 
+static wchar_t*
+decode_locale(const char* arg, size_t *size, int ignore_utf8_mode)
+{
+#if defined(__APPLE__) || defined(__ANDROID__)
+    return _Py_DecodeUTF8_surrogateescape(arg, strlen(arg), size);
+#else
+    if (!ignore_utf8_mode && Py_UTF8Mode == 1) {
+        return _Py_DecodeUTF8_surrogateescape(arg, strlen(arg), size);
+    }
+
+#ifndef MS_WINDOWS
+    if (force_ascii == -1)
+        force_ascii = check_force_ascii();
+
+    if (force_ascii) {
+        /* force ASCII encoding to workaround mbstowcs() issue */
+        wchar_t *wstr = decode_ascii_surrogateescape(arg, size);
+        if (wstr == NULL) {
+            if (size != NULL) {
+                *size = (size_t)-1;
+            }
+            return NULL;
+        }
+        return wstr;
+    }
+#endif
+
+    return decode_current_locale(arg, size);
+#endif   /* __APPLE__ or __ANDROID__ */
+}
+
+
 /* Decode a byte string from the locale encoding with the
    surrogateescape error handler: undecodable bytes are decoded as characters
    in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
@@ -402,32 +434,15 @@ oom:
 wchar_t*
 Py_DecodeLocale(const char* arg, size_t *size)
 {
-#if defined(__APPLE__) || defined(__ANDROID__)
-    return _Py_DecodeUTF8_surrogateescape(arg, strlen(arg), size);
-#else
-    if (Py_UTF8Mode == 1) {
-        return _Py_DecodeUTF8_surrogateescape(arg, strlen(arg), size);
-    }
+    return decode_locale(arg, size, 0);
+}
 
-#ifndef MS_WINDOWS
-    if (force_ascii == -1)
-        force_ascii = check_force_ascii();
 
-    if (force_ascii) {
-        /* force ASCII encoding to workaround mbstowcs() issue */
-        wchar_t *wstr = decode_ascii_surrogateescape(arg, size);
-        if (wstr == NULL) {
-            if (size != NULL) {
-                *size = (size_t)-1;
-            }
-            return NULL;
-        }
-        return wstr;
-    }
-#endif
-
-    return decode_locale(arg, size);
-#endif   /* __APPLE__ or __ANDROID__ */
+/* Similar to Py_DecodeLocale() but ignore the UTF-8 mode */
+wchar_t*
+_Py_DecodeCurrentLocale(const char* arg, size_t *size)
+{
+    return decode_locale(arg, size, 1);
 }
 
 
@@ -508,12 +523,13 @@ encode_current_locale(const wchar_t *text, size_t *error_pos, int raw_malloc)
 #endif
 
 static char*
-encode_locale(const wchar_t *text, size_t *error_pos, int raw_malloc)
+encode_locale(const wchar_t *text, size_t *error_pos,
+              int raw_malloc, int ignore_utf8_mode)
 {
 #if defined(__APPLE__) || defined(__ANDROID__)
     return _Py_EncodeUTF8_surrogateescape(text, error_pos, raw_malloc);
 #else   /* __APPLE__ */
-    if (Py_UTF8Mode == 1) {
+    if (!ignore_utf8_mode && Py_UTF8Mode == 1) {
         return _Py_EncodeUTF8_surrogateescape(text, error_pos, raw_malloc);
     }
 
@@ -544,7 +560,7 @@ encode_locale(const wchar_t *text, size_t *error_pos, int raw_malloc)
 char*
 Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
-    return encode_locale(text, error_pos, 0);
+    return encode_locale(text, error_pos, 0, 0);
 }
 
 
@@ -553,7 +569,15 @@ Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 char*
 _Py_EncodeLocaleRaw(const wchar_t *text, size_t *error_pos)
 {
-    return encode_locale(text, error_pos, 1);
+    return encode_locale(text, error_pos, 1, 0);
+}
+
+
+/* Similar to _Py_EncodeLocaleRaw() but ignore the UTF-8 Mode */
+char*
+_Py_EncodeCurrentLocale(const wchar_t *text, size_t *error_pos)
+{
+    return encode_locale(text, error_pos, 1, 1);
 }
 
 

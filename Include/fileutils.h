@@ -24,6 +24,14 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     const char *s,
     Py_ssize_t size,
     size_t *p_wlen);
+
+PyAPI_FUNC(wchar_t *) _Py_DecodeCurrentLocale(
+    const char *arg,
+    size_t *size);
+
+PyAPI_FUNC(char*) _Py_EncodeCurrentLocale(
+    const wchar_t *text,
+    size_t *error_pos);
 #endif
 
 #ifndef Py_LIMITED_API
