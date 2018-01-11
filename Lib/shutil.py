@@ -72,21 +72,37 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
+class EncodingMissmatchError(UnicodeError):
+    """Raised when source and destination encoding are not the same."""
+
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
-    buf = memoryview(bytearray(length))
-    # localize
-    readinto = fsrc.readinto
     write = fdst.write
-    # run loop
-    while 1:
-        recv_len = readinto(buf)
-        if recv_len < length:
-            # write remaining content if any.
-            write(buf[:recv_len])
-            break
-        write(buf)
+    if hasattr(fsrc, 'readinto') and length > 0:
+        buf = memoryview(bytearray(length))
+        readinto = fsrc.readinto
+        while 1:
+            recv_len = readinto(buf)
+            if recv_len < length:
+                # write remaining content if any.
+                write(buf[:recv_len])
+                break
+            write(buf)
+    else:
+        # TextIOBase
+        if hasattr(fsrc, 'encoding') and hasattr(fdst, 'encoding'):
+            # check fsrc & fdst encoding matches
+            if fsrc.encoding != fdst.encoding:
+                raise EncodingMissmatchError(
+                    'fsrc.encoding={!r} and fdst.encoding={!r}'.format(fsrc.encoding, fdst.encoding)
+                )
+        read = fsrc.read
+        while 1:
+            buf = read(length)
+            if not buf:
+                break
+            write(buf)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
@@ -110,7 +126,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    for fn in [src, dst]:
+    for fn in {src, dst}:
         try:
             st = os.stat(fn)
         except OSError:
