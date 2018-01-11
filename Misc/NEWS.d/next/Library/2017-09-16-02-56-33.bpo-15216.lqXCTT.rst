@@ -1,2 +1,0 @@
-``TextIOWrapper.reconfigure()`` supports changing *encoding*, *errors*, and
-*newline*.

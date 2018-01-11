@@ -1,4 +1,0 @@
-Make asyncio.Task.set_exception() and set_result() raise
-NotImplementedError. Task._step() and Future.__await__() raise proper
-exceptions when they are in an invalid state, instead of raising an
-AssertionError.
