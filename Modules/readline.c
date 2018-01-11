@@ -138,8 +138,7 @@ encode(PyObject *b)
 static PyObject *
 decode(const char *s)
 {
-    return _PyUnicode_DecodeCurrentLocaleAndSize(s, strlen(s),
-                                                 "surrogateescape");
+    return _PyUnicode_DecodeCurrentLocale(s, "surrogateescape");
 }
 
 
