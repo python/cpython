@@ -1,0 +1,3 @@
+Added a check that only runs dummy function init in ctypes on windows, where
+it's needed. This solves the problem with GRsecurity/SELinux complaining
+about that and treating it as a memory violation.
