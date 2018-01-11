@@ -102,6 +102,7 @@ def _quote_html(html):
 class HTTPServer(SocketServer.ThreadingTCPServer):
 
     allow_reuse_address = 1    # Seems to make sense in testing environment
+    daemon_threads = True
 
     def server_bind(self):
         """Override server_bind to store the server name."""
