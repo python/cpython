@@ -1811,6 +1811,10 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(
     const char *errors
     );
 
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeCurrentLocale(
+    const char *str,
+    const char *errors);
+
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeCurrentLocaleAndSize(
     const char *str,
     Py_ssize_t len,
