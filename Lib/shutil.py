@@ -125,7 +125,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    for fn in {src, dst}:
+    for fn in [src, dst]:
         try:
             st = os.stat(fn)
         except OSError:
