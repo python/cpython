@@ -121,7 +121,7 @@ def _type_check(arg, msg):
         isinstance(arg, _GenericAlias) and
         arg.__origin__ in (Generic, _Protocol, ClassVar) or
         arg in (Generic, _Protocol)
-        or isinstance(arg, _SpecialForm) and arg != Any
+        or isinstance(arg, _SpecialForm) and arg is not Any
     ):
         raise TypeError("Plain %s is not valid as type argument" % arg)
     if isinstance(arg, (type, TypeVar, ForwardRef)):
