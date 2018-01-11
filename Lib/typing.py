@@ -821,7 +821,8 @@ class Generic:
     def __init_subclass__(cls, *args, **kwargs):
         tvars = []
         if ('__orig_bases__' in cls.__dict__ and Generic in cls.__orig_bases__ or
-                not '__orig_bases__' in cls.__dict__ and Generic in cls.__bases__):
+                '__orig_bases__' not in cls.__dict__ and Generic in cls.__bases__
+                and cls.__name__ != '_Protocol'):
             raise TypeError("Cannot inherit from plain Generic")
         if '__orig_bases__' in cls.__dict__:
             tvars = _collect_type_vars(cls.__orig_bases__)
@@ -1129,7 +1130,7 @@ class _ProtocolMeta(type):
         return attrs
 
 
-class _Protocol(metaclass=_ProtocolMeta):
+class _Protocol(Generic, metaclass=_ProtocolMeta):
     """Internal base class for protocol classes.
 
     This implements a simple-minded structural issubclass check
@@ -1142,7 +1143,7 @@ class _Protocol(metaclass=_ProtocolMeta):
     _is_protocol = True
 
     def __class_getitem__(cls, params):
-        return Generic.__class_getitem__(cls, params)
+        return super().__class_getitem__(params)
 
 
 # Some unconstrained type variables.  These are used by the container types.
