@@ -570,7 +570,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 
 
 # _cls should never be specified by keyword, so start it with an
-#  underscore. The presense of _cls is used to detect if this
+#  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
               hash=None, frozen=False):
@@ -677,7 +677,7 @@ def astuple(obj, *, tuple_factory=tuple):
           y: int
 
     c = C(1, 2)
-    assert asdtuple(c) == (1, 2)
+    assert astuple(c) == (1, 2)
 
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
@@ -714,16 +714,17 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     omitted, use the string 'typing.Any'.  Field objects are created by
     the equivalent of calling 'field(name, type [, Field-info])'.
 
-      C = make_class('C', ['x', ('y', int'), ('z', int, Field(init=False))], bases=[Base])
+      C = make_dataclass('C', ['x', ('y', int), ('z', int, field(init=False))], bases=(Base,))
 
     is equivalent to:
 
       @dataclass
       class C(Base):
-          a: int
-          b: int = field(init=False)
+          x: 'typing.Any'
+          y: int
+          z: int = field(init=False)
 
-    For the bases and namespace paremeters, see the builtin type() function.
+    For the bases and namespace parameters, see the builtin type() function.
 
     The parameters init, repr, eq, order, hash, and frozen are passed to
     dataclass().
