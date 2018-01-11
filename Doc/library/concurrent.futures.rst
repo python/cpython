@@ -115,10 +115,13 @@ Executor Objects
              which are currently being processed by the executor. The WorkItem
              object is a container holding the function *fn*, its arguments
              *args* and *kwargs* and the associated :class:`Future` in *future*.
-           - `waiting_tasks`:  a dictionary with WorkItems representing the
+           - `waiting_tasks`: a dictionary with WorkItems representing the
              tasks waiting to be processed by the executor. The WorkItem object
              is a container holding the function *fn*, its arguments *args* and
              *kwargs* and the associated :class:`Future` in *future*.
+           - `status`: a string holding the status of the executor. It can be
+             one of {"not_started", "running", "broken", "shutting_down",
+             "shutdown"}.
 
        .. versionchanged:: 3.7
           Added the *stat* method.
