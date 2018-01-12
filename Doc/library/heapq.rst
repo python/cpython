@@ -188,7 +188,7 @@ they were added. And since no two entry counts are the same, the tuple
 comparison will never attempt to directly compare two tasks.
 
 Another solution to the problem of non-comparable tasks is to create a wrapper
-class that only compares the priority and ignores the task item:
+class that ignores the task item and only compares the priority field::
 
     from dataclasses import dataclass, field
     from typing import Any
