@@ -693,9 +693,9 @@ ctypes._aix.find_library() Patch by: Michael Felt
 .. nonce: -OMNg8
 .. section: Library
 
-The picklers no longer allocate temporary memory when dumping large
-``bytes`` and ``str`` objects into a file object. Instead the data is
-directly streamed into the underlying file object.
+The pickler now uses less memory when serializing large bytes and str
+objects into a file.  Pickles created with protocol 4 will require less
+memory for unpickling large bytes and str objects.
 
 ..
 
