@@ -5,7 +5,6 @@ from . import data01
 from . import zipdata02
 from . import util
 from importlib import resources
-from unittest.mock import patch
 
 
 class ResourceTests:
@@ -43,13 +42,6 @@ class ResourceTests:
 class ResourceDiskTests(ResourceTests, unittest.TestCase):
     def setUp(self):
         self.data = data01
-        # Disk based tests should use the ResourceReader API of FileLoader, so
-        # mock out the fallbacks in resources.py.
-        patcher = patch('importlib.resources.builtins_open',
-                        return_value=RuntimeError)
-        self.addCleanup(patcher.stop)
-        print('====> patcher.start!')
-        patcher.start()
 
 
 class ResourceZipTests(ResourceTests, util.ZipSetup, unittest.TestCase):
