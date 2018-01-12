@@ -843,13 +843,13 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertFalse(issubclass(type(x), Collection), repr(type(x)))
         # Check some non-collection iterables
         non_col_iterables = [_test_gen(), iter(b''), iter(bytearray()),
-                             (x for x in []), dict().values()]
+                             (x for x in [])]
         for x in non_col_iterables:
             self.assertNotIsInstance(x, Collection)
             self.assertFalse(issubclass(type(x), Collection), repr(type(x)))
         # Check some collections
         samples = [set(), frozenset(), dict(), bytes(), str(), tuple(),
-                   list(), dict().keys(), dict().items()]
+                   list(), dict().keys(), dict().items(), dict().values()]
         for x in samples:
             self.assertIsInstance(x, Collection)
             self.assertTrue(issubclass(type(x), Collection), repr(type(x)))
