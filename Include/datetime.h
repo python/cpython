@@ -154,7 +154,6 @@ typedef struct {
     PyTypeObject *TimeType;
     PyTypeObject *DeltaType;
     PyTypeObject *TZInfoType;
-    PyTypeObject *TimeZoneType;
 
     /* singletons */
     PyObject *TimeZone_UTC;
@@ -199,9 +198,6 @@ typedef struct {
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
 
-#define PyTimeZone_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TimeZoneType)
-#define PyTimeZone_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TimeZoneType)
-
 #else
 
 /* Define global variable for the C API and a macro for setting it. */
@@ -225,10 +221,6 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TZInfoType)
-
-#define PyTimeZone_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TimeZoneType)
-#define PyTimeZone_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TimeZoneType)
-
 
 /* Macros for accessing constructors in a simplified fashion. */
 #define PyDate_FromDate(year, month, day) \

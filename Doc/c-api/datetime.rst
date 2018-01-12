@@ -75,18 +75,6 @@ Type-check macros:
    *NULL*.
 
 
-.. c:function:: int PyTimeZone_Check(PyObject *ob)
-
-   Return true if *ob* is of type :c:data:`PyDateTime_TimeZoneType` or a subtype of
-   :c:data:`PyDateTime_TimeZoneType`.  *ob* must not be *NULL*.
-
-
-.. c:function:: int PyTimeZone_CheckExact(PyObject *ob)
-
-   Return true if *ob* is of type :c:data:`PyDateTime_TimeZoneType`. *ob* must not be
-   *NULL*.
-
-
 Macros to create objects:
 
 .. c:function:: PyObject* PyDate_FromDate(int year, int month, int day)

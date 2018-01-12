@@ -6036,7 +6036,6 @@ static PyDateTime_CAPI CAPI = {
     &PyDateTime_TimeType,
     &PyDateTime_DeltaType,
     &PyDateTime_TZInfoType,
-    &PyDateTime_TimeZoneType,
     NULL,                       // PyDatetime_TimeZone_UTC not initialized yet
     new_date_ex,
     new_datetime_ex,

@@ -5622,24 +5622,6 @@ class CapiTest(unittest.TestCase):
                 with self.subTest(arg=arg, exact=exact):
                     self.assertFalse(is_tzinfo(arg, exact))
 
-    def test_check_timezone(self):
-        tz = timezone(timedelta(hours=-5))
-
-        is_timezone = _testcapi.datetime_check_timezone
-
-        # Check the ones that should be valid
-        self.assertTrue(is_timezone(tz))
-        self.assertTrue(is_timezone(tz, True))
-
-        # Check that various other things are not time zones
-        args = [tuple(), list(), 1, '2011-01-01', tzinfo(),
-                date(2011, 1, 1), datetime(2011, 1, 1)]
-
-        for arg in args:
-            for exact in (True, False):
-                with self.subTest(arg=arg, exact=exact):
-                    self.assertFalse(is_timezone(arg, exact))
-
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
     return standard_tests
