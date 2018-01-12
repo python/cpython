@@ -418,11 +418,11 @@ tmtotuple(struct tm *p
     SET(8, p->tm_isdst);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
+        _PyUnicode_DecodeCurrentLocale(p->tm_zone, "surrogateescape"));
     SET(10, p->tm_gmtoff);
 #else
     PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(zone, "surrogateescape"));
+        _PyUnicode_DecodeCurrentLocale(zone, "surrogateescape"));
     PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
@@ -809,8 +809,8 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen,
-                                                "surrogateescape");
+            ret = _PyUnicode_DecodeCurrentLocaleAndSize(outbuf, buflen,
+                                                        "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
@@ -1541,8 +1541,8 @@ PyInit_timezone(PyObject *m) {
     PyModule_AddIntConstant(m, "altzone", timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
-    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
+    otz0 = _PyUnicode_DecodeCurrentLocale(tzname[0], "surrogateescape");
+    otz1 = _PyUnicode_DecodeCurrentLocale(tzname[1], "surrogateescape");
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
     {
