@@ -1906,14 +1906,13 @@ main_loop:
         }
 
         TARGET(BEGIN_FINALLY) {
-            /* Push NULL onto the stack for using it in END_FINALLY,
-               POP_FINALLY, WITH_CLEANUP_START and WITH_CLEANUP_FINISH.
+            /* Push NULL onto the stack for using it in END_FINALLY and
+               POP_FINALLY.
              */
             PUSH(NULL);
             FAST_DISPATCH();
         }
 
-        PREDICTED(END_FINALLY);
         TARGET(END_FINALLY) {
             /* At the top of the stack are 1 or 6 values:
                Either:
@@ -2955,97 +2954,57 @@ main_loop:
         }
 
         TARGET(WITH_CLEANUP_START) {
-            /* At the top of the stack are 1 or 6 values indicating
-               how/why we entered the finally clause:
-               - TOP = NULL
-               - (TOP, SECOND, THIRD) = exc_info()
-                 (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-               Below them is EXIT, the context.__exit__ or context.__aexit__
-               bound method.
-               In the first case, we must call
-                 EXIT(None, None, None)
-               otherwise we must call
-                 EXIT(TOP, SECOND, THIRD)
+            /* (TOP, SECOND, THIRD) = exc_info()
+               (FOURTH, FIFTH, SIXTH) = previous exception for EXCEPT_HANDLER
+               SEVENTH = EXIT, the context.__exit__ or context.__aexit__
+                  bound method.
 
-               In the first case, we remove EXIT from the
-               stack, leaving TOP, and push TOP on the stack.
-               Otherwise we shift the bottom 3 values of the
-               stack down, replace the empty spot with NULL, and push
-               None on the stack.
-
-               Finally we push the result of the call.
+               We shift the top 6 values of the stack down and push the result
+               of the call EXIT(TOP, SECOND, THIRD).
             */
-            PyObject *stack[3];
-            PyObject *exit_func;
-            PyObject *exc, *val, *tb, *res;
+            PyObject *exc = TOP();
+            assert(PyExceptionClass_Check(exc));
+            PyObject *val = SECOND();
+            PyObject *tb = THIRD();
+            PyObject *tp2 = FOURTH();
+            PyObject *exc2 = PEEK(5);
+            PyObject *tb2 = PEEK(6);
+            PyObject *exit_func = PEEK(7);
+            SET_VALUE(7, tb2);
+            SET_VALUE(6, exc2);
+            SET_VALUE(5, tp2);
+            SET_FOURTH(tb);
+            SET_THIRD(val);
+            SET_SECOND(exc);
+            /* We just shifted the stack down, so we have
+               to tell the except handler block that the
+               values are lower than it expects. */
+            assert(f->f_iblock > 0);
+            PyTryBlock *block = &f->f_blockstack[f->f_iblock - 1];
+            assert(block->b_type == EXCEPT_HANDLER);
+            assert(block->b_level > 0);
+            block->b_level--;
 
-            val = tb = Py_None;
-            exc = TOP();
-            if (exc == NULL) {
-                STACKADJ(-1);
-                exit_func = TOP();
-                SET_TOP(exc);
-                exc = Py_None;
-            }
-            else {
-                assert(PyExceptionClass_Check(exc));
-                PyObject *tp2, *exc2, *tb2;
-                PyTryBlock *block;
-                val = SECOND();
-                tb = THIRD();
-                tp2 = FOURTH();
-                exc2 = PEEK(5);
-                tb2 = PEEK(6);
-                exit_func = PEEK(7);
-                SET_VALUE(7, tb2);
-                SET_VALUE(6, exc2);
-                SET_VALUE(5, tp2);
-                /* UNWIND_EXCEPT_HANDLER will pop this off. */
-                SET_FOURTH(NULL);
-                /* We just shifted the stack down, so we have
-                   to tell the except handler block that the
-                   values are lower than it expects. */
-                assert(f->f_iblock > 0);
-                block = &f->f_blockstack[f->f_iblock - 1];
-                assert(block->b_type == EXCEPT_HANDLER);
-                assert(block->b_level > 0);
-                block->b_level--;
-            }
-
-            stack[0] = exc;
-            stack[1] = val;
-            stack[2] = tb;
-            res = _PyObject_FastCall(exit_func, stack, 3);
+            PyObject *stack[3] = {exc, val, tb};
+            PyObject *res = _PyObject_FastCall(exit_func, stack, 3);
+            SET_TOP(res);
             Py_DECREF(exit_func);
             if (res == NULL)
                 goto error;
 
-            Py_INCREF(exc); /* Duplicating the exception on the stack */
-            PUSH(exc);
-            PUSH(res);
             PREDICT(WITH_CLEANUP_FINISH);
             DISPATCH();
         }
 
         PREDICTED(WITH_CLEANUP_FINISH);
         TARGET(WITH_CLEANUP_FINISH) {
-            /* TOP = the result of calling the context.__exit__ bound method
-               SECOND = either None or exception type
-
-               If SECOND is None below is NULL or the return address,
-               otherwise below are 7 values representing an exception.
-            */
+            /* TOP = the result of calling the context.__exit__ bound method.
+               (SECOND, THIRD, FOURTH) = exc_info()
+               (FIFTH, SIXTH, SEVENTH) = previous exception for EXCEPT_HANDLER
+             */
             PyObject *res = POP();
-            PyObject *exc = POP();
-            int err;
-
-            if (exc != Py_None)
-                err = PyObject_IsTrue(res);
-            else
-                err = 0;
-
+            int err = (res == Py_None) ? 0 : PyObject_IsTrue(res);
             Py_DECREF(res);
-            Py_DECREF(exc);
 
             if (err < 0)
                 goto error;
@@ -3058,10 +3017,16 @@ main_loop:
                 PyTryBlock *b = PyFrame_BlockPop(f);
                 assert(b->b_type == EXCEPT_HANDLER);
                 UNWIND_EXCEPT_HANDLER(b);
-                PUSH(NULL);
+                DISPATCH();
             }
-            PREDICT(END_FINALLY);
-            DISPATCH();
+            else {
+                PyObject *exc = POP();
+                assert(PyExceptionClass_Check(exc));
+                PyObject *val = POP();
+                PyObject *tb = POP();
+                PyErr_Restore(exc, val, tb);
+                goto exception_unwind;
+            }
         }
 
         TARGET(LOAD_METHOD) {

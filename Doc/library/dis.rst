@@ -706,9 +706,8 @@ iterations of the loop.
 
 .. opcode:: BEGIN_FINALLY
 
-   Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY`,
-   :opcode:`POP_FINALLY`, :opcode:`WITH_CLEANUP_START` and
-   :opcode:`WITH_CLEANUP_FINISH`.  Starts the :keyword:`finally` block.
+   Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY` and
+   :opcode:`POP_FINALLY`.  Starts the :keyword:`finally` block.
 
    .. versionadded:: 3.8
 
@@ -754,16 +753,14 @@ iterations of the loop.
 
    Starts cleaning up the stack when a :keyword:`with` statement block exits.
 
-   At the top of the stack are either ``NULL`` (pushed by
-   :opcode:`BEGIN_FINALLY`) or 6 values pushed if an exception has been
-   raised in the with block.  Below is the context manager's
+   At the top of the stack are 6 values pushed when an exception has been
+   raised in the with block.  Below is EXIT, the context manager's
    :meth:`~object.__exit__` or :meth:`~object.__aexit__` bound method.
 
-   If TOS is ``NULL``, calls ``SECOND(None, None, None)``,
-   removes the function from the stack, leaving TOS, and pushes ``None``
-   to the stack.  Otherwise calls ``SEVENTH(TOP, SECOND, THIRD)``,
-   shifts the bottom 3 values of the stack down, replaces the empty spot
-   with ``NULL`` and pushes TOS.  Finally pushes the result of the call.
+   Shifts the top 6 values of the stack down and pushes the result of
+   ``EXIT(TOP, SECOND, THIRD)``.
+
+   .. versionchanged:: 3.8
 
 
 .. opcode:: WITH_CLEANUP_FINISH
@@ -771,12 +768,16 @@ iterations of the loop.
    Finishes cleaning up the stack when a :keyword:`with` statement block exits.
 
    TOS is result of ``__exit__()`` or ``__aexit__()`` function call pushed
-   by :opcode:`WITH_CLEANUP_START`.  SECOND is ``None`` or an exception type
-   (pushed when an exception has been raised).
+   by :opcode:`WITH_CLEANUP_START`. Below are 6 values pushed when an exception
+   has been raised in the with block.
 
-   Pops two values from the stack.  If SECOND is not None and TOS is true
-   unwinds the EXCEPT_HANDLER block which was created when the exception
-   was caught and pushes ``NULL`` to the stack.
+   Pops TOS from the stack.  If it is true unwinds the EXCEPT_HANDLER block
+   which was created when the exception was caught.  Otherwise the next three
+   values will be used to re-raise the exception and the other three
+   values will be used to restore the exception state.  An exception handler
+   block will removed from the block stack.
+
+   .. versionchanged:: 3.8
 
 
 All of the following opcodes use their arguments.

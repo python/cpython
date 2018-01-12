@@ -866,8 +866,6 @@ compiler_set_lineno(struct compiler *c, int off)
    * 1 -- when jump
    * -1 -- maximal
  */
-/* XXX Make the stack effect of WITH_CLEANUP_START and
-   WITH_CLEANUP_FINISH deterministic. */
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
@@ -951,11 +949,11 @@ stack_effect(int opcode, int oparg, int jump)
              * the handler if an exception be raised. */
             return jump ? 6 : 1;
         case WITH_CLEANUP_START:
-            return 2; /* or 1, depending on TOS */
+            return 0;
         case WITH_CLEANUP_FINISH:
-            /* Pop a variable number of values pushed by WITH_CLEANUP_START
-             * + __exit__ or __aexit__. */
-            return -3;
+            /* Pop a result of __exit__ or __aexit__ and 6 values
+             * pushed when an exception was raised. */
+            return -7;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -1528,15 +1526,18 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (preserve_tos) {
                 ADDOP(c, ROT_TWO);
             }
-            ADDOP(c, BEGIN_FINALLY);
-            ADDOP(c, WITH_CLEANUP_START);
+            PyObject *args = PyTuple_Pack(3, Py_None, Py_None, Py_None);
+            if (args == NULL) {
+                return 0;
+            }
+            ADDOP_N(c, LOAD_CONST, args, consts);
+            ADDOP_I(c, CALL_FUNCTION_EX, 0);
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
                 ADDOP_O(c, LOAD_CONST, Py_None, consts);
                 ADDOP(c, YIELD_FROM);
             }
-            ADDOP(c, WITH_CLEANUP_FINISH);
-            ADDOP_I(c, POP_FINALLY, 0);
+            ADDOP(c, POP_TOP);
             return 1;
 
         case HANDLER_CLEANUP:
@@ -4345,14 +4346,15 @@ expr_constant(expr_ty e)
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *finally;
+    basicblock *block, *finally, *end;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
 
     block = compiler_new_block(c);
     finally = compiler_new_block(c);
-    if (!block || !finally)
+    end = compiler_new_block(c);
+    if (!block || !finally || !end)
         return 0;
 
     /* Evaluate EXPR */
@@ -4367,7 +4369,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* SETUP_ASYNC_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
-    if (!compiler_push_fblock(c, ASYNC_WITH, block, finally)) {
+    if (!compiler_push_fblock(c, ASYNC_WITH, block, NULL)) {
         return 0;
     }
 
@@ -4386,10 +4388,22 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     else if (!compiler_async_with(c, s, pos))
             return 0;
 
-    /* End of try block; start the finally block */
+    /* End of try block; call __aexit__(None, None, None) */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, ASYNC_WITH, block);
+    PyObject *args = PyTuple_Pack(3, Py_None, Py_None, Py_None);
+    if (args == NULL) {
+        return 0;
+    }
+    ADDOP_N(c, LOAD_CONST, args, consts);
+    ADDOP_I(c, CALL_FUNCTION_EX, 0);
+
+    ADDOP(c, GET_AWAITABLE);
+    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP(c, YIELD_FROM);
+
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, end);
 
     compiler_use_next_block(c, finally);
     if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
@@ -4407,8 +4421,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_CLEANUP_FINISH);
 
     /* Finally block ends. */
-    ADDOP(c, END_FINALLY);
     compiler_pop_fblock(c, FINALLY_END, finally);
+    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -4439,14 +4453,15 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *finally;
+    basicblock *block, *finally, *end;
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
     block = compiler_new_block(c);
     finally = compiler_new_block(c);
-    if (!block || !finally)
+    end = compiler_new_block(c);
+    if (!block || !finally || !end)
         return 0;
 
     /* Evaluate EXPR */
@@ -4455,7 +4470,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* SETUP_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
-    if (!compiler_push_fblock(c, WITH, block, finally)) {
+    if (!compiler_push_fblock(c, WITH, block, NULL)) {
         return 0;
     }
 
@@ -4474,10 +4489,17 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     else if (!compiler_with(c, s, pos))
             return 0;
 
-    /* End of try block; start the finally block */
+    /* End of try block; call __exit__(None, None, None) */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, WITH, block);
+    PyObject *args = PyTuple_Pack(3, Py_None, Py_None, Py_None);
+    if (args == NULL) {
+        return 0;
+    }
+    ADDOP_N(c, LOAD_CONST, args, consts);
+    ADDOP_I(c, CALL_FUNCTION_EX, 0);
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, end);
 
     compiler_use_next_block(c, finally);
     if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
@@ -4490,8 +4512,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_CLEANUP_FINISH);
 
     /* Finally block ends. */
-    ADDOP(c, END_FINALLY);
     compiler_pop_fblock(c, FINALLY_END, finally);
+    compiler_use_next_block(c, end);
     return 1;
 }
 
