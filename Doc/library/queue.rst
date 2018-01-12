@@ -56,6 +56,16 @@ The :mod:`queue` module defines the following classes and exceptions:
    one returned by ``sorted(list(entries))[0]``).  A typical pattern for entries
    is a tuple in the form: ``(priority_number, data)``.
 
+   If the *data* elements are not comparable, the data can be wrapped in a class
+   that ignores the data item and only compares the priority number::
+
+        from dataclasses import dataclass, field
+        from typing import Any
+
+        @dataclass(order=True)
+        class PrioritizedItem:
+            priority: int
+            item: Any=field(compare=False)
 
 .. exception:: Empty
 
