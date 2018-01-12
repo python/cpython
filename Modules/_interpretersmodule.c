@@ -18,69 +18,7 @@ _get_current(void)
     return tstate->interp;
 }
 
-/* cross-interpreter data */
-
-static crossinterpdatafunc
-_lookup_getdata(PyObject *obj)
-{
-    crossinterpdatafunc getdata = _PyCrossInterpreterData_Lookup(obj);
-    if (getdata == NULL && PyErr_Occurred() == 0)
-        PyErr_Format(PyExc_ValueError,
-                     "%S is not a cross-interpreter shareable type", obj);
-    return getdata;
-}
-
-static int
-_PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
-{
-    Py_INCREF(obj);
-    crossinterpdatafunc getdata = _lookup_getdata(obj);
-    if (getdata == NULL) {
-        Py_DECREF(obj);
-        return -1;
-    }
-    int res = getdata(obj, data);
-    if (res != 0) {
-        Py_DECREF(obj);
-    }
-    return res;
-}
-
-static void
-_PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
-{
-    PyThreadState *save_tstate = NULL;
-    if (data->interp != NULL) {
-        // Switch to the original interpreter.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(data->interp);
-        save_tstate = PyThreadState_Swap(tstate);
-    }
-
-    if (data->free != NULL) {
-        data->free(data->data);
-    }
-    Py_XDECREF(data->object);
-
-    // Switch back.
-    if (save_tstate != NULL)
-        PyThreadState_Swap(save_tstate);
-}
-
-static PyObject *
-_PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
-{
-    return data->new_object(data);
-}
-
-/* other sharing-specific functions and structs */
-
-static int
-_PyObject_CheckShareable(PyObject *obj)
-{
-    if (_lookup_getdata(obj) == NULL)
-        return -1;
-    return 0;
-}
+/* data-sharing-specific functions and structs */
 
 struct _shareditem {
     Py_UNICODE *name;
@@ -199,35 +137,13 @@ _apply_shared_exception(struct _shared_exception *exc)
 /* interpreter-specific functions */
 
 static PyInterpreterState *
-_look_up_int64(PY_INT64_T requested_id)
-{
-    if (requested_id < 0)
-        goto error;
-
-    PyInterpreterState *interp = PyInterpreterState_Head();
-    while (interp != NULL) {
-        PY_INT64_T id = PyInterpreterState_GetID(interp);
-        if (id < 0)
-            return NULL;
-        if (requested_id == id)
-            return interp;
-        interp = PyInterpreterState_Next(interp);
-    }
-
-error:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %lld", requested_id);
-    return NULL;
-}
-
-static PyInterpreterState *
 _look_up(PyObject *requested_id)
 {
     long long id = PyLong_AsLongLong(requested_id);
     if (id == -1 && PyErr_Occurred() != NULL)
         return NULL;
     assert(id <= INT64_MAX);
-    return _look_up_int64(id);
+    return _PyInterpreterState_LookUpID(id);
 }
 
 static PyObject *
@@ -549,7 +465,7 @@ object_is_shareable(PyObject *self, PyObject *args)
     PyObject *obj;
     if (!PyArg_UnpackTuple(args, "is_shareable", 1, 1, &obj))
         return NULL;
-    if (_PyObject_CheckShareable(obj) == 0)
+    if (_PyObject_CheckCrossInterpreterData(obj) == 0)
         Py_RETURN_TRUE;
     PyErr_Clear();
     Py_RETURN_FALSE;
