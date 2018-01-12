@@ -328,8 +328,8 @@ importlib.resources
 This module provides several new APIs and one new ABC for access to, opening,
 and reading *resources* inside packages.  Resources are roughly akin to files
 inside of packages, but they needn't be actual files on the physical file
-system.  Module loaders can support the
-:class:`importlib.abc.ResourceReader` ABC to support this new module's API.
+system.  Module loaders can provide :class:`importlib.abc.ResourceReader`
+implementations to support this new module's API.
 
 
 Improved Modules

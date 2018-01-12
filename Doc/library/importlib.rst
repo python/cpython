@@ -492,7 +492,7 @@ ABC hierarchy::
     expected to be a :term:`path-like object` which represents
     conceptually just a file name. This means that no subdirectory
     paths should be included in the *resource* argument. This is
-    because the location of the package the reader is for acts as the
+    because the location of the package the reader is for, acts as the
     "directory". Hence the metaphor for directories and file
     names is packages and resources, respectively. This is also why
     instances of this class are expected to directly correlate to
@@ -501,10 +501,10 @@ ABC hierarchy::
 
     Loaders that wish to support resource reading are expected to
     provide a method called ``get_resource_loader(fullname)`` which
-    either returns an object implementing this ABC's interface or
-    :const:`None` for the package specified by *fullname*. An object
-    compatible with this ABC should only be returned when the
-    specified module is a package.
+    returns an object implementing this ABC's interface. If the module
+    specified by fullname is not a package, this method should return
+    :const:`None`. An object compatible with this ABC should only be
+    returned when the specified module is a package.
 
     .. versionadded:: 3.7
 

@@ -346,7 +346,7 @@ class ResourceReader:
 
     """Abstract base class to provide resource-reading support.
 
-    Loaders who support resource reading are expected to implement
+    Loaders that support resource reading are expected to implement
     the ``get_resource_reader(fullname)`` method and have it either return None
     or an object compatible with this ABC.
     """
