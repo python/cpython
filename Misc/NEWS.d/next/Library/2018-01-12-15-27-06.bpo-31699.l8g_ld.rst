@@ -1,0 +1,2 @@
+Fix :class:`concurrent.futures.ProcessPoolExecutor` so unpickling errors do
+not break the executor and are send back as errors on the faulty task.
