@@ -1,0 +1,2 @@
+Fix ``OSError`` for ``os.listdir`` with deep paths (starting with ``\\?\``) on
+windows.  Patch by Anthony Sottile.

@@ -2385,7 +2385,7 @@ posix_listdir(PyObject *self, PyObject *args)
     if (len > 0) {
         char ch = namebuf[len-1];
         if (ch != SEP && ch != ALTSEP && ch != ':')
-            namebuf[len++] = '/';
+            namebuf[len++] = SEP;
         strcpy(namebuf + len, "*.*");
     }
 
