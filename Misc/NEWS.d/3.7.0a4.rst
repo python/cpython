@@ -693,7 +693,7 @@ ctypes._aix.find_library() Patch by: Michael Felt
 .. nonce: -OMNg8
 .. section: Library
 
-The pickler now uses less memory when serialize large bytes and str
+The pickler now uses less memory when serializing large bytes and str
 objects into a file.  Pickles created with protocol 4 will require less
 memory for unpickling large bytes and str objects.
 
