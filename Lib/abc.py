@@ -170,7 +170,7 @@ class ABCMeta(type):
         """Debug helper to print the ABC registry."""
         print("Class: %s.%s" % (cls.__module__, cls.__qualname__), file=file)
         print("Inv.counter: %s" % ABCMeta._abc_invalidation_counter, file=file)
-        for name in cls.__dict__.keys():
+        for name in cls.__dict__:
             if name.startswith("_abc_"):
                 value = getattr(cls, name)
                 if isinstance(value, WeakSet):
