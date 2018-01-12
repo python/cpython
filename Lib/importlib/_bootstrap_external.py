@@ -914,9 +914,9 @@ class FileLoader:
 
     @_check_name
     def get_resource_reader(self, module):
-        if not self.is_package(module):
-            return None
-        return self
+        if self.is_package(module):
+            return self
+        return None
 
     def open_resource(self, resource):
         path = _path_join(_path_split(self.path)[0], resource)
