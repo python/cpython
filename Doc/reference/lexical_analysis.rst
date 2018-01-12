@@ -571,7 +571,7 @@ that a single backslash followed by a newline is interpreted as those two
 characters as part of the literal, *not* as a line continuation.
 
 
-.. _string-catenation:
+.. _string-concatenation:
 
 String literal concatenation
 ----------------------------
