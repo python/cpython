@@ -2262,9 +2262,10 @@ Samuele
 ...     # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
 ...     return next(filter(pred, iterable), default)
 
->>> def nth_combination(population, r, index):
-...     'Equivalent to list(combinations(population, r))[index]'
-...     n = len(population)
+>>> def nth_combination(iterable, r, index):
+...     'Equivalent to list(combinations(iterable, r))[index]'
+...     pool = tuple(iterable)
+...     n = len(pool)
 ...     c = 1
 ...     k = min(r, n-r)
 ...     for i in range(1, k+1):
@@ -2281,7 +2282,7 @@ Samuele
 ...         while index >= c:
 ...             index -= c
 ...             c, n = c*(n-r)//n, n-1
-...         result.append(population[-1-n])
+...         result.append(pool[-1-n])
 ...     return tuple(result)
 
 

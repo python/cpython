@@ -859,9 +859,10 @@ which incur interpreter overhead.
        indices = sorted(random.randrange(n) for i in range(r))
        return tuple(pool[i] for i in indices)
 
-   def nth_combination(population, r, index):
-       'Equivalent to list(combinations(population, r))[index]'
-       n = len(population)
+   def nth_combination(iterable, r, index):
+       'Equivalent to list(combinations(iterable, r))[index]'
+       pool = tuple(iterable)
+       n = len(pool)
        c = 1
        k = min(r, n-r)
        for i in range(1, k+1):
@@ -878,7 +879,7 @@ which incur interpreter overhead.
            while index >= c:
                index -= c
                c, n = c*(n-r)//n, n-1
-           result.append(population[-1-n])
+           result.append(pool[-1-n])
        return tuple(result)
 
 Note, many of the above recipes can be optimized by replacing global lookups
