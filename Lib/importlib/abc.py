@@ -342,9 +342,14 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 _register(SourceLoader, machinery.SourceFileLoader)
 
 
-class ResourceReader(Loader):
+class ResourceReader:
 
-    """Abstract base class for loaders to provide resource reading support."""
+    """Abstract base class to provide resource-reading support.
+
+    Loaders that support resource reading are expected to implement
+    the ``get_resource_reader(fullname)`` method and have it either return None
+    or an object compatible with this ABC.
+    """
 
     @abc.abstractmethod
     def open_resource(self, resource):
