@@ -1208,7 +1208,7 @@ _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
     // XXX Fail if already registered (instead of effectively replacing)?
 
     // XXX lock
-    struct _cidclass *newhead = PyMem_NEW(struct _cidclass, 1);
+    struct _cidclass *newhead = PyMem_RawMalloc(sizeof(struct _cidclass));
     newhead->classname = classname;
     newhead->cls = cls;
     newhead->getdata = getdata;

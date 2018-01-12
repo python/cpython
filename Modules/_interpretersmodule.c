@@ -7,6 +7,21 @@
 #include "internal/pystate.h"
 
 
+struct _channels;
+
+/* globals is the process-global state for the module.  It holds all
+   the data that we need to share between interpreters, so it cannot
+   hold PyObject values. */
+static struct globals {
+    struct _channels {
+        //PyThread_type_lock mutex;
+        struct _channel *head;
+        int64_t count;
+        int64_t next_id;
+    } channels;
+} _globals;
+
+
 static PyInterpreterState *
 _get_current(void)
 {
@@ -18,7 +33,7 @@ _get_current(void)
     return tstate->interp;
 }
 
-/* data-sharing-specific functions and structs */
+/* data-sharing-specific code ***********************************************/
 
 struct _shareditem {
     Py_UNICODE *name;
@@ -134,7 +149,254 @@ _apply_shared_exception(struct _shared_exception *exc)
     PyErr_SetString(_interp_failed_error, exc->msg);
 }
 
-/* interpreter-specific functions */
+/* channel-specific code */
+
+struct _channelitem;
+
+struct _channelitem {
+    _PyCrossInterpreterData *data;
+    struct _channelitem *next;
+};
+
+struct _channel;
+
+typedef struct _channel {
+    struct _channel *next;
+
+    int64_t id;
+
+    //PyThread_type_lock mutex;
+
+    int64_t count;
+    struct _channelitem *first;
+    struct _channelitem *last;
+} _PyChannelState;
+
+static _PyChannelState *
+_channel_new(void)
+{
+    _PyChannelState *chan = PyMem_Malloc(sizeof(_PyChannelState));
+    if (chan == NULL)
+        return NULL;
+    chan->next = NULL;
+    chan->id = -1;
+    chan->count = 0;
+    chan->first = NULL;
+    chan->last = NULL;
+    return chan;
+}
+
+static int
+_channel_add(_PyChannelState *chan, _PyCrossInterpreterData *data)
+{
+    struct _channelitem *item = PyMem_Malloc(sizeof(struct _channelitem));
+    if (item == NULL)
+        return -1;
+    item->data = data;
+    item->next = NULL;
+
+    /* XXX lock */
+    chan->count += 1;
+    if (chan->first == NULL)
+        chan->first = item;
+    chan->last = item;
+    /* XXX unlock */
+
+    return 0;
+}
+
+static _PyCrossInterpreterData *
+_channel_next(_PyChannelState *chan)
+{
+    /* XXX lock */
+    struct _channelitem *item = chan->first;
+    if (item == NULL) {
+        /* XXX unlock */
+        return NULL;
+    }
+
+    chan->first = item->next;
+    if (chan->last == item)
+        chan->last = NULL;
+    chan->count -= 1;
+    /* XXX unlock */
+
+    _PyCrossInterpreterData *data = item->data;
+    PyMem_Free(item);
+    return data;
+}
+
+static void
+_channel_clear(_PyChannelState *chan)
+{
+    /* XXX lock */
+    _PyCrossInterpreterData *data = _channel_next(chan);
+    for (; data != NULL; data = _channel_next(chan)) {
+        _PyCrossInterpreterData_Release(data);
+        PyMem_Free(data);
+    }
+    /* XXX unlock */
+}
+
+static void
+_channel_free(_PyChannelState *chan)
+{
+    _channel_clear(chan);
+    PyMem_Free(chan);
+}
+
+static int64_t
+_channels_next_id(void)
+{
+    int64_t id = _globals.channels.next_id;
+    if (id < 0) {
+        /* overflow */
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to get a channel ID");
+        return -1;
+    }
+    _globals.channels.next_id += 1;
+    return id;
+}
+
+_PyChannelState *
+_channels_lookup(int64_t id)
+{
+    /* XXX lock */
+    _PyChannelState *chan = _globals.channels.head;
+    for (;chan != NULL; chan = chan->next) {
+        if (chan->id == id)
+            break;
+    }
+    /* XXX unlock */
+    if (chan == NULL) {
+        PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
+    }
+    return chan;
+}
+
+static int
+_channels_add(_PyChannelState *chan)
+{
+    /* XXX lock */
+    int64_t id = _channels_next_id();
+    if (id < 0) {
+        /* XXX unlock */
+        return -1;
+    }
+    if (_globals.channels.head != NULL) {
+        chan->next = _globals.channels.head;
+    }
+    _globals.channels.head = chan;
+    _globals.channels.count += 1;
+    chan->id = id;
+    /* XXX unlock */
+
+    return 0;
+}
+
+_PyChannelState *
+_channels_remove(int64_t id)
+{
+    /* XXX lock */
+    if (_globals.channels.head == NULL) {
+        /* XXX unlock */
+        return NULL;
+    }
+
+    _PyChannelState *prev = NULL;
+    _PyChannelState *chan = _globals.channels.head;
+    for (;chan != NULL; chan = chan->next) {
+        if (chan->id == id)
+            break;
+        prev = chan;
+    }
+    if (chan == NULL) {
+        PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
+        /* XXX unlock */
+        return NULL;
+    }
+
+    if (chan == _globals.channels.head) {
+        _globals.channels.head = chan->next;
+    } else {
+        prev->next = chan->next;
+    }
+    chan->next = NULL;
+
+    _globals.channels.count -= 1;
+    /* XXX unlock */
+    return chan;
+}
+
+int64_t *
+_channels_list_all(int64_t *count)
+{
+    int64_t *ids = PyMem_Malloc(sizeof(int64_t) * _globals.channels.count);
+    if (ids == NULL)
+        return NULL;
+    _PyChannelState *chan = _globals.channels.head;
+    for (int64_t i=0; chan != NULL; chan = chan->next, i++) {
+        ids[i] = chan->id;
+    }
+    *count = _globals.channels.count;
+    return ids;
+}
+
+/*
+int
+channel_list_interpreters(int id)
+{
+}
+
+int
+channel_close(void)
+{
+}
+*/
+
+int
+_channel_send(int64_t id, PyObject *obj)
+{
+    _PyCrossInterpreterData *data = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
+    if (_PyObject_GetCrossInterpreterData(obj, data) != 0)
+        return -1;
+
+    // XXX lock _PyChannelState to avoid race on destroy here?
+    _PyChannelState *chan = _channels_lookup(id);
+    if (chan == NULL) {
+        PyMem_Free(data);
+        return -1;
+    }
+    if (_channel_add(chan, data) != 0) {
+        PyMem_Free(data);
+        return -1;
+    }
+
+    return 0;
+}
+
+PyObject *
+_channel_recv(int64_t id)
+{
+    // XXX lock _PyChannelState to avoid race on destroy here?
+    _PyChannelState *chan = _channels_lookup(id);
+    if (chan == NULL)
+        return NULL;
+    _PyCrossInterpreterData *data = _channel_next(chan);
+    if (data == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "empty channel");
+        return NULL;
+    }
+
+    PyObject *obj = _PyCrossInterpreterData_NewObject(data);
+    if (obj == NULL)
+        return NULL;
+    _PyCrossInterpreterData_Release(data);
+    return obj;
+}
+
+/* interpreter-specific functions *******************************************/
 
 static PyInterpreterState *
 _look_up(PyObject *requested_id)
@@ -505,6 +767,77 @@ PyDoc_STRVAR(is_running_doc,
 \n\
 Return whether or not the identified interpreter is running.");
 
+static PyObject *
+channel_create(PyObject *self)
+{
+    _PyChannelState *chan = _channel_new();
+    if (chan == NULL)
+        return NULL;
+    if (_channels_add(chan) != 0) {
+        _channel_free(chan);
+        return NULL;
+    }
+    PyObject *id = PyLong_FromLongLong(chan->id);
+    if (id == NULL) {
+        _channel_free(chan);
+        return NULL;
+    }
+    return id;
+}
+
+PyDoc_STRVAR(channel_create_doc,
+"channel_create() -> ID\n\
+\n\
+Create a new cross-interpreter channel and return a unique generated ID.");
+
+static PyObject *
+channel_send(PyObject *self, PyObject *args)
+{
+    PyObject *id;
+    PyObject *obj;
+    if (!PyArg_UnpackTuple(args, "channel_send", 2, 2, &id, &obj))
+        return NULL;
+    if (!PyLong_Check(id)) {
+        PyErr_SetString(PyExc_TypeError, "ID must be an int");
+        return NULL;
+    }
+
+    long long cid = PyLong_AsLongLong(id);
+    if (cid == -1 && PyErr_Occurred() != NULL)
+        return NULL;
+    assert(cid <= INT64_MAX);
+    if (_channel_send(cid, obj) != 0)
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(channel_send_doc,
+"channel_send(ID, obj)\n\
+\n\
+Add the object's data to the channel's queue.");
+
+static PyObject *
+channel_recv(PyObject *self, PyObject *args)
+{
+    PyObject *id;
+    if (!PyArg_UnpackTuple(args, "channel_recv", 1, 1, &id))
+        return NULL;
+    if (!PyLong_Check(id)) {
+        PyErr_SetString(PyExc_TypeError, "ID must be an int");
+        return NULL;
+    }
+
+    long long cid = PyLong_AsLongLong(id);
+    if (cid == -1 && PyErr_Occurred() != NULL)
+        return NULL;
+    assert(cid <= INT64_MAX);
+    return _channel_recv(cid);
+}
+
+PyDoc_STRVAR(channel_recv_doc,
+"channel_recv(ID) -> obj\n\
+\n\
+Return a new object from the data at the from of the channel's queue.");
 
 static PyMethodDef module_functions[] = {
     {"create",                  (PyCFunction)interp_create,
@@ -527,6 +860,13 @@ static PyMethodDef module_functions[] = {
     {"is_shareable",            (PyCFunction)object_is_shareable,
      METH_VARARGS, is_shareable_doc},
 
+    {"channel_create",          (PyCFunction)channel_create,
+     METH_NOARGS, channel_create_doc},
+    {"channel_send",            (PyCFunction)channel_send,
+     METH_VARARGS, channel_send_doc},
+    {"channel_recv",            (PyCFunction)channel_recv,
+     METH_VARARGS, channel_recv_doc},
+
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -539,14 +879,14 @@ The 'interpreters' module provides a more convenient interface.");
 
 static struct PyModuleDef interpretersmodule = {
     PyModuleDef_HEAD_INIT,
-    "_interpreters",
-    module_doc,
-    -1,
-    module_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    "_interpreters",  /* m_name */
+    module_doc,       /* m_doc */
+    -1,               /* m_size */
+    module_functions, /* m_methods */
+    NULL,             /* m_slots */
+    NULL,             /* m_traverse */
+    NULL,             /* m_clear */
+    NULL              /* m_free */
 };
 
 

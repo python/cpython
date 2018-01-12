@@ -715,5 +715,76 @@ class RunStringTests(TestBase):
         self.assertEqual(retcode, 0)
 
 
+class ChannelTests(TestBase):
+
+    def test_sequential_ids(self):
+        id1 = interpreters.channel_create()
+        id2 = interpreters.channel_create()
+        id3 = interpreters.channel_create()
+
+        self.assertEqual(id2, id1 + 1)
+        self.assertEqual(id3, id2 + 1)
+
+    def test_ids_global(self):
+        id1 = interpreters.create()
+        out = _run_output(id1, dedent("""
+            import _interpreters
+            cid = _interpreters.channel_create()
+            print(cid)
+            """))
+        cid1 = int(out.strip())
+
+        id2 = interpreters.create()
+        out = _run_output(id2, dedent("""
+            import _interpreters
+            cid = _interpreters.channel_create()
+            print(cid)
+            """))
+        cid2 = int(out.strip())
+
+        self.assertEqual(cid2, cid1 + 1)
+
+    def test_send_recv_main(self):
+        cid = interpreters.channel_create()
+        orig = b'spam'
+        interpreters.channel_send(cid, orig)
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
+
+    def test_send_recv_same_interpreter(self):
+        id1 = interpreters.create()
+        out = _run_output(id1, dedent("""
+            import _interpreters
+            cid = _interpreters.channel_create()
+            orig = b'spam'
+            _interpreters.channel_send(cid, orig)
+            obj = _interpreters.channel_recv(cid)
+            assert obj is not orig
+            assert obj == orig
+            """))
+
+    def test_send_recv_different_interpreters(self):
+        cid = interpreters.channel_create()
+        id1 = interpreters.create()
+        out = _run_output(id1, dedent(f"""
+            import _interpreters
+            _interpreters.channel_send({cid}, b'spam')
+            """))
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, b'spam')
+
+    def test_recv_empty(self):
+        cid = interpreters.channel_create()
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_recv(cid)
+
+    @unittest.skip('not implemented yet')
+    def test_run_string_arg(self):
+        raise NotImplementedError
+
+
 if __name__ == '__main__':
     unittest.main()
