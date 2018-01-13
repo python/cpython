@@ -342,7 +342,7 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 _register(SourceLoader, machinery.SourceFileLoader)
 
 
-class ResourceReader:
+class ResourceReader(metaclass=abc.ABCMeta):
 
     """Abstract base class to provide resource-reading support.
 
