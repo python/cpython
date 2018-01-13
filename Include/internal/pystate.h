@@ -131,9 +131,7 @@ PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 struct _cidclass;
 
 struct _cidclass {
-    // XXX Do we really need classname?
-    const char *classname;
-    PyTypeObject *cls;  // XXX only safe for static types?
+    PyTypeObject *cls;
     crossinterpdatafunc getdata;
     struct _cidclass *next;
 };

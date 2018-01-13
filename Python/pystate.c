@@ -1179,42 +1179,16 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
    alternative would be to add a tp_* slot for a class's
    crossinterpdatafunc. It would be simpler and more efficient. */
 
-/* XXX Rename to _PyObject_GetQualname? */
-static const char *
-_get_qualname(PyObject *obj)
-{
-    PyObject *qualname = PyObject_GetAttrString(obj, "__qualname__");
-    if (qualname == NULL)
-        return NULL;
-    Py_ssize_t name_size;
-    const char *encoded = PyUnicode_AsUTF8AndSize(qualname, &name_size);
-    if (encoded == NULL)
-        return NULL;
-    if (strlen(encoded) != (size_t)name_size) {
-        PyErr_SetString(PyExc_ValueError,
-                        "qualname must not contain null characters");
-        return NULL;
-    }
-    return encoded;
-}
-
 static int
 _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
 {
-    const char *classname = _get_qualname((PyObject *)cls);
-    if (classname == NULL)
-        return -1;
-
-    // XXX Fail if already registered (instead of effectively replacing)?
-
-    // XXX lock
+    // Note that we effectively replace already registered classes
+    // rather than failing.
     struct _cidclass *newhead = PyMem_RawMalloc(sizeof(struct _cidclass));
-    newhead->classname = classname;
     newhead->cls = cls;
     newhead->getdata = getdata;
     newhead->next = _PyRuntime.crossinterpclasses;
     _PyRuntime.crossinterpclasses = newhead;
-    // XXX unlock
     return 0;
 }
 
@@ -1233,9 +1207,11 @@ _PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
         return -1;
     }
 
+    // Make sure the class isn't ever deallocated.
+    Py_INCREF((PyObject *)cls);
+
     // XXX lock
-    _PyRuntimeState *runtime = &_PyRuntime;
-    if (runtime->crossinterpclasses == NULL) {
+    if (_PyRuntime.crossinterpclasses == NULL) {
         _register_builtins_for_crossinterpreter_data();
     }
     int res = _register_xidata(cls, getdata);
@@ -1247,27 +1223,21 @@ crossinterpdatafunc
 _PyCrossInterpreterData_Lookup(PyObject *obj)
 {
     PyObject *cls = PyObject_Type(obj);
-    const char *classname = _get_qualname(cls);
-    if (classname == NULL)
-        return NULL;
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    struct _cidclass *cur = runtime->crossinterpclasses;
+    crossinterpdatafunc getdata = NULL;
+    // XXX lock
+    struct _cidclass *cur = _PyRuntime.crossinterpclasses;
     if (cur == NULL) {
         _register_builtins_for_crossinterpreter_data();
-        cur = runtime->crossinterpclasses;
+        cur = _PyRuntime.crossinterpclasses;
     }
     for(; cur != NULL; cur = cur->next) {
-        // XXX Be more strict (e.g. Py*_CheckExact)?
-        if (strcmp(cur->classname, classname) == 0) {
-            if (cur->cls != (PyTypeObject *)cls) {
-                // oops!
-                break;
-            }
-            return cur->getdata;
+        if (cur->cls == (PyTypeObject *)cls) {
+            getdata = cur->getdata;
+            break;
         }
     }
-    return NULL;
+    // XXX unlock
+    return getdata;
 }
 
 /* cross-interpreter data for builtin types */
