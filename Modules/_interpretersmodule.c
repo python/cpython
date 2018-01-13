@@ -768,6 +768,19 @@ PyDoc_STRVAR(is_running_doc,
 Return whether or not the identified interpreter is running.");
 
 static PyObject *
+channel_list_all(PyObject *self)
+{
+    // XXX finish
+    PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(channel_list_all_doc,
+"channel_list_all() -> [ID]\n\
+\n\
+Return the list of all IDs for active channels.");
+
+static PyObject *
 channel_create(PyObject *self)
 {
     _PyChannelState *chan = _channel_new();
@@ -839,33 +852,84 @@ PyDoc_STRVAR(channel_recv_doc,
 \n\
 Return a new object from the data at the from of the channel's queue.");
 
+static PyObject *
+channel_close(PyObject *self, PyObject *args)
+{
+    PyObject *id;
+    if (!PyArg_UnpackTuple(args, "channel_close", 1, 1, &id))
+        return NULL;
+    if (!PyLong_Check(id)) {
+        PyErr_SetString(PyExc_TypeError, "ID must be an int");
+        return NULL;
+    }
+
+    // XXX finish
+    PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(channel_close_doc,
+"channel_close(ID, *, send=None, recv=None)\n\
+\n\
+Close the channel for the current interpreter.  'send' and 'receive'\n\
+(bool) may be used to indicate the ends to close.  By default both\n\
+ends are closed.  Closing an already closed end is a noop.");
+
+static PyObject *
+channel_list_interpreters(PyObject *self, PyObject *args)
+{
+    PyObject *id;
+    if (!PyArg_UnpackTuple(args, "...", 1, 1, &id))
+        return NULL;
+    if (!PyLong_Check(id)) {
+        PyErr_SetString(PyExc_TypeError, "ID must be an int");
+        return NULL;
+    }
+
+    // XXX finish
+    PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(channel_list_interpreters_doc,
+"channel_list_interpreters(ID) -> ([ID], [ID])\n\
+\n\
+Return the list of intepreter IDs associated with the channel\n\
+on the recv and send ends, respectively.");
+
 static PyMethodDef module_functions[] = {
-    {"create",                  (PyCFunction)interp_create,
+    {"create",                     (PyCFunction)interp_create,
      METH_VARARGS, create_doc},
-    {"destroy",                 (PyCFunction)interp_destroy,
+    {"destroy",                    (PyCFunction)interp_destroy,
      METH_VARARGS, destroy_doc},
 
-    {"list_all",               (PyCFunction)interp_list_all,
+    {"list_all",                   (PyCFunction)interp_list_all,
      METH_NOARGS, list_all_doc},
-    {"get_current",             (PyCFunction)interp_get_current,
+    {"get_current",                (PyCFunction)interp_get_current,
      METH_NOARGS, get_current_doc},
-    {"get_main",                (PyCFunction)interp_get_main,
+    {"get_main",                   (PyCFunction)interp_get_main,
      METH_NOARGS, get_main_doc},
-    {"is_running",              (PyCFunction)interp_is_running,
+    {"is_running",                 (PyCFunction)interp_is_running,
      METH_VARARGS, is_running_doc},
 
-    {"run_string",              (PyCFunction)interp_run_string,
+    {"run_string",                 (PyCFunction)interp_run_string,
      METH_VARARGS, run_string_doc},
 
-    {"is_shareable",            (PyCFunction)object_is_shareable,
+    {"is_shareable",               (PyCFunction)object_is_shareable,
      METH_VARARGS, is_shareable_doc},
 
-    {"channel_create",          (PyCFunction)channel_create,
+    {"channel_list_all",           (PyCFunction)channel_list_all,
+     METH_NOARGS, channel_list_all_doc},
+    {"channel_create",             (PyCFunction)channel_create,
      METH_NOARGS, channel_create_doc},
-    {"channel_send",            (PyCFunction)channel_send,
+    {"channel_send",               (PyCFunction)channel_send,
      METH_VARARGS, channel_send_doc},
-    {"channel_recv",            (PyCFunction)channel_recv,
+    {"channel_recv",               (PyCFunction)channel_recv,
      METH_VARARGS, channel_recv_doc},
+    {"channel_close",              (PyCFunction)channel_close,
+     METH_VARARGS, channel_close_doc},
+    {"channel_list_interpreters",  (PyCFunction)channel_list_interpreters,
+     METH_VARARGS, channel_list_interpreters_doc},
 
     {NULL,                      NULL}           /* sentinel */
 };
