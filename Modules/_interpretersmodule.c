@@ -165,7 +165,7 @@ typedef struct _channel {
 
     int64_t id;
 
-    //PyThread_type_lock mutex;
+    PyThread_type_lock mutex;
 
     int64_t count;
     struct _channelitem *first;
@@ -180,6 +180,11 @@ _channel_new(void)
         return NULL;
     chan->next = NULL;
     chan->id = -1;
+    chan->mutex = PyThread_allocate_lock();
+    if (chan->mutex == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "can't initialize mutex for new channel");
+        return NULL;
+    }
     chan->count = 0;
     chan->first = NULL;
     chan->last = NULL;
@@ -195,12 +200,12 @@ _channel_add(_PyChannelState *chan, _PyCrossInterpreterData *data)
     item->data = data;
     item->next = NULL;
 
-    /* XXX lock */
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
     chan->count += 1;
     if (chan->first == NULL)
         chan->first = item;
     chan->last = item;
-    /* XXX unlock */
+    PyThread_release_lock(chan->mutex);
 
     return 0;
 }
@@ -208,10 +213,10 @@ _channel_add(_PyChannelState *chan, _PyCrossInterpreterData *data)
 static _PyCrossInterpreterData *
 _channel_next(_PyChannelState *chan)
 {
-    /* XXX lock */
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
     struct _channelitem *item = chan->first;
     if (item == NULL) {
-        /* XXX unlock */
+        PyThread_release_lock(chan->mutex);
         return NULL;
     }
 
@@ -219,7 +224,7 @@ _channel_next(_PyChannelState *chan)
     if (chan->last == item)
         chan->last = NULL;
     chan->count -= 1;
-    /* XXX unlock */
+    PyThread_release_lock(chan->mutex);
 
     _PyCrossInterpreterData *data = item->data;
     PyMem_Free(item);
@@ -229,19 +234,20 @@ _channel_next(_PyChannelState *chan)
 static void
 _channel_clear(_PyChannelState *chan)
 {
-    /* XXX lock */
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
     _PyCrossInterpreterData *data = _channel_next(chan);
     for (; data != NULL; data = _channel_next(chan)) {
         _PyCrossInterpreterData_Release(data);
         PyMem_Free(data);
     }
-    /* XXX unlock */
+    PyThread_release_lock(chan->mutex);
 }
 
 static void
 _channel_free(_PyChannelState *chan)
 {
     _channel_clear(chan);
+    PyThread_free_lock(chan->mutex);
     PyMem_Free(chan);
 }
 
