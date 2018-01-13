@@ -204,7 +204,6 @@ _channel_next(_PyChannelState *chan)
         PyThread_release_lock(chan->mutex);
         return NULL;
     }
-
     chan->first = item->next;
     if (chan->last == item)
         chan->last = NULL;
@@ -272,29 +271,34 @@ _channels_next_id(struct _channels *channels)
     return id;
 }
 
-_PyChannelState *
-_channels_lookup(struct _channels *channels, int64_t id)
+static _PyChannelState *
+_channels_lookup_locked(struct _channels *channels, int64_t id)
 {
-    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
     _PyChannelState *chan = channels->head;
     for (;chan != NULL; chan = chan->next) {
         if (chan->id == id)
             break;
     }
-    PyThread_release_lock(channels->mutex);
     if (chan == NULL) {
         PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
     }
     return chan;
 }
 
-static int
-_channels_add(struct _channels *channels, _PyChannelState *chan)
+static _PyChannelState *
+_channels_lookup(struct _channels *channels, int64_t id)
 {
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+    _PyChannelState *chan = _channels_lookup_locked(channels, id);
+    PyThread_release_lock(channels->mutex);
+    return chan;
+}
+
+static int
+_channels_add_locked(struct _channels *channels, _PyChannelState *chan)
+{
     int64_t id = _channels_next_id(channels);
     if (id < 0) {
-        PyThread_release_lock(channels->mutex);
         return -1;
     }
     if (channels->head != NULL) {
@@ -303,17 +307,22 @@ _channels_add(struct _channels *channels, _PyChannelState *chan)
     channels->head = chan;
     channels->count += 1;
     chan->id = id;
-    PyThread_release_lock(channels->mutex);
-
     return 0;
 }
 
-_PyChannelState *
-_channels_remove(struct _channels *channels, int64_t id)
+static int
+_channels_add(struct _channels *channels, _PyChannelState *chan)
 {
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+    int res = _channels_add_locked(channels, chan);
+    PyThread_release_lock(channels->mutex);
+    return res;
+}
+
+static _PyChannelState *
+_channels_remove_locked(struct _channels *channels, int64_t id)
+{
     if (channels->head == NULL) {
-        PyThread_release_lock(channels->mutex);
         return NULL;
     }
 
@@ -326,7 +335,6 @@ _channels_remove(struct _channels *channels, int64_t id)
     }
     if (chan == NULL) {
         PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
-        PyThread_release_lock(channels->mutex);
         return NULL;
     }
 
@@ -338,6 +346,14 @@ _channels_remove(struct _channels *channels, int64_t id)
     chan->next = NULL;
 
     channels->count -= 1;
+    return chan;
+}
+
+static _PyChannelState *
+_channels_remove(struct _channels *channels, int64_t id)
+{
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+    _PyChannelState *chan = _channels_remove_locked(channels, id);
     PyThread_release_lock(channels->mutex);
     return chan;
 }
@@ -404,7 +420,6 @@ _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0)
         return -1;
 
-    // XXX lock _PyChannelState to avoid race on destroy here?
     _PyChannelState *chan = _channels_lookup(channels, id);
     if (chan == NULL) {
         PyMem_Free(data);
@@ -421,7 +436,6 @@ _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
 PyObject *
 _channel_recv(struct _channels *channels, int64_t id)
 {
-    // XXX lock _PyChannelState to avoid race on destroy here?
     _PyChannelState *chan = _channels_lookup(channels, id);
     if (chan == NULL)
         return NULL;
@@ -432,8 +446,9 @@ _channel_recv(struct _channels *channels, int64_t id)
     }
 
     PyObject *obj = _PyCrossInterpreterData_NewObject(data);
-    if (obj == NULL)
+    if (obj == NULL) {
         return NULL;
+    }
     _PyCrossInterpreterData_Release(data);
     return obj;
 }
@@ -536,7 +551,6 @@ static int
 _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
                            PyObject *shareables)
 {
-    // XXX lock?
     if (_ensure_not_running(interp) < 0)
         return -1;
 
