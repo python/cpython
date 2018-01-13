@@ -73,6 +73,17 @@ def freeze_support():
                 kwds[name] = int(value)
         spawn_main(**kwds)
         sys.exit()
+    # fix the command line for the semaphore tracker (unix)
+    elif (
+        (len(sys.argv) >= 3) and
+        (sys.argv[-2] == '-c') and
+        ('semaphore_tracker import main;' in sys.argv[-1])
+    ):
+        r = int(sys.argv[-1].rsplit('(')[1].split(')')[0])
+        from multiprocessing.semaphore_tracker import main;
+        main(r)
+        sys.exit()
+    # TODO: fix the command line for the fork server (unix)
 
 
 def get_command_line(**kwds):
