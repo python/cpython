@@ -863,6 +863,8 @@ which incur interpreter overhead.
        'Equivalent to list(combinations(iterable, r))[index]'
        pool = tuple(iterable)
        n = len(pool)
+       if r < 0 or r > n:
+           raise ValueError
        c = 1
        k = min(r, n-r)
        for i in range(1, k+1):
@@ -871,8 +873,6 @@ which incur interpreter overhead.
            index += c
        if index < 0 or index >= c:
            raise IndexError
-       if r < 0 or r > n:
-           raise ValueError
        result = []
        while r:
            c, n, r = c*r//n, n-1, r-1

@@ -2266,6 +2266,8 @@ Samuele
 ...     'Equivalent to list(combinations(iterable, r))[index]'
 ...     pool = tuple(iterable)
 ...     n = len(pool)
+...     if r < 0 or r > n:
+...         raise ValueError
 ...     c = 1
 ...     k = min(r, n-r)
 ...     for i in range(1, k+1):
@@ -2274,8 +2276,6 @@ Samuele
 ...         index += c
 ...     if index < 0 or index >= c:
 ...         raise IndexError
-...     if r < 0 or r > n:
-...         raise ValueError
 ...     result = []
 ...     while r:
 ...         c, n, r = c*r//n, n-1, r-1
@@ -2371,9 +2371,12 @@ True
 
 >>> population = 'ABCDEFGH'
 >>> for r in range(len(population) + 1):
-...     for i, expected in enumerate(combinations(population, r)):
-...         actual = nth_combination(population, r, i)
-...         assert expected == actual
+...     seq = list(combinations(population, r))
+...     for i in range(len(seq)):
+...         assert nth_combination(population, r, i) == seq[i]
+...     for i in range(-len(seq), 0):
+...         assert nth_combination(population, r, i) == seq[i]
+
 
 """
 
