@@ -887,6 +887,37 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     return NULL;
 }
 
+PyObject *
+_PyObject_GetAttrWithoutError(PyObject *v, PyObject *name)
+{
+    PyTypeObject *tp = Py_TYPE(v);
+    PyObject *ret = NULL;
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     name->ob_type->tp_name);
+        return NULL;
+    }
+    if (tp->tp_getattro != NULL) {
+        // Fast path, skip raising AttributeError
+        if (tp->tp_getattro == PyObject_GenericGetAttr) {
+            return _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
+        }
+        ret = (*tp->tp_getattro)(v, name);
+    }
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL)
+            return NULL;
+        ret = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    if (ret == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Clear();
+    }
+    return ret;
+}
+
 int
 PyObject_HasAttr(PyObject *v, PyObject *name)
 {
@@ -1098,7 +1129,8 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *
-_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
+_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
+                                 PyObject *dict, int suppress)
 {
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
@@ -1180,9 +1212,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         goto done;
     }
 
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
+    if (!suppress) {
+        PyErr_Format(PyExc_AttributeError,
+                     "'%.50s' object has no attribute '%U'",
+                     tp->tp_name, name);
+    }
   done:
     Py_XDECREF(descr);
     Py_DECREF(name);
@@ -1192,7 +1226,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
 PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
-    return _PyObject_GenericGetAttrWithDict(obj, name, NULL);
+    return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 0);
 }
 
 int
