@@ -7,21 +7,6 @@
 #include "internal/pystate.h"
 
 
-struct _channels;
-
-/* globals is the process-global state for the module.  It holds all
-   the data that we need to share between interpreters, so it cannot
-   hold PyObject values. */
-static struct globals {
-    struct _channels {
-        //PyThread_type_lock mutex;
-        struct _channel *head;
-        int64_t count;
-        int64_t next_id;
-    } channels;
-} _globals;
-
-
 static PyInterpreterState *
 _get_current(void)
 {
@@ -251,30 +236,52 @@ _channel_free(_PyChannelState *chan)
     PyMem_Free(chan);
 }
 
-static int64_t
-_channels_next_id(void)
+struct _channels {
+    PyThread_type_lock mutex;
+    _PyChannelState *head;
+    int64_t count;
+    int64_t next_id;
+};
+
+static int
+_channels_init(struct _channels *channels)
 {
-    int64_t id = _globals.channels.next_id;
+    if (channels->mutex == NULL) {
+        channels->mutex = PyThread_allocate_lock();
+        if (channels->mutex == NULL) {
+            PyMem_Free(channels);
+            PyErr_SetString(PyExc_RuntimeError, "can't initialize mutex for new channel");
+            return -1;
+        }
+    }
+    channels->head = NULL;
+    return 0;
+}
+
+static int64_t
+_channels_next_id(struct _channels *channels)
+{
+    int64_t id = channels->next_id;
     if (id < 0) {
         /* overflow */
         PyErr_SetString(PyExc_RuntimeError,
                         "failed to get a channel ID");
         return -1;
     }
-    _globals.channels.next_id += 1;
+    channels->next_id += 1;
     return id;
 }
 
 _PyChannelState *
-_channels_lookup(int64_t id)
+_channels_lookup(struct _channels *channels, int64_t id)
 {
-    /* XXX lock */
-    _PyChannelState *chan = _globals.channels.head;
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+    _PyChannelState *chan = channels->head;
     for (;chan != NULL; chan = chan->next) {
         if (chan->id == id)
             break;
     }
-    /* XXX unlock */
+    PyThread_release_lock(channels->mutex);
     if (chan == NULL) {
         PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
     }
@@ -282,36 +289,36 @@ _channels_lookup(int64_t id)
 }
 
 static int
-_channels_add(_PyChannelState *chan)
+_channels_add(struct _channels *channels, _PyChannelState *chan)
 {
-    /* XXX lock */
-    int64_t id = _channels_next_id();
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+    int64_t id = _channels_next_id(channels);
     if (id < 0) {
-        /* XXX unlock */
+        PyThread_release_lock(channels->mutex);
         return -1;
     }
-    if (_globals.channels.head != NULL) {
-        chan->next = _globals.channels.head;
+    if (channels->head != NULL) {
+        chan->next = channels->head;
     }
-    _globals.channels.head = chan;
-    _globals.channels.count += 1;
+    channels->head = chan;
+    channels->count += 1;
     chan->id = id;
-    /* XXX unlock */
+    PyThread_release_lock(channels->mutex);
 
     return 0;
 }
 
 _PyChannelState *
-_channels_remove(int64_t id)
+_channels_remove(struct _channels *channels, int64_t id)
 {
-    /* XXX lock */
-    if (_globals.channels.head == NULL) {
-        /* XXX unlock */
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+    if (channels->head == NULL) {
+        PyThread_release_lock(channels->mutex);
         return NULL;
     }
 
     _PyChannelState *prev = NULL;
-    _PyChannelState *chan = _globals.channels.head;
+    _PyChannelState *chan = channels->head;
     for (;chan != NULL; chan = chan->next) {
         if (chan->id == id)
             break;
@@ -319,33 +326,37 @@ _channels_remove(int64_t id)
     }
     if (chan == NULL) {
         PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
-        /* XXX unlock */
+        PyThread_release_lock(channels->mutex);
         return NULL;
     }
 
-    if (chan == _globals.channels.head) {
-        _globals.channels.head = chan->next;
+    if (chan == channels->head) {
+        channels->head = chan->next;
     } else {
         prev->next = chan->next;
     }
     chan->next = NULL;
 
-    _globals.channels.count -= 1;
-    /* XXX unlock */
+    channels->count -= 1;
+    PyThread_release_lock(channels->mutex);
     return chan;
 }
 
 int64_t *
-_channels_list_all(int64_t *count)
+_channels_list_all(struct _channels *channels, int64_t *count)
 {
-    int64_t *ids = PyMem_Malloc(sizeof(int64_t) * _globals.channels.count);
-    if (ids == NULL)
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+    int64_t *ids = PyMem_Malloc(sizeof(int64_t) * channels->count);
+    if (ids == NULL) {
+        PyThread_release_lock(channels->mutex);
         return NULL;
-    _PyChannelState *chan = _globals.channels.head;
+    }
+    _PyChannelState *chan = channels->head;
     for (int64_t i=0; chan != NULL; chan = chan->next, i++) {
         ids[i] = chan->id;
     }
-    *count = _globals.channels.count;
+    *count = channels->count;
+    PyThread_release_lock(channels->mutex);
     return ids;
 }
 
@@ -361,15 +372,40 @@ channel_close(void)
 }
 */
 
+/* "high"-level channel-related functions */
+
+static int64_t
+_channel_create(struct _channels *channels)
+{
+    _PyChannelState *chan = _channel_new();
+    if (chan == NULL)
+        return -1;
+    if (_channels_add(channels, chan) != 0) {
+        _channel_free(chan);
+        return -1;
+    }
+    return chan->id;
+}
+
+static int
+_channel_destroy(struct _channels *channels, int64_t id)
+{
+    _PyChannelState *chan = _channels_remove(channels, id);
+    if (chan == NULL)
+        return -1;
+    _channel_free(chan);
+    return 0;
+}
+
 int
-_channel_send(int64_t id, PyObject *obj)
+_channel_send(struct _channels *channels, int64_t id, PyObject *obj)
 {
     _PyCrossInterpreterData *data = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0)
         return -1;
 
     // XXX lock _PyChannelState to avoid race on destroy here?
-    _PyChannelState *chan = _channels_lookup(id);
+    _PyChannelState *chan = _channels_lookup(channels, id);
     if (chan == NULL) {
         PyMem_Free(data);
         return -1;
@@ -383,10 +419,10 @@ _channel_send(int64_t id, PyObject *obj)
 }
 
 PyObject *
-_channel_recv(int64_t id)
+_channel_recv(struct _channels *channels, int64_t id)
 {
     // XXX lock _PyChannelState to avoid race on destroy here?
-    _PyChannelState *chan = _channels_lookup(id);
+    _PyChannelState *chan = _channels_lookup(channels, id);
     if (chan == NULL)
         return NULL;
     _PyCrossInterpreterData *data = _channel_next(chan);
@@ -541,6 +577,21 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
 
 /* module level code ********************************************************/
+
+/* globals is the process-global state for the module.  It holds all
+   the data that we need to share between interpreters, so it cannot
+   hold PyObject values. */
+static struct globals {
+    struct _channels channels;
+} _globals = {0};
+
+static int
+_init_globals(void)
+{
+    if (_channels_init(&_globals.channels) != 0)
+        return -1;
+    return 0;
+}
 
 static PyObject *
 interp_create(PyObject *self, PyObject *args)
@@ -789,16 +840,12 @@ Return the list of all IDs for active channels.");
 static PyObject *
 channel_create(PyObject *self)
 {
-    _PyChannelState *chan = _channel_new();
-    if (chan == NULL)
+    int64_t cid = _channel_create(&_globals.channels);
+    if (cid < 0)
         return NULL;
-    if (_channels_add(chan) != 0) {
-        _channel_free(chan);
-        return NULL;
-    }
-    PyObject *id = PyLong_FromLongLong(chan->id);
+    PyObject *id = PyLong_FromLongLong(cid);
     if (id == NULL) {
-        _channel_free(chan);
+        _channel_destroy(&_globals.channels, cid);
         return NULL;
     }
     return id;
@@ -825,7 +872,7 @@ channel_send(PyObject *self, PyObject *args)
     if (cid == -1 && PyErr_Occurred() != NULL)
         return NULL;
     assert(cid <= INT64_MAX);
-    if (_channel_send(cid, obj) != 0)
+    if (_channel_send(&_globals.channels, cid, obj) != 0)
         return NULL;
     Py_RETURN_NONE;
 }
@@ -850,7 +897,7 @@ channel_recv(PyObject *self, PyObject *args)
     if (cid == -1 && PyErr_Occurred() != NULL)
         return NULL;
     assert(cid <= INT64_MAX);
-    return _channel_recv(cid);
+    return _channel_recv(&_globals.channels, cid);
 }
 
 PyDoc_STRVAR(channel_recv_doc,
@@ -963,6 +1010,9 @@ static struct PyModuleDef interpretersmodule = {
 PyMODINIT_FUNC
 PyInit__interpreters(void)
 {
+    if (_init_globals() != 0)
+        return NULL;
+
     PyObject *module = PyModule_Create(&interpretersmodule);
     if (module == NULL)
         return NULL;
