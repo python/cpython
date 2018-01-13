@@ -90,6 +90,7 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby
 from bisect import bisect_left, bisect_right
+from random import randint
 
 
 
@@ -285,6 +286,32 @@ def _fail_neg(values, errmsg='negative value'):
         yield x
 
 
+def _partition(data, left, right, pivot):
+    """Partition the data in two, taking the pivot as middle point"""
+    pivot_value = data[pivot]
+    data[pivot], data[right] = data[right], data[pivot]
+    store = left
+    for i in range(left, right):
+        if data[i] < pivot_value:
+            data[store], data[i] = data[i], data[store]
+            store += 1
+    data[right], data[store] = data[store], data[right]
+    return store
+
+
+def _quick_select(data, left, right, k):
+    if left == right:
+        return data[left]
+    pivot = randint(left, right)
+    pivot = _partition(data, left, right, pivot)
+    if k == pivot:
+        return data[k]
+    elif k < pivot:
+        return _quick_select(data, left, pivot - 1, k)
+    else:
+        return _quick_select(data, pivot + 1, right, k)
+
+
 # === Measures of central tendency (averages) ===
 
 def mean(data):
@@ -359,7 +386,6 @@ def harmonic_mean(data):
     return _convert(n/total, T)
 
 
-# FIXME: investigate ways to calculate medians without sorting? Quickselect?
 def median(data):
     """Return the median (middle value) of numeric data.
 
@@ -373,15 +399,16 @@ def median(data):
     4.0
 
     """
-    data = sorted(data)
+    data = list(data)
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return _quick_select(data, 0, n - 1, (n - 1) // 2)
     else:
-        i = n//2
-        return (data[i - 1] + data[i])/2
+        smaller = _quick_select(data, 0, n - 1, (n // 2) - 1)
+        larger = _quick_select(data, 0, n - 1, (n // 2))
+        return (smaller + larger) / 2
 
 
 def median_low(data):
@@ -396,14 +423,14 @@ def median_low(data):
     3
 
     """
-    data = sorted(data)
+    data = list(data)
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return _quick_select(data, 0, n - 1, (n - 1) // 2)
     else:
-        return data[n//2 - 1]
+        return _quick_select(data, 0, n - 1, (n // 2) - 1)
 
 
 def median_high(data):
@@ -418,11 +445,14 @@ def median_high(data):
     5
 
     """
-    data = sorted(data)
+    data = list(data)
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    return data[n//2]
+    if n % 2 == 1:
+        return _quick_select(data, 0, n - 1, (n - 1) // 2)
+    else:
+        return _quick_select(data, 0, n - 1, (n // 2))
 
 
 def median_grouped(data, interval=1):
