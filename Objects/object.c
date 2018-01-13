@@ -900,11 +900,12 @@ _PyObject_GetAttrWithoutError(PyObject *v, PyObject *name)
         return NULL;
     }
     if (tp->tp_getattro != NULL) {
-        // Fast path, skip raising AttributeError
         if (tp->tp_getattro == PyObject_GenericGetAttr) {
-            return _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
+            ret = _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
         }
-        ret = (*tp->tp_getattro)(v, name);
+        else {
+            ret = (*tp->tp_getattro)(v, name);
+        }
     }
     else if (tp->tp_getattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
@@ -1134,6 +1135,9 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 {
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
+
+       When suppress=1, this function doesn't raise AttributeError.
+       But descriptors may raise it.
     */
 
     PyTypeObject *tp = Py_TYPE(obj);
