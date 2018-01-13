@@ -72,12 +72,12 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(PY_INT64_T);
 
 /* cross-interpreter data */
 
-struct _cid;
+struct _xid;
 
 // _PyCrossInterpreterData is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass between interpreters in the same process.
-typedef struct _cid {
+typedef struct _xid {
     // data is the cross-interpreter-safe derivation of a Python object
     // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
     // new_object func (below) encodes the data.
@@ -99,7 +99,7 @@ typedef struct _cid {
     // new_object is a function that returns a new object in the current
     // interpreter given the data.  The resulting object will be
     // equivalent to the original object.  This field is required.
-    PyObject *(*new_object)(struct _cid *);
+    PyObject *(*new_object)(struct _xid *);
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
     // okay (e.g. bytes) and for those types this field should be set
@@ -128,12 +128,12 @@ PyAPI_FUNC(void) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
 PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
-struct _cidclass;
+struct _xidregitem;
 
-struct _cidclass {
+struct _xidregitem {
     PyTypeObject *cls;
     crossinterpdatafunc getdata;
-    struct _cidclass *next;
+    struct _xidregitem *next;
 };
 
 
@@ -159,7 +159,10 @@ typedef struct pyruntimestate {
         int64_t next_id;
     } interpreters;
     // XXX Remove this field once we have a tp_* slot.
-    struct _cidclass *crossinterpclasses;
+    struct _xidregistry {
+        PyThread_type_lock mutex;
+        struct _xidregitem *head;
+    } xidregistry;
 
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);

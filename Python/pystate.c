@@ -56,6 +56,11 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     }
     runtime->interpreters.next_id = -1;
 
+    runtime->xidregistry.mutex = PyThread_allocate_lock();
+    if (runtime->xidregistry.mutex == NULL) {
+        return _Py_INIT_ERR("Can't initialize threads for cross-interpreter data registry");
+    }
+
     return _Py_INIT_OK();
 }
 
@@ -1183,11 +1188,13 @@ _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
 {
     // Note that we effectively replace already registered classes
     // rather than failing.
-    struct _cidclass *newhead = PyMem_RawMalloc(sizeof(struct _cidclass));
+    struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
+    if (newhead == NULL)
+        return -1;
     newhead->cls = cls;
     newhead->getdata = getdata;
-    newhead->next = _PyRuntime.crossinterpclasses;
-    _PyRuntime.crossinterpclasses = newhead;
+    newhead->next = _PyRuntime.xidregistry.head;
+    _PyRuntime.xidregistry.head = newhead;
     return 0;
 }
 
@@ -1209,12 +1216,12 @@ _PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
     // Make sure the class isn't ever deallocated.
     Py_INCREF((PyObject *)cls);
 
-    // XXX lock
-    if (_PyRuntime.crossinterpclasses == NULL) {
+    PyThread_acquire_lock(_PyRuntime.xidregistry.mutex, WAIT_LOCK);
+    if (_PyRuntime.xidregistry.head == NULL) {
         _register_builtins_for_crossinterpreter_data();
     }
     int res = _register_xidata(cls, getdata);
-    // XXX unlock
+    PyThread_release_lock(_PyRuntime.xidregistry.mutex);
     return res;
 }
 
@@ -1223,11 +1230,11 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
 {
     PyObject *cls = PyObject_Type(obj);
     crossinterpdatafunc getdata = NULL;
-    // XXX lock
-    struct _cidclass *cur = _PyRuntime.crossinterpclasses;
+    PyThread_acquire_lock(_PyRuntime.xidregistry.mutex, WAIT_LOCK);
+    struct _xidregitem *cur = _PyRuntime.xidregistry.head;
     if (cur == NULL) {
         _register_builtins_for_crossinterpreter_data();
-        cur = _PyRuntime.crossinterpclasses;
+        cur = _PyRuntime.xidregistry.head;
     }
     for(; cur != NULL; cur = cur->next) {
         if (cur->cls == (PyTypeObject *)cls) {
@@ -1235,7 +1242,7 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
             break;
         }
     }
-    // XXX unlock
+    PyThread_release_lock(_PyRuntime.xidregistry.mutex);
     return getdata;
 }
 
@@ -1280,12 +1287,12 @@ _register_builtins_for_crossinterpreter_data(void)
 {
     // None
     if (_register_xidata((PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
-        Py_FatalError("could not register None for X-interpreter sharing");
+        Py_FatalError("could not register None for cross-interpreter sharing");
     }
 
     // bytes
     if (_register_xidata(&PyBytes_Type, _bytes_shared) != 0) {
-        Py_FatalError("could not register bytes for X-interpreter sharing");
+        Py_FatalError("could not register bytes for cross-interpreter sharing");
     }
 }
 
