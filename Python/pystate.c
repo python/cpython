@@ -1123,7 +1123,6 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     if (res != 0) {
         return -1;
     }
-    // XXX Make sure they didn't set data->interp?
 
     // Fill in the blanks and validate the result.
     Py_XINCREF(data->obj);

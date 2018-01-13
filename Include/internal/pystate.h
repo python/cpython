@@ -158,7 +158,6 @@ typedef struct pyruntimestate {
            using a Python int. */
         int64_t next_id;
     } interpreters;
-    // XXX Move this to the module of the _intepreters module?
     // XXX Remove this field once we have a tp_* slot.
     struct _cidclass *crossinterpclasses;
 

@@ -464,7 +464,6 @@ class RunStringTests(TestBase):
             file.flush()
 
             expected = 'spam spam spam spam spam'
-            # XXX leaking a process...
             script = dedent(f"""
                 # (inspired by Lib/test/test_fork.py)
                 import os
