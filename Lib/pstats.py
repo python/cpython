@@ -35,7 +35,7 @@ class SortKey(str, Enum):
     CALLS = 'calls'
     NCALLS = 'ncalls'
     CUMULATIVE = 'cumulative'
-    CUMTIME = 'cumtime'
+    CUMTIME = 'cumulative'
     MODULE = 'module'
     FILE = 'file'
     FILENAME = 'filename'
@@ -230,6 +230,9 @@ class Stats:
         if isinstance(field[0], SortKey):
             sort_arg_defs = self.sort_arg_dict_default
         else:
+            for word in field:
+                if isinstance(word, str) and word == 'cumtime':
+                    word = 'cumulative'
             sort_arg_defs = self.get_sort_arg_defs()
 
         sort_tuple = ()

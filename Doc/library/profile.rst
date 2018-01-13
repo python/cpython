@@ -155,7 +155,6 @@ The first call will actually sort the list by function name, and the second call
 will print out the statistics.  The following are some interesting calls to
 experiment with::
 
-   p.sort_stats('cumulative').print_stats(10)
    p.sort_stats(SortKey.cumulative).print_stats(10)
 
 This sorts the profile by cumulative time in a function, and then only prints
@@ -165,7 +164,6 @@ taking time, the above line is what you would use.
 If you were looking to see what functions were looping a lot, and taking a lot
 of time, you would do::
 
-   p.sort_stats('time').print_stats(10)
    p.sort_stats(SortKey.time).print_stats(10)
 
 to sort according to time spent within each function, and then print the
@@ -173,14 +171,12 @@ statistics for the top ten functions.
 
 You might also try::
 
-   p.sort_stats('file').print_stats('__init__')
    p.sort_stats(SortKey.file).print_stats('__init__')
 
 This will sort all the statistics by file name, and then print out statistics
 for only the class init methods (since they are spelled with ``__init__`` in
 them).  As one final example, you could try::
 
-   p.sort_stats('time', 'cumulative').print_stats(.5, 'init')
    p.sort_stats(SortKey.time, SortKey.cumulative).print_stats(.5, 'init')
 
 This line sorts statistics with a primary key of time, and a secondary key of
