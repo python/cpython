@@ -841,9 +841,29 @@ Return whether or not the identified interpreter is running.");
 static PyObject *
 channel_list_all(PyObject *self)
 {
-    // XXX finish
-    PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
-    Py_RETURN_NONE;
+    int64_t count = 0;
+    int64_t *cids = _channels_list_all(&_globals.channels, &count);
+    if (cids == NULL) {
+        if (count == 0)
+            return PyList_New(0);
+        return NULL;
+    }
+    PyObject *ids = PyList_New((Py_ssize_t)count);
+    if (ids == NULL) {
+        // XXX free cids
+        return NULL;
+    }
+    for (int64_t i=0; i < count; cids++, i++) {
+        PyObject *id = PyLong_FromLongLong(*cids);
+        if (id == NULL) {
+            Py_DECREF(ids);
+            ids = NULL;
+            break;
+        }
+        PyList_SET_ITEM(ids, i, id);
+    }
+    // XXX free cids
+    return ids;
 }
 
 PyDoc_STRVAR(channel_list_all_doc,
