@@ -1,18 +1,21 @@
 """
-The typing module:
+The typing module: Support for gradual typing as defined by PEP 484.
 
-* Imports
-* Exports
-* Internal helper functions
-* _SpecialForm and its instances: Any, NoReturn, ClassVar, Union, Optional
-* Two things that can be type arguments in addition to types: ForwardRef and TypeVar
-* The central internal API: _GenericAlias, _VariadicGenericAlias
-* The public counterpart of the API: Generic, Protocol (soon)
-* Public functions: get_type_hints, overload, cast, no_type_check,
-  no_type_check_decorator
-* Generic aliases for collections.abc ABCs and few additional protocols
-* Special types: NewType, NamedTuple, TypedDict (soon)
-* Wrapper re and io related types
+At large scale, the structure of the module is following:
+* Imports and exports, all public names should be explicitelly added to __all__.
+* Internal helper functions: these should never be used in code outside this module.
+* _SpecialForm and its instances (special forms): Any, NoReturn, ClassVar, Union, Optional
+* Two classes whose instances can be type arguments in addition to types: ForwardRef and TypeVar
+* The core of internal generics API: _GenericAlias and _VariadicGenericAlias, the latter is
+  currently only used by Tuple and Callable. All subscripted types like X[int], Union[int, str],
+  etc., are instances of either of these classes.
+* The public counterpart of the generics API consists of two classes: Generic and Protocol
+  (the latter is currently private, but will be made public after PEP 544 acceptance).
+* Public helper functions: get_type_hints, overload, cast, no_type_check,
+  no_type_check_decorator.
+* Generic aliases for collections.abc ABCs and few additional protocols.
+* Special types: NewType, NamedTuple, TypedDict (may be added soon).
+* Wrapper submodules for re and io related types.
 """
 
 import abc
@@ -105,8 +108,9 @@ __all__ = [
 def _type_check(arg, msg):
     """Check that the argument is a type, and return it (internal helper).
 
-    As a special case, accept None and return type(None) instead.
-    Also, _TypeAlias instances (e.g. Match, Pattern) are acceptable.
+    As a special case, accept None and return type(None) instead. Also wrap strings
+    into ForwardRef instances. Consider several corner cases, for example plain
+    special forms like Union are not valid, while Union[int, str] is OK, etc.
     The msg argument is a human-readable error message, e.g::
 
         "Union[arg, ...]: arg should be a type."
@@ -117,17 +121,16 @@ def _type_check(arg, msg):
         return type(None)
     if isinstance(arg, str):
         return ForwardRef(arg)
-    if (
-        isinstance(arg, _GenericAlias) and
-        arg.__origin__ in (Generic, _Protocol, ClassVar) or
-        arg in (Generic, _Protocol)
-        or isinstance(arg, _SpecialForm) and arg is not Any
-    ):
-        raise TypeError("Plain %s is not valid as type argument" % arg)
+    if (isinstance(arg, _GenericAlias) and
+            arg.__origin__ in (Generic, _Protocol, ClassVar)):
+        raise TypeError(f"{arg} is not valid as type argument")
+    if (isinstance(arg, _SpecialForm) and arg is not Any
+            or arg in (Generic, _Protocol)):
+        raise TypeError(f"Plain {arg} is not valid as type argument")
     if isinstance(arg, (type, TypeVar, ForwardRef)):
         return arg
     if not callable(arg):
-        raise TypeError(msg + " Got %.100r." % (arg,))
+        raise TypeError(f"{msg} Got {arg!r:.100}")
     return arg
 
 
@@ -142,7 +145,7 @@ def _type_repr(obj):
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
-        return '%s.%s' % (obj.__module__, obj.__qualname__)
+        return f'{obj.__module__}.{obj.__qualname__}'
     if obj is ...:
         return('...')
     if isinstance(obj, types.FunctionType):
@@ -189,12 +192,12 @@ def _check_generic(cls, parameters):
     This gives a nice error message in case of count mismatch.
     """
     if not cls.__parameters__:
-        raise TypeError("%s is not a generic class" % repr(cls))
+        raise TypeError(f"{cls} is not a generic class")
     alen = len(parameters)
     elen = len(cls.__parameters__)
     if alen != elen:
-        raise TypeError("Too %s parameters for %s; actual %s, expected %s" %
-                        ("many" if alen > elen else "few", repr(cls), alen, elen))
+        raise TypeError(f"Too {'many' if alen > elen else 'few'} parameters for {cls};"
+                        f" actual {alen}, expected {elen}")
 
 
 def _remove_dups_flatten(parameters):
@@ -306,7 +309,7 @@ class _SpecialForm(_Final, _root=True):
                 isinstance(args[0], str) and
                 isinstance(args[1], tuple)):
             # Close enough.
-            raise TypeError("Cannot subclass %r" % cls)
+            raise TypeError(f"Cannot subclass {cls}")
         return super().__new__(cls)
 
     def __init__(self, name, doc):
@@ -328,13 +331,13 @@ class _SpecialForm(_Final, _root=True):
         return self  # Special forms are immutable.
 
     def __call__(self, *args, **kwds):
-        raise TypeError("Cannot instantiate %r" % self)
+        raise TypeError(f"Cannot instantiate {self}")
 
     def __instancecheck__(self, obj):
-        raise TypeError("%r cannot be used with isinstance()." % self)
+        raise TypeError(f"{self} cannot be used with isinstance()")
 
     def __subclasscheck__(self, cls):
-        raise TypeError("%r cannot be used with issubclass()." % self)
+        raise TypeError(f"{self} cannot be used with issubclass()")
 
     @_tp_cache
     def __getitem__(self, parameters):
@@ -451,12 +454,11 @@ class ForwardRef(_Final, _root=True):
 
     def __init__(self, arg):
         if not isinstance(arg, str):
-            raise TypeError('Forward reference must be a string -- got %r' % (arg,))
+            raise TypeError(f"Forward reference must be a string -- got {arg}")
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
-            raise SyntaxError('Forward reference must be an expression -- got %r' %
-                              (arg,))
+            raise SyntaxError(f"Forward reference must be an expression -- got {arg}")
         self.__forward_arg__ = arg
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
@@ -486,7 +488,7 @@ class ForwardRef(_Final, _root=True):
         return hash((self.__forward_arg__, self.__forward_value__))
 
     def __repr__(self):
-        return 'ForwardRef(%r)' % (self.__forward_arg__,)
+        return f'ForwardRef({self.__forward_arg__})'
 
 
 class TypeVar(_Final, _root=True):

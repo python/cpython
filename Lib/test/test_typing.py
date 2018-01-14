@@ -597,7 +597,7 @@ class GenericTests(BaseTestCase):
         SM1 = SimpleMapping[str, int]
         with self.assertRaises(TypeError):
             issubclass(SM1, SimpleMapping)
-        self.assertIsInstance(SimpleMapping[str, int](), SimpleMapping)
+        self.assertIsInstance(SM1(), SimpleMapping)
 
     def test_generic_errors(self):
         T = TypeVar('T')
