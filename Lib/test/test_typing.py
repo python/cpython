@@ -609,6 +609,8 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Generic[T][S]
         with self.assertRaises(TypeError):
+            class C(Generic[T], Generic[T]): ...
+        with self.assertRaises(TypeError):
             isinstance([], List[int])
         with self.assertRaises(TypeError):
             issubclass(list, List[int])

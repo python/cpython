@@ -170,7 +170,7 @@ def _collect_type_vars(types):
 
 def _subs_tvars(tp, tvars, subs):
     """Substitute type variables 'tvars' with substitutions 'subs'.
-    These two must have same length.
+    These two must have the same length.
     """
     if not isinstance(tp, _GenericAlias):
         return tp
@@ -488,7 +488,7 @@ class ForwardRef(_Final, _root=True):
         return hash((self.__forward_arg__, self.__forward_value__))
 
     def __repr__(self):
-        return f'ForwardRef({self.__forward_arg__})'
+        return f'ForwardRef({self.__forward_arg__!r})'
 
 
 class TypeVar(_Final, _root=True):
@@ -681,7 +681,7 @@ class _GenericAlias(_Final, _root=True):
         return result
 
     def __mro_entries__(self, bases):
-        if self._name:
+        if self._name:  # generic version of an ABC or built-in class
             res = []
             if self.__origin__ not in bases:
                 res.append(self.__origin__)
@@ -690,9 +690,9 @@ class _GenericAlias(_Final, _root=True):
                 res.append(Generic)
             return tuple(res)
         if self.__origin__ is Generic:
-            i = bases.index(self)  # FIXME: class C(Generic[T], Generic[T]): pass
+            i = bases.index(self)
             for b in bases[i+1:]:
-                if isinstance(b, _GenericAlias):
+                if isinstance(b, _GenericAlias) and b is not self:
                     return ()
         return (self.__origin__,)
 
@@ -1187,7 +1187,6 @@ Collection = _GenericAlias(collections.abc.Collection, T_co,
                            name='Collection', special=True)
 Callable = _VariadicGenericAlias(collections.abc.Callable, (),
                                  name='Callable', special=True)
-# TODO: Fix the interaction with -OO flag
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
