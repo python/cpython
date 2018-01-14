@@ -372,6 +372,7 @@ Any = _SpecialForm('Any', doc=
     static type checkers. At runtime, Any should not be used with instance
     or class checks.
     """)
+
 NoReturn = _SpecialForm('NoReturn', doc=
     """Special type indicating functions that never return.
     Example::
@@ -384,6 +385,7 @@ NoReturn = _SpecialForm('NoReturn', doc=
     This type is invalid in other positions, e.g., ``List[NoReturn]``
     will fail in static type checkers.
     """)
+
 ClassVar = _SpecialForm('ClassVar', doc=
     """Special type construct to mark class variables.
 
@@ -400,6 +402,7 @@ ClassVar = _SpecialForm('ClassVar', doc=
     Note that ClassVar is not a class itself, and should not
     be used with isinstance() or issubclass().
     """)
+
 Union = _SpecialForm('Union', doc=
     """Union type; Union[X, Y] means either X or Y.
 
@@ -439,6 +442,7 @@ Union = _SpecialForm('Union', doc=
     - You cannot subclass or instantiate a union.
     - You can use Optional[X] as a shorthand for Union[X, None].
     """)
+
 Optional = _SpecialForm('Optional', doc=
     """Optional type.
 
@@ -660,8 +664,6 @@ class _GenericAlias(_Final, _root=True):
             return False
         if self.__origin__ is Union and other.__origin__ is Union:
             return frozenset(self.__args__) == frozenset(other.__args__)
-        if self._special and other._special:
-            return True
         return self.__args__ == other.__args__
 
     def __hash__(self):
