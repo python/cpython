@@ -130,7 +130,7 @@ def _type_check(arg, msg):
     if isinstance(arg, (type, TypeVar, ForwardRef)):
         return arg
     if not callable(arg):
-        raise TypeError(f"{msg} Got {arg!r:.100}")
+        raise TypeError(f"{msg} Got {arg!r:.100}.")
     return arg
 
 
