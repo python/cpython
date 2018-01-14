@@ -187,7 +187,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto restart;
             mask = so->mask;                 /* help avoid a register spill */
         }
-        else if (entry->hash == -1 && freeslot == NULL)
+        else if (entry->hash == -1)
             freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
@@ -216,7 +216,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                         goto restart;
                     mask = so->mask;
                 }
-                else if (entry->hash == -1 && freeslot == NULL)
+                else if (entry->hash == -1)
                     freeslot = entry;
             }
         }
