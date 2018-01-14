@@ -3,12 +3,16 @@
 """
 import os
 import sys
+import webbrowser
+from functools import partial
 from platform import python_version, architecture
 
+from tkinter import font
 from tkinter import Toplevel, Frame, Label, Button, PhotoImage
 from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
 from idlelib import textview
+
 
 
 def build_bits():
@@ -17,6 +21,13 @@ def build_bits():
         return '64' if sys.maxsize > 2**32 else '32'
     else:
         return architecture()[0][:2]
+
+
+def display_browser_link(link=None, event=None):
+    "Handle event of clicking a hyperlink."
+    if not link:
+        return
+    webbrowser.open(link)
 
 
 class AboutDialog(Toplevel):
@@ -85,13 +96,20 @@ class AboutDialog(Toplevel):
         byline = Label(frame_background, text=byline_text, justify=LEFT,
                        fg=self.fg, bg=self.bg)
         byline.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)
-        email = Label(frame_background, text='email:  idle-dev@python.org',
-                      justify=LEFT, fg=self.fg, bg=self.bg)
-        email.grid(row=6, column=0, columnspan=2, sticky=W, padx=10, pady=0)
-        docs = Label(frame_background, text='https://docs.python.org/' +
-                     python_version()[:3] + '/library/idle.html',
-                     justify=LEFT, fg=self.fg, bg=self.bg)
-        docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
+
+        emaillink = 'https://mail.python.org/mailman/listinfo/idle-dev'
+        self.email = self.create_link(parent=frame_background,
+                                      text='Email List', link=emaillink)
+        self.email.grid(row=6, column=0, columnspan=2, sticky=W,
+                        padx=10, pady=0)
+
+        doclink = (f'https://docs.python.org/{python_version()[:3]}'
+                    '/library/idle.html')
+        self.docs = self.create_link(parent=frame_background,
+                                     text='IDLE Documentation Page',
+                                     link=doclink)
+        self.docs.grid(row=7, column=0, columnspan=2, sticky=W,
+                       padx=10, pady=0)
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,
@@ -141,6 +159,23 @@ class AboutDialog(Toplevel):
                                    highlightbackground=self.bg,
                                    command=self.show_idle_credits)
         self.idle_credits.pack(side=LEFT, padx=10, pady=10)
+
+    def create_link(self, parent=None, text=None, link=None):
+        """Create a Label widget that behaves like a hyperlink.
+
+        Args:
+            parent: Parent widget for the Label.
+            text: Text for the Label.
+            link: Link to open when Label is clicked.
+        """
+        widget = Label(parent, text=text, foreground='blue', bg=self.bg,
+                       cursor='hand2')
+        underline_font = font.Font(widget, widget['font'])
+        underline_font['underline'] = True
+        underline_font['size'] = 10
+        widget['font'] = underline_font
+        widget.bind('<Button-1>', partial(display_browser_link, link))
+        return widget
 
     # License, copyright, and credits are of type _sitebuiltins._Printer
     def show_py_license(self):

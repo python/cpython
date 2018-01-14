@@ -3,7 +3,7 @@
 Coverage: 100%
 '''
 from test.support import requires, findfile
-from tkinter import Tk, TclError
+from tkinter import Tk, TclError, font
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
@@ -37,6 +37,22 @@ class LiveDialogTest(unittest.TestCase):
     def test_build_bits(self):
         self.assertIn(help_about.build_bits(), ('32', '64'))
 
+    def test_display_browser_link(self):
+        """Test display browser link."""
+        orig_webbrowser = help_about.webbrowser.open
+        help_about.webbrowser.open = mock.Mock()
+
+        # No link.
+        help_about.display_browser_link()
+        help_about.webbrowser.open.assert_not_called()
+
+        # Valid link.
+        link = 'https://www.python.org'
+        help_about.display_browser_link(link=link)
+        help_about.webbrowser.open.assert_called_with(link)
+
+        help_about.webbrowser.open = orig_webbrowser
+
     def test_dialog_title(self):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(), 'About IDLE')
@@ -46,6 +62,18 @@ class LiveDialogTest(unittest.TestCase):
         path, file = os.path.split(self.dialog.icon_image['file'])
         fn, ext = os.path.splitext(file)
         self.assertEqual(fn, 'idle_48')
+
+    def test_create_link(self):
+        """Test appearance of label acting as links."""
+        dialog = self.dialog
+        link_widgets = (dialog.email, dialog.docs)
+        for widget in link_widgets:
+            widget_font = font.Font(widget, font=widget['font'])
+            self.assertTrue(widget_font.actual()['underline'])
+            self.assertEqual(widget_font.actual()['size'], 10)
+            self.assertEqual(widget['foreground'], 'blue')
+            self.assertEqual(widget['cursor'], 'hand2')
+            self.assertIn('<Button-1>', widget.bind())
 
     def test_printer_buttons(self):
         """Test buttons whose commands use printer function."""
