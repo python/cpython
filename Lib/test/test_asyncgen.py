@@ -701,7 +701,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         async def gen():
             nonlocal DONE
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1)
             yield
             DONE += 2
 
@@ -709,6 +709,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             nonlocal DONE
             ag = gen()
             asend_coro = ag.asend(None)
+            self.assertFalse(ag.ag_running)
             fut = asend_coro.send(None)
             self.assertTrue(ag.ag_running)
             with self.assertRaises(ValueError):
@@ -716,7 +717,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             DONE += 10
 
         self.loop.run_until_complete(run())
-        self.assertEqual(DONE, 12)
+        self.assertEqual(DONE, 10)
 
     def test_async_gen_asyncio_asend_01(self):
         DONE = 0
