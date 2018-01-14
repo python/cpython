@@ -607,11 +607,13 @@ class _GenericAlias(_Final, _root=True):
     have 'name' always set. If 'inst' is False, then the alias can't be instantiated,
     this is used by e.g. typing.List and typing.Dict.
     """
-    def __init__(self, origin, params, *,
-                 name=None, inst=True, special=False):
-        self._name = name
+    def __init__(self, origin, params, *, inst=True, special=False, name=None):
         self._inst = inst
         self._special = special
+        if special:
+            orig_name = origin.__name__
+            name = orig_name[0].title() + orig_name[1:]
+        self._name = name
         if not isinstance(params, tuple):
             params = (params,)
         self.__origin__ = origin
@@ -849,10 +851,10 @@ class Generic:
                 tvarset = set(tvars)
                 gvarset = set(gvars)
                 if not tvarset <= gvarset:
-                    raise TypeError(
-                        f"Some type variables "
-                        "({', '.join(str(t) for t in tvars if t not in gvarset)}) "
-                        "are not listed in Generic[{', '.join(str(g) for g in gvars)}]")
+                    s_vars = ', '.join(str(t) for t in tvars if t not in gvarset)
+                    s_args = ', '.join(str(g) for g in gvars)
+                    raise TypeError(f"Some type variables ({s_vars}) are"
+                                    f" not listed in Generic[{s_args}]")
                 tvars = gvars
         cls.__parameters__ = tuple(tvars)
 
@@ -1166,29 +1168,23 @@ CT_co = TypeVar('CT_co', covariant=True, bound=type)
 # (This one *is* for export!)
 AnyStr = TypeVar('AnyStr', bytes, str)
 
+
 # Various ABCs mimicking those in collections.abc.
-Hashable = _GenericAlias(collections.abc.Hashable, (),
-                         name='Hashable', special=True)  # Not generic.
-Awaitable = _GenericAlias(collections.abc.Awaitable, T_co,
-                          name='Awaitable', special=True)
-Coroutine = _GenericAlias(collections.abc.Coroutine, (T_co, T_contra, V_co),
-                          name='Coroutine', special=True)
-AsyncIterable = _GenericAlias(collections.abc.AsyncIterable, T_co,
-                              name='AsyncIterable', special=True)
-AsyncIterator = _GenericAlias(collections.abc.AsyncIterator, T_co,
-                              name='AsyncIterator', special=True)
-Iterable = _GenericAlias(collections.abc.Iterable, T_co, name='Iterable', special=True)
-Iterator = _GenericAlias(collections.abc.Iterator, T_co, name='Iterator', special=True)
-Reversible = _GenericAlias(collections.abc.Reversible, T_co,
-                           name='Reversible', special=True)
-Sized = _GenericAlias(collections.abc.Sized, (),
-                      name='Sized', special=True)  # Not generic.
-Container = _GenericAlias(collections.abc.Container, T_co,
-                          name='Container', special=True)
-Collection = _GenericAlias(collections.abc.Collection, T_co,
-                           name='Collection', special=True)
-Callable = _VariadicGenericAlias(collections.abc.Callable, (),
-                                 name='Callable', special=True)
+def _alias(origin, params, inst=True):
+    return _GenericAlias(origin, params, special=True, inst=inst)
+
+Hashable = _alias(collections.abc.Hashable, ())  # Not generic.
+Awaitable = _alias(collections.abc.Awaitable, T_co)
+Coroutine = _alias(collections.abc.Coroutine, (T_co, T_contra, V_co))
+AsyncIterable = _alias(collections.abc.AsyncIterable, T_co)
+AsyncIterator = _alias(collections.abc.AsyncIterator, T_co)
+Iterable = _alias(collections.abc.Iterable, T_co)
+Iterator = _alias(collections.abc.Iterator, T_co)
+Reversible = _alias(collections.abc.Reversible, T_co)
+Sized = _alias(collections.abc.Sized, ())  # Not generic.
+Container = _alias(collections.abc.Container, T_co)
+Collection = _alias(collections.abc.Collection, T_co)
+Callable = _VariadicGenericAlias(collections.abc.Callable, (), special=True)
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
@@ -1199,20 +1195,15 @@ Callable.__doc__ = \
     There is no syntax to indicate optional or keyword arguments,
     such function types are rarely used as callback types.
     """
-AbstractSet = _GenericAlias(collections.abc.Set, T_co, name='AbstractSet', special=True)
-MutableSet = _GenericAlias(collections.abc.MutableSet, T,
-                           name='MutableSet', special=True)
+AbstractSet = _alias(collections.abc.Set, T_co)
+MutableSet = _alias(collections.abc.MutableSet, T)
 # NOTE: Mapping is only covariant in the value type.
-Mapping = _GenericAlias(collections.abc.Mapping, (KT, VT_co),
-                        name='Mapping', special=True)
-MutableMapping = _GenericAlias(collections.abc.MutableMapping, (KT, VT),
-                               name='MutableMapping', special=True)
-Sequence = _GenericAlias(collections.abc.Sequence, T_co, name='Sequence', special=True)
-MutableSequence = _GenericAlias(collections.abc.MutableSequence, T,
-                                name='MutableSequence', special=True)
-ByteString = _GenericAlias(collections.abc.ByteString, (),
-                           name='ByteString', special=True)  # Not generic
-Tuple = _VariadicGenericAlias(tuple, (), name='Tuple', inst=False, special=True)
+Mapping = _alias(collections.abc.Mapping, (KT, VT_co))
+MutableMapping = _alias(collections.abc.MutableMapping, (KT, VT))
+Sequence = _alias(collections.abc.Sequence, T_co)
+MutableSequence = _alias(collections.abc.MutableSequence, T)
+ByteString = _alias(collections.abc.ByteString, ())  # Not generic
+Tuple = _VariadicGenericAlias(tuple, (), inst=False, special=True)
 Tuple.__doc__ = \
     """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
 
@@ -1222,31 +1213,23 @@ Tuple.__doc__ = \
 
     To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
     """
-List = _GenericAlias(list, T, name='List', inst=False, special=True)
-Deque = _GenericAlias(collections.deque, T, name='Deque', special=True)
-Set = _GenericAlias(set, T, name='Set', inst=False, special=True)
-FrozenSet = _GenericAlias(frozenset, T_co, name='FrozenSet', inst=False, special=True)
-MappingView = _GenericAlias(collections.abc.MappingView, T_co,
-                            name='MappingView', special=True)
-KeysView = _GenericAlias(collections.abc.KeysView, KT, name='KeysView', special=True)
-ItemsView = _GenericAlias(collections.abc.ItemsView, (KT, VT_co),
-                          name='ItemsView', special=True)
-ValuesView = _GenericAlias(collections.abc.ValuesView, VT_co,
-                           name='ValuesView', special=True)
-ContextManager = _GenericAlias(contextlib.AbstractContextManager, T_co,
-                               name='ContextManager', special=True)
-AsyncContextManager = _GenericAlias(contextlib.AbstractAsyncContextManager, T_co,
-                                    name='AsyncContextManager', special=True)
-Dict = _GenericAlias(dict, (KT, VT), name='Dict', inst=False, special=True)
-DefaultDict = _GenericAlias(collections.defaultdict, (KT, VT),
-                            name='DefaultDict', special=True)
-Counter = _GenericAlias(collections.Counter, T, name='Counter', special=True)
-ChainMap = _GenericAlias(collections.ChainMap, (KT, VT), name='ChainMap', special=True)
-Generator = _GenericAlias(collections.abc.Generator, (T_co, T_contra, V_co),
-                          name='Generator', special=True)
-AsyncGenerator = _GenericAlias(collections.abc.AsyncGenerator, (T_co, T_contra),
-                               name='AsyncGenerator', special=True)
-Type = _GenericAlias(type, CT_co, name='Type', inst=False, special=True)
+List = _alias(list, T, inst=False)
+Deque = _alias(collections.deque, T)
+Set = _alias(set, T, inst=False)
+FrozenSet = _alias(frozenset, T_co, inst=False)
+MappingView = _alias(collections.abc.MappingView, T_co)
+KeysView = _alias(collections.abc.KeysView, KT)
+ItemsView = _alias(collections.abc.ItemsView, (KT, VT_co))
+ValuesView = _alias(collections.abc.ValuesView, VT_co)
+ContextManager = _alias(contextlib.AbstractContextManager, T_co)
+AsyncContextManager = _alias(contextlib.AbstractAsyncContextManager, T_co)
+Dict = _alias(dict, (KT, VT), inst=False)
+DefaultDict = _alias(collections.defaultdict, (KT, VT))
+Counter = _alias(collections.Counter, T)
+ChainMap = _alias(collections.ChainMap, (KT, VT))
+Generator = _alias(collections.abc.Generator, (T_co, T_contra, V_co))
+AsyncGenerator = _alias(collections.abc.AsyncGenerator, (T_co, T_contra))
+Type = _alias(type, CT_co, inst=False)
 Type.__doc__ = \
     """A special construct usable to annotate class objects.
 
@@ -1596,10 +1579,8 @@ class io:
 io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
-Pattern = _GenericAlias(stdlib_re.Pattern, AnyStr,
-                        name='Pattern', special=True)
-Match = _GenericAlias(stdlib_re.Match, AnyStr,
-                      name='Match', special=True)
+Pattern = _alias(stdlib_re.Pattern, AnyStr)
+Match = _alias(stdlib_re.Match, AnyStr)
 
 class re:
     """Wrapper namespace for re type aliases."""
