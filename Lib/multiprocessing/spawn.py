@@ -8,6 +8,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+import ast
 import os
 import sys
 import runpy
@@ -83,7 +84,22 @@ def freeze_support():
         from multiprocessing.semaphore_tracker import main;
         main(r)
         sys.exit()
-    # TODO: fix the command line for the fork server (unix)
+    # fix the command line for the fork server (unix)
+    elif (
+        (len(sys.argv) >= 3) and
+        (sys.argv[-2] == '-c') and
+        ('forkserver import main;' in sys.argv[-1])
+    ):
+        cmd = sys.argv[-1]
+        main_args = cmd.split('main(')[1].rsplit(')', 1)[0].split(', ', 3)
+        listener_fd = int(main_args[0])
+        alive_r = int(main_args[1])
+        preload = ast.literal_eval(main_args[2])
+        kwds = ast.literal_eval(main_args[3][2:])
+
+        from multiprocessing.forkserver import main
+        main(listener_fd, alive_r, preload, **kwds)
+        sys.exit()
 
 
 def get_command_line(**kwds):
