@@ -64,22 +64,20 @@ def is_semaphore_tracker(argv):
     '''
     Return whether commandline indicates we are running the semaphore tracker
     '''
-    return (
-        (len(argv) >= 3) and
-        (argv[-2] == '-c') and
-        ('semaphore_tracker import main;' in sys.argv[-1])
-    )
+    if len(argv) >= 2 and argv[1] == '--multiprocessing-semaphore-tracker':
+        return True
+    else:
+        return False
 
 
 def is_forkserver(argv):
     '''
     Return whether commandline indicates we are running the forkserver
     '''
-    return (
-        (len(sys.argv) >= 3) and
-        (sys.argv[-2] == '-c') and
-        ('forkserver import main;' in sys.argv[-1])
-    )
+    if len(argv) >= 2 and argv[1] == '--multiprocessing-forkserver':
+        return True
+    else:
+        return False
 
 
 def freeze_support():
@@ -99,21 +97,20 @@ def freeze_support():
     # fix the command line for the semaphore tracker (unix)
     # we extract the single argument to the semaphore tracker's main()
     elif is_semaphore_tracker(sys.argv):
+        from multiprocessing.semaphore_tracker import main
         r = int(sys.argv[-1].rsplit('(')[1].split(')')[0])
-        from multiprocessing.semaphore_tracker import main;
         main(r)
         sys.exit()
     # fix the command line for the fork server (unix)
     # we extract the 3 args and keywords to the forkserver's main()
     elif is_forkserver(sys.argv):
+        from multiprocessing.forkserver import main
         cmd = sys.argv[-1]
         main_args = cmd.split('main(')[1].rsplit(')', 1)[0].split(', ', 3)
         listener_fd = int(main_args[0])
         alive_r = int(main_args[1])
         preload = ast.literal_eval(main_args[2])
         kwds = ast.literal_eval(main_args[3][2:])
-
-        from multiprocessing.forkserver import main
         main(listener_fd, alive_r, preload, **kwds)
         sys.exit()
 
