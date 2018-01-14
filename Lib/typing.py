@@ -309,7 +309,7 @@ class _SpecialForm(_Final, _root=True):
                 isinstance(args[0], str) and
                 isinstance(args[1], tuple)):
             # Close enough.
-            raise TypeError(f"Cannot subclass {cls}")
+            raise TypeError(f"Cannot subclass {cls!r}")
         return super().__new__(cls)
 
     def __init__(self, name, doc):
@@ -331,7 +331,7 @@ class _SpecialForm(_Final, _root=True):
         return self  # Special forms are immutable.
 
     def __call__(self, *args, **kwds):
-        raise TypeError(f"Cannot instantiate {self}")
+        raise TypeError(f"Cannot instantiate {self!r}")
 
     def __instancecheck__(self, obj):
         raise TypeError(f"{self} cannot be used with isinstance()")
@@ -458,11 +458,11 @@ class ForwardRef(_Final, _root=True):
 
     def __init__(self, arg):
         if not isinstance(arg, str):
-            raise TypeError(f"Forward reference must be a string -- got {arg}")
+            raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
-            raise SyntaxError(f"Forward reference must be an expression -- got {arg}")
+            raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
         self.__forward_arg__ = arg
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
