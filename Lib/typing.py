@@ -684,7 +684,8 @@ class _GenericAlias(_Final, _root=True):
             if self.__origin__ not in bases:
                 res.append(self.__origin__)
             i = bases.index(self)
-            if not any(isinstance(b, _GenericAlias) for b in bases[i+1:]):
+            if not any(isinstance(b, _GenericAlias) or issubclass(b, Generic)
+                       for b in bases[i+1:]):
                 res.append(Generic)
             return tuple(res)
         if self.__origin__ is Generic:

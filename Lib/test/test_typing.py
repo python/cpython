@@ -1204,6 +1204,12 @@ class GenericTests(BaseTestCase):
 
         self.assertEqual(C.__parameters__, (VT, T, KT))
 
+    def test_multiple_inheritance_special(self):
+        S = TypeVar('S')
+        class B(Generic[S]): ...
+        class C(List[int], B): ...
+        self.assertEqual(C.__mro__, (C, list, B, Generic, object))
+
     def test_nested(self):
 
         G = Generic
