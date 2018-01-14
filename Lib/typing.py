@@ -124,8 +124,8 @@ def _type_check(arg, msg):
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in (Generic, _Protocol, ClassVar)):
         raise TypeError(f"{arg} is not valid as type argument")
-    if (isinstance(arg, _SpecialForm) and arg is not Any
-            or arg in (Generic, _Protocol)):
+    if (isinstance(arg, _SpecialForm) and arg is not Any or
+            arg in (Generic, _Protocol)):
         raise TypeError(f"Plain {arg} is not valid as type argument")
     if isinstance(arg, (type, TypeVar, ForwardRef)):
         return arg
@@ -823,8 +823,8 @@ class Generic:
     def __init_subclass__(cls, *args, **kwargs):
         tvars = []
         if ('__orig_bases__' in cls.__dict__ and Generic in cls.__orig_bases__ or
-                '__orig_bases__' not in cls.__dict__ and Generic in cls.__bases__
-                and cls.__name__ != '_Protocol'):
+                '__orig_bases__' not in cls.__dict__ and Generic in cls.__bases__ and
+                cls.__name__ != '_Protocol'):
             raise TypeError("Cannot inherit from plain Generic")
         if '__orig_bases__' in cls.__dict__:
             tvars = _collect_type_vars(cls.__orig_bases__)
