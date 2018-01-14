@@ -696,6 +696,29 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(run())
         self.assertEqual(DONE, 10)
 
+    def test_async_gen_asyncio_aclose_12(self):
+        DONE = 0
+
+        async def gen():
+            nonlocal DONE
+            await asyncio.sleep(1)
+            yield
+            DONE += 2
+
+        async def run():
+            nonlocal DONE
+            ag = gen()
+            asend_coro = ag.asend(None)
+            self.assertFalse(ag.ag_running)
+            fut = asend_coro.send(None)
+            self.assertTrue(ag.ag_running)
+            with self.assertRaises(ValueError):
+                await ag.asend(None)
+            DONE += 10
+
+        self.loop.run_until_complete(run())
+        self.assertEqual(DONE, 10)
+
     def test_async_gen_asyncio_asend_01(self):
         DONE = 0
 

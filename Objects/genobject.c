@@ -1534,9 +1534,11 @@ async_gen_asend_send(PyAsyncGenASend *o, PyObject *arg)
 
     result = gen_send_ex((PyGenObject*)o->ags_gen, arg, 0, 0);
     result = async_gen_unwrap_value(o->ags_gen, result);
+    ((PyGenObject*)o->ags_gen)->gi_running = 1;
 
     if (result == NULL) {
         o->ags_state = AWAITABLE_STATE_CLOSED;
+        ((PyGenObject*)o->ags_gen)->gi_running = 0;
     }
 
     return result;
@@ -1562,9 +1564,11 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *args)
 
     result = gen_throw((PyGenObject*)o->ags_gen, args);
     result = async_gen_unwrap_value(o->ags_gen, result);
+    ((PyGenObject*)o->ags_gen)->gi_running = 1;
 
     if (result == NULL) {
         o->ags_state = AWAITABLE_STATE_CLOSED;
+        ((PyGenObject*)o->ags_gen)->gi_running = 0;
     }
 
     return result;
@@ -1575,6 +1579,7 @@ static PyObject *
 async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
 {
     o->ags_state = AWAITABLE_STATE_CLOSED;
+    ((PyGenObject*)o->ags_gen)->gi_running = 0;
     Py_RETURN_NONE;
 }
 
