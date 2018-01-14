@@ -746,6 +746,79 @@ class ChannelTests(TestBase):
 
         self.assertEqual(cid2, cid1 + 1)
 
+    def test_close_single_user(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_recv(cid)
+        interpreters.channel_close(cid, send=True, recv=True)
+
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_recv(cid)
+
+    def test_close_multiple_users(self):
+        raise NotImplementedError
+
+    def test_close_no_kwargs(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_recv(cid)
+        interpreters.channel_close(cid)
+
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_recv(cid)
+
+    def test_close_multiple_times(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_recv(cid)
+        interpreters.channel_close(cid, send=True, recv=True)
+
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_close(cid, send=True, recv=True)
+
+    def test_close_with_unused_items(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'ham')
+        interpreters.channel_close(cid, send=True, recv=True)
+
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_recv(cid)
+
+    def test_close_never_used(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_close(cid)
+        # XXX Do we want this to fail?
+        interpreters.channel_send(cid, b'spam')
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, b'spam')
+
+    def test_close_by_unassociated_interp(self):
+        raise NotImplementedError
+
+    def test_close_partially(self):
+        raise NotImplementedError
+
+    def test_close_used_multiple_times_by_single_user(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_recv(cid)
+        interpreters.channel_close(cid, send=True, recv=True)
+
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(RuntimeError):
+            interpreters.channel_recv(cid)
+
     def test_send_recv_main(self):
         cid = interpreters.channel_create()
         orig = b'spam'

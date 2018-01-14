@@ -136,6 +136,38 @@ _apply_shared_exception(struct _shared_exception *exc)
 
 /* channel-specific code */
 
+struct _channelend;
+
+struct _channelend {
+    int64_t interp;
+    struct _channelend *next;
+};
+
+static void
+_channelend_free_all(struct _channelend *end) {
+    while (end != NULL) {
+        struct _channelend *last = end;
+        end = end->next;
+        PyMem_Free(last);
+    }
+}
+
+static struct _channelend *
+_channelend_find(struct _channelend *first, int64_t interp, struct _channelend **pprev)
+{
+    struct _channelend *prev = NULL;
+    struct _channelend *end = first;
+    while (end != NULL) {
+        if (end->interp == interp)
+            break;
+        prev = end;
+        end = end->next;
+    }
+    if (pprev != NULL)
+        *pprev = prev;
+    return end;
+}
+
 struct _channelitem;
 
 struct _channelitem {
@@ -155,6 +187,17 @@ typedef struct _channel {
     int64_t count;
     struct _channelitem *first;
     struct _channelitem *last;
+
+    // Note that the list entries are never removed for interpreter
+    // for which the channel is closed.  This should be a problem in
+    // practice.  Also, a channel isn't automatically closed when an
+    // interpreter is destroyed.
+    int64_t sendcount;
+    int64_t recvcount;
+    struct _channelend *send;
+    struct _channelend *recv;
+    struct _channelend *sendclosed;
+    struct _channelend *recvclosed;
 } _PyChannelState;
 
 static _PyChannelState *
@@ -173,19 +216,121 @@ _channel_new(void)
     chan->count = 0;
     chan->first = NULL;
     chan->last = NULL;
+    chan->sendcount = 0;
+    chan->recvcount = 0;
+    chan->send = NULL;
+    chan->recv = NULL;
+    chan->sendclosed = NULL;
+    chan->recvclosed = NULL;
     return chan;
 }
 
 static int
-_channel_add(_PyChannelState *chan, _PyCrossInterpreterData *data)
+_channel_associate_end(_PyChannelState *chan, int64_t interp, int send)
 {
-    struct _channelitem *item = PyMem_Malloc(sizeof(struct _channelitem));
-    if (item == NULL)
+    struct _channelend *prev;
+    struct _channelend *end = _channelend_find(send ? chan->send : chan->recv, interp, &prev);
+    if (end != NULL) {
+        // already associated
+        return 0;
+    }
+    end = _channelend_find(send ? chan->sendclosed : chan->recvclosed, interp, &prev);
+    if (end != NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "channel already closed");
+        return 1;
+    }
+
+    end = PyMem_Malloc(sizeof(struct _channelend));
+    if (end == NULL)
         return -1;
+    end->interp = interp;
+    end->next = NULL;
+    if (prev == NULL) {
+        if (send) {
+            chan->send = end;
+        } else {
+            chan->recv = end;
+        }
+    } else {
+        prev->next = end;
+    }
+    if (send)
+        chan->sendcount += 1;
+    else
+        chan->recvcount += 1;
+    return 0;
+}
+
+static int
+_channel_close_end(_PyChannelState *chan, int64_t interp, int send)
+{
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+
+    struct _channelend *prev;
+    struct _channelend *end = _channelend_find(send ? chan->send : chan->recv, interp, &prev);
+    if (end == NULL) {
+        // never associated or already closed
+        PyThread_release_lock(chan->mutex);
+        return 0;
+    }
+
+    // Drop it from the "open" list.
+    if (prev == NULL) {
+        if (send)
+            chan->send = NULL;
+        else
+            chan->recv = NULL;
+    } else {
+        prev->next = end->next;
+    }
+    if (send)
+        chan->sendcount -= 1;
+    else
+        chan->recvcount -= 1;
+
+    // Add it to the "closed" list.
+    if (send) {
+        end->next = chan->sendclosed;
+        chan->sendclosed = end;
+    } else {
+        end->next = chan->recvclosed;
+        chan->recvclosed = end;
+    }
+
+    PyThread_release_lock(chan->mutex);
+    return 0;
+}
+
+static int
+_channel_is_closed(_PyChannelState *chan)
+{
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+    int res = 0;
+    if (chan->sendcount == 0 && chan->recvcount == 0) {
+        if (chan->sendclosed != NULL || chan->recvclosed != NULL)
+            res = 1;
+    }
+    PyThread_release_lock(chan->mutex);
+    return res;
+}
+
+static int
+_channel_add(_PyChannelState *chan, int64_t interp, _PyCrossInterpreterData *data)
+{
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+    if (_channel_associate_end(chan, interp, 1) != 0) {
+        PyThread_release_lock(chan->mutex);
+        return -1;
+    }
+
+    struct _channelitem *item = PyMem_Malloc(sizeof(struct _channelitem));
+    if (item == NULL) {
+        PyThread_release_lock(chan->mutex);
+        return -1;
+    }
     item->data = data;
     item->next = NULL;
 
-    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
     chan->count += 1;
     if (chan->first == NULL)
         chan->first = item;
@@ -196,9 +341,14 @@ _channel_add(_PyChannelState *chan, _PyCrossInterpreterData *data)
 }
 
 static _PyCrossInterpreterData *
-_channel_next(_PyChannelState *chan)
+_channel_next(_PyChannelState *chan, int64_t interp)
 {
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+    if (_channel_associate_end(chan, interp, 0) != 0) {
+        PyThread_release_lock(chan->mutex);
+        return NULL;
+    }
+
     struct _channelitem *item = chan->first;
     if (item == NULL) {
         PyThread_release_lock(chan->mutex);
@@ -218,19 +368,29 @@ _channel_next(_PyChannelState *chan)
 static void
 _channel_clear(_PyChannelState *chan)
 {
-    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
-    _PyCrossInterpreterData *data = _channel_next(chan);
-    for (; data != NULL; data = _channel_next(chan)) {
-        _PyCrossInterpreterData_Release(data);
-        PyMem_Free(data);
+    struct _channelitem *item = chan->first;
+    while (item != NULL) {
+        _PyCrossInterpreterData_Release(item->data);
+        PyMem_Free(item->data);
+        struct _channelitem *last = item;
+        item = item->next;
+        PyMem_Free(last);
     }
-    PyThread_release_lock(chan->mutex);
+    chan->first = NULL;
+    chan->last = NULL;
 }
 
 static void
 _channel_free(_PyChannelState *chan)
 {
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
     _channel_clear(chan);
+    _channelend_free_all(chan->send);
+    _channelend_free_all(chan->recv);
+    _channelend_free_all(chan->sendclosed);
+    _channelend_free_all(chan->recvclosed);
+    PyThread_release_lock(chan->mutex);
+
     PyThread_free_lock(chan->mutex);
     PyMem_Free(chan);
 }
@@ -376,18 +536,6 @@ _channels_list_all(struct _channels *channels, int64_t *count)
     return ids;
 }
 
-/*
-int
-channel_list_interpreters(int id)
-{
-}
-
-int
-channel_close(void)
-{
-}
-*/
-
 /* "high"-level channel-related functions */
 
 static int64_t
@@ -413,9 +561,13 @@ _channel_destroy(struct _channels *channels, int64_t id)
     return 0;
 }
 
-int
+static int
 _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
 {
+    PyInterpreterState *interp = _get_current();
+    if (interp == NULL)
+        return -1;
+
     _PyCrossInterpreterData *data = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0)
         return -1;
@@ -425,7 +577,7 @@ _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
         PyMem_Free(data);
         return -1;
     }
-    if (_channel_add(chan, data) != 0) {
+    if (_channel_add(chan, interp->id, data) != 0) {
         PyMem_Free(data);
         return -1;
     }
@@ -433,13 +585,17 @@ _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
     return 0;
 }
 
-PyObject *
+static PyObject *
 _channel_recv(struct _channels *channels, int64_t id)
 {
+    PyInterpreterState *interp = _get_current();
+    if (interp == NULL)
+        return NULL;
+
     _PyChannelState *chan = _channels_lookup(channels, id);
     if (chan == NULL)
         return NULL;
-    _PyCrossInterpreterData *data = _channel_next(chan);
+    _PyCrossInterpreterData *data = _channel_next(chan, interp->id);
     if (data == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "empty channel");
         return NULL;
@@ -452,6 +608,39 @@ _channel_recv(struct _channels *channels, int64_t id)
     _PyCrossInterpreterData_Release(data);
     return obj;
 }
+
+static int
+_channel_close(struct _channels *channels, int64_t id, int send, int recv)
+{
+    PyInterpreterState *interp = _get_current();
+    if (interp == NULL)
+        return -1;
+    _PyChannelState *chan = _channels_lookup(channels, id);
+    if (chan == NULL)
+        return -1;
+
+    if (send > 0) {
+        if (_channel_close_end(chan, interp->id, 1) != 0)
+            return -1;
+    }
+    if (recv > 0) {
+        if (_channel_close_end(chan, interp->id, 0) != 0)
+            return -1;
+    }
+    if (_channel_is_closed(chan)) {
+        if (_channel_destroy(channels, chan->id) != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+/*
+int
+channel_list_interpreters(int id)
+{
+}
+*/
 
 /* interpreter-specific functions *******************************************/
 
@@ -940,25 +1129,29 @@ PyDoc_STRVAR(channel_recv_doc,
 Return a new object from the data at the from of the channel's queue.");
 
 static PyObject *
-channel_close(PyObject *self, PyObject *args)
+channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_close", 1, 1, &id))
+    static char *kwlist[] = {"id", "send", "recv"};
+    long long cid;
+    int send = -1;
+    int recv = -1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n|$pp:channel_close", kwlist,
+                                     &cid, &send, &recv))
         return NULL;
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "ID must be an int");
-        return NULL;
-    }
 
-    // XXX finish
-    PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+    if (send < 0 && recv < 0) {
+        send = 1;
+        recv = 1;
+    }
+    if (_channel_close(&_globals.channels, cid, send, recv) != 0)
+        return NULL;
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(channel_close_doc,
 "channel_close(ID, *, send=None, recv=None)\n\
 \n\
-Close the channel for the current interpreter.  'send' and 'receive'\n\
+Close the channel for the current interpreter.  'send' and 'recv'\n\
 (bool) may be used to indicate the ends to close.  By default both\n\
 ends are closed.  Closing an already closed end is a noop.");
 
@@ -1013,8 +1206,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS, channel_send_doc},
     {"channel_recv",               (PyCFunction)channel_recv,
      METH_VARARGS, channel_recv_doc},
-    {"channel_close",              (PyCFunction)channel_close,
-     METH_VARARGS, channel_close_doc},
+    {"channel_close",              (PyCFunctionWithKeywords)channel_close,
+     METH_VARARGS|METH_KEYWORDS, channel_close_doc},
     {"channel_list_interpreters",  (PyCFunction)channel_list_interpreters,
      METH_VARARGS, channel_list_interpreters_doc},
 
