@@ -1,0 +1,4 @@
+* AIX uses the character '.' rather than ':' to seperate the MAC ADDR values
+ returned by 'netstat -i' command.
+* The commands arp and ifconfig doe not return a local MAC address 
+* define util._generate_time_safe based on lib.uuid_create (for when _uuid is not available)
