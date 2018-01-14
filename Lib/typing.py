@@ -43,11 +43,11 @@ __all__ = [
     'Union',
 
     # ABCs (from collections.abc).
-    'AbstractSet',  # collections.abc.Set.
-    'ByteString',  # collections.abc.ByteString.
+    'AbstractSet',
+    'ByteString',
     'Container',
     'ContextManager',
-    'Hashable',  # collections.abc.Hashable.
+    'Hashable',
     'ItemsView',
     'Iterable',
     'Iterator',
@@ -591,12 +591,6 @@ class TypeVar(_Final, _root=True):
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
 
-_sentinel = object()
-
-
-def _is_dunder(attr):
-    return attr.startswith('__') and attr.endswith('__')
-
 
 class _GenericAlias(_Final, _root=True):
     """The central part of internal API.
@@ -610,7 +604,7 @@ class _GenericAlias(_Final, _root=True):
     def __init__(self, origin, params, *, inst=True, special=False, name=None):
         self._inst = inst
         self._special = special
-        if special:
+        if special and name is None:
             orig_name = origin.__name__
             name = orig_name[0].title() + orig_name[1:]
         self._name = name
@@ -702,14 +696,16 @@ class _GenericAlias(_Final, _root=True):
 
     def __getattr__(self, attr):
         # We are carefull for copy and pickle.
-        if '__origin__' in self.__dict__ and not _is_dunder(attr):
+        # Also for simplicity we just don't relay all dunder names
+        if '__origin__' in self.__dict__ and not (attr.startswith('__') and attr.endswith('__')):
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if not _is_dunder(attr) and attr not in ('_name', '_inst', '_special'):
+        if attr.startswith('__') and attr.endswith('__') or attr in ('_name', '_inst', '_special'):
+            super().__setattr__(attr, val)
+        else:
             setattr(self.__origin__, attr, val)
-        super().__setattr__(attr, val)
 
     def __instancecheck__(self, obj):
         return self.__subclasscheck__(type(obj))
