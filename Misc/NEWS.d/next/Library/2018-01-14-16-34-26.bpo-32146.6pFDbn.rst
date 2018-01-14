@@ -1,0 +1,2 @@
+``multiprocessing.freeze_support`` now works on non-Windows platforms as
+well.
