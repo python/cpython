@@ -104,6 +104,7 @@ class FTP:
     welcome = None
     passiveserver = 1
     encoding = "latin-1"
+    externalip = ''
 
     # Initialization method (called by class instantiation).
     # Initialize host to localhost, port to standard ftp port
@@ -176,6 +177,12 @@ class FTP:
         With a false argument, use the normal PORT mode,
         With a true argument, use the PASV command.'''
         self.passiveserver = val
+
+    def set_externalip(self, val):
+        '''Use defined IP address for active mode data transfers.
+        With a valid IP address string argument, use it with PORT command.
+        With a empty string argument, use default IP address.'''
+        self.externalip = val
 
     # Internal: "sanitize" a string for printing
     def sanitize(self, s):
@@ -324,6 +331,9 @@ class FTP:
         sock.listen(1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
+        if(self.externalip!=''): # Override IP address
+            if(socket.inet_aton(self.externalip)):
+                host = self.externalip
         if self.af == socket.AF_INET:
             resp = self.sendport(host, port)
         else:
