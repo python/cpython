@@ -491,8 +491,8 @@ class BaseTestInternals:
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
-        # issue28009 - AIX netstat -ai has specific layout,
-        # e.g., '.' rather than ':' tsas format character  
+        # issue28009 - AIX netstat -i(a) has specific formatting,
+        # i.e., '.' rather than ':' as format character
         if not sys.platform.startswith("aix"):
             data = '''
 fake hwaddr
