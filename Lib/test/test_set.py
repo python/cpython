@@ -746,7 +746,7 @@ class TestFrozenSet(TestJointOps, unittest.TestCase):
             mask = t - 1
             for nums in (range, zf_range):
                 u = len({h & mask for h in map(hash, powerset(nums(n)))})
-                self.assertGreater(4*u, t)
+                self.assertGreaterEqual(3*u, t)
 
 class FrozenSetSubclass(frozenset):
     pass
