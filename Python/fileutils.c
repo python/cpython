@@ -1769,7 +1769,7 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
     }
 
     /* Keep a copy of the LC_CTYPE locale */
-    char *oldloc, *loc;
+    char *oldloc = NULL, *loc = NULL;
     if (change_locale) {
         oldloc = setlocale(LC_CTYPE, NULL);
         if (!oldloc) {
@@ -1790,10 +1790,6 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
         if (loc != NULL) {
             setlocale(LC_CTYPE, loc);
         }
-    }
-    else {
-        oldloc = NULL;
-        loc = NULL;
     }
 
     if (decimal_point != NULL) {
