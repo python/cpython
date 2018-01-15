@@ -449,8 +449,8 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
             n = fread(buf, 1, MAXPATHLEN, f);
             buf[n] = '\0';
             fclose(f);
-            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n, NULL);
-            if (rel_builddir_path != NULL) {
+            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n);
+            if (rel_builddir_path) {
                 wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
                 exec_prefix[MAXPATHLEN] = L'\0';
                 joinpath(exec_prefix, rel_builddir_path);
