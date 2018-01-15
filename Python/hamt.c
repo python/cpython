@@ -4,6 +4,10 @@
 #include "internal/pystate.h"
 #include "internal/hamt.h"
 
+/* popcnt support in Visual Studio */
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 /*
 This file provides an implemention of an immutable mapping using the
@@ -242,15 +246,12 @@ There are three fundamental operations on an immutable dictionary:
 Further Reading
 ===============
 
-1. http://blog.higher-order.net/2009/09/08/
-        understanding-clojures-persistenthashmap-deftwice.html
+1. http://blog.higher-order.net/2009/09/08/understanding-clojures-persistenthashmap-deftwice.html
 
-2. http://blog.higher-order.net/2010/08/16/
-        assoc-and-clojures-persistenthashmap-part-ii.html
+2. http://blog.higher-order.net/2010/08/16/assoc-and-clojures-persistenthashmap-part-ii.html
 
 3. Clojure's PersistentHashMap implementation:
-   https://github.com/clojure/clojure/blob/master/src/jvm/
-        clojure/lang/PersistentHashMap.java
+   https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentHashMap.java
 
 
 Debug
@@ -418,6 +419,8 @@ hamt_bitcount(uint32_t i)
     return (uint32_t)__builtin_popcountl(i);
 #elif defined(__clang__) && (__clang_major__ > 3)
     return (uint32_t)__builtin_popcountl(i);
+#elif defined(_MSC_VER)
+    return (uint32_t)__popcnt(i);
 #else
     /* https://graphics.stanford.edu/~seander/bithacks.html */
     i = i - ((i >> 1) & 0x55555555);
@@ -547,7 +550,7 @@ hamt_node_bitmap_new(Py_ssize_t size)
 static inline Py_ssize_t
 hamt_node_bitmap_count(PyHamtNode_Bitmap *node)
 {
-    return Py_SIZE(node) >> 1;
+    return Py_SIZE(node) / 2;
 }
 
 static PyHamtNode_Bitmap *
@@ -1169,7 +1172,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
     }
 
     if (_hamt_dump_format(writer, "BitmapNode(size=%zd count=%zd ",
-                          Py_SIZE(node), Py_SIZE(node) >> 1))
+                          Py_SIZE(node), Py_SIZE(node) / 2))
     {
         goto error;
     }
@@ -1407,7 +1410,7 @@ hamt_node_collision_assoc(PyHamtNode_Collision *self,
 static inline Py_ssize_t
 hamt_node_collision_count(PyHamtNode_Collision *node)
 {
-    return Py_SIZE(node) >> 1;
+    return Py_SIZE(node) / 2;
 }
 
 static hamt_without_t
@@ -2570,17 +2573,7 @@ PyTypeObject _PyHamtItems_Type = {
 static PyObject *
 hamt_iter_yield_items(PyObject *key, PyObject *val)
 {
-    PyObject *tup = PyTuple_New(2);
-    if (tup == NULL) {
-        return tup;
-    }
-
-    Py_INCREF(key);
-    PyTuple_SET_ITEM(tup, 0, key);
-    Py_INCREF(val);
-    PyTuple_SET_ITEM(tup, 1, val);
-
-    return tup;
+    return PyTuple_Pack(2, key, val);
 }
 
 PyObject *

@@ -624,18 +624,20 @@ contextvar_del(PyContextVar *var)
 static Py_hash_t
 contextvar_generate_hash(void *addr, PyObject *name)
 {
-    /* Take hash of the name and XOR it with the default object hash.
-       We do this to ensure that even sequentially allocated ContextVar
-       objects have drastically different hashes.
+    /* Take hash of `name` and XOR it with the object's addr.
 
-       OTOH, we can't just return the hash of name.  For two variables
-       below:
+       The structure of the tree is encoded in objects' hashes, which
+       means that sufficiently similar hashes would result in tall trees
+       with many Collision nodes.  Which would, in turn, result in slower
+       get and set operations.
 
-            c1 = ContextVar('somename')
-            c2 = ContextVar('somename')
+       The XORing helps to ensure that:
 
-       c1 and c2 are completely different variables that happen to
-       have the same name.
+       (1) sequentially allocated ContextVar objects have
+           different hashes;
+
+       (2) context variables with equal names have
+           different hashes.
     */
 
     Py_hash_t name_hash = PyObject_Hash(name);
