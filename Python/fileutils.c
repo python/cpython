@@ -362,6 +362,7 @@ decode_current_locale(const char* arg, size_t *size)
         goto oom;
 #endif   /* HAVE_MBRTOWC */
     return res;
+
 oom:
     if (size != NULL)
         *size = (size_t)-1;
@@ -369,25 +370,6 @@ oom:
 }
 
 
-/* Decode a byte string from the locale encoding with the
-   surrogateescape error handler: undecodable bytes are decoded as characters
-   in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
-   character, escape the bytes using the surrogateescape error handler instead
-   of decoding them.
-
-   Return a pointer to a newly allocated wide character string, use
-   PyMem_RawFree() to free the memory. If size is not NULL, write the number of
-   wide characters excluding the null character into *size
-
-   Return NULL on decoding error or memory allocation error. If *size* is not
-   NULL, *size is set to (size_t)-1 on memory error or set to (size_t)-2 on
-   decoding error.
-
-   Decoding errors should never happen, unless there is a bug in the C
-   library.
-
-   Use the Py_EncodeLocale() function to encode the character string back to a
-   byte string. */
 static wchar_t*
 decode_locale(const char* arg, size_t *size, int current_locale)
 {
@@ -429,6 +411,25 @@ decode_locale(const char* arg, size_t *size, int current_locale)
 }
 
 
+/* Decode a byte string from the locale encoding with the
+   surrogateescape error handler: undecodable bytes are decoded as characters
+   in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
+   character, escape the bytes using the surrogateescape error handler instead
+   of decoding them.
+
+   Return a pointer to a newly allocated wide character string, use
+   PyMem_RawFree() to free the memory. If size is not NULL, write the number of
+   wide characters excluding the null character into *size
+
+   Return NULL on decoding error or memory allocation error. If *size* is not
+   NULL, *size is set to (size_t)-1 on memory error or set to (size_t)-2 on
+   decoding error.
+
+   Decoding errors should never happen, unless there is a bug in the C
+   library.
+
+   Use the Py_EncodeLocale() function to encode the character string back to a
+   byte string. */
 wchar_t*
 Py_DecodeLocale(const char* arg, size_t *size)
 {
@@ -508,18 +509,6 @@ encode_current_locale(const wchar_t *text, size_t *error_pos)
 }
 
 
-/* Encode a wide character string to the locale encoding with the
-   surrogateescape error handler: surrogate characters in the range
-   U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
-
-   Return a pointer to a newly allocated byte string, use PyMem_Free() to free
-   the memory. Return NULL on encoding or memory allocation error.
-
-   If error_pos is not NULL, *error_pos is set to the index of the invalid
-   character on encoding error, or set to (size_t)-1 otherwise.
-
-   Use the Py_DecodeLocale() function to decode the bytes string back to a wide
-   character string. */
 static char*
 encode_locale(const wchar_t *text, size_t *error_pos, int current_locale)
 {
@@ -574,6 +563,18 @@ encode_locale(const wchar_t *text, size_t *error_pos, int current_locale)
 }
 
 
+/* Encode a wide character string to the locale encoding with the
+   surrogateescape error handler: surrogate characters in the range
+   U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
+
+   Return a pointer to a newly allocated byte string, use PyMem_Free() to free
+   the memory. Return NULL on encoding or memory allocation error.
+
+   If error_pos is not NULL, *error_pos is set to the index of the invalid
+   character on encoding error, or set to (size_t)-1 otherwise.
+
+   Use the Py_DecodeLocale() function to decode the bytes string back to a wide
+   character string. */
 char*
 Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
