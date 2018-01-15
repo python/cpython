@@ -1783,6 +1783,12 @@ order (MRO) for bases """
             def f(self): return "C"
         class D(B, C):
             pass
+        self.assertEqual(A.mro(), [A, object])
+        self.assertEqual(A.__mro__, (A, object))
+        self.assertEqual(B.mro(), [B, A, object])
+        self.assertEqual(B.__mro__, (B, A, object))
+        self.assertEqual(C.mro(), [C, A, object])
+        self.assertEqual(C.__mro__, (C, A, object))
         self.assertEqual(D.mro(), [D, B, C, A, object])
         self.assertEqual(D.__mro__, (D, B, C, A, object))
         self.assertEqual(D().f(), "C")

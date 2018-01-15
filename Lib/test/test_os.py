@@ -3079,19 +3079,15 @@ class FDInheritanceTests(unittest.TestCase):
 
         # inheritable by default
         fd2 = os.open(__file__, os.O_RDONLY)
-        try:
-            os.dup2(fd, fd2)
-            self.assertEqual(os.get_inheritable(fd2), True)
-        finally:
-            os.close(fd2)
+        self.addCleanup(os.close, fd2)
+        self.assertEqual(os.dup2(fd, fd2), fd2)
+        self.assertTrue(os.get_inheritable(fd2))
 
         # force non-inheritable
         fd3 = os.open(__file__, os.O_RDONLY)
-        try:
-            os.dup2(fd, fd3, inheritable=False)
-            self.assertEqual(os.get_inheritable(fd3), False)
-        finally:
-            os.close(fd3)
+        self.addCleanup(os.close, fd3)
+        self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
+        self.assertFalse(os.get_inheritable(fd3))
 
     @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
     def test_openpty(self):

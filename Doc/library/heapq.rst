@@ -187,6 +187,17 @@ a tie-breaker so that two tasks with the same priority are returned in the order
 they were added. And since no two entry counts are the same, the tuple
 comparison will never attempt to directly compare two tasks.
 
+Another solution to the problem of non-comparable tasks is to create a wrapper
+class that ignores the task item and only compares the priority field::
+
+    from dataclasses import dataclass, field
+    from typing import Any
+
+    @dataclass(order=True)
+    class PrioritizedItem:
+        priority: int
+        item: Any=field(compare=False)
+
 The remaining challenges revolve around finding a pending task and making
 changes to its priority or removing it entirely.  Finding a task can be done
 with a dictionary pointing to an entry in the queue.

@@ -29,9 +29,15 @@ import sys
 import warnings
 import weakref
 
+try:
+    import ssl
+except ImportError:  # pragma: no cover
+    ssl = None
+
 from . import coroutines
 from . import events
 from . import futures
+from . import sslproto
 from . import tasks
 from .log import logger
 
@@ -145,7 +151,7 @@ def _run_until_complete_cb(fut):
             # Issue #22429: run_forever() already finished, no need to
             # stop it.
             return
-    fut._loop.stop()
+    futures._get_loop(fut).stop()
 
 
 class Server(events.AbstractServer):
@@ -178,6 +184,9 @@ class Server(events.AbstractServer):
             self._loop._stop_serving(sock)
         if self._active_count == 0:
             self._wakeup()
+
+    def get_loop(self):
+        return self._loop
 
     def _wakeup(self):
         waiters = self._waiters
@@ -275,9 +284,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create socket transport."""
         raise NotImplementedError
 
-    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
-                            *, server_side=False, server_hostname=None,
-                            extra=None, server=None):
+    def _make_ssl_transport(
+            self, rawsock, protocol, sslcontext, waiter=None,
+            *, server_side=False, server_hostname=None,
+            extra=None, server=None,
+            ssl_handshake_timeout=None,
+            call_connection_made=True):
         """Create SSL transport."""
         raise NotImplementedError
 
@@ -635,10 +647,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         return await self.run_in_executor(
             None, socket.getnameinfo, sockaddr, flags)
 
-    async def create_connection(self, protocol_factory, host=None, port=None,
-                                *, ssl=None, family=0,
-                                proto=0, flags=0, sock=None,
-                                local_addr=None, server_hostname=None):
+    async def create_connection(
+            self, protocol_factory, host=None, port=None,
+            *, ssl=None, family=0,
+            proto=0, flags=0, sock=None,
+            local_addr=None, server_hostname=None,
+            ssl_handshake_timeout=None):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given Internet host and
@@ -668,6 +682,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError('You must set server_hostname '
                                  'when using ssl without a host')
             server_hostname = host
+
+        if ssl_handshake_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         if host is not None or port is not None:
             if sock is not None:
@@ -751,7 +769,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f'A Stream Socket was expected, got {sock!r}')
 
         transport, protocol = await self._create_connection_transport(
-            sock, protocol_factory, ssl, server_hostname)
+            sock, protocol_factory, ssl, server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket
@@ -760,8 +779,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                          sock, host, port, transport, protocol)
         return transport, protocol
 
-    async def _create_connection_transport(self, sock, protocol_factory, ssl,
-                                           server_hostname, server_side=False):
+    async def _create_connection_transport(
+            self, sock, protocol_factory, ssl,
+            server_hostname, server_side=False,
+            ssl_handshake_timeout=None):
 
         sock.setblocking(False)
 
@@ -771,7 +792,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             sslcontext = None if isinstance(ssl, bool) else ssl
             transport = self._make_ssl_transport(
                 sock, protocol, sslcontext, waiter,
-                server_side=server_side, server_hostname=server_hostname)
+                server_side=server_side, server_hostname=server_hostname,
+                ssl_handshake_timeout=ssl_handshake_timeout)
         else:
             transport = self._make_socket_transport(sock, protocol, waiter)
 
@@ -782,6 +804,42 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise
 
         return transport, protocol
+
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
+        """
+        if ssl is None:
+            raise RuntimeError('Python ssl module is not available')
+
+        if not isinstance(sslcontext, ssl.SSLContext):
+            raise TypeError(
+                f'sslcontext is expected to be an instance of ssl.SSLContext, '
+                f'got {sslcontext!r}')
+
+        if not getattr(transport, '_start_tls_compatible', False):
+            raise TypeError(
+                f'transport {self!r} is not supported by start_tls()')
+
+        waiter = self.create_future()
+        ssl_protocol = sslproto.SSLProtocol(
+            self, protocol, sslcontext, waiter,
+            server_side, server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            call_connection_made=False)
+
+        transport.set_protocol(ssl_protocol)
+        self.call_soon(ssl_protocol.connection_made, transport)
+        if not transport.is_reading():
+            self.call_soon(transport.resume_reading)
+
+        await waiter
+        return ssl_protocol._app_transport
 
     async def create_datagram_endpoint(self, protocol_factory,
                                        local_addr=None, remote_addr=None, *,
@@ -929,15 +987,17 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise OSError(f'getaddrinfo({host!r}) returned empty list')
         return infos
 
-    async def create_server(self, protocol_factory, host=None, port=None,
-                            *,
-                            family=socket.AF_UNSPEC,
-                            flags=socket.AI_PASSIVE,
-                            sock=None,
-                            backlog=100,
-                            ssl=None,
-                            reuse_address=None,
-                            reuse_port=None):
+    async def create_server(
+            self, protocol_factory, host=None, port=None,
+            *,
+            family=socket.AF_UNSPEC,
+            flags=socket.AI_PASSIVE,
+            sock=None,
+            backlog=100,
+            ssl=None,
+            reuse_address=None,
+            reuse_port=None,
+            ssl_handshake_timeout=None):
         """Create a TCP server.
 
         The host parameter can be a string, in that case the TCP server is
@@ -955,6 +1015,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
+
+        if ssl_handshake_timeout is not None and ssl is None:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
+
         if host is not None or port is not None:
             if sock is not None:
                 raise ValueError(
@@ -1026,13 +1091,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         for sock in sockets:
             sock.listen(backlog)
             sock.setblocking(False)
-            self._start_serving(protocol_factory, sock, ssl, server, backlog)
+            self._start_serving(protocol_factory, sock, ssl, server, backlog,
+                                ssl_handshake_timeout)
         if self._debug:
             logger.info("%r is serving", server)
         return server
 
-    async def connect_accepted_socket(self, protocol_factory, sock,
-                                      *, ssl=None):
+    async def connect_accepted_socket(
+            self, protocol_factory, sock,
+            *, ssl=None,
+            ssl_handshake_timeout=None):
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of
@@ -1044,8 +1112,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         if sock.type != socket.SOCK_STREAM:
             raise ValueError(f'A Stream Socket was expected, got {sock!r}')
 
+        if ssl_handshake_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
+
         transport, protocol = await self._create_connection_transport(
-            sock, protocol_factory, ssl, '', server_side=True)
+            sock, protocol_factory, ssl, '', server_side=True,
+            ssl_handshake_timeout=ssl_handshake_timeout)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket
