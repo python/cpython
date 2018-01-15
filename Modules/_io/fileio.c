@@ -1231,7 +1231,7 @@ PyTypeObject PyFileIO_Type = {
     0,                                          /* tp_is_gc */
     0,                                          /* tp_bases */
     0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
+    0,                                          /* tp_defined_slots */
     0,                                          /* tp_subclasses */
     0,                                          /* tp_weaklist */
     0,                                          /* tp_del */
