@@ -416,17 +416,12 @@ EXPORT(unsigned long long) last_tf_arg_u = 0;
 struct BITS {
     signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
 /*
- * The test case needs "signed short" bitfields, but the
+ * The test case needs/uses "signed short" bitfields, but the
  * IBM XLC compiler does not support this
  */
-#ifndef _AIX
+#ifndef __xlc__
 #define SIGNED_SHORT_BITFIELDS
      short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
-#else
-#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_1 /* Something to distinguish GCC and XLC */
-#define SIGNED_SHORT_BITFIELDS
-     short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
-#endif
 #endif
 };
 
