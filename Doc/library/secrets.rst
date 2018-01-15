@@ -48,7 +48,7 @@ randomness that your operating system provides.
 
 .. function:: randbelow(n)
 
-   Return a random int in the range [0, *n*).
+   Return a random int in the range(0, *n*).
 
 .. function:: randbits(k)
 
