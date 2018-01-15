@@ -14,12 +14,7 @@
 #if defined(__VXWORKS__)
 #include "Python.h"
 #include <rtpLib.h>
-#include "oscar.h"            
-// TODO use python Clinic
-
-static PyObject * oscar_wrapper(PyObject * self, PyObject * args){
-    return PyUnicode_FromString(oscar());
-}
+#include "clinic/_vxwapi.c.h"
 
 /*
  * RTP_ID rtpSpawn
@@ -35,16 +30,6 @@ static PyObject * oscar_wrapper(PyObject * self, PyObject * args){
  *
  */
 
-static PyObject * rtpSpawn_wrapper(PyObject * self, PyObject * args){
-    char * rtpFileName;
-    PyObject *argv;
-    PyObject *envp;
-    int priority;
-    size_t uStackSize;
-    int options;
-    int taskOptions;
-    if(!PyArg_ParseTuple(args,""))
-}
 
 /*[clinic input]
 module _vxwapi
@@ -70,24 +55,26 @@ static PyObject *
 _vxwapi_rtpSpawn_impl(PyObject *module, const char *rtpFileName,
                       PyObject *argv, PyObject *envp, int priority,
                       unsigned int uStackSize, int options, int taskOptions)
-/*[clinic end generated code: output=4a3c98870a33cf6a input=86238fe5131c82ba]*/
-
-static PyMethodDef OscarMethods[] = {
-    { "oscar", oscar_wrapper, METH_VARARGS, "Is this documentation?" },
-    { NULL, NULL, 0, NULL }
+/*[clinic end generated code output=4a3c98870a33cf6a input=86238fe5131c82ba]*/
+{
+    return PyUnicode_FromString("notImpl");
+}
+static PyMethodDef _vxwapiMethods[] = {
+    _VXWAPI_RTPSPAWN_METHODDEF  
+    { NULL, NULL }
 };
 
-static struct PyModuleDef oscarmodule = {
+static struct PyModuleDef _vxwapimodule = {
     PyModuleDef_HEAD_INIT,
-    "oscar",
+    "_vxwapi",
     NULL,
     -1,
-    OscarMethods
+    _vxwapiMethods
 };
 
 PyMODINIT_FUNC
 PyInit_oscar(void){
-    return PyModule_Create(&oscarmodule);
+    return PyModule_Create(&_vxwapimodule);
 }
 
 
