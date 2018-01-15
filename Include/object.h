@@ -536,7 +536,7 @@ PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
-/* Same to PyObject_GetAttr(), but don't raise AttributeError. */
+/* Same as PyObject_GetAttr(), but don't raise AttributeError. */
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrWithoutError(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
