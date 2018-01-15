@@ -46,8 +46,16 @@ simplequeue_traverse(simplequeueobject *self, visitproc visit, void *arg)
     return 0;
 }
 
+/*[clinic input]
+@classmethod
+_queue.SimpleQueue.__new__ as simplequeue_new
+
+Simple, unbounded, reentrant FIFO queue.
+[clinic start generated code]*/
+
 static PyObject *
-simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+simplequeue_new_impl(PyTypeObject *type)
+/*[clinic end generated code: output=ba97740608ba31cd input=a0674a1643e3e2fb]*/
 {
     simplequeueobject *self;
 
@@ -69,19 +77,6 @@ simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     return (PyObject *) self;
-}
-
-/*[clinic input]
-_queue.SimpleQueue.__init__
-
-Simple, unbounded, reentrant FIFO queue.
-[clinic start generated code]*/
-
-static int
-_queue_SimpleQueue___init___impl(simplequeueobject *self)
-/*[clinic end generated code: output=111d7b9a0c26aa23 input=21461b956918fcfb]*/
-{
-    return 0;
 }
 
 /*[clinic input]
@@ -328,7 +323,7 @@ PyTypeObject PySimpleQueueType = {
     sizeof(simplequeueobject),          /*tp_size*/
     0,                                  /*tp_itemsize*/
     /* methods */
-    (destructor)simplequeue_dealloc,          /*tp_dealloc*/
+    (destructor)simplequeue_dealloc,    /*tp_dealloc*/
     0,                                  /*tp_print*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
@@ -345,7 +340,7 @@ PyTypeObject PySimpleQueueType = {
     0,                                  /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
         | Py_TPFLAGS_HAVE_GC,           /* tp_flags */
-    _queue_SimpleQueue___init____doc__, /*tp_doc*/
+    simplequeue_new__doc__,             /*tp_doc*/
     (traverseproc)simplequeue_traverse, /*tp_traverse*/
     0,                                  /*tp_clear*/
     0,                                  /*tp_richcompare*/
@@ -360,7 +355,7 @@ PyTypeObject PySimpleQueueType = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    _queue_SimpleQueue___init__,        /* tp_init */
+    0,                                  /* tp_init */
     0,                                  /* tp_alloc */
     simplequeue_new                     /* tp_new */
 };

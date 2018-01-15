@@ -2,29 +2,29 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_queue_SimpleQueue___init____doc__,
+PyDoc_STRVAR(simplequeue_new__doc__,
 "SimpleQueue()\n"
 "--\n"
 "\n"
 "Simple, unbounded, reentrant FIFO queue.");
 
-static int
-_queue_SimpleQueue___init___impl(simplequeueobject *self);
+static PyObject *
+simplequeue_new_impl(PyTypeObject *type);
 
-static int
-_queue_SimpleQueue___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
 
-    if ((Py_TYPE(self) == &PySimpleQueueType) &&
+    if ((type == &PySimpleQueueType) &&
         !_PyArg_NoPositional("SimpleQueue", args)) {
         goto exit;
     }
-    if ((Py_TYPE(self) == &PySimpleQueueType) &&
+    if ((type == &PySimpleQueueType) &&
         !_PyArg_NoKeywords("SimpleQueue", kwargs)) {
         goto exit;
     }
-    return_value = _queue_SimpleQueue___init___impl((simplequeueobject *)self);
+    return_value = simplequeue_new_impl(type);
 
 exit:
     return return_value;
@@ -215,4 +215,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2c48491738047b09 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8badc3bb85263689 input=a9049054013a1b77]*/
