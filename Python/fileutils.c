@@ -1783,11 +1783,16 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
             return -1;
         }
 
-        char *loc = setlocale(LC_NUMERIC, NULL);
+        loc = setlocale(LC_NUMERIC, NULL);
         if (loc != NULL && strcmp(loc, oldloc) == 0) {
             loc = NULL;
         }
+
         if (loc != NULL) {
+            /* Only set the locale temporarilty the LC_CTYPE locale
+               if LC_NUMERIC locale is different than LC_CTYPE locale and
+               decimal_point and/or thousands_sep are non-ASCII or longer than
+               1 byte */
             setlocale(LC_CTYPE, loc);
         }
     }
