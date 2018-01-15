@@ -899,13 +899,12 @@ _PyObject_GetAttrWithoutError(PyObject *v, PyObject *name)
                      name->ob_type->tp_name);
         return NULL;
     }
+
+    if (tp->tp_getattro == PyObject_GenericGetAttr) {
+        return _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
+    }
     if (tp->tp_getattro != NULL) {
-        if (tp->tp_getattro == PyObject_GenericGetAttr) {
-            ret = _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
-        }
-        else {
-            ret = (*tp->tp_getattro)(v, name);
-        }
+        ret = (*tp->tp_getattro)(v, name);
     }
     else if (tp->tp_getattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
@@ -1136,8 +1135,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
 
-       When suppress=1, this function doesn't raise AttributeError.
-       But descriptors may raise it.
+       When suppress=1, this function suppress AttributeError.
     */
 
     PyTypeObject *tp = Py_TYPE(obj);
@@ -1168,6 +1166,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         f = descr->ob_type->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
             res = f(descr, obj, (PyObject *)obj->ob_type);
+            if (res == NULL && suppress &&
+                    PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
             goto done;
         }
     }
@@ -1207,6 +1209,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (f != NULL) {
         res = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (res == NULL && suppress &&
+                PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
         goto done;
     }
 
