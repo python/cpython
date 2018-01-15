@@ -342,7 +342,7 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 _register(SourceLoader, machinery.SourceFileLoader)
 
 
-class ResourceReader:
+class ResourceReader(metaclass=abc.ABCMeta):
 
     """Abstract base class to provide resource-reading support.
 
@@ -383,3 +383,6 @@ class ResourceReader:
     def contents(self):
         """Return an iterator of strings over the contents of the package."""
         return iter([])
+
+
+_register(ResourceReader, machinery.SourceFileLoader)
