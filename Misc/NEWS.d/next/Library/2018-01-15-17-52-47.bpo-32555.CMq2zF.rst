@@ -1,0 +1,3 @@
+On FreeBSD and Solaris, os.strerror() now always decode the byte string from
+the current locale encoding, rather than using ASCII/surrogateescape in some
+cases.
