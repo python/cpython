@@ -47,7 +47,7 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
                             int block, PyObject *timeout);
 
 static PyObject *
-_queue_SimpleQueue_put(simplequeueobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"item", "block", "timeout", NULL};
@@ -82,7 +82,7 @@ static PyObject *
 _queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item);
 
 static PyObject *
-_queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"item", NULL};
@@ -121,7 +121,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
                             PyObject *timeout);
 
 static PyObject *
-_queue_SimpleQueue_get(simplequeueobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_get(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"block", "timeout", NULL};
@@ -195,4 +195,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 {
     return _queue_SimpleQueue_qsize_impl(self);
 }
-/*[clinic end generated code: output=d05b0a7744934b91 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47d790833e9d5fbb input=a9049054013a1b77]*/
