@@ -942,11 +942,17 @@ Miscellaneous
           Process(target=f).start()
 
    If the ``freeze_support()`` line is omitted then trying to run the frozen
-   executable will raise :exc:`RuntimeError`.
+   executable will cause errors (e.g., :exc:`RuntimeError`). It is needed
+   when using the ``'spawn'`` and ``'forkserver'`` start methods.
+
 
    ``freeze_support()`` has no effect when invoked in a module that is being
    run normally by the Python interpreter (i.e., instead of by a frozen
    executable).
+
+.. versionchanged:: 3.7
+   Now supported on Unix (for the ``'spawn'`` and ``'forkserver'` start
+   methods)
 
 .. function:: get_all_start_methods()
 
