@@ -699,6 +699,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
+        # _queue module
+        exts.append( Extension("_queue", ["_queuemodule.c"]) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
