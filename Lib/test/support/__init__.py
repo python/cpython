@@ -2702,6 +2702,9 @@ def missing_compiler_executable(cmd_names=[]):
                     "the '%s' executable is not configured" % name
         elif cmd is None:
             continue
+        # issue #11191: sysconfig.customize_compiler also returns [] rather than None
+        elif len(cmd) == 0:
+            continue
         if spawn.find_executable(cmd[0]) is None:
             return cmd[0]
 

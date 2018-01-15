@@ -88,8 +88,14 @@ class UnixCCompiler(CCompiler):
         ignore, macros, include_dirs = fixed_args
         pp_opts = gen_preprocess_options(macros, include_dirs)
         pp_args = self.preprocessor + pp_opts
+
+        # issue11191 - xlc requires '-C' to include comments in cpp output
+        pp_gcc = self._is_gcc(self.preprocessor)
+        if not pp_gcc and sys.platform[:3] == 'aix':
+            pp_args.append('-C')
         if output_file:
-            pp_args.extend(['-o', output_file])
+            if pp_gcc or sys.platform[:3] != 'aix':
+                pp_args.extend(['-o', output_file])
         if extra_preargs:
             pp_args[:0] = extra_preargs
         if extra_postargs:
