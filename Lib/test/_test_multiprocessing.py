@@ -3,6 +3,7 @@
 #
 
 import unittest
+import unittest.mock
 import queue as pyqueue
 import contextlib
 import time
@@ -4492,6 +4493,76 @@ class TestSimpleQueue(unittest.TestCase):
         self.assertTrue(queue.empty())
 
         proc.join()
+
+
+#
+# Issue 32146: freeze_support for fork, spawn, and forkserver start methods
+#
+
+class TestFreezeSupport(unittest.TestCase):
+    def setUp(self):
+        import multiprocessing.spawn
+        self.module = multiprocessing.spawn
+
+    def test_get_forking_args(self):
+        # Too few args
+        self.assertIsNone(self.module.get_forking_args(['./embed']))
+
+        # Wrong second argument
+        self.assertIsNone(
+            self.module.get_forking_args(['./embed', '-h'])
+        )
+
+        # All correct
+        args, kwds = self.module.get_forking_args(
+            ['./embed', '--multiprocessing-fork', 'pipe_handle=6', 'key=None']
+        )
+        self.assertEqual(args, [])
+        self.assertEqual(kwds, {'pipe_handle': 6, 'key': None})
+
+    def test_get_semaphore_tracker_args(self):
+        # Too few args
+        self.assertIsNone(self.module.get_semaphore_tracker_args(['.embed']))
+
+        # Wrong second argument
+        self.assertIsNone(self.module.get_semaphore_tracker_args(
+            ['./embed', '-h'])
+        )
+
+        # All correct
+        argv = [
+            './embed',
+            '--multiprocessing-semaphore-tracker',
+            'from multiprocessing.semaphore_tracker import main;main(5)'
+        ]
+        args, kwds = self.module.get_semaphore_tracker_args(argv)
+        self.assertEqual(args, [5])
+        self.assertEqual(kwds, {})
+
+    def test_get_forkserver_args(self):
+        # Too few args
+        self.assertFalse(self.module.get_forkserver_args(['./python-embed']))
+
+        # Wrong second argument
+        self.assertFalse(
+            self.module.get_forkserver_args(['./python-embed', '-h'])
+        )
+
+        # All correct
+        argv = [
+            './embed',
+            '--multiprocessing-forkserver',
+            (
+                "from multiprocessing.forkserver import main; "
+                "main(8, 9, ['__main__'], "
+                "**{'sys_path': ['/embed/lib', '/embed/lib/library.zip']})"
+            )
+        ]
+        args, kwds = self.module.get_forkserver_args(argv)
+        self.assertEqual(args, [8, 9, ['__main__']])
+        self.assertEqual(
+            kwds, {'sys_path': ['/embed/lib', '/embed/lib/library.zip']}
+        )
 
 #
 # Mixins

@@ -50,6 +50,7 @@ def get_executable():
 #
 #
 
+
 def is_forking(argv):
     '''
     Return whether commandline indicates we are forking
@@ -60,58 +61,91 @@ def is_forking(argv):
         return False
 
 
-def is_semaphore_tracker(argv):
+def get_forking_args(argv):
     '''
-    Return whether commandline indicates we are running the semaphore tracker
+    If the command line indicated we are forking, return (args, kwargs)
+    suitable for passing to spawn_main. Otherwise return None.
     '''
-    if len(argv) >= 2 and argv[1] == '--multiprocessing-semaphore-tracker':
-        return True
-    else:
-        return False
+    if not is_forking(argv):
+        return None
+
+    args = []
+    kwds = {}
+    for arg in argv[2:]:
+        name, value = arg.split('=')
+        if value == 'None':
+            kwds[name] = None
+        else:
+            kwds[name] = int(value)
+
+    return args, kwds
 
 
-def is_forkserver(argv):
+def get_semaphore_tracker_args(argv):
     '''
-    Return whether commandline indicates we are running the forkserver
+    If the command line indicates we are running the semaphore tracker,
+    return (args, kwargs) suitable for passing to semaphore_tracker.main.
+    Otherwise return None.
     '''
-    if len(argv) >= 2 and argv[1] == '--multiprocessing-forkserver':
-        return True
-    else:
-        return False
+    if len(argv) < 2 or argv[1] != '--multiprocessing-semaphore-tracker':
+        return None
+
+    # command ends with main(fd) - extract fd
+    r = int(argv[-1].rsplit('(')[1].split(')')[0])
+
+    args = [r]
+    kwds = {}
+    return args, kwds
+
+
+def get_forkserver_args(argv):
+    '''
+    If the command line indicates we are running the forkserver, return
+    (args, kwargs) suitable for passing to forkserver.main. Otherwise return
+    None.
+    '''
+    if len(argv) < 2 or argv[1] != '--multiprocessing-forkserver':
+        return None
+
+    # command ends with main(listener_fd, alive_r, preload, **kwds) - extract
+    # the args and kwarfs
+    # listener_fd and alive_r are integers
+    # preload is a list
+    # kwds map strings to lists
+    main_args = argv[-1].split('main(')[1].rsplit(')', 1)[0].split(', ', 3)
+    listener_fd = int(main_args[0])
+    alive_r = int(main_args[1])
+    preload = ast.literal_eval(main_args[2])
+
+    args = [listener_fd, alive_r, preload]
+    kwds = ast.literal_eval(main_args[3][2:])
+    return args, kwds
 
 
 def freeze_support():
     '''
-    Run code for process object if this in not the main process
+    Run code for process object if this in not the main process.
     '''
-    if is_forking(sys.argv):
-        kwds = {}
-        for arg in sys.argv[2:]:
-            name, value = arg.split('=')
-            if value == 'None':
-                kwds[name] = None
-            else:
-                kwds[name] = int(value)
-        spawn_main(**kwds)
+    argv = sys.argv
+
+    forking_args = get_forking_args(argv)
+    if forking_args is not None:
+        args, kwds = forking_args
+        spawn_main(*args, **kwds)
         sys.exit()
-    # fix the command line for the semaphore tracker (unix)
-    # we extract the single argument to the semaphore tracker's main()
-    elif is_semaphore_tracker(sys.argv):
+
+    semaphore_tracker_args = get_semaphore_tracker_args(argv)
+    if semaphore_tracker_args is not None:
         from multiprocessing.semaphore_tracker import main
-        r = int(sys.argv[-1].rsplit('(')[1].split(')')[0])
-        main(r)
+        args, kwds = semaphore_tracker_args
+        main(*args, **kwds)
         sys.exit()
-    # fix the command line for the fork server (unix)
-    # we extract the 3 args and keywords to the forkserver's main()
-    elif is_forkserver(sys.argv):
+
+    forkserver_args = get_forkserver_args(argv)
+    if get_forkserver_args(sys.argv):
         from multiprocessing.forkserver import main
-        cmd = sys.argv[-1]
-        main_args = cmd.split('main(')[1].rsplit(')', 1)[0].split(', ', 3)
-        listener_fd = int(main_args[0])
-        alive_r = int(main_args[1])
-        preload = ast.literal_eval(main_args[2])
-        kwds = ast.literal_eval(main_args[3][2:])
-        main(listener_fd, alive_r, preload, **kwds)
+        args, kwds = forkserver_args
+        main(*args, **kwds)
         sys.exit()
 
 
