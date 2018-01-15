@@ -1209,7 +1209,7 @@ class UserString(Sequence):
     def isspace(self): return self.data.isspace()
     def istitle(self): return self.data.istitle()
     def isupper(self): return self.data.isupper()
-    def join(self, seq): return self.data.join(seq)
+    def join(self, seq): return self.__class__(self.data.join(seq))
     def ljust(self, width, *args):
         return self.__class__(self.data.ljust(width, *args))
     def lower(self): return self.__class__(self.data.lower())

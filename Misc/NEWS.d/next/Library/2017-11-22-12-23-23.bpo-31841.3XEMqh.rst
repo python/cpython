@@ -1,2 +1,2 @@
-Methods ``format`` and ``format_map`` of ``collections.UserString`` now
+Methods ``join``, ``format``, and ``format_map`` of ``collections.UserString`` now
 return instances of ``UserString`` or its subclasses.
