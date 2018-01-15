@@ -724,6 +724,8 @@ class PyBuildExt(build_ext):
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
 
+        exts.append( Extension("oscar", ["oscar.c"]) )
+
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
         # supported...)

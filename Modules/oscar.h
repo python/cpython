@@ -1,0 +1,1 @@
+extern char* oscar(void);
