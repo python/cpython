@@ -866,6 +866,9 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+  locale to the ``LC_NUMERIC`` locale in some cases.
+
 * The ``asyncio.windows_utils.socketpair()`` function has been
   removed: use directly :func:`socket.socketpair` which is available on all
   platforms since Python 3.5 (before, it wasn't available on Windows).
