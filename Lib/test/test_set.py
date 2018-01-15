@@ -748,11 +748,10 @@ class TestFrozenSet(TestJointOps, unittest.TestCase):
         for n in range(18):
             t = 2 ** n
             mask = t - 1
-            for nums in (range, letter_range, zf_range):
+            for nums in (range, zf_range):
                 u = len({h & mask for h in map(hash, powerset(nums(n)))})
                 self.assertGreaterEqual(3*u, t)
-            nums = letter_range
-            u = len({h & mask for h in map(hash, powerset(nums(n)))})
+            u = len({h & mask for h in map(hash, powerset(letter_range(n)))})
             self.assertGreaterEqual(4*u, t)
 
 class FrozenSetSubclass(frozenset):
