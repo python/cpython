@@ -1746,3 +1746,80 @@ error:
     return -1;
 }
 #endif
+
+
+int
+_Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
+                         const char **grouping)
+{
+    int res = -1;
+
+    struct lconv *lc = localeconv();
+
+    int change_locale = 0;
+    if (decimal_point != NULL &&
+        (strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127))
+    {
+        change_locale = 1;
+    }
+    if (thousands_sep != NULL &&
+        (strlen(lc->thousands_sep) > 1 || ((unsigned char)lc->thousands_sep[0]) > 127))
+    {
+        change_locale = 1;
+    }
+
+    /* Keep a copy of the LC_CTYPE locale */
+    char *oldloc = NULL, *loc = NULL;
+    if (change_locale) {
+        oldloc = setlocale(LC_CTYPE, NULL);
+        if (!oldloc) {
+            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            return -1;
+        }
+
+        oldloc = _PyMem_Strdup(oldloc);
+        if (!oldloc) {
+            PyErr_NoMemory();
+            return -1;
+        }
+
+        loc = setlocale(LC_NUMERIC, NULL);
+        if (loc != NULL && strcmp(loc, oldloc) == 0) {
+            loc = NULL;
+        }
+
+        if (loc != NULL) {
+            /* Only set the locale temporarilty the LC_CTYPE locale
+               if LC_NUMERIC locale is different than LC_CTYPE locale and
+               decimal_point and/or thousands_sep are non-ASCII or longer than
+               1 byte */
+            setlocale(LC_CTYPE, loc);
+        }
+    }
+
+    if (decimal_point != NULL) {
+        *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+        if (*decimal_point == NULL) {
+            goto error;
+        }
+    }
+    if (thousands_sep != NULL) {
+        *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+        if (*thousands_sep == NULL) {
+            goto error;
+        }
+    }
+
+    if (grouping != NULL) {
+        *grouping = lc->grouping;
+    }
+
+    res = 0;
+
+error:
+    if (loc != NULL) {
+        setlocale(LC_CTYPE, oldloc);
+    }
+    PyMem_Free(oldloc);
+    return res;
+}
