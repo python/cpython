@@ -382,8 +382,8 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
             /* Comment - skip */
             continue;
         }
-        tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n, NULL);
-        if (tmpbuffer != NULL) {
+        tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n);
+        if (tmpbuffer) {
             wchar_t * state;
             wchar_t * tok = wcstok(tmpbuffer, L" \t\r\n", &state);
             if ((tok != NULL) && !wcscmp(tok, key)) {

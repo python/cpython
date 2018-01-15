@@ -696,7 +696,7 @@ static int parse_isoformat_date(const char *dtstr,
     if (NULL == p) {
         return -1;
     }
-    
+
     if (*(p++) != '-') {
         return -2;
     }

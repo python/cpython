@@ -572,8 +572,9 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
     if (!PyArg_ParseTuple(args, "sz", &domain, &codeset))
         return NULL;
     codeset = bind_textdomain_codeset(domain, codeset);
-    if (codeset)
+    if (codeset) {
         return PyUnicode_DecodeLocale(codeset, NULL);
+    }
     Py_RETURN_NONE;
 }
 #endif
