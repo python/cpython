@@ -151,8 +151,7 @@ The :mod:`locale` module defines the following exception and functions:
    locale to decode ``decimal_point`` and ``thousands_sep`` byte strings if
    they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
    different than the ``LC_CTYPE`` locale. This temporary change affects other
-   threads, and so it is safer to only call this function at startup when only
-   the main thread is running.
+   threads.
 
    .. versionchanged:: 3.7
       The function now sets temporarily the ``LC_CTYPE`` locale to the
