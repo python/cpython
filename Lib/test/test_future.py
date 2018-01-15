@@ -130,13 +130,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         return func_ret_ann
 
     def assertAnnotationEqual(
-        self, annotation, drop_parens=False, is_tuple=False
+        self, annotation, expected=None, drop_parens=False, is_tuple=False,
     ):
         actual = self.getActual(annotation)
-        if is_tuple:
-            expected = annotation[1:-1]
-        else:
-            expected = annotation
+        if expected is None:
+            expected = annotation if not is_tuple else annotation[1:-1]
         if drop_parens:
             self.assertNotEqual(actual, expected)
             actual = actual.replace("(", "").replace(")", "")
@@ -225,16 +223,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("slice[1:]")
         eq("slice[::-1]")
         eq('(str or None) if (sys.version_info[0] > (3,)) else (str or bytes or None)')
-
-    def test_annotations_no_fstring_support_implemented(self):
-        # FIXME: Add f-string support in ast_unparse.c.
-        eq = self.assertAnnotationEqual
-        with self.assertRaises(SystemError) as err:
-            eq("""f'some f-string with {a} {few():.2f} {formatted.values!r}'""")
-        self.assertEqual(
-            str(err.exception),
-            "f-string support in annotations not implemented yet",
-        )
+        eq("f'f-string without formatted values is just a string'")
+        eq("f'{{NOT a formatted value}}'")
+        eq("f'some f-string with {a} {few():.2f} {formatted.values!r}'")
+        eq('''f"{f'{nested} inner'} outer"''')
+        eq("f'space between opening braces: { {a for a in (1, 2, 3)}}'")
 
     def test_annotations_inexact(self):
         """Source formatting is not always preserved

@@ -2,9 +2,20 @@
 #include "Python.h"
 #include "Python-ast.h"
 
-/* Forward declaration for recursion via helper functions. */
+static PyObject *_str_open_br;
+static PyObject *_str_dbl_open_br;
+static PyObject *_str_close_br;
+static PyObject *_str_dbl_close_br;
+
+/* Forward declarations for recursion via helper functions. */
+static PyObject *
+expr_as_unicode(expr_ty e, bool omit_parens);
 static int
 append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens);
+static int
+append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
+static int
+append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
 
 static int
 append_charp(_PyUnicodeWriter *writer, const char *charp)
@@ -706,6 +717,158 @@ append_ast_call(_PyUnicodeWriter *writer, expr_ty e)
     return append_charp(writer, ")");
 }
 
+static PyObject *
+escape_braces(PyObject *orig)
+{
+    PyObject *temp;
+    PyObject *result;
+    temp = PyUnicode_Replace(orig, _str_open_br, _str_dbl_open_br, -1);
+    if (!temp) {
+        return NULL;
+    }
+    result = PyUnicode_Replace(temp, _str_close_br, _str_dbl_close_br, -1);
+    Py_DECREF(temp);
+    return result;
+}
+
+static int
+append_fstring_unicode(_PyUnicodeWriter *writer, PyObject *unicode)
+{
+    PyObject *escaped;
+    int result = -1;
+    escaped = escape_braces(unicode);
+    if (escaped) {
+        result = _PyUnicodeWriter_WriteStr(writer, escaped);
+        Py_DECREF(escaped);
+    }
+    return result;
+}
+
+static int
+append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+{
+    switch (e->kind) {
+    case Constant_kind:
+        return append_fstring_unicode(writer, e->v.Constant.value);
+    case Str_kind:
+        return append_fstring_unicode(writer, e->v.Str.s);
+    case JoinedStr_kind:
+        return append_joinedstr(writer, e, is_format_spec);
+    case FormattedValue_kind:
+        return append_formattedvalue(writer, e, is_format_spec);
+    default:
+        PyErr_SetString(PyExc_SystemError,
+                        "unknown expression kind inside f-string");
+        return -1;
+    }
+}
+
+/* Build body separately to enable wrapping the entire stream of Strs,
+   Constants and FormattedValues in one opening and one closing quote. */
+static PyObject *
+build_fstring_body(asdl_seq *values, bool is_format_spec)
+{
+    Py_ssize_t i, value_count;
+    _PyUnicodeWriter body_writer;
+    _PyUnicodeWriter_Init(&body_writer);
+    body_writer.min_length = 256;
+    body_writer.overallocate = 1;
+
+    value_count = asdl_seq_LEN(values) - 1;
+    assert(value_count >= 0);
+    for (i = 0; i <= value_count; ++i) {
+        if (-1 == append_fstring_element(&body_writer,
+                                         (expr_ty)asdl_seq_GET(values, i),
+                                         is_format_spec
+                                         )) {
+            _PyUnicodeWriter_Dealloc(&body_writer);
+            return NULL;
+        }
+    }
+
+    return _PyUnicodeWriter_Finish(&body_writer);
+}
+
+static int
+append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+{
+    int result = -1;
+    PyObject *body = build_fstring_body(e->v.JoinedStr.values, is_format_spec);
+    if (!body) {
+        return -1;
+    }
+
+    if (!is_format_spec) {
+        if (-1 != append_charp(writer, "f") &&
+            -1 != append_repr(writer, body))
+        {
+            result = 0;
+        }
+    }
+    else {
+        result = _PyUnicodeWriter_WriteStr(writer, body);
+    }
+    Py_DECREF(body);
+    return result;
+}
+
+static int
+append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+{
+    char *conversion;
+    char *outer_brace = "{";
+    PyObject *temp_fv_str = expr_as_unicode(e->v.FormattedValue.value, true);
+    if (!temp_fv_str) {
+        return -1;
+    }
+    if (PyUnicode_Find(temp_fv_str, _str_open_br, 0, 1, 1) == 0) {
+        /* Expression starts with a brace, split it with a space from the outer
+           one. */
+        outer_brace = "{ ";
+    }
+    if (-1 == append_charp(writer, outer_brace)) {
+        Py_DECREF(temp_fv_str);
+        return -1;
+    }
+    if (-1 == _PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
+        Py_DECREF(temp_fv_str);
+        return -1;
+    }
+    Py_DECREF(temp_fv_str);
+
+    if (e->v.FormattedValue.conversion > 0) {
+        switch (e->v.FormattedValue.conversion) {
+        case 97:
+            conversion = "!a";
+            break;
+        case 114:
+            conversion = "!r";
+            break;
+        case 115:
+            conversion = "!s";
+            break;
+        default:
+            PyErr_SetString(PyExc_SystemError,
+                            "unknown f-value conversion kind");
+            return -1;
+        }
+        if (-1 == append_charp(writer, conversion)) {
+            return -1;
+        }
+    }
+    if (e->v.FormattedValue.format_spec > 0) {
+        if (-1 == _PyUnicodeWriter_WriteASCIIString(writer, ":", 1) ||
+            -1 == append_fstring_element(writer,
+                                         e->v.FormattedValue.format_spec,
+                                         true
+                                        ))
+        {
+            return -1;
+        }
+    }
+    return append_charp(writer, "}");
+}
+
 static int
 append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 {
@@ -925,13 +1088,9 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     case Str_kind:
         return append_repr(writer, e->v.Str.s);
     case JoinedStr_kind:
-        PyErr_SetString(PyExc_SystemError,
-                        "f-string support in annotations not implemented yet");
-        return -1;
+        return append_joinedstr(writer, e, false);
     case FormattedValue_kind:
-        PyErr_SetString(PyExc_SystemError,
-                        "f-string support in annotations not implemented yet");
-        return -1;
+        return append_formattedvalue(writer, e, false);
     case Bytes_kind:
         return append_repr(writer, e->v.Bytes.s);
     case Ellipsis_kind:
@@ -959,16 +1118,46 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     }
 }
 
-PyObject *
-_PyAST_ExprAsUnicode(expr_ty e, bool omit_parens)
+static int
+maybe_init_static_strings()
+{
+    if (!_str_open_br &&
+        !(_str_open_br = PyUnicode_InternFromString("{"))) {
+        return -1;
+    }
+    if (!_str_dbl_open_br &&
+        !(_str_dbl_open_br = PyUnicode_InternFromString("{{"))) {
+        return -1;
+    }
+    if (!_str_close_br &&
+        !(_str_close_br = PyUnicode_InternFromString("}"))) {
+        return -1;
+    }
+    if (!_str_dbl_close_br &&
+        !(_str_dbl_close_br = PyUnicode_InternFromString("}}"))) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+expr_as_unicode(expr_ty e, bool omit_parens)
 {
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = 256;
     writer.overallocate = 1;
-    if (-1 == append_ast_expr(&writer, e, omit_parens)) {
+    if (-1 == maybe_init_static_strings() ||
+        -1 == append_ast_expr(&writer, e, omit_parens))
+    {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
     return _PyUnicodeWriter_Finish(&writer);
+}
+
+PyObject *
+_PyAST_ExprAsUnicode(expr_ty e, bool omit_parens)
+{
+    return expr_as_unicode(e, omit_parens);
 }
