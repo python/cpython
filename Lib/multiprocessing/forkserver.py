@@ -127,7 +127,9 @@ class ForkServer(object):
                     cmd %= (listener.fileno(), alive_r, self._preload_modules,
                             data)
                     exe = spawn.get_executable()
-                    args = [exe, '--multiprocessing-forkserver']
+                    args = [exe]
+                    if getattr(sys, 'frozen', False):
+                        args.append('--multiprocessing-forkserver')
                     args += util._args_from_interpreter_flags()
                     args += ['-c', cmd]
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)

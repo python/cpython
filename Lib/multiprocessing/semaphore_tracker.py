@@ -66,7 +66,9 @@ class SemaphoreTracker(object):
                 fds_to_pass.append(r)
                 # process will out live us, so no need to wait on pid
                 exe = spawn.get_executable()
-                args = [exe, '--multiprocessing-semaphore-tracker']
+                args = [exe]
+                if getattr(sys, 'frozen', False):
+                    args.append('--multiprocessing-semaphore-tracker')
                 args += util._args_from_interpreter_flags()
                 args += ['-c', cmd % r]
                 pid = util.spawnv_passfds(exe, args, fds_to_pass)
