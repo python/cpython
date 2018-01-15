@@ -951,7 +951,7 @@ Miscellaneous
    executable).
 
 .. versionchanged:: 3.7
-   Now supported on Unix (for the ``'spawn'`` and ``'forkserver'` start
+   Now supported on Unix (for the ``'spawn'`` and ``'forkserver'`` start
    methods)
 
 .. function:: get_all_start_methods()
