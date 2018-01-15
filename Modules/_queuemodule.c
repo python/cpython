@@ -271,35 +271,29 @@ _queue_SimpleQueue_get_nowait_impl(simplequeueobject *self)
 }
 
 /*[clinic input]
-_queue.SimpleQueue.empty
+_queue.SimpleQueue.empty -> bool
 
 Return True if the queue is empty, False otherwise (not reliable!).
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _queue_SimpleQueue_empty_impl(simplequeueobject *self)
-/*[clinic end generated code: output=25164355586aaad0 input=990412cc070aa6a2]*/
+/*[clinic end generated code: output=1a02a1b87c0ef838 input=1a98431c45fd66f9]*/
 {
-    PyObject *r;
-    if (self->lst_pos == PyList_GET_SIZE(self->lst))
-        r = Py_True;
-    else
-        r = Py_False;
-    Py_INCREF(r);
-    return r;
+    return self->lst_pos == PyList_GET_SIZE(self->lst);
 }
 
 /*[clinic input]
-_queue.SimpleQueue.qsize
+_queue.SimpleQueue.qsize -> Py_ssize_t
 
 Return the approximate size of the queue (not reliable!).
 [clinic start generated code]*/
 
-static PyObject *
+static Py_ssize_t
 _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
-/*[clinic end generated code: output=4c6f52e316a53f60 input=76444ac3249e90c5]*/
+/*[clinic end generated code: output=f9dcd9d0a90e121e input=7a74852b407868a1]*/
 {
-    return PyLong_FromSsize_t(PyList_GET_SIZE(self->lst) - self->lst_pos);
+    return PyList_GET_SIZE(self->lst) - self->lst_pos;
 }
 
 static PyObject *

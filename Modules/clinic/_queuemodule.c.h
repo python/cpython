@@ -169,13 +169,23 @@ PyDoc_STRVAR(_queue_SimpleQueue_empty__doc__,
 #define _QUEUE_SIMPLEQUEUE_EMPTY_METHODDEF    \
     {"empty", (PyCFunction)_queue_SimpleQueue_empty, METH_NOARGS, _queue_SimpleQueue_empty__doc__},
 
-static PyObject *
+static int
 _queue_SimpleQueue_empty_impl(simplequeueobject *self);
 
 static PyObject *
 _queue_SimpleQueue_empty(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _queue_SimpleQueue_empty_impl(self);
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _queue_SimpleQueue_empty_impl(self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_queue_SimpleQueue_qsize__doc__,
@@ -187,12 +197,22 @@ PyDoc_STRVAR(_queue_SimpleQueue_qsize__doc__,
 #define _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF    \
     {"qsize", (PyCFunction)_queue_SimpleQueue_qsize, METH_NOARGS, _queue_SimpleQueue_qsize__doc__},
 
-static PyObject *
+static Py_ssize_t
 _queue_SimpleQueue_qsize_impl(simplequeueobject *self);
 
 static PyObject *
 _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _queue_SimpleQueue_qsize_impl(self);
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = _queue_SimpleQueue_qsize_impl(self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
 }
-/*[clinic end generated code: output=47d790833e9d5fbb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2c48491738047b09 input=a9049054013a1b77]*/

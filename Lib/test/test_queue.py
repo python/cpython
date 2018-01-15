@@ -546,55 +546,57 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
     type2test = queue._PySimpleQueue
 
 
-if _queue is not None:
+@unittest.skipIf(_queue is None, "No _queue module found")
+class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
 
-    class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
-        type2test = _queue.SimpleQueue
+    def setUp(self):
+        self.type2test = _queue.SimpleQueue
+        super().setUp()
 
-        def test_is_default(self):
-            self.assertIs(self.type2test, queue.SimpleQueue)
+    def test_is_default(self):
+        self.assertIs(self.type2test, queue.SimpleQueue)
 
-        def test_sizeof(self):
-            N = 10
-            q = self.q
-            # getsizeof() takes into account the internal queue size
-            cur = sys.getsizeof(q)
-            for item in range(N):
-                q.put(item)
-            new = sys.getsizeof(q)
-            self.assertGreater(new, cur)
-            # popping items eventually frees up some internal space
-            for i in range(N - 1):
-                q.get()
-            self.assertLess(sys.getsizeof(q), new)
+    def test_sizeof(self):
+        N = 10
+        q = self.q
+        # getsizeof() takes into account the internal queue size
+        cur = sys.getsizeof(q)
+        for item in range(N):
+            q.put(item)
+        new = sys.getsizeof(q)
+        self.assertGreater(new, cur)
+        # popping items eventually frees up some internal space
+        for i in range(N - 1):
+            q.get()
+        self.assertLess(sys.getsizeof(q), new)
 
-        def test_reentrancy(self):
-            # bpo-14976: put() may be called reentrantly in an asynchronous
-            # callback.
-            q = self.q
-            gen = itertools.count()
-            N = 10000
-            results = []
+    def test_reentrancy(self):
+        # bpo-14976: put() may be called reentrantly in an asynchronous
+        # callback.
+        q = self.q
+        gen = itertools.count()
+        N = 10000
+        results = []
 
-            # This test exploits the fact that __del__ in a reference cycle
-            # can be called any time the GC may run.
+        # This test exploits the fact that __del__ in a reference cycle
+        # can be called any time the GC may run.
 
-            class Circular(object):
-                def __init__(self):
-                    self.circular = self
+        class Circular(object):
+            def __init__(self):
+                self.circular = self
 
-                def __del__(self):
-                    q.put(next(gen))
-
-            while True:
-                o = Circular()
+            def __del__(self):
                 q.put(next(gen))
-                del o
-                results.append(q.get())
-                if results[-1] >= N:
-                    break
 
-            self.assertEqual(results, list(range(N + 1)))
+        while True:
+            o = Circular()
+            q.put(next(gen))
+            del o
+            results.append(q.get())
+            if results[-1] >= N:
+                break
+
+        self.assertEqual(results, list(range(N + 1)))
 
 
 if __name__ == "__main__":
