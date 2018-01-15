@@ -601,15 +601,16 @@ def _load_system_functions():
 
         # The uuid_generate_* routines are provided by libuuid on at least
         # Linux and FreeBSD, and provided by libc on Mac OS X.
+        # uuid_generate() is provided by libc on AIX
+        # (and FreeBSD issue 32493)
         _libnames = ['uuid']
         if not sys.platform.startswith('win'):
             _libnames.append('c')
+        # attach to a lib and look for uuid_generate* family functions
+        # rather than open 'None' several times
+        # only try to dlopen when something has been found
+        lib = None
         for libname in _libnames:
-            # issue28009 - (at least) on AIX ctypes.CDLL(None) returns
-            # the equivalent of libc as that is already dynamically linked
-            # and anything already dlopen() ed is available
-            # so, rather than open 'None' several times
-            # only try to open when something has been found
             libnm = ctypes.util.find_library(libname)
             if not libnm:
                 continue
@@ -637,20 +638,24 @@ def _load_system_functions():
                     _uuid_generate_time(_buffer)
                     return bytes(_buffer.raw), None
                 break
-        # issue28009 - (see also #26439, #32399, #32493)
-        # when find_library("c") does not work AND _uuid is not present
-        # try to attach to libc using None
+        # when find_library("c") returns None AND _uuid is not present
+        # try to attach to libc using ctypes.CDLL(None)
+        # on AIX (at least) ctypes.CDLL(None) returns
+        # the equivalent of libc because libc is already dynamically linked
+        # to the python executable (see also #26439, #32399, #32493)
         if not lib:
             try:
                 lib = ctypes.CDLL(None)
             except:
                 lib = None
+        # look for uuid_generate() as a way to define both
+        # _uuid_generate_time and _generate_time_safe
         if lib:
             if hasattr(lib, 'uuid_create'):    # pragma: nocover
                 _uuid_generate_time = lib.uuid_create
                 def _generate_time_safe():
-                    _buffer = ctypes.create_string_buffer(16)
-                    _status = ctypes.create_string_buffer(ctypes.sizeof(ctypes.c_ushort))
+                    _buffer = ctypes.create_string_buffer(16)# uuid
+                    _status = ctypes.create_string_buffer(2) # c_ushort
                     _uuid_generate_time(_buffer, _status)
                     return bytes(_buffer.raw), bytes(_status.raw)
 
