@@ -291,16 +291,6 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
     return PyList_GET_SIZE(self->lst) - self->lst_pos;
 }
 
-static PyObject *
-simplequeue_sizeof(simplequeueobject *self, void *unused)
-{
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
-    res += _PySys_GetSizeOf(self->lst);
-    return PyLong_FromSsize_t(res);
-}
-
 
 #include "clinic/_queuemodule.c.h"
 
@@ -312,7 +302,6 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
-    {"__sizeof__", (PyCFunction) simplequeue_sizeof, METH_NOARGS, NULL},
     {NULL,           NULL}              /* sentinel */
 };
 

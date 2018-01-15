@@ -556,20 +556,6 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
     def test_is_default(self):
         self.assertIs(self.type2test, queue.SimpleQueue)
 
-    def test_sizeof(self):
-        N = 10
-        q = self.q
-        # getsizeof() takes into account the internal queue size
-        cur = sys.getsizeof(q)
-        for item in range(N):
-            q.put(item)
-        new = sys.getsizeof(q)
-        self.assertGreater(new, cur)
-        # popping items eventually frees up some internal space
-        for i in range(N - 1):
-            q.get()
-        self.assertLess(sys.getsizeof(q), new)
-
     def test_reentrancy(self):
         # bpo-14976: put() may be called reentrantly in an asynchronous
         # callback.
