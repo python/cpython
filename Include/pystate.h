@@ -272,8 +272,8 @@ typedef struct _ts {
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 
-    PyObject *contextvars;
-    uint64_t contextvars_stack_ver;
+    PyObject *context;
+    uint64_t context_ver;
 
     /* Unique thread state id. */
     uint64_t id;

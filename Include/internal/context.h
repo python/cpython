@@ -7,10 +7,10 @@
 
 struct _pycontextobject {
     PyObject_HEAD
-    PyHamtObject *ctx_prev;
+    PyContext *ctx_prev;
     PyHamtObject *ctx_vars;
     PyObject *ctx_weakreflist;
-    int ctx_prev_set;
+    int ctx_entered;
 };
 
 

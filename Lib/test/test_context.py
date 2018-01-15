@@ -158,6 +158,29 @@ class ContextTest(unittest.TestCase):
 
         self.assertIsNone(var.get(None))
 
+    def test_context_run_6(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('a', default=0)
+
+        def fun():
+            self.assertEqual(c.get(), 0)
+            self.assertIsNone(ctx.get(c))
+
+            c.set(42)
+            self.assertEqual(c.get(), 42)
+            self.assertEqual(ctx.get(c), 42)
+
+        ctx.run(fun)
+
+    def test_context_run_7(self):
+        ctx = contextvars.Context()
+
+        def fun():
+            with self.assertRaisesRegex(RuntimeError, 'is already entered'):
+                ctx.run(fun)
+
+        ctx.run(fun)
+
     @isolated_context
     def test_context_getset_1(self):
         c = contextvars.ContextVar('c')

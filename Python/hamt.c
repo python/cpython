@@ -2343,9 +2343,11 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
 static hamt_find_t
 hamt_find(PyHamtObject *o, PyObject *key, PyObject **val)
 {
-    int32_t key_hash;
+    if (o->h_count == 0) {
+        return F_NOT_FOUND;
+    }
 
-    key_hash = hamt_hash(key);
+    int32_t key_hash = hamt_hash(key);
     if (key_hash == -1) {
         return F_ERROR;
     }

@@ -24,6 +24,12 @@ module _contextvars
 static PyContext *
 context_new(PyHamtObject *vars);
 
+static inline PyContext *
+context_get(void);
+
+static inline PyContext *
+context_copy(void);
+
 static PyContextToken *
 token_new(PyContextVar *var, PyObject *val);
 
@@ -54,36 +60,27 @@ PyContext_New(void)
 PyContext *
 PyContext_Copy(void)
 {
-    PyThreadState *ts = PyThreadState_Get();
-    PyHamtObject *vars = (PyHamtObject *)ts->contextvars;
-    if (vars == NULL) {
-        vars = _PyHamt_New();
-        if (vars == NULL) {
-            return NULL;
-        }
-        ts->contextvars = (PyObject *)vars;
-    }
-    return context_new(vars);
+    return context_copy();
 }
 
 
 int
 PyContext_Enter(PyContext *ctx)
 {
-    if (ctx->ctx_prev_set) {
+    if (ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
-                     "cannot enter: Context %R was already "
-                     "entered before, but not exited", ctx);
+                     "cannot enter context: %R is already entered", ctx);
         return -1;
     }
 
     PyThreadState *ts = PyThreadState_Get();
-    ctx->ctx_prev = (PyHamtObject *)ts->contextvars;  /* borrow */
-    ctx->ctx_prev_set = 1;
 
-    Py_INCREF(ctx->ctx_vars);
-    ts->contextvars = (PyObject *)ctx->ctx_vars;
-    ts->contextvars_stack_ver++;
+    ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
+    ctx->ctx_entered = 1;
+
+    Py_INCREF(ctx);
+    ts->context = (PyObject *)ctx;
+    ts->context_ver++;
 
     return 0;
 }
@@ -92,22 +89,19 @@ PyContext_Enter(PyContext *ctx)
 int
 PyContext_Exit(PyContext *ctx)
 {
-    if (!ctx->ctx_prev_set) {
+    if (!ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
-                     "cannot exit: Context %R was not entered before", ctx);
+                     "cannot exit context: %R has not been entered", ctx);
         return -1;
     }
 
     PyThreadState *ts = PyThreadState_Get();
 
-    Py_DECREF(ctx->ctx_vars);
-    ctx->ctx_vars = (PyHamtObject *)ts->contextvars;
-
-    ts->contextvars = (PyObject *)ctx->ctx_prev;  /* borrow */
-    ts->contextvars_stack_ver++;
+    Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
+    ts->context_ver++;
 
     ctx->ctx_prev = NULL;
-    ctx->ctx_prev_set = 0;
+    ctx->ctx_entered = 0;
 
     return 0;
 }
@@ -130,20 +124,20 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
     assert(PyContextVar_CheckExact(var));
 
     PyThreadState *ts = PyThreadState_Get();
-    if (ts->contextvars == NULL) {
+    if (ts->context == NULL) {
         goto not_found;
     }
 
     if (var->var_cached != NULL &&
             var->var_cached_tsid == ts->id &&
-            var->var_cached_tsver == ts->contextvars_stack_ver)
+            var->var_cached_tsver == ts->context_ver)
     {
         *val = var->var_cached;
         goto found;
     }
 
-    assert(PyHamt_Check(ts->contextvars));
-    PyHamtObject *vars = (PyHamtObject *)ts->contextvars;
+    assert(PyContext_CheckExact(ts->context));
+    PyHamtObject *vars = ((PyContext *)ts->context)->ctx_vars;
 
     PyObject *found = NULL;
     int res = _PyHamt_Find(vars, (PyObject*)var, &found);
@@ -154,7 +148,7 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
         assert(found != NULL);
         var->var_cached = found;  /* borrow */
         var->var_cached_tsid = ts->id;
-        var->var_cached_tsver = ts->contextvars_stack_ver;
+        var->var_cached_tsver = ts->context_ver;
 
         *val = found;
         goto found;
@@ -194,20 +188,13 @@ PyContextVar_Set(PyContextVar *var, PyObject *val)
         return NULL;
     }
 
-    PyThreadState *ts = PyThreadState_Get();
-
-    if (ts->contextvars == NULL) {
-        ts->contextvars = (PyObject *)_PyHamt_New();
-        if (ts->contextvars == NULL) {
-            return NULL;
-        }
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return NULL;
     }
 
-    assert(PyHamt_Check(ts->contextvars));
-    PyHamtObject *vars = (PyHamtObject *)ts->contextvars;
-
     PyObject *old_val = NULL;
-    int found = _PyHamt_Find(vars, (PyObject *)var, &old_val);
+    int found = _PyHamt_Find(ctx->ctx_vars, (PyObject *)var, &old_val);
     if (found < 0) {
         return NULL;
     }
@@ -288,11 +275,37 @@ context_new(PyHamtObject *vars)
     }
 
     ctx->ctx_prev = NULL;
-    ctx->ctx_prev_set = 0;
+    ctx->ctx_entered = 0;
 
     ctx->ctx_weakreflist = NULL;
     PyObject_GC_Track(ctx);
     return ctx;
+}
+
+static inline PyContext *
+context_get(void)
+{
+    PyThreadState *ts = PyThreadState_Get();
+    PyContext *current_ctx = (PyContext *)ts->context;
+    if (current_ctx == NULL) {
+        current_ctx = context_new(NULL);
+        if (current_ctx == NULL) {
+            return NULL;
+        }
+        ts->context = (PyObject *)current_ctx;
+    }
+    return current_ctx;
+}
+
+static inline PyContext *
+context_copy(void)
+{
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return NULL;
+    }
+    assert(ctx->ctx_vars != NULL);
+    return context_new(ctx->ctx_vars);
 }
 
 static int
@@ -567,28 +580,24 @@ static int
 contextvar_set(PyContextVar *var, PyObject *val)
 {
     var->var_cached = NULL;
-
     PyThreadState *ts = PyThreadState_Get();
-    if (ts->contextvars == NULL) {
-        ts->contextvars = (PyObject *)_PyHamt_New();
-        if (ts->contextvars == NULL) {
-            return -1;
-        }
+
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return -1;
     }
 
-    assert(PyHamt_Check(ts->contextvars));
-    PyHamtObject *vars = (PyHamtObject *)ts->contextvars;
-
-    PyHamtObject *new_vars = _PyHamt_Assoc(vars, (PyObject *)var, val);
+    PyHamtObject *new_vars = _PyHamt_Assoc(
+        ctx->ctx_vars, (PyObject *)var, val);
     if (new_vars == NULL) {
         return -1;
     }
 
-    Py_SETREF(ts->contextvars, (PyObject *)new_vars);
+    Py_SETREF(ctx->ctx_vars, new_vars);
 
     var->var_cached = val;  /* borrow */
     var->var_cached_tsid = ts->id;
-    var->var_cached_tsver = ts->contextvars_stack_ver;
+    var->var_cached_tsver = ts->context_ver;
     return 0;
 }
 
@@ -597,14 +606,12 @@ contextvar_del(PyContextVar *var)
 {
     var->var_cached = NULL;
 
-    PyThreadState *ts = PyThreadState_Get();
-    if (ts->contextvars == NULL) {
-        return 0;
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return -1;
     }
 
-    assert(PyHamt_Check(ts->contextvars));
-    PyHamtObject *vars = (PyHamtObject *)ts->contextvars;
-
+    PyHamtObject *vars = ctx->ctx_vars;
     PyHamtObject *new_vars = _PyHamt_Without(vars, (PyObject *)var);
     if (new_vars == NULL) {
         return -1;
@@ -616,8 +623,7 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
-    ts->contextvars = (PyObject *)new_vars;
-    Py_DECREF(vars);
+    Py_SETREF(ctx->ctx_vars, new_vars);
     return 0;
 }
 
