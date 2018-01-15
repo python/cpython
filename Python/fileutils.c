@@ -70,7 +70,10 @@ _Py_device_encoding(int fd)
     Py_RETURN_NONE;
 }
 
-#if !defined(__APPLE__) && !defined(MS_WINDOWS)
+#if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS)
+
+#define USE_FORCE_ASCII
+
 extern int _Py_normalize_encoding(const char *, char *, size_t);
 
 /* Workaround FreeBSD and OpenIndiana locale encoding issue with the C locale.
@@ -221,7 +224,7 @@ encode_ascii_surrogateescape(const wchar_t *text, size_t *error_pos)
 }
 #endif   /* !defined(__APPLE__) && !defined(MS_WINDOWS) */
 
-#if !defined(__APPLE__) && (!defined(MS_WINDOWS) || !defined(HAVE_MBRTOWC))
+#if !defined(HAVE_MBRTOWC) || defined(USE_FORCE_ASCII)
 static wchar_t*
 decode_ascii_surrogateescape(const char *arg, size_t *size)
 {
@@ -251,39 +254,9 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
 #endif
 
 
-/* Decode a byte string from the locale encoding with the
-   surrogateescape error handler: undecodable bytes are decoded as characters
-   in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
-   character, escape the bytes using the surrogateescape error handler instead
-   of decoding them.
-
-   Return a pointer to a newly allocated wide character string, use
-   PyMem_RawFree() to free the memory. If size is not NULL, write the number of
-   wide characters excluding the null character into *size
-
-   Return NULL on decoding error or memory allocation error. If *size* is not
-   NULL, *size is set to (size_t)-1 on memory error or set to (size_t)-2 on
-   decoding error.
-
-   Decoding errors should never happen, unless there is a bug in the C
-   library.
-
-   Use the Py_EncodeLocale() function to encode the character string back to a
-   byte string. */
-wchar_t*
-Py_DecodeLocale(const char* arg, size_t *size)
+static wchar_t*
+decode_current_locale(const char* arg, size_t *size)
 {
-#if defined(__APPLE__) || defined(__ANDROID__)
-    wchar_t *wstr;
-    wstr = _Py_DecodeUTF8_surrogateescape(arg, strlen(arg));
-    if (size != NULL) {
-        if (wstr != NULL)
-            *size = wcslen(wstr);
-        else
-            *size = (size_t)-1;
-    }
-    return wstr;
-#else
     wchar_t *res;
     size_t argsize;
     size_t count;
@@ -291,19 +264,6 @@ Py_DecodeLocale(const char* arg, size_t *size)
     unsigned char *in;
     wchar_t *out;
     mbstate_t mbs;
-#endif
-
-#ifndef MS_WINDOWS
-    if (force_ascii == -1)
-        force_ascii = check_force_ascii();
-
-    if (force_ascii) {
-        /* force ASCII encoding to workaround mbstowcs() issue */
-        res = decode_ascii_surrogateescape(arg, size);
-        if (res == NULL)
-            goto oom;
-        return res;
-    }
 #endif
 
 #ifdef HAVE_BROKEN_MBSTOWCS
@@ -402,71 +362,95 @@ Py_DecodeLocale(const char* arg, size_t *size)
         goto oom;
 #endif   /* HAVE_MBRTOWC */
     return res;
+
 oom:
     if (size != NULL)
         *size = (size_t)-1;
     return NULL;
+}
+
+
+static wchar_t*
+decode_locale(const char* arg, size_t *size, int current_locale)
+{
+    if (current_locale) {
+        return decode_current_locale(arg, size);
+    }
+
+#if defined(__APPLE__) || defined(__ANDROID__)
+    wchar_t *wstr;
+    wstr = _Py_DecodeUTF8_surrogateescape(arg, strlen(arg));
+    if (size != NULL) {
+        if (wstr != NULL)
+            *size = wcslen(wstr);
+        else
+            *size = (size_t)-1;
+    }
+    return wstr;
+#else
+
+#ifdef USE_FORCE_ASCII
+    if (force_ascii == -1) {
+        force_ascii = check_force_ascii();
+    }
+
+    if (force_ascii) {
+        /* force ASCII encoding to workaround mbstowcs() issue */
+        wchar_t *res = decode_ascii_surrogateescape(arg, size);
+        if (res == NULL) {
+            if (size != NULL)
+                *size = (size_t)-1;
+            return NULL;
+        }
+        return res;
+    }
+#endif
+
+    return decode_current_locale(arg, size);
 #endif   /* __APPLE__ or __ANDROID__ */
 }
 
-/* Encode a wide character string to the locale encoding with the
-   surrogateescape error handler: surrogate characters in the range
-   U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
 
-   Return a pointer to a newly allocated byte string, use PyMem_Free() to free
-   the memory. Return NULL on encoding or memory allocation error.
+/* Decode a byte string from the locale encoding with the
+   surrogateescape error handler: undecodable bytes are decoded as characters
+   in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
+   character, escape the bytes using the surrogateescape error handler instead
+   of decoding them.
 
-   If error_pos is not NULL, *error_pos is set to the index of the invalid
-   character on encoding error, or set to (size_t)-1 otherwise.
+   Return a pointer to a newly allocated wide character string, use
+   PyMem_RawFree() to free the memory. If size is not NULL, write the number of
+   wide characters excluding the null character into *size
 
-   Use the Py_DecodeLocale() function to decode the bytes string back to a wide
-   character string. */
-char*
-Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
+   Return NULL on decoding error or memory allocation error. If *size* is not
+   NULL, *size is set to (size_t)-1 on memory error or set to (size_t)-2 on
+   decoding error.
+
+   Decoding errors should never happen, unless there is a bug in the C
+   library.
+
+   Use the Py_EncodeLocale() function to encode the character string back to a
+   byte string. */
+wchar_t*
+Py_DecodeLocale(const char* arg, size_t *size)
 {
-#if defined(__APPLE__) || defined(__ANDROID__)
-    Py_ssize_t len;
-    PyObject *unicode, *bytes = NULL;
-    char *cpath;
+    return decode_locale(arg, size, 0);
+}
 
-    unicode = PyUnicode_FromWideChar(text, wcslen(text));
-    if (unicode == NULL)
-        return NULL;
 
-    bytes = _PyUnicode_AsUTF8String(unicode, "surrogateescape");
-    Py_DECREF(unicode);
-    if (bytes == NULL) {
-        PyErr_Clear();
-        if (error_pos != NULL)
-            *error_pos = (size_t)-1;
-        return NULL;
-    }
+wchar_t*
+_Py_DecodeLocaleEx(const char* arg, size_t *size, int current_locale)
+{
+    return decode_locale(arg, size, current_locale);
+}
 
-    len = PyBytes_GET_SIZE(bytes);
-    cpath = PyMem_Malloc(len+1);
-    if (cpath == NULL) {
-        PyErr_Clear();
-        Py_DECREF(bytes);
-        if (error_pos != NULL)
-            *error_pos = (size_t)-1;
-        return NULL;
-    }
-    memcpy(cpath, PyBytes_AsString(bytes), len + 1);
-    Py_DECREF(bytes);
-    return cpath;
-#else   /* __APPLE__ */
+
+static char*
+encode_current_locale(const wchar_t *text, size_t *error_pos)
+{
     const size_t len = wcslen(text);
     char *result = NULL, *bytes = NULL;
     size_t i, size, converted;
     wchar_t c, buf[2];
-
-#ifndef MS_WINDOWS
-    if (force_ascii == -1)
-        force_ascii = check_force_ascii();
-
-    if (force_ascii)
-        return encode_ascii_surrogateescape(text, error_pos);
-#endif
 
     /* The function works in two steps:
        1. compute the length of the output buffer in bytes (size)
@@ -522,7 +506,86 @@ Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
         bytes = result;
     }
     return result;
+}
+
+
+static char*
+encode_locale(const wchar_t *text, size_t *error_pos, int current_locale)
+{
+    if (current_locale) {
+        return encode_current_locale(text, error_pos);
+    }
+
+#if defined(__APPLE__) || defined(__ANDROID__)
+    Py_ssize_t len;
+    PyObject *unicode, *bytes = NULL;
+    char *cpath;
+
+    unicode = PyUnicode_FromWideChar(text, wcslen(text));
+    if (unicode == NULL)
+        return NULL;
+
+    bytes = _PyUnicode_AsUTF8String(unicode, "surrogateescape");
+    Py_DECREF(unicode);
+    if (bytes == NULL) {
+        PyErr_Clear();
+        if (error_pos != NULL)
+            *error_pos = (size_t)-1;
+        return NULL;
+    }
+
+    len = PyBytes_GET_SIZE(bytes);
+    cpath = PyMem_Malloc(len+1);
+    if (cpath == NULL) {
+        PyErr_Clear();
+        Py_DECREF(bytes);
+        if (error_pos != NULL)
+            *error_pos = (size_t)-1;
+        return NULL;
+    }
+    memcpy(cpath, PyBytes_AsString(bytes), len + 1);
+    Py_DECREF(bytes);
+    return cpath;
+#else   /* __APPLE__ */
+
+#ifdef USE_FORCE_ASCII
+    if (force_ascii == -1) {
+        force_ascii = check_force_ascii();
+    }
+
+    if (force_ascii) {
+        return encode_ascii_surrogateescape(text, error_pos);
+    }
+#endif
+
+    return encode_current_locale(text, error_pos);
 #endif   /* __APPLE__ or __ANDROID__ */
+}
+
+
+/* Encode a wide character string to the locale encoding with the
+   surrogateescape error handler: surrogate characters in the range
+   U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
+
+   Return a pointer to a newly allocated byte string, use PyMem_Free() to free
+   the memory. Return NULL on encoding or memory allocation error.
+
+   If error_pos is not NULL, *error_pos is set to the index of the invalid
+   character on encoding error, or set to (size_t)-1 otherwise.
+
+   Use the Py_DecodeLocale() function to decode the bytes string back to a wide
+   character string. */
+char*
+Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
+{
+    return encode_locale(text, error_pos, 0);
+}
+
+
+char*
+_Py_EncodeLocaleEx(const wchar_t *text, size_t *error_pos, int current_locale)
+{
+    return encode_locale(text, error_pos, current_locale);
 }
 
 

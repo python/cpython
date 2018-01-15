@@ -17,6 +17,16 @@ PyAPI_FUNC(char*) Py_EncodeLocale(
 
 #ifndef Py_LIMITED_API
 
+PyAPI_FUNC(wchar_t *) _Py_DecodeLocaleEx(
+    const char *arg,
+    size_t *size,
+    int current_locale);
+
+PyAPI_FUNC(char*) _Py_EncodeLocaleEx(
+    const wchar_t *text,
+    size_t *error_pos,
+    int current_locale);
+
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #ifdef MS_WINDOWS

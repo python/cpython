@@ -66,9 +66,18 @@ Operating System Utilities
    surrogate character, escape the bytes using the surrogateescape error
    handler instead of decoding them.
 
+   Encoding, highest priority to lowest priority:
+
+   * ``UTF-8`` on macOS and Android;
+   * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
+     ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
+     and :c:func:`mbstowcs` and :c:func:`wcstombs` functions use the
+     ``ISO-8859-1`` encoding.
+   * the current locale encoding (``LC_CTYPE`` locale).
+
    Return a pointer to a newly allocated wide character string, use
    :c:func:`PyMem_RawFree` to free the memory. If size is not ``NULL``, write
-   the number of wide characters excluding the null character into ``*size``
+   the number of wide characters excluding the null character into ``*size``.
 
    Return ``NULL`` on decoding error or memory allocation error. If *size* is
    not ``NULL``, ``*size`` is set to ``(size_t)-1`` on memory error or set to
@@ -93,6 +102,15 @@ Operating System Utilities
    Encode a wide character string to the locale encoding with the
    :ref:`surrogateescape error handler <surrogateescape>`: surrogate characters
    in the range U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
+
+   Encoding, highest priority to lowest priority:
+
+   * ``UTF-8`` on macOS and Android;
+   * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
+     ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
+     and :c:func:`mbstowcs` and :c:func:`wcstombs` functions uses the
+     ``ISO-8859-1`` encoding.
+   * the current locale encoding.
 
    Return a pointer to a newly allocated byte string, use :c:func:`PyMem_Free`
    to free the memory. Return ``NULL`` on encoding error or memory allocation
