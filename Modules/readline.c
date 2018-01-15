@@ -132,13 +132,13 @@ static PyModuleDef readlinemodule;
 static PyObject *
 encode(PyObject *b)
 {
-    return _PyUnicode_EncodeCurrentLocale(b, "surrogateescape");
+    return PyUnicode_EncodeLocale(b, "surrogateescape");
 }
 
 static PyObject *
 decode(const char *s)
 {
-    return _PyUnicode_DecodeCurrentLocale(s, "surrogateescape");
+    return PyUnicode_DecodeLocale(s, "surrogateescape");
 }
 
 
