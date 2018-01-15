@@ -2348,7 +2348,7 @@ It has been replaced by the new ``make regen-all`` target.
 .. versionchanged:: 3.6.2
 
 
-Notable changes in Python 3.6.4
+Notable changes in Python 3.6.5
 ===============================
 
 The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``

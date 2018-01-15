@@ -1608,7 +1608,7 @@ expression support in the :mod:`re` module).
       ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale. This
       temporary change affects other threads.
 
-   .. versionchanged:: 3.6.4
+   .. versionchanged:: 3.6.5
       When formatting a number with the ``n`` type, the function sets
       temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
       cases.

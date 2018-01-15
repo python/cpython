@@ -153,7 +153,7 @@ The :mod:`locale` module defines the following exception and functions:
    different than the ``LC_CTYPE`` locale. This temporary change affects other
    threads.
 
-   .. versionchanged:: 3.6.4
+   .. versionchanged:: 3.6.5
       The function now sets temporarily the ``LC_CTYPE`` locale to the
       ``LC_NUMERIC`` locale in some cases.
 
