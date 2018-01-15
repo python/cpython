@@ -922,7 +922,7 @@ _PyObject_GetAttrWithoutError(PyObject *v, PyObject *name)
 int
 PyObject_HasAttr(PyObject *v, PyObject *name)
 {
-    PyObject *res = PyObject_GetAttr(v, name);
+    PyObject *res = _PyObject_GetAttrWithoutError(v, name);
     if (res != NULL) {
         Py_DECREF(res);
         return 1;
