@@ -126,15 +126,71 @@ _get_shared_exception(void)
     return err;
 }
 
-static PyObject * _interp_failed_error;
+static PyObject * RunFailedError;
+
+static int
+interp_exceptions_init(PyObject *ns)
+{
+    // XXX Move the exceptions into per-module memory?
+
+    // An uncaught exception came out of interp_run_string().
+    RunFailedError = PyErr_NewException("_interpreters.RunFailedError",
+                                        PyExc_RuntimeError, NULL);
+    if (RunFailedError == NULL)
+        return -1;
+    PyDict_SetItemString(ns, "RunFailedError", RunFailedError);
+
+    return 0;
+}
 
 static void
 _apply_shared_exception(struct _shared_exception *exc)
 {
-    PyErr_SetString(_interp_failed_error, exc->msg);
+    PyErr_SetString(RunFailedError, exc->msg);
 }
 
 /* channel-specific code */
+
+static PyObject *ChannelError;
+static PyObject *ChannelNotFoundError;
+static PyObject *ChannelClosedError;
+static PyObject *ChannelEmptyError;
+
+static int
+channel_exceptions_init(PyObject *ns)
+{
+    // XXX Move the exceptions into per-module memory?
+
+    // A channel-related operation failed.
+    ChannelError = PyErr_NewException("_interpreters.ChannelError",
+                                      PyExc_RuntimeError, NULL);
+    if (ChannelError == NULL)
+        return -1;
+    PyDict_SetItemString(ns, "ChannelError", ChannelError);
+
+    // An operation tried to use a channel that doesn't exist.
+    ChannelNotFoundError = PyErr_NewException("_interpreters.ChannelNotFoundError",
+                                              ChannelError, NULL);
+    if (ChannelNotFoundError == NULL)
+        return -1;
+    PyDict_SetItemString(ns, "ChannelNotFoundError", ChannelNotFoundError);
+
+    // An operation tried to use a closed channel.
+    ChannelClosedError = PyErr_NewException("_interpreters.ChannelClosedError",
+                                            ChannelError, NULL);
+    if (ChannelClosedError == NULL)
+        return -1;
+    PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError);
+
+    // An operation tried to pop from an empty channel.
+    ChannelEmptyError = PyErr_NewException("_interpreters.ChannelEmptyError",
+                                           ChannelError, NULL);
+    if (ChannelEmptyError == NULL)
+        return -1;
+    PyDict_SetItemString(ns, "ChannelEmptyError", ChannelEmptyError);
+
+    return 0;
+}
 
 struct _channelend;
 
@@ -210,7 +266,7 @@ _channel_new(void)
     chan->id = -1;
     chan->mutex = PyThread_allocate_lock();
     if (chan->mutex == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "can't initialize mutex for new channel");
+        PyErr_SetString(ChannelError, "can't initialize mutex for new channel");
         return NULL;
     }
     chan->count = 0;
@@ -236,7 +292,7 @@ _channel_associate_end(_PyChannelState *chan, int64_t interp, int send)
     }
     end = _channelend_find(send ? chan->sendclosed : chan->recvclosed, interp, &prev);
     if (end != NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "channel already closed");
+        PyErr_SetString(ChannelClosedError, "channel already closed");
         return 1;
     }
 
@@ -409,7 +465,7 @@ _channels_init(struct _channels *channels)
         channels->mutex = PyThread_allocate_lock();
         if (channels->mutex == NULL) {
             PyMem_Free(channels);
-            PyErr_SetString(PyExc_RuntimeError, "can't initialize mutex for new channel");
+            PyErr_SetString(ChannelError, "can't initialize mutex for channel management");
             return -1;
         }
     }
@@ -423,7 +479,7 @@ _channels_next_id(struct _channels *channels)
     int64_t id = channels->next_id;
     if (id < 0) {
         /* overflow */
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(ChannelError,
                         "failed to get a channel ID");
         return -1;
     }
@@ -440,7 +496,7 @@ _channels_lookup_locked(struct _channels *channels, int64_t id)
             break;
     }
     if (chan == NULL) {
-        PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
+        PyErr_Format(ChannelNotFoundError, "channel %d not found", id);
     }
     return chan;
 }
@@ -494,7 +550,7 @@ _channels_remove_locked(struct _channels *channels, int64_t id)
         prev = chan;
     }
     if (chan == NULL) {
-        PyErr_Format(PyExc_RuntimeError, "channel %d not found", id);
+        PyErr_Format(ChannelNotFoundError, "channel %d not found", id);
         return NULL;
     }
 
@@ -597,7 +653,7 @@ _channel_recv(struct _channels *channels, int64_t id)
         return NULL;
     _PyCrossInterpreterData *data = _channel_next(chan, interp->id);
     if (data == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "empty channel");
+        PyErr_SetString(ChannelEmptyError, "empty channel");
         return NULL;
     }
 
@@ -1245,11 +1301,10 @@ PyInit__interpreters(void)
         return NULL;
     PyObject *ns = PyModule_GetDict(module);  // borrowed
 
-    _interp_failed_error = PyErr_NewException("_interpreters.RunFailedError",
-                                              PyExc_RuntimeError, NULL);
-    if (_interp_failed_error == NULL)
+    if (interp_exceptions_init(ns) != 0)
         return NULL;
-    PyDict_SetItemString(ns, "RunFailedError", _interp_failed_error);
+    if (channel_exceptions_init(ns) != 0)
+        return NULL;
 
     return module;
 }

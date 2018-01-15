@@ -752,9 +752,9 @@ class ChannelTests(TestBase):
         interpreters.channel_recv(cid)
         interpreters.channel_close(cid, send=True, recv=True)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
 
     def test_close_multiple_users(self):
@@ -766,9 +766,9 @@ class ChannelTests(TestBase):
         interpreters.channel_recv(cid)
         interpreters.channel_close(cid)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
 
     def test_close_multiple_times(self):
@@ -777,7 +777,7 @@ class ChannelTests(TestBase):
         interpreters.channel_recv(cid)
         interpreters.channel_close(cid, send=True, recv=True)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_close(cid, send=True, recv=True)
 
     def test_close_with_unused_items(self):
@@ -786,9 +786,7 @@ class ChannelTests(TestBase):
         interpreters.channel_send(cid, b'ham')
         interpreters.channel_close(cid, send=True, recv=True)
 
-        with self.assertRaises(RuntimeError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
 
     def test_close_never_used(self):
@@ -814,9 +812,9 @@ class ChannelTests(TestBase):
         interpreters.channel_recv(cid)
         interpreters.channel_close(cid, send=True, recv=True)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
 
     def test_send_recv_main(self):
@@ -853,7 +851,7 @@ class ChannelTests(TestBase):
 
     def test_recv_empty(self):
         cid = interpreters.channel_create()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.ChannelEmptyError):
             interpreters.channel_recv(cid)
 
     @unittest.skip('not implemented yet')
