@@ -57,7 +57,8 @@ _vxwapi_rtpSpawn_impl(PyObject *module, const char *rtpFileName,
                       unsigned int uStackSize, int options, int taskOptions)
 /*[clinic end generated code output=4a3c98870a33cf6a input=86238fe5131c82ba]*/
 {
-    return PyUnicode_FromString("notImpl");
+    return PyLong_FromSize_t( rtpSpawn(rtpFileName, (const char**)argv,
+            (const char**) envp, priority, uStackSize, options, taskOptions));
 }
 static PyMethodDef _vxwapiMethods[] = {
     _VXWAPI_RTPSPAWN_METHODDEF  
@@ -73,7 +74,7 @@ static struct PyModuleDef _vxwapimodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_oscar(void){
+PyInit__vxwapi(void){
     return PyModule_Create(&_vxwapimodule);
 }
 

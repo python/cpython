@@ -1186,7 +1186,7 @@ then
 fi
 
 AC_CHECK_TOOLS([READELF], [readelf], [:])
-if test "$cross_compiling" = yes; then
+if test "$cross_compiling" = yes && test "$ac_sys_system" != VxWorks ; then
     case "$READELF" in
 	readelf|:)
 	AC_MSG_ERROR([readelf for the host is required for cross builds])
