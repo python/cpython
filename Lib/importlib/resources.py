@@ -59,8 +59,10 @@ def _get_resource_reader(
     # hook wants to create a weak reference to the object, but
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
-    if hasattr(package.__spec__.loader, 'open_resource'):
-        return cast(resources_abc.ResourceReader, package.__spec__.loader)
+    spec = package.__spec__
+    if hasattr(spec.loader, 'get_resource_reader'):
+        return cast(resources_abc.ResourceReader,
+                    spec.loader.get_resource_reader(spec.name))
     return None
 
 

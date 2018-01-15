@@ -6,12 +6,11 @@ such it requires the injection of specific modules and attributes in order to
 work. One should use importlib as the public-facing version of this module.
 
 """
-#
-# IMPORTANT: Whenever making changes to this module, be sure to run
-# a top-level make in order to get the frozen version of the module
-# updated. Not doing so will result in the Makefile to fail for
-# all others who don't have a ./python around to freeze the module
-# in the early stages of compilation.
+# IMPORTANT: Whenever making changes to this module, be sure to run a top-level
+# `make regen-importlib` followed by `make` in order to get the frozen version
+# of the module updated. Not doing so will result in the Makefile to fail for
+# all others who don't have a ./python around to freeze the module in the early
+# stages of compilation.
 #
 
 # See importlib._setup() for what is injected into the global namespace.
@@ -910,6 +909,33 @@ class FileLoader:
         """Return the data from path as raw bytes."""
         with _io.FileIO(path, 'r') as file:
             return file.read()
+
+    # ResourceReader ABC API.
+
+    @_check_name
+    def get_resource_reader(self, module):
+        if self.is_package(module):
+            return self
+        return None
+
+    def open_resource(self, resource):
+        path = _path_join(_path_split(self.path)[0], resource)
+        return _io.FileIO(path, 'r')
+
+    def resource_path(self, resource):
+        if not self.is_resource(resource):
+            raise FileNotFoundError
+        path = _path_join(_path_split(self.path)[0], resource)
+        return path
+
+    def is_resource(self, name):
+        if path_sep in name:
+            return False
+        path = _path_join(_path_split(self.path)[0], name)
+        return _path_isfile(path)
+
+    def contents(self):
+        return iter(_os.listdir(_path_split(self.path)[0]))
 
 
 class SourceFileLoader(FileLoader, SourceLoader):
