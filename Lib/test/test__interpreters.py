@@ -714,6 +714,87 @@ class RunStringTests(TestBase):
         self.assertEqual(retcode, 0)
 
 
+class ChannelIDTests(unittest.TestCase):
+
+    def test_default_kwargs(self):
+        cid = interpreters.ChannelID(10)
+
+        self.assertEqual(int(cid), 10)
+        self.assertEqual(cid.end, 'both')
+
+    def test_with_kwargs(self):
+        cid = interpreters.ChannelID(10, send=True)
+        self.assertEqual(cid.end, 'send')
+
+        cid = interpreters.ChannelID(10, send=True, recv=False)
+        self.assertEqual(cid.end, 'send')
+
+        cid = interpreters.ChannelID(10, recv=True)
+        self.assertEqual(cid.end, 'recv')
+
+        cid = interpreters.ChannelID(10, recv=True, send=False)
+        self.assertEqual(cid.end, 'recv')
+
+        cid = interpreters.ChannelID(10, send=True, recv=True)
+        self.assertEqual(cid.end, 'both')
+
+    def test_coerce_id(self):
+        cid = interpreters.ChannelID('10')
+        self.assertEqual(int(cid), 10)
+
+        cid = interpreters.ChannelID(10.0)
+        self.assertEqual(int(cid), 10)
+
+        class Int(str):
+            def __init__(self, value):
+                self._value = value
+            def __int__(self):
+                return self._value
+
+        cid = interpreters.ChannelID(Int(10))
+        self.assertEqual(int(cid), 10)
+
+    def test_bad_id(self):
+        ids = [-1, 2**64, "spam"]
+        for cid in ids:
+            with self.subTest(cid):
+                with self.assertRaises(ValueError):
+                    interpreters.ChannelID(cid)
+
+        with self.assertRaises(TypeError):
+            interpreters.ChannelID(object())
+
+    def test_bad_kwargs(self):
+        with self.assertRaises(ValueError):
+            interpreters.ChannelID(10, send=False, recv=False)
+
+    def test_repr(self):
+        cid = interpreters.ChannelID(10)
+        self.assertEqual(repr(cid), 'ChannelID(10)')
+
+        cid = interpreters.ChannelID(10, send=True)
+        self.assertEqual(repr(cid), 'ChannelID(10, send=True)')
+
+        cid = interpreters.ChannelID(10, recv=True)
+        self.assertEqual(repr(cid), 'ChannelID(10, recv=True)')
+
+        cid = interpreters.ChannelID(10, send=True, recv=True)
+        self.assertEqual(repr(cid), 'ChannelID(10)')
+
+    def test_equality(self):
+        cid1 = interpreters.ChannelID(10)
+        cid2 = interpreters.ChannelID(10)
+        cid3 = interpreters.ChannelID(20)
+
+        self.assertTrue(cid1 == cid1)
+        self.assertTrue(cid1 == cid2)
+        self.assertFalse(cid1 == cid3)
+
+        self.assertFalse(cid1 != cid1)
+        self.assertFalse(cid1 != cid2)
+        self.assertTrue(cid1 != cid3)
+
+
 class ChannelTests(TestBase):
 
     def test_sequential_ids(self):
@@ -723,8 +804,8 @@ class ChannelTests(TestBase):
         id3 = interpreters.channel_create()
         after = interpreters.channel_list_all()
 
-        self.assertEqual(id2, id1 + 1)
-        self.assertEqual(id3, id2 + 1)
+        self.assertEqual(id2, int(id1) + 1)
+        self.assertEqual(id3, int(id2) + 1)
         self.assertEqual(set(after) - set(before), {id1, id2, id3})
 
     def test_ids_global(self):
@@ -732,7 +813,7 @@ class ChannelTests(TestBase):
         out = _run_output(id1, dedent("""
             import _interpreters
             cid = _interpreters.channel_create()
-            print(cid)
+            print(int(cid))
             """))
         cid1 = int(out.strip())
 
@@ -740,11 +821,11 @@ class ChannelTests(TestBase):
         out = _run_output(id2, dedent("""
             import _interpreters
             cid = _interpreters.channel_create()
-            print(cid)
+            print(int(cid))
             """))
         cid2 = int(out.strip())
 
-        self.assertEqual(cid2, cid1 + 1)
+        self.assertEqual(cid2, int(cid1) + 1)
 
     def test_close_single_user(self):
         cid = interpreters.channel_create()
@@ -843,7 +924,7 @@ class ChannelTests(TestBase):
         id1 = interpreters.create()
         out = _run_output(id1, dedent(f"""
             import _interpreters
-            _interpreters.channel_send({cid}, b'spam')
+            _interpreters.channel_send({int(cid)}, b'spam')
             """))
         obj = interpreters.channel_recv(cid)
 

@@ -18,6 +18,33 @@ _get_current(void)
     return tstate->interp;
 }
 
+static int64_t
+_coerce_id(PyObject *id)
+{
+    id = PyNumber_Long(id);
+    if (id == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_SetString(PyExc_TypeError, "'id' must be a non-negative int");
+        else
+            PyErr_SetString(PyExc_ValueError, "'id' must be a non-negative int");
+        return -1;
+    }
+    long long cid = PyLong_AsLongLong(id);
+    if (cid == -1 && PyErr_Occurred() != NULL) {
+        PyErr_SetString(PyExc_ValueError, "'id' must be a non-negative int");
+        return -1;
+    }
+    if (cid < 0) {
+        PyErr_SetString(PyExc_ValueError, "'id' must be a non-negative int");
+        return -1;
+    }
+    if (cid > INT64_MAX) {
+        PyErr_SetString(PyExc_ValueError, "'id' too large (must be 64-bit int)");
+        return -1;
+    }
+    return cid;
+}
+
 /* data-sharing-specific code ***********************************************/
 
 struct _shareditem {
@@ -698,6 +725,258 @@ channel_list_interpreters(int id)
 }
 */
 
+/* ChannelID class */
+
+#define CHANNEL_SEND 1
+#define CHANNEL_RECV -1
+
+static PyTypeObject ChannelIDtype;
+
+typedef struct channelid {
+    PyObject_HEAD
+    int64_t id;
+    int end;
+} channelid;
+
+static channelid *
+newchannelid(PyTypeObject *cls, int64_t id, int end)
+{
+    channelid *self = PyObject_New(channelid, cls);
+    if (self == NULL)
+        return NULL;
+    self->id = id;
+    self->end = end;
+    return self;
+}
+
+static PyObject *
+channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "send", "recv"};
+    PyObject *id;
+    int send = -1;
+    int recv = -1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$pp:ChannelID.__init__", kwlist,
+                                     &id, &send, &recv))
+        return NULL;
+
+    // Coerce and check the ID.
+    int64_t cid;
+    if (PyObject_TypeCheck(id, &ChannelIDtype)) {
+        cid = ((channelid *)id)->id;
+    }
+    else {
+        cid = _coerce_id(id);
+        if (cid < 0)
+            return NULL;
+    }
+
+    // Handle "send" and "recv".
+    if (send == 0 && recv == 0) {
+        PyErr_SetString(PyExc_ValueError, "'send' and 'recv' cannot both be False");
+        return NULL;
+    }
+    int end = 0;
+    if (send == 1) {
+        if (recv == 0 || recv == -1)
+            end = CHANNEL_SEND;
+    }
+    else if (recv == 1) {
+        end = CHANNEL_RECV;
+    }
+
+    return (PyObject *)newchannelid(cls, cid, end);
+}
+
+static void
+channelid_dealloc(PyObject *v)
+{
+    Py_TYPE(v)->tp_free(v);
+}
+
+static PyObject *
+channelid_repr(PyObject *self)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    // XXX Use the qualname?
+    const char *name = _PyType_Name(type);
+
+    channelid *cid = (channelid *)self;
+    const char *fmt;
+    if (cid->end == CHANNEL_SEND)
+        fmt = "%s(%d, send=True)";
+    else if (cid->end == CHANNEL_RECV)
+        fmt = "%s(%d, recv=True)";
+    else
+        fmt = "%s(%d)";
+    return PyUnicode_FromFormat(fmt, name, cid->id);
+}
+
+PyObject *
+channelid_int(PyObject *self)
+{
+    channelid *cid = (channelid *)self;
+    return PyLong_FromLongLong(cid->id);
+}
+
+static PyNumberMethods channelid_as_number = {
+     0,                        /* nb_add */
+     0,                        /* nb_subtract */
+     0,                        /* nb_multiply */
+     0,                        /* nb_remainder */
+     0,                        /* nb_divmod */
+     0,                        /* nb_power */
+     0,                        /* nb_negative */
+     0,                        /* nb_positive */
+     0,                        /* nb_absolute */
+     0,                        /* nb_bool */
+     0,                        /* nb_invert */
+     0,                        /* nb_lshift */
+     0,                        /* nb_rshift */
+     0,                        /* nb_and */
+     0,                        /* nb_xor */
+     0,                        /* nb_or */
+     (unaryfunc)channelid_int, /* nb_int */
+     0,                        /* nb_reserved */
+     0,                        /* nb_float */
+
+     0,                        /* nb_inplace_add */
+     0,                        /* nb_inplace_subtract */
+     0,                        /* nb_inplace_multiply */
+     0,                        /* nb_inplace_remainder */
+     0,                        /* nb_inplace_power */
+     0,                        /* nb_inplace_lshift */
+     0,                        /* nb_inplace_rshift */
+     0,                        /* nb_inplace_and */
+     0,                        /* nb_inplace_xor */
+     0,                        /* nb_inplace_or */
+
+     0,                        /* nb_floor_divide */
+     0,                        /* nb_true_divide */
+     0,                        /* nb_inplace_floor_divide */
+     0,                        /* nb_inplace_true_divide */
+
+     (unaryfunc)channelid_int, /* nb_index */
+};
+
+static Py_hash_t
+channelid_hash(PyObject *self)
+{
+    channelid *cid = (channelid *)self;
+    PyObject *id = PyLong_FromLongLong(cid->id);
+    if (id == NULL)
+        return -1;
+    return PyObject_Hash(id);
+}
+
+static PyObject *
+channelid_richcompare(PyObject *self, PyObject *other, int op)
+{
+    switch(op) {
+    case Py_LT:
+    case Py_LE:
+    case Py_GT:
+    case Py_GE:
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (!PyObject_TypeCheck(self, &ChannelIDtype))
+        Py_RETURN_NOTIMPLEMENTED;
+
+    int64_t cid = ((channelid *)self)->id;
+    int64_t othercid;
+    if (PyObject_TypeCheck(other, &ChannelIDtype)) {
+        othercid = ((channelid *)other)->id;
+        if (((channelid *)other)->end != ((channelid *)self)->end)
+            Py_RETURN_FALSE;
+    }
+    else {
+        other = PyNumber_Long(other);
+        if (other == NULL) {
+            PyErr_Clear();
+            Py_RETURN_NOTIMPLEMENTED;
+        }
+        othercid = PyLong_AsLongLong(other);
+        if (othercid == -1 && PyErr_Occurred() != NULL)
+            return NULL;
+        if (othercid < 0 || othercid > INT64_MAX)
+            Py_RETURN_FALSE;
+    }
+    Py_RETURN_RICHCOMPARE(othercid != cid, 0, op);
+}
+
+static PyObject *
+channelid_end(PyObject *self, void *end)
+{
+    channelid *cid = (channelid *)self;
+    if (end != NULL)
+        return (PyObject *)newchannelid(Py_TYPE(self), cid->id, *(int *)end);
+
+    if (cid->end == CHANNEL_SEND)
+        return PyUnicode_InternFromString("send");
+    if (cid->end == CHANNEL_RECV)
+        return PyUnicode_InternFromString("recv");
+    return PyUnicode_InternFromString("both");
+}
+
+static int _channelid_end_send = CHANNEL_SEND;
+static int _channelid_end_recv = CHANNEL_RECV;
+
+static PyGetSetDef channelid_getsets[] = {
+    {"end", (getter)channelid_end, NULL,
+     PyDoc_STR("'send', 'recv', or 'both'")},
+    {"send", (getter)channelid_end, NULL,
+     PyDoc_STR("the 'send' end of the channel"), &_channelid_end_send},
+    {"recv", (getter)channelid_end, NULL,
+     PyDoc_STR("the 'recv' end of the channel"), &_channelid_end_recv},
+    {NULL}
+};
+
+PyDoc_STRVAR(channelid_doc,
+"A channel ID identifies a channel and may be used as an int.");
+
+static PyTypeObject ChannelIDtype = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "_interpreters.ChannelID",     /* tp_name */
+    sizeof(channelid),             /* tp_size */
+    0,                             /* tp_itemsize */
+    (destructor)channelid_dealloc, /* tp_dealloc */
+    0,                             /* tp_print */
+    0,                             /* tp_getattr */
+    0,                             /* tp_setattr */
+    0,                             /* tp_as_async */
+    (reprfunc)channelid_repr,      /* tp_repr */
+    &channelid_as_number,          /* tp_as_number */
+    0,                             /* tp_as_sequence */
+    0,                             /* tp_as_mapping */
+    channelid_hash,                /* tp_hash */
+    0,                             /* tp_call */
+    0,                             /* tp_str */
+    0,                             /* tp_getattro */
+    0,                             /* tp_setattro */
+    0,                             /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        Py_TPFLAGS_LONG_SUBCLASS,  /* tp_flags */
+    channelid_doc,                 /* tp_doc */
+    0,                             /* tp_traverse */
+    0,                             /* tp_clear */
+    channelid_richcompare,         /* tp_richcompare */
+    0,                             /* tp_weaklistoffset */
+    0,                             /* tp_iter */
+    0,                             /* tp_iternext */
+    0,                             /* tp_methods */
+    0,                             /* tp_members */
+    channelid_getsets,             /* tp_getset */
+    0,                             /* tp_base */
+    0,                             /* tp_dict */
+    0,                             /* tp_descr_get */
+    0,                             /* tp_descr_set */
+    0,                             /* tp_dictoffset */
+    0,                             /* tp_init */
+    0,                             /* tp_alloc */
+    (newfunc)channelid_new,        /* tp_new */
+};
+
 /* interpreter-specific functions *******************************************/
 
 static PyInterpreterState *
@@ -1099,7 +1378,7 @@ channel_list_all(PyObject *self)
         return NULL;
     }
     for (int64_t i=0; i < count; cids++, i++) {
-        PyObject *id = PyLong_FromLongLong(*cids);
+        PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cids, 0);
         if (id == NULL) {
             Py_DECREF(ids);
             ids = NULL;
@@ -1122,7 +1401,7 @@ channel_create(PyObject *self)
     int64_t cid = _channel_create(&_globals.channels);
     if (cid < 0)
         return NULL;
-    PyObject *id = PyLong_FromLongLong(cid);
+    PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, cid, 0);
     if (id == NULL) {
         _channel_destroy(&_globals.channels, cid);
         return NULL;
@@ -1147,10 +1426,9 @@ channel_send(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    long long cid = PyLong_AsLongLong(id);
-    if (cid == -1 && PyErr_Occurred() != NULL)
+    int64_t cid = _coerce_id(id);
+    if (cid < 0)
         return NULL;
-    assert(cid <= INT64_MAX);
     if (_channel_send(&_globals.channels, cid, obj) != 0)
         return NULL;
     Py_RETURN_NONE;
@@ -1172,8 +1450,8 @@ channel_recv(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    long long cid = PyLong_AsLongLong(id);
-    if (cid == -1 && PyErr_Occurred() != NULL)
+    int64_t cid = _coerce_id(id);
+    if (cid < 0)
         return NULL;
     assert(cid <= INT64_MAX);
     return _channel_recv(&_globals.channels, cid);
@@ -1188,17 +1466,21 @@ static PyObject *
 channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "send", "recv"};
-    long long cid;
+    PyObject *id;
     int send = -1;
     int recv = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n|$pp:channel_close", kwlist,
-                                     &cid, &send, &recv))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$pp:channel_close", kwlist,
+                                     &id, &send, &recv))
         return NULL;
 
+    int64_t cid = _coerce_id(id);
+    if (cid < 0)
+        return NULL;
     if (send < 0 && recv < 0) {
         send = 1;
         recv = 1;
     }
+
     if (_channel_close(&_globals.channels, cid, send, recv) != 0)
         return NULL;
     Py_RETURN_NONE;
@@ -1262,8 +1544,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS, channel_send_doc},
     {"channel_recv",               (PyCFunction)channel_recv,
      METH_VARARGS, channel_recv_doc},
-    {"channel_close",              (PyCFunctionWithKeywords)channel_close,
-     METH_VARARGS|METH_KEYWORDS, channel_close_doc},
+    {"channel_close",              (PyCFunction)channel_close,
+     METH_VARARGS | METH_KEYWORDS, channel_close_doc},
     {"channel_list_interpreters",  (PyCFunction)channel_list_interpreters,
      METH_VARARGS, channel_list_interpreters_doc},
 
@@ -1296,15 +1578,26 @@ PyInit__interpreters(void)
     if (_init_globals() != 0)
         return NULL;
 
+    /* Initialize types */
+    ChannelIDtype.tp_base = &PyLong_Type;
+    if (PyType_Ready(&ChannelIDtype) != 0)
+        return NULL;
+
+    /* Create the module */
     PyObject *module = PyModule_Create(&interpretersmodule);
     if (module == NULL)
         return NULL;
-    PyObject *ns = PyModule_GetDict(module);  // borrowed
 
+    /* Add exception types */
+    PyObject *ns = PyModule_GetDict(module);  // borrowed
     if (interp_exceptions_init(ns) != 0)
         return NULL;
     if (channel_exceptions_init(ns) != 0)
         return NULL;
+
+    /* Add other types */
+    Py_INCREF(&ChannelIDtype);
+    PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype);
 
     return module;
 }
