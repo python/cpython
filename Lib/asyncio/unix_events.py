@@ -397,7 +397,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         def cb(fut):
             if fut.cancelled():
                 fd = sock.fileno()
-                if fd!= -1:
+                if fd != -1:
                     self.remove_writer(fd)
         fut.add_done_callback(cb)
 
