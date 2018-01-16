@@ -253,8 +253,44 @@ class ContextTest(unittest.TestCase):
                 ctx[c]
             self.assertIsNone(ctx.get(c))
             self.assertEqual(ctx.get(c, 'spam'), 'spam')
+            self.assertNotIn(c, ctx)
+            self.assertEqual(list(ctx.keys()), [])
+
+            t = c.set(1)
+            self.assertEqual(list(ctx.keys()), [c])
+            self.assertEqual(ctx[c], 1)
+
+            c.reset(t)
+            self.assertEqual(list(ctx.keys()), [])
+            with self.assertRaises(KeyError):
+                ctx[c]
 
         ctx.run(fun)
+
+    def test_context_copy_1(self):
+        ctx1 = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def ctx1_fun():
+            c.set(10)
+
+            ctx2 = ctx1.copy()
+            self.assertEqual(ctx2[c], 10)
+
+            c.set(20)
+            self.assertEqual(ctx1[c], 20)
+            self.assertEqual(ctx2[c], 10)
+
+            ctx2.run(ctx2_fun)
+            self.assertEqual(ctx1[c], 20)
+            self.assertEqual(ctx2[c], 30)
+
+        def ctx2_fun():
+            self.assertEqual(c.get(), 10)
+            c.set(30)
+            self.assertEqual(c.get(), 30)
+
+        ctx1.run(ctx1_fun)
 
     @isolated_context
     def test_context_threads_1(self):

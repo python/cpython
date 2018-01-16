@@ -501,6 +501,19 @@ _contextvars_Context_values_impl(PyContext *self)
 }
 
 
+/*[clinic input]
+_contextvars.Context.copy
+[clinic start generated code]*/
+
+static PyObject *
+_contextvars_Context_copy_impl(PyContext *self)
+/*[clinic end generated code: output=30ba8896c4707a15 input=3e3fd72d598653ab]*/
+{
+    assert(self->ctx_vars != NULL);
+    return (PyObject *)context_new(self->ctx_vars);
+}
+
+
 static PyObject *
 context_run(PyContext *self, PyObject *const *args,
             Py_ssize_t nargs, PyObject *kwnames)
@@ -531,6 +544,7 @@ static PyMethodDef PyContext_methods[] = {
     _CONTEXTVARS_CONTEXT_ITEMS_METHODDEF
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF
     _CONTEXTVARS_CONTEXT_VALUES_METHODDEF
+    _CONTEXTVARS_CONTEXT_COPY_METHODDEF
     {"run", (PyCFunction)context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
     {NULL, NULL}
 };

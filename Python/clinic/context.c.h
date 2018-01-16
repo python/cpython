@@ -83,6 +83,23 @@ _contextvars_Context_values(PyContext *self, PyObject *Py_UNUSED(ignored))
     return _contextvars_Context_values_impl(self);
 }
 
+PyDoc_STRVAR(_contextvars_Context_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n");
+
+#define _CONTEXTVARS_CONTEXT_COPY_METHODDEF    \
+    {"copy", (PyCFunction)_contextvars_Context_copy, METH_NOARGS, _contextvars_Context_copy__doc__},
+
+static PyObject *
+_contextvars_Context_copy_impl(PyContext *self);
+
+static PyObject *
+_contextvars_Context_copy(PyContext *self, PyObject *Py_UNUSED(ignored))
+{
+    return _contextvars_Context_copy_impl(self);
+}
+
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
 "get($self, default=None, /)\n"
 "--\n"
@@ -126,4 +143,4 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=7a5fb14b7e372b5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d9a675e3a52a14fc input=a9049054013a1b77]*/
