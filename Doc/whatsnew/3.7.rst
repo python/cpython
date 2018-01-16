@@ -328,8 +328,8 @@ importlib.resources
 This module provides several new APIs and one new ABC for access to, opening,
 and reading *resources* inside packages.  Resources are roughly akin to files
 inside of packages, but they needn't be actual files on the physical file
-system.  Module loaders can implement the
-:class:`importlib.abc.ResourceReader` ABC to support this new module's API.
+system.  Module loaders can provide :class:`importlib.abc.ResourceReader`
+implementations to support this new module's API.
 
 
 Improved Modules
@@ -428,6 +428,12 @@ Add the parameter ``directory`` to the :class:`~http.server.SimpleHTTPRequestHan
 and the ``--directory`` to the command line of the module :mod:`~http.server`.
 With this parameter, the server serves the specified directory, by default it uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
+
+importlib
+---------
+
+The :class:`importlib.abc.ResourceReader` ABC was introduced to
+support the loading of resource from packages.
 
 locale
 ------
@@ -761,6 +767,9 @@ Deprecated
 
 - The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
 
+- The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
+  favour of :class:`importlib.abc.ResourceReader`.
+
 
 Changes in the C API
 --------------------
@@ -785,8 +794,8 @@ Windows Only
   been used. If the specified version is not available py.exe will error exit.
   (Contributed by Steve Barnes in :issue:`30291`.)
 
-- The launcher can be run as "py -0" to produce a list of the installed pythons,
-  *with default marked with an asterix*. Running "py -0p" will include the paths.
+- The launcher can be run as ``py -0`` to produce a list of the installed pythons,
+  *with default marked with an asterisk*. Running ``py -0p`` will include the paths.
   If py is run with a version specifier that cannot be matched it will also print
   the *short form* list of available specifiers.
   (Contributed by Steve Barnes in :issue:`30362`.)
@@ -856,6 +865,9 @@ Changes in Python behavior
 
 Changes in the Python API
 -------------------------
+
+* The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+  locale to the ``LC_NUMERIC`` locale in some cases.
 
 * The ``asyncio.windows_utils.socketpair()`` function has been
   removed: use directly :func:`socket.socketpair` which is available on all
