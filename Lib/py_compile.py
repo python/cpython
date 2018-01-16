@@ -112,6 +112,8 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     the resulting file would be regular and thus not the same type of file as
     it was previously.
     """
+    if os.environ.get('SOURCE_DATE_EPOCH'):
+        invalidation_mode = PycInvalidationMode.CHECKED_HASH
     if cfile is None:
         if optimize >= 0:
             optimization = optimize if optimize >= 1 else ''
