@@ -29,7 +29,6 @@ _Py_IDENTIFIER(mode);
 _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(raw);
 _Py_IDENTIFIER(read);
-_Py_IDENTIFIER(read1);
 _Py_IDENTIFIER(readable);
 _Py_IDENTIFIER(replace);
 _Py_IDENTIFIER(reset);
@@ -1202,13 +1201,12 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     self->seekable = self->telling = r;
 
-    res = _PyObject_GetAttrId(buffer, &PyId_read1);
+    res = _PyObject_GetAttrWithoutError(buffer, _PyIO_str_read1);
     if (res != NULL) {
         Py_DECREF(res);
         self->has_read1 = 1;
     }
-    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+    else if (!PyErr_Occurred()) {
         self->has_read1 = 0;
     }
     else {
@@ -3024,15 +3022,9 @@ textiowrapper_newlines_get(textio *self, void *context)
     CHECK_ATTACHED(self);
     if (self->decoder == NULL)
         Py_RETURN_NONE;
-    res = PyObject_GetAttr(self->decoder, _PyIO_str_newlines);
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            Py_RETURN_NONE;
-        }
-        else {
-            return NULL;
-        }
+    res = _PyObject_GetAttrWithoutError(self->decoder, _PyIO_str_newlines);
+    if (res == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
     }
     return res;
 }

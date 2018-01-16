@@ -190,12 +190,11 @@ iobase_check_closed(PyObject *self)
     int closed;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    res = PyObject_GetAttr(self, _PyIO_str_closed);
+    res = _PyObject_GetAttrWithoutError(self, _PyIO_str_closed);
     if (res == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (PyErr_Occurred()) {
             return -1;
         }
-        PyErr_Clear();
         return 0;
     }
     closed = PyObject_IsTrue(res);
@@ -274,7 +273,7 @@ iobase_finalize(PyObject *self)
 
     /* If `closed` doesn't exist or can't be evaluated as bool, then the
        object is probably in an unusable state, so ignore. */
-    res = PyObject_GetAttr(self, _PyIO_str_closed);
+    res = _PyObject_GetAttrWithoutError(self, _PyIO_str_closed);
     if (res == NULL) {
         PyErr_Clear();
         closed = -1;
@@ -538,14 +537,10 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
 
     PyObject *peek, *buffer, *result;
     Py_ssize_t old_size = -1;
-    _Py_IDENTIFIER(peek);
 
-    peek = _PyObject_GetAttrId(self, &PyId_peek);
-    if (peek == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return NULL;
-        }
-        PyErr_Clear();
+    peek = _PyObject_GetAttrWithoutError(self, _PyIO_str_peek);
+    if (peek == NULL && PyErr_Occurred()) {
+        return NULL;
     }
 
     buffer = PyByteArray_FromStringAndSize(NULL, 0);
