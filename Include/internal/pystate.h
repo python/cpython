@@ -97,8 +97,9 @@ typedef struct _xid {
     // with deleted interpreters.
     int64_t interp;
     // new_object is a function that returns a new object in the current
-    // interpreter given the data.  The resulting object will be
-    // equivalent to the original object.  This field is required.
+    // interpreter given the data.  The resulting object (a new
+    // reference) will be equivalent to the original object.  This field
+    // is required.
     PyObject *(*new_object)(struct _xid *);
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
