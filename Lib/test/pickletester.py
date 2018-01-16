@@ -2052,24 +2052,24 @@ class AbstractPickleTests(unittest.TestCase):
         frameless_opcodes = {'BINBYTES', 'BINUNICODE', 'BINBYTES8', 'BINUNICODE8'}
         for op, arg, pos in pickletools.genops(pickled):
             if frame_end is not None:
-                if op.name == 'FRAME':
-                    self.assertEqual(pos, frame_end)
-                else:
-                    self.assertLessEqual(pos, frame_end)
                 self.assertLessEqual(pos, frame_end)
-                if pos < frame_end:
-                    self.assertNotIn(op.name, 'FRAME')
-                    if op.name in frameless_opcodes:
-                        self.assertLessEqual(len(arg), self.FRAME_SIZE_TARGET)
-                else:
+                if pos == frame_end:
                     frame_end = None
-                    #frameless_start = pos
 
-            if frame_end is None:
+            if frame_end is not None:  # framed
+                self.assertNotEqual(op.name, 'FRAME')
+                if op.name in frameless_opcodes:
+                    # Only short bytes and str objects should be written
+                    # in a frame
+                    self.assertLessEqual(len(arg), self.FRAME_SIZE_TARGET)
+
+            else:  # not framed
                 if (op.name == 'FRAME' or
                     (op.name in frameless_opcodes and
                      len(arg) > self.FRAME_SIZE_TARGET)):
+                    # Frame or large bytes or str object
                     if frameless_start is not None:
+                        # Only short data should be written outside of a frame
                         self.assertLess(pos - frameless_start,
                                         self.FRAME_SIZE_MIN)
                         frameless_start = None
@@ -2158,6 +2158,8 @@ class AbstractPickleTests(unittest.TestCase):
 
         frame_size = self.FRAME_SIZE_TARGET
         num_frames = 20
+        # Large byte objects (dict values) intermitted with small objects
+        # (dict keys)
         obj = {i: bytes([i]) * frame_size for i in range(num_frames)}
 
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
