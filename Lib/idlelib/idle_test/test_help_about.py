@@ -39,19 +39,30 @@ class LiveDialogTest(unittest.TestCase):
 
     def test_display_browser_link(self):
         """Test display browser link."""
-        orig_webbrowser = help_about.webbrowser.open
-        help_about.webbrowser.open = mock.Mock()
+        dialog = self.dialog
+        ha = help_about
+        orig_webbrowser = ha.webbrowser.open
+        orig_showerror = ha.showerror
+        web = ha.webbrowser.open = mock.Mock()
+        error = ha.showerror = Mbox_func()
 
         # No link.
-        help_about.display_browser_link()
-        help_about.webbrowser.open.assert_not_called()
+        dialog.display_browser_link()
+        web.assert_not_called()
 
         # Valid link.
         link = 'https://www.python.org'
-        help_about.display_browser_link(link=link)
-        help_about.webbrowser.open.assert_called_with(link)
+        ha.webbrowser.open.return_value(True)
+        dialog.display_browser_link(link=link)
+        web.assert_called_with(link)
 
-        help_about.webbrowser.open = orig_webbrowser
+        # False returned from webbrowser.open.
+        ha.webbrowser.open.return_value = False
+        dialog.display_browser_link(link=link)
+        self.assertEqual(error.title, 'Page Load Error')
+
+        ha.webbrowser.open = orig_webbrowser
+        ha.showerror = orig_showerror
 
     def test_dialog_title(self):
         """Test about dialog title"""
@@ -66,7 +77,7 @@ class LiveDialogTest(unittest.TestCase):
     def test_create_link(self):
         """Test appearance of label acting as links."""
         dialog = self.dialog
-        link_widgets = (dialog.email, dialog.docs)
+        link_widgets = (dialog.email, )
         for widget in link_widgets:
             widget_font = font.Font(widget, font=widget['font'])
             self.assertTrue(widget_font.actual()['underline'])

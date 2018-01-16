@@ -10,9 +10,9 @@ from platform import python_version, architecture
 from tkinter import font
 from tkinter import Toplevel, Frame, Label, Button, PhotoImage
 from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
+from tkinter.messagebox import showerror
 
 from idlelib import textview
-
 
 
 def build_bits():
@@ -21,13 +21,6 @@ def build_bits():
         return '64' if sys.maxsize > 2**32 else '32'
     else:
         return architecture()[0][:2]
-
-
-def display_browser_link(link=None, event=None):
-    "Handle event of clicking a hyperlink."
-    if not link:
-        return
-    webbrowser.open(link)
 
 
 class AboutDialog(Toplevel):
@@ -99,17 +92,11 @@ class AboutDialog(Toplevel):
 
         emaillink = 'https://mail.python.org/mailman/listinfo/idle-dev'
         self.email = self.create_link(parent=frame_background,
-                                      text='Email List', link=emaillink)
+                                      text='Email List',
+                                      callback=partial(self.display_browser_link,
+                                                       emaillink))
         self.email.grid(row=6, column=0, columnspan=2, sticky=W,
                         padx=10, pady=0)
-
-        doclink = (f'https://docs.python.org/{python_version()[:3]}'
-                    '/library/idle.html')
-        self.docs = self.create_link(parent=frame_background,
-                                     text='IDLE Documentation Page',
-                                     link=doclink)
-        self.docs.grid(row=7, column=0, columnspan=2, sticky=W,
-                       padx=10, pady=0)
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,
@@ -160,13 +147,13 @@ class AboutDialog(Toplevel):
                                    command=self.show_idle_credits)
         self.idle_credits.pack(side=LEFT, padx=10, pady=10)
 
-    def create_link(self, parent=None, text=None, link=None):
+    def create_link(self, parent=None, text=None, callback=None):
         """Create a Label widget that behaves like a hyperlink.
 
         Args:
             parent: Parent widget for the Label.
             text: Text for the Label.
-            link: Link to open when Label is clicked.
+            callback: Callback to execute when Label is clicked.
         """
         widget = Label(parent, text=text, foreground='blue', bg=self.bg,
                        cursor='hand2')
@@ -174,7 +161,7 @@ class AboutDialog(Toplevel):
         underline_font['underline'] = True
         underline_font['size'] = 10
         widget['font'] = underline_font
-        widget.bind('<Button-1>', partial(display_browser_link, link))
+        widget.bind('<Button-1>', callback)
         return widget
 
     # License, copyright, and credits are of type _sitebuiltins._Printer
@@ -227,6 +214,15 @@ class AboutDialog(Toplevel):
         fn = os.path.join(os.path.abspath(os.path.dirname(__file__)), filename)
         self._current_textview = textview.view_file(
             self, title, fn, encoding, _utest=self._utest)
+
+    def display_browser_link(self, link=None, event=None):
+        "Handle event of clicking a hyperlink."
+        if not link:
+            return
+        if not webbrowser.open(link):
+            showerror(title='Page Load Error',
+                      message=f'Unable open browser.',
+                      parent=self)
 
     def ok(self, event=None):
         "Dismiss help_about dialog."
