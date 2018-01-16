@@ -192,14 +192,14 @@ class ContextTest(unittest.TestCase):
         t0 = c.set(42)
         self.assertEqual(c.get(), 42)
         self.assertEqual(c.get(None), 42)
-        self.assertIs(t0.old_val, t0.MISSING)
-        self.assertIs(t0.old_val, contextvars.Token.MISSING)
+        self.assertIs(t0.old_value, t0.MISSING)
+        self.assertIs(t0.old_value, contextvars.Token.MISSING)
         self.assertIs(t0.var, c)
 
         t = c.set('spam')
         self.assertEqual(c.get(), 'spam')
         self.assertEqual(c.get(None), 'spam')
-        self.assertEqual(t.old_val, 42)
+        self.assertEqual(t.old_value, 42)
         c.reset(t)
 
         self.assertEqual(c.get(), 42)

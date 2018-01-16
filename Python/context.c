@@ -1009,7 +1009,7 @@ token_get_var(PyContextToken *self)
 }
 
 static PyObject *
-token_get_old_val(PyContextToken *self)
+token_get_old_value(PyContextToken *self)
 {
     if (self->tok_oldval == NULL) {
         return get_token_missing();
@@ -1021,7 +1021,7 @@ token_get_old_val(PyContextToken *self)
 
 static PyGetSetDef PyContextTokenType_getsetlist[] = {
     {"var", (getter)token_get_var, NULL, NULL},
-    {"old_val", (getter)token_get_old_val, NULL, NULL},
+    {"old_value", (getter)token_get_old_value, NULL, NULL},
     {NULL}
 };
 
