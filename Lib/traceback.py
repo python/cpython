@@ -80,7 +80,7 @@ _context_message = (
     "another exception occurred:\n\n")
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+def print_exception(etype, value, tb, limit=None, file=None, chain=True, filter_frames=None):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -96,12 +96,12 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     # ignore it here (rather than in the new TracebackException API).
     if file is None:
         file = sys.stderr
-    for line in TracebackException(
-            type(value), value, tb, limit=limit).format(chain=chain):
+    exc = TracebackException(type(value), value, tb, limit=limit)
+    for line in exc.format(chain=chain, filter_frames=filter_frames):
         print(line, file=file, end="")
 
 
-def format_exception(etype, value, tb, limit=None, chain=True):
+def format_exception(etype, value, tb, limit=None, chain=True, filter_frames=None):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -113,8 +113,8 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     # format_exception has ignored etype for some time, and code such as cgitb
     # passes in bogus values as a result. For compatibility with such code we
     # ignore it here (rather than in the new TracebackException API).
-    return list(TracebackException(
-        type(value), value, tb, limit=limit).format(chain=chain))
+    exc = TracebackException(type(value), value, tb, limit=limit)
+    return list(exc.format(chain=chain, filter_frames=filter_frames))
 
 
 def format_exception_only(etype, value):
@@ -154,21 +154,24 @@ def _some_str(value):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
-    print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
+def print_exc(limit=None, file=None, chain=True, filter_frames=None):
+    """Shorthand for 'print_exception(*sys.exc_info(), limit, file,
+    chain, filter_frames)'."""
+    print_exception(*sys.exc_info(), limit=limit, file=file,
+                chain=chain, filter_frames=filter_frames)
 
-def format_exc(limit=None, chain=True):
+def format_exc(limit=None, chain=True, filter_frames=None):
     """Like print_exc() but return a string."""
-    return "".join(format_exception(*sys.exc_info(), limit=limit, chain=chain))
+    return "".join(format_exception(*sys.exc_info(), limit=limit,
+                chain=chain, filter_frames=filter_frames))
 
-def print_last(limit=None, file=None, chain=True):
+def print_last(limit=None, file=None, chain=True, filter_frames=None):
     """This is a shorthand for 'print_exception(sys.last_type,
-    sys.last_value, sys.last_traceback, limit, file)'."""
+    sys.last_value, sys.last_traceback, limit, file, chain, filter_frames)'."""
     if not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
     print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                    limit, file, chain)
+                    limit, file, chain, filter_frames)
 
 #
 # Printing and Extracting Stacks.
@@ -306,6 +309,20 @@ def walk_tb(tb):
         tb = tb.tb_next
 
 
+def _walk_with_limit(frame_gen, limit=None):
+    if limit is None:
+        limit = getattr(sys, 'tracebacklimit', None)
+        if limit is not None and limit < 0:
+            limit = 0
+    if limit is not None:
+        if limit >= 0:
+            return itertools.islice(frame_gen, limit)
+        else:
+            return collections.deque(frame_gen, maxlen=-limit)
+
+    return frame_gen
+
+
 class StackSummary(list):
     """A stack of frames."""
 
@@ -323,19 +340,10 @@ class StackSummary(list):
         :param capture_locals: If True, the local variables from each frame will
             be captured as object representations into the FrameSummary.
         """
-        if limit is None:
-            limit = getattr(sys, 'tracebacklimit', None)
-            if limit is not None and limit < 0:
-                limit = 0
-        if limit is not None:
-            if limit >= 0:
-                frame_gen = itertools.islice(frame_gen, limit)
-            else:
-                frame_gen = collections.deque(frame_gen, maxlen=-limit)
-
         result = klass()
         fnames = set()
-        for f, lineno in frame_gen:
+
+        for f, lineno in _walk_with_limit(frame_gen, limit):
             co = f.f_code
             filename = co.co_filename
             name = co.co_name
@@ -491,8 +499,10 @@ class TracebackException:
         self.__suppress_context__ = \
             exc_value.__suppress_context__ if exc_value else False
         # TODO: locals.
+        # Keep actual frame objects for filtering
+        self._raw_stack = list(_walk_with_limit(walk_tb(exc_traceback), limit=limit))
         self.stack = StackSummary.extract(
-            walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
+            self._raw_stack, limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
@@ -573,10 +583,14 @@ class TracebackException:
         msg = self.msg or "<no detail available>"
         yield "{}: {}\n".format(stype, msg)
 
-    def format(self, *, chain=True):
+    def format(self, *, chain=True, filter_frames=None):
         """Format the exception.
 
         If chain is not *True*, *__cause__* and *__context__* will not be formatted.
+
+        If filter_frames is not *None*, it should be a callable that accepts a
+        single frame object. Only traceback entries for which filter_frames returns
+        *True* will be returned.
 
         The return value is a generator of strings, each ending in a newline and
         some containing internal newlines. `print_exception` is a wrapper around
@@ -587,13 +601,24 @@ class TracebackException:
         """
         if chain:
             if self.__cause__ is not None:
-                yield from self.__cause__.format(chain=chain)
+                yield from self.__cause__.format(chain=chain, filter_frames=filter_frames)
                 yield _cause_message
             elif (self.__context__ is not None and
                 not self.__suppress_context__):
-                yield from self.__context__.format(chain=chain)
+                yield from self.__context__.format(chain=chain, filter_frames=filter_frames)
                 yield _context_message
         if self.exc_traceback is not None:
             yield 'Traceback (most recent call last):\n'
-        yield from self.stack.format()
+
+        if filter_frames is not None:
+            keep = []
+            for (frame, _), summary in zip(self._raw_stack, self.stack):
+                if filter_frames(frame):
+                    keep.append(summary)
+
+            clean = StackSummary.from_list(keep)
+            yield from clean.format()
+        else:
+            yield from self.stack.format()
+
         yield from self.format_exception_only()

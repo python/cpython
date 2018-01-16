@@ -36,7 +36,7 @@ The module defines the following functions:
        Added negative *limit* support.
 
 
-.. function:: print_exception(etype, value, tb, limit=None, file=None, chain=True)
+.. function:: print_exception(etype, value, tb, limit=None, file=None, chain=True, filter_frames=None)
 
    Print exception information and stack trace entries from traceback object
    *tb* to *file*. This differs from :func:`print_tb` in the following
@@ -53,24 +53,29 @@ The module defines the following functions:
    If *chain* is true (the default), then chained exceptions (the
    :attr:`__cause__` or :attr:`__context__` attributes of the exception) will be
    printed as well, like the interpreter itself does when printing an unhandled
-   exception.
+   exception. If *filter_frames* is not ``None``, it should be a callable
+   that accepts a single frame object. Only traceback entries for which
+   *filter_frames* returns ``True`` will be displayed.
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
 
+   .. versionadded:: 3.7
+      *filter_frames* argument.
 
-.. function:: print_exc(limit=None, file=None, chain=True)
+
+.. function:: print_exc(limit=None, file=None, chain=True, filter_frames=None)
 
    This is a shorthand for ``print_exception(*sys.exc_info(), limit, file,
-   chain)``.
+   chain, filter_frames)``.
 
 
-.. function:: print_last(limit=None, file=None, chain=True)
+.. function:: print_last(limit=None, file=None, chain=True, filter_frames=None)
 
    This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
-   sys.last_traceback, limit, file, chain)``.  In general it will work only
-   after an exception has reached an interactive prompt (see
-   :data:`sys.last_type`).
+   sys.last_traceback, limit, file, chain, filter_frames)``.
+   In general it will work only after an exception has reached an interactive
+   prompt (see :data:`sys.last_type`).
 
 
 .. function:: print_stack(f=None, limit=None, file=None)
@@ -126,7 +131,7 @@ The module defines the following functions:
    which exception occurred is the always last string in the list.
 
 
-.. function:: format_exception(etype, value, tb, limit=None, chain=True)
+.. function:: format_exception(etype, value, tb, limit=None, chain=True, filter_frames=None)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
@@ -138,10 +143,10 @@ The module defines the following functions:
       The *etype* argument is ignored and inferred from the type of *value*.
 
 
-.. function:: format_exc(limit=None, chain=True)
+.. function:: format_exc(limit=None, chain=True, filter_frames=None)
 
-   This is like ``print_exc(limit)`` but returns a string instead of printing to
-   a file.
+   This is like ``print_exc(limit, chain, filter_frames)`` but returns a string
+   instead of printing to a file.
 
 
 .. function:: format_tb(tb, limit=None)
@@ -239,12 +244,14 @@ capture data for later printing in a lightweight fashion.
 
       Note that when locals are captured, they are also shown in the traceback.
 
-   .. method:: format(*, chain=True)
+   .. method:: format(*, chain=True, filter_frames=None)
 
       Format the exception.
 
       If *chain* is not ``True``, ``__cause__`` and ``__context__`` will not
-      be formatted.
+      be formatted. If *filter_frames* is not ``None``, it should be a callable
+      that accepts a single frame object. Only traceback entries for which
+      *filter_frames* returns ``True`` will be returned.
 
       The return value is a generator of strings, each ending in a newline and
       some containing internal newlines. :func:`~traceback.print_exception`
@@ -252,6 +259,9 @@ capture data for later printing in a lightweight fashion.
 
       The message indicating which exception occurred is always the last
       string in the output.
+
+      .. versionadded:: 3.7
+         *filter_frames* argument.
 
    .. method::  format_exception_only()
 

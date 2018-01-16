@@ -1092,6 +1092,38 @@ class TestTracebackException(unittest.TestCase):
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
 
+    def test_filtering(self):
+        def a():
+            b()
+
+        def b():
+            c()
+
+        def c():
+            try:
+                d()
+            except:
+                raise TypeError
+
+        def d():
+            1/0
+
+        try:
+            a()
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info)
+            full = list(exc.format())
+
+        # Must only remove the current frame
+        current = sys._getframe()
+        filtered = exc.format(chain=False, filter_frames=lambda f: f is not current)
+        self.assertEqual(list(filtered), [full[-6]] + full[-4:])
+
+        # Must remove c frames from all chained exceptions
+        filtered = exc.format(filter_frames=lambda f: f.f_code.co_name != 'c')
+        self.assertEqual(list(filtered), full[:1] + full[2:9] + full[10:])
+
 
 class MiscTest(unittest.TestCase):
 
