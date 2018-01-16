@@ -97,6 +97,14 @@ PyContext_Exit(PyContext *ctx)
 
     PyThreadState *ts = PyThreadState_Get();
 
+    if (ts->context != (PyObject *)ctx) {
+        /* Can only happen if someone misuses the C API */
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot exit context: thread state references "
+                        "a different context object");
+        return -1;
+    }
+
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
     ts->context_ver++;
 
