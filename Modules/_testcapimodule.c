@@ -2295,7 +2295,15 @@ make_timezones_capi(PyObject *self, PyObject *args) {
 
 static PyObject *
 get_timezone_utc_capi(PyObject* self, PyObject *args) {
-    return PyDateTimeAPI->TimeZone_UTC;
+    int macro = 0;
+    if (!PyArg_ParseTuple(args, "|p", &macro)) {
+        return NULL;
+    }
+    if (macro) {
+        return PyDateTime_TimeZone_UTC;
+    } else {
+        return PyDateTimeAPI->TimeZone_UTC;
+    }
 }
 
 
@@ -4523,7 +4531,7 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
-    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_NOARGS},
+    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},

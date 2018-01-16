@@ -206,6 +206,9 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #define PyDateTime_IMPORT \
     PyDateTimeAPI = (PyDateTime_CAPI *)PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)
 
+/* Macro for access to the UTC singleton */
+#define PyDateTime_TimeZone_UTC PyDateTimeAPI->TimeZone_UTC
+
 /* Macros for type checking when not building the Python core. */
 #define PyDate_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->DateType)
 #define PyDate_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->DateType)

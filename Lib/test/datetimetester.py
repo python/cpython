@@ -5457,9 +5457,11 @@ class CapiTest(unittest.TestCase):
         _testcapi.test_datetime_capi()
 
     def test_utc_capi(self):
-        capi_utc = _testcapi.get_timezone_utc_capi()
+        for use_macro in (True, False):
+            capi_utc = _testcapi.get_timezone_utc_capi(use_macro)
 
-        self.assertIs(capi_utc, timezone.utc)
+            with self.subTest(use_macro=use_macro):
+                self.assertIs(capi_utc, timezone.utc)
 
     def test_timezones_capi(self):
         est_capi, est_macro, est_macro_nn = _testcapi.make_timezones_capi()

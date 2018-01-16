@@ -13,6 +13,16 @@ the module initialisation function.  The macro puts a pointer to a C structure
 into a static variable, :c:data:`PyDateTimeAPI`, that is used by the following
 macros.
 
+Macro for access to the UTC singleton:
+
+.. c:var:: PyObject* PyDateTime_TimeZone_UTC
+
+   Returns the time zone singleton representing UTC, the same object as
+   :attr:``datetime.timezone.utc``.
+
+   .. versionadded:: 3.7
+
+
 Type-check macros:
 
 .. c:function:: int PyDate_Check(PyObject *ob)
