@@ -2556,6 +2556,8 @@ class AbstractEventLoopTests(unittest.TestCase):
             with self.assertRaises(NotImplementedError):
                 await loop.sock_accept(f)
             with self.assertRaises(NotImplementedError):
+                await loop.sock_sendfile(f, mock.Mock())
+            with self.assertRaises(NotImplementedError):
                 await loop.connect_read_pipe(f, mock.sentinel.pipe)
             with self.assertRaises(NotImplementedError):
                 await loop.connect_write_pipe(f, mock.sentinel.pipe)
