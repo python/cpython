@@ -1,10 +1,10 @@
 import sys
 import unittest
 
-from importlib import resources
 from . import data01
 from . import zipdata02
 from . import util
+from importlib import resources
 
 
 class ResourceTests:

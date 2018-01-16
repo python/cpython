@@ -334,20 +334,6 @@ _symtable symtablemodule.c
 #parser parsermodule.c
 
 
-# Lee Busby's SIGFPE modules.
-# The library to link fpectl with is platform specific.
-# Choose *one* of the options below for fpectl:
-
-# For Solaris with SunPro compiler (tested on Solaris 2.5 with SunPro C 4.2):
-# (Without the compiler you don't have -lsunmath.)
-#fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
-
-# For other systems: see instructions in fpectlmodule.c.
-#fpectl fpectlmodule.c ...
-
-# Test module for fpectl.  No extra libraries needed.
-#fpetest fpetestmodule.c
-
 # Andrew Kuchling's zlib module.
 # This require zlib 1.1.3 (or later).
 # See http://www.gzip.org/zlib/
