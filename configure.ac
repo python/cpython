@@ -3374,6 +3374,10 @@ DLINCLDIR=.
 # the dlopen() function means we might want to use dynload_shlib.o. some
 # platforms, such as AIX, have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS(dlopen)
+# unoptimizable memset's like function for secure purposes.
+AC_CHECK_FUNCS(explicit_bzero)
+AC_CHECK_FUNCS(explicit_memset)
+AC_CHECK_FUNCS(SecureZeroMemory)
 
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
