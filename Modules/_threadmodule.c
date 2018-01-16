@@ -925,13 +925,15 @@ local_getattro(localobject *self, PyObject *name)
 
     if (Py_TYPE(self) != &localtype)
         /* use generic lookup for subtypes */
-        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict);
+        return _PyObject_GenericGetAttrWithDict(
+            (PyObject *)self, name, ldict, 0);
 
     /* Optimization: just look in dict ourselves */
     value = PyDict_GetItem(ldict, name);
     if (value == NULL)
         /* Fall back on generic to get __class__ and __dict__ */
-        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict);
+        return _PyObject_GenericGetAttrWithDict(
+            (PyObject *)self, name, ldict, 0);
 
     Py_INCREF(value);
     return value;
