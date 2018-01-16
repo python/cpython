@@ -520,6 +520,26 @@ class QueuePutTests(_QueueTestBase):
         self.loop.run_until_complete(
             asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
 
+    def test_cancelled_putters_not_being_held_in_self_putters(self):
+        def a_generator():
+            yield 0.1
+            yield 0.2
+            yield 0.3
+
+        self.loop = self.new_test_loop(a_generator)
+
+        async def produce(queue, num_items):
+            for i in range(num_items):
+                try:
+                    await asyncio.wait_for(queue.put(i), 0.1, loop=self.loop)
+                except asyncio.TimeoutError:
+                    pass
+
+        queue = asyncio.Queue(loop=self.loop, maxsize=1)
+        coro = produce(queue, num_items=2)
+        self.loop.run_until_complete(self.loop.create_task(coro))
+        self.assertEqual(len(queue._putters), 0)
+
 
 class LifoQueueTests(_QueueTestBase):
 
