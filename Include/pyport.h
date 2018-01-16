@@ -556,16 +556,6 @@ extern char * _getpty(int *, int, mode_t, int);
 #include <sys/termio.h>
 #endif
 
-#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY)
-#if !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H)
-/* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
-   functions, even though they are included in libutil. */
-#include <termios.h>
-extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
-extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
-#endif /* !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H) */
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
-
 
 /* On 4.4BSD-descendants, ctype functions serves the whole range of
  * wchar_t character set rather than single byte code points only.
@@ -794,8 +784,13 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-#include <android/api-level.h>
+/* The Android langinfo.h header is not used. */
+#undef HAVE_LANGINFO_H
+#undef CODESET
 #endif
+
+/* Maximum value of the Windows DWORD type */
+#define PY_DWORD_MAX 4294967295U
 
 /* This macro used to tell whether Python was built with multithreading
  * enabled.  Now multithreading is always enabled, but keep the macro

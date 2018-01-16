@@ -123,12 +123,17 @@ them in various ways.
 The file :mod:`cProfile` can also be invoked as a script to profile another
 script.  For example::
 
-   python -m cProfile [-o output_file] [-s sort_order] myscript.py
+   python -m cProfile [-o output_file] [-s sort_order] (-m module | myscript.py)
 
 ``-o`` writes the profile results to a file instead of to stdout
 
 ``-s`` specifies one of the :func:`~pstats.Stats.sort_stats` sort values to sort
 the output by. This only applies when ``-o`` is not supplied.
+
+``-m`` specifies that a module is being profiled instead of a script.
+
+   .. versionadded:: 3.7
+      Added the ``-m`` option.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::
@@ -575,7 +580,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.clock() as
+on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your

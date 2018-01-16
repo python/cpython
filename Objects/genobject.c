@@ -16,6 +16,15 @@ static char *NON_INIT_CORO_MSG = "can't send non-None value to a "
 static char *ASYNC_GEN_IGNORED_EXIT_MSG =
                                  "async generator ignored GeneratorExit";
 
+static inline int
+exc_state_traverse(_PyErr_StackItem *exc_state, visitproc visit, void *arg)
+{
+    Py_VISIT(exc_state->exc_type);
+    Py_VISIT(exc_state->exc_value);
+    Py_VISIT(exc_state->exc_traceback);
+    return 0;
+}
+
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
@@ -23,7 +32,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    return 0;
+    return exc_state_traverse(&gen->gi_exc_state, visit, arg);
 }
 
 void
@@ -87,6 +96,21 @@ _PyGen_Finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static inline void
+exc_state_clear(_PyErr_StackItem *exc_state)
+{
+    PyObject *t, *v, *tb;
+    t = exc_state->exc_type;
+    v = exc_state->exc_value;
+    tb = exc_state->exc_traceback;
+    exc_state->exc_type = NULL;
+    exc_state->exc_value = NULL;
+    exc_state->exc_traceback = NULL;
+    Py_XDECREF(t);
+    Py_XDECREF(v);
+    Py_XDECREF(tb);
+}
+
 static void
 gen_dealloc(PyGenObject *gen)
 {
@@ -116,6 +140,7 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
+    exc_state_clear(&gen->gi_exc_state);
     PyObject_GC_Del(gen);
 }
 
@@ -127,7 +152,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     PyObject *result;
 
     if (gen->gi_running) {
-        char *msg = "generator already executing";
+        const char *msg = "generator already executing";
         if (PyCoro_CheckExact(gen)) {
             msg = "coroutine already executing";
         }
@@ -161,8 +186,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 
     if (f->f_lasti == -1) {
         if (arg && arg != Py_None) {
-            char *msg = "can't send non-None value to a "
-                        "just-started generator";
+            const char *msg = "can't send non-None value to a "
+                              "just-started generator";
             if (PyCoro_CheckExact(gen)) {
                 msg = NON_INIT_CORO_MSG;
             }
@@ -187,7 +212,11 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     f->f_back = tstate->frame;
 
     gen->gi_running = 1;
+    gen->gi_exc_state.previous_item = tstate->exc_info;
+    tstate->exc_info = &gen->gi_exc_state;
     result = PyEval_EvalFrameEx(f, exc);
+    tstate->exc_info = gen->gi_exc_state.previous_item;
+    gen->gi_exc_state.previous_item = NULL;
     gen->gi_running = 0;
 
     /* Don't keep the reference to f_back any longer than necessary.  It
@@ -281,16 +310,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
         /* first clean reference cycle through stored exception traceback */
-        PyObject *t, *v, *tb;
-        t = f->f_exc_type;
-        v = f->f_exc_value;
-        tb = f->f_exc_traceback;
-        f->f_exc_type = NULL;
-        f->f_exc_value = NULL;
-        f->f_exc_traceback = NULL;
-        Py_XDECREF(t);
-        Py_XDECREF(v);
-        Py_XDECREF(tb);
+        exc_state_clear(&gen->gi_exc_state);
         gen->gi_frame->f_gen = NULL;
         gen->gi_frame = NULL;
         Py_DECREF(f);
@@ -390,7 +410,7 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetNone(PyExc_GeneratorExit);
     retval = gen_send_ex(gen, Py_None, 1, 1);
     if (retval) {
-        char *msg = "generator ignored GeneratorExit";
+        const char *msg = "generator ignored GeneratorExit";
         if (PyCoro_CheckExact(gen)) {
             msg = "coroutine ignored GeneratorExit";
         } else if (PyAsyncGen_CheckExact(gen)) {
@@ -810,6 +830,10 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     gen->gi_code = (PyObject *)(f->f_code);
     gen->gi_running = 0;
     gen->gi_weakreflist = NULL;
+    gen->gi_exc_state.exc_type = NULL;
+    gen->gi_exc_state.exc_value = NULL;
+    gen->gi_exc_state.exc_traceback = NULL;
+    gen->gi_exc_state.previous_item = NULL;
     if (name != NULL)
         gen->gi_name = name;
     else
@@ -1138,100 +1162,6 @@ PyObject *
 PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
     return gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
-}
-
-
-/* __aiter__ wrapper; see http://bugs.python.org/issue27243 for details. */
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *ags_aiter;
-} PyAIterWrapper;
-
-
-static PyObject *
-aiter_wrapper_iternext(PyAIterWrapper *aw)
-{
-    _PyGen_SetStopIterationValue(aw->ags_aiter);
-    return NULL;
-}
-
-static int
-aiter_wrapper_traverse(PyAIterWrapper *aw, visitproc visit, void *arg)
-{
-    Py_VISIT((PyObject *)aw->ags_aiter);
-    return 0;
-}
-
-static void
-aiter_wrapper_dealloc(PyAIterWrapper *aw)
-{
-    _PyObject_GC_UNTRACK((PyObject *)aw);
-    Py_CLEAR(aw->ags_aiter);
-    PyObject_GC_Del(aw);
-}
-
-static PyAsyncMethods aiter_wrapper_as_async = {
-    PyObject_SelfIter,                          /* am_await */
-    0,                                          /* am_aiter */
-    0                                           /* am_anext */
-};
-
-PyTypeObject _PyAIterWrapper_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "aiter_wrapper",
-    sizeof(PyAIterWrapper),                     /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    (destructor)aiter_wrapper_dealloc,          /* destructor tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    &aiter_wrapper_as_async,                    /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    "A wrapper object for __aiter__ bakwards compatibility.",
-    (traverseproc)aiter_wrapper_traverse,       /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)aiter_wrapper_iternext,       /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-};
-
-
-PyObject *
-_PyAIterWrapper_New(PyObject *aiter)
-{
-    PyAIterWrapper *aw = PyObject_GC_New(PyAIterWrapper,
-                                         &_PyAIterWrapper_Type);
-    if (aw == NULL) {
-        return NULL;
-    }
-    Py_INCREF(aiter);
-    aw->ags_aiter = aiter;
-    _PyObject_GC_TRACK(aw);
-    return (PyObject *)aw;
 }
 
 

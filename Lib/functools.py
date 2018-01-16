@@ -19,8 +19,7 @@ except ImportError:
     pass
 from abc import get_cache_token
 from collections import namedtuple
-from types import MappingProxyType
-from weakref import WeakKeyDictionary
+# import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
 
@@ -753,10 +752,14 @@ def singledispatch(func):
     function acts as the default implementation, and additional
     implementations can be registered using the register() attribute of the
     generic function.
-
     """
+    # There are many programs that use functools without singledispatch, so we
+    # trade-off making singledispatch marginally slower for the benefit of
+    # making start-up of such applications slightly faster.
+    import types, weakref
+
     registry = {}
-    dispatch_cache = WeakKeyDictionary()
+    dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
 
     def dispatch(cls):
@@ -790,7 +793,23 @@ def singledispatch(func):
         """
         nonlocal cache_token
         if func is None:
-            return lambda f: register(cls, f)
+            if isinstance(cls, type):
+                return lambda f: register(cls, f)
+            ann = getattr(cls, '__annotations__', {})
+            if not ann:
+                raise TypeError(
+                    f"Invalid first argument to `register()`: {cls!r}. "
+                    f"Use either `@register(some_class)` or plain `@register` "
+                    f"on an annotated function."
+                )
+            func = cls
+
+            # only import typing if annotation parsing is necessary
+            from typing import get_type_hints
+            argname, cls = next(iter(get_type_hints(func).items()))
+            assert isinstance(cls, type), (
+                f"Invalid annotation for {argname!r}. {cls!r} is not a class."
+            )
         registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
             cache_token = get_cache_token()
@@ -803,7 +822,7 @@ def singledispatch(func):
     registry[object] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
-    wrapper.registry = MappingProxyType(registry)
+    wrapper.registry = types.MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper

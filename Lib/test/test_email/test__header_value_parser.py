@@ -14,18 +14,7 @@ class TestTokens(TestEmailBase):
         self.assertEqual(x, ' \t')
         self.assertEqual(str(x), '')
         self.assertEqual(x.value, '')
-        self.assertEqual(x.encoded, ' \t')
-
-    # UnstructuredTokenList
-
-    def test_undecodable_bytes_error_preserved(self):
-        badstr = b"le pouf c\xaflebre".decode('ascii', 'surrogateescape')
-        unst = parser.get_unstructured(badstr)
-        self.assertDefectsEqual(unst.all_defects, [errors.UndecodableBytesDefect])
-        parts = list(unst.parts)
-        self.assertDefectsEqual(parts[0].all_defects, [])
-        self.assertDefectsEqual(parts[1].all_defects, [])
-        self.assertDefectsEqual(parts[2].all_defects, [errors.UndecodableBytesDefect])
+        self.assertEqual(x.token_type, 'fws')
 
 
 class TestParserMixin:
@@ -139,7 +128,6 @@ class TestParser(TestParserMixin, TestEmailBase):
                          'first second',
                          [],
                          '')
-        self.assertEqual(ew.encoded, '=?us-ascii*jive?q?first_second?=')
         self.assertEqual(ew.charset, 'us-ascii')
         self.assertEqual(ew.lang, 'jive')
 
@@ -150,7 +138,6 @@ class TestParser(TestParserMixin, TestEmailBase):
                          'first second',
                          [],
                          '')
-        self.assertEqual(ew.encoded, '=?us-ascii?q?first_second?=')
         self.assertEqual(ew.charset, 'us-ascii')
         self.assertEqual(ew.lang, '')
 
@@ -2700,28 +2687,37 @@ class TestFolding(TestEmailBase):
     # and with unicode tokens in the comments.  Spaces inside the quotes
     # currently don't do the right thing.
 
-    def test_initial_whitespace_splitting(self):
+    def test_split_at_whitespace_after_header_before_long_token(self):
         body = parser.get_unstructured('   ' + 'x'*77)
         header = parser.Header([
             parser.HeaderLabel([parser.ValueTerminal('test:', 'atext')]),
             parser.CFWSList([parser.WhiteSpaceTerminal(' ', 'fws')]), body])
         self._test(header, 'test:   \n ' + 'x'*77 + '\n')
 
-    def test_whitespace_splitting(self):
+    def test_split_at_whitespace_before_long_token(self):
         self._test(parser.get_unstructured('xxx   ' + 'y'*77),
                    'xxx  \n ' + 'y'*77 + '\n')
 
+    def test_overlong_encodeable_is_wrapped(self):
+        first_token_with_whitespace = 'xxx   '
+        chrome_leader = '=?utf-8?q?'
+        len_chrome = len(chrome_leader) + 2
+        len_non_y = len_chrome + len(first_token_with_whitespace)
+        self._test(parser.get_unstructured(first_token_with_whitespace +
+                                           'y'*80),
+                   first_token_with_whitespace + chrome_leader +
+                       'y'*(78-len_non_y) + '?=\n' +
+                       ' ' + chrome_leader + 'y'*(80-(78-len_non_y)) + '?=\n')
+
     def test_long_filename_attachment(self):
-        folded = self.policy.fold('Content-Disposition', 'attachment; filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TES.txt"')
-        self.assertEqual(
-            'Content-Disposition: attachment;\n filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TES.txt"\n',
-            folded
-        )
-        folded = self.policy.fold('Content-Disposition', 'attachment; filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_T.txt"')
-        self.assertEqual(
-            'Content-Disposition: attachment;\n filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_T.txt"\n',
-            folded
-        )
+        self._test(parser.parse_content_disposition_header(
+            'attachment; filename="TEST_TEST_TEST_TEST'
+                '_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TES.txt"'),
+            "attachment;\n"
+            " filename*0*=us-ascii''TEST_TEST_TEST_TEST_TEST_TEST"
+                "_TEST_TEST_TEST_TEST_TEST;\n"
+            " filename*1*=_TEST_TES.txt\n",
+            )
 
 if __name__ == '__main__':
     unittest.main()
