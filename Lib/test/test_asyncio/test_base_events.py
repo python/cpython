@@ -1861,7 +1861,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
 
         with self.assertRaisesRegex(base_events._SendfileNotAvailable,
-                                    "Fast sendfile is not available"):
+                                    "sendfile is not available"):
             self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                           0, None))
 
@@ -1872,7 +1872,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
 
         with self.assertRaisesRegex(RuntimeError,
-                                    "Fast sendfile is not available"):
+                                    "sendfile is not available"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                   fallback=False))
 
