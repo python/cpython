@@ -652,7 +652,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             None, socket.getnameinfo, sockaddr, flags)
 
     async def sock_sendfile(self, sock, file, offset=0, count=None,
-                            *, fallback=None):
+                            *, fallback=True):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         self._check_sendfile_params(sock, file, offset, count)
@@ -671,7 +671,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise RuntimeError(exc.args[0]) from None
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
-        raise _SendfileNotAvailable("Fast sendfile is not available")
+        # NB: sendfile syscall is not supported for SSL sockets and
+        # non-mmap files even if sendfile is supported by OS
+        raise _SendfileNotAvailable(
+            f"syscall sendfile is not available for socket {sock!r} "
+            "and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:

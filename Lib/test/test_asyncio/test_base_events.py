@@ -1868,21 +1868,6 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         self.assertEqual(proto.data, b'')
         self.assertEqual(self.file.tell(), 0)
 
-    def test__sock_sendfile_always_fallback(self):
-        sock, proto = self.prepare()
-
-        self.loop._sock_sendfile_native = mock.Mock()
-        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
-                                                    0, None, fallback=True))
-
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, len(self.DATA))
-        self.assertEqual(proto.data, self.DATA)
-        self.assertEqual(self.file.tell(), len(self.DATA))
-        self.loop._sock_sendfile_native.assert_not_called()
-
     def test_sock_sendfile_no_fallback(self):
         sock, proto = self.prepare()
 
