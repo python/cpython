@@ -100,14 +100,15 @@ static volatile struct {
 
 static volatile struct {
     SOCKET_T fd;
+    int warn_on_full_buffer;
     int use_send;
-    int send_err_set;
-    int send_errno;
-    int send_win_error;
-} wakeup = {INVALID_FD, 0, 0};
+} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1, .use_send = 0};
 #else
 #define INVALID_FD (-1)
-static volatile sig_atomic_t wakeup_fd = -1;
+static volatile struct {
+    sig_atomic_t fd;
+    int warn_on_full_buffer;
+} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1};
 #endif
 
 /* Speed up sigcheck() when none tripped */
@@ -210,28 +211,15 @@ report_wakeup_write_error(void *data)
 
 #ifdef MS_WINDOWS
 static int
-report_wakeup_send_error(void* Py_UNUSED(data))
+report_wakeup_send_error(void* data)
 {
-    PyObject *res;
-
-    if (wakeup.send_win_error) {
-        /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
-           recognizes the error codes used by both GetLastError() and
-           WSAGetLastError */
-        res = PyErr_SetExcFromWindowsErr(PyExc_OSError, wakeup.send_win_error);
-    }
-    else {
-        errno = wakeup.send_errno;
-        res = PyErr_SetFromErrno(PyExc_OSError);
-    }
-
-    assert(res == NULL);
-    wakeup.send_err_set = 0;
-
+    /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
+       recognizes the error codes used by both GetLastError() and
+       WSAGetLastError */
+    PyErr_SetExcFromWindowsErr(PyExc_OSError, (int) (intptr_t) data);
     PySys_WriteStderr("Exception ignored when trying to send to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
-
     return 0;
 }
 #endif   /* MS_WINDOWS */
@@ -257,7 +245,7 @@ trip_signal(int sig_num)
        and then set the flag, but this allowed the following sequence of events
        (especially on windows, where trip_signal may run in a new thread):
 
-       - main thread blocks on select([wakeup_fd], ...)
+       - main thread blocks on select([wakeup.fd], ...)
        - signal arrives
        - trip_signal writes to the wakeup fd
        - the main thread wakes up
@@ -274,41 +262,43 @@ trip_signal(int sig_num)
 #ifdef MS_WINDOWS
     fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
 #else
-    fd = wakeup_fd;
+    fd = wakeup.fd;
 #endif
 
     if (fd != INVALID_FD) {
         byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
         if (wakeup.use_send) {
-            do {
-                rc = send(fd, &byte, 1, 0);
-            } while (rc < 0 && errno == EINTR);
+            rc = send(fd, &byte, 1, 0);
 
-            /* we only have a storage for one error in the wakeup structure */
-            if (rc < 0 && !wakeup.send_err_set) {
-                wakeup.send_err_set = 1;
-                wakeup.send_errno = errno;
-                wakeup.send_win_error = GetLastError();
-                /* Py_AddPendingCall() isn't signal-safe, but we
-                   still use it for this exceptional case. */
-                Py_AddPendingCall(report_wakeup_send_error, NULL);
+            if (rc < 0) {
+                int last_error = GetLastError();
+                if (wakeup.warn_on_full_buffer ||
+                    last_error != WSAEWOULDBLOCK)
+                {
+                    /* Py_AddPendingCall() isn't signal-safe, but we
+                       still use it for this exceptional case. */
+                    Py_AddPendingCall(report_wakeup_send_error,
+                                      (void *)(intptr_t) last_error);
+                }
             }
         }
         else
 #endif
         {
-            byte = (unsigned char)sig_num;
-
             /* _Py_write_noraise() retries write() if write() is interrupted by
                a signal (fails with EINTR). */
             rc = _Py_write_noraise(fd, &byte, 1);
 
             if (rc < 0) {
-                /* Py_AddPendingCall() isn't signal-safe, but we
-                   still use it for this exceptional case. */
-                Py_AddPendingCall(report_wakeup_write_error,
-                                  (void *)(intptr_t)errno);
+                if (wakeup.warn_on_full_buffer ||
+                    (errno != EWOULDBLOCK && errno != EAGAIN))
+                {
+                    /* Py_AddPendingCall() isn't signal-safe, but we
+                       still use it for this exceptional case. */
+                    Py_AddPendingCall(report_wakeup_write_error,
+                                      (void *)(intptr_t)errno);
+                }
             }
         }
     }
@@ -549,9 +539,13 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 
 
 static PyObject*
-signal_set_wakeup_fd(PyObject *self, PyObject *args)
+signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
 {
     struct _Py_stat_struct status;
+    static char *kwlist[] = {
+        "", "warn_on_full_buffer", NULL,
+    };
+    int warn_on_full_buffer = 1;
 #ifdef MS_WINDOWS
     PyObject *fdobj;
     SOCKET_T sockfd, old_sockfd;
@@ -560,7 +554,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
     PyObject *mod;
     int is_socket;
 
-    if (!PyArg_ParseTuple(args, "O:set_wakeup_fd", &fdobj))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$p:set_wakeup_fd", kwlist,
+                                     &fdobj, &warn_on_full_buffer))
         return NULL;
 
     sockfd = PyLong_AsSocket_t(fdobj);
@@ -569,7 +564,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 #else
     int fd, old_fd;
 
-    if (!PyArg_ParseTuple(args, "i:set_wakeup_fd", &fd))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "i|$p:set_wakeup_fd", kwlist,
+                                     &fd, &warn_on_full_buffer))
         return NULL;
 #endif
 
@@ -620,6 +616,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 
     old_sockfd = wakeup.fd;
     wakeup.fd = sockfd;
+    wakeup.warn_on_full_buffer = warn_on_full_buffer;
     wakeup.use_send = is_socket;
 
     if (old_sockfd != INVALID_FD)
@@ -644,15 +641,16 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         }
     }
 
-    old_fd = wakeup_fd;
-    wakeup_fd = fd;
+    old_fd = wakeup.fd;
+    wakeup.fd = fd;
+    wakeup.warn_on_full_buffer = warn_on_full_buffer;
 
     return PyLong_FromLong(old_fd);
 #endif
 }
 
 PyDoc_STRVAR(set_wakeup_fd_doc,
-"set_wakeup_fd(fd) -> fd\n\
+"set_wakeup_fd(fd, *, warn_on_full_buffer=True) -> fd\n\
 \n\
 Sets the fd to be written to (with the signal number) when a signal\n\
 comes in.  A library can use this to wakeup select or poll.\n\
@@ -670,11 +668,11 @@ PySignal_SetWakeupFd(int fd)
 
 #ifdef MS_WINDOWS
     old_fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
-    wakeup.fd = fd;
 #else
-    old_fd = wakeup_fd;
-    wakeup_fd = fd;
+    old_fd = wakeup.fd;
 #endif
+    wakeup.fd = fd;
+    wakeup.warn_on_full_buffer = 1;
     return old_fd;
 }
 
@@ -1155,7 +1153,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_GETITIMER_METHODDEF
     SIGNAL_SIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd",           signal_set_wakeup_fd, METH_VARARGS, set_wakeup_fd_doc},
+    {"set_wakeup_fd", (PyCFunction)signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PTHREAD_KILL_METHODDEF

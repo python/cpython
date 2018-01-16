@@ -168,6 +168,21 @@ PyObject_GetItem(PyObject *o, PyObject *key)
                               "be integer, not '%.200s'", key);
     }
 
+    if (PyType_Check(o)) {
+        PyObject *meth, *result, *stack[1] = {key};
+        _Py_IDENTIFIER(__class_getitem__);
+        meth = _PyObject_GetAttrId(o, &PyId___class_getitem__);
+        if (meth) {
+            result = _PyObject_FastCall(meth, stack, 1);
+            Py_DECREF(meth);
+            return result;
+        }
+        else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return NULL;
+        }
+        PyErr_Clear();
+    }
+
     return type_error("'%.200s' object is not subscriptable", o);
 }
 

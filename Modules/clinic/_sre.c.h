@@ -167,7 +167,7 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyObject *string,
                             Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_match(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_match(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
@@ -200,7 +200,7 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyObject *string,
                                 Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
@@ -235,7 +235,7 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyObject *string,
                              Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_search(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_search(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
@@ -268,7 +268,7 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
                               Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_findall(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_findall(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
@@ -303,7 +303,7 @@ _sre_SRE_Pattern_finditer_impl(PatternObject *self, PyObject *string,
                                Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_finditer(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_finditer(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
@@ -335,7 +335,7 @@ _sre_SRE_Pattern_scanner_impl(PatternObject *self, PyObject *string,
                               Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_scanner(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_scanner(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
@@ -368,7 +368,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
                             Py_ssize_t maxsplit);
 
 static PyObject *
-_sre_SRE_Pattern_split(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_split(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "maxsplit", NULL};
@@ -400,7 +400,7 @@ _sre_SRE_Pattern_sub_impl(PatternObject *self, PyObject *repl,
                           PyObject *string, Py_ssize_t count);
 
 static PyObject *
-_sre_SRE_Pattern_sub(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_sub(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"repl", "string", "count", NULL};
@@ -433,7 +433,7 @@ _sre_SRE_Pattern_subn_impl(PatternObject *self, PyObject *repl,
                            PyObject *string, Py_ssize_t count);
 
 static PyObject *
-_sre_SRE_Pattern_subn(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_subn(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"repl", "string", "count", NULL};
@@ -492,7 +492,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *indexgroup);
 
 static PyObject *
-_sre_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", NULL};
@@ -527,7 +527,7 @@ static PyObject *
 _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template);
 
 static PyObject *
-_sre_SRE_Match_expand(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Match_expand(MatchObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"template", NULL};
@@ -560,7 +560,7 @@ static PyObject *
 _sre_SRE_Match_groups_impl(MatchObject *self, PyObject *default_value);
 
 static PyObject *
-_sre_SRE_Match_groups(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Match_groups(MatchObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"default", NULL};
@@ -593,7 +593,7 @@ static PyObject *
 _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value);
 
 static PyObject *
-_sre_SRE_Match_groupdict(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Match_groupdict(MatchObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"default", NULL};
@@ -623,7 +623,7 @@ static Py_ssize_t
 _sre_SRE_Match_start_impl(MatchObject *self, PyObject *group);
 
 static PyObject *
-_sre_SRE_Match_start(MatchObject *self, PyObject **args, Py_ssize_t nargs)
+_sre_SRE_Match_start(MatchObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *group = NULL;
@@ -657,7 +657,7 @@ static Py_ssize_t
 _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group);
 
 static PyObject *
-_sre_SRE_Match_end(MatchObject *self, PyObject **args, Py_ssize_t nargs)
+_sre_SRE_Match_end(MatchObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *group = NULL;
@@ -691,7 +691,7 @@ static PyObject *
 _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group);
 
 static PyObject *
-_sre_SRE_Match_span(MatchObject *self, PyObject **args, Py_ssize_t nargs)
+_sre_SRE_Match_span(MatchObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *group = NULL;
@@ -765,4 +765,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=1e6a1be31302df09 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4b807104b65c1e0e input=a9049054013a1b77]*/

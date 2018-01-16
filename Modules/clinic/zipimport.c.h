@@ -65,7 +65,7 @@ zipimport_zipimporter_find_module_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path);
 
 static PyObject *
-zipimport_zipimporter_find_module(ZipImporter *self, PyObject **args, Py_ssize_t nargs)
+zipimport_zipimporter_find_module(ZipImporter *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *fullname;
@@ -101,7 +101,7 @@ zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path);
 
 static PyObject *
-zipimport_zipimporter_find_loader(ZipImporter *self, PyObject **args, Py_ssize_t nargs)
+zipimport_zipimporter_find_loader(ZipImporter *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *fullname;
@@ -291,4 +291,4 @@ zipimport_zipimporter_get_source(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bac6c9144950eaec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93cb62a3a9752b9f input=a9049054013a1b77]*/

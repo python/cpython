@@ -5,7 +5,7 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # asyncio
-**/*asyncio*                  @1st1
+**/*asyncio*                  @1st1 @asvetlov
 
 # Core
 **/*genobject*                @1st1
@@ -14,8 +14,13 @@
 **/*hashlib*                  @python/crypto-team
 **/*pyhash*                   @python/crypto-team
 
-# Import (including importlib)
-**/*import*                   @python/import-team
+# Import (including importlib).
+# Ignoring importlib.h so as to not get flagged on
+# all pull requests that change the the emitted
+# bytecode.
+**/*import*.c                 @python/import-team
+**/*import*.py                @python/import-team
+
 
 # SSL
 **/*ssl*                      @python/crypto-team
@@ -50,4 +55,8 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*functools*                @ncoghlan @rhettinger
 **/*decimal*                  @rhettinger @skrah
 
+**/*dataclasses*              @ericvsmith
+
 **/*idlelib*                  @terryjreedy
+
+**/*typing*                   @gvanrossum @ilevkivskyi

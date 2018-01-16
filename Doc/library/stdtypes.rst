@@ -973,9 +973,9 @@ Notes:
 
 (8)
    ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   When supported, the additional arguments to the index method allow
-   efficient searching of subsections of the sequence. Passing the extra
-   arguments is roughly equivalent to using ``s[i:j].index(x)``, only
+   Not all implementations support passing the additional arguments *i* and *j*.
+   These arguments allow efficient searching of subsections of the sequence. Passing
+   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
@@ -1598,6 +1598,20 @@ expression support in the :mod:`re` module).
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
+
+   .. note::
+      When formatting a number (:class:`int`, :class:`float`, :class:`float`
+      and subclasses) with the ``n`` type (ex: ``'{:n}'.format(1234)``), the
+      function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+      locale to decode ``decimal_point`` and ``thousands_sep`` fields of
+      :c:func:`localeconv` if they are non-ASCII or longer than 1 byte, and the
+      ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale. This
+      temporary change affects other threads.
+
+   .. versionchanged:: 3.7
+      When formatting a number with the ``n`` type, the function sets
+      temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
+      cases.
 
 
 .. method:: str.format_map(mapping)

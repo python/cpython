@@ -60,6 +60,31 @@ def add_dir_to_list(dirlist, dir):
             return
     dirlist.insert(0, dir)
 
+def sysroot_paths(make_vars, subdirs):
+    """Get the paths of sysroot sub-directories.
+
+    * make_vars: a sequence of names of variables of the Makefile where
+      sysroot may be set.
+    * subdirs: a sequence of names of subdirectories used as the location for
+      headers or libraries.
+    """
+
+    dirs = []
+    for var_name in make_vars:
+        var = sysconfig.get_config_var(var_name)
+        if var is not None:
+            m = re.search(r'--sysroot=([^"]\S*|"[^"]+")', var)
+            if m is not None:
+                sysroot = m.group(1).strip('"')
+                for subdir in subdirs:
+                    if os.path.isabs(subdir):
+                        subdir = subdir[1:]
+                    path = os.path.join(sysroot, subdir)
+                    if os.path.isdir(path):
+                        dirs.append(path)
+                break
+    return dirs
+
 def macosx_sdk_root():
     """
     Return the directory of the current OSX SDK,
@@ -501,13 +526,6 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
-    def detect_math_libs(self):
-        # Check for MacOS X, which doesn't need libm.a at all
-        if host_platform == 'darwin':
-            return []
-        else:
-            return ['m']
-
     def detect_modules(self):
         # Ensure that /usr/local is always used, but the local build
         # directories (i.e. '.' and 'Include') must be first.  See issue
@@ -566,18 +584,23 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.include_dirs,
                             sysconfig.get_config_var("INCLUDEDIR"))
 
+        system_lib_dirs = ['/lib64', '/usr/lib64', '/lib', '/usr/lib']
+        system_include_dirs = ['/usr/include']
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
         if not cross_compiling:
-            lib_dirs = self.compiler.library_dirs + [
-                '/lib64', '/usr/lib64',
-                '/lib', '/usr/lib',
-                ]
-            inc_dirs = self.compiler.include_dirs + ['/usr/include']
+            lib_dirs = self.compiler.library_dirs + system_lib_dirs
+            inc_dirs = self.compiler.include_dirs + system_include_dirs
         else:
-            lib_dirs = self.compiler.library_dirs[:]
-            inc_dirs = self.compiler.include_dirs[:]
+            # Add the sysroot paths. 'sysroot' is a compiler option used to
+            # set the logical path of the standard system headers and
+            # libraries.
+            lib_dirs = (self.compiler.library_dirs +
+                        sysroot_paths(('LDFLAGS', 'CC'), system_lib_dirs))
+            inc_dirs = (self.compiler.include_dirs +
+                        sysroot_paths(('CPPFLAGS', 'CFLAGS', 'CC'),
+                                      system_include_dirs))
         exts = []
         missing = []
 
@@ -613,8 +636,6 @@ class PyBuildExt(build_ext):
                 if item.startswith('-L'):
                     lib_dirs.append(item[2:])
 
-        math_libs = self.detect_math_libs()
-
         #
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
@@ -628,12 +649,12 @@ class PyBuildExt(build_ext):
         exts.append( Extension('cmath', ['cmathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=math_libs) )
+                               libraries=['m']) )
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=math_libs) )
+                               libraries=['m']) )
 
         # time libraries: librt may be needed for clock_gettime()
         time_libs = []
@@ -644,10 +665,10 @@ class PyBuildExt(build_ext):
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
                                libraries=time_libs) )
-        # math_libs is needed by delta_new() that uses round() and by accum()
-        # that uses modf().
+        # libm is needed by delta_new() that uses round() and by accum() that
+        # uses modf().
         exts.append( Extension('_datetime', ['_datetimemodule.c'],
-                               libraries=math_libs) )
+                               libraries=['m']) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # bisect
@@ -678,6 +699,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
+        # _queue module
+        exts.append( Extension("_queue", ["_queuemodule.c"]) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
@@ -732,9 +755,9 @@ class PyBuildExt(build_ext):
         # According to #993173, this one should actually work fine on
         # 64-bit platforms.
         #
-        # audioop needs math_libs for floor() in multiple functions.
+        # audioop needs libm for floor() in multiple functions.
         exts.append( Extension('audioop', ['audioop.c'],
-                               libraries=math_libs) )
+                               libraries=['m']) )
 
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
@@ -1352,12 +1375,19 @@ class PyBuildExt(build_ext):
             # Sun yellow pages. Some systems have the functions in libc.
             if (host_platform not in ['cygwin', 'qnx6'] and
                 find_file('rpcsvc/yp_prot.h', inc_dirs, []) is not None):
-                if (self.compiler.find_library_file(lib_dirs, 'nsl')):
-                    libs = ['nsl']
-                else:
-                    libs = []
+                nis_libs = []
+                nis_includes = []
+                if self.compiler.find_library_file(lib_dirs, 'nsl'):
+                    nis_libs.append('nsl')
+                if self.compiler.find_library_file(lib_dirs, 'tirpc'):
+                    # Sun RPC has been moved from glibc to libtirpc
+                    # rpcsvc/yp_prot.h is still in /usr/include, but
+                    # rpc/rpc.h has been moved into tirpc/ subdir.
+                    nis_libs.append('tirpc')
+                    nis_includes.append('/usr/include/tirpc')
                 exts.append( Extension('nis', ['nismodule.c'],
-                                       libraries = libs) )
+                                       libraries = nis_libs,
+                                       include_dirs=nis_includes) )
             else:
                 missing.append('nis')
         else:
@@ -1378,7 +1408,7 @@ class PyBuildExt(build_ext):
             if host_platform == 'darwin':
                 # On OS X, there is no separate /usr/lib/libncursesw nor
                 # libpanelw.  If we are here, we found a locally-supplied
-                # version of libncursesw.  There should be also be a
+                # version of libncursesw.  There should also be a
                 # libpanelw.  _XOPEN_SOURCE defines are usually excluded
                 # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
                 # ncurses wide char support
@@ -1659,12 +1689,11 @@ class PyBuildExt(build_ext):
 
         # Build the _uuid module if possible
         uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
-        if uuid_incs:
+        if uuid_incs is not None:
             if self.compiler.find_library_file(lib_dirs, 'uuid'):
                 uuid_libs = ['uuid']
             else:
                 uuid_libs = []
-        if uuid_incs:
             self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
                                    libraries=uuid_libs,
                                    include_dirs=uuid_incs))
@@ -1972,7 +2001,6 @@ class PyBuildExt(build_ext):
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c']
         depends = ['_ctypes/ctypes.h']
-        math_libs = self.detect_math_libs()
 
         if host_platform == 'darwin':
             sources.append('_ctypes/malloc_closure.c')
@@ -2003,10 +2031,10 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources,
                         depends=depends)
-        # function my_sqrt() needs math library for sqrt()
+        # function my_sqrt() needs libm for sqrt()
         ext_test = Extension('_ctypes_test',
                      sources=['_ctypes/_ctypes_test.c'],
-                     libraries=math_libs)
+                     libraries=['m'])
         self.extensions.extend([ext, ext_test])
 
         if host_platform == 'darwin':
@@ -2050,7 +2078,7 @@ class PyBuildExt(build_ext):
                                                          'Modules',
                                                          '_decimal',
                                                          'libmpdec'))]
-            libraries = self.detect_math_libs()
+            libraries = ['m']
             sources = [
               '_decimal/_decimal.c',
               '_decimal/libmpdec/basearith.c',

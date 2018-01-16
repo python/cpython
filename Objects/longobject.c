@@ -2024,7 +2024,7 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     const char *p = *str;
     const char *start = p;
     char prev = 0;
-    int digits = 0;
+    Py_ssize_t digits = 0;
     int bits_per_char;
     Py_ssize_t n;
     PyLongObject *z;
@@ -2268,7 +2268,7 @@ digit beyond the first.
 ***/
         twodigits c;           /* current input character */
         Py_ssize_t size_z;
-        int digits = 0;
+        Py_ssize_t digits = 0;
         int i;
         int convwidth;
         twodigits convmultmax, convmult;
@@ -2330,7 +2330,14 @@ digit beyond the first.
          * need to initialize z->ob_digit -- no slot is read up before
          * being stored into.
          */
-        size_z = (Py_ssize_t)(digits * log_base_BASE[base]) + 1;
+        double fsize_z = (double)digits * log_base_BASE[base] + 1.0;
+        if (fsize_z > (double)MAX_LONG_DIGITS) {
+            /* The same exception as in _PyLong_New(). */
+            PyErr_SetString(PyExc_OverflowError,
+                            "too many digits in integer");
+            return NULL;
+        }
+        size_z = (Py_ssize_t)fsize_z;
         /* Uncomment next line to test exceedingly rare copy code */
         /* size_z = 1; */
         assert(size_z > 0);
@@ -2509,21 +2516,18 @@ PyLong_FromUnicodeObject(PyObject *u, int base)
     asciidig = _PyUnicode_TransformDecimalAndSpaceToASCII(u);
     if (asciidig == NULL)
         return NULL;
+    assert(PyUnicode_IS_ASCII(asciidig));
+    /* Simply get a pointer to existing ASCII characters. */
     buffer = PyUnicode_AsUTF8AndSize(asciidig, &buflen);
-    if (buffer == NULL) {
+    assert(buffer != NULL);
+
+    result = PyLong_FromString(buffer, &end, base);
+    if (end == NULL || (result != NULL && end == buffer + buflen)) {
         Py_DECREF(asciidig);
-        if (!PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
-            return NULL;
+        return result;
     }
-    else {
-        result = PyLong_FromString(buffer, &end, base);
-        if (end == NULL || (result != NULL && end == buffer + buflen)) {
-            Py_DECREF(asciidig);
-            return result;
-        }
-        Py_DECREF(asciidig);
-        Py_XDECREF(result);
-    }
+    Py_DECREF(asciidig);
+    Py_XDECREF(result);
     PyErr_Format(PyExc_ValueError,
                  "invalid literal for int() with base %d: %.200R",
                  base, u);
@@ -4811,7 +4815,7 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
         return NULL;
     if ((base != 0 && base < 2) || base > 36) {
         PyErr_SetString(PyExc_ValueError,
-                        "int() base must be >= 2 and <= 36");
+                        "int() base must be >= 2 and <= 36, or 0");
         return NULL;
     }
 
