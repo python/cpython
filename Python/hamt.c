@@ -283,8 +283,32 @@ to introspect the tree:
 #define IS_COLLISION_NODE(node) (Py_TYPE(node) == &_PyHamt_CollisionNode_Type)
 
 
+/* Return type for 'find' (lookup a key) functions.
+
+   * F_ERROR - an error occurred;
+   * F_NOT_FOUND - the key was not found;
+   * F_FOUND - the key was found.
+*/
 typedef enum {F_ERROR, F_NOT_FOUND, F_FOUND} hamt_find_t;
+
+
+/* Return type for 'without' (delete a key) functions.
+
+   * W_ERROR - an error occurred;
+   * W_NOT_FOUND - the key was not found: there's nothing to delete;
+   * W_EMPTY - the key was found: the node/tree would be empty
+     if the key is deleted;
+   * W_NEWNODE - the key was found: a new node/tree is returned
+     without that key.
+*/
 typedef enum {W_ERROR, W_NOT_FOUND, W_EMPTY, W_NEWNODE} hamt_without_t;
+
+
+/* Low-level iterator protocol type.
+
+   * I_ITEM - a new item has been yielded;
+   * I_END - the whole tree was visited (similar to StopIteration).
+*/
 typedef enum {I_ITEM, I_END} hamt_iter_t;
 
 
