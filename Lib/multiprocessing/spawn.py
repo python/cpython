@@ -112,13 +112,9 @@ def get_forkserver_args(argv):
     # listener_fd and alive_r are integers
     # preload is a list
     # kwds map strings to lists
-    main_args = argv[-1].split('main(')[1].rsplit(')', 1)[0].split(', ', 3)
-    listener_fd = int(main_args[0])
-    alive_r = int(main_args[1])
-    preload = ast.literal_eval(main_args[2])
-
-    args = [listener_fd, alive_r, preload]
-    kwds = ast.literal_eval(main_args[3][2:])
+    parsed = ast.parse(argv[-1])
+    args = [ast.literal_eval(parsed.body[1].value.args[i]) for i in range(3)]
+    kwds = ast.literal_eval(parsed.body[1].value.keywords[0].value)
     return args, kwds
 
 

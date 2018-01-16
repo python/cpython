@@ -4554,12 +4554,12 @@ class TestFreezeSupport(unittest.TestCase):
             '--multiprocessing-forkserver',
             (
                 "from multiprocessing.forkserver import main; "
-                "main(8, 9, ['__main__'], "
+                "main(8, 9, ['__main__', 'other'], "
                 "**{'sys_path': ['/embed/lib', '/embed/lib/library.zip']})"
             )
         ]
         args, kwds = self.module.get_forkserver_args(argv)
-        self.assertEqual(args, [8, 9, ['__main__']])
+        self.assertEqual(args, [8, 9, ['__main__', 'other']])
         self.assertEqual(
             kwds, {'sys_path': ['/embed/lib', '/embed/lib/library.zip']}
         )
