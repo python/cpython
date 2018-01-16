@@ -1,6 +1,7 @@
 """Selector event loop for Unix with signal handling."""
 
 import errno
+import io
 import os
 import selectors
 import signal
@@ -307,6 +308,98 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self._start_serving(protocol_factory, sock, ssl, server,
                             ssl_handshake_timeout=ssl_handshake_timeout)
         return server
+
+    async def _sock_sendfile_native(self, sock, file, offset, count):
+        try:
+            os.sendfile
+        except AttributeError as exc:
+            raise base_events._SendfileNotAvailable(
+                "os.sendfile() is not available")
+        try:
+            fileno = file.fileno()
+        except (AttributeError, io.UnsupportedOperation) as err:
+            raise base_events._SendfileNotAvailable("not a regular file")
+        try:
+            fsize = os.fstat(fileno).st_size
+        except OSError as err:
+            raise base_events._SendfileNotAvailable("not a regular file")
+        blocksize = count if count else fsize
+        if not blocksize:
+            return 0  # empty file
+
+        fut = self.create_future()
+        self._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                        offset, count, blocksize, 0)
+        return await fut
+
+    def _sock_sendfile_native_impl(self, fut, registered_fd, sock, fileno,
+                                   offset, count, blocksize, total_sent):
+        fd = sock.fileno()
+        if registered_fd is not None:
+            # Remove the callback early.  It should be rare that the
+            # selector says the fd is ready but the call still returns
+            # EAGAIN, and I am willing to take a hit in that case in
+            # order to simplify the common case.
+            self.remove_writer(registered_fd)
+        if fut.cancelled():
+            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+            return
+        if count:
+            blocksize = count - total_sent
+            if blocksize <= 0:
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_result(total_sent)
+                return
+
+        try:
+            sent = os.sendfile(fd, fileno, offset, blocksize)
+        except (BlockingIOError, InterruptedError):
+            if registered_fd is None:
+                self._sock_add_cancellation_callback(fut, sock)
+            self.add_writer(fd, self._sock_sendfile_native_impl, fut,
+                            fd, sock, fileno,
+                            offset, count, blocksize, total_sent)
+        except OSError as exc:
+            if total_sent == 0:
+                # We can get here for different reasons, the main
+                # one being 'file' is not a regular mmap(2)-like
+                # file, in which case we'll fall back on using
+                # plain send().
+                err = base_events._SendfileNotAvailable(
+                    "os.sendfile call failed")
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_exception(err)
+            else:
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_exception(exc)
+        except Exception as exc:
+            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+            fut.set_exception(exc)
+        else:
+            if sent == 0:
+                # EOF
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_result(total_sent)
+            else:
+                offset += sent
+                total_sent += sent
+                if registered_fd is None:
+                    self._sock_add_cancellation_callback(fut, sock)
+                self.add_writer(fd, self._sock_sendfile_native_impl, fut,
+                                fd, sock, fileno,
+                                offset, count, blocksize, total_sent)
+
+    def _sock_sendfile_update_filepos(self, fileno, offset, total_sent):
+        if total_sent > 0:
+            os.lseek(fileno, offset, os.SEEK_SET)
+
+    def _sock_add_cancellation_callback(self, fut, sock):
+        def cb(fut):
+            if fut.cancelled():
+                fd = sock.fileno()
+                if fd != -1:
+                    self.remove_writer(fd)
+        fut.add_done_callback(cb)
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):

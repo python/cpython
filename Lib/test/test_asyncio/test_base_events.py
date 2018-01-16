@@ -1787,5 +1787,163 @@ class RunningLoopTests(unittest.TestCase):
             outer_loop.close()
 
 
+class BaseLoopSendfileTests(test_utils.TestCase):
+
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
+
+    class MyProto(asyncio.Protocol):
+
+        def __init__(self, loop):
+            self.started = False
+            self.closed = False
+            self.data = bytearray()
+            self.fut = loop.create_future()
+
+        def connection_made(self, transport):
+            self.started = True
+
+        def data_received(self, data):
+            self.data.extend(data)
+
+        def connection_lost(self, exc):
+            self.closed = True
+            self.fut.set_result(None)
+
+        async def wait_closed(self):
+            await self.fut
+
+    @classmethod
+    def setUpClass(cls):
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(cls.DATA)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(support.TESTFN)
+        super().tearDownClass()
+
+    def setUp(self):
+        from asyncio.selector_events import BaseSelectorEventLoop
+        # BaseSelectorEventLoop() has no native implementation
+        self.loop = BaseSelectorEventLoop()
+        self.set_event_loop(self.loop)
+        self.file = open(support.TESTFN, 'rb')
+        self.addCleanup(self.file.close)
+        super().setUp()
+
+    def make_socket(self, blocking=False):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(blocking)
+        self.addCleanup(sock.close)
+        return sock
+
+    def run_loop(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def prepare(self):
+        sock = self.make_socket()
+        proto = self.MyProto(self.loop)
+        port = support.find_unused_port()
+        server = self.run_loop(self.loop.create_server(
+            lambda: proto, support.HOST, port))
+        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+
+        def cleanup():
+            server.close()
+            self.run_loop(server.wait_closed())
+
+        self.addCleanup(cleanup)
+
+        return sock, proto
+
+    def test__sock_sendfile_native_failure(self):
+        sock, proto = self.prepare()
+
+        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
+                                    "sendfile is not available"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
+                                                          0, None))
+
+        self.assertEqual(proto.data, b'')
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_no_fallback(self):
+        sock, proto = self.prepare()
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    "sendfile is not available"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                  fallback=False))
+
+        self.assertEqual(self.file.tell(), 0)
+        self.assertEqual(proto.data, b'')
+
+    def test_sock_sendfile_fallback(self):
+        sock, proto = self.prepare()
+
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(self.file.tell(), len(self.DATA))
+        self.assertEqual(proto.data, self.DATA)
+
+    def test_sock_sendfile_fallback_offset_and_count(self):
+        sock, proto = self.prepare()
+
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                    1000, 2000))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, 2000)
+        self.assertEqual(self.file.tell(), 3000)
+        self.assertEqual(proto.data, self.DATA[1000:3000])
+
+    def test_blocking_socket(self):
+        self.loop.set_debug(True)
+        sock = self.make_socket(blocking=True)
+        with self.assertRaisesRegex(ValueError, "must be non-blocking"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
+
+    def test_nonbinary_file(self):
+        sock = self.make_socket()
+        with open(support.TESTFN, 'r') as f:
+            with self.assertRaisesRegex(ValueError, "binary mode"):
+                self.run_loop(self.loop.sock_sendfile(sock, f))
+
+    def test_nonstream_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        with self.assertRaisesRegex(ValueError, "only SOCK_STREAM type"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
+
+    def test_notint_count(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(TypeError,
+                                    "count must be a positive integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 0, 'count'))
+
+    def test_negative_count(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(ValueError,
+                                    "count must be a positive integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 0, -1))
+
+    def test_notint_offset(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(TypeError,
+                                    "offset must be a non-negative integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 'offset'))
+
+    def test_negative_offset(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(ValueError,
+                                    "offset must be a non-negative integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, -1))
+
+
 if __name__ == '__main__':
     unittest.main()
