@@ -27,6 +27,7 @@ struct _pycontextvarobject {
 
 struct _pycontexttokenobject {
     PyObject_HEAD
+    PyContext *tok_ctx;
     PyContextVar *tok_var;
     PyObject *tok_oldval;
     int tok_used;

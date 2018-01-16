@@ -34,7 +34,7 @@ static inline PyContext *
 context_copy(void);
 
 static PyContextToken *
-token_new(PyContextVar *var, PyObject *val);
+token_new(PyContext *ctx, PyContextVar *var, PyObject *val);
 
 static PyContextVar *
 contextvar_new(PyObject *name, PyObject *def);
@@ -211,7 +211,7 @@ PyContextVar_Set(PyContextVar *var, PyObject *val)
     }
 
     Py_XINCREF(old_val);
-    PyContextToken *tok = token_new(var, old_val);
+    PyContextToken *tok = token_new(ctx, var, old_val);
     Py_XDECREF(old_val);
 
     if (contextvar_set(var, val)) {
@@ -229,6 +229,13 @@ PyContextVar_Reset(PyContextVar *var, PyContextToken *tok)
     if (var != tok->tok_var) {
         PyErr_SetString(PyExc_ValueError,
                         "Token was created by a different ContextVar");
+        return -1;
+    }
+
+    PyContext *ctx = context_get();
+    if (ctx != tok->tok_ctx) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Token was created in a different Context");
         return -1;
     }
 
@@ -971,6 +978,7 @@ token_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 token_tp_clear(PyContextToken *self)
 {
+    Py_CLEAR(self->tok_ctx);
     Py_CLEAR(self->tok_var);
     Py_CLEAR(self->tok_oldval);
     return 0;
@@ -979,6 +987,7 @@ token_tp_clear(PyContextToken *self)
 static int
 token_tp_traverse(PyContextToken *self, visitproc visit, void *arg)
 {
+    Py_VISIT(self->tok_ctx);
     Py_VISIT(self->tok_var);
     Py_VISIT(self->tok_oldval);
     return 0;
@@ -1032,12 +1041,15 @@ PyTypeObject PyContextToken_Type = {
 };
 
 static PyContextToken *
-token_new(PyContextVar *var, PyObject *val)
+token_new(PyContext *ctx, PyContextVar *var, PyObject *val)
 {
     PyContextToken *tok = PyObject_GC_New(PyContextToken, &PyContextToken_Type);
     if (tok == NULL) {
         return NULL;
     }
+
+    Py_INCREF(ctx);
+    tok->tok_ctx = ctx;
 
     Py_INCREF(var);
     tok->tok_var = var;

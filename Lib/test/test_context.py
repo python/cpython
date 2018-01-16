@@ -267,6 +267,16 @@ class ContextTest(unittest.TestCase):
 
         ctx.run(fun)
 
+    @isolated_context
+    def test_context_getset_4(self):
+        c = contextvars.ContextVar('c', default=42)
+        ctx = contextvars.Context()
+
+        tok = ctx.run(c.set, 1)
+
+        with self.assertRaisesRegex(ValueError, 'different Context'):
+            c.reset(tok)
+
     def test_context_copy_1(self):
         ctx1 = contextvars.Context()
         c = contextvars.ContextVar('c', default=42)
