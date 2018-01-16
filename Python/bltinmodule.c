@@ -71,12 +71,11 @@ update_bases(PyObject *bases, PyObject *const *args, int nargs)
             }
             continue;
         }
-        meth = _PyObject_GetAttrId(base, &PyId___mro_entries__);
+        meth = _PyObject_GetAttrIdWithoutError(base, &PyId___mro_entries__);
         if (!meth) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (PyErr_Occurred()) {
                 goto error;
             }
-            PyErr_Clear();
             if (new_bases) {
                 if (PyList_Append(new_bases, base) < 0) {
                     goto error;
@@ -218,17 +217,13 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     /* else: meta is not a class, so we cannot do the metaclass
        calculation, so we will use the explicitly given object as it is */
-    prep = _PyObject_GetAttrId(meta, &PyId___prepare__);
+    prep = _PyObject_GetAttrIdWithoutError(meta, &PyId___prepare__);
     if (prep == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            ns = PyDict_New();
+        if (PyErr_Occurred()) {
+            ns = NULL;
         }
         else {
-            Py_DECREF(meta);
-            Py_XDECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
+            ns = PyDict_New();
         }
     }
     else {

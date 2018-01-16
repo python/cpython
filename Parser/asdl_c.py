@@ -498,7 +498,7 @@ class Obj2ModVisitor(PickleVisitor):
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
         if not field.opt:
-            self.emit("tmp = _PyObject_GetAttrId(obj, &PyId_%s);" % field.name, depth)
+            self.emit("tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_%s);" % field.name, depth)
         else:
             self.emit("tmp = get_not_none(obj, &PyId_%s);" % field.name, depth)
         self.emit("if (tmp != NULL) {", depth)
@@ -541,7 +541,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("Py_CLEAR(tmp);", depth+1)
         if not field.opt:
             self.emit("} else {", depth)
-            self.emit("if (PyErr_ExceptionMatches(PyExc_AttributeError)) {", depth+1)
+            self.emit("if (!PyErr_Occurred()) {", depth+1)
             message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
             format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
             self.emit(format % message, depth+2, reflow=False)
@@ -662,16 +662,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
+    fields = _PyObject_GetAttrIdWithoutError((PyObject*)Py_TYPE(self), &PyId__fields);
     if (fields) {
         numfields = PySequence_Size(fields);
         if (numfields == -1)
             goto cleanup;
     }
-    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
-    }
-    else {
+    else if (PyErr_Occurred()) {
         goto cleanup;
     }
 
@@ -713,19 +710,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
-    PyObject *res;
     _Py_IDENTIFIER(__dict__);
-    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
-    if (dict == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return NULL;
-    }
+    PyObject *dict = _PyObject_GetAttrIdWithoutError(self, &PyId___dict__);
     if (dict) {
-        res = Py_BuildValue("O()O", Py_TYPE(self), dict);
-        Py_DECREF(dict);
-        return res;
+        return Py_BuildValue("O()N", Py_TYPE(self), dict);
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
     }
     return Py_BuildValue("O()", Py_TYPE(self));
 }
@@ -967,11 +958,8 @@ static int add_ast_fields(void)
 
 static PyObject *get_not_none(PyObject *obj, _Py_Identifier *id)
 {
-    PyObject *attr = _PyObject_GetAttrId(obj, id);
+    PyObject *attr = _PyObject_GetAttrIdWithoutError(obj, id);
     if (!attr) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
         return NULL;
     }
     else if (attr == Py_None) {

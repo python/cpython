@@ -80,11 +80,8 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
             return NULL;
     }
 
-    obj = _PyObject_GetAttrId(warnings_module, attr_id);
+    obj = _PyObject_GetAttrIdWithoutError(warnings_module, attr_id);
     Py_DECREF(warnings_module);
-    if (obj == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
-    }
     return obj;
 }
 
@@ -893,13 +890,10 @@ get_source_line(PyObject *module_globals, int lineno)
     Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
-    get_source = _PyObject_GetAttrId(loader, &PyId_get_source);
+    get_source = _PyObject_GetAttrIdWithoutError(loader, &PyId_get_source);
     Py_DECREF(loader);
     if (!get_source) {
         Py_DECREF(module_name);
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
         return NULL;
     }
     /* Call get_source() to get the source code. */

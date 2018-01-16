@@ -545,16 +545,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
+    fields = _PyObject_GetAttrIdWithoutError((PyObject*)Py_TYPE(self), &PyId__fields);
     if (fields) {
         numfields = PySequence_Size(fields);
         if (numfields == -1)
             goto cleanup;
     }
-    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
-    }
-    else {
+    else if (PyErr_Occurred()) {
         goto cleanup;
     }
 
@@ -596,19 +593,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
-    PyObject *res;
     _Py_IDENTIFIER(__dict__);
-    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
-    if (dict == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return NULL;
-    }
+    PyObject *dict = _PyObject_GetAttrIdWithoutError(self, &PyId___dict__);
     if (dict) {
-        res = Py_BuildValue("O()O", Py_TYPE(self), dict);
-        Py_DECREF(dict);
-        return res;
+        return Py_BuildValue("O()N", Py_TYPE(self), dict);
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
     }
     return Py_BuildValue("O()", Py_TYPE(self));
 }
@@ -850,11 +841,8 @@ static int add_ast_fields(void)
 
 static PyObject *get_not_none(PyObject *obj, _Py_Identifier *id)
 {
-    PyObject *attr = _PyObject_GetAttrId(obj, id);
+    PyObject *attr = _PyObject_GetAttrIdWithoutError(obj, id);
     if (!attr) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
         return NULL;
     }
     else if (attr == Py_None) {
@@ -4012,7 +4000,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         asdl_seq* body;
         string docstring;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4036,7 +4024,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Module");
             }
             return 1;
@@ -4063,7 +4051,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* body;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4087,7 +4075,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Interactive");
             }
             return 1;
@@ -4103,14 +4091,14 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
     if (isinstance) {
         expr_ty body;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &body, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Expression");
             }
             return 1;
@@ -4126,7 +4114,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* body;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4150,7 +4138,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Suite");
             }
             return 1;
@@ -4179,26 +4167,26 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         *out = NULL;
         return 0;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_lineno);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &lineno, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from stmt");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_col_offset);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &col_offset, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from stmt");
         }
         return 1;
@@ -4215,31 +4203,31 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         expr_ty returns;
         string docstring;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_name);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_name);
         if (tmp != NULL) {
             int res;
             res = obj2ast_identifier(tmp, &name, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from FunctionDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_args);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_args);
         if (tmp != NULL) {
             int res;
             res = obj2ast_arguments(tmp, &args, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from FunctionDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4263,12 +4251,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from FunctionDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_decorator_list);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_decorator_list);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4292,7 +4280,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from FunctionDef");
             }
             return 1;
@@ -4336,31 +4324,31 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         expr_ty returns;
         string docstring;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_name);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_name);
         if (tmp != NULL) {
             int res;
             res = obj2ast_identifier(tmp, &name, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from AsyncFunctionDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_args);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_args);
         if (tmp != NULL) {
             int res;
             res = obj2ast_arguments(tmp, &args, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from AsyncFunctionDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4384,12 +4372,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncFunctionDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_decorator_list);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_decorator_list);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4413,7 +4401,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from AsyncFunctionDef");
             }
             return 1;
@@ -4457,19 +4445,19 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* decorator_list;
         string docstring;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_name);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_name);
         if (tmp != NULL) {
             int res;
             res = obj2ast_identifier(tmp, &name, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from ClassDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_bases);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_bases);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4493,12 +4481,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"bases\" missing from ClassDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_keywords);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_keywords);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4522,12 +4510,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from ClassDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4551,12 +4539,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ClassDef");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_decorator_list);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_decorator_list);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4580,7 +4568,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from ClassDef");
             }
             return 1;
@@ -4630,7 +4618,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* targets;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_targets);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_targets);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4654,7 +4642,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"targets\" missing from Delete");
             }
             return 1;
@@ -4671,7 +4659,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* targets;
         expr_ty value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_targets);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_targets);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4695,19 +4683,19 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"targets\" missing from Assign");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Assign");
             }
             return 1;
@@ -4725,38 +4713,38 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         operator_ty op;
         expr_ty value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_target);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_target);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &target, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AugAssign");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_op);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_op);
         if (tmp != NULL) {
             int res;
             res = obj2ast_operator(tmp, &op, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from AugAssign");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from AugAssign");
             }
             return 1;
@@ -4775,26 +4763,26 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         expr_ty value;
         int simple;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_target);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_target);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &target, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AnnAssign");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_annotation);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_annotation);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &annotation, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"annotation\" missing from AnnAssign");
             }
             return 1;
@@ -4810,14 +4798,14 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         } else {
             value = NULL;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_simple);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_simple);
         if (tmp != NULL) {
             int res;
             res = obj2ast_int(tmp, &simple, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"simple\" missing from AnnAssign");
             }
             return 1;
@@ -4837,31 +4825,31 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* orelse;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_target);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_target);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &target, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from For");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_iter);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_iter);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &iter, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from For");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4885,12 +4873,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from For");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_orelse);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4914,7 +4902,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from For");
             }
             return 1;
@@ -4933,31 +4921,31 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* orelse;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_target);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_target);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &target, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AsyncFor");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_iter);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_iter);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &iter, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from AsyncFor");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -4981,12 +4969,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncFor");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_orelse);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5010,7 +4998,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from AsyncFor");
             }
             return 1;
@@ -5028,19 +5016,19 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* orelse;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_test);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_test);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &test, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from While");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5064,12 +5052,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from While");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_orelse);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5093,7 +5081,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from While");
             }
             return 1;
@@ -5111,19 +5099,19 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* orelse;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_test);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_test);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &test, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from If");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5147,12 +5135,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from If");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_orelse);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5176,7 +5164,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from If");
             }
             return 1;
@@ -5193,7 +5181,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* items;
         asdl_seq* body;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_items);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_items);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5217,12 +5205,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from With");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5246,7 +5234,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from With");
             }
             return 1;
@@ -5263,7 +5251,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* items;
         asdl_seq* body;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_items);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_items);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5287,12 +5275,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from AsyncWith");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5316,7 +5304,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncWith");
             }
             return 1;
@@ -5369,7 +5357,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* orelse;
         asdl_seq* finalbody;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5393,12 +5381,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Try");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_handlers);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_handlers);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5422,12 +5410,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from Try");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_orelse);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5451,12 +5439,12 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from Try");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_finalbody);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_finalbody);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5480,7 +5468,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"finalbody\" missing from Try");
             }
             return 1;
@@ -5498,14 +5486,14 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         expr_ty test;
         expr_ty msg;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_test);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_test);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &test, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from Assert");
             }
             return 1;
@@ -5532,7 +5520,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* names;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_names);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_names);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5556,7 +5544,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Import");
             }
             return 1;
@@ -5585,7 +5573,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         } else {
             module = NULL;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_names);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_names);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5609,7 +5597,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from ImportFrom");
             }
             return 1;
@@ -5636,7 +5624,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* names;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_names);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_names);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5660,7 +5648,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Global");
             }
             return 1;
@@ -5676,7 +5664,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* names;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_names);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_names);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5700,7 +5688,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Nonlocal");
             }
             return 1;
@@ -5716,14 +5704,14 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         expr_ty value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Expr");
             }
             return 1;
@@ -5782,26 +5770,26 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         *out = NULL;
         return 0;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_lineno);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &lineno, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from expr");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_col_offset);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &col_offset, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from expr");
         }
         return 1;
@@ -5814,19 +5802,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         boolop_ty op;
         asdl_seq* values;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_op);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_op);
         if (tmp != NULL) {
             int res;
             res = obj2ast_boolop(tmp, &op, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BoolOp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_values);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_values);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -5850,7 +5838,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from BoolOp");
             }
             return 1;
@@ -5868,38 +5856,38 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         operator_ty op;
         expr_ty right;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_left);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_left);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &left, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from BinOp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_op);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_op);
         if (tmp != NULL) {
             int res;
             res = obj2ast_operator(tmp, &op, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BinOp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_right);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_right);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &right, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"right\" missing from BinOp");
             }
             return 1;
@@ -5916,26 +5904,26 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         unaryop_ty op;
         expr_ty operand;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_op);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_op);
         if (tmp != NULL) {
             int res;
             res = obj2ast_unaryop(tmp, &op, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from UnaryOp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_operand);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_operand);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &operand, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"operand\" missing from UnaryOp");
             }
             return 1;
@@ -5952,26 +5940,26 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         arguments_ty args;
         expr_ty body;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_args);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_args);
         if (tmp != NULL) {
             int res;
             res = obj2ast_arguments(tmp, &args, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Lambda");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &body, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Lambda");
             }
             return 1;
@@ -5989,38 +5977,38 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty body;
         expr_ty orelse;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_test);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_test);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &test, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from IfExp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &body, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from IfExp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_orelse);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_orelse);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &orelse, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from IfExp");
             }
             return 1;
@@ -6037,7 +6025,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         asdl_seq* keys;
         asdl_seq* values;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_keys);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_keys);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6061,12 +6049,12 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"keys\" missing from Dict");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_values);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_values);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6090,7 +6078,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from Dict");
             }
             return 1;
@@ -6106,7 +6094,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* elts;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_elts);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_elts);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6130,7 +6118,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from Set");
             }
             return 1;
@@ -6147,19 +6135,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty elt;
         asdl_seq* generators;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_elt);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_elt);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &elt, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from ListComp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_generators);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6183,7 +6171,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from ListComp");
             }
             return 1;
@@ -6200,19 +6188,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty elt;
         asdl_seq* generators;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_elt);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_elt);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &elt, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from SetComp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_generators);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6236,7 +6224,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from SetComp");
             }
             return 1;
@@ -6254,31 +6242,31 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty value;
         asdl_seq* generators;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_key);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_key);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &key, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"key\" missing from DictComp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from DictComp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_generators);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6302,7 +6290,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from DictComp");
             }
             return 1;
@@ -6319,19 +6307,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty elt;
         asdl_seq* generators;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_elt);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_elt);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &elt, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from GeneratorExp");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_generators);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_generators);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6355,7 +6343,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from GeneratorExp");
             }
             return 1;
@@ -6371,14 +6359,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         expr_ty value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Await");
             }
             return 1;
@@ -6416,14 +6404,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         expr_ty value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from YieldFrom");
             }
             return 1;
@@ -6441,19 +6429,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         asdl_int_seq* ops;
         asdl_seq* comparators;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_left);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_left);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &left, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from Compare");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_ops);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ops);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6477,12 +6465,12 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"ops\" missing from Compare");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_comparators);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_comparators);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6506,7 +6494,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"comparators\" missing from Compare");
             }
             return 1;
@@ -6524,19 +6512,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         asdl_seq* args;
         asdl_seq* keywords;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_func);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_func);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &func, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"func\" missing from Call");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_args);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_args);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6560,12 +6548,12 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Call");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_keywords);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_keywords);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6589,7 +6577,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from Call");
             }
             return 1;
@@ -6605,14 +6593,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         object n;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_n);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_n);
         if (tmp != NULL) {
             int res;
             res = obj2ast_object(tmp, &n, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"n\" missing from Num");
             }
             return 1;
@@ -6628,14 +6616,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         string s;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_s);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_s);
         if (tmp != NULL) {
             int res;
             res = obj2ast_string(tmp, &s, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"s\" missing from Str");
             }
             return 1;
@@ -6653,14 +6641,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         int conversion;
         expr_ty format_spec;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from FormattedValue");
             }
             return 1;
@@ -6699,7 +6687,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* values;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_values);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_values);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -6723,7 +6711,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from JoinedStr");
             }
             return 1;
@@ -6739,14 +6727,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         bytes s;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_s);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_s);
         if (tmp != NULL) {
             int res;
             res = obj2ast_bytes(tmp, &s, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"s\" missing from Bytes");
             }
             return 1;
@@ -6762,14 +6750,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         singleton value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_singleton(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NameConstant");
             }
             return 1;
@@ -6795,14 +6783,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     if (isinstance) {
         constant value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_constant(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Constant");
             }
             return 1;
@@ -6820,38 +6808,38 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         identifier attr;
         expr_context_ty ctx;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Attribute");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_attr);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_attr);
         if (tmp != NULL) {
             int res;
             res = obj2ast_identifier(tmp, &attr, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"attr\" missing from Attribute");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ctx);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr_context(tmp, &ctx, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Attribute");
             }
             return 1;
@@ -6869,38 +6857,38 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         slice_ty slice;
         expr_context_ty ctx;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Subscript");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_slice);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_slice);
         if (tmp != NULL) {
             int res;
             res = obj2ast_slice(tmp, &slice, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"slice\" missing from Subscript");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ctx);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr_context(tmp, &ctx, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Subscript");
             }
             return 1;
@@ -6917,26 +6905,26 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty value;
         expr_context_ty ctx;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Starred");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ctx);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr_context(tmp, &ctx, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Starred");
             }
             return 1;
@@ -6953,26 +6941,26 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         identifier id;
         expr_context_ty ctx;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_id);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_id);
         if (tmp != NULL) {
             int res;
             res = obj2ast_identifier(tmp, &id, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"id\" missing from Name");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ctx);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr_context(tmp, &ctx, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Name");
             }
             return 1;
@@ -6989,7 +6977,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         asdl_seq* elts;
         expr_context_ty ctx;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_elts);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_elts);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -7013,19 +7001,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from List");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ctx);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr_context(tmp, &ctx, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from List");
             }
             return 1;
@@ -7042,7 +7030,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         asdl_seq* elts;
         expr_context_ty ctx;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_elts);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_elts);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -7066,19 +7054,19 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from Tuple");
             }
             return 1;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_ctx);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ctx);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr_context(tmp, &ctx, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Tuple");
             }
             return 1;
@@ -7216,7 +7204,7 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* dims;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_dims);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_dims);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -7240,7 +7228,7 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"dims\" missing from ExtSlice");
             }
             return 1;
@@ -7256,14 +7244,14 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
     if (isinstance) {
         expr_ty value;
 
-        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
         if (tmp != NULL) {
             int res;
             res = obj2ast_expr(tmp, &value, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Index");
             }
             return 1;
@@ -7560,31 +7548,31 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
     asdl_seq* ifs;
     int is_async;
 
-    tmp = _PyObject_GetAttrId(obj, &PyId_target);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_target);
     if (tmp != NULL) {
         int res;
         res = obj2ast_expr(tmp, &target, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from comprehension");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_iter);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_iter);
     if (tmp != NULL) {
         int res;
         res = obj2ast_expr(tmp, &iter, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from comprehension");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_ifs);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_ifs);
     if (tmp != NULL) {
         int res;
         Py_ssize_t len;
@@ -7608,19 +7596,19 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"ifs\" missing from comprehension");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_is_async);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_is_async);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &is_async, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"is_async\" missing from comprehension");
         }
         return 1;
@@ -7645,26 +7633,26 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
         *out = NULL;
         return 0;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_lineno);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &lineno, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from excepthandler");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_col_offset);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &col_offset, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from excepthandler");
         }
         return 1;
@@ -7700,7 +7688,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
         } else {
             name = NULL;
         }
-        tmp = _PyObject_GetAttrId(obj, &PyId_body);
+        tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_body);
         if (tmp != NULL) {
             int res;
             Py_ssize_t len;
@@ -7724,7 +7712,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         } else {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ExceptHandler");
             }
             return 1;
@@ -7751,7 +7739,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
     arg_ty kwarg;
     asdl_seq* defaults;
 
-    tmp = _PyObject_GetAttrId(obj, &PyId_args);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_args);
     if (tmp != NULL) {
         int res;
         Py_ssize_t len;
@@ -7775,7 +7763,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from arguments");
         }
         return 1;
@@ -7791,7 +7779,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
     } else {
         vararg = NULL;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_kwonlyargs);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_kwonlyargs);
     if (tmp != NULL) {
         int res;
         Py_ssize_t len;
@@ -7815,12 +7803,12 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"kwonlyargs\" missing from arguments");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_kw_defaults);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_kw_defaults);
     if (tmp != NULL) {
         int res;
         Py_ssize_t len;
@@ -7844,7 +7832,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"kw_defaults\" missing from arguments");
         }
         return 1;
@@ -7860,7 +7848,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
     } else {
         kwarg = NULL;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_defaults);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_defaults);
     if (tmp != NULL) {
         int res;
         Py_ssize_t len;
@@ -7884,7 +7872,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"defaults\" missing from arguments");
         }
         return 1;
@@ -7906,14 +7894,14 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     int lineno;
     int col_offset;
 
-    tmp = _PyObject_GetAttrId(obj, &PyId_arg);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_arg);
     if (tmp != NULL) {
         int res;
         res = obj2ast_identifier(tmp, &arg, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"arg\" missing from arg");
         }
         return 1;
@@ -7929,26 +7917,26 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     } else {
         annotation = NULL;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_lineno);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &lineno, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from arg");
         }
         return 1;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_col_offset);
     if (tmp != NULL) {
         int res;
         res = obj2ast_int(tmp, &col_offset, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from arg");
         }
         return 1;
@@ -7978,14 +7966,14 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     } else {
         arg = NULL;
     }
-    tmp = _PyObject_GetAttrId(obj, &PyId_value);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_value);
     if (tmp != NULL) {
         int res;
         res = obj2ast_expr(tmp, &value, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from keyword");
         }
         return 1;
@@ -8004,14 +7992,14 @@ obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena)
     identifier name;
     identifier asname;
 
-    tmp = _PyObject_GetAttrId(obj, &PyId_name);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_name);
     if (tmp != NULL) {
         int res;
         res = obj2ast_identifier(tmp, &name, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from alias");
         }
         return 1;
@@ -8041,14 +8029,14 @@ obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
     expr_ty context_expr;
     expr_ty optional_vars;
 
-    tmp = _PyObject_GetAttrId(obj, &PyId_context_expr);
+    tmp = _PyObject_GetAttrIdWithoutError(obj, &PyId_context_expr);
     if (tmp != NULL) {
         int res;
         res = obj2ast_expr(tmp, &context_expr, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from withitem");
         }
         return 1;

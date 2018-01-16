@@ -2359,7 +2359,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             goto handle_kwargs;
         }
 
-        func = _PyObject_GetAttrId(other, &PyId_keys);
+        func = _PyObject_GetAttrIdWithoutError(other, &PyId_keys);
         if (func != NULL) {
             PyObject *keys, *iterator, *key;
             keys = _PyObject_CallNoArg(func);
@@ -2391,15 +2391,12 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
                 return NULL;
             goto handle_kwargs;
         }
-        else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        else if (PyErr_Occurred()) {
             Py_DECREF(other);
             return NULL;
         }
-        else {
-            PyErr_Clear();
-        }
 
-        func = _PyObject_GetAttrId(other, &PyId_items);
+        func = _PyObject_GetAttrIdWithoutError(other, &PyId_items);
         if (func != NULL) {
             PyObject *items;
             Py_DECREF(other);
@@ -2413,12 +2410,9 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
                 return NULL;
             goto handle_kwargs;
         }
-        else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        else if (PyErr_Occurred()) {
             Py_DECREF(other);
             return NULL;
-        }
-        else {
-            PyErr_Clear();
         }
 
         res = mutablemapping_add_pairs(self, other);

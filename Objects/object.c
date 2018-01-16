@@ -816,13 +816,12 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    isabstract = _PyObject_GetAttrId(obj, &PyId___isabstractmethod__);
+    isabstract = _PyObject_GetAttrIdWithoutError(obj, &PyId___isabstractmethod__);
     if (isabstract == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            return 0;
+        if (PyErr_Occurred()) {
+            return -1;
         }
-        return -1;
+        return 0;
     }
     res = PyObject_IsTrue(isabstract);
     Py_DECREF(isabstract);
@@ -916,6 +915,17 @@ _PyObject_GetAttrWithoutError(PyObject *v, PyObject *name)
         PyErr_Clear();
     }
     return ret;
+}
+
+PyObject *
+_PyObject_GetAttrIdWithoutError(PyObject *v, _Py_Identifier *name)
+{
+    PyObject *result;
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname)
+        return NULL;
+    result = _PyObject_GetAttrWithoutError(v, oname);
+    return result;
 }
 
 int
