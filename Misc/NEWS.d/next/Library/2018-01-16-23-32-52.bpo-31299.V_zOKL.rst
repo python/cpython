@@ -1,0 +1,3 @@
+``traceback.TracebackException.format`` and :mod:`traceback` functions that
+use it now accept the callable ``filter_frames`` argument for hiding
+unwanted traceback entries.
