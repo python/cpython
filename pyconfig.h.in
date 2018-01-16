@@ -1191,7 +1191,7 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
-/* Define if uuid_create() exists. AIX support for uuid:RFC4122 */
+/* Define if uuid_create() exists. */
 #undef HAVE_UUID_CREATE
 
 /* Define if uuid_generate_time_safe() exists. */

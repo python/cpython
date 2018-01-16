@@ -1,2 +1,0 @@
-Fix an unnecessary ifdef in the include of VersionHelpers.h in socketmodule
-on Windows.

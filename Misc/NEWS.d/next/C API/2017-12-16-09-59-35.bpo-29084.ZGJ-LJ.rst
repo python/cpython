@@ -1,2 +1,0 @@
-Undocumented C API for OrderedDict has been excluded from the limited C API.
-It was added by mistake and actually never worked in the limited C API.

@@ -699,6 +699,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
+        # _queue module
+        exts.append( Extension("_queue", ["_queuemodule.c"]) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
@@ -1373,12 +1375,19 @@ class PyBuildExt(build_ext):
             # Sun yellow pages. Some systems have the functions in libc.
             if (host_platform not in ['cygwin', 'qnx6'] and
                 find_file('rpcsvc/yp_prot.h', inc_dirs, []) is not None):
-                if (self.compiler.find_library_file(lib_dirs, 'nsl')):
-                    libs = ['nsl']
-                else:
-                    libs = []
+                nis_libs = []
+                nis_includes = []
+                if self.compiler.find_library_file(lib_dirs, 'nsl'):
+                    nis_libs.append('nsl')
+                if self.compiler.find_library_file(lib_dirs, 'tirpc'):
+                    # Sun RPC has been moved from glibc to libtirpc
+                    # rpcsvc/yp_prot.h is still in /usr/include, but
+                    # rpc/rpc.h has been moved into tirpc/ subdir.
+                    nis_libs.append('tirpc')
+                    nis_includes.append('/usr/include/tirpc')
                 exts.append( Extension('nis', ['nismodule.c'],
-                                       libraries = libs) )
+                                       libraries = nis_libs,
+                                       include_dirs=nis_includes) )
             else:
                 missing.append('nis')
         else:

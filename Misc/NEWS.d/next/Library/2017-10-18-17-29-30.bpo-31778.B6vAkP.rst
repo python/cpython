@@ -1,2 +1,0 @@
-ast.literal_eval() is now more strict. Addition and subtraction of
-arbitrary numbers no longer allowed.

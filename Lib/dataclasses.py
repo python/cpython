@@ -1,7 +1,6 @@
 import sys
 import types
 from copy import deepcopy
-import collections
 import inspect
 
 __all__ = ['dataclass',
@@ -448,11 +447,11 @@ def _set_attribute(cls, name, value):
 
 
 def _process_class(cls, repr, eq, order, hash, init, frozen):
-    # Use an OrderedDict because:
-    #  - Order matters!
-    #  - Derived class fields overwrite base class fields, but the
-    #    order is defined by the base class, which is found first.
-    fields = collections.OrderedDict()
+    # Now that dicts retain insertion order, there's no reason to use
+    #  an ordered dict.  I am leveraging that ordering here, because
+    #  derived class fields overwrite base class fields, but the order
+    #  is defined by the base class, which is found first.
+    fields = {}
 
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
@@ -571,7 +570,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 
 
 # _cls should never be specified by keyword, so start it with an
-#  underscore. The presense of _cls is used to detect if this
+#  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
               hash=None, frozen=False):
@@ -612,7 +611,8 @@ def fields(class_or_instance):
     except AttributeError:
         raise TypeError('must be called with a dataclass type or instance')
 
-    # Exclude pseudo-fields.
+    # Exclude pseudo-fields.  Note that fields is sorted by insertion
+    #  order, so the order of the tuple is as the fields were defined.
     return tuple(f for f in fields.values() if f._field_type is _FIELD)
 
 
@@ -677,7 +677,7 @@ def astuple(obj, *, tuple_factory=tuple):
           y: int
 
     c = C(1, 2)
-    assert asdtuple(c) == (1, 2)
+    assert astuple(c) == (1, 2)
 
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
@@ -712,18 +712,19 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     The dataclass name will be 'cls_name'.  'fields' is an iterable
     of either (name), (name, type) or (name, type, Field) objects. If type is
     omitted, use the string 'typing.Any'.  Field objects are created by
-    calling 'field(name, type [, Field])'.
+    the equivalent of calling 'field(name, type [, Field-info])'.
 
-      C = make_class('C', [('a', int', ('b', int, Field(init=False))], bases=Base)
+      C = make_dataclass('C', ['x', ('y', int), ('z', int, field(init=False))], bases=(Base,))
 
     is equivalent to:
 
       @dataclass
       class C(Base):
-          a: int
-          b: int = field(init=False)
+          x: 'typing.Any'
+          y: int
+          z: int = field(init=False)
 
-    For the bases and namespace paremeters, see the builtin type() function.
+    For the bases and namespace parameters, see the builtin type() function.
 
     The parameters init, repr, eq, order, hash, and frozen are passed to
     dataclass().
@@ -735,7 +736,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         # Copy namespace since we're going to mutate it.
         namespace = namespace.copy()
 
-    anns = collections.OrderedDict()
+    anns = {}
     for item in fields:
         if isinstance(item, str):
             name = item

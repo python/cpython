@@ -1,2 +1,0 @@
-PEP 562: Add support for module ``__getattr__`` and ``__dir__``. Implemented by Ivan
-Levkivskyi.
