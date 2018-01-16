@@ -75,11 +75,24 @@ class RegistryError(Exception):
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
-    while 1:
-        buf = fsrc.read(length)
-        if not buf:
-            break
-        fdst.write(buf)
+    write = fdst.write
+    if hasattr(fsrc, 'readinto') and length > 0:
+        buf = memoryview(bytearray(length))
+        readinto = fsrc.readinto
+        while 1:
+            recv_len = readinto(buf)
+            if recv_len < length:
+                # write remaining content if any.
+                write(buf[:recv_len])
+                break
+            write(buf)
+    else:
+        read = fsrc.read
+        while 1:
+            buf = read(length)
+            if not buf:
+                break
+            write(buf)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
