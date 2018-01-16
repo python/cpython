@@ -243,6 +243,20 @@ class ContextTest(unittest.TestCase):
             v2.reset(t1)
 
     @isolated_context
+    def test_context_getset_3(self):
+        c = contextvars.ContextVar('c', default=42)
+        ctx = contextvars.Context()
+
+        def fun():
+            self.assertEqual(c.get(), 42)
+            with self.assertRaises(KeyError):
+                ctx[c]
+            self.assertIsNone(ctx.get(c))
+            self.assertEqual(ctx.get(c, 'spam'), 'spam')
+
+        ctx.run(fun)
+
+    @isolated_context
     def test_context_threads_1(self):
         cvar = contextvars.ContextVar('cvar')
 
