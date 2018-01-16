@@ -12,7 +12,7 @@
  ************************************************/
 
 #if defined(__VXWORKS__)
-#include "Python.h"
+#include <Python.h>
 #include <rtpLib.h>
 #include "clinic/_vxwapi.c.h"
 
@@ -41,21 +41,20 @@ cStrings_from_PyList( PyObject *attrlist, char***attrsp ) {
 
     if (attrlist == Py_None) {
         /* None means a NULL attrlist */
-#if PY_MAJOR_VERSION == 2
-    } else if (PyBytes_Check(attrlist)) {
-#else
+//#if PY_MAJOR_VERSION == 2
+//    } else if (PyBytes_Check(attrlist)) {
+//#else
     } else if (PyUnicode_Check(attrlist)) {
-#endif
-        /* caught by John Benninghoff <johnb@netscape.com> */
+//#endif
         goto error;
     } else {
         PyObject *item = NULL;
         Py_ssize_t i, len, strlen;
-#if PY_MAJOR_VERSION >= 3
+//#if PY_MAJOR_VERSION >= 3
         const char *str;
-#else
-        char *str;
-#endif
+//#else
+//        char *str;
+//#endif
 
         seq = PySequence_Fast(attrlist, "expected list of strings or None");
         if (seq == NULL)
@@ -72,20 +71,20 @@ cStrings_from_PyList( PyObject *attrlist, char***attrsp ) {
             item = PySequence_Fast_GET_ITEM(seq, i);
             if (item == NULL)
                 goto error;
-#if PY_MAJOR_VERSION == 2
-            /* Encoded in Python to UTF-8 */
-            if (!PyBytes_Check(item)) {
-                goto error;
-            }
-            if (PyBytes_AsStringAndSize(item, &str, &strlen) == -1) {
-                goto error;
-            }
-#else
+//#if PY_MAJOR_VERSION == 2
+//            /* Encoded in Python to UTF-8 */
+//            if (!PyBytes_Check(item)) {
+//                goto error;
+//            }
+//           if (PyBytes_AsStringAndSize(item, &str, &strlen) == -1) {
+//                goto error;
+//            }
+//#else
             if (!PyUnicode_Check(item)) {
                 goto error;
             }
             str = PyUnicode_AsUTF8AndSize(item, &strlen);
-#endif
+//#endif
             /* Make a copy. PyBytes_AsString* /
              * PyUnicode_AsUTF8* return
              *              * internal values that must
@@ -158,14 +157,14 @@ _vxwapi_rtpSpawn_impl(PyObject *module, const char *rtpFileName,
         unsigned int uStackSize, int options, int taskOptions)
     /*[clinic end generated code output=4a3c98870a33cf6a input=86238fe5131c82ba]*/
 {
-    char*** argvp = NULL;
-    char*** envpp = NULL;
-    if(!cStrings_from_PyList(argv,argvp))
+    char** argvp;
+    char** envpp;
+    if(!cStrings_from_PyList(argv,&argvp))
         goto error;
-    if(!cStrings_from_PyList(envp,envpp))
+    if(!cStrings_from_PyList(envp,&envpp))
         goto error;
-    int PID = (int) rtpSpawn(rtpFileName,(const char ** ) *argvp, 
-               (const char **) *envpp, priority, uStackSize, options, taskOptions);
+    int PID = (int) rtpSpawn(rtpFileName,(const char ** ) argvp, 
+               (const char **) envpp, priority, uStackSize, options, taskOptions);
     if(PID == RTP_ID_ERROR) 
         goto error;
     return Py_BuildValue("i", PID);
