@@ -164,6 +164,7 @@ extern PyObject *_PyIO_str_getstate;
 extern PyObject *_PyIO_str_isatty;
 extern PyObject *_PyIO_str_newlines;
 extern PyObject *_PyIO_str_nl;
+extern PyObject *_PyIO_str_peek;
 extern PyObject *_PyIO_str_read;
 extern PyObject *_PyIO_str_read1;
 extern PyObject *_PyIO_str_readable;
