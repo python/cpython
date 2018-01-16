@@ -7,6 +7,19 @@ group: beta
 cache:
     - pip
     - ccache
+    - directories:
+        - $HOME/multissl
+
+env:
+  global:
+    - OPENSSL=1.1.0g
+    - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
+    - PATH="${OPENSSL_DIR}/bin:$PATH"
+    - CFLAGS="-I${OPENSSL_DIR}/include"
+    - LDFLAGS="-L${OPENSSL_DIR}/lib"
+    # Set rpath with env var instead of -Wl,-rpath linker flag
+    # OpenSSL ignores LDFLAGS when linking bin/openssl
+    - LD_RUN_PATH="${OPENSSL_DIR}/lib"
 
 branches:
   only:
@@ -48,6 +61,10 @@ matrix:
               echo "Only docs were updated, stopping build process."
               exit
             fi
+            python3 Tools/ssl/multissltests.py  --steps=library \
+                --base-directory ${HOME}/multissl \
+                --openssl ${OPENSSL} >/dev/null
+            openssl version
             ./configure
             make -s -j4
             # Need a venv that can parse covered code.
@@ -71,6 +88,13 @@ before_script:
         echo "Only docs were updated, stopping build process."
         exit
       fi
+      if [ "${TESTING}" != "docs" ]; then
+        # clang complains about unused-parameter a lot, redirect stderr
+        python3 Tools/ssl/multissltests.py --steps=library \
+            --base-directory ${HOME}/multissl \
+            --openssl ${OPENSSL} >/dev/null 2>&1
+      fi
+      openssl version
       ./configure --with-pydebug
       make -j4
       make -j4 regen-all clinic
