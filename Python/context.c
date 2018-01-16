@@ -6,7 +6,7 @@
 #include "internal/hamt.h"
 
 
-#define FREELIST_CONTEXT_MAXLEN 255
+#define CONTEXT_FREELIST_MAXLEN 255
 static PyContext *ctx_freelist = NULL;
 static Py_ssize_t ctx_freelist_len = 0;
 
@@ -22,7 +22,10 @@ module _contextvars
 
 
 static PyContext *
-context_new(PyHamtObject *vars);
+context_new_empty(void);
+
+static PyContext *
+context_new_from_vars(PyHamtObject *vars);
 
 static inline PyContext *
 context_get(void);
@@ -53,7 +56,7 @@ _PyContext_NewHamtForTests(void)
 PyContext *
 PyContext_New(void)
 {
-    return context_new(NULL);
+    return context_new_empty();
 }
 
 
@@ -251,8 +254,8 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdf87f8e0cb580e8]*/
 
 
-static PyContext *
-context_new(PyHamtObject *vars)
+static inline PyContext *
+_context_alloc(void)
 {
     PyContext *ctx;
     if (ctx_freelist_len) {
@@ -269,26 +272,49 @@ context_new(PyHamtObject *vars)
         }
     }
 
-    if (vars == NULL) {
-        ctx->ctx_vars = _PyHamt_New();
-        if (ctx->ctx_vars == NULL) {
-            Py_DECREF(ctx);
-            return NULL;
-        }
-    }
-    else {
-        assert(PyHamt_Check(vars));
-        Py_INCREF(vars);
-        ctx->ctx_vars = vars;
-    }
-
+    ctx->ctx_vars = NULL;
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
-
     ctx->ctx_weakreflist = NULL;
+
+    return ctx;
+}
+
+
+static PyContext *
+context_new_empty(void)
+{
+    PyContext *ctx = _context_alloc();
+    if (ctx == NULL) {
+        return NULL;
+    }
+
+    ctx->ctx_vars = _PyHamt_New();
+    if (ctx->ctx_vars == NULL) {
+        Py_DECREF(ctx);
+        return NULL;
+    }
+
     PyObject_GC_Track(ctx);
     return ctx;
 }
+
+
+static PyContext *
+context_new_from_vars(PyHamtObject *vars)
+{
+    PyContext *ctx = _context_alloc();
+    if (ctx == NULL) {
+        return NULL;
+    }
+
+    Py_INCREF(vars);
+    ctx->ctx_vars = vars;
+
+    PyObject_GC_Track(ctx);
+    return ctx;
+}
+
 
 static inline PyContext *
 context_get(void)
@@ -296,7 +322,7 @@ context_get(void)
     PyThreadState *ts = PyThreadState_Get();
     PyContext *current_ctx = (PyContext *)ts->context;
     if (current_ctx == NULL) {
-        current_ctx = context_new(NULL);
+        current_ctx = context_new_empty();
         if (current_ctx == NULL) {
             return NULL;
         }
@@ -312,8 +338,8 @@ context_copy(void)
     if (ctx == NULL) {
         return NULL;
     }
-    assert(ctx->ctx_vars != NULL);
-    return context_new(ctx->ctx_vars);
+
+    return context_new_from_vars(ctx->ctx_vars);
 }
 
 static int
@@ -364,7 +390,7 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-    if (ctx_freelist_len < FREELIST_CONTEXT_MAXLEN) {
+    if (ctx_freelist_len < CONTEXT_FREELIST_MAXLEN) {
         ctx_freelist_len++;
         self->ctx_weakreflist = (PyObject *)ctx_freelist;
         ctx_freelist = self;
@@ -517,8 +543,7 @@ static PyObject *
 _contextvars_Context_copy_impl(PyContext *self)
 /*[clinic end generated code: output=30ba8896c4707a15 input=3e3fd72d598653ab]*/
 {
-    assert(self->ctx_vars != NULL);
-    return (PyObject *)context_new(self->ctx_vars);
+    return (PyObject *)context_new_from_vars(self->ctx_vars);
 }
 
 
