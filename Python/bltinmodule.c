@@ -1126,13 +1126,15 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
                         "getattr(): attribute name must be string");
         return NULL;
     }
-    result = PyObject_GetAttr(v, name);
-    if (result == NULL && dflt != NULL &&
-        PyErr_ExceptionMatches(PyExc_AttributeError))
-    {
-        PyErr_Clear();
-        Py_INCREF(dflt);
-        result = dflt;
+    if (dflt != NULL) {
+        result = _PyObject_GetAttrWithoutError(v, name);
+        if (result == NULL && !PyErr_Occurred()) {
+            Py_INCREF(dflt);
+            return dflt;
+        }
+    }
+    else {
+        result = PyObject_GetAttr(v, name);
     }
     return result;
 }
@@ -1189,10 +1191,9 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
                         "hasattr(): attribute name must be string");
         return NULL;
     }
-    v = PyObject_GetAttr(obj, name);
+    v = _PyObject_GetAttrWithoutError(obj, name);
     if (v == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
+        if (!PyErr_Occurred()) {
             Py_RETURN_FALSE;
         }
         return NULL;
