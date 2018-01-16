@@ -126,7 +126,7 @@ Glossary
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
-      <https://www.python.org/~guido/>`_, Python's creator.
+      <https://gvanrossum.github.io/>`_, Python's creator.
 
    binary file
       A :term:`file object` able to read and write
@@ -391,7 +391,8 @@ Glossary
    garbage collection
       The process of freeing memory when it is not used anymore.  Python
       performs garbage collection via reference counting and a cyclic garbage
-      collector that is able to detect and break reference cycles.
+      collector that is able to detect and break reference cycles.  The
+      garbage collector can be controlled using the :mod:`gc` module.
 
       .. index:: single: generator
 
@@ -457,6 +458,12 @@ Glossary
       because performance suffered in the common single-processor case. It
       is believed that overcoming this performance issue would make the
       implementation much more complicated and therefore costlier to maintain.
+
+
+   hash-based pyc
+      A bytecode cache file that uses the the hash rather than the last-modified
+      time of the corresponding source file to determine its validity. See
+      :ref:`pyc-invalidation`.
 
    hashable
       An object is *hashable* if it has a hash value which never changes during
@@ -535,7 +542,10 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`__iter__` or :meth:`__getitem__` method.  Iterables can be
+      with an :meth:`__iter__` method or with a :meth:`__getitem__` method
+      that implements :term:`Sequence` semantics.
+
+      Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
       needed (:func:`zip`, :func:`map`, ...).  When an iterable object is passed
       as an argument to the built-in function :func:`iter`, it returns an

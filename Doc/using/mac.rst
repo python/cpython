@@ -149,7 +149,7 @@ X by Apple, and the latest version can be downloaded and installed from
 https://www.activestate.com; it can also be built from source.
 
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
-Mac OS X. Packages and documentation are available from http://www.wxpython.org.
+Mac OS X. Packages and documentation are available from https://www.wxpython.org.
 
 *PyQt* is another popular cross-platform GUI toolkit that runs natively on Mac
 OS X. More information can be found at

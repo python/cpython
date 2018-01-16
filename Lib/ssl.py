@@ -91,7 +91,6 @@ ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
 import ipaddress
-import textwrap
 import re
 import sys
 import os
@@ -222,7 +221,7 @@ class CertificateError(ValueError):
     pass
 
 
-def _dnsname_match(dn, hostname, max_wildcards=1):
+def _dnsname_match(dn, hostname):
     """Matching according to RFC 6125, section 6.4.3
 
     http://tools.ietf.org/html/rfc6125#section-6.4.3
@@ -234,7 +233,12 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
     leftmost, *remainder = dn.split(r'.')
 
     wildcards = leftmost.count('*')
-    if wildcards > max_wildcards:
+    if wildcards == 1 and len(leftmost) > 1:
+        # Only match wildcard in leftmost segment.
+        raise CertificateError(
+            "wildcard can only be present in the leftmost segment: " + repr(dn))
+
+    if wildcards > 1:
         # Issue #17980: avoid denials of service by refusing more
         # than one wildcard per fragment.  A survey of established
         # policy among SSL implementations showed it to be a
@@ -1201,9 +1205,10 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     PEM version of it as a string."""
 
     f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
-    return (PEM_HEADER + '\n' +
-            textwrap.fill(f, 64) + '\n' +
-            PEM_FOOTER + '\n')
+    ss = [PEM_HEADER]
+    ss += [f[i:i+64] for i in range(0, len(f), 64)]
+    ss.append(PEM_FOOTER + '\n')
+    return '\n'.join(ss)
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the
