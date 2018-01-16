@@ -656,19 +656,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         self._check_sendfile_params(sock, file, offset, count)
-        if fallback:
-            return await self._sock_sendfile_fallback(sock, file,
-                                                      offset, count)
-        else:
-            try:
-                return await self._sock_sendfile_native(sock, file,
-                                                        offset, count)
-            except _SendfileNotAvailable as exc:
-                if fallback is None:
-                    return await self._sock_sendfile_fallback(sock, file,
-                                                              offset, count)
-                else:
-                    raise RuntimeError(exc.args[0]) from None
+        try:
+            return await self._sock_sendfile_native(sock, file,
+                                                    offset, count)
+        except _SendfileNotAvailable as exc:
+            if fallback:
+                return await self._sock_sendfile_fallback(sock, file,
+                                                          offset, count)
+            else:
+                raise RuntimeError(exc.args[0]) from None
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
         # NB: sendfile syscall is not supported for SSL sockets and
