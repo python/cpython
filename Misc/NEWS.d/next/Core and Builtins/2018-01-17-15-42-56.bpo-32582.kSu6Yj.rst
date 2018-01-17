@@ -1,0 +1,2 @@
+The :func:`chr` builtin function now catchs :exc:`OverflowError` and raises
+a :exc:`ValueError` exception instead.
