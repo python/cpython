@@ -367,17 +367,15 @@ init_method_ref(PyObject *self, _Py_Identifier *name,
                 PyObject **method_func, PyObject **method_self)
 {
     PyObject *func, *func2;
+    int ret;
 
     /* *method_func and *method_self should be consistent.  All refcount decrements
        should be occurred after setting *method_self and *method_func. */
-    func = _PyObject_GetAttrIdWithoutError(self, name);
+    ret = _PyObject_LookupAttrId(self, name, &func);
     if (func == NULL) {
         *method_self = NULL;
         Py_CLEAR(*method_func);
-        if (PyErr_Occurred()) {
-            return -1;
-        }
-        return 0;
+        return ret;
     }
 
     if (PyMethod_Check(func) && PyMethod_GET_SELF(func) == self) {
@@ -1154,12 +1152,12 @@ _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
 {
     _Py_IDENTIFIER(write);
     assert(file != NULL);
-    self->write = _PyObject_GetAttrIdWithoutError(file, &PyId_write);
+    if (_PyObject_LookupAttrId(file, &PyId_write, &self->write) < 0) {
+        return -1;
+    }
     if (self->write == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_TypeError,
-                            "file must have a 'write' attribute");
-        }
+        PyErr_SetString(PyExc_TypeError,
+                        "file must have a 'write' attribute");
         return -1;
     }
 
@@ -1504,12 +1502,11 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
     _Py_IDENTIFIER(read);
     _Py_IDENTIFIER(readline);
 
-    self->peek = _PyObject_GetAttrIdWithoutError(file, &PyId_peek);
-    if (self->peek == NULL && PyErr_Occurred()) {
+    if (_PyObject_LookupAttrId(file, &PyId_peek, &self->peek) < 0) {
         return -1;
     }
-    self->read = _PyObject_GetAttrIdWithoutError(file, &PyId_read);
-    self->readline = _PyObject_GetAttrIdWithoutError(file, &PyId_readline);
+    (void)_PyObject_LookupAttrId(file, &PyId_read, &self->read);
+    (void)_PyObject_LookupAttrId(file, &PyId_readline, &self->readline);
     if (self->readline == NULL || self->read == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError,
@@ -1689,7 +1686,7 @@ get_deep_attribute(PyObject *obj, PyObject *names, PyObject **pparent)
         PyObject *name = PyList_GET_ITEM(names, i);
         Py_XDECREF(parent);
         parent = obj;
-        obj = _PyObject_GetAttrWithoutError(parent, name);
+        (void)_PyObject_LookupAttr(parent, name, &obj);
         if (obj == NULL) {
             Py_DECREF(parent);
             return NULL;
@@ -1715,8 +1712,9 @@ getattribute(PyObject *obj, PyObject *name, int allow_qualname)
         attr = get_deep_attribute(obj, dotted_path, NULL);
         Py_DECREF(dotted_path);
     }
-    else
-        attr = _PyObject_GetAttrWithoutError(obj, name);
+    else {
+        (void)_PyObject_LookupAttr(obj, name, &attr);
+    }
     if (attr == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_AttributeError,
                      "Can't get attribute %R on %R", name, obj);
@@ -1759,13 +1757,10 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     _Py_IDENTIFIER(modules);
     _Py_IDENTIFIER(__main__);
 
-    module_name = _PyObject_GetAttrIdWithoutError(global, &PyId___module__);
-
-    if (module_name == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
+    if (_PyObject_LookupAttrId(global, &PyId___module__, &module_name) < 0) {
+        return NULL;
     }
-    else {
+    if (module_name) {
         /* In some rare cases (e.g., bound methods of extension types),
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
@@ -3314,10 +3309,9 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
         global_name = name;
     }
     else {
-        global_name = _PyObject_GetAttrIdWithoutError(obj, &PyId___qualname__);
+        if (_PyObject_LookupAttrId(obj, &PyId___qualname__, &global_name) < 0)
+            goto error;
         if (global_name == NULL) {
-            if (PyErr_Occurred())
-                goto error;
             global_name = _PyObject_GetAttrId(obj, &PyId___name__);
             if (global_name == NULL)
                 goto error;
@@ -3639,8 +3633,7 @@ get_class(PyObject *obj)
     PyObject *cls;
     _Py_IDENTIFIER(__class__);
 
-    cls = _PyObject_GetAttrIdWithoutError(obj, &PyId___class__);
-    if (cls == NULL && !PyErr_Occurred()) {
+    if (_PyObject_LookupAttrId(obj, &PyId___class__, &cls) == 0) {
         cls = (PyObject *) Py_TYPE(obj);
         Py_INCREF(cls);
     }
@@ -3714,13 +3707,10 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         PyObject *name;
         _Py_IDENTIFIER(__name__);
 
-        name = _PyObject_GetAttrIdWithoutError(callable, &PyId___name__);
-        if (name == NULL) {
-            if (PyErr_Occurred()) {
-                return -1;
-            }
+        if (_PyObject_LookupAttrId(callable, &PyId___name__, &name) < 0) {
+            return -1;
         }
-        else if (PyUnicode_Check(name)) {
+        if (name != NULL && PyUnicode_Check(name)) {
             _Py_IDENTIFIER(__newobj_ex__);
             use_newobj_ex = _PyUnicode_EqualToASCIIId(
                     name, &PyId___newobj_ex__);
@@ -4087,16 +4077,15 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
            don't actually have to check for a __reduce__ method. */
 
         /* Check for a __reduce_ex__ method. */
-        reduce_func = _PyObject_GetAttrIdWithoutError(obj, &PyId___reduce_ex__);
+        if (_PyObject_LookupAttrId(obj, &PyId___reduce_ex__, &reduce_func) < 0) {
+            goto error;
+        }
         if (reduce_func != NULL) {
             PyObject *proto;
             proto = PyLong_FromLong(self->proto);
             if (proto != NULL) {
                 reduce_value = _Pickle_FastCall(reduce_func, proto);
             }
-        }
-        else if (PyErr_Occurred()) {
-            goto error;
         }
         else {
             PickleState *st = _Pickle_GetGlobalState();
@@ -4377,9 +4366,8 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
         return -1;
     }
 
-    self->dispatch_table = _PyObject_GetAttrIdWithoutError((PyObject *)self,
-                                               &PyId_dispatch_table);
-    if (self->dispatch_table == NULL && PyErr_Occurred()) {
+    if (_PyObject_LookupAttrId((PyObject *)self,
+                                    &PyId_dispatch_table, &self->dispatch_table) < 0) {
         return -1;
     }
 
@@ -5343,11 +5331,11 @@ instantiate(PyObject *cls, PyObject *args)
     if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
         _Py_IDENTIFIER(__getinitargs__);
         _Py_IDENTIFIER(__new__);
-        PyObject *func = _PyObject_GetAttrIdWithoutError(cls, &PyId___getinitargs__);
+        PyObject *func;
+        if (_PyObject_LookupAttrId(cls, &PyId___getinitargs__, &func) < 0) {
+            return NULL;
+        }
         if (func == NULL) {
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
             return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
         }
         Py_DECREF(func);
@@ -6197,14 +6185,11 @@ load_build(UnpicklerObject *self)
 
     inst = self->stack->data[Py_SIZE(self->stack) - 1];
 
-    setstate = _PyObject_GetAttrIdWithoutError(inst, &PyId___setstate__);
-    if (setstate == NULL) {
-        if (PyErr_Occurred()) {
-            Py_DECREF(state);
-            return -1;
-        }
+    if (_PyObject_LookupAttrId(inst, &PyId___setstate__, &setstate) < 0) {
+        Py_DECREF(state);
+        return -1;
     }
-    else {
+    if (setstate != NULL) {
         PyObject *result;
 
         /* The explicit __setstate__ is responsible for everything. */

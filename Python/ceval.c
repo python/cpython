@@ -4798,9 +4798,9 @@ import_from(PyObject *v, PyObject *name)
     _Py_IDENTIFIER(__name__);
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
-    x = _PyObject_GetAttrWithoutError(v, name);
-    if (x != NULL || PyErr_Occurred())
+    if (_PyObject_LookupAttr(v, name, &x) != 0) {
         return x;
+    }
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
@@ -4865,20 +4865,20 @@ import_all_from(PyObject *locals, PyObject *v)
 {
     _Py_IDENTIFIER(__all__);
     _Py_IDENTIFIER(__dict__);
-    PyObject *all = _PyObject_GetAttrIdWithoutError(v, &PyId___all__);
-    PyObject *dict, *name, *value;
+    PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
 
+    if (_PyObject_LookupAttrId(v, &PyId___all__, &all) < 0) {
+        return -1; /* Unexpected error */
+    }
     if (all == NULL) {
-        if (PyErr_Occurred())
-            return -1; /* Unexpected error */
-        dict = _PyObject_GetAttrIdWithoutError(v, &PyId___dict__);
+        if (_PyObject_LookupAttrId(v, &PyId___dict__, &dict) < 0) {
+            return -1;
+        }
         if (dict == NULL) {
-            if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ImportError,
+            PyErr_SetString(PyExc_ImportError,
                     "from-import-* object has no __dict__ and no __all__");
-            }
             return -1;
         }
         all = PyMapping_Keys(dict);

@@ -830,14 +830,13 @@ tee(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    copyfunc = _PyObject_GetAttrIdWithoutError(it, &PyId___copy__);
-    if (copyfunc != NULL) {
-        copyable = it;
-    }
-    else if (PyErr_Occurred()) {
+    if (_PyObject_LookupAttrId(it, &PyId___copy__, &copyfunc) < 0) {
         Py_DECREF(it);
         Py_DECREF(result);
         return NULL;
+    }
+    if (copyfunc != NULL) {
+        copyable = it;
     }
     else {
         copyable = tee_fromiterable(it);
