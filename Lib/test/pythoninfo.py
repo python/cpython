@@ -315,6 +315,8 @@ def collect_tkinter(info_add):
 def collect_time(info_add):
     import time
 
+    info_add('time.time', time.time())
+
     attributes = (
         'altzone',
         'daylight',
@@ -326,7 +328,16 @@ def collect_time(info_add):
     if hasattr(time, 'get_clock_info'):
         for clock in ('time', 'perf_counter'):
             tinfo = time.get_clock_info(clock)
-            info_add('time.%s' % clock, tinfo)
+            info_add('time.get_clock_info(%s)' % clock, tinfo)
+
+
+def collect_datetime(info_add):
+    try:
+        import datetime
+    except ImportError:
+        return
+
+    info_add('datetime.datetime.now', datetime.datetime.now())
 
 
 def collect_sysconfig(info_add):
@@ -497,6 +508,7 @@ def collect_info(info):
         collect_sys,
         collect_sysconfig,
         collect_time,
+        collect_datetime,
         collect_tkinter,
         collect_zlib,
         collect_expat,
