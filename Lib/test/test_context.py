@@ -49,6 +49,20 @@ class ContextTest(unittest.TestCase):
         self.assertIn('...', repr(c))
         self.assertIn('...', repr(lst))
 
+    def test_context_subclassing_1(self):
+        with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
+            class MyContextVar(contextvars.ContextVar):
+                # Potentially we might want ContextVars to be subclassable.
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
+            class MyContext(contextvars.Context):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
+            class MyToken(contextvars.Token):
+                pass
+
     def test_context_new_1(self):
         with self.assertRaisesRegex(TypeError, 'any arguments'):
             contextvars.Context(1)
