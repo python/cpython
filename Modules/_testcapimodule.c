@@ -5064,6 +5064,7 @@ static void
 generic_alias_dealloc(PyGenericAliasObject *self)
 {
     Py_CLEAR(self->item);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
