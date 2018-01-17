@@ -113,24 +113,6 @@ PyDoc_STRVAR(builtin_chr__doc__,
 #define BUILTIN_CHR_METHODDEF    \
     {"chr", (PyCFunction)builtin_chr, METH_O, builtin_chr__doc__},
 
-static PyObject *
-builtin_chr_impl(PyObject *module, int i);
-
-static PyObject *
-builtin_chr(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int i;
-
-    if (!PyArg_Parse(arg, "i:chr", &i)) {
-        goto exit;
-    }
-    return_value = builtin_chr_impl(module, i);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
 "        dont_inherit=False, optimize=-1)\n"
@@ -710,4 +692,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9f17c7a87d740374 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ff748273b78b0ac input=a9049054013a1b77]*/
