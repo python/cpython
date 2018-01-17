@@ -1151,6 +1151,24 @@ class Sizegrip(Widget):
         Widget.__init__(self, master, "ttk::sizegrip", kw)
 
 
+class Spinbox(Entry):
+    """Ttk Spinbox is an Entry with increment and decrement arrows, used
+     for number entry"""
+
+    def __init__(self, master=None, **kw):
+        """Construct a Ttk Spinbox widget with the parent master.
+
+        STANDARD OPTIONS
+
+            class, cursor, style, takefocus
+
+        WIDGET-SPECIFIC OPTIONS
+
+            to, from_, increment
+        """
+        Entry.__init__(self, master, "ttk::spinbox", **kw)
+
+
 class Treeview(Widget, tkinter.XView, tkinter.YView):
     """Ttk Treeview widget displays a hierarchical collection of items.
 
