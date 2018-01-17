@@ -226,22 +226,25 @@ PyContextVar_Set(PyContextVar *var, PyObject *val)
 int
 PyContextVar_Reset(PyContextVar *var, PyContextToken *tok)
 {
+    if (tok->tok_used) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "%R has already been used once", tok);
+        return -1;
+    }
+
     if (var != tok->tok_var) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Token was created by a different ContextVar");
+        PyErr_Format(PyExc_ValueError,
+                     "%R was created by a different ContextVar", tok);
         return -1;
     }
 
     PyContext *ctx = context_get();
     if (ctx != tok->tok_ctx) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Token was created in a different Context");
+        PyErr_Format(PyExc_ValueError,
+                     "%R was created in a different Context", tok);
         return -1;
     }
 
-    if (tok->tok_used) {
-        return 0;
-    }
     tok->tok_used = 1;
 
     if (tok->tok_oldval == NULL) {
@@ -805,7 +808,6 @@ contextvar_tp_repr(PyContextVar *self)
     _PyUnicodeWriter writer;
 
     _PyUnicodeWriter_Init(&writer);
-    writer.min_length = 33;  /* len of "<ContextVar name= at 0x10b0cd0f0>" */
 
     if (_PyUnicodeWriter_WriteASCIIString(
             &writer, "<ContextVar name=", 17) < 0)
@@ -1002,6 +1004,54 @@ token_tp_dealloc(PyContextToken *self)
 }
 
 static PyObject *
+token_tp_repr(PyContextToken *self)
+{
+    _PyUnicodeWriter writer;
+
+    _PyUnicodeWriter_Init(&writer);
+
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, "<Token", 6) < 0) {
+        goto error;
+    }
+
+    if (self->tok_used) {
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, " used", 5) < 0) {
+            goto error;
+        }
+    }
+
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, " var=", 5) < 0) {
+        goto error;
+    }
+
+    PyObject *var = PyObject_Repr((PyObject *)self->tok_var);
+    if (var == NULL) {
+        goto error;
+    }
+    if (_PyUnicodeWriter_WriteStr(&writer, var) < 0) {
+        Py_DECREF(var);
+        goto error;
+    }
+    Py_DECREF(var);
+
+    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
+    if (addr == NULL) {
+        goto error;
+    }
+    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
+        Py_DECREF(addr);
+        goto error;
+    }
+    Py_DECREF(addr);
+
+    return _PyUnicodeWriter_Finish(&writer);
+
+error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
+}
+
+static PyObject *
 token_get_var(PyContextToken *self)
 {
     Py_INCREF(self->tok_var);
@@ -1038,6 +1088,7 @@ PyTypeObject PyContextToken_Type = {
     .tp_new = token_tp_new,
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
+    .tp_repr = (reprfunc)token_tp_repr,
 };
 
 static PyContextToken *

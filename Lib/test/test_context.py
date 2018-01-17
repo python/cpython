@@ -36,6 +36,7 @@ class ContextTest(unittest.TestCase):
     def test_context_var_new_2(self):
         self.assertIsNone(contextvars.ContextVar[int])
 
+    @isolated_context
     def test_context_var_repr_1(self):
         c = contextvars.ContextVar('a')
         self.assertIn('a', repr(c))
@@ -48,6 +49,12 @@ class ContextTest(unittest.TestCase):
         lst.append(c)
         self.assertIn('...', repr(c))
         self.assertIn('...', repr(lst))
+
+        t = c.set(1)
+        self.assertIn(repr(c), repr(t))
+        self.assertNotIn(' used ', repr(t))
+        c.reset(t)
+        self.assertIn(' used ', repr(t))
 
     def test_context_subclassing_1(self):
         with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
@@ -220,14 +227,16 @@ class ContextTest(unittest.TestCase):
         self.assertEqual(c.get(None), 42)
 
         c.set('spam2')
-        c.reset(t)  # This should be a nop
+        with self.assertRaisesRegex(RuntimeError, 'has already been used'):
+            c.reset(t)
         self.assertEqual(c.get(), 'spam2')
 
         ctx1 = contextvars.copy_context()
         self.assertIn(c, ctx1)
 
         c.reset(t0)
-        c.reset(t0)
+        with self.assertRaisesRegex(RuntimeError, 'has already been used'):
+            c.reset(t0)
         self.assertIsNone(c.get(None))
 
         self.assertIn(c, ctx1)
