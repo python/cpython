@@ -868,9 +868,9 @@ Constants
 .. data:: HAS_NPN
 
    Whether the OpenSSL library has built-in support for *Next Protocol
-   Negotiation* as described in the `Application Layer Protocol Negotiation
-   <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation >`_. When true,
-   you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
+   Negotiation* as described in the `Application Layer Protocol
+   Negotiation <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation>`_.
+   When true, you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
    which protocols you want to support.
 
    .. versionadded:: 3.3
@@ -1502,7 +1502,7 @@ to speed up repeated connections from the same clients.
    handshake. It should be a list of strings, like ``['http/1.1', 'spdy/2']``,
    ordered by preference. The selection of a protocol will happen during the
    handshake, and will play out according to the `Application Layer Protocol Negotiation
-   <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation >`_. After a
+   <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation>`_. After a
    successful handshake, the :meth:`SSLSocket.selected_npn_protocol` method will
    return the agreed-upon protocol.
 
@@ -1663,12 +1663,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information
-<<<<<<< HEAD
-   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_sess_number.html>`_ to their
-=======
-   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_sess_number.html>`_ to their
->>>>>>> master
+   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
