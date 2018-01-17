@@ -430,8 +430,13 @@ Certificate handling
       of the certificate, is now supported.
 
    .. versionchanged:: 3.7
+      The function is no longer used. Hostname matching is now performed
+      by OpenSSL.
+
       Allow wildcard when it is the leftmost and the only character
       in that segment.
+
+   .. deprecated:: 3.7
 
 .. function:: cert_time_to_seconds(cert_time)
 
@@ -585,6 +590,42 @@ Constants
    Use of this setting requires a valid set of CA certificates to
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
    value of the ``ca_certs`` parameter to :func:`wrap_socket`.
+
+.. class:: HostFlags
+
+   :class:`enum.IntFlag` collection of all hostname verification flags for
+   :attr:`SSLContext.host_flags`
+
+   .. versionadded:: 3.7
+
+.. attribute:: HostFlags.HOSTFLAG_ALWAYS_CHECK_SUBJECT
+
+   Consider subject CN even if the certificate contains at least one subject
+   alternative name. This flag violates :rfc:`6125`.
+
+.. attribute:: HostFlags.HOSTFLAG_NO_WILDCARDS
+
+   Don't support wildcard certificate, e.g. ``*.example.org``.
+
+.. attribute:: HostFlags.HOSTFLAG_NO_PARTIAL_WILDCARDS
+
+   Dont' support wildcard certificate with partial matches, e.g.
+   ``www*.example.org``.
+
+.. attribute:: HostFlags.HOSTFLAG_MULTI_LABEL_WILDCARDS
+
+   Wildcards match multiple labels, e.g. ``www.subdomain.example.org``
+   matches ``*.example.org`` This flag violates :rfc:`6125`.
+
+.. attribute:: HostFlags.HOSTFLAG_SINGLE_LABEL_SUBDOMAINS
+
+.. attribute:: HostFlags.HOSTFLAG_NEVER_CHECK_SUBJECT
+
+   Ignore subject CN even if the certificate has no subject alternative
+   names.
+
+   .. note:: The flag is not available when the ssl module is compiled
+      with OpenSSL 1.0.2 or LibreSSL.
 
 .. class:: VerifyMode
 
@@ -1074,6 +1115,12 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.5
       The socket timeout is no more reset each time bytes are received or sent.
       The socket timeout is now to maximum total duration of the handshake.
+
+   .. versionchanged:: 3.7
+      Hostname or IP address is matched by OpenSSL during handshake. The
+      function :func:`match_hostname` is no longer used. In case OpenSSL
+      refuses a hostname or IP address, the handshake is aborted early and
+      a TLS alert message is send to the peer.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
@@ -1730,6 +1777,14 @@ to speed up repeated connections from the same clients.
    The protocol version chosen when constructing the context.  This attribute
    is read-only.
 
+.. attribute:: SSLContext.host_flags
+
+   The flags for validating host names. By default
+   :data:`HostFlags.HOSTFLAG_SINGLE_LABEL_SUBDOMAINS` and
+   :data:`HostFlags.HOSTFLAG_NO_PARTIAL_WILDCARDS` are set.
+
+   .. versionadded:: 3.7
+
 .. attribute:: SSLContext.verify_flags
 
    The flags for certificate verification operations. You can set flags like
@@ -2323,6 +2378,10 @@ protocols and applications, the service can be identified by the hostname;
 in this case, the :func:`match_hostname` function can be used.  This common
 check is automatically performed when :attr:`SSLContext.check_hostname` is
 enabled.
+
+.. versionchanged:: 3.7
+   Hostname matchings is now performed by OpenSSL. Python no longer uses
+   :func:`match_hostname`.
 
 In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
