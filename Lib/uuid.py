@@ -701,7 +701,7 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID(safely_generated)
         except ValueError:
             is_safe = SafeUUID.unknown
-        return UUID(bytes=uuid_time, is_safe=is_safe)
+        return UUID(bytes=uuid_time, is_safe=is_safe, version=1)
 
     global _last_timestamp
     import time
