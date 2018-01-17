@@ -411,8 +411,8 @@ hamt_hash(PyObject *o)
     }
 
     /* While it's suboptimal to reduce Python's 64 bit hash to
-       32 bits via xor, it seems that the resulting hash function
-       is good enough.  This is also how Java hashes its Long type.
+       32 bits via XOR, it seems that the resulting hash function
+       is good enough (this is also how Long type is hashed in Java.)
        Storing 10, 100, 1000 Python strings results in a relatively
        shallow and uniform tree structure.
 
