@@ -236,7 +236,7 @@ PyThread_exit_thread(void)
 }
 
 /*
- * Lock support. It has too be implemented as semaphores.
+ * Lock support. It has to be implemented as semaphores.
  * I [Dag] tried to implement it with mutex but I could find a way to
  * tell whether a thread already own the lock or not.
  */
