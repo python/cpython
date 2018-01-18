@@ -300,6 +300,19 @@ class ContextTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'different Context'):
             c.reset(tok)
 
+    @isolated_context
+    def test_context_getset_5(self):
+        c = contextvars.ContextVar('c', default=42)
+        c.set([])
+
+        def fun():
+            c.set([])
+            c.get().append(42)
+            self.assertEqual(c.get(), [42])
+
+        contextvars.copy_context().run(fun)
+        self.assertEqual(c.get(), [])
+
     def test_context_copy_1(self):
         ctx1 = contextvars.Context()
         c = contextvars.ContextVar('c', default=42)
@@ -468,13 +481,18 @@ class HamtTest(unittest.TestCase):
     def test_hamt_basics_3(self):
         h = hamt()
         o = object()
-        h.set('1', o).set('1', o)
+        h1 = h.set('1', o)
+        h2 = h1.set('1', o)
+        self.assertIs(h1, h2)
 
     def test_hamt_basics_4(self):
         h = hamt()
-        h1 = h.set('1', int('1000'))
-        h2 = h1.set('1', int('1000'))
-        self.assertIs(h1, h2)
+        h1 = h.set('key', [])
+        h2 = h1.set('key', [])
+        self.assertIsNot(h1, h2)
+        self.assertEqual(len(h1), 1)
+        self.assertEqual(len(h2), 1)
+        self.assertIsNot(h1.get('key'), h2.get('key'))
 
     def test_hamt_collision_1(self):
         k1 = HashKey(10, 'aaa')

@@ -770,13 +770,8 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
             return NULL;
         }
         if (comp_err == 1) {  /* key == key_or_null */
-            comp_err = PyObject_RichCompareBool(val, val_or_node, Py_EQ);
-            if (comp_err < 0) {
-                return NULL;
-            }
-            if (comp_err == 1) {
-                /* val == val_or_null: we already have the same key/val
-                   pair; return self. */
+            if (val == val_or_node) {
+                /* we already have the same key/val pair; return self. */
                 Py_INCREF(self);
                 return (PyHamtNode *)self;
             }
@@ -1002,8 +997,8 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
 
                    So in no situation we can have a single-item
                    Bitmap child of another Bitmap node.
-                 */
-                abort();
+                */
+                Py_UNREACHABLE();
 
             case W_NEWNODE: {
                 assert(sub_node != NULL);
@@ -1065,6 +1060,9 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
             case W_NOT_FOUND:
                 assert(sub_node == NULL);
                 return res;
+
+            default:
+                Py_UNREACHABLE();
         }
     }
     else {
@@ -1368,15 +1366,7 @@ hamt_node_collision_assoc(PyHamtNode_Collision *self,
                 assert(key_idx < Py_SIZE(self));
                 Py_ssize_t val_idx = key_idx + 1;
 
-                /* Check if the existing value for the key is equal
-                   to the value that we're setting. */
-                int cmp = PyObject_RichCompareBool(
-                    self->c_array[val_idx], val, Py_EQ);
-                if (cmp < 0) {
-                    /* Exception */
-                    return NULL;
-                }
-                if (cmp == 1) {
+                if (self->c_array[val_idx] == val) {
                     /* We're setting a key/value pair that's already set. */
                     Py_INCREF(self);
                     return (PyHamtNode *)self;
@@ -1402,6 +1392,9 @@ hamt_node_collision_assoc(PyHamtNode_Collision *self,
                 new_node->c_array[val_idx] = val;
 
                 return (PyHamtNode *)new_node;
+
+            default:
+                Py_UNREACHABLE();
         }
     }
     else {
@@ -1522,6 +1515,9 @@ hamt_node_collision_without(PyHamtNode_Collision *self,
 
             *new_node = (PyHamtNode*)new;
             return W_NEWNODE;
+
+        default:
+            Py_UNREACHABLE();
     }
 }
 
@@ -1907,6 +1903,9 @@ hamt_node_array_without(PyHamtNode_Array *self,
             *new_node = (PyHamtNode*)new;  /* borrow */
             return W_NEWNODE;
         }
+
+        default:
+            Py_UNREACHABLE();
     }
 }
 
@@ -2361,6 +2360,8 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
             assert(new_o->h_count >= 0);
             return new_o;
         }
+        default:
+            Py_UNREACHABLE();
     }
 }
 
@@ -2391,6 +2392,8 @@ _PyHamt_Find(PyHamtObject *o, PyObject *key, PyObject **val)
             return 0;
         case F_FOUND:
             return 1;
+        default:
+            Py_UNREACHABLE();
     }
 }
 
@@ -2543,6 +2546,10 @@ hamt_baseiter_tp_iternext(PyHamtIterator *it)
 
         case I_ITEM: {
             return (*(it->hi_yield))(key, val);
+        }
+
+        default: {
+            Py_UNREACHABLE();
         }
     }
 }
@@ -2745,6 +2752,8 @@ hamt_tp_subscript(PyHamtObject *self, PyObject *key)
         case F_NOT_FOUND:
             PyErr_SetObject(PyExc_KeyError, key);
             return NULL;
+        default:
+            Py_UNREACHABLE();
     }
 }
 
@@ -2797,6 +2806,8 @@ hamt_py_get(PyHamtObject *self, PyObject *args)
             }
             Py_INCREF(def);
             return def;
+        default:
+            Py_UNREACHABLE();
     }
 }
 
