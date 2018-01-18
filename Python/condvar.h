@@ -97,6 +97,156 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 }
 
 #elif defined(NT_THREADS)
+/*
+ * Windows (XP, 2003 server and later, as well as (hopefully) CE) support
+ *
+ * Emulated condition variables ones that work with XP and later, plus
+ * example native support on VISTA and onwards.
+ */
+
+#if _PY_EMULATED_WIN_CV
+
+/* The mutex is a CriticalSection object and
+   The condition variables is emulated with the help of a semaphore.
+
+   This implementation still has the problem that the threads woken
+   with a "signal" aren't necessarily those that are already
+   waiting.  It corresponds to listing 2 in:
+   http://birrell.org/andrew/papers/ImplementingCVs.pdf
+
+   Generic emulations of the pthread_cond_* API using
+   earlier Win32 functions can be found on the Web.
+   The following read can be give background information to these issues,
+   but the implementations are all broken in some way.
+   http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
+*/
+
+Py_LOCAL_INLINE(int)
+PyMUTEX_INIT(PyMUTEX_T *cs)
+{
+    InitializeCriticalSection(cs);
+    return 0;
+}
+
+Py_LOCAL_INLINE(int)
+PyMUTEX_FINI(PyMUTEX_T *cs)
+{
+    DeleteCriticalSection(cs);
+    return 0;
+}
+
+Py_LOCAL_INLINE(int)
+PyMUTEX_LOCK(PyMUTEX_T *cs)
+{
+    EnterCriticalSection(cs);
+    return 0;
+}
+
+Py_LOCAL_INLINE(int)
+PyMUTEX_UNLOCK(PyMUTEX_T *cs)
+{
+    LeaveCriticalSection(cs);
+    return 0;
+}
+
+
+Py_LOCAL_INLINE(int)
+PyCOND_INIT(PyCOND_T *cv)
+{
+    /* A semaphore with a "large" max value,  The positive value
+     * is only needed to catch those "lost wakeup" events and
+     * race conditions when a timed wait elapses.
+     */
+    cv->sem = CreateSemaphore(NULL, 0, 100000, NULL);
+    if (cv->sem==NULL)
+        return -1;
+    cv->waiting = 0;
+    return 0;
+}
+
+Py_LOCAL_INLINE(int)
+PyCOND_FINI(PyCOND_T *cv)
+{
+    return CloseHandle(cv->sem) ? 0 : -1;
+}
+
+/* this implementation can detect a timeout.  Returns 1 on timeout,
+ * 0 otherwise (and -1 on error)
+ */
+Py_LOCAL_INLINE(int)
+_PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
+{
+    DWORD wait;
+    cv->waiting++;
+    PyMUTEX_UNLOCK(cs);
+    /* "lost wakeup bug" would occur if the caller were interrupted here,
+     * but we are safe because we are using a semaphore which has an internal
+     * count.
+     */
+    wait = WaitForSingleObjectEx(cv->sem, ms, FALSE);
+    PyMUTEX_LOCK(cs);
+    if (wait != WAIT_OBJECT_0)
+        --cv->waiting;
+        /* Here we have a benign race condition with PyCOND_SIGNAL.
+         * When failure occurs or timeout, it is possible that
+         * PyCOND_SIGNAL also decrements this value
+         * and signals releases the mutex.  This is benign because it
+         * just means an extra spurious wakeup for a waiting thread.
+         * ('waiting' corresponds to the semaphore's "negative" count and
+         * we may end up with e.g. (waiting == -1 && sem.count == 1).  When
+         * a new thread comes along, it will pass right throuhgh, having
+         * adjusted it to (waiting == 0 && sem.count == 0).
+         */
+
+    if (wait == WAIT_FAILED)
+        return -1;
+    /* return 0 on success, 1 on timeout */
+    return wait != WAIT_OBJECT_0;
+}
+
+Py_LOCAL_INLINE(int)
+PyCOND_WAIT(PyCOND_T *cv, PyMUTEX_T *cs)
+{
+    int result = _PyCOND_WAIT_MS(cv, cs, INFINITE);
+    return result >= 0 ? 0 : result;
+}
+
+Py_LOCAL_INLINE(int)
+PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, long long us)
+{
+    return _PyCOND_WAIT_MS(cv, cs, (DWORD)(us/1000));
+}
+
+Py_LOCAL_INLINE(int)
+PyCOND_SIGNAL(PyCOND_T *cv)
+{
+    /* this test allows PyCOND_SIGNAL to be a no-op unless required
+     * to wake someone up, thus preventing an unbounded increase of
+     * the semaphore's internal counter.
+     */
+    if (cv->waiting > 0) {
+        /* notifying thread decreases the cv->waiting count so that
+         * a delay between notify and actual wakeup of the target thread
+         * doesn't cause a number of extra ReleaseSemaphore calls.
+         */
+        cv->waiting--;
+        return ReleaseSemaphore(cv->sem, 1, NULL) ? 0 : -1;
+    }
+    return 0;
+}
+
+Py_LOCAL_INLINE(int)
+PyCOND_BROADCAST(PyCOND_T *cv)
+{
+    int waiting = cv->waiting;
+    if (waiting > 0) {
+        cv->waiting = 0;
+        return ReleaseSemaphore(cv->sem, waiting, NULL) ? 0 : -1;
+    }
+    return 0;
+}
+
+#else /* !_PY_EMULATED_WIN_CV */
 
 Py_LOCAL_INLINE(int)
 PyMUTEX_INIT(PyMUTEX_T *cs)
@@ -166,6 +316,9 @@ PyCOND_BROADCAST(PyCOND_T *cv)
      WakeAllConditionVariable(cv);
      return 0;
 }
+
+
+#endif /* _PY_EMULATED_WIN_CV */
 
 #endif /* _POSIX_THREADS, NT_THREADS */
 
