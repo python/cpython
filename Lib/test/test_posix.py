@@ -177,13 +177,13 @@ class PosixTester(unittest.TestCase):
             os.close(fp)
 
 
-    @unittest.skipUnless(hasattr(os, 'posixspawn'), "test needs os.posix_spawn")
+    @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
     def test_posix_spawn(self):
         pid = posix.posix_spawn(sys.executable, [sys.executable, "-c", "pass"], os.environ,[])
         self.assertEqual(os.waitpid(pid,0),(pid,0))
 
 
-    @unittest.skipUnless(hasattr(os, 'posixspawn'), "test needs os.posix_spawn")
+    @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
     def test_posix_spawn_file_actions(self):
         file_actions = []
         file_actions.append((0,3,os.path.realpath(__file__),0,0))

@@ -1,2 +1,1 @@
-Expose posix_spawn and a FileActions object to work with said function in
-the os module.
+Expose posix_spawn as a low level API in the os module.
