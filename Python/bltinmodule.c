@@ -52,9 +52,9 @@ _Py_IDENTIFIER(stderr);
 #include "clinic/bltinmodule.c.h"
 
 static PyObject*
-update_bases(PyObject *bases, PyObject *const *args, int nargs)
+update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
 {
-    int i, j;
+    Py_ssize_t i, j;
     PyObject *base, *meth, *new_base, *result, *new_bases = NULL;
     PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
