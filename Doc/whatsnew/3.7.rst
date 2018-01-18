@@ -803,6 +803,11 @@ Windows Only
 Removed
 =======
 
+Platform Support Removals
+-------------------------
+
+* FreeBSD 9 and older are no longer supported.
+
 API and Feature Removals
 ------------------------
 
