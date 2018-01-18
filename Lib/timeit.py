@@ -189,8 +189,10 @@ class Timer:
             import statistics
             result = {'mean': statistics.mean(timing),
                       'median': statistics.median(timing),
-                      'stdev': statistics.pstdev(timing),
-                      'variance': statistics.pvariance(timing),
+                      'stdev': statistics.stdev(timing),
+                      'variance': statistics.variance(timing),
+                      'pstdev': statistics.pstdev(timing),
+                      'pvariance': statistics.pvariance(timing),
                       'total': sum(timing)}
             return result
         else:
