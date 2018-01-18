@@ -500,7 +500,11 @@ calculate_exec_prefix(const _PyCoreConfig *core_config,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
         wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
+#ifdef __VXWORKS__
+        joinpath(exec_prefix, L"lib/common/lib-dynload");
+#else
         joinpath(exec_prefix, L"lib/lib-dynload");
+#endif
     }
     /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
 }

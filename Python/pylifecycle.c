@@ -274,7 +274,7 @@ get_locale_encoding(void)
         return NULL;
     }
     return get_codec_name(codeset);
-#elif defined(__ANDROID__)
+#elif defined(__ANDROID__) || defined(__VXWORKS__)
     return get_codec_name("UTF-8");
 #else
     PyErr_SetNone(PyExc_NotImplementedError);
@@ -1502,10 +1502,6 @@ initfsencoding(PyInterpreterState *interp)
     else {
         Py_FileSystemDefaultEncoding = "utf-8";
         Py_FileSystemDefaultEncodeErrors = "surrogatepass";
-    }
-#elif defined(__VXWORKS__)
-    {
-    Py_FileSystemDefaultEncoding = "ascii";
     }
 #else
     if (Py_FileSystemDefaultEncoding == NULL &&

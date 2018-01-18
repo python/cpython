@@ -43,6 +43,7 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
 
 import sys
 _mswindows = (sys.platform == "win32")
+_vxworks = (sys.platform == "vxworks")
 
 import io
 import os
@@ -136,7 +137,10 @@ if _mswindows:
             self.wShowWindow = wShowWindow
             self.lpAttributeList = lpAttributeList or {"handle_list": []}
 else:
-    import _posixsubprocess
+    if(_vxworks):
+        import _vxwapi
+    else:
+        import _posixsubprocess
     import select
     import selectors
     import threading
@@ -594,12 +598,14 @@ class Popen(object):
       stdin, stdout and stderr: These specify the executed programs' standard
           input, standard output and standard error file handles, respectively.
 
-      preexec_fn: (POSIX only) An object to be called in the child process
-          just before the child is executed.
+      preexec_fn: (non VxWorks POSIX only) An object to be called in the
+          child process just before the child is executed.
 
-      close_fds: Controls closing or inheriting of file descriptors.
+      close_fds: (not supported on vxworks) Controls closing or
+          inheriting of file descriptors.
 
-      shell: If true, the command will be executed through the shell.
+      shell: (not supported on vxworks) If true, the command will
+          be executed through the shell.
 
       cwd: Sets the current directory before the child is executed.
 
@@ -628,7 +634,7 @@ class Popen(object):
 
     def __init__(self, args, bufsize=-1, executable=None,
                  stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=True,
+                 preexec_fn=None, close_fds=False,
                  shell=False, cwd=None, env=None, universal_newlines=None,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
@@ -653,7 +659,24 @@ class Popen(object):
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
+
+
         else:
+            # VxWorks
+            if _vxworks:
+                if shell:
+                    raise ValueError("shell is not supported on VxWorks Platforms");
+                if preexec_fn is not None:
+                    raise ValueError("Preexecution function is not supported on"
+                                 "VxWorks platforms")
+                if close_fds:
+                    raise ValueError("close_fds is not supported on VxWorks "
+                                     "Platforms")
+                if start_new_session:
+                    raise ValueError("VxWorks doesnt support sessions");
+
+
+
             # POSIX
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
@@ -1298,6 +1321,7 @@ class Popen(object):
                            restore_signals, start_new_session):
             """Execute program (POSIX version)"""
 
+
             if isinstance(args, (str, bytes)):
                 args = [args]
             else:
@@ -1352,7 +1376,60 @@ class Popen(object):
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    self.pid = _posixsubprocess.fork_exec(
+                    if(_vxworks):
+                        #Hack method to have child spawn with correct FD's
+                        #copy parent std fds
+                        #set parent stdfd's as desired child fds
+                        #spawn child
+                        #resture parent stdfds to std values
+                        #
+                        #!!!Massive caveat in that the child inherits all pipes
+                        tmp_stdin = None;
+                        tmp_stdout = None;
+                        tmp_stderr = None;
+                        #save old stdio fds
+                        if sys.stdin.fileno() >= 0:
+                            tmp_stdin = os.dup(sys.stdin.fileno());
+
+                        if sys.stdout.fileno() >= 0:
+                            tmp_stdout = os.dup(sys.stdout.fileno());
+
+                        if sys.stderr.fileno() >= 0:
+                            tmp_stderr = os.dup(sys.stderr.fileno());
+                        #replace stdiofds with desired child fds
+                        if c2pwrite >= 0:
+                            os.dup2(c2pwrite, sys.stdout.fileno());
+
+                        if p2cread >= 0:
+                            os.dup2(p2cread, sys.stdin.fileno());
+
+                        if errwrite >= 0:
+                            os.dup2(errwrite, sys.stderr.fileno());
+
+                        if cwd:
+                            os.chdir(cwd);
+
+                        print(executable_list)
+                        print(args );
+                        print(env_list );
+                        if env_list is None:
+                            env_list = []
+                        self.pid = _vxwapi.rtpSpawn(
+                            executable_list[0].decode("UTF-8"),
+                            args,env_list, 100,0,0,0)
+
+                        if tmp_stdin is not None:
+                            os.dup2(tmp_stdin, sys.stdin.fileno())
+
+                        if tmp_stdout is not None:
+                            os.dup2(tmp_stdout, sys.stdout.fileno())
+
+                        if tmp_stderr is not None:
+                            os.dup2(tmp_stderr, sys.stderr.fileno())
+
+
+                    else:
+                        self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
                             cwd, env_list,
