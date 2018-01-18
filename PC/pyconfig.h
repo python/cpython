@@ -132,8 +132,8 @@ WIN32 is still required for the locale module.
 #endif /* MS_WIN64 */
 
 /* set the version macros for the windows headers */
-/* Python 3.7+ requires Windows 7 or greater */
-#define Py_WINVER 0x0601 /* _WIN32_WINNT_WIN7 */
+/* Python 3.5+ requires Windows Vista or greater */
+#define Py_WINVER 0x0600 /* _WIN32_WINNT_VISTA */
 #define Py_NTDDI NTDDI_VISTA
 
 /* We only set these values when building Python - we don't want to force
