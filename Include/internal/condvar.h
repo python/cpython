@@ -22,19 +22,12 @@
 #define PyCOND_T pthread_cond_t
 
 #elif defined(NT_THREADS)
-/*
- * Windows (XP, 2003 server and later, as well as (hopefully) CE) support
- *
- * Emulated condition variables ones that work with XP and later, plus
- * example native support on VISTA and onwards.
- */
+/* Windows support: use native Win7 primitives */
 #define Py_HAVE_CONDVAR
 
 /* include windows if it hasn't been done before */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
-/* Use native Win7 primitives */
 
 /* SRWLOCK is faster and better than CriticalSection */
 typedef SRWLOCK PyMUTEX_T;
