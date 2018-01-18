@@ -75,7 +75,6 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(PySourcePath)PC\external\$(PlatformToolset)\$(ArchName)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -350,7 +349,6 @@
     <ClCompile Include="..\PC\config.c" />
     <ClCompile Include="..\PC\getpathp.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
-    <ClCompile Include="..\PC\_findvs.cpp" />
     <ClCompile Include="..\Python\pyhash.c" />
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
