@@ -1,5 +1,5 @@
-// Support back to Vista
-#define _WIN32_WINNT _WIN32_WINNT_VISTA
+// Support back to Windows 7
+#define _WIN32_WINNT _WIN32_WINNT_WIN7
 #include <sdkddkver.h>
 
 // Use WRL to define a classic COM class

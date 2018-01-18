@@ -1,0 +1,3 @@
+Drop support for Windows Vista. Windows Vista extended support ended in
+April 2017. As stated in :pep:`11`, Python 3.7 drops support for Windows
+Vista and now requires Windows 7 or newer.
