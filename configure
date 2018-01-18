@@ -6167,7 +6167,7 @@ esac
   fi
 fi
 
-if test "$cross_compiling" = yes; then
+if test "$cross_compiling" = yes && test "$ac_sys_system" != VxWorks ; then
     case "$READELF" in
 	readelf|:)
 	as_fn_error $? "readelf for the host is required for cross builds" "$LINENO" 5
