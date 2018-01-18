@@ -56,7 +56,7 @@ def _find_vc2015():
     return best_version, best_dir
 
 def _find_vc2017():
-    import _findvs
+    import _distutils_findvs
     import threading
 
     best_version = 0,   # tuple for full version comparisons
@@ -66,7 +66,7 @@ def _find_vc2017():
     # initialize COM.
     all_packages = []
     def _getall():
-        all_packages.extend(_findvs.findall())
+        all_packages.extend(_distutils_findvs.findall())
     t = threading.Thread(target=_getall)
     t.start()
     t.join()
