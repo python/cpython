@@ -307,22 +307,22 @@ PyDoc_STRVAR(gc_get_freeze_count__doc__,
 #define GC_GET_FREEZE_COUNT_METHODDEF    \
     {"get_freeze_count", (PyCFunction)gc_get_freeze_count, METH_NOARGS, gc_get_freeze_count__doc__},
 
-static int
+static Py_ssize_t
 gc_get_freeze_count_impl(PyObject *module);
 
 static PyObject *
 gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    int _return_value;
+    Py_ssize_t _return_value;
 
     _return_value = gc_get_freeze_count_impl(module);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromLong((long)_return_value);
+    return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6f9ee4d8dd1f36c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21dc9270b10b7891 input=a9049054013a1b77]*/
