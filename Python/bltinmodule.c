@@ -731,7 +731,6 @@ builtin_chr(PyObject *module, PyObject *i)
             return NULL;
         }
         PyErr_Clear();
-        ch = -1;
     }
     return PyUnicode_FromOrdinal(ch);
 }
