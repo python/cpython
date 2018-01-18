@@ -227,7 +227,7 @@ class UnixCCompiler(CCompiler):
         if sys.platform[:6] == "darwin":
             # MacOSX's linker doesn't understand the -R flag at all
             return "-L" + dir
-        elif sys.platform.startswith("freebsd"):
+        elif sys.platform[:7] == "freebsd":
             return "-Wl,-rpath=" + dir
         elif sys.platform[:5] == "hp-ux":
             if self._is_gcc(compiler):
