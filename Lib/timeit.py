@@ -59,6 +59,7 @@ dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 5
 default_timer = time.perf_counter
+default_statistics = False
 
 _globals = globals
 
@@ -68,11 +69,13 @@ _globals = globals
 template = """
 def inner(_it, _timer{init}):
     {setup}
-    _t0 = _timer()
+    _times = []
     for _i in _it:
+        _t0 = _timer()
         {stmt}
-    _t1 = _timer()
-    return _t1 - _t0
+        _t1 = _timer()
+        _times.append(_t1 - _t0)
+    return _times
 """
 
 def reindent(src, indent):
@@ -159,7 +162,7 @@ class Timer:
 
         traceback.print_exc(file=file)
 
-    def timeit(self, number=default_number):
+    def timeit(self, number=default_number, stats=default_statistics):
         """Time 'number' executions of the main statement.
 
         To be precise, this executes the setup statement once, and
@@ -168,6 +171,11 @@ class Timer:
         argument is the number of times through the loop, defaulting
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
+
+        If 'stats' is True a dictionary is with more information is 
+        returned. The keys are 'mean', 'median', 'stdev'
+        (statistics.pstdev), 'variance' (statistics.pvariance) and
+        total.
         """
         it = itertools.repeat(None, number)
         gcold = gc.isenabled()
@@ -177,9 +185,19 @@ class Timer:
         finally:
             if gcold:
                 gc.enable()
-        return timing
+        if stats:
+            import statistics
+            result = {'mean': statistics.mean(timing),
+                      'median': statistics.median(timing),
+                      'stdev': statistics.pstdev(timing),
+                      'variance': statistics.pvariance(timing),
+                      'total': sum(timing)}
+            return result
+        else:
+            return sum(timing)
 
-    def repeat(self, repeat=default_repeat, number=default_number):
+    def repeat(self, repeat=default_repeat, number=default_number, 
+               stats=default_statistics):
         """Call timeit() a few times.
 
         This is a convenience function that calls the timeit()
@@ -201,7 +219,7 @@ class Timer:
         """
         r = []
         for i in range(repeat):
-            t = self.timeit(number)
+            t = self.timeit(number, stats=stats)
             r.append(t)
         return r
 
@@ -227,14 +245,15 @@ class Timer:
             i *= 10
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
-           number=default_number, globals=None):
+           number=default_number, globals=None, stats=default_statistics):
     """Convenience function to create Timer object and call timeit method."""
-    return Timer(stmt, setup, timer, globals).timeit(number)
+    return Timer(stmt, setup, timer, globals).timeit(number, stats)
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
-           repeat=default_repeat, number=default_number, globals=None):
+           repeat=default_repeat, number=default_number, globals=None, 
+           stats=default_statistics):
     """Convenience function to create Timer object and call repeat method."""
-    return Timer(stmt, setup, timer, globals).repeat(repeat, number)
+    return Timer(stmt, setup, timer, globals).repeat(repeat, number, stats)
 
 def main(args=None, *, _wrap_timer=None):
     """Main program, used when run as a script.
