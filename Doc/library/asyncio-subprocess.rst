@@ -5,6 +5,8 @@
 Subprocess
 ==========
 
+**Source code:** :source:`Lib/asyncio/subprocess.py`
+
 Windows event loop
 ------------------
 
@@ -80,7 +82,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    however, where :class:`~subprocess.Popen` takes a single argument which is
    list of strings, :func:`subprocess_exec` takes multiple string arguments.
 
-   The *protocol_factory* must instanciate a subclass of the
+   The *protocol_factory* must instantiate a subclass of the
    :class:`asyncio.SubprocessProtocol` class.
 
    Other parameters:
@@ -123,7 +125,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    using the platform's "shell" syntax. This is similar to the standard library
    :class:`subprocess.Popen` class called with ``shell=True``.
 
-   The *protocol_factory* must instanciate a subclass of the
+   The *protocol_factory* must instantiate a subclass of the
    :class:`asyncio.SubprocessProtocol` class.
 
    See :meth:`~AbstractEventLoop.subprocess_exec` for more details about
@@ -345,21 +347,20 @@ wait for the subprocess exit. The subprocess is created by the
         def process_exited(self):
             self.exit_future.set_result(True)
 
-    @asyncio.coroutine
-    def get_date(loop):
+    async def get_date(loop):
         code = 'import datetime; print(datetime.datetime.now())'
         exit_future = asyncio.Future(loop=loop)
 
         # Create the subprocess controlled by the protocol DateProtocol,
         # redirect the standard output into a pipe
-        create = loop.subprocess_exec(lambda: DateProtocol(exit_future),
-                                      sys.executable, '-c', code,
-                                      stdin=None, stderr=None)
-        transport, protocol = yield from create
+        transport, protocol = await loop.subprocess_exec(
+            lambda: DateProtocol(exit_future),
+            sys.executable, '-c', code,
+            stdin=None, stderr=None)
 
         # Wait for the subprocess exit using the process_exited() method
         # of the protocol
-        yield from exit_future
+        await exit_future
 
         # Close the stdout pipe
         transport.close()
@@ -396,16 +397,16 @@ function::
         code = 'import datetime; print(datetime.datetime.now())'
 
         # Create the subprocess, redirect the standard output into a pipe
-        create = asyncio.create_subprocess_exec(sys.executable, '-c', code,
-                                                stdout=asyncio.subprocess.PIPE)
-        proc = yield from create
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, '-c', code,
+            stdout=asyncio.subprocess.PIPE)
 
         # Read one line of output
-        data = yield from proc.stdout.readline()
+        data = await proc.stdout.readline()
         line = data.decode('ascii').rstrip()
 
         # Wait for the subprocess exit
-        yield from proc.wait()
+        await proc.wait()
         return line
 
     if sys.platform == "win32":

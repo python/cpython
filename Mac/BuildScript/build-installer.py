@@ -13,7 +13,7 @@ sphinx-build and the current versions of Sphinx now require at least
 Python 2.6.
 
 In addition to what is supplied with OS X 10.5+ and Xcode 3+, the script
-requires an installed version of hg and a third-party version of
+requires an installed third-party version of
 Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
 (for 10.6 or later) installed in /Library/Frameworks.  When installed,
 the Python built by this script will attempt to dynamically link first to
@@ -23,7 +23,7 @@ installing the most recent ActiveTcl 8.4 or 8.5 version.
 
 32-bit-only installer builds are still possible on OS X 10.4 with Xcode 2.5
 and the installation of additional components, such as a newer Python
-(2.5 is needed for Python parser updates), hg, and for the documentation
+(2.5 is needed for Python parser updates) and for the documentation
 build either svn (pre-3.4.1) or sphinx-build (3.4.1 and later).
 
 Usage: see USAGE variable in the script.
@@ -213,9 +213,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.0.2j",
-              url="https://www.openssl.org/source/openssl-1.0.2j.tar.gz",
-              checksum='96322138f0b69e61b7212bc53d5e912b',
+              name="OpenSSL 1.0.2m",
+              url="https://www.openssl.org/source/openssl-1.0.2m.tar.gz",
+              checksum='10e9e37f492094b9ef296f68f24a7666',
               patches=[
                   "openssl_sdk_makedepend.patch",
                    ],
@@ -270,9 +270,9 @@ def library_recipes():
     if PYTHON_3:
         result.extend([
           dict(
-              name="XZ 5.2.2",
-              url="http://tukaani.org/xz/xz-5.2.2.tar.gz",
-              checksum='7cf6a8544a7dae8e8106fdf7addfa28c',
+              name="XZ 5.2.3",
+              url="http://tukaani.org/xz/xz-5.2.3.tar.gz",
+              checksum='ef68674fb47a8b8e741b34e429d86e9d',
               configure_pre=[
                     '--disable-dependency-tracking',
               ]
@@ -315,13 +315,14 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.14.2",
-              url="https://www.sqlite.org/2016/sqlite-autoconf-3140200.tar.gz",
-              checksum='90c53cacb811db27f990b8292bd96159',
+              name="SQLite 3.21.0",
+              url="https://www.sqlite.org/2017/sqlite-autoconf-3210000.tar.gz",
+              checksum='7913de4c3126ba3c24689cb7a199ea31',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
+                            '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_TCL=0 '
                  '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
@@ -635,9 +636,8 @@ def checkEnvironment():
         base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
     os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
-    # Ensure ws have access to hg and to sphinx-build.
-    # You may have to create links in /usr/bin for them.
-    runCommand('hg --version')
+    # Ensure we have access to sphinx-build.
+    # You may have to create a link in /usr/bin for it.
     runCommand('sphinx-build --version')
 
 def parseOptions(args=None):
@@ -845,7 +845,6 @@ def build_universal_openssl(basedir, archList):
             "enable-tlsext",
             "no-ssl2",
             "no-ssl3",
-            "no-ssl3-method",
             # "enable-unit-test",
             "shared",
             "--install_prefix=%s"%shellQuote(archbase),
@@ -1082,17 +1081,17 @@ def buildLibraries():
 
 def buildPythonDocs():
     # This stores the documentation as Resources/English.lproj/Documentation
-    # inside the framwork. pydoc and IDLE will pick it up there.
+    # inside the framework. pydoc and IDLE will pick it up there.
     print("Install python documentation")
     rootDir = os.path.join(WORKDIR, '_root')
     buildDir = os.path.join('../../Doc')
     docdir = os.path.join(rootDir, 'pydocs')
     curDir = os.getcwd()
     os.chdir(buildDir)
-    # The Doc build changed for 3.4 (technically, for 3.4.1) and for 2.7.9
     runCommand('make clean')
-    # Assume sphinx-build is on our PATH, checked in checkEnvironment
-    runCommand('make html')
+    # Create virtual environment for docs builds with blurb and sphinx
+    runCommand('make venv')
+    runCommand('make html PYTHON=venv/bin/python')
     os.chdir(curDir)
     if not os.path.exists(docdir):
         os.mkdir(docdir)
@@ -1142,11 +1141,25 @@ def buildPython():
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
-    print("Running make touch")
-    runCommand("make touch")
+    # Look for environment value BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS
+    # and, if defined, append its value to the make command.  This allows
+    # us to pass in version control tags, like GITTAG, to a build from a
+    # tarball rather than from a vcs checkout, thus eliminating the need
+    # to have a working copy of the vcs program on the build machine.
+    #
+    # A typical use might be:
+    #      export BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS=" \
+    #                         GITVERSION='echo 123456789a' \
+    #                         GITTAG='echo v3.6.0' \
+    #                         GITBRANCH='echo 3.6'"
 
-    print("Running make")
-    runCommand("make")
+    make_extras = os.getenv("BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS")
+    if make_extras:
+        make_cmd = "make " + make_extras
+    else:
+        make_cmd = "make"
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
 
     print("Running make install")
     runCommand("make install DESTDIR=%s"%(

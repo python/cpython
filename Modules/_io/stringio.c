@@ -301,7 +301,7 @@ _io_StringIO_tell_impl(stringio *self)
 
 /*[clinic input]
 _io.StringIO.read
-    size as arg: object = None
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read at most size characters, returned as a string.
@@ -311,29 +311,14 @@ is reached. Return an empty string at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_read_impl(stringio *self, PyObject *arg)
-/*[clinic end generated code: output=3676864773746f68 input=9a319015f6f3965c]*/
+_io_StringIO_read_impl(stringio *self, Py_ssize_t size)
+/*[clinic end generated code: output=ae8cf6002f71626c input=0921093383dfb92d]*/
 {
-    Py_ssize_t size, n;
+    Py_ssize_t n;
     Py_UCS4 *output;
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
-
-    if (PyNumber_Check(arg)) {
-        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* Read until EOF is reached, by default. */
-        size = -1;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     /* adjust invalid sizes */
     n = self->string_size - self->pos;
@@ -388,7 +373,7 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
 
 /*[clinic input]
 _io.StringIO.readline
-    size as arg: object = None
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read until newline or EOF.
@@ -397,26 +382,14 @@ Returns an empty string if EOF is hit immediately.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_readline_impl(stringio *self, PyObject *arg)
-/*[clinic end generated code: output=99fdcac03a3dee81 input=e0e0ed4042040176]*/
+_io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
+/*[clinic end generated code: output=cabd6452f1b7e85d input=a5bd70bf682aa276]*/
 {
-    Py_ssize_t limit = -1;
-
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    if (PyNumber_Check(arg)) {
-        limit = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg != Py_None) {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
-    return _stringio_readline(self, limit);
+    return _stringio_readline(self, size);
 }
 
 static PyObject *
@@ -437,7 +410,7 @@ stringio_iternext(stringio *self)
         line = PyObject_CallMethodObjArgs((PyObject *)self,
                                            _PyIO_str_readline, NULL);
         if (line && !PyUnicode_Check(line)) {
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
                          "not '%.200s'", Py_TYPE(line)->tp_name);
             Py_DECREF(line);
@@ -459,7 +432,7 @@ stringio_iternext(stringio *self)
 
 /*[clinic input]
 _io.StringIO.truncate
-    pos as arg: object = None
+    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
     /
 
 Truncate size to pos.
@@ -470,28 +443,11 @@ Returns the new absolute position.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_truncate_impl(stringio *self, PyObject *arg)
-/*[clinic end generated code: output=6072439c2b01d306 input=748619a494ba53ad]*/
+_io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
+/*[clinic end generated code: output=eb3aef8e06701365 input=5505cff90ca48b96]*/
 {
-    Py_ssize_t size;
-
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
-
-    if (PyNumber_Check(arg)) {
-        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* Truncate to current position if no argument is passed. */
-        size = self->pos;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     if (size < 0) {
         PyErr_Format(PyExc_ValueError,
@@ -542,7 +498,7 @@ _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence)
         return NULL;
     }
     else if (whence != 0 && pos != 0) {
-        PyErr_SetString(PyExc_IOError,
+        PyErr_SetString(PyExc_OSError,
                         "Can't do nonzero cur-relative seeks");
         return NULL;
     }
@@ -895,7 +851,7 @@ stringio_setstate(stringio *self, PyObject *state)
     /* We allow the state tuple to be longer than 4, because we may need
        someday to extend the object's state without breaking
        backward-compatibility. */
-    if (!PyTuple_Check(state) || Py_SIZE(state) < 4) {
+    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) < 4) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__setstate__ argument should be 4-tuple, got %.200s",
                      Py_TYPE(self)->tp_name, Py_TYPE(state)->tp_name);

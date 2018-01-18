@@ -237,13 +237,17 @@ The legacy interface:
 
 
 .. function:: decodebytes(s)
-              decodestring(s)
 
    Decode the :term:`bytes-like object` *s*, which must contain one or more
    lines of base64 encoded data, and return the decoded :class:`bytes`.
-   ``decodestring`` is a deprecated alias.
 
    .. versionadded:: 3.1
+
+.. function:: decodestring(s)
+
+   Deprecated alias of :func:`decodebytes`.
+
+   .. deprecated:: 3.1
 
 
 .. function:: encode(input, output)
@@ -257,14 +261,19 @@ The legacy interface:
 
 
 .. function:: encodebytes(s)
-              encodestring(s)
 
    Encode the :term:`bytes-like object` *s*, which can contain arbitrary binary
    data, and return :class:`bytes` containing the base64-encoded data, with newlines
    (``b'\n'``) inserted after every 76 bytes of output, and ensuring that
    there is a trailing newline, as per :rfc:`2045` (MIME).
 
-   ``encodestring`` is a deprecated alias.
+   .. versionadded:: 3.1
+
+.. function:: encodestring(s)
+
+   Deprecated alias of :func:`encodebytes`.
+
+   .. deprecated:: 3.1
 
 
 An example usage of the module:

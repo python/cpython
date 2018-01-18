@@ -25,10 +25,8 @@
 
 
 import sys
-import os
 import time
 import marshal
-from optparse import OptionParser
 
 __all__ = ["run", "runctx", "Profile"]
 
@@ -179,7 +177,7 @@ class Profile:
         self.t = self.get_time()
         self.simulate_call('profiler')
 
-    # Heavily optimized dispatch routine for os.times() timer
+    # Heavily optimized dispatch routine for time.process_time() timer
 
     def trace_dispatch(self, frame, event, arg):
         timer = self.timer
@@ -197,7 +195,7 @@ class Profile:
             self.t = r[0] + r[1] - t # put back unrecorded delta
 
     # Dispatch routine for best timer program (return = scalar, fastest if
-    # an integer but float works too -- and time.clock() relies on that).
+    # an integer but float works too -- and time.process_time() relies on that).
 
     def trace_dispatch_i(self, frame, event, arg):
         timer = self.timer
@@ -552,6 +550,9 @@ class Profile:
 #****************************************************************************
 
 def main():
+    import os
+    from optparse import OptionParser
+
     usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False

@@ -121,12 +121,21 @@ class Test(unittest.TestCase):
             (c_int * 1).from_buffer_copy(a, 16 * sizeof(c_int))
 
     def test_abstract(self):
+        from ctypes import _Pointer, _SimpleCData, _CFuncPtr
+
         self.assertRaises(TypeError, Array.from_buffer, bytearray(10))
         self.assertRaises(TypeError, Structure.from_buffer, bytearray(10))
         self.assertRaises(TypeError, Union.from_buffer, bytearray(10))
+        self.assertRaises(TypeError, _CFuncPtr.from_buffer, bytearray(10))
+        self.assertRaises(TypeError, _Pointer.from_buffer, bytearray(10))
+        self.assertRaises(TypeError, _SimpleCData.from_buffer, bytearray(10))
+
         self.assertRaises(TypeError, Array.from_buffer_copy, b"123")
         self.assertRaises(TypeError, Structure.from_buffer_copy, b"123")
         self.assertRaises(TypeError, Union.from_buffer_copy, b"123")
+        self.assertRaises(TypeError, _CFuncPtr.from_buffer_copy, b"123")
+        self.assertRaises(TypeError, _Pointer.from_buffer_copy, b"123")
+        self.assertRaises(TypeError, _SimpleCData.from_buffer_copy, b"123")
 
 if __name__ == '__main__':
     unittest.main()

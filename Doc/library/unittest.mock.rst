@@ -303,14 +303,14 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_once_with(*args, **kwargs)
 
-       Assert that the mock was called exactly once and with the specified
-       arguments.
+       Assert that the mock was called exactly once and that that call was
+       with the specified arguments.
 
             >>> mock = Mock(return_value=None)
             >>> mock('foo', bar='baz')
             >>> mock.assert_called_once_with('foo', bar='baz')
-            >>> mock('foo', bar='baz')
-            >>> mock.assert_called_once_with('foo', bar='baz')
+            >>> mock('other', bar='values')
+            >>> mock.assert_called_once_with('other', bar='values')
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'mock' to be called once. Called 2 times.
@@ -322,7 +322,8 @@ the *new_callable* argument to :func:`patch`.
 
         The assert passes if the mock has *ever* been called, unlike
         :meth:`assert_called_with` and :meth:`assert_called_once_with` that
-        only pass if the call is the most recent one.
+        only pass if the call is the most recent one, and in the case of
+        :meth:`assert_called_once_with` it must also be the only call.
 
             >>> mock = Mock(return_value=None)
             >>> mock(1, 2, arg='thing')
@@ -1571,8 +1572,8 @@ do then it imports ``SomeClass`` from module a. If we use :func:`patch` to mock 
 reference to the *real* ``SomeClass`` and it looks like our patching had no
 effect.
 
-The key is to patch out ``SomeClass`` where it is used (or where it is looked up
-). In this case ``some_function`` will actually look up ``SomeClass`` in module b,
+The key is to patch out ``SomeClass`` where it is used (or where it is looked up).
+In this case ``some_function`` will actually look up ``SomeClass`` in module b,
 where we have imported it. The patching should look like::
 
     @patch('b.SomeClass')
@@ -2364,3 +2365,23 @@ alternative object as the *autospec* argument:
    a mocked class to create a mock instance *does not* create a real instance.
    It is only attribute lookups - along with calls to :func:`dir` - that are done.
 
+Sealing mocks
+~~~~~~~~~~~~~
+
+.. function:: seal(mock)
+
+    Seal will disable the creation of mock children by preventing getting or setting
+    of any new attribute on the sealed mock. The sealing process is performed recursively.
+
+    If a mock instance is assigned to an attribute instead of being dynamically created
+    it won't be considered in the sealing chain. This allows one to prevent seal from
+    fixing part of the mock object.
+
+        >>> mock = Mock()
+        >>> mock.submock.attribute1 = 2
+        >>> mock.not_submock = mock.Mock()
+        >>> seal(mock)
+        >>> mock.submock.attribute2  # This will raise AttributeError.
+        >>> mock.not_submock.attribute2  # This won't raise.
+
+    .. versionadded:: 3.7

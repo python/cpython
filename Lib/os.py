@@ -23,7 +23,7 @@ and opendir), and leave all pathname manipulation to os.path
 
 #'
 import abc
-import sys, errno
+import sys
 import stat as st
 
 _names = sys.builtin_module_names
@@ -129,6 +129,7 @@ if _exists("_have_functions"):
     _add("HAVE_FCHMOD",     "chmod")
     _add("HAVE_FCHOWN",     "chown")
     _add("HAVE_FDOPENDIR",  "listdir")
+    _add("HAVE_FDOPENDIR",  "scandir")
     _add("HAVE_FEXECVE",    "execve")
     _set.add(stat) # fstat always works
     _add("HAVE_FTRUNCATE",  "truncate")
@@ -207,7 +208,7 @@ def makedirs(name, mode=0o777, exist_ok=False):
         head, tail = path.split(head)
     if head and tail and not path.exists(head):
         try:
-            makedirs(head, mode, exist_ok)
+            makedirs(head, exist_ok=exist_ok)
         except FileExistsError:
             # Defeats race condition when another thread created the path
             pass
@@ -416,7 +417,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
 __all__.append("walk")
 
-if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
+if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
     def fwalk(top=".", topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None):
         """Directory tree generator.
@@ -455,47 +456,57 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
             top = fspath(top)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
-        orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
+        if not follow_symlinks:
+            orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
         topfd = open(top, O_RDONLY, dir_fd=dir_fd)
         try:
             if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
                                     path.samestat(orig_st, stat(topfd)))):
-                yield from _fwalk(topfd, top, topdown, onerror, follow_symlinks)
+                yield from _fwalk(topfd, top, isinstance(top, bytes),
+                                  topdown, onerror, follow_symlinks)
         finally:
             close(topfd)
 
-    def _fwalk(topfd, toppath, topdown, onerror, follow_symlinks):
+    def _fwalk(topfd, toppath, isbytes, topdown, onerror, follow_symlinks):
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
 
-        names = listdir(topfd)
-        dirs, nondirs = [], []
-        for name in names:
+        scandir_it = scandir(topfd)
+        dirs = []
+        nondirs = []
+        entries = None if topdown or follow_symlinks else []
+        for entry in scandir_it:
+            name = entry.name
+            if isbytes:
+                name = fsencode(name)
             try:
-                # Here, we don't use AT_SYMLINK_NOFOLLOW to be consistent with
-                # walk() which reports symlinks to directories as directories.
-                # We do however check for symlinks before recursing into
-                # a subdirectory.
-                if st.S_ISDIR(stat(name, dir_fd=topfd).st_mode):
+                if entry.is_dir():
                     dirs.append(name)
+                    if entries is not None:
+                        entries.append(entry)
                 else:
                     nondirs.append(name)
             except OSError:
                 try:
                     # Add dangling symlinks, ignore disappeared files
-                    if st.S_ISLNK(stat(name, dir_fd=topfd, follow_symlinks=False)
-                                .st_mode):
+                    if entry.is_symlink():
                         nondirs.append(name)
                 except OSError:
-                    continue
+                    pass
 
         if topdown:
             yield toppath, dirs, nondirs, topfd
 
-        for name in dirs:
+        for name in dirs if entries is None else zip(dirs, entries):
             try:
-                orig_st = stat(name, dir_fd=topfd, follow_symlinks=follow_symlinks)
+                if not follow_symlinks:
+                    if topdown:
+                        orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
+                    else:
+                        assert entries is not None
+                        name, entry = name
+                        orig_st = entry.stat(follow_symlinks=False)
                 dirfd = open(name, O_RDONLY, dir_fd=topfd)
             except OSError as err:
                 if onerror is not None:
@@ -504,7 +515,8 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
             try:
                 if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                     dirpath = path.join(toppath, name)
-                    yield from _fwalk(dirfd, dirpath, topdown, onerror, follow_symlinks)
+                    yield from _fwalk(dirfd, dirpath, isbytes,
+                                      topdown, onerror, follow_symlinks)
             finally:
                 close(dirfd)
 
@@ -578,12 +590,10 @@ def _execvpe(file, args, env=None):
         argrest = (args,)
         env = environ
 
-    head, tail = path.split(file)
-    if head:
+    if path.dirname(file):
         exec_func(file, *argrest)
         return
-    last_exc = saved_exc = None
-    saved_tb = None
+    saved_exc = None
     path_list = get_exec_path(env)
     if name != 'nt':
         file = fsencode(file)
@@ -592,16 +602,15 @@ def _execvpe(file, args, env=None):
         fullname = path.join(dir, file)
         try:
             exec_func(fullname, *argrest)
+        except (FileNotFoundError, NotADirectoryError) as e:
+            last_exc = e
         except OSError as e:
             last_exc = e
-            tb = sys.exc_info()[2]
-            if (e.errno != errno.ENOENT and e.errno != errno.ENOTDIR
-                and saved_exc is None):
+            if saved_exc is None:
                 saved_exc = e
-                saved_tb = tb
-    if saved_exc:
-        raise saved_exc.with_traceback(saved_tb)
-    raise last_exc.with_traceback(tb)
+    if saved_exc is not None:
+        raise saved_exc
+    raise last_exc
 
 
 def get_exec_path(env=None):
@@ -685,7 +694,9 @@ class _Environ(MutableMapping):
             raise KeyError(key) from None
 
     def __iter__(self):
-        for key in self._data:
+        # list() from dict object is an atomic operation
+        keys = list(self._data)
+        for key in keys:
             yield self.decodekey(key)
 
     def __len__(self):
@@ -880,7 +891,7 @@ If mode == P_WAIT return the process's exit code if it exits normally;
 otherwise return -SIG, where SIG is the signal that killed it. """
         return _spawnvef(mode, file, args, env, execve)
 
-    # Note: spawnvp[e] is't currently supported on Windows
+    # Note: spawnvp[e] isn't currently supported on Windows
 
     def spawnvp(mode, file, args):
         """spawnvp(mode, file, args) -> integer

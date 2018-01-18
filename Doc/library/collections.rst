@@ -618,6 +618,25 @@ added elements by appending to the right and popping to the left::
             d.append(elem)
             yield s / n
 
+A `round-robin scheduler
+<https://en.wikipedia.org/wiki/Round-robin_scheduling>`_ can be implemented with
+input iterators stored in a :class:`deque`.  Values are yielded from the active
+iterator in position zero.  If that iterator is exhausted, it can be removed
+with :meth:`~deque.popleft`; otherwise, it can be cycled back to the end with
+the :meth:`~deque.rotate` method::
+
+    def roundrobin(*iterables):
+        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+        iterators = deque(map(iter, iterables))
+        while iterators:
+            try:
+                while True:
+                    yield next(iterators[0])
+                    iterators.rotate(-1)
+            except StopIteration:
+                # Remove an exhausted iterator.
+                iterators.popleft()
+
 The :meth:`rotate` method provides a way to implement :class:`deque` slicing and
 deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
 the :meth:`rotate` method to position elements to be popped::
@@ -763,7 +782,7 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
+.. function:: namedtuple(typename, field_names, *, rename=False, defaults=None, module=None)
 
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
@@ -771,9 +790,9 @@ they add the ability to access fields by name instead of position index.
     helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
     method which lists the tuple contents in a ``name=value`` format.
 
-    The *field_names* are a single string with each fieldname separated by whitespace
-    and/or commas, for example ``'x y'`` or ``'x, y'``.  Alternatively, *field_names*
-    can be a sequence of strings such as ``['x', 'y']``.
+    The *field_names* are a sequence of strings such as ``['x', 'y']``.
+    Alternatively, *field_names* can be a single string with each fieldname
+    separated by whitespace and/or commas, for example ``'x y'`` or ``'x, y'``.
 
     Any valid Python identifier may be used for a fieldname except for names
     starting with an underscore.  Valid identifiers consist of letters, digits,
@@ -786,9 +805,12 @@ they add the ability to access fields by name instead of position index.
     converted to ``['abc', '_1', 'ghi', '_3']``, eliminating the keyword
     ``def`` and the duplicate fieldname ``abc``.
 
-    If *verbose* is true, the class definition is printed after it is
-    built.  This option is outdated; instead, it is simpler to print the
-    :attr:`_source` attribute.
+    *defaults* can be ``None`` or an :term:`iterable` of default values.
+    Since fields with a default value must come after any fields without a
+    default, the *defaults* are applied to the rightmost parameters.  For
+    example, if the fieldnames are ``['x', 'y', 'z']`` and the defaults are
+    ``(1, 2)``, then ``x`` will be a required argument, ``y`` will default to
+    ``1``, and ``z`` will default to ``2``.
 
     If *module* is defined, the ``__module__`` attribute of the named tuple is
     set to that value.
@@ -805,6 +827,13 @@ they add the ability to access fields by name instead of position index.
 
     .. versionchanged:: 3.6
        Added the *module* parameter.
+
+    .. versionchanged:: 3.7
+       Remove the *verbose* parameter and the :attr:`_source` attribute.
+
+    .. versionchanged:: 3.7
+       Added the *defaults* parameter and the :attr:`_field_defaults`
+       attribute.
 
 .. doctest::
     :options: +NORMALIZE_WHITESPACE
@@ -866,7 +895,7 @@ field names, the method and attribute names start with an underscore.
     .. versionchanged:: 3.1
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
 
-.. method:: somenamedtuple._replace(kwargs)
+.. method:: somenamedtuple._replace(**kwargs)
 
     Return a new instance of the named tuple replacing specified fields with new
     values::
@@ -877,15 +906,6 @@ field names, the method and attribute names start with an underscore.
 
         >>> for partnum, record in inventory.items():
         ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
-
-.. attribute:: somenamedtuple._source
-
-    A string with the pure Python source code used to create the named
-    tuple class.  The source makes the named tuple self-documenting.
-    It can be printed, executed using :func:`exec`, or saved to a file
-    and imported.
-
-    .. versionadded:: 3.3
 
 .. attribute:: somenamedtuple._fields
 
@@ -901,6 +921,18 @@ field names, the method and attribute names start with an underscore.
         >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
         >>> Pixel(11, 22, 128, 255, 0)
         Pixel(x=11, y=22, red=128, green=255, blue=0)
+
+.. attribute:: somenamedtuple._fields_defaults
+
+   Dictionary mapping field names to default values.
+
+   .. doctest::
+
+        >>> Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
+        >>> Account._fields_defaults
+        {'balance': 0}
+        >>> Account('premium')
+        Account(type='premium', balance=0)
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
 function:

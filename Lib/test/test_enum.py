@@ -2,6 +2,7 @@ import enum
 import inspect
 import pydoc
 import unittest
+import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
@@ -13,7 +14,6 @@ try:
     import threading
 except ImportError:
     threading = None
-
 
 # for pickle tests
 try:
@@ -2018,7 +2018,6 @@ class TestFlag(unittest.TestCase):
             d = 6
         self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only
@@ -2321,6 +2320,26 @@ class TestIntFlag(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
 
+    def test_programatic_function_from_empty_list(self):
+        Perm = enum.IntFlag('Perm', [])
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', [])
+        lst = list(Thing)
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
+
+    def test_programatic_function_from_empty_tuple(self):
+        Perm = enum.IntFlag('Perm', ())
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', ())
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
     def test_containment(self):
         Perm = self.Perm
         R, W, X = Perm
@@ -2349,7 +2368,6 @@ class TestIntFlag(unittest.TestCase):
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only

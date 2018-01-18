@@ -321,7 +321,7 @@ You can read back this static file, by using the
     >>> metadata.description
     'Easily download, build, install, upgrade, and uninstall Python packages'
 
-Notice that the class can also be instanciated with a metadata file path to
+Notice that the class can also be instantiated with a metadata file path to
 loads its values::
 
     >>> pkg_info_path = 'distribute-0.6.8-py2.7.egg-info'

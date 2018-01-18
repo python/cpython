@@ -20,6 +20,7 @@ import codecs
 import io
 import os
 import logging
+import pkgutil
 import sys
 
 # Pgen imports
@@ -94,11 +95,8 @@ class Driver(object):
 
     def parse_file(self, filename, encoding=None, debug=False):
         """Parse a file and return the syntax tree."""
-        stream = codecs.open(filename, "r", encoding)
-        try:
+        with io.open(filename, "r", encoding=encoding) as stream:
             return self.parse_stream(stream, debug)
-        finally:
-            stream.close()
 
     def parse_string(self, text, debug=False):
         """Parse a string and return the syntax tree."""
@@ -141,6 +139,26 @@ def _newer(a, b):
     if not os.path.exists(b):
         return True
     return os.path.getmtime(a) >= os.path.getmtime(b)
+
+
+def load_packaged_grammar(package, grammar_source):
+    """Normally, loads a pickled grammar by doing
+        pkgutil.get_data(package, pickled_grammar)
+    where *pickled_grammar* is computed from *grammar_source* by adding the
+    Python version and using a ``.pickle`` extension.
+
+    However, if *grammar_source* is an extant file, load_grammar(grammar_source)
+    is called instead. This facilitates using a packaged grammar file when needed
+    but preserves load_grammar's automatic regeneration behavior when possible.
+
+    """
+    if os.path.isfile(grammar_source):
+        return load_grammar(grammar_source)
+    pickled_name = _generate_pickle_name(os.path.basename(grammar_source))
+    data = pkgutil.get_data(package, pickled_name)
+    g = grammar.Grammar()
+    g.loads(data)
+    return g
 
 
 def main(*args):

@@ -107,7 +107,7 @@ This example uses the iterator form::
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.
 
-   http://www.w3schools.com/sql/
+   https://www.w3schools.com/sql/
       Tutorial, reference and examples for learning SQL syntax.
 
    :pep:`249` - Database API Specification 2.0
@@ -172,9 +172,13 @@ Module functions and constants
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
 
-   Opens a connection to the SQLite database file *database*. You can use
-   ``":memory:"`` to open a database connection to a database that resides in RAM
-   instead of on disk.
+   Opens a connection to the SQLite database file *database*. By default returns a
+   :class:`Connection` object, unless a custom *factory* is given.
+
+   *database* is a :term:`path-like object` giving the pathname (absolute or
+   relative to the current  working directory) of the database file to be opened.
+   You can use ``":memory:"`` to open a database connection to a database that
+   resides in RAM instead of on disk.
 
    When a database is accessed by multiple connections, and one of the processes
    modifies the database, the SQLite database is locked until that transaction is
@@ -222,6 +226,9 @@ Module functions and constants
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.
+
+   .. versionchanged:: 3.7
+      *database* can now also be a :term:`path-like object`, not only a string.
 
 
 .. function:: register_converter(typename, callable)
@@ -420,6 +427,10 @@ Connection Objects
 
       If you want to clear any previously installed progress handler, call the
       method with :const:`None` for *handler*.
+
+      Returning a non-zero value from the handler function will terminate the
+      currently executing query and cause it to raise an :exc:`OperationalError`
+      exception.
 
 
    .. method:: set_trace_callback(trace_callback)
@@ -639,6 +650,11 @@ Cursor Objects
 
       .. versionchanged:: 3.6
          Added support for the ``REPLACE`` statement.
+
+   .. attribute:: arraysize
+
+      Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
+      The default value is 1 which means a single row would be fetched per call.
 
    .. attribute:: description
 
@@ -927,14 +943,6 @@ By default, the :mod:`sqlite3` module opens transactions implicitly before a
 Data Modification Language (DML)  statement (i.e.
 ``INSERT``/``UPDATE``/``DELETE``/``REPLACE``).
 
-So if you are within a transaction and issue a command like ``CREATE TABLE
-...``, ``VACUUM``, ``PRAGMA``, the :mod:`sqlite3` module will commit implicitly
-before executing that command. There are two reasons for doing that. The first
-is that some of these commands don't work within transactions. The other reason
-is that sqlite3 needs to keep track of the transaction state (if a transaction
-is active or not).  The current transaction state is exposed through the
-:attr:`Connection.in_transaction` attribute of the connection object.
-
 You can control which kind of ``BEGIN`` statements sqlite3 implicitly executes
 (or none at all) via the *isolation_level* parameter to the :func:`connect`
 call, or via the :attr:`isolation_level` property of connections.
@@ -944,6 +952,9 @@ If you want **autocommit mode**, then set :attr:`isolation_level` to ``None``.
 Otherwise leave it at its default, which will result in a plain "BEGIN"
 statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
 "IMMEDIATE" or "EXCLUSIVE".
+
+The current transaction state is exposed through the
+:attr:`Connection.in_transaction` attribute of the connection object.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL

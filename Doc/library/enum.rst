@@ -24,8 +24,8 @@ Module Contents
 ---------------
 
 This module defines four enumeration classes that can be used to define unique
-sets of names and values: :class:`Enum`, :class:`IntEnum`, and
-:class:`IntFlags`.  It also defines one decorator, :func:`unique`, and one
+sets of names and values: :class:`Enum`, :class:`IntEnum`, :class:`Flag`, and
+:class:`IntFlag`.  It also defines one decorator, :func:`unique`, and one
 helper, :class:`auto`.
 
 .. class:: Enum
@@ -654,7 +654,7 @@ value and let :class:`Flag` select an appropriate value.
 Like :class:`IntFlag`, if a combination of :class:`Flag` members results in no
 flags being set, the boolean evaluation is :data:`False`::
 
-    >>> from enum import Flag
+    >>> from enum import Flag, auto
     >>> class Color(Flag):
     ...     RED = auto()
     ...     BLUE = auto()

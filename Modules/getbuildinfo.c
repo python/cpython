@@ -21,47 +21,47 @@
 #endif
 
 /* XXX Only unix build process has been tested */
-#ifndef HGVERSION
-#define HGVERSION ""
+#ifndef GITVERSION
+#define GITVERSION ""
 #endif
-#ifndef HGTAG
-#define HGTAG ""
+#ifndef GITTAG
+#define GITTAG ""
 #endif
-#ifndef HGBRANCH
-#define HGBRANCH ""
+#ifndef GITBRANCH
+#define GITBRANCH ""
 #endif
 
 const char *
 Py_GetBuildInfo(void)
 {
-    static char buildinfo[50 + sizeof(HGVERSION) +
-                          ((sizeof(HGTAG) > sizeof(HGBRANCH)) ?
-                           sizeof(HGTAG) : sizeof(HGBRANCH))];
-    const char *revision = _Py_hgversion();
+    static char buildinfo[50 + sizeof(GITVERSION) +
+                          ((sizeof(GITTAG) > sizeof(GITBRANCH)) ?
+                           sizeof(GITTAG) : sizeof(GITBRANCH))];
+    const char *revision = _Py_gitversion();
     const char *sep = *revision ? ":" : "";
-    const char *hgid = _Py_hgidentifier();
-    if (!(*hgid))
-        hgid = "default";
+    const char *gitid = _Py_gitidentifier();
+    if (!(*gitid))
+        gitid = "default";
     PyOS_snprintf(buildinfo, sizeof(buildinfo),
-                  "%s%s%s, %.20s, %.9s", hgid, sep, revision,
+                  "%s%s%s, %.20s, %.9s", gitid, sep, revision,
                   DATE, TIME);
     return buildinfo;
 }
 
 const char *
-_Py_hgversion(void)
+_Py_gitversion(void)
 {
-    return HGVERSION;
+    return GITVERSION;
 }
 
 const char *
-_Py_hgidentifier(void)
+_Py_gitidentifier(void)
 {
-    const char *hgtag, *hgid;
-    hgtag = HGTAG;
-    if ((*hgtag) && strcmp(hgtag, "tip") != 0)
-        hgid = hgtag;
+    const char *gittag, *gitid;
+    gittag = GITTAG;
+    if ((*gittag) && strcmp(gittag, "undefined") != 0)
+        gitid = gittag;
     else
-        hgid = HGBRANCH;
-    return hgid;
+        gitid = GITBRANCH;
+    return gitid;
 }

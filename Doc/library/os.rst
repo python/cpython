@@ -735,12 +735,16 @@ as internal buffering of data.
 
 .. function:: dup2(fd, fd2, inheritable=True)
 
-   Duplicate file descriptor *fd* to *fd2*, closing the latter first if necessary.
-   The file descriptor *fd2* is :ref:`inheritable <fd_inheritance>` by default,
-   or non-inheritable if *inheritable* is ``False``.
+   Duplicate file descriptor *fd* to *fd2*, closing the latter first if
+   necessary. Return *fd2*. The new file descriptor is :ref:`inheritable
+   <fd_inheritance>` by default or non-inheritable if *inheritable*
+   is ``False``.
 
    .. versionchanged:: 3.4
       Add the optional *inheritable* parameter.
+
+   .. versionchanged:: 3.7
+      Return *fd2* on success. Previously, ``None`` was always returned.
 
 
 .. function:: fchmod(fd, mode)
@@ -1741,8 +1745,11 @@ features:
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
    intermediate-level directories needed to contain the leaf directory.
 
-   The *mode* parameter is passed to :func:`mkdir`; see :ref:`the mkdir()
-   description <mkdir_modebits>` for how it is interpreted.
+   The *mode* parameter is passed to :func:`mkdir` for creating the leaf
+   directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
+   is interpreted.  To set the file permission bits of any newly-created parent
+   directories you can set the umask before invoking :func:`makedirs`.  The
+   file permission bits of existing parent directories are not changed.
 
    If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if the
    target directory already exists.
@@ -1766,6 +1773,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.7
+      The *mode* argument no longer affects the file permission bits of
+      newly-created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2022,6 +2033,9 @@ features:
    attributes of each :class:`os.DirEntry` will be ``bytes``; in all other
    circumstances, they will be of type ``str``.
 
+   This function can also support :ref:`specifying a file descriptor
+   <path_fd>`; the file descriptor must refer to a directory.
+
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
@@ -2068,6 +2082,9 @@ features:
 
       The function accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      Added support for :ref:`file descriptors <path_fd>` on Unix.
+
 
 .. class:: DirEntry
 
@@ -2107,7 +2124,9 @@ features:
       The entry's full path name: equivalent to ``os.path.join(scandir_path,
       entry.name)`` where *scandir_path* is the :func:`scandir` *path*
       argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.
+      argument was absolute.  If the :func:`scandir` *path*
+      argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
+      attribute is the same as the :attr:`name` attribute.
 
       The :attr:`path` attribute will be ``bytes`` if the :func:`scandir`
       *path* argument is of type ``bytes`` and ``str`` otherwise.  Use
@@ -2320,8 +2339,6 @@ features:
       * the time of creation on Windows, expressed in nanoseconds as an
         integer.
 
-   See also the :func:`stat_float_times` function.
-
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
@@ -2416,33 +2433,6 @@ features:
       Added the :attr:`st_file_attributes` member on Windows.
 
 
-.. function:: stat_float_times([newvalue])
-
-   Determine whether :class:`stat_result` represents time stamps as float objects.
-   If *newvalue* is ``True``, future calls to :func:`~os.stat` return floats, if it is
-   ``False``, future calls return ints. If *newvalue* is omitted, return the
-   current setting.
-
-   For compatibility with older Python versions, accessing :class:`stat_result` as
-   a tuple always returns integers.
-
-   Python now returns float values by default. Applications which do not work
-   correctly with floating point time stamps can use this function to restore the
-   old behaviour.
-
-   The resolution of the timestamps (that is the smallest possible fraction)
-   depends on the system. Some systems only support second resolution; on these
-   systems, the fraction will always be zero.
-
-   It is recommended that this setting is only changed at program startup time in
-   the *__main__* module; libraries should never change this setting. If an
-   application uses a library that works incorrectly if floating point time stamps
-   are processed, this application should turn the feature off until the library
-   has been corrected.
-
-   .. deprecated:: 3.3
-
-
 .. function:: statvfs(path)
 
    Perform a :c:func:`statvfs` system call on the given path.  The return value is
@@ -2450,7 +2440,7 @@ features:
    correspond to the members of the :c:type:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
-   :attr:`f_flag`, :attr:`f_namemax`.
+   :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
 
    Two module-level constants are defined for the :attr:`f_flag` attribute's
    bit-flags: if :const:`ST_RDONLY` is set, the filesystem is mounted
@@ -2484,6 +2474,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionadded:: 3.7
+      Added :attr:`f_fsid`.
 
 
 .. data:: supports_dir_fd
@@ -2839,6 +2832,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.7
+      Added support for :class:`bytes` paths.
 
 
 Linux extended attributes
@@ -3260,6 +3256,39 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+
+.. function:: register_at_fork(*, before=None, after_in_parent=None, \
+                               after_in_child=None)
+
+   Register callables to be executed when a new child process is forked
+   using :func:`os.fork` or similar process cloning APIs.
+   The parameters are optional and keyword-only.
+   Each specifies a different call point.
+
+   * *before* is a function called before forking a child process.
+   * *after_in_parent* is a function called from the parent process
+     after forking a child process.
+   * *after_in_child* is a function called from the child process.
+
+   These calls are only made if control is expected to return to the
+   Python interpreter.  A typical :mod:`subprocess` launch will not
+   trigger them as the child is not going to re-enter the interpreter.
+
+   Functions registered for execution before forking are called in
+   reverse registration order.  Functions registered for execution
+   after forking (either in the parent or in the child) are called
+   in registration order.
+
+   Note that :c:func:`fork` calls made by third-party C code may not
+   call those functions, unless it explicitly calls :c:func:`PyOS_BeforeFork`,
+   :c:func:`PyOS_AfterFork_Parent` and :c:func:`PyOS_AfterFork_Child`.
+
+   There is no way to unregister a function.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
 
 
 .. function:: spawnl(mode, path, ...)

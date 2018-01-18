@@ -1,19 +1,34 @@
-This is Python version 3.7.0 alpha 1
-====================================
+This is Python version 3.7.0 alpha 4+
+=====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
+
+.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
+   :alt: CPython build status on Appveyor
+   :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
+2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
 reserved.
 
 See the end of this file for further copyright and license information.
+
+.. contents::
+
+General Information
+-------------------
+
+- Website: https://www.python.org
+- Source code: https://github.com/python/cpython
+- Issue tracker: https://bugs.python.org
+- Documentation: https://docs.python.org
+- Developer's Guide: https://devguide.python.org/
 
 Contributing to CPython
 -----------------------
@@ -21,7 +36,7 @@ Contributing to CPython
 For more complete instructions on contributing to CPython development,
 see the `Developer Guide`_.
 
-.. _Developer Guide: https://docs.python.org/devguide/
+.. _Developer Guide: https://devguide.python.org/
 
 Using Python
 ------------
@@ -30,7 +45,6 @@ Installable Python kits, and information about using Python, are available at
 `python.org`_.
 
 .. _python.org: https://www.python.org/
-
 
 Build Instructions
 ------------------
@@ -76,7 +90,7 @@ below.
 
 
 Profile Guided Optimization
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If ran,
 ``make profile-opt`` will do several steps.
@@ -100,7 +114,7 @@ optimized and suitable for distribution or production installation.
 
 
 Link Time Optimization
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
 ability of recent compiler toolchains to optimize across the otherwise
@@ -114,7 +128,7 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in Python
 3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/master/Misc/NEWS>`_, but a full
+<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/master>`_.
 
@@ -219,7 +233,8 @@ Copyright and License Information
 ---------------------------------
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016 Python Software Foundation.  All rights reserved.
+2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
+reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

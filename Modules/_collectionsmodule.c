@@ -731,6 +731,10 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
     if (seq == NULL)
         return seq;
 
+    /* Reduce the number of repetitions when maxlen would be exceeded */
+    if (deque->maxlen >= 0 && n * size > deque->maxlen)
+        n = (deque->maxlen + size - 1) / size;
+
     for (i = 0 ; i < n-1 ; i++) {
         rv = deque_extend(deque, seq);
         if (rv == NULL) {
@@ -908,14 +912,10 @@ done:
 }
 
 static PyObject *
-deque_rotate(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
-             PyObject *kwnames)
+deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t n=1;
 
-    if (!_PyArg_NoStackKeywords("rotate", kwnames)) {
-        return NULL;
-    }
     if (!_PyArg_ParseStack(args, nargs, "|n:rotate", &n)) {
         return NULL;
     }
@@ -938,8 +938,7 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     Py_ssize_t n = Py_SIZE(deque) >> 1;
     PyObject *tmp;
 
-    n++;
-    while (--n) {
+    while (--n >= 0) {
         /* Validate that pointers haven't met in the middle */
         assert(leftblock != rightblock || leftindex < rightindex);
         CHECK_NOT_END(leftblock);
@@ -981,8 +980,7 @@ deque_count(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    n++;
-    while (--n) {
+    while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -1019,8 +1017,7 @@ deque_contains(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    n++;
-    while (--n) {
+    while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -1048,8 +1045,7 @@ deque_len(dequeobject *deque)
 }
 
 static PyObject *
-deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
-            PyObject *kwnames)
+deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t i, n, start=0, stop=Py_SIZE(deque);
     PyObject *v, *item;
@@ -1058,12 +1054,9 @@ deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
     size_t start_state = deque->state;
     int cmp;
 
-    if (!_PyArg_NoStackKeywords("index", kwnames)) {
-        return NULL;
-    }
     if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index", &v,
-                           _PyEval_SliceIndex, &start,
-                           _PyEval_SliceIndex, &stop)) {
+                           _PyEval_SliceIndexNotNone, &start,
+                           _PyEval_SliceIndexNotNone, &stop)) {
         return NULL;
     }
 
@@ -1092,13 +1085,13 @@ deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
         }
     }
 
-    n = stop - i + 1;
-    while (--n) {
+    n = stop - i;
+    while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         if (cmp > 0)
-            return PyLong_FromSsize_t(stop - n);
+            return PyLong_FromSsize_t(stop - n - 1);
         if (cmp < 0)
             return NULL;
         if (start_state != deque->state) {
@@ -1129,17 +1122,13 @@ PyDoc_STRVAR(index_doc,
 */
 
 static PyObject *
-deque_insert(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
-             PyObject *kwnames)
+deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t index;
     Py_ssize_t n = Py_SIZE(deque);
     PyObject *value;
     PyObject *rv;
 
-    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
-        return NULL;
-    }
     if (!_PyArg_ParseStack(args, nargs, "nO:insert", &index, &value)) {
         return NULL;
     }
@@ -1236,16 +1225,14 @@ deque_item(dequeobject *deque, Py_ssize_t i)
         i = (Py_ssize_t)((size_t) i % BLOCKLEN);
         if (index < (Py_SIZE(deque) >> 1)) {
             b = deque->leftblock;
-            n++;
-            while (--n)
+            while (--n >= 0)
                 b = b->rightlink;
         } else {
             n = (Py_ssize_t)(
                     ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                     / BLOCKLEN - n);
             b = deque->rightblock;
-            n++;
-            while (--n)
+            while (--n >= 0)
                 b = b->leftlink;
         }
     }
@@ -1289,16 +1276,14 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     i = (Py_ssize_t)((size_t) i % BLOCKLEN);
     if (index <= halflen) {
         b = deque->leftblock;
-        n++;
-        while (--n)
+        while (--n >= 0)
             b = b->rightlink;
     } else {
         n = (Py_ssize_t)(
                 ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                 / BLOCKLEN - n);
         b = deque->rightblock;
-        n++;
-        while (--n)
+        while (--n >= 0)
             b = b->leftlink;
     }
     Py_INCREF(v);
@@ -1399,10 +1384,12 @@ deque_repr(PyObject *deque)
         return NULL;
     }
     if (((dequeobject *)deque)->maxlen >= 0)
-        result = PyUnicode_FromFormat("deque(%R, maxlen=%zd)",
-                                      aslist, ((dequeobject *)deque)->maxlen);
+        result = PyUnicode_FromFormat("%s(%R, maxlen=%zd)",
+                                      _PyType_Name(Py_TYPE(deque)), aslist,
+                                      ((dequeobject *)deque)->maxlen);
     else
-        result = PyUnicode_FromFormat("deque(%R)", aslist);
+        result = PyUnicode_FromFormat("%s(%R)",
+                                      _PyType_Name(Py_TYPE(deque)), aslist);
     Py_ReprLeave(deque);
     Py_DECREF(aslist);
     return result;
@@ -1725,6 +1712,8 @@ dequeiter_traverse(dequeiterobject *dio, visitproc visit, void *arg)
 static void
 dequeiter_dealloc(dequeiterobject *dio)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(dio);
     Py_XDECREF(dio->deque);
     PyObject_GC_Del(dio);
 }
@@ -2105,6 +2094,8 @@ static PyMemberDef defdict_members[] = {
 static void
 defdict_dealloc(defdictobject *dd)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(dd);
     Py_CLEAR(dd->default_factory);
     PyDict_Type.tp_dealloc((PyObject *)dd);
 }
@@ -2138,7 +2129,8 @@ defdict_repr(defdictobject *dd)
         Py_DECREF(baserepr);
         return NULL;
     }
-    result = PyUnicode_FromFormat("defaultdict(%U, %U)",
+    result = PyUnicode_FromFormat("%s(%U, %U)",
+                                  _PyType_Name(Py_TYPE(dd)),
                                   defrepr, baserepr);
     Py_DECREF(defrepr);
     Py_DECREF(baserepr);
@@ -2263,8 +2255,6 @@ _count_elements(PyObject *self, PyObject *args)
     PyObject *it, *iterable, *mapping, *oldval;
     PyObject *newval = NULL;
     PyObject *key = NULL;
-    PyObject *zero = NULL;
-    PyObject *one = NULL;
     PyObject *bound_get = NULL;
     PyObject *mapping_get;
     PyObject *dict_get;
@@ -2278,10 +2268,6 @@ _count_elements(PyObject *self, PyObject *args)
     if (it == NULL)
         return NULL;
 
-    one = PyLong_FromLong(1);
-    if (one == NULL)
-        goto done;
-
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
      */
@@ -2291,7 +2277,9 @@ _count_elements(PyObject *self, PyObject *args)
     dict_setitem = _PyType_LookupId(&PyDict_Type, &PyId___setitem__);
 
     if (mapping_get != NULL && mapping_get == dict_get &&
-        mapping_setitem != NULL && mapping_setitem == dict_setitem) {
+        mapping_setitem != NULL && mapping_setitem == dict_setitem &&
+        PyDict_Check(mapping))
+    {
         while (1) {
             /* Fast path advantages:
                    1. Eliminate double hashing
@@ -2321,10 +2309,10 @@ _count_elements(PyObject *self, PyObject *args)
             if (oldval == NULL) {
                 if (PyErr_Occurred())
                     goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
+                if (_PyDict_SetItem_KnownHash(mapping, key, _PyLong_One, hash) < 0)
                     goto done;
             } else {
-                newval = PyNumber_Add(oldval, one);
+                newval = PyNumber_Add(oldval, _PyLong_One);
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
@@ -2338,18 +2326,14 @@ _count_elements(PyObject *self, PyObject *args)
         if (bound_get == NULL)
             goto done;
 
-        zero = PyLong_FromLong(0);
-        if (zero == NULL)
-            goto done;
-
         while (1) {
             key = PyIter_Next(it);
             if (key == NULL)
                 break;
-            oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
+            oldval = PyObject_CallFunctionObjArgs(bound_get, key, _PyLong_Zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, one);
+            newval = PyNumber_Add(oldval, _PyLong_One);
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
@@ -2365,8 +2349,6 @@ done:
     Py_XDECREF(key);
     Py_XDECREF(newval);
     Py_XDECREF(bound_get);
-    Py_XDECREF(zero);
-    Py_XDECREF(one);
     if (PyErr_Occurred())
         return NULL;
     Py_RETURN_NONE;

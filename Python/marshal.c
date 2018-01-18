@@ -14,6 +14,13 @@
 #include "marshal.h"
 #include "../Modules/hashtable.h"
 
+/*[clinic input]
+module marshal
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c982b7930dee17db]*/
+
+#include "clinic/marshal.c.h"
+
 /* High water mark to determine when the marshalled object is dangerously deep
  * and risks coring the interpreter.  When the object stack gets this deep,
  * raise an exception instead of continuing.
@@ -32,6 +39,9 @@
 #define TYPE_STOPITER           'S'
 #define TYPE_ELLIPSIS           '.'
 #define TYPE_INT                'i'
+/* TYPE_INT64 is not generated anymore.
+   Supported for backward compatibility only. */
+#define TYPE_INT64              'I'
 #define TYPE_FLOAT              'f'
 #define TYPE_BINARY_FLOAT       'g'
 #define TYPE_COMPLEX            'x'
@@ -549,7 +559,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_lnotab, p);
     }
     else if (PyObject_CheckBuffer(v)) {
-        /* Write unknown bytes-like objects as a byte string */
+        /* Write unknown bytes-like objects as a bytes object */
         Py_buffer view;
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
@@ -640,7 +650,6 @@ typedef struct {
     FILE *fp;
     int depth;
     PyObject *readable;  /* Stream-like object being read from */
-    PyObject *current_filename;
     char *ptr;
     char *end;
     char *buf;
@@ -775,6 +784,19 @@ r_long(RFILE *p)
 #endif
     }
     return x;
+}
+
+/* r_long64 deals with the TYPE_INT64 code. */
+static PyObject *
+r_long64(RFILE *p)
+{
+    const unsigned char *buffer = (const unsigned char *) r_string(8, p);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    return _PyLong_FromByteArray(buffer, 8,
+                                 1 /* little endian */,
+                                 1 /* signed */);
 }
 
 static PyObject *
@@ -976,6 +998,11 @@ r_object(RFILE *p)
         R_REF(retval);
         break;
 
+    case TYPE_INT64:
+        retval = r_long64(p);
+        R_REF(retval);
+        break;
+
     case TYPE_LONG:
         retval = r_PyLong(p);
         R_REF(retval);
@@ -1086,7 +1113,7 @@ r_object(RFILE *p)
             if (PyErr_Occurred())
                 break;
             if (n < 0 || n > SIZE32_MAX) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
+                PyErr_SetString(PyExc_ValueError, "bad marshal data (bytes object size out of range)");
                 break;
             }
             v = PyBytes_FromStringAndSize((char *)NULL, n);
@@ -1105,18 +1132,20 @@ r_object(RFILE *p)
 
     case TYPE_ASCII_INTERNED:
         is_interned = 1;
+        /* fall through */
     case TYPE_ASCII:
         n = r_long(p);
         if (PyErr_Occurred())
             break;
         if (n < 0 || n > SIZE32_MAX) {
-            PyErr_SetString(PyExc_ValueError, "bad marshal data (unicode size out of range)");
+            PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
             break;
         }
         goto _read_ascii;
 
     case TYPE_SHORT_ASCII_INTERNED:
         is_interned = 1;
+        /* fall through */
     case TYPE_SHORT_ASCII:
         n = r_byte(p);
         if (n == EOF) {
@@ -1142,6 +1171,7 @@ r_object(RFILE *p)
 
     case TYPE_INTERNED:
         is_interned = 1;
+        /* fall through */
     case TYPE_UNICODE:
         {
         const char *buffer;
@@ -1150,7 +1180,7 @@ r_object(RFILE *p)
         if (PyErr_Occurred())
             break;
         if (n < 0 || n > SIZE32_MAX) {
-            PyErr_SetString(PyExc_ValueError, "bad marshal data (unicode size out of range)");
+            PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
             break;
         }
         if (n != 0) {
@@ -1380,18 +1410,6 @@ r_object(RFILE *p)
             filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
-            if (PyUnicode_CheckExact(filename)) {
-                if (p->current_filename != NULL) {
-                    if (!PyUnicode_Compare(filename, p->current_filename)) {
-                        Py_DECREF(filename);
-                        Py_INCREF(p->current_filename);
-                        filename = p->current_filename;
-                    }
-                }
-                else {
-                    p->current_filename = filename;
-                }
-            }
             name = r_object(p);
             if (name == NULL)
                 goto code_error;
@@ -1474,7 +1492,6 @@ PyMarshal_ReadShortFromFile(FILE *fp)
     assert(fp);
     rf.readable = NULL;
     rf.fp = fp;
-    rf.current_filename = NULL;
     rf.end = rf.ptr = NULL;
     rf.buf = NULL;
     res = r_short(&rf);
@@ -1490,7 +1507,6 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     long res;
     rf.fp = fp;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
     res = r_long(&rf);
@@ -1552,7 +1568,6 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     PyObject *result;
     rf.fp = fp;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.depth = 0;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
@@ -1573,7 +1588,6 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     PyObject *result;
     rf.fp = NULL;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = (char *)str;
     rf.end = (char *)str + len;
     rf.buf = NULL;
@@ -1612,7 +1626,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
         if (wf.ptr - base > PY_SSIZE_T_MAX) {
             Py_DECREF(wf.str);
             PyErr_SetString(PyExc_OverflowError,
-                            "too much marshal data for a string");
+                            "too much marshal data for a bytes object");
             return NULL;
         }
         if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
@@ -1632,43 +1646,62 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 }
 
 /* And an interface for Python programs... */
+/*[clinic input]
+marshal.dump
+
+    value: object
+        Must be a supported type.
+    file: object
+        Must be a writeable binary file.
+    version: int(c_default="Py_MARSHAL_VERSION") = version
+        Indicates the data format that dump should use.
+    /
+
+Write the value on the open file.
+
+If the value has (or contains an object that has) an unsupported type, a
+ValueError exception is raised - but garbage data will also be written
+to the file. The object will not be properly read back by load().
+[clinic start generated code]*/
 
 static PyObject *
-marshal_dump(PyObject *self, PyObject *args)
+marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
+                  int version)
+/*[clinic end generated code: output=aaee62c7028a7cb2 input=6c7a3c23c6fef556]*/
 {
     /* XXX Quick hack -- need to do this differently */
-    PyObject *x;
-    PyObject *f;
-    int version = Py_MARSHAL_VERSION;
     PyObject *s;
     PyObject *res;
     _Py_IDENTIFIER(write);
 
-    if (!PyArg_ParseTuple(args, "OO|i:dump", &x, &f, &version))
-        return NULL;
-    s = PyMarshal_WriteObjectToString(x, version);
+    s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodIdObjArgs(f, &PyId_write, s, NULL);
+    res = _PyObject_CallMethodIdObjArgs(file, &PyId_write, s, NULL);
     Py_DECREF(s);
     return res;
 }
 
-PyDoc_STRVAR(dump_doc,
-"dump(value, file[, version])\n\
-\n\
-Write the value on the open file. The value must be a supported type.\n\
-The file must be an open file object such as sys.stdout or returned by\n\
-open() or os.popen(). It must be opened in binary mode ('wb' or 'w+b').\n\
-\n\
-If the value has (or contains an object that has) an unsupported type, a\n\
-ValueError exception is raised - but garbage data will also be written\n\
-to the file. The object will not be properly read back by load()\n\
-\n\
-The version argument indicates the data format that dump should use.");
+/*[clinic input]
+marshal.load
+
+    file: object
+        Must be readable binary file.
+    /
+
+Read one value from the open file and return it.
+
+If no valid value is read (e.g. because the data has a different Python
+version's incompatible marshal format), raise EOFError, ValueError or
+TypeError.
+
+Note: If an object containing an unsupported type was marshalled with
+dump(), load() will substitute None for the unmarshallable type.
+[clinic start generated code]*/
 
 static PyObject *
-marshal_load(PyObject *self, PyObject *f)
+marshal_load(PyObject *module, PyObject *file)
+/*[clinic end generated code: output=f8e5c33233566344 input=c85c2b594cd8124a]*/
 {
     PyObject *data, *result;
     _Py_IDENTIFIER(read);
@@ -1681,20 +1714,19 @@ marshal_load(PyObject *self, PyObject *f)
      * This can be removed if we guarantee good error handling
      * for r_string()
      */
-    data = _PyObject_CallMethodId(f, &PyId_read, "i", 0);
+    data = _PyObject_CallMethodId(file, &PyId_read, "i", 0);
     if (data == NULL)
         return NULL;
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
-                     "f.read() returned not bytes but %.100s",
+                     "file.read() returned not bytes but %.100s",
                      data->ob_type->tp_name);
         result = NULL;
     }
     else {
         rf.depth = 0;
         rf.fp = NULL;
-        rf.readable = f;
-        rf.current_filename = NULL;
+        rf.readable = file;
         rf.ptr = rf.end = NULL;
         rf.buf = NULL;
         if ((rf.refs = PyList_New(0)) != NULL) {
@@ -1709,77 +1741,65 @@ marshal_load(PyObject *self, PyObject *f)
     return result;
 }
 
-PyDoc_STRVAR(load_doc,
-"load(file)\n\
-\n\
-Read one value from the open file and return it. If no valid value is\n\
-read (e.g. because the data has a different Python version's\n\
-incompatible marshal format), raise EOFError, ValueError or TypeError.\n\
-The file must be an open file object opened in binary mode ('rb' or\n\
-'r+b').\n\
-\n\
-Note: If an object containing an unsupported type was marshalled with\n\
-dump(), load() will substitute None for the unmarshallable type.");
+/*[clinic input]
+marshal.dumps
 
+    value: object
+        Must be a supported type.
+    version: int(c_default="Py_MARSHAL_VERSION") = version
+        Indicates the data format that dumps should use.
+    /
+
+Return the bytes object that would be written to a file by dump(value, file).
+
+Raise a ValueError exception if value has (or contains an object that has) an
+unsupported type.
+[clinic start generated code]*/
 
 static PyObject *
-marshal_dumps(PyObject *self, PyObject *args)
+marshal_dumps_impl(PyObject *module, PyObject *value, int version)
+/*[clinic end generated code: output=9c200f98d7256cad input=a2139ea8608e9b27]*/
 {
-    PyObject *x;
-    int version = Py_MARSHAL_VERSION;
-    if (!PyArg_ParseTuple(args, "O|i:dumps", &x, &version))
-        return NULL;
-    return PyMarshal_WriteObjectToString(x, version);
+    return PyMarshal_WriteObjectToString(value, version);
 }
 
-PyDoc_STRVAR(dumps_doc,
-"dumps(value[, version])\n\
-\n\
-Return the string that would be written to a file by dump(value, file).\n\
-The value must be a supported type. Raise a ValueError exception if\n\
-value has (or contains an object that has) an unsupported type.\n\
-\n\
-The version argument indicates the data format that dumps should use.");
+/*[clinic input]
+marshal.loads
 
+    bytes: Py_buffer
+    /
+
+Convert the bytes-like object to a value.
+
+If no valid value is found, raise EOFError, ValueError or TypeError.  Extra
+bytes in the input are ignored.
+[clinic start generated code]*/
 
 static PyObject *
-marshal_loads(PyObject *self, PyObject *args)
+marshal_loads_impl(PyObject *module, Py_buffer *bytes)
+/*[clinic end generated code: output=9fc65985c93d1bb1 input=6f426518459c8495]*/
 {
     RFILE rf;
-    Py_buffer p;
-    char *s;
-    Py_ssize_t n;
+    char *s = bytes->buf;
+    Py_ssize_t n = bytes->len;
     PyObject* result;
-    if (!PyArg_ParseTuple(args, "y*:loads", &p))
-        return NULL;
-    s = p.buf;
-    n = p.len;
     rf.fp = NULL;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = s;
     rf.end = s + n;
     rf.depth = 0;
     if ((rf.refs = PyList_New(0)) == NULL)
         return NULL;
     result = read_object(&rf);
-    PyBuffer_Release(&p);
     Py_DECREF(rf.refs);
     return result;
 }
 
-PyDoc_STRVAR(loads_doc,
-"loads(bytes)\n\
-\n\
-Convert the bytes object to a value. If no valid value is found, raise\n\
-EOFError, ValueError or TypeError. Extra characters in the input are\n\
-ignored.");
-
 static PyMethodDef marshal_methods[] = {
-    {"dump",            marshal_dump,   METH_VARARGS,   dump_doc},
-    {"load",            marshal_load,   METH_O,         load_doc},
-    {"dumps",           marshal_dumps,  METH_VARARGS,   dumps_doc},
-    {"loads",           marshal_loads,  METH_VARARGS,   loads_doc},
+    MARSHAL_DUMP_METHODDEF
+    MARSHAL_LOAD_METHODDEF
+    MARSHAL_DUMPS_METHODDEF
+    MARSHAL_LOADS_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1810,8 +1830,8 @@ Functions:\n\
 \n\
 dump() -- write value to a file\n\
 load() -- read value from a file\n\
-dumps() -- write value to a string\n\
-loads() -- read value from a string");
+dumps() -- marshal value as a bytes object\n\
+loads() -- read value from a bytes-like object");
 
 
 

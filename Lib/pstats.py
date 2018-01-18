@@ -500,8 +500,7 @@ def add_callers(target, source):
         if func in new_callers:
             if isinstance(caller, tuple):
                 # format used by cProfile
-                new_callers[func] = tuple([i[0] + i[1] for i in
-                                           zip(caller, new_callers[func])])
+                new_callers[func] = tuple(i[0] + i[1] for i in zip(caller, new_callers[func]))
             else:
                 # format used by profile
                 new_callers[func] += caller
@@ -579,7 +578,7 @@ if __name__ == '__main__':
             if self.stats:
                 try:
                     self.stats.add(line)
-                except IOError as e:
+                except OSError as e:
                     print("Failed to load statistics for %s: %s" % (line, e), file=self.stream)
             else:
                 print("No statistics object is loaded.", file=self.stream)

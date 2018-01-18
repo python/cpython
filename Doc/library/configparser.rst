@@ -34,12 +34,17 @@ can be customized by end users easily.
 .. seealso::
 
    Module :mod:`shlex`
-      Support for a creating Unix shell-like mini-languages which can be used
-      as an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can be used as
+      an alternate format for application configuration files.
 
    Module :mod:`json`
       The json module implements a subset of JavaScript syntax which can also
       be used for this purpose.
+
+
+.. testsetup::
+
+   import configparser
 
 
 Quick Start
@@ -95,7 +100,6 @@ back and explore the data it holds.
 
 .. doctest::
 
-   >>> import configparser
    >>> config = configparser.ConfigParser()
    >>> config.sections()
    []
@@ -116,8 +120,8 @@ back and explore the data it holds.
    'no'
    >>> topsecret['Port']
    '50022'
-   >>> for key in config['bitbucket.org']: print(key)
-   ...
+   >>> for key in config['bitbucket.org']:  # doctest: +SKIP
+   ...     print(key)
    user
    compressionlevel
    serveraliveinterval
@@ -469,9 +473,9 @@ the :meth:`__init__` options:
      ...                                'bar': 'y',
      ...                                'baz': 'z'}
      ... })
-     >>> parser.sections()
+     >>> parser.sections()  # doctest: +SKIP
      ['section3', 'section2', 'section1']
-     >>> [option for option in parser['section3']]
+     >>> [option for option in parser['section3']] # doctest: +SKIP
      ['baz', 'foo', 'bar']
 
   In these operations you need to use an ordered dictionary as well:
@@ -498,11 +502,11 @@ the :meth:`__init__` options:
      ...     ),
      ...   ))
      ... )
-     >>> parser.sections()
+     >>> parser.sections()  # doctest: +SKIP
      ['s1', 's2']
-     >>> [option for option in parser['s1']]
+     >>> [option for option in parser['s1']]  # doctest: +SKIP
      ['1', '3', '5']
-     >>> [option for option in parser['s2'].values()]
+     >>> [option for option in parser['s2'].values()]  # doctest: +SKIP
      ['b', 'd', 'f']
 
 * *allow_no_value*, default value: ``False``
@@ -597,11 +601,11 @@ the :meth:`__init__` options:
     ...   line #3
     ... """)
     >>> print(parser['hashes']['shebang'])
-
+    <BLANKLINE>
     #!/usr/bin/env python
     # -*- coding: utf-8 -*-
     >>> print(parser['hashes']['extensions'])
-
+    <BLANKLINE>
     enabled_extension
     another_extension
     yet_another_extension
@@ -755,6 +759,7 @@ be overridden by subclasses or by attribute assignment.
 
   .. doctest::
 
+     >>> import re
      >>> config = """
      ... [Section 1]
      ... option = value
@@ -762,11 +767,11 @@ be overridden by subclasses or by attribute assignment.
      ... [  Section 2  ]
      ... another = val
      ... """
-     >>> typical = ConfigParser()
+     >>> typical = configparser.ConfigParser()
      >>> typical.read_string(config)
      >>> typical.sections()
      ['Section 1', '  Section 2  ']
-     >>> custom = ConfigParser()
+     >>> custom = configparser.ConfigParser()
      >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
      >>> custom.read_string(config)
      >>> custom.sections()
@@ -939,6 +944,11 @@ ConfigParser Objects
    .. versionchanged:: 3.5
       The *converters* argument was added.
 
+   .. versionchanged:: 3.7
+      The *defaults* argument is read with :meth:`read_dict()`,
+      providing consistent behavior across the parser: non-string
+      keys and values are implicitly converted to strings.
+
 
    .. method:: defaults()
 
@@ -983,13 +993,17 @@ ConfigParser Objects
    .. method:: read(filenames, encoding=None)
 
       Attempt to read and parse a list of filenames, returning a list of
-      filenames which were successfully parsed.  If *filenames* is a string, it
-      is treated as a single filename.  If a file named in *filenames* cannot
-      be opened, that file will be ignored.  This is designed so that you can
-      specify a list of potential configuration file locations (for example,
-      the current directory, the user's home directory, and some system-wide
-      directory), and all existing configuration files in the list will be
-      read.  If none of the named files exist, the :class:`ConfigParser`
+      filenames which were successfully parsed.
+
+      If *filenames* is a string, a :class:`bytes` object or a
+      :term:`path-like object`, it is treated as
+      a single filename.  If a file named in *filenames* cannot be opened, that
+      file will be ignored.  This is designed so that you can specify a list of
+      potential configuration file locations (for example, the current
+      directory, the user's home directory, and some system-wide directory),
+      and all existing configuration files in the list will be read.
+
+      If none of the named files exist, the :class:`ConfigParser`
       instance will contain an empty dataset.  An application which requires
       initial values to be loaded from a file should load the required file or
       files using :meth:`read_file` before calling :meth:`read` for any
@@ -1005,6 +1019,12 @@ ConfigParser Objects
       .. versionadded:: 3.2
          The *encoding* parameter.  Previously, all files were read using the
          default encoding for :func:`open`.
+
+      .. versionadded:: 3.6.1
+         The *filenames* parameter accepts a :term:`path-like object`.
+
+      .. versionadded:: 3.7
+         The *filenames* parameter accepts a :class:`bytes` object.
 
 
    .. method:: read_file(f, source=None)
@@ -1197,8 +1217,10 @@ RawConfigParser Objects
                            default_section=configparser.DEFAULTSECT[, \
                            interpolation])
 
-   Legacy variant of the :class:`ConfigParser` with interpolation disabled
-   by default and unsafe ``add_section`` and ``set`` methods.
+   Legacy variant of the :class:`ConfigParser`.  It has interpolation
+   disabled by default and allows for non-string section names, option
+   names, and values via its unsafe ``add_section`` and ``set`` methods,
+   as well as the legacy ``defaults=`` keyword argument handling.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
@@ -1314,4 +1336,3 @@ Exceptions
 .. [1] Config parsers allow for heavy customization.  If you are interested in
        changing the behaviour outlined by the footnote reference, consult the
        `Customizing Parser Behaviour`_ section.
-

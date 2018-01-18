@@ -14,7 +14,7 @@ import sys
 import encodings
 import encodings.aliases
 import re
-import collections
+import _collections_abc
 from builtins import str as _builtin_str
 import functools
 
@@ -180,19 +180,6 @@ def _strip_padding(s, amount):
 _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
                          r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Returns the locale-aware substitution of a %? specifier
-    (percent).
-
-    additional is for format strings which contain one or more
-    '*' modifiers."""
-    # this is only for one-percent-specifier strings and this should be checked
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
-
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
         formatted = percent % ((value,) + additional)
@@ -217,20 +204,23 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
             formatted = _strip_padding(formatted, seps)
     return formatted
 
-def format_string(f, val, grouping=False):
+def format_string(f, val, grouping=False, monetary=False):
     """Formats a string in the same way that the % formatting would use,
     but takes the current locale into account.
-    Grouping is applied if the third parameter is true."""
+
+    Grouping is applied if the third parameter is true.
+    Conversion uses monetary thousands separator and grouping strings if
+    forth parameter monetary is true."""
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
-    if isinstance(val, collections.Mapping):
+    if isinstance(val, _collections_abc.Mapping):
         new_val = []
         for perc in percents:
             if perc.group()[-1]=='%':
                 new_val.append('%')
             else:
-                new_val.append(format(perc.group(), val, grouping))
+                new_val.append(_format(perc.group(), val, grouping, monetary))
     else:
         if not isinstance(val, tuple):
             val = (val,)
@@ -244,12 +234,27 @@ def format_string(f, val, grouping=False):
                 new_val.append(_format(perc.group(),
                                       val[i],
                                       grouping,
-                                      False,
+                                      monetary,
                                       *val[i+1:i+1+starcount]))
                 i += (1 + starcount)
     val = tuple(new_val)
 
     return new_f % val
+
+def format(percent, value, grouping=False, monetary=False, *additional):
+    """Deprecated, use format_string instead."""
+    import warnings
+    warnings.warn(
+        "This method will be removed in a future version of Python. "
+        "Use 'locale.format_string()' instead.",
+        DeprecationWarning, stacklevel=2
+    )
+
+    match = _percent_re.match(percent)
+    if not match or len(match.group())!= len(percent):
+        raise ValueError(("format() must be given exactly one %%char "
+                         "format specifier, %s not valid") % repr(percent))
+    return _format(percent, value, grouping, monetary, *additional)
 
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
@@ -262,7 +267,7 @@ def currency(val, symbol=True, grouping=False, international=False):
         raise ValueError("Currency formatting is not possible using "
                          "the 'C' locale.")
 
-    s = format('%%.%if' % digits, abs(val), grouping, monetary=True)
+    s = _format('%%.%if' % digits, abs(val), grouping, monetary=True)
     # '<' and '>' are markers if the sign must be inserted between symbol and value
     s = '<' + s + '>'
 
@@ -298,7 +303,7 @@ def currency(val, symbol=True, grouping=False, international=False):
 
 def str(val):
     """Convert float to string, taking the locale into account."""
-    return format("%.12g", val)
+    return _format("%.12g", val)
 
 def delocalize(string):
     "Parses a string as a normalized number according to the locale settings."
@@ -327,7 +332,7 @@ def atoi(string):
 def _test():
     setlocale(LC_ALL, "")
     #do grouping
-    s1 = format("%d", 123456789,1)
+    s1 = format_string("%d", 123456789,1)
     print(s1, "is", atoi(s1))
     #standard formatting
     s1 = str(3.14)
@@ -507,7 +512,8 @@ def _build_localename(localetuple):
         else:
             return language + '.' + encoding
     except (TypeError, ValueError):
-        raise TypeError('Locale must be None, a string, or an iterable of two strings -- language code, encoding.')
+        raise TypeError('Locale must be None, a string, or an iterable of '
+                        'two strings -- language code, encoding.') from None
 
 def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
@@ -611,6 +617,8 @@ if sys.platform.startswith("win"):
     # On Win32, this will return the ANSI code page
     def getpreferredencoding(do_setlocale = True):
         """Return the charset that the user is likely using."""
+        if sys.flags.utf8_mode:
+            return 'UTF-8'
         import _bootlocale
         return _bootlocale.getpreferredencoding(False)
 else:
@@ -628,6 +636,8 @@ else:
             def getpreferredencoding(do_setlocale = True):
                 """Return the charset that the user is likely using,
                 by looking at environment variables."""
+                if sys.flags.utf8_mode:
+                    return 'UTF-8'
                 res = getdefaultlocale()[1]
                 if res is None:
                     # LANG not set, default conservatively to ASCII
@@ -637,6 +647,8 @@ else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,
             according to the system configuration."""
+            if sys.flags.utf8_mode:
+                return 'UTF-8'
             import _bootlocale
             if do_setlocale:
                 oldloc = setlocale(LC_CTYPE)

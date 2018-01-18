@@ -3,6 +3,8 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 
 #include "bytes_methods.h"
 #include "pystrhex.h"
@@ -528,6 +530,8 @@ byte_converter(PyObject *arg, char *p)
     return 0;
 }
 
+static PyObject *_PyBytes_FromBuffer(PyObject *x);
+
 static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
@@ -564,8 +568,19 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
+    /* does it support buffer protocol? */
+    if (PyObject_CheckBuffer(v)) {
+        /* maybe we can avoid making a copy of the buffer object here? */
+        result = _PyBytes_FromBuffer(v);
+        if (result == NULL)
+            return NULL;
+        *pbuf = PyBytes_AS_STRING(result);
+        *plen = PyBytes_GET_SIZE(result);
+        return result;
+    }
     PyErr_Format(PyExc_TypeError,
-                 "%%b requires bytes, or an object that implements __bytes__, not '%.100s'",
+                 "%%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not '%.100s'",
                  Py_TYPE(v)->tp_name);
     return NULL;
 }
@@ -619,11 +634,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             Py_ssize_t len;
             char *pos;
 
-            pos = strchr(fmt + 1, '%');
+            pos = (char *)memchr(fmt + 1, '%', fmtcnt);
             if (pos != NULL)
                 len = pos - fmt;
             else
-                len = format_len - (fmt - format);
+                len = fmtcnt + 1;
             assert(len != 0);
 
             memcpy(res, fmt, len);
@@ -650,6 +665,12 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 #endif
 
             fmt++;
+            if (*fmt == '%') {
+                *res++ = '%';
+                fmt++;
+                fmtcnt--;
+                continue;
+            }
             if (*fmt == '(') {
                 const char *keystart;
                 Py_ssize_t keylen;
@@ -794,11 +815,9 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                                 "incomplete format");
                 goto error;
             }
-            if (c != '%') {
-                v = getnextarg(args, arglen, &argidx);
-                if (v == NULL)
-                    goto error;
-            }
+            v = getnextarg(args, arglen, &argidx);
+            if (v == NULL)
+                goto error;
 
             if (fmtcnt < 0) {
                 /* last writer: disable writer overallocation */
@@ -808,10 +827,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             sign = 0;
             fill = ' ';
             switch (c) {
-            case '%':
-                *res++ = '%';
-                continue;
-
             case 'r':
                 // %r is only for 2/3 code; 3 only code should use %a
             case 'a':
@@ -853,7 +868,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     switch(c)
                     {
                         default:
-                            assert(0 && "'type' not in [diuoxX]");
+                            Py_UNREACHABLE();
                         case 'd':
                         case 'i':
                         case 'u':
@@ -1017,7 +1032,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 res += (width - len);
             }
 
-            if (dict && (argidx < arglen) && c != '%') {
+            if (dict && (argidx < arglen)) {
                 PyErr_SetString(PyExc_TypeError,
                            "not all arguments converted during bytes formatting");
                 Py_XDECREF(temp);
@@ -1242,7 +1257,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (first_invalid_escape != NULL) {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                              "invalid escape sequence '\\%c'",
-                             *first_invalid_escape) < 0) {
+                             (unsigned char)*first_invalid_escape) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1425,7 +1440,7 @@ bytes_concat(PyObject *a, PyObject *b)
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                     Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+                     Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
         goto done;
     }
 
@@ -1551,7 +1566,6 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     int c;
     Py_ssize_t len_a, len_b;
     Py_ssize_t min_len;
-    PyObject *result;
     int rc;
 
     /* Make sure both arguments are strings. */
@@ -1584,7 +1598,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
                 }
             }
         }
-        result = Py_NotImplemented;
+        Py_RETURN_NOTIMPLEMENTED;
     }
     else if (a == b) {
         switch (op) {
@@ -1592,12 +1606,12 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         case Py_LE:
         case Py_GE:
             /* a string is equal to itself */
-            result = Py_True;
+            Py_RETURN_TRUE;
             break;
         case Py_NE:
         case Py_LT:
         case Py_GT:
-            result = Py_False;
+            Py_RETURN_FALSE;
             break;
         default:
             PyErr_BadArgument();
@@ -1607,7 +1621,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     else if (op == Py_EQ || op == Py_NE) {
         int eq = bytes_compare_eq(a, b);
         eq ^= (op == Py_NE);
-        result = eq ? Py_True : Py_False;
+        return PyBool_FromLong(eq);
     }
     else {
         len_a = Py_SIZE(a);
@@ -1620,22 +1634,10 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         }
         else
             c = 0;
-        if (c == 0)
-            c = (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
-        switch (op) {
-        case Py_LT: c = c <  0; break;
-        case Py_LE: c = c <= 0; break;
-        case Py_GT: c = c >  0; break;
-        case Py_GE: c = c >= 0; break;
-        default:
-            PyErr_BadArgument();
-            return NULL;
-        }
-        result = c ? Py_True : Py_False;
+        if (c != 0)
+            Py_RETURN_RICHCOMPARE(c, 0, op);
+        Py_RETURN_RICHCOMPARE(len_a, len_b, op);
     }
-
-    Py_INCREF(result);
-    return result;
 }
 
 static Py_hash_t
@@ -1670,11 +1672,11 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
         char* result_buf;
         PyObject* result;
 
-        if (PySlice_GetIndicesEx(item,
-                         PyBytes_GET_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyBytes_GET_SIZE(self), &start,
+                                            &stop, step);
 
         if (slicelength <= 0) {
             return PyBytes_FromStringAndSize("", 0);
@@ -1819,7 +1821,7 @@ bytes.rpartition
 
 Partition the bytes into three parts using the given separator.
 
-This will search for the separator sep in the bytes, starting and the end. If
+This will search for the separator sep in the bytes, starting at the end. If
 the separator is found, returns a 3-tuple containing the part before the
 separator, the separator itself, and the part after it.
 
@@ -1829,7 +1831,7 @@ objects and the original bytes object.
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=191b114cbb028e50 input=67f689e63a62d478]*/
+/*[clinic end generated code: output=191b114cbb028e50 input=d78db010c8cfdbe1]*/
 {
     return stringlib_rpartition(
         (PyObject*) self,
@@ -2293,7 +2295,7 @@ bytes_decode_impl(PyBytesObject *self, const char *encoding,
 /*[clinic input]
 bytes.splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the bytes, breaking at line boundaries.
 
@@ -2303,7 +2305,7 @@ true.
 
 static PyObject *
 bytes_splitlines_impl(PyBytesObject *self, int keepends)
-/*[clinic end generated code: output=3484149a5d880ffb input=7f4aac67144f9944]*/
+/*[clinic end generated code: output=3484149a5d880ffb input=a8b32eb01ff5a5ed]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyBytes_AS_STRING(self),

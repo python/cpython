@@ -59,7 +59,7 @@ it will be used:
    ...
    >>> copyreg.pickle(C, pickle_c)
    >>> c = C(1)
-   >>> d = copy.copy(c)
+   >>> d = copy.copy(c)  # doctest: +SKIP
    pickling a C instance...
-   >>> p = pickle.dumps(c)
+   >>> p = pickle.dumps(c)  # doctest: +SKIP
    pickling a C instance...

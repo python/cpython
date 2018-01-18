@@ -3,13 +3,10 @@
 import io
 import sys
 import tempfile
+import threading
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
 
 
 class TestAbstractContextManager(unittest.TestCase):
@@ -43,6 +40,16 @@ class TestAbstractContextManager(unittest.TestCase):
                 super().__exit__(*args)
 
         self.assertTrue(issubclass(DefaultEnter, AbstractContextManager))
+
+        class NoEnter(ManagerFromScratch):
+            __enter__ = None
+
+        self.assertFalse(issubclass(NoEnter, AbstractContextManager))
+
+        class NoExit(ManagerFromScratch):
+            __exit__ = None
+
+        self.assertFalse(issubclass(NoExit, AbstractContextManager))
 
 
 class ContextManagerTestCase(unittest.TestCase):
@@ -152,6 +159,29 @@ def woohoo():
         else:
             self.fail('StopIteration was suppressed')
 
+    def test_contextmanager_do_not_unchain_non_stopiteration_exceptions(self):
+        @contextmanager
+        def test_issue29692():
+            try:
+                yield
+            except Exception as exc:
+                raise RuntimeError('issue29692:Chained') from exc
+        try:
+            with test_issue29692():
+                raise ZeroDivisionError
+        except Exception as ex:
+            self.assertIs(type(ex), RuntimeError)
+            self.assertEqual(ex.args[0], 'issue29692:Chained')
+            self.assertIsInstance(ex.__cause__, ZeroDivisionError)
+
+        try:
+            with test_issue29692():
+                raise StopIteration('issue29692:Unchained')
+        except Exception as ex:
+            self.assertIs(type(ex), StopIteration)
+            self.assertEqual(ex.args[0], 'issue29692:Unchained')
+            self.assertIsNone(ex.__cause__)
+
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):
@@ -222,6 +252,16 @@ class ClosingTestCase(unittest.TestCase):
                 1 / 0
         self.assertEqual(state, [1])
 
+
+class NullcontextTestCase(unittest.TestCase):
+    def test_nullcontext(self):
+        class C:
+            pass
+        c = C()
+        with nullcontext(c) as c_in:
+            self.assertIs(c_in, c)
+
+
 class FileContextTestCase(unittest.TestCase):
 
     def testWithOpen(self):
@@ -242,7 +282,6 @@ class FileContextTestCase(unittest.TestCase):
         finally:
             support.unlink(tfn)
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class LockContextTestCase(unittest.TestCase):
 
     def boilerPlate(self, lock, locked):

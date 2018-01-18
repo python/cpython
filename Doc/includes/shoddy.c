@@ -17,7 +17,7 @@ Shoddy_increment(Shoddy *self, PyObject *unused)
 static PyMethodDef Shoddy_methods[] = {
     {"increment", (PyCFunction)Shoddy_increment, METH_NOARGS,
      PyDoc_STR("increment state counter")},
-    {NULL,	NULL},
+    {NULL},
 };
 
 static int
@@ -31,7 +31,7 @@ Shoddy_init(Shoddy *self, PyObject *args, PyObject *kwds)
 
 
 static PyTypeObject ShoddyType = {
-    PyObject_HEAD_INIT(NULL)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "shoddy.Shoddy",         /* tp_name */
     sizeof(Shoddy),          /* tp_basicsize */
     0,                       /* tp_itemsize */

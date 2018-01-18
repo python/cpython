@@ -31,6 +31,9 @@ class Bunch(object):
         self.started = []
         self.finished = []
         self._can_exit = not wait_before_exit
+        self.wait_thread = support.wait_threads_exit()
+        self.wait_thread.__enter__()
+
         def task():
             tid = threading.get_ident()
             self.started.append(tid)
@@ -40,6 +43,7 @@ class Bunch(object):
                 self.finished.append(tid)
                 while not self._can_exit:
                     _wait()
+
         try:
             for i in range(n):
                 start_new_thread(task, ())
@@ -54,6 +58,8 @@ class Bunch(object):
     def wait_for_finished(self):
         while len(self.finished) < self.n:
             _wait()
+        # Wait for threads exit
+        self.wait_thread.__exit__(None, None, None)
 
     def do_finish(self):
         self._can_exit = True
@@ -220,20 +226,23 @@ class LockTests(BaseLockTests):
         # Lock needs to be released before re-acquiring.
         lock = self.locktype()
         phase = []
+
         def f():
             lock.acquire()
             phase.append(None)
             lock.acquire()
             phase.append(None)
-        start_new_thread(f, ())
-        while len(phase) == 0:
+
+        with support.wait_threads_exit():
+            start_new_thread(f, ())
+            while len(phase) == 0:
+                _wait()
             _wait()
-        _wait()
-        self.assertEqual(len(phase), 1)
-        lock.release()
-        while len(phase) == 1:
-            _wait()
-        self.assertEqual(len(phase), 2)
+            self.assertEqual(len(phase), 1)
+            lock.release()
+            while len(phase) == 1:
+                _wait()
+            self.assertEqual(len(phase), 2)
 
     def test_different_thread(self):
         # Lock can be released from a different thread.
@@ -304,6 +313,7 @@ class RLockTests(BaseLockTests):
             self.assertRaises(RuntimeError, lock.release)
         finally:
             b.do_finish()
+        b.wait_for_finished()
 
     def test__is_owned(self):
         lock = self.locktype()
@@ -461,21 +471,28 @@ class ConditionTests(BaseTestCase):
         # construct.  In particular, it is possible that this can no longer
         # be conveniently guaranteed should their implementation ever change.
         N = 5
+        ready = []
         results1 = []
         results2 = []
         phase_num = 0
         def f():
             cond.acquire()
+            ready.append(phase_num)
             result = cond.wait()
             cond.release()
             results1.append((result, phase_num))
             cond.acquire()
+            ready.append(phase_num)
             result = cond.wait()
             cond.release()
             results2.append((result, phase_num))
         b = Bunch(f, N)
         b.wait_for_started()
-        _wait()
+        # first wait, to ensure all workers settle into cond.wait() before
+        # we continue. See issues #8799 and #30727.
+        while len(ready) < 5:
+            _wait()
+        ready.clear()
         self.assertEqual(results1, [])
         # Notify 3 threads at first
         cond.acquire()
@@ -487,9 +504,9 @@ class ConditionTests(BaseTestCase):
             _wait()
         self.assertEqual(results1, [(True, 1)] * 3)
         self.assertEqual(results2, [])
-        # first wait, to ensure all workers settle into cond.wait() before
-        # we continue. See issue #8799
-        _wait()
+        # make sure all awaken workers settle into cond.wait()
+        while len(ready) < 3:
+            _wait()
         # Notify 5 threads: they might be in their first or second wait
         cond.acquire()
         cond.notify(5)
@@ -500,7 +517,9 @@ class ConditionTests(BaseTestCase):
             _wait()
         self.assertEqual(results1, [(True, 1)] * 3 + [(True, 2)] * 2)
         self.assertEqual(results2, [(True, 2)] * 3)
-        _wait() # make sure all workers settle into cond.wait()
+        # make sure all workers settle into cond.wait()
+        while len(ready) < 5:
+            _wait()
         # Notify all threads: they are all in their second wait
         cond.acquire()
         cond.notify_all()
@@ -610,13 +629,14 @@ class BaseSemaphoreTests(BaseTestCase):
         sem = self.semtype(7)
         sem.acquire()
         N = 10
+        sem_results = []
         results1 = []
         results2 = []
         phase_num = 0
         def f():
-            sem.acquire()
+            sem_results.append(sem.acquire())
             results1.append(phase_num)
-            sem.acquire()
+            sem_results.append(sem.acquire())
             results2.append(phase_num)
         b = Bunch(f, 10)
         b.wait_for_started()
@@ -640,6 +660,7 @@ class BaseSemaphoreTests(BaseTestCase):
         # Final release, to let the last thread finish
         sem.release()
         b.wait_for_finished()
+        self.assertEqual(sem_results, [True] * (6 + 7 + 6 + 1))
 
     def test_try_acquire(self):
         sem = self.semtype(2)

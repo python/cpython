@@ -71,6 +71,8 @@ class Unparser:
     ########################################################
 
     def _Module(self, tree):
+        if tree.docstring is not None:
+            self.fill(repr(tree.docstring))
         for stmt in tree.body:
             self.dispatch(stmt)
 
@@ -235,6 +237,8 @@ class Unparser:
         self.write(")")
 
         self.enter()
+        if t.docstring is not None:
+            self.fill(repr(t.docstring))
         self.dispatch(t.body)
         self.leave()
 
@@ -257,6 +261,8 @@ class Unparser:
             self.write(" -> ")
             self.dispatch(t.returns)
         self.enter()
+        if t.docstring is not None:
+            self.fill(repr(t.docstring))
         self.dispatch(t.body)
         self.leave()
 

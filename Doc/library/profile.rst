@@ -85,11 +85,11 @@ next line: ``Ordered by: standard name``, indicates that the text string in the
 far right column was used to sort the output. The column headings include:
 
 ncalls
-   for the number of calls,
+   for the number of calls.
 
 tottime
-    for the total time spent in the given function (and excluding time made in
-    calls to sub-functions)
+   for the total time spent in the given function (and excluding time made in
+   calls to sub-functions)
 
 percall
    is the quotient of ``tottime`` divided by ``ncalls``
@@ -123,12 +123,17 @@ them in various ways.
 The file :mod:`cProfile` can also be invoked as a script to profile another
 script.  For example::
 
-   python -m cProfile [-o output_file] [-s sort_order] myscript.py
+   python -m cProfile [-o output_file] [-s sort_order] (-m module | myscript.py)
 
 ``-o`` writes the profile results to a file instead of to stdout
 
 ``-s`` specifies one of the :func:`~pstats.Stats.sort_stats` sort values to sort
 the output by. This only applies when ``-o`` is not supplied.
+
+``-m`` specifies that a module is being profiled instead of a script.
+
+   .. versionadded:: 3.7
+      Added the ``-m`` option.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::
@@ -215,11 +220,11 @@ functions:
 
    and gathers profiling statistics from the execution. If no file name is
    present, then this function automatically creates a :class:`~pstats.Stats`
-   instance and prints a simple profiling report. If the sort value is specified
+   instance and prints a simple profiling report. If the sort value is specified,
    it is passed to this :class:`~pstats.Stats` instance to control how the
    results are sorted.
 
-.. function:: runctx(command, globals, locals, filename=None)
+.. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
    globals and locals dictionaries for the *command* string. This routine
@@ -575,7 +580,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.clock() as
+on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your

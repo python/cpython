@@ -157,7 +157,7 @@ Later we will see more functions that return iterables and take iterables as arg
 :keyword:`break` and :keyword:`continue` Statements, and :keyword:`else` Clauses on Loops
 =========================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the smallest enclosing
+The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an ``else`` clause; it is executed when the loop
@@ -475,7 +475,7 @@ Here's an example that fails due to this restriction::
    ...
    >>> function(0, a=0)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: function() got multiple values for keyword argument 'a'
 
 When a final formal parameter of the form ``**name`` is present, it receives a
@@ -492,8 +492,7 @@ function like this::
        for arg in arguments:
            print(arg)
        print("-" * 40)
-       keys = sorted(keywords.keys())
-       for kw in keys:
+       for kw in keywords:
            print(kw, ":", keywords[kw])
 
 It could be called like this::
@@ -513,13 +512,13 @@ and of course it would print:
    It's very runny, sir.
    It's really very, VERY runny, sir.
    ----------------------------------------
-   client : John Cleese
    shopkeeper : Michael Palin
+   client : John Cleese
    sketch : Cheese Shop Sketch
 
-Note that the list of keyword argument names is created by sorting the result
-of the keywords dictionary's ``keys()`` method before printing its contents;
-if this is not done, the order in which the arguments are printed is undefined.
+Note that the order in which the keyword arguments are printed is guaranteed
+to match the order in which they were provided in the function call.
+
 
 .. _tut-arbitraryargs:
 

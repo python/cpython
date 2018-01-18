@@ -1,12 +1,14 @@
 """Utilities for with-statement contexts.  See PEP 343."""
 import abc
 import sys
+import _collections_abc
 from collections import deque
 from functools import wraps
 
-__all__ = ["contextmanager", "closing", "AbstractContextManager",
-           "ContextDecorator", "ExitStack", "redirect_stdout",
-           "redirect_stderr", "suppress"]
+__all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
+           "AbstractContextManager", "AbstractAsyncContextManager",
+           "ContextDecorator", "ExitStack",
+           "redirect_stdout", "redirect_stderr", "suppress"]
 
 
 class AbstractContextManager(abc.ABC):
@@ -25,9 +27,28 @@ class AbstractContextManager(abc.ABC):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is AbstractContextManager:
-            if (any("__enter__" in B.__dict__ for B in C.__mro__) and
-                any("__exit__" in B.__dict__ for B in C.__mro__)):
-                return True
+            return _collections_abc._check_methods(C, "__enter__", "__exit__")
+        return NotImplemented
+
+
+class AbstractAsyncContextManager(abc.ABC):
+
+    """An abstract base class for asynchronous context managers."""
+
+    async def __aenter__(self):
+        """Return `self` upon entering the runtime context."""
+        return self
+
+    @abc.abstractmethod
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Raise any exception triggered within the runtime context."""
+        return None
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is AbstractAsyncContextManager:
+            return _collections_abc._check_methods(C, "__aenter__",
+                                                   "__aexit__")
         return NotImplemented
 
 
@@ -54,8 +75,8 @@ class ContextDecorator(object):
         return inner
 
 
-class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
-    """Helper for @contextmanager decorator."""
+class _GeneratorContextManagerBase:
+    """Shared functionality for @contextmanager and @asynccontextmanager."""
 
     def __init__(self, func, args, kwds):
         self.gen = func(*args, **kwds)
@@ -70,6 +91,12 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
         # currently bypasses the instance docstring and shows the docstring
         # for the class instead.
         # See http://bugs.python.org/issue19404 for more details.
+
+
+class _GeneratorContextManager(_GeneratorContextManagerBase,
+                               AbstractContextManager,
+                               ContextDecorator):
+    """Helper for @contextmanager decorator."""
 
     def _recreate_cm(self):
         # _GCM instances are one-shot context managers, so the
@@ -88,7 +115,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
             try:
                 next(self.gen)
             except StopIteration:
-                return
+                return False
             else:
                 raise RuntimeError("generator didn't stop")
         else:
@@ -98,7 +125,6 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 value = type()
             try:
                 self.gen.throw(type, value, traceback)
-                raise RuntimeError("generator didn't stop after throw()")
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
@@ -111,7 +137,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # Likewise, avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
                 # (see PEP 479).
-                if exc.__cause__ is value:
+                if type is StopIteration and exc.__cause__ is value:
                     return False
                 raise
             except:
@@ -122,7 +148,59 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # fixes the impedance mismatch between the throw() protocol
                 # and the __exit__() protocol.
                 #
-                if sys.exc_info()[1] is not value:
+                # This cannot use 'except BaseException as exc' (as in the
+                # async implementation) to maintain compatibility with
+                # Python 2, where old-style class exceptions are not caught
+                # by 'except BaseException'.
+                if sys.exc_info()[1] is value:
+                    return False
+                raise
+            raise RuntimeError("generator didn't stop after throw()")
+
+
+class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
+                                    AbstractAsyncContextManager):
+    """Helper for @asynccontextmanager."""
+
+    async def __aenter__(self):
+        try:
+            return await self.gen.__anext__()
+        except StopAsyncIteration:
+            raise RuntimeError("generator didn't yield") from None
+
+    async def __aexit__(self, typ, value, traceback):
+        if typ is None:
+            try:
+                await self.gen.__anext__()
+            except StopAsyncIteration:
+                return
+            else:
+                raise RuntimeError("generator didn't stop")
+        else:
+            if value is None:
+                value = typ()
+            # See _GeneratorContextManager.__exit__ for comments on subtleties
+            # in this implementation
+            try:
+                await self.gen.athrow(typ, value, traceback)
+                raise RuntimeError("generator didn't stop after throw()")
+            except StopAsyncIteration as exc:
+                return exc is not value
+            except RuntimeError as exc:
+                if exc is value:
+                    return False
+                # Avoid suppressing if a StopIteration exception
+                # was passed to throw() and later wrapped into a RuntimeError
+                # (see PEP 479 for sync generators; async generators also
+                # have this behavior). But do this only if the exception wrapped
+                # by the RuntimeError is actully Stop(Async)Iteration (see
+                # issue29692).
+                if isinstance(value, (StopIteration, StopAsyncIteration)):
+                    if exc.__cause__ is value:
+                        return False
+                raise
+            except BaseException as exc:
+                if exc is not value:
                     raise
 
 
@@ -152,11 +230,43 @@ def contextmanager(func):
             <body>
         finally:
             <cleanup>
-
     """
     @wraps(func)
     def helper(*args, **kwds):
         return _GeneratorContextManager(func, args, kwds)
+    return helper
+
+
+def asynccontextmanager(func):
+    """@asynccontextmanager decorator.
+
+    Typical usage:
+
+        @asynccontextmanager
+        async def some_async_generator(<arguments>):
+            <setup>
+            try:
+                yield <value>
+            finally:
+                <cleanup>
+
+    This makes this:
+
+        async with some_async_generator(<arguments>) as <variable>:
+            <body>
+
+    equivalent to this:
+
+        <setup>
+        try:
+            <variable> = <value>
+            <body>
+        finally:
+            <cleanup>
+    """
+    @wraps(func)
+    def helper(*args, **kwds):
+        return _AsyncGeneratorContextManager(func, args, kwds)
     return helper
 
 
@@ -382,3 +492,24 @@ class ExitStack(AbstractContextManager):
                 exc_details[1].__context__ = fixed_ctx
                 raise
         return received_exc and suppressed_exc
+
+
+class nullcontext(AbstractContextManager):
+    """Context manager that does no additional processing.
+
+    Used as a stand-in for a normal context manager, when a particular
+    block of code is only sometimes used with a normal context manager:
+
+    cm = optional_cm if condition else nullcontext()
+    with cm:
+        # Perform operation, using optional_cm if condition is True
+    """
+
+    def __init__(self, enter_result=None):
+        self.enter_result = enter_result
+
+    def __enter__(self):
+        return self.enter_result
+
+    def __exit__(self, *excinfo):
+        pass

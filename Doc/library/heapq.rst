@@ -100,7 +100,9 @@ The module also offers three general purpose functions based on heaps.
    ``None`` (compare the elements directly).
 
    *reverse* is a boolean value.  If set to ``True``, then the input elements
-   are merged as if each comparison were reversed.
+   are merged as if each comparison were reversed. To achieve behavior similar
+   to ``sorted(itertools.chain(*iterables), reverse=True)``, all iterables must
+   be sorted from largest to smallest.
 
    .. versionchanged:: 3.5
       Added the optional *key* and *reverse* parameters.
@@ -184,6 +186,17 @@ including the priority, an entry count, and the task.  The entry count serves as
 a tie-breaker so that two tasks with the same priority are returned in the order
 they were added. And since no two entry counts are the same, the tuple
 comparison will never attempt to directly compare two tasks.
+
+Another solution to the problem of non-comparable tasks is to create a wrapper
+class that ignores the task item and only compares the priority field::
+
+    from dataclasses import dataclass, field
+    from typing import Any
+
+    @dataclass(order=True)
+    class PrioritizedItem:
+        priority: int
+        item: Any=field(compare=False)
 
 The remaining challenges revolve around finding a pending task and making
 changes to its priority or removing it entirely.  Finding a task can be done

@@ -43,7 +43,7 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=(',', ':'))
+    >>> json.dumps([1, 2, 3, {'4': 5, '6': 7}], separators=(',', ':'))
     '[1,2,3,{"4":5,"6":7}]'
 
 Pretty printing::
@@ -503,7 +503,7 @@ Encoders and Decoders
 Exceptions
 ----------
 
-.. exception:: JSONDecodeError(msg, doc, pos, end=None)
+.. exception:: JSONDecodeError(msg, doc, pos)
 
    Subclass of :exc:`ValueError` with the following additional attributes:
 

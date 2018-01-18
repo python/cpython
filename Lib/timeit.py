@@ -206,7 +206,7 @@ class Timer:
         return r
 
     def autorange(self, callback=None):
-        """Return the number of loops so that total time >= 0.2.
+        """Return the number of loops and time taken so that total time >= 0.2.
 
         Calls the timeit method with increasing numbers from the sequence
         1, 2, 5, 10, 20, 50, ... until the time taken is at least 0.2

@@ -1,7 +1,7 @@
 @echo off
 setlocal
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
 
 set BUILDX86=
 set BUILDX64=
@@ -22,8 +22,8 @@ if "%~1" EQU "-r" (set REBUILD=-r) && shift && goto CheckOpts
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
 call "%D%get_externals.bat"
-
-call "%PCBUILD%env.bat" x86
+call "%PCBUILD%find_msbuild.bat" %MSBUILD%
+if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 if defined BUILDX86 (
     call "%PCBUILD%build.bat" -d -e %REBUILD% %BUILDTEST%
@@ -44,7 +44,7 @@ if defined BUILDDOC (
 )
 
 rem Build the launcher MSI separately
-msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86
+%MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86
 
 set BUILD_CMD="%D%bundle\snapshot.wixproj"
 if defined BUILDTEST (
@@ -58,11 +58,11 @@ if defined REBUILD (
 )
 
 if defined BUILDX86 (
-    msbuild %BUILD_CMD%
+    %MSBUILD% %BUILD_CMD%
     if errorlevel 1 goto :eof
 )
 if defined BUILDX64 (
-    msbuild /p:Platform=x64 %BUILD_CMD%
+    %MSBUILD% /p:Platform=x64 %BUILD_CMD%
     if errorlevel 1 goto :eof
 )
 

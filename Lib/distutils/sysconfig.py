@@ -23,7 +23,7 @@ BASE_PREFIX = os.path.normpath(sys.base_prefix)
 BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
 # Path to the base directory of the project. On Windows the binary may
-# live in project/PCBuild/win32 or project/PCBuild/amd64.
+# live in project/PCbuild/win32 or project/PCbuild/amd64.
 # set for cross builds
 if "_PYTHON_PROJECT_BASE" in os.environ:
     project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
@@ -93,14 +93,11 @@ def get_python_inc(plat_specific=0, prefix=None):
             # the build directory may not be the source directory, we
             # must use "srcdir" from the makefile to find the "Include"
             # directory.
-            base = _sys_home or project_base
             if plat_specific:
-                return base
-            if _sys_home:
-                incdir = os.path.join(_sys_home, get_config_var('AST_H_DIR'))
+                return _sys_home or project_base
             else:
                 incdir = os.path.join(get_config_var('srcdir'), 'Include')
-            return os.path.normpath(incdir)
+                return os.path.normpath(incdir)
         python_dir = 'python' + get_python_version() + build_flags
         return os.path.join(prefix, "include", python_dir)
     elif os.name == "nt":

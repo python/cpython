@@ -15,7 +15,6 @@ import zipfile, os, unittest
 import time
 import sys
 
-from io import StringIO
 from tempfile import TemporaryFile
 
 from test.support import TESTFN, requires_zlib
@@ -40,7 +39,7 @@ class TestsWithSourceFile(unittest.TestCase):
         # Create the ZIP archive.
         zipfp = zipfile.ZipFile(f, "w", compression)
 
-        # It will contain enough copies of self.data to reach about 6GB of
+        # It will contain enough copies of self.data to reach about 6 GiB of
         # raw data to store.
         filecount = 6*1024**3 // len(self.data)
 

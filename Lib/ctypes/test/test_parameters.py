@@ -1,5 +1,6 @@
 import unittest
 from ctypes.test import need_symbol
+import test.support
 
 class SimpleTypesTestCase(unittest.TestCase):
 
@@ -169,6 +170,36 @@ class SimpleTypesTestCase(unittest.TestCase):
         # ArgumentError: argument 1: ValueError: 99
         self.assertRaises(ArgumentError, func, 99)
 
+    def test_abstract(self):
+        from ctypes import (Array, Structure, Union, _Pointer,
+                            _SimpleCData, _CFuncPtr)
+
+        self.assertRaises(TypeError, Array.from_param, 42)
+        self.assertRaises(TypeError, Structure.from_param, 42)
+        self.assertRaises(TypeError, Union.from_param, 42)
+        self.assertRaises(TypeError, _CFuncPtr.from_param, 42)
+        self.assertRaises(TypeError, _Pointer.from_param, 42)
+        self.assertRaises(TypeError, _SimpleCData.from_param, 42)
+
+    @test.support.cpython_only
+    def test_issue31311(self):
+        # __setstate__ should neither raise a SystemError nor crash in case
+        # of a bad __dict__.
+        from ctypes import Structure
+
+        class BadStruct(Structure):
+            @property
+            def __dict__(self):
+                pass
+        with self.assertRaises(TypeError):
+            BadStruct().__setstate__({}, b'foo')
+
+        class WorseStruct(Structure):
+            @property
+            def __dict__(self):
+                1/0
+        with self.assertRaises(ZeroDivisionError):
+            WorseStruct().__setstate__({}, b'foo')
 
 ################################################################
 

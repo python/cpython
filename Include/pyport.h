@@ -37,7 +37,7 @@ Used in:  Py_SAFE_DOWNCAST
  * integral synonyms.  Only define the ones we actually need.
  */
 
-// long long is required. Ensure HAVE_LONG_LONG is defined for compatibility.
+/* long long is required. Ensure HAVE_LONG_LONG is defined for compatibility. */
 #ifndef HAVE_LONG_LONG
 #define HAVE_LONG_LONG 1
 #endif
@@ -173,12 +173,9 @@ typedef int Py_ssize_clean_t;
 /* fastest possible local call under MSVC */
 #define Py_LOCAL(type) static type __fastcall
 #define Py_LOCAL_INLINE(type) static __inline type __fastcall
-#elif defined(USE_INLINE)
-#define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static inline type
 #else
 #define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static type
+#define Py_LOCAL_INLINE(type) static inline type
 #endif
 
 /* Py_MEMCPY is kept for backwards compatibility,
@@ -559,16 +556,6 @@ extern char * _getpty(int *, int, mode_t, int);
 #include <sys/termio.h>
 #endif
 
-#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY)
-#if !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H)
-/* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
-   functions, even though they are included in libutil. */
-#include <termios.h>
-extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
-extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
-#endif /* !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H) */
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
-
 
 /* On 4.4BSD-descendants, ctype functions serves the whole range of
  * wchar_t character set rather than single byte code points only.
@@ -644,7 +631,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
-#               ifdef Py_BUILD_CORE
+#               if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 #                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
 #                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
         /* module init functions inside the core need no external linkage */
@@ -671,7 +658,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #                               define PyMODINIT_FUNC __declspec(dllexport) PyObject*
 #                       endif /* __cplusplus */
 #               endif /* Py_BUILD_CORE */
-#       endif /* HAVE_DECLSPEC */
+#       endif /* HAVE_DECLSPEC_DLL */
 #endif /* Py_ENABLE_SHARED */
 
 /* If no external linkage macros defined by now, create defaults */
@@ -776,7 +763,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).
@@ -797,7 +784,20 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-#include <android/api-level.h>
+/* The Android langinfo.h header is not used. */
+#undef HAVE_LANGINFO_H
+#undef CODESET
+#endif
+
+/* Maximum value of the Windows DWORD type */
+#define PY_DWORD_MAX 4294967295U
+
+/* This macro used to tell whether Python was built with multithreading
+ * enabled.  Now multithreading is always enabled, but keep the macro
+ * for compatibility.
+ */
+#ifndef WITH_THREAD
+#define WITH_THREAD
 #endif
 
 #endif /* Py_PYPORT_H */

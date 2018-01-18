@@ -42,11 +42,12 @@ PyObject *PyBool_FromLong(long ok)
 static PyObject *
 bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"x", 0};
     PyObject *x = Py_False;
     long ok;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:bool", kwlist, &x))
+    if (!_PyArg_NoKeywords("bool", kwds))
+        return NULL;
+    if (!PyArg_UnpackTuple(args, "bool", 0, 1, &x))
         return NULL;
     ok = PyObject_IsTrue(x);
     if (ok < 0)

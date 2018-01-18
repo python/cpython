@@ -1,4 +1,6 @@
 #include <Python.h>
+#include "pythread.h"
+#include <inttypes.h>
 #include <stdio.h>
 
 /*********************************************************
@@ -22,9 +24,13 @@ static void _testembed_Py_Initialize(void)
 
 static void print_subinterp(void)
 {
-    /* Just output some debug stuff */
+    /* Output information about the interpreter in the format
+       expected in Lib/test/test_capi.py (test_subinterps). */
     PyThreadState *ts = PyThreadState_Get();
-    printf("interp %p, thread state %p: ", ts->interp, ts);
+    PyInterpreterState *interp = ts->interp;
+    int64_t id = PyInterpreterState_GetID(interp);
+    printf("interp %" PRId64 " <0x%" PRIXPTR ">, thread state <0x%" PRIXPTR ">: ",
+            id, (uintptr_t)interp, (uintptr_t)ts);
     fflush(stdout);
     PyRun_SimpleString(
         "import sys;"
@@ -36,9 +42,7 @@ static void print_subinterp(void)
 static int test_repeated_init_and_subinterpreters(void)
 {
     PyThreadState *mainstate, *substate;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate;
-#endif
     int i, j;
 
     for (i=0; i<15; i++) {
@@ -46,12 +50,10 @@ static int test_repeated_init_and_subinterpreters(void)
         _testembed_Py_Initialize();
         mainstate = PyThreadState_Get();
 
-#ifdef WITH_THREAD
         PyEval_InitThreads();
         PyEval_ReleaseThread(mainstate);
 
         gilstate = PyGILState_Ensure();
-#endif
         print_subinterp();
         PyThreadState_Swap(NULL);
 
@@ -63,9 +65,7 @@ static int test_repeated_init_and_subinterpreters(void)
 
         PyThreadState_Swap(mainstate);
         print_subinterp();
-#ifdef WITH_THREAD
         PyGILState_Release(gilstate);
-#endif
 
         PyEval_RestoreThread(mainstate);
         Py_Finalize();
@@ -126,9 +126,78 @@ static int test_forced_io_encoding(void)
     return 0;
 }
 
+/*********************************************************
+ * Test parts of the C-API that work before initialization
+ *********************************************************/
+
+static int test_pre_initialization_api(void)
+{
+    /* Leading "./" ensures getpath.c can still find the standard library */
+    wchar_t *program = Py_DecodeLocale("./spam", NULL);
+    if (program == NULL) {
+        fprintf(stderr, "Fatal error: cannot decode program name\n");
+        return 1;
+    }
+    Py_SetProgramName(program);
+
+    Py_Initialize();
+    Py_Finalize();
+
+    PyMem_RawFree(program);
+    return 0;
+}
+
+static void bpo20891_thread(void *lockp)
+{
+    PyThread_type_lock lock = *((PyThread_type_lock*)lockp);
+
+    PyGILState_STATE state = PyGILState_Ensure();
+    if (!PyGILState_Check()) {
+        fprintf(stderr, "PyGILState_Check failed!");
+        abort();
+    }
+
+    PyGILState_Release(state);
+
+    PyThread_release_lock(lock);
+
+    PyThread_exit_thread();
+}
+
+static int test_bpo20891(void)
+{
+    /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
+       calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
+       call PyEval_InitThreads() for us in this case. */
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (!lock) {
+        fprintf(stderr, "PyThread_allocate_lock failed!");
+        return 1;
+    }
+
+    _testembed_Py_Initialize();
+
+    unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &lock);
+    if (thrd == PYTHREAD_INVALID_THREAD_ID) {
+        fprintf(stderr, "PyThread_start_new_thread failed!");
+        return 1;
+    }
+    PyThread_acquire_lock(lock, WAIT_LOCK);
+
+    Py_BEGIN_ALLOW_THREADS
+    /* wait until the thread exit */
+    PyThread_acquire_lock(lock, WAIT_LOCK);
+    Py_END_ALLOW_THREADS
+
+    PyThread_free_lock(lock);
+
+    return 0;
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
- * 
+ *
  * Names are compared case-sensitively with the first
  * argument. If no match is found, or no first argument was
  * provided, the names of all test cases are printed and
@@ -136,7 +205,7 @@ static int test_forced_io_encoding(void)
  *
  * The int returned from test functions is used as the exit
  * code, and test_capi treats all non-zero exit codes as a
- * failed test. 
+ * failed test.
  *********************************************************/
 struct TestCase
 {
@@ -147,6 +216,8 @@ struct TestCase
 static struct TestCase TestCases[] = {
     { "forced_io_encoding", test_forced_io_encoding },
     { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
+    { "pre_initialization_api", test_pre_initialization_api },
+    { "bpo20891", test_bpo20891 },
     { NULL, NULL }
 };
 

@@ -7,7 +7,6 @@
 
 
 import time
-from math import log, ceil
 try:
     from test.support import import_fresh_module
 except ImportError:

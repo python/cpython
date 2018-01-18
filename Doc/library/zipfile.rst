@@ -132,8 +132,9 @@ ZipFile Objects
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True)
 
-   Open a ZIP file, where *file* can be either a path to a file (a string) or a
-   file-like object.  The *mode* parameter should be ``'r'`` to read an existing
+   Open a ZIP file, where *file* can be a path to a file (a string), a
+   file-like object or a :term:`path-like object`.
+   The *mode* parameter should be ``'r'`` to read an existing
    file, ``'w'`` to truncate and write a new file, ``'a'`` to append to an
    existing file, or ``'x'`` to exclusively create and write a new file.
    If *mode* is ``'x'`` and *file* refers to an existing file,
@@ -182,6 +183,9 @@ ZipFile Objects
    .. versionchanged:: 3.6
       Previously, a plain :exc:`RuntimeError` was raised for unrecognized
       compression values.
+
+   .. versionchanged:: 3.6.2
+      The *file* parameter accepts a :term:`path-like object`.
 
 
 .. method:: ZipFile.close()
@@ -284,6 +288,9 @@ ZipFile Objects
       Calling :meth:`extract` on a closed ZipFile will raise a
       :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.6.2
+      The *path* parameter accepts a :term:`path-like object`.
+
 
 .. method:: ZipFile.extractall(path=None, members=None, pwd=None)
 
@@ -303,6 +310,9 @@ ZipFile Objects
    .. versionchanged:: 3.6
       Calling :meth:`extractall` on a closed ZipFile will raise a
       :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
+
+   .. versionchanged:: 3.6.2
+      The *path* parameter accepts a :term:`path-like object`.
 
 
 .. method:: ZipFile.printdir()
@@ -403,6 +413,9 @@ ZipFile Objects
 
 The following data attributes are also available:
 
+.. attribute:: ZipFile.filename
+
+   Name of the ZIP file.
 
 .. attribute:: ZipFile.debug
 
@@ -451,12 +464,12 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       added to the archive, compiling if necessary.
 
       If *pathname* is a file, the filename must end with :file:`.py`, and
-      just the (corresponding :file:`\*.py[co]`) file is added at the top level
+      just the (corresponding :file:`\*.pyc`) file is added at the top level
       (no path information).  If *pathname* is a file that does not end with
       :file:`.py`, a :exc:`RuntimeError` will be raised.  If it is a directory,
       and the directory is not a package directory, then all the files
-      :file:`\*.py[co]` are added at the top level.  If the directory is a
-      package directory, then all :file:`\*.py[co]` are added under the package
+      :file:`\*.pyc` are added at the top level.  If the directory is a
+      package directory, then all :file:`\*.pyc` are added under the package
       name as a file path, and if any subdirectories are package directories,
       all of these are added recursively.
 
@@ -488,6 +501,9 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       .. versionadded:: 3.4
          The *filterfunc* parameter.
 
+      .. versionchanged:: 3.6.2
+         The *pathname* parameter accepts a :term:`path-like object`.
+
 
 .. _zipinfo-objects:
 
@@ -513,6 +529,10 @@ file:
    with any drive letter and leading path separators removed.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.6.2
+      The *filename* parameter accepts a :term:`path-like object`.
+
 
 Instances have the following methods and attributes:
 
