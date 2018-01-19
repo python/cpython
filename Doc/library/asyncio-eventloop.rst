@@ -726,7 +726,7 @@ Low-level socket operations
    the file when the platform does not support the sendfile syscall
    (e.g. Windows or SSL socket on Unix).
 
-   Raise :exc:`RuntimeError` if the system does not support
+   Raise :exc:`SendfileNotAvailableError` if the system does not support
    *sendfile* syscall and *fallback* is ``False``.
 
    .. versionadded:: 3.7
@@ -978,6 +978,18 @@ Handle
       Return ``True`` if the call was cancelled.
 
       .. versionadded:: 3.7
+
+
+SendfileNotAvailableError
+-------------------------
+
+
+.. exception:: SendfileNotAvailableError
+
+   Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
+
+   Raised if the OS does not support senfile syscall for
+   given socket or file type.
 
 
 Event loop examples
