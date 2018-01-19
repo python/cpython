@@ -3705,6 +3705,50 @@ exit:
 
 #endif /* defined(HAVE_PREAD) */
 
+#if defined(HAVE_PREAD)
+
+PyDoc_STRVAR(os_preadv2__doc__,
+"preadv2($module, fd, buffers, offset, flags, /)\n"
+"--\n"
+"\n"
+"Read a number of bytes from a file descriptor starting at a particular offset.\n"
+"\n"
+"Read length bytes from file descriptor fd, starting at offset bytes from\n"
+"the beginning of the file.  The file offset remains unchanged.");
+
+#define OS_PREADV2_METHODDEF    \
+    {"preadv2", (PyCFunction)os_preadv2, METH_FASTCALL, os_preadv2__doc__},
+
+static Py_ssize_t
+os_preadv2_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
+                int flags);
+
+static PyObject *
+os_preadv2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    PyObject *buffers;
+    Py_off_t offset;
+    int flags;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, "iOO&i:preadv2",
+        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+        goto exit;
+    }
+    _return_value = os_preadv2_impl(module, fd, buffers, offset, flags);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_PREAD) */
+
 PyDoc_STRVAR(os_write__doc__,
 "write($module, fd, data, /)\n"
 "--\n"
@@ -6239,6 +6283,10 @@ exit:
     #define OS_PREAD_METHODDEF
 #endif /* !defined(OS_PREAD_METHODDEF) */
 
+#ifndef OS_PREADV2_METHODDEF
+    #define OS_PREADV2_METHODDEF
+#endif /* !defined(OS_PREADV2_METHODDEF) */
+
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
 #endif /* !defined(OS_PIPE_METHODDEF) */
@@ -6410,4 +6458,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=6345053cd5992caf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2b1fdec599a15ea9 input=a9049054013a1b77]*/

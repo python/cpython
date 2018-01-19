@@ -8163,6 +8163,64 @@ os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
 }
 #endif /* HAVE_PREAD */
 
+#ifdef HAVE_PREAD
+/*[clinic input]
+os.preadv2 -> Py_ssize_t
+
+    fd: int
+    buffers: object
+    offset: Py_off_t
+    flags: int
+    /
+
+Read a number of bytes from a file descriptor starting at a particular offset.
+
+Read length bytes from file descriptor fd, starting at offset bytes from
+the beginning of the file.  The file offset remains unchanged.
+[clinic start generated code]*/
+
+static Py_ssize_t
+os_preadv2_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
+                int flags)
+/*[clinic end generated code: output=fd040c20cf504631 input=f4a633d90005eb65]*/
+{
+    Py_ssize_t cnt, n;
+    int async_err = 0;
+    struct iovec *iov;
+    Py_buffer *buf;
+
+    if (!PySequence_Check(buffers)) {
+        PyErr_SetString(PyExc_TypeError,
+            "preadv2() arg 2 must be a sequence");
+        return -1;
+    }
+
+    cnt = PySequence_Size(buffers);
+    if (cnt < 0)
+        return -1;
+
+    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0)
+        return -1;
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        n = preadv2(fd, iov, cnt, offset, flags);
+        Py_END_ALLOW_THREADS
+    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    iov_cleanup(iov, buf, cnt);
+    if (n < 0) {
+        if (!async_err)
+            posix_error();
+        return -1;
+    }
+
+    return n;
+}
+
+
+#endif /* HAVE PREADV2 */
+
 
 /*[clinic input]
 os.write -> Py_ssize_t
@@ -12506,6 +12564,7 @@ static PyMethodDef posix_methods[] = {
     OS_READ_METHODDEF
     OS_READV_METHODDEF
     OS_PREAD_METHODDEF
+    OS_PREADV2_METHODDEF
     OS_WRITE_METHODDEF
     OS_WRITEV_METHODDEF
     OS_PWRITE_METHODDEF
@@ -12951,6 +13010,13 @@ all_ins(PyObject *m)
 #endif
 #ifdef F_TEST
     if (PyModule_AddIntMacro(m, F_TEST)) return -1;
+#endif
+
+#ifdef HAVE_READV
+    if (PyModule_AddIntConstant(m, "RWF_DSYNC", RWF_DSYNC)) return -1;
+    if (PyModule_AddIntConstant(m, "RWF_HIPRI", RWF_HIPRI)) return -1;
+    if (PyModule_AddIntConstant(m, "RWF_SYNC", RWF_SYNC)) return -1;
+    if (PyModule_AddIntConstant(m, "RWF_NOWAIT", RWF_NOWAIT)) return -1;
 #endif
 
 #ifdef HAVE_SPAWNV
