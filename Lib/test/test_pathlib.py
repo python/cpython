@@ -2145,6 +2145,9 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             otherhome = pwdent.pw_dir.rstrip('/')
             if othername != username and otherhome:
                 break
+        else:
+            othername = username
+            otherhome = userhome
 
         p1 = P('~/Documents')
         p2 = P('~' + username + '/Documents')
