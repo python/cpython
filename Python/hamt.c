@@ -883,9 +883,14 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
                         Py_INCREF(new_node->a_array[i]);
                     }
                     else {
+                        int32_t rehash = hamt_hash(self->b_array[j]);
+                        if (rehash == -1) {
+                            goto fin;
+                        }
+
                         new_node->a_array[i] = hamt_node_assoc(
                             empty, shift + 5,
-                            hamt_hash(self->b_array[j]),
+                            rehash,
                             self->b_array[j],
                             self->b_array[j + 1],
                             added_leaf);
