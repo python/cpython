@@ -322,34 +322,4 @@ zipimport_zipimporter_get_resource_reader(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-
-PyDoc_STRVAR(zipimport_resource_reader___init____doc__,
-"resource_reader(zipimporter, package_name)\n"
-"--\n"
-"\n"
-"The ResourceReader for a zipimporter.");
-
-static int
-zipimport_resource_reader___init___impl(ZipImportResourceREader *self,
-                                        PyObject *zipimporter,
-                                        PyObject *package_name);
-
-static int
-zipimport_resource_reader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    static const char * const _keywords[] = {"zipimporter", "package_name", NULL};
-    static _PyArg_Parser _parser = {"OO:resource_reader", _keywords, 0};
-    PyObject *zipimporter;
-    PyObject *package_name;
-
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &zipimporter, &package_name)) {
-        goto exit;
-    }
-    return_value = zipimport_resource_reader___init___impl((ZipImportResourceREader *)self, zipimporter, package_name);
-
-exit:
-    return return_value;
-}
-/*[clinic end generated code: output=0b6edbf9e4977a45 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b57adfe21373512 input=a9049054013a1b77]*/

@@ -303,3 +303,18 @@ def contents(package: Package) -> Iterator[str]:
                 if subdir not in subdirs_seen:
                     subdirs_seen.add(subdir)
                     yield subdir
+
+
+# Private implementation of ResourceReader and get_resource_reader() for
+# zipimport.  Don't use these directly!  We're implementing these in Python
+# because 1) it's easier, 2) zipimport will likely get rewritten in Python
+# itself at some point, so doing this all in C would just be a waste of
+# effort.
+
+class _ZipImportResourceReader(resources_abc.ResourceReader):
+    """Private class used to support ZipImport.get_resource_reader()."""
+
+
+def _zipimport_get_resource_reader(zipimport, fullname):
+    print('got called with:', zipimport, fullname)
+    return None
