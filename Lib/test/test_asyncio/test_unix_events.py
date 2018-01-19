@@ -518,7 +518,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sendfile_not_available(self):
         sock, proto = self.prepare()
         with mock.patch('asyncio.unix_events.os', spec=[]):
-            with self.assertRaisesRegex(events.SendfileNotAvailable,
+            with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                         "os[.]sendfile[(][)] is not available"):
                 self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                               0, None))
@@ -527,7 +527,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
-        with self.assertRaisesRegex(events.SendfileNotAvailable,
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -536,7 +536,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sendfile_iobuffer(self):
         sock, proto = self.prepare()
         f = io.BytesIO()
-        with self.assertRaisesRegex(events.SendfileNotAvailable,
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -546,7 +546,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
         f = mock.Mock()
         f.fileno.return_value = -1
-        with self.assertRaisesRegex(events.SendfileNotAvailable,
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -632,7 +632,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         with self.assertRaises(KeyError):
             self.loop._selector.get_key(sock)
         exc = fut.exception()
-        self.assertIsInstance(exc, events.SendfileNotAvailable)
+        self.assertIsInstance(exc, events.SendfileNotAvailableError)
         self.assertEqual(0, self.file.tell())
 
     def test_os_error_next_call(self):
@@ -657,7 +657,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
         fileno = self.file.fileno()
         fut = self.loop.create_future()
-        err = events.SendfileNotAvailable()
+        err = events.SendfileNotAvailableError()
         with mock.patch('os.sendfile', side_effect=err):
             self.loop._sock_sendfile_native_impl(fut, sock.fileno(),
                                                  sock, fileno,
