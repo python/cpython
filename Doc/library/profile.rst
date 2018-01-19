@@ -376,8 +376,8 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       (identical function names) by sorting by file name.
 
       For the string argument, abbreviations can be used for any key names, as
-      long as the abbreviation is unambiguous.  
-      
+      long as the abbreviation is unambiguous.
+
       The following are the valid string and SortKey:
 
       +------------------+---------------------+----------------------+
