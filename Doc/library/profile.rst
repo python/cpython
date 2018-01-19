@@ -172,7 +172,7 @@ statistics for the top ten functions.
 
 You might also try::
 
-   p.sort_stats(SortKey.FILE).print_stats('__init__')
+   p.sort_stats(SortKey.MODULE).print_stats('__init__')
 
 This will sort all the statistics by file name, and then print out statistics
 for only the class init methods (since they are spelled with ``__init__`` in
@@ -421,7 +421,7 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       the file names were the same) appear in the string order 20, 3 and 40.
       In contrast, ``SortKey.NFL`` does a numeric compare of the line numbers.
       In fact, ``sort_stats(SortKey.NFL)`` is the same as
-      ``sort_stats(SortKey.NAME, SortKey.FILE, SortKey.LINE)``.
+      ``sort_stats(SortKey.NAME, SortKey.MODULE, SortKey.LINE)``.
 
       For backward-compatibility reasons, the numeric arguments ``-1``, ``0``,
       ``1``, and ``2`` are permitted.  They are interpreted as ``'stdname'``,

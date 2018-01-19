@@ -34,7 +34,7 @@ __all__ = ["Stats", "SortKey"]
 class SortKey(str, Enum):
     CALLS = 'calls', 'ncalls'
     CUMULATIVE = 'cumulative', 'cumtime'
-    MODULE = 'module', 'filename', 'file'
+    MODULE = 'module', 'filename'
     LINE = 'line'
     NAME = 'name'
     NFL = 'nfl'
@@ -185,7 +185,6 @@ class Stats:
               "ncalls"    : (((1,-1),              ), "call count"),
               "cumtime"   : (((3,-1),              ), "cumulative time"),
               "cumulative": (((3,-1),              ), "cumulative time"),
-              "file"      : (((4, 1),              ), "file name"),
               "filename"  : (((4, 1),              ), "file name"),
               "line"      : (((5, 1),              ), "line number"),
               "module"    : (((4, 1),              ), "file name"),
