@@ -8163,14 +8163,14 @@ os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
 }
 #endif /* HAVE_PREAD */
 
-#ifdef HAVE_PREADV2
+#if defined(HAVE_PREADV) || defined (HAVE_PREADV2)
 /*[clinic input]
-os.preadv2 -> Py_ssize_t
+os.preadv -> Py_ssize_t
 
     fd: int
     buffers: object
     offset: Py_off_t
-    flags: int
+    flags: int = 0
     /
 
 Read a number of bytes from a file descriptor starting at a particular offset.
@@ -8180,9 +8180,9 @@ the beginning of the file.  The file offset remains unchanged.
 [clinic start generated code]*/
 
 static Py_ssize_t
-os_preadv2_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
-                int flags)
-/*[clinic end generated code: output=fd040c20cf504631 input=f4a633d90005eb65]*/
+os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
+               int flags)
+/*[clinic end generated code: output=26fc9c6e58e7ada5 input=5b07b7e2d1825627]*/
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
@@ -8201,12 +8201,23 @@ os_preadv2_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0)
         return -1;
-
+    #ifdef HAVE_PREADV2
     do {
         Py_BEGIN_ALLOW_THREADS
         n = preadv2(fd, iov, cnt, offset, flags);
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    #else
+    if(flags != 0){
+        PyErr_SetString(PyExc_OSError, "preadv2() not available in this system");
+        return -1;
+    }
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        n = preadv(fd, iov, cnt, offset);
+        Py_END_ALLOW_THREADS
+    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    #endif
 
     iov_cleanup(iov, buf, cnt);
     if (n < 0) {
@@ -8217,9 +8228,7 @@ os_preadv2_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     return n;
 }
-
-
-#endif /* HAVE PREADV2 */
+#endif /* HAVE_PREADV2 */
 
 
 /*[clinic input]
@@ -12564,7 +12573,7 @@ static PyMethodDef posix_methods[] = {
     OS_READ_METHODDEF
     OS_READV_METHODDEF
     OS_PREAD_METHODDEF
-    OS_PREADV2_METHODDEF
+    OS_PREADV_METHODDEF
     OS_WRITE_METHODDEF
     OS_WRITEV_METHODDEF
     OS_PWRITE_METHODDEF

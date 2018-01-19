@@ -272,18 +272,29 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
-    @unittest.skipUnless(hasattr(posix, 'preadv2'), "test needs posix.preadv2()")
+    @unittest.skipUnless(hasattr(posix, 'preadv'), "test needs posix.preadv()")
+    def test_preadv(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd, b'test1tt2t3')
+            os.lseek(fd, 0, os.SEEK_SET)
+            buf = [bytearray(i) for i in [5, 3, 2]]
+            self.assertEqual(posix.preadv(fd, buf, 0), 10)
+            self.assertEqual([b'test1', b'tt2', b't3'], [bytes(i) for i in buf])
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'RWF_SYNC'), "test needs posix.preadv2()")
     def test_preadv2(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:
             os.write(fd, b'test1tt2t3')
             os.lseek(fd, 0, os.SEEK_SET)
             buf = [bytearray(i) for i in [5, 3, 2]]
-            self.assertEqual(posix.preadv2(fd, buf, 0, os.RWF_SYNC), 10)
+            self.assertEqual(posix.preadv(fd, buf, 0, os.RWF_SYNC), 10)
             self.assertEqual([b'test1', b'tt2', b't3'], [bytes(i) for i in buf])
         finally:
             os.close(fd)
-
 
     @unittest.skipUnless(hasattr(posix, 'pwrite'), "test needs posix.pwrite()")
     def test_pwrite(self):

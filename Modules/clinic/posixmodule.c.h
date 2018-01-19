@@ -3705,10 +3705,10 @@ exit:
 
 #endif /* defined(HAVE_PREAD) */
 
-#if defined(HAVE_PREADV2)
+#if (defined(HAVE_PREADV) || defined (HAVE_PREADV2))
 
-PyDoc_STRVAR(os_preadv2__doc__,
-"preadv2($module, fd, buffers, offset, flags, /)\n"
+PyDoc_STRVAR(os_preadv__doc__,
+"preadv($module, fd, buffers, offset, flags=0, /)\n"
 "--\n"
 "\n"
 "Read a number of bytes from a file descriptor starting at a particular offset.\n"
@@ -3716,28 +3716,28 @@ PyDoc_STRVAR(os_preadv2__doc__,
 "Read length bytes from file descriptor fd, starting at offset bytes from\n"
 "the beginning of the file.  The file offset remains unchanged.");
 
-#define OS_PREADV2_METHODDEF    \
-    {"preadv2", (PyCFunction)os_preadv2, METH_FASTCALL, os_preadv2__doc__},
+#define OS_PREADV_METHODDEF    \
+    {"preadv", (PyCFunction)os_preadv, METH_FASTCALL, os_preadv__doc__},
 
 static Py_ssize_t
-os_preadv2_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
-                int flags);
+os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
+               int flags);
 
 static PyObject *
-os_preadv2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_preadv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
     PyObject *buffers;
     Py_off_t offset;
-    int flags;
+    int flags = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iOO&i:preadv2",
+    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:preadv",
         &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
         goto exit;
     }
-    _return_value = os_preadv2_impl(module, fd, buffers, offset, flags);
+    _return_value = os_preadv_impl(module, fd, buffers, offset, flags);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -3747,7 +3747,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PREADV2) */
+#endif /* (defined(HAVE_PREADV) || defined (HAVE_PREADV2)) */
 
 PyDoc_STRVAR(os_write__doc__,
 "write($module, fd, data, /)\n"
@@ -6283,9 +6283,9 @@ exit:
     #define OS_PREAD_METHODDEF
 #endif /* !defined(OS_PREAD_METHODDEF) */
 
-#ifndef OS_PREADV2_METHODDEF
-    #define OS_PREADV2_METHODDEF
-#endif /* !defined(OS_PREADV2_METHODDEF) */
+#ifndef OS_PREADV_METHODDEF
+    #define OS_PREADV_METHODDEF
+#endif /* !defined(OS_PREADV_METHODDEF) */
 
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
@@ -6458,4 +6458,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=efbe9448c1bba1a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52cbdec1822e34f9 input=a9049054013a1b77]*/

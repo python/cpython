@@ -707,6 +707,12 @@
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
+/* Define to 1 if you have the `preadv' function. */
+#undef HAVE_PREADV
+
+/* Define to 1 if you have the `preadv2' function. */
+#undef HAVE_PREADV2
+
 /* Define if you have the 'prlimit' functions. */
 #undef HAVE_PRLIMIT
 
