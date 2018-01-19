@@ -988,7 +988,7 @@ SendfileNotAvailable
 
    Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
 
-   Raised if Operation System does not support senfile syscall for
+   Raised if the OS does not support senfile syscall for
    given socket or file type.
 
 

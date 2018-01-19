@@ -656,11 +656,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
         except events.SendfileNotAvailable as exc:
-            if fallback:
-                return await self._sock_sendfile_fallback(sock, file,
-                                                          offset, count)
-            else:
+            if not fallback:
                 raise
+        return await self._sock_sendfile_fallback(sock, file,
+                                                  offset, count)
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
         # NB: sendfile syscall is not supported for SSL sockets and
