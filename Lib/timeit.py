@@ -172,7 +172,7 @@ class Timer:
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
 
-        If 'stats' is True a dictionary is with more information is 
+        If 'stats' is True a dictionary is with more information is
         returned. The keys are 'mean', 'median', 'stdev'
         (statistics.pstdev), 'variance' (statistics.pvariance) and
         total.
@@ -198,7 +198,7 @@ class Timer:
         else:
             return sum(timing)
 
-    def repeat(self, repeat=default_repeat, number=default_number, 
+    def repeat(self, repeat=default_repeat, number=default_number,
                stats=default_statistics):
         """Call timeit() a few times.
 
@@ -252,7 +252,7 @@ def timeit(stmt="pass", setup="pass", timer=default_timer,
     return Timer(stmt, setup, timer, globals).timeit(number, stats)
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
-           repeat=default_repeat, number=default_number, globals=None, 
+           repeat=default_repeat, number=default_number, globals=None,
            stats=default_statistics):
     """Convenience function to create Timer object and call repeat method."""
     return Timer(stmt, setup, timer, globals).repeat(repeat, number, stats)
