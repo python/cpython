@@ -410,15 +410,6 @@ unified API for reading resources contained within packages.  Also add
 
 ..
 
-.. bpo: 32311
-.. date: 2017-12-14-17-28-54
-.. nonce: DL5Ytn
-.. section: Library
-
-Implement asyncio.create_task(coro) shortcut
-
-..
-
 .. bpo: 32327
 .. date: 2017-12-14-16-00-25
 .. nonce: bbkSxA
