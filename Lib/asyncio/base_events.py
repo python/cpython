@@ -154,10 +154,6 @@ def _run_until_complete_cb(fut):
     futures._get_loop(fut).stop()
 
 
-class _SendfileNotAvailable(RuntimeError):
-    pass
-
-
 class Server(events.AbstractServer):
 
     def __init__(self, loop, sockets):
@@ -659,17 +655,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except _SendfileNotAvailable as exc:
-            if fallback:
-                return await self._sock_sendfile_fallback(sock, file,
-                                                          offset, count)
-            else:
-                raise RuntimeError(exc.args[0]) from None
+        except events.SendfileNotAvailableError as exc:
+            if not fallback:
+                raise
+        return await self._sock_sendfile_fallback(sock, file,
+                                                  offset, count)
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
         # NB: sendfile syscall is not supported for SSL sockets and
         # non-mmap files even if sendfile is supported by OS
-        raise _SendfileNotAvailable(
+        raise events.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
             "and file {file!r} combination")
 

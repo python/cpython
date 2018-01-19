@@ -14,6 +14,7 @@ from unittest import mock
 import asyncio
 from asyncio import base_events
 from asyncio import constants
+from asyncio import events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -1860,7 +1861,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
     def test__sock_sendfile_native_failure(self):
         sock, proto = self.prepare()
 
-        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                     "sendfile is not available"):
             self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                           0, None))
@@ -1871,7 +1872,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_no_fallback(self):
         sock, proto = self.prepare()
 
-        with self.assertRaisesRegex(RuntimeError,
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                     "sendfile is not available"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                   fallback=False))
