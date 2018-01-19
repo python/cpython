@@ -32,20 +32,24 @@ __all__ = ["Stats", "SortKey"]
 
 
 class SortKey(str, Enum):
-    CALLS = 'calls'
-    NCALLS = 'ncalls'
-    CUMULATIVE = 'cumulative'
-    CUMTIME = 'cumulative'
-    MODULE = 'module'
-    FILE = 'file'
-    FILENAME = 'filename'
+    CALLS = 'calls', 'ncalls'
+    CUMULATIVE = 'cumulative', 'cumtime'
+    MODULE = 'module', 'filename', 'file'
     LINE = 'line'
     NAME = 'name'
     NFL = 'nfl'
     PCALLS = 'pcalls'
     STDNAME = 'stdname'
-    TIME = 'time'
-    TOTTIME = 'tottime'
+    TIME = 'time', 'tottime'
+
+    def __new__(cls, *values):
+        obj = str.__new__(cls)
+
+        obj._value_ = values[0]
+        for other_value in values[1:]:
+            cls._value2member_map_[other_value] = obj
+        obj._all_values = values
+        return obj
 
 
 class Stats:
@@ -177,20 +181,20 @@ class Stats:
     # list the tuple indices and directions for sorting,
     # along with some printable description
     sort_arg_dict_default = {
-              SortKey.CALLS     : (((1,-1),              ), "call count"),
-              SortKey.NCALLS    : (((1,-1),              ), "call count"),
-              SortKey.CUMTIME   : (((3,-1),              ), "cumulative time"),
-              SortKey.CUMULATIVE: (((3,-1),              ), "cumulative time"),
-              SortKey.FILE      : (((4, 1),              ), "file name"),
-              SortKey.FILENAME  : (((4, 1),              ), "file name"),
-              SortKey.LINE      : (((5, 1),              ), "line number"),
-              SortKey.MODULE    : (((4, 1),              ), "file name"),
-              SortKey.NAME      : (((6, 1),              ), "function name"),
-              SortKey.NFL       : (((6, 1),(4, 1),(5, 1),), "name/file/line"),
-              SortKey.PCALLS    : (((0,-1),              ), "primitive call count"),
-              SortKey.STDNAME   : (((7, 1),              ), "standard name"),
-              SortKey.TIME      : (((2,-1),              ), "internal time"),
-              SortKey.TOTTIME   : (((2,-1),              ), "internal time"),
+              "calls"     : (((1,-1),              ), "call count"),
+              "ncalls"    : (((1,-1),              ), "call count"),
+              "cumtime"   : (((3,-1),              ), "cumulative time"),
+              "cumulative": (((3,-1),              ), "cumulative time"),
+              "file"      : (((4, 1),              ), "file name"),
+              "filename"  : (((4, 1),              ), "file name"),
+              "line"      : (((5, 1),              ), "line number"),
+              "module"    : (((4, 1),              ), "file name"),
+              "name"      : (((6, 1),              ), "function name"),
+              "nfl"       : (((6, 1),(4, 1),(5, 1),), "name/file/line"),
+              "pcalls"    : (((0,-1),              ), "primitive call count"),
+              "stdname"   : (((7, 1),              ), "standard name"),
+              "time"      : (((2,-1),              ), "internal time"),
+              "tottime"   : (((2,-1),              ), "internal time"),
               }
 
     def get_sort_arg_defs(self):
@@ -227,18 +231,14 @@ class Stats:
                 if type(arg) != type(field[0]):
                     raise TypeError("Can't have mixed argument type")
 
-        if isinstance(field[0], SortKey):
-            sort_arg_defs = self.sort_arg_dict_default
-        else:
-            for word in field:
-                if isinstance(word, str) and word == 'cumtime':
-                    word = 'cumulative'
-            sort_arg_defs = self.get_sort_arg_defs()
+        sort_arg_defs = self.get_sort_arg_defs()
 
         sort_tuple = ()
         self.sort_type = ""
         connector = ""
         for word in field:
+            if isinstance(word, SortKey):
+                word = word.value
             sort_tuple = sort_tuple + sort_arg_defs[word][0]
             self.sort_type += connector + sort_arg_defs[word][1]
             connector = ", "

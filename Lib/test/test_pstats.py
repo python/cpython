@@ -45,21 +45,23 @@ class StatsTestCase(unittest.TestCase):
                              self.stats.sort_arg_dict_default[arg_str][-1])
 
     def test_sort_stats_string(self):
-        for arg in SortKey:
-            arg = arg.value
+        for sort_name in ('calls', 'ncalls', 'cumtime', 'cumulative', 'file',
+                    'filename', 'line', 'module', 'name', 'nfl', 'pcalls',
+                    'stdname', 'time', 'tottime'):
             # 'file' sorting criteria will not work because it creates
             # ambiquity with 'filename'
-            if arg == 'file':
+            if sort_name == 'file':
                 continue
-            self.stats.sort_stats(arg)
+            self.stats.sort_stats(sort_name)
             self.assertEqual(self.stats.sort_type,
-                             self.stats.sort_arg_dict_default[arg][-1])
+                             self.stats.sort_arg_dict_default[sort_name][-1])
 
     def test_sort_stats_enum(self):
-        for arg in SortKey:
-            self.stats.sort_stats(arg)
-            self.assertEqual(self.stats.sort_type,
-                             self.stats.sort_arg_dict_default[arg][-1])
+        for member in SortKey:
+            self.stats.sort_stats(member)
+            self.assertEqual(
+                    self.stats.sort_type,
+                    self.stats.sort_arg_dict_default[member.value][-1])
 
     def test_sort_starts_mix(self):
         self.assertRaises(TypeError, self.stats.sort_stats,
