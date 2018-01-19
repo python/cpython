@@ -956,7 +956,7 @@ An example to show the :attr:`_ignore_` attribute in use::
     ...     Period = vars()
     ...     for i in range(367):
     ...         Period['day_%d' % i] = i
-    ... 
+    ...
     >>> list(Period)[:2]
     [<Period.day_0: datetime.timedelta(0)>, <Period.day_1: datetime.timedelta(days=1)>]
     >>> list(Period)[-2:]
