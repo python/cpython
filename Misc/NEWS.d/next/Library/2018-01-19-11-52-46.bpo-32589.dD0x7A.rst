@@ -1,0 +1,1 @@
+Added statistics output to timeit module
