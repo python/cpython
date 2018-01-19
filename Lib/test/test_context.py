@@ -977,6 +977,7 @@ class HamtTest(unittest.TestCase):
         A = HashKey(100, 'A')
 
         h = hamt()
+        h = h.set(0, 0)  # empty HAMT node is memoized in hamt.c
         ref = weakref.ref(h)
 
         a = []

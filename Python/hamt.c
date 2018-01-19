@@ -337,6 +337,7 @@ typedef struct {
 
 
 static PyHamtNode_Bitmap *_empty_bitmap_node;
+static PyHamtObject *_empty_hamt;
 
 
 static PyHamtObject *
@@ -2467,6 +2468,13 @@ hamt_alloc(void)
 PyHamtObject *
 _PyHamt_New(void)
 {
+    if (_empty_hamt != NULL) {
+        /* HAMT is an immutable object so we can easily cache an
+           empty instance. */
+        Py_INCREF(_empty_hamt);
+        return _empty_hamt;
+    }
+
     PyHamtObject *o = hamt_alloc();
     if (o == NULL) {
         return NULL;
@@ -2479,6 +2487,12 @@ _PyHamt_New(void)
     }
 
     o->h_count = 0;
+
+    if (_empty_hamt == NULL) {
+        Py_INCREF(o);
+        _empty_hamt = o;
+    }
+
     return o;
 }
 
@@ -2958,5 +2972,6 @@ _PyHamt_Init(void)
 void
 _PyHamt_Fini(void)
 {
+    Py_CLEAR(_empty_hamt);
     Py_CLEAR(_empty_bitmap_node);
 }
