@@ -8163,7 +8163,7 @@ os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
 }
 #endif /* HAVE_PREAD */
 
-#ifdef HAVE_PREAD
+#ifdef HAVE_PREADV2
 /*[clinic input]
 os.preadv2 -> Py_ssize_t
 
@@ -13012,7 +13012,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, F_TEST)) return -1;
 #endif
 
-#ifdef HAVE_READV
+#ifdef HAVE_PREADV2
     if (PyModule_AddIntConstant(m, "RWF_DSYNC", RWF_DSYNC)) return -1;
     if (PyModule_AddIntConstant(m, "RWF_HIPRI", RWF_HIPRI)) return -1;
     if (PyModule_AddIntConstant(m, "RWF_SYNC", RWF_SYNC)) return -1;

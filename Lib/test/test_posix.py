@@ -272,7 +272,7 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
-    @unittest.skipUnless(hasattr(posix, 'pread'), "test needs posix.pread()")
+    @unittest.skipUnless(hasattr(posix, 'preadv2'), "test needs posix.preadv2()")
     def test_preadv2(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:

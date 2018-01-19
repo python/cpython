@@ -3705,7 +3705,7 @@ exit:
 
 #endif /* defined(HAVE_PREAD) */
 
-#if defined(HAVE_PREAD)
+#if defined(HAVE_PREADV2)
 
 PyDoc_STRVAR(os_preadv2__doc__,
 "preadv2($module, fd, buffers, offset, flags, /)\n"
@@ -3747,7 +3747,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PREAD) */
+#endif /* defined(HAVE_PREADV2) */
 
 PyDoc_STRVAR(os_write__doc__,
 "write($module, fd, data, /)\n"
@@ -6458,4 +6458,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=2b1fdec599a15ea9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=efbe9448c1bba1a2 input=a9049054013a1b77]*/
