@@ -13,6 +13,7 @@ from typing import Iterator, Optional, Set, Union   # noqa: F401
 from typing import cast
 from typing.io import BinaryIO, TextIO
 from zipfile import ZipFile
+from zipimport import ZipImportError
 
 
 Package = Union[str, ModuleType]
@@ -314,7 +315,27 @@ def contents(package: Package) -> Iterator[str]:
 class _ZipImportResourceReader(resources_abc.ResourceReader):
     """Private class used to support ZipImport.get_resource_reader()."""
 
+    def __init__(self, zipimporter, fullname):
+        self.zipimporter = zipimporter
+        self.fullname = fullname
 
-def _zipimport_get_resource_reader(zipimport, fullname):
-    print('got called with:', zipimport, fullname)
-    return None
+    def open_resource(self, resource):
+        pass
+
+    def resource_path(self, resource):
+        pass
+
+    def is_resource(self, name):
+        pass
+
+    def contents(self):
+        pass
+
+
+def _zipimport_get_resource_reader(zipimporter, fullname):
+    try:
+        if not zipimporter.is_package(fullname):
+            return None
+    except ZipImportError:
+        return None
+    return _ZipImportResourceReader(zipimporter, fullname)
