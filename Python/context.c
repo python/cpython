@@ -305,7 +305,7 @@ context_new_empty(void)
         return NULL;
     }
 
-    PyObject_GC_Track(ctx);
+    _PyObject_GC_TRACK(ctx);
     return ctx;
 }
 
@@ -321,7 +321,7 @@ context_new_from_vars(PyHamtObject *vars)
     Py_INCREF(vars);
     ctx->ctx_vars = vars;
 
-    PyObject_GC_Track(ctx);
+    _PyObject_GC_TRACK(ctx);
     return ctx;
 }
 
@@ -394,7 +394,8 @@ context_tp_traverse(PyContext *self, visitproc visit, void *arg)
 static void
 context_tp_dealloc(PyContext *self)
 {
-    PyObject_GC_UnTrack(self);
+    _PyObject_GC_UNTRACK(self);
+
     if (self->ctx_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
     }
@@ -742,7 +743,11 @@ contextvar_new(PyObject *name, PyObject *def)
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
 
-    PyObject_GC_Track(var);
+    if (_PyObject_GC_IS_TRACKED(name) ||
+            (def != NULL && _PyObject_GC_IS_TRACKED(def)))
+    {
+        PyObject_GC_Track(var);
+    }
     return var;
 }
 
