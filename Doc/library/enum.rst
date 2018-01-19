@@ -1014,7 +1014,7 @@ Supported ``_sunder_`` names
 
 - ``_missing_`` -- a lookup function used when a value is not found; may be
   overridden
- - ``_ignore_`` -- a list of names, either as a :func:`list` or a :func:`str`,
+- ``_ignore_`` -- a list of names, either as a :func:`list` or a :func:`str`,
   that will not be transformed into members, and will be removed from the final
   class
 - ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
