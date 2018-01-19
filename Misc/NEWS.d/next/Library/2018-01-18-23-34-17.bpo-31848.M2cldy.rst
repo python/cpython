@@ -1,0 +1,1 @@
+Fix error handling in Aifc_read.initfp() when the SSND chunk is not found.
