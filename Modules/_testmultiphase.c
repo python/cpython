@@ -4,6 +4,11 @@
 
 #include "Python.h"
 
+/*[clinic input]
+module _testmultiphase
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a11493b5ab5f8846]*/
+
 static PyObject *staterr = NULL;
 static const char *staterr_name = "_testmultiphase.StaticError";
 static const char *staterr_doc = "Pseudo-static exception on heap initialized during runtime.";
@@ -17,6 +22,11 @@ typedef struct {
 typedef struct {
     PyObject *integer;
 } testmultiphase_state;
+
+/*[clinic input]
+class _testmultiphase.Example "ExampleObject *" "&Example"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3fddc55ef4b8273]*/
 
 /* Example methods */
 
@@ -46,9 +56,20 @@ Example_demo(ExampleObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#include "clinic/_testmultiphase.c.h"
+/*[clinic input]
+_testmultiphase.Example.get_defining_module
+
+    cls: defining_class
+
+This method returns module of the defining class.
+[clinic start generated code]*/
+
 static PyObject *
-Example_get_defining_module(ExampleObject *self, PyTypeObject *cls,
-            PyObject *args, PyObject *kwargs) {
+_testmultiphase_Example_get_defining_module_impl(ExampleObject *self,
+                                                 PyTypeObject *cls)
+/*[clinic end generated code: output=9f723f75c9370a28 input=3817c6c4d5d7aa97]*/
+{
     PyObject *retval;
     retval = PyType_GetModule(cls);
     if (retval == NULL) {
@@ -61,8 +82,7 @@ Example_get_defining_module(ExampleObject *self, PyTypeObject *cls,
 static PyMethodDef Example_methods[] = {
     {"demo",            (PyCFunction)Example_demo,  METH_VARARGS,
         PyDoc_STR("demo() -> None")},
-    {"get_defining_module",     (PyCFunction)Example_get_defining_module, METH_METHOD,
-        PyDoc_STR("Test new method call.")},
+    _TESTMULTIPHASE_EXAMPLE_GET_DEFINING_MODULE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

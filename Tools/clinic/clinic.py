@@ -717,6 +717,18 @@ class CLanguage(Language):
             {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
+        parser_prototype_def_class = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+        """)
+
+        body_keyword = normalize_snippet("""
+            if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+                {parse_arguments})) {{
+                goto exit;
+            }}
+            """, indent=4)
+
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
@@ -813,6 +825,21 @@ class CLanguage(Language):
                         """ % argname
                 parser_definition = parser_body(parser_prototype,
                                                 normalize_snippet(parsearg, indent=4))
+
+        elif any(isinstance(p.converter, defining_class_converter)
+               for p in parameters):
+            # As METH_METHOD supports all of these, we may leave these
+            # flags enabled all
+            flags = 'METH_METHOD|METH_VARARGS|METH_KEYWORDS'
+            parser_prototype = parser_prototype_def_class
+
+            # Only defining class is required, so no need of parsing
+            if len(parameters) > 1:
+                parser_definition = parser_body(parser_prototype, body_keyword)
+                parser_definition = insert_keywords(parser_definition)
+            else:
+                parser_definition = parser_body(parser_prototype)
+
 
         elif has_option_groups:
             # positional parameters with option groups
@@ -1216,6 +1243,11 @@ class CLanguage(Language):
 
         f_self = parameters[0]
         selfless = parameters[1:]
+        if selfless and isinstance(selfless[0].converter, defining_class_converter):
+            f_def_class = selfless[0]
+        else:
+            f_def_class = None
+
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         last_group = 0
@@ -1288,8 +1320,10 @@ class CLanguage(Language):
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
-        template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
+        template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = template_dict['defining_class_name'] = ''
         f_self.converter.set_template_dict(template_dict)
+        if f_def_class:
+            f_def_class.converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
@@ -2437,7 +2471,8 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # Should we show this parameter in the generated
     # __text_signature__? This is *almost* always True.
-    # (It's only False for __new__, __init__, and METH_STATIC functions.)
+    # (It's only False for __new__, __init__, METH_STATIC functions, and
+    # defining_class.)
     show_in_signature = True
 
     # Overrides the name used in a text signature.
@@ -3277,6 +3312,25 @@ class str_converter(CConverter):
                 """.format(argname=argname, paramname=self.name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
+
+class defining_class_converter(CConverter):
+    """
+    A special-case converter:
+    this is the default converter used for the defining class.
+    """
+    type = 'PyTypeObject *'
+    format_unit = ''
+    show_in_signature = False
+
+    def converter_init(self, *, type=None):
+        self.specified_type = type
+
+    def render(self, parameter, data):
+        self._render_self(parameter, data)
+
+    def set_template_dict(self, template_dict):
+        template_dict['defining_class_name'] = self.name
+
 
 #
 # This is the fourth or fifth rewrite of registering all the
@@ -4510,6 +4564,20 @@ class DSLParser:
                 self.function.parameters.clear()
             else:
                 fail("A 'self' parameter, if specified, must be the very first thing in the parameter block.")
+
+        if isinstance(converter, defining_class_converter):
+            _lp = len(self.function.parameters)
+            if _lp == 1:
+                if (self.parameter_state != self.ps_required):
+                    fail("A 'defining_class' parameter cannot be marked optional.")
+                if value is not unspecified:
+                    fail("A 'defining_class' parameter cannot have a default value.")
+                if self.group:
+                    fail("A 'defining_class' parameter cannot be in an optional group.")
+            else:
+                fail("A 'defining_class' parameter, if specified, must either be the first thing in the parameter block, or come just after 'self'.")
+
+
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
