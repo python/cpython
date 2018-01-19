@@ -1152,8 +1152,11 @@ class Sizegrip(Widget):
 
 
 class Spinbox(Combobox):
-    """Ttk Spinbox is an Entry with increment and decrement arrows, used
-     for number entry"""
+    """Ttk Spinbox is an Entry with increment and decrement arrows
+
+    It is commonly used for number entry or to select from a list of
+    string values.
+    """
 
     def __init__(self, master=None, **kw):
         """Construct a Ttk Spinbox widget with the parent master.
