@@ -1151,7 +1151,7 @@ class Sizegrip(Widget):
         Widget.__init__(self, master, "ttk::sizegrip", kw)
 
 
-class Spinbox(Entry):
+class Spinbox(Combobox):
     """Ttk Spinbox is an Entry with increment and decrement arrows, used
      for number entry"""
 
