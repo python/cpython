@@ -12,7 +12,6 @@ from types import ModuleType
 from typing import Iterator, Optional, Set, Union   # noqa: F401
 from typing import cast
 from typing.io import BinaryIO, TextIO
-from zipfile import ZipFile
 from zipimport import ZipImportError
 
 
@@ -238,41 +237,7 @@ def contents(package: Package) -> Iterator[str]:
             not package.__spec__.has_location):
         return []
     package_directory = Path(package.__spec__.origin).parent
-    try:
-        yield from os.listdir(str(package_directory))
-    except (NotADirectoryError, FileNotFoundError):
-        # The package is probably in a zip file.
-        archive_path = getattr(package.__spec__.loader, 'archive', None)
-        if archive_path is None:
-            raise
-        relpath = package_directory.relative_to(archive_path)
-        with ZipFile(archive_path) as zf:
-            toc = zf.namelist()
-        subdirs_seen = set()                        # type: Set
-        for filename in toc:
-            path = Path(filename)
-            # Strip off any path component parts that are in common with the
-            # package directory, relative to the zip archive's file system
-            # path.  This gives us all the parts that live under the named
-            # package inside the zip file.  If the length of these subparts is
-            # exactly 1, then it is situated inside the package.  The resulting
-            # length will be 0 if it's above the package, and it will be
-            # greater than 1 if it lives in a subdirectory of the package
-            # directory.
-            #
-            # However, since directories themselves don't appear in the zip
-            # archive as a separate entry, we need to return the first path
-            # component for any case that has > 1 subparts -- but only once!
-            if path.parts[:len(relpath.parts)] != relpath.parts:
-                continue
-            subparts = path.parts[len(relpath.parts):]
-            if len(subparts) == 1:
-                yield subparts[0]
-            elif len(subparts) > 1:
-                subdir = subparts[0]
-                if subdir not in subdirs_seen:
-                    subdirs_seen.add(subdir)
-                    yield subdir
+    yield from os.listdir(str(package_directory))
 
 
 # Private implementation of ResourceReader and get_resource_reader() for
@@ -294,7 +259,10 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
 
     def open_resource(self, resource):
         path = f'{self.fullname}/{resource}'
-        return BytesIO(self.zipimporter.get_data(path))
+        try:
+            return BytesIO(self.zipimporter.get_data(path))
+        except OSError:
+            raise FileNotFoundError
 
     def resource_path(self, resource):
         # All resources are in the zip file, so there is no path to the file.
@@ -313,7 +281,35 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
         return True
 
     def contents(self):
-        pass
+        # This is a bit convoluted, because fullname will be a module path,
+        # but _files is a list of file names relative to the top of the
+        # archive's namespace.  We want to compare file paths to find all the
+        # names of things inside the module represented by fullname.  So we
+        # turn the module path of fullname into a file path relative to the
+        # top of the archive, and then we iterate through _files looking for
+        # names inside that "directory".
+        fullname_path = Path(self.zipimporter.get_filename(self.fullname))
+        relative_path = fullname_path.relative_to(self.zipimporter.archive)
+        # Don't forget that fullname names a package, so its path will include
+        # __init__.py, which we want to ignore.
+        assert relative_path.name == '__init__.py'
+        package_path = relative_path.parent
+        subdirs_seen = set()
+        for filename in self.zipimporter._files:
+            try:
+                relative = Path(filename).relative_to(package_path)
+            except ValueError:
+                continue
+            # If the path of the file (which is relative to the top of the zip
+            # namespace), relative to the package given when the resource
+            # reader was created, has a parent, then it's a name in a
+            # subdirectory and thus we skip it.
+            parent_name = relative.parent.name
+            if len(parent_name) == 0:
+                yield relative.name
+            elif parent_name not in subdirs_seen:
+                subdirs_seen.add(parent_name)
+                yield parent_name
 
 
 def _zipimport_get_resource_reader(zipimporter, fullname):
