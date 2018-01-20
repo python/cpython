@@ -860,74 +860,15 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_socket', ['socketmodule.c'],
                                depends = ['socketmodule.h']) )
         # Detect SSL support for the socket module (via _ssl)
-        search_for_ssl_incs_in = [
-                              '/usr/local/ssl/include',
-                              '/usr/contrib/ssl/include/'
-                             ]
-        ssl_incs = find_file('openssl/ssl.h', inc_dirs,
-                             search_for_ssl_incs_in
-                             )
-        if ssl_incs is not None:
-            krb5_h = find_file('krb5.h', inc_dirs,
-                               ['/usr/kerberos/include'])
-            if krb5_h:
-                ssl_incs += krb5_h
-        ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
-                                     ['/usr/local/ssl/lib',
-                                      '/usr/contrib/ssl/lib/'
-                                     ] )
-
-        if (ssl_incs is not None and
-            ssl_libs is not None):
-            exts.append( Extension('_ssl', ['_ssl.c'],
-                                   include_dirs = ssl_incs,
-                                   library_dirs = ssl_libs,
-                                   libraries = ['ssl', 'crypto'],
-                                   depends = ['socketmodule.h']), )
+        ssl_ext, hashlib_ext = self._detect_openssl(inc_dirs, lib_dirs)
+        if ssl_ext is not None:
+            exts.append(ssl_ext)
         else:
             missing.append('_ssl')
-
-        # find out which version of OpenSSL we have
-        openssl_ver = 0
-        openssl_ver_re = re.compile(
-            r'^\s*#\s*define\s+OPENSSL_VERSION_NUMBER\s+(0x[0-9a-fA-F]+)' )
-
-        # look for the openssl version header on the compiler search path.
-        opensslv_h = find_file('openssl/opensslv.h', [],
-                inc_dirs + search_for_ssl_incs_in)
-        if opensslv_h:
-            name = os.path.join(opensslv_h[0], 'openssl/opensslv.h')
-            if host_platform == 'darwin' and is_macosx_sdk_path(name):
-                name = os.path.join(macosx_sdk_root(), name[1:])
-            try:
-                with open(name, 'r') as incfile:
-                    for line in incfile:
-                        m = openssl_ver_re.match(line)
-                        if m:
-                            openssl_ver = int(m.group(1), 16)
-                            break
-            except IOError as msg:
-                print("IOError while reading opensshv.h:", msg)
-
-        #print('openssl_ver = 0x%08x' % openssl_ver)
-        min_openssl_ver = 0x00907000
-        have_any_openssl = ssl_incs is not None and ssl_libs is not None
-        have_usable_openssl = (have_any_openssl and
-                               openssl_ver >= min_openssl_ver)
-
-        if have_any_openssl:
-            if have_usable_openssl:
-                # The _hashlib module wraps optimized implementations
-                # of hash functions from the OpenSSL library.
-                exts.append( Extension('_hashlib', ['_hashopenssl.c'],
-                                       depends = ['hashlib.h'],
-                                       include_dirs = ssl_incs,
-                                       library_dirs = ssl_libs,
-                                       libraries = ['ssl', 'crypto']) )
-            else:
-                print("warning: openssl 0x%08x is too old for _hashlib" %
-                      openssl_ver)
-                missing.append('_hashlib')
+        if hashlib_ext is not None:
+            exts.append(hashlib_ext)
+        else:
+            missing.append('_hashlib')
 
         # We always compile these even when OpenSSL is available (issue #14693).
         # It's harmless and the object code is tiny (40-50 KiB per module,
@@ -2182,6 +2123,61 @@ class PyBuildExt(build_ext):
             depends=depends
         )
         return ext
+
+    def _detect_openssl(self, inc_dirs, lib_dirs):
+        config_vars = sysconfig.get_config_vars()
+
+        def split_var(name, sep):
+            # poor man's shlex, the re module is not available yet.
+            value = config_vars.get(name)
+            if not value:
+                return ()
+            # This trick works because ax_check_openssl uses --libs-only-L,
+            # --libs-only-l, and --cflags-only-I.
+            value = ' ' + value
+            sep = ' ' + sep
+            return [v.strip() for v in value.split(sep) if v.strip()]
+
+        openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
+        openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
+        openssl_libs = split_var('OPENSSL_LIBS', '-l')
+        if not openssl_libs:
+            # libssl and libcrypto not found
+            return None, None
+
+        # Find OpenSSL includes
+        ssl_incs = find_file(
+            'openssl/ssl.h', inc_dirs, openssl_includes
+        )
+        if ssl_incs is None:
+            return None, None
+
+        # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
+        krb5_h = find_file(
+            'krb5.h', inc_dirs,
+            ['/usr/kerberos/include']
+        )
+        if krb5_h:
+            ssl_incs.extend(krb5_h)
+
+        ssl_ext = Extension(
+            '_ssl', ['_ssl.c'],
+            include_dirs=openssl_includes,
+            library_dirs=openssl_libdirs,
+            libraries=openssl_libs,
+            depends=['socketmodule.h']
+        )
+
+        hashlib_ext = Extension(
+            '_hashlib', ['_hashopenssl.c'],
+            depends=['hashlib.h'],
+            include_dirs=openssl_includes,
+            library_dirs=openssl_libdirs,
+            libraries=openssl_libs,
+        )
+
+        return ssl_ext, hashlib_ext
+
 
 class PyBuildInstall(install):
     # Suppress the warning about installation into the lib_dynload
