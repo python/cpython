@@ -29,6 +29,12 @@ ssl = support.import_module("ssl")
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
 IS_LIBRESSL = ssl.OPENSSL_VERSION.startswith('LibreSSL')
+if IS_LIBRESSL:
+    LIBRESSL_VERSION = tuple(
+        int(s) for s in ssl.OPENSSL_VERSION.rsplit(' ')[-1].split('.')
+    )
+else:
+    LIBRESSL_VERSION = ()
 IS_OPENSSL_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
 
 
@@ -3462,6 +3468,8 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
         self.assertIs(stats['client_npn_protocol'], None)
 
+    @unittest.skipIf(IS_LIBRESSL and LIBRESSL_VERSION >= (2, 6, 1),
+                     "LibreSSL 2.6.1+ has broken NPN support")
     @unittest.skipUnless(ssl.HAS_NPN, "NPN support needed for this test")
     def test_npn_protocols(self):
         server_protocols = ['http/1.1', 'spdy/2']
