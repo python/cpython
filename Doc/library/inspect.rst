@@ -215,6 +215,10 @@ attributes:
 +-----------+-------------------+---------------------------+
 |           | cr_code           | code                      |
 +-----------+-------------------+---------------------------+
+|           | cr_origin         | where coroutine was       |
+|           |                   | created, if coroutine     |
+|           |                   | origin tracking is enabled|
++-----------+-------------------+---------------------------+
 | builtin   | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | original name of this     |
@@ -234,6 +238,9 @@ attributes:
    The ``__name__`` attribute of generators is now set from the function
    name, instead of the code name, and it can now be modified.
 
+.. versionchanged:: 3.7
+
+   Add ``cr_origin`` attribute to coroutines.
 
 .. function:: getmembers(object[, predicate])
 

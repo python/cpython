@@ -1212,6 +1212,27 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)
 
+.. function:: set_coroutine_origin_tracking_depth(depth)
+
+   Allows enabling or disabling coroutine origin tracking. When
+   enabled, the ``cr_origin`` attribute on coroutine objects will
+   contain a list of (filename, line number, function name) tuples
+   describing the traceback where the coroutine object was created.
+   When disabled, ``cr_origin`` will be None.
+
+   To enable, pass a *depth* value greater than zero; this sets the
+   number of frames whose information will be captured. To disable,
+   pass set *depth* to zero.
+
+   Returns the old value of *depth*.
+
+   This setting is thread-local.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
 
 .. function:: set_coroutine_wrapper(wrapper)
 

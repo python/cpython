@@ -32,6 +32,8 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
+    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE)
+        Py_VISIT(((PyCoroObject *)gen)->cr_origin);
     return exc_state_traverse(&gen->gi_exc_state, visit, arg);
 }
 
@@ -137,6 +139,8 @@ gen_dealloc(PyGenObject *gen)
         gen->gi_frame->f_gen = NULL;
         Py_CLEAR(gen->gi_frame);
     }
+    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE)
+        Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
@@ -990,6 +994,7 @@ static PyMemberDef coro_memberlist[] = {
     {"cr_frame",     T_OBJECT, offsetof(PyCoroObject, cr_frame),    READONLY},
     {"cr_running",   T_BOOL,   offsetof(PyCoroObject, cr_running),  READONLY},
     {"cr_code",      T_OBJECT, offsetof(PyCoroObject, cr_code),     READONLY},
+    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin),   READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1161,7 +1166,47 @@ PyTypeObject _PyCoroWrapper_Type = {
 PyObject *
 PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
-    return gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
+    PyObject *coro = gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
+    if (!coro)
+        return NULL;
+
+    PyThreadState *tstate = PyThreadState_GET();
+    int depth = tstate->coroutine_origin_tracking_depth;
+
+    if (depth == 0) {
+        ((PyCoroObject *)coro)->cr_origin = NULL;
+    } else {
+        PyObject *origin = PyList_New(depth);
+        /* Immediately pass ownership to coro, so on error paths we don't have
+           to worry about it separately. */
+        ((PyCoroObject *)coro)->cr_origin = origin;
+        PyFrameObject *frame = PyEval_GetFrame();
+        int i = 0;
+        for (; i < depth; ++i) {
+            if (!frame)
+                break;
+
+            PyObject *frameinfo = Py_BuildValue(
+                "OiO",
+                frame->f_code->co_filename,
+                PyFrame_GetLineNumber(frame),
+                frame->f_code->co_name);
+            if (!frameinfo) {
+                Py_DECREF(coro);
+                return NULL;
+            }
+            PyList_SET_ITEM(origin, i, frameinfo);
+
+            frame = frame->f_back;
+        }
+        /* Truncate the list if necessary */
+        if (PyList_SetSlice(origin, i, depth, NULL) < 0) {
+            Py_DECREF(coro);
+            return NULL;
+        }
+    }
+
+    return coro;
 }
 
 

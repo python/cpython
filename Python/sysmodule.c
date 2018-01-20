@@ -34,6 +34,13 @@ extern void *PyWin_DLLhModule;
 extern const char *PyWin_DLLVersionString;
 #endif
 
+/*[clinic input]
+module sys
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3726b388feee8cea]*/
+
+#include "clinic/sysmodule.c.h"
+
 _Py_IDENTIFIER(_);
 _Py_IDENTIFIER(__sizeof__);
 _Py_IDENTIFIER(_xoptions);
@@ -708,6 +715,29 @@ sys_setrecursionlimit(PyObject *self, PyObject *args)
 
     Py_SetRecursionLimit(new_limit);
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.set_coroutine_origin_tracking_depth -> int
+
+  depth: int
+
+Enable or disable origin tracking for coroutine objects in this thread.
+
+Coroutine objects will track 'depth' frames of traceback information about
+where they came from, available in their cr_origin attribute. Set depth of 0
+to disable. Returns old value.
+[clinic start generated code]*/
+
+static int
+sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=1d421106d83a2fce input=f0a48609fc463a5c]*/
+{
+    if (depth < 0) {
+        PyErr_SetString(PyExc_ValueError, "depth must be >= 0");
+        return -1;
+    }
+    return _PyEval_SetCoroutineOriginTrackingDepth(depth);
 }
 
 static PyObject *
@@ -1512,6 +1542,7 @@ static PyMethodDef sys_methods[] = {
     {"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
     {"_debugmallocstats", sys_debugmallocstats, METH_NOARGS,
      debugmallocstats_doc},
+    SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     {"set_coroutine_wrapper", sys_set_coroutine_wrapper, METH_O,
      set_coroutine_wrapper_doc},
     {"get_coroutine_wrapper", sys_get_coroutine_wrapper, METH_NOARGS,

@@ -1,4 +1,4 @@
-import contextlib
+from contextlib import contextmanager, closing
 import copy
 import inspect
 import pickle
@@ -58,7 +58,7 @@ def run_async__await__(coro):
     return buffer, result
 
 
-@contextlib.contextmanager
+@contextmanager
 def silence_coro_gc():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -2040,6 +2040,51 @@ class SysSetCoroWrapperTest(unittest.TestCase):
         finally:
             sys.set_coroutine_wrapper(None)
 
+
+class OriginTrackingTest(unittest.TestCase):
+    def here(self):
+        info = inspect.getframeinfo(inspect.currentframe().f_back)
+        return (info.filename, info.lineno)
+
+    def test_origin_tracking(self):
+        orig_depth = sys.set_coroutine_origin_tracking_depth(0)
+        try:
+            async def corofn():
+                pass
+
+            with closing(corofn()) as coro:
+                self.assertIsNone(coro.cr_origin)
+
+            self.assertEqual(sys.set_coroutine_origin_tracking_depth(1), 0)
+
+            fname, lineno = self.here()
+            with closing(corofn()) as coro:
+                self.assertEqual(coro.cr_origin,
+                                 [(fname, lineno + 1, "test_origin_tracking")])
+
+            self.assertEqual(sys.set_coroutine_origin_tracking_depth(2), 1)
+            def nested():
+                return (self.here(), corofn())
+            fname, lineno = self.here()
+            ((nested_fname, nested_lineno), coro) = nested()
+            with closing(coro):
+                self.assertEqual(coro.cr_origin,
+                                 [(nested_fname, nested_lineno, "nested"),
+                                  (fname, lineno + 1, "test_origin_tracking")])
+
+            # Check we handle running out of frames correctly
+            sys.set_coroutine_origin_tracking_depth(1000)
+            with closing(corofn()) as coro:
+                self.assertTrue(2 < len(coro.cr_origin) < 1000)
+
+            # We can't set depth negative
+            with self.assertRaises(ValueError):
+                sys.set_coroutine_origin_tracking_depth(-1)
+            # And trying leaves it unchanged
+            self.assertEqual(sys.set_coroutine_origin_tracking_depth(0), 1000)
+
+        finally:
+            sys.set_coroutine_origin_tracking_depth(orig_depth)
 
 @support.cpython_only
 class CAPITest(unittest.TestCase):
