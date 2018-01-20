@@ -1,0 +1,3 @@
+Leading whitespace is now correctly ignored when generating suggestions
+for converting Py2 print statements to Py3 builtin print function calls.
+Patch by Sanyam Khurana.
