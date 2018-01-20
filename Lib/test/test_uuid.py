@@ -311,6 +311,26 @@ class BaseTestUUID:
         node2 = self.uuid.getnode()
         self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
+    # bpo-32502: UUID1 requires a 48-bit identifier, but hardware identifiers
+    # need not necessarily be 48 bits (e.g., EUI-64).
+    def test_uuid1_eui64(self):
+        # Reset any cached node value
+        self.uuid._node = None
+
+        # Confirm that uuid.getnode ignores hardware addresses larger than 48
+        # bits
+        bad_getter = lambda: 1 << 48
+        node = self.uuid.getnode(getters=[bad_getter])
+        self.assertTrue(0 < node < (1 << 48), '%012x' % node)
+
+        # Confirm that uuid1 doesn't fail when there's only a 64-bit hardware
+        # address
+        try:
+            self.uuid.uuid1(node=node)
+        except ValueError as e:
+            self.fail('uuid1 was given an invalid node ID')
+
+
     def test_uuid1(self):
         equal = self.assertEqual
 
