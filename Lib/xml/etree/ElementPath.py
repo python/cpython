@@ -65,7 +65,7 @@ xpath_tokenizer_re = re.compile(
     r"//?|"
     r"\.\.|"
     r"\(\)|"
-    r"[/.*:\[\]\(\)@=])|"
+    r"[/.,*:\[\]\(\)@=])|"
     r"((?:\{[^}]+\})?[^/\[\]\(\)@=\s]+)|"
     r"\s+"
     )
@@ -223,6 +223,38 @@ def prepare_parent(next, token):
                     yield parent
     return select
 
+def prepare_predicate_concat(next):
+    constr = ''
+    needstr = True
+    started = False
+    while True:
+        try:
+            token = next()
+        except StopIteration:
+            raise SyntaxError("incomplete concat")
+        if token == ('', ''):
+            continue
+        if not started:
+            if token[0] == '(':
+                started = True
+                continue
+            else:
+                raise SyntaxError("concat missing opening paranthese")
+        if token[0] == ')':
+            if needstr:
+                raise SyntaxError("invalid close paranthese for concat")
+            return constr
+        if token[0] == ',':
+            if needstr:
+                raise SyntaxError("comma separator in concat without string")
+            needstr = True
+            continue
+        if token[0] and token[0][0] in "'\"" and token[0][0] == token[0][-1]:
+            constr += token[0][1:-1]
+            needstr = False
+        else:
+            raise SyntaxError("invalid string ({}) in concat".format(token[0] or token[1]))
+
 def prepare_predicate(next, token):
     # FIXME: replace with real parser!!! refs:
     # http://effbot.org/zone/simple-iterator-parser.htm
@@ -239,6 +271,8 @@ def prepare_predicate(next, token):
         if token == ('', ''):
             # ignore whitespace
             continue
+        if token[1] == "concat" and signature == ['@', '-', '=']:
+            token = "'" + prepare_predicate_concat(next) + "'", ''
         if token[0] and token[0][:1] in "'\"":
             token = "'", token[0][1:-1]
         signature.append(token[0] or "-")
