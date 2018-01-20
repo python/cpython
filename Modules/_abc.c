@@ -215,7 +215,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         return NULL;
     }
     /* TODO: clear the registry from dead refs from time to time
-       on iteration here (have a counter for this) */
+       on iteration here (have a counter for this) or maybe better durin a .register() call */
     /* TODO: Reset caches every n-th succes/failure correspondingly
        so that they don't grow too large */
     ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
