@@ -32,14 +32,6 @@ def _is_debug_mode():
 _DEBUG = _is_debug_mode()
 
 
-def debug_wrapper(gen):
-    # This function is called from 'sys.set_coroutine_wrapper'.
-    # We only wrap here coroutines defined via 'async def' syntax.
-    # Generator-based coroutines are wrapped in @coroutine
-    # decorator.
-    return CoroWrapper(gen, None)
-
-
 class CoroWrapper:
     # Wrapper for coroutine object in _DEBUG mode.
 
@@ -141,8 +133,6 @@ def coroutine(func):
     if inspect.iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defined with "async def".
-        # Wrapping in CoroWrapper will happen via
-        # 'sys.set_coroutine_wrapper' function.
         return func
 
     if inspect.isgeneratorfunction(func):
