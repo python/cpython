@@ -1169,6 +1169,8 @@ class ElementTreeTest(unittest.TestCase):
         check("{http://spam}egg", ['{http://spam}egg'])
         check("./spam.egg", ['.', '/', 'spam.egg'])
         check(".//{http://spam}egg", ['.', '//', '{http://spam}egg'])
+        check("concat('insult')", ['concat', '(', "'insult'", ')'])
+        check('concat("abuse")', ['concat', '(', '"abuse"', ')'])
 
         # wildcard tags
         check("{ns}*", ['{ns}*'])
@@ -2570,9 +2572,10 @@ class ElementFindTest(unittest.TestCase):
         LINEAR_XML = '''
         <body>
             <tag class='a'/>
-            <tag class='b'/>
+            <tag class='b' value='concat'/>
+            <concat class='x'/>
             <tag class='c'/>
-            <tag class='d'/>
+            <tag class='d' concat='value'/>
         </body>'''
         e = ET.XML(LINEAR_XML)
 
@@ -2587,6 +2590,21 @@ class ElementFindTest(unittest.TestCase):
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[-1]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()-0]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()+1]')
+
+        # Test concat functionality
+        self.assertEqual(e.find('./tag[@class=concat("d")]').attrib['class'], 'd')
+        self.assertEqual(e.find('./tag[@class=concat("", \'d\', "")]').attrib['class'], 'd')
+        self.assertEqual(e.find('./tag[@value="concat"]').attrib['class'], 'b')
+        self.assertEqual(e.find('./tag[@value=concat("concat")]').attrib['class'], 'b')
+        self.assertEqual(e.find('./tag[@concat="value"]').attrib['class'], 'd')
+        self.assertEqual(e.find('./tag[@concat=concat("value")]').attrib['class'], 'd')
+        self.assertEqual(e.find('./concat[@class=concat("x")]').attrib['class'], 'x')
+
+        self.assertRaisesRegex(SyntaxError, 'invalid predicate', e.find, './tag[@class=concat"d"]')
+        self.assertRaisesRegex(SyntaxError, 'concat missing opening paranthese', e.find, './tag[@class=concat()]')
+        self.assertRaisesRegex(SyntaxError, 'invalid close paranthese for concat', e.find, './tag[@class=concat("d",)]')
+        self.assertRaisesRegex(SyntaxError, 'incomplete concat', e.find, './tag[@class=concat("d"')
+        self.assertRaisesRegex(SyntaxError, "invalid string '.' in concat", e.find, './tag[@class=concat("d". "e"]')
 
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)

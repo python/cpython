@@ -253,7 +253,7 @@ def prepare_predicate_concat(next):
             constr += token[0][1:-1]
             needstr = False
         else:
-            raise SyntaxError("invalid string ({}) in concat".format(token[0] or token[1]))
+            raise SyntaxError("invalid string '{}' in concat".format(token[0] or token[1]))
 
 def prepare_predicate(next, token):
     # FIXME: replace with real parser!!! refs:
