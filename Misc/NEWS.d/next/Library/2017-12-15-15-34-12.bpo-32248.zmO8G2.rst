@@ -1,7 +1,8 @@
 Add :class:`importlib.abc.ResourceReader` as an ABC to provide a
 unified API for reading resources contained within packages. Loaders
 wishing to support resource reading are expected to implement the
-``get_resource_reader(fullname)`` method.
+``get_resource_reader(fullname)`` method.  File-based and zipimport-based
+loaders both implement these APIs.
 
 Also add :mod:`importlib.resources` as the stdlib port of the
 ``importlib_resources`` PyPI package. The modules provides a high-level
