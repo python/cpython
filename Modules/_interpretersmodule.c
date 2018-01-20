@@ -930,13 +930,6 @@ _channel_close(struct _channels *channels, int64_t id)
     return _channels_close(channels, id, NULL);
 }
 
-/*
-int
-channel_list_interpreters(int id)
-{
-}
-*/
-
 /* ChannelID class */
 
 #define CHANNEL_SEND 1
@@ -1776,28 +1769,6 @@ Close the channel for the current interpreter.  'send' and 'recv'\n\
 ends are closed.  Closing an already closed end is a noop.");
 
 static PyObject *
-channel_list_interpreters(PyObject *self, PyObject *args)
-{
-    PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_list_interpreters", 1, 1, &id))
-        return NULL;
-
-    int64_t cid = _coerce_id(id);
-    if (cid < 0)
-        return NULL;
-
-    // XXX finish
-    PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(channel_list_interpreters_doc,
-"channel_list_interpreters(ID) -> ([ID], [ID])\n\
-\n\
-Return the list of intepreter IDs associated with the channel\n\
-on the recv and send ends, respectively.");
-
-static PyObject *
 channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 {
     return channelid_new(&ChannelIDtype, args, kwds);
@@ -1836,8 +1807,6 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS, channel_close_doc},
     {"channel_drop_interpreter",  (PyCFunction)channel_drop_interpreter,
      METH_VARARGS | METH_KEYWORDS, channel_drop_interpreter_doc},
-    {"channel_list_interpreters", (PyCFunction)channel_list_interpreters,
-     METH_VARARGS, channel_list_interpreters_doc},
     {"_channel_id",               (PyCFunction)channel__channel_id,
      METH_VARARGS | METH_KEYWORDS, NULL},
 
