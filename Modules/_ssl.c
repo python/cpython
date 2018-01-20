@@ -723,8 +723,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->owner = NULL;
     self->server_hostname = NULL;
     if (server_hostname != NULL) {
+        /* server_hostname was encoded to an A-label by our caller; put it
+         * back into a str object, but still as an A-label (bpo-28414)
+         */
         PyObject *hostname = PyUnicode_Decode(server_hostname, strlen(server_hostname),
-                                              "idna", "strict");
+                                              "ascii", "strict");
         if (hostname == NULL) {
             Py_DECREF(self);
             return NULL;

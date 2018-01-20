@@ -1247,6 +1247,12 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.7
+      When ``server_hostname`` is an internationalized domain name
+      (IDN), this attribute now stores the A-label form
+      (``"xn--pythn-mua.org"``), rather than the U-label form
+      (``"pythön.org"``).
+
 .. attribute:: SSLSocket.session
 
    The :class:`SSLSession` for this SSL connection. The session is available

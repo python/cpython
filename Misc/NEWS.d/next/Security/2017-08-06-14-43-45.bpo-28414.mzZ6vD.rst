@@ -1,0 +1,2 @@
+The ssl module can now validate hostnames that contain non-ASCII
+characters (IDNs).

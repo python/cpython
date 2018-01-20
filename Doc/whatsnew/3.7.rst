@@ -487,6 +487,16 @@ can be set within the scope of a group.
 ``'^$'`` or ``(?=-)`` that matches an empty string.
 (Contributed by Serhiy Storchaka in :issue:`25054`.)
 
+ssl
+---
+
+Added support for validating server certificates containing
+internationalized domain names (IDNs). As part of this change, the
+:attr:`ssl.SSLSocket.server_hostname` attribute now stores the
+expected hostname in A-label form (``"xn--pythn-mua.org"``), rather
+than the U-label form (``"pythön.org"``). (Contributed by
+Nathaniel J. Smith in :issue:`28414`.)
+
 string
 ------
 
