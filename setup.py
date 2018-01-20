@@ -2157,13 +2157,16 @@ class PyBuildExt(build_ext):
         if krb5_h:
             ssl_incs.extend(krb5_h)
 
-        ssl_ext = Extension(
-            '_ssl', ['_ssl.c'],
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
-            depends=['socketmodule.h']
-        )
+        if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
+            ssl_ext = Extension(
+                '_ssl', ['_ssl.c'],
+                include_dirs=openssl_includes,
+                library_dirs=openssl_libdirs,
+                libraries=openssl_libs,
+                depends=['socketmodule.h']
+            )
+        else:
+            ssl_ext = None
 
         hashlib_ext = Extension(
             '_hashlib', ['_hashopenssl.c'],

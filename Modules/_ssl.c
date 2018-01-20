@@ -64,10 +64,13 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/rand.h"
 #include "openssl/bio.h"
 
-/* Set HAVE_X509_VERIFY_PARAM_SET1_HOST for non-autoconf builds */
 #ifndef HAVE_X509_VERIFY_PARAM_SET1_HOST
-#  if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER > 0x1000200fL
+#  ifdef LIBRESSL_VERSION_NUMBER
+#    error "LibreSSL is missing X509_VERIFY_PARAM_set1_host(), see https://github.com/libressl-portable/portable/issues/381"
+#  elif OPENSSL_VERSION_NUMBER > 0x1000200fL
 #    define HAVE_X509_VERIFY_PARAM_SET1_HOST
+#  else
+#    error "libssl is too old and does not support X509_VERIFY_PARAM_set1_host()"
 #  endif
 #endif
 
@@ -215,11 +218,6 @@ static int BIO_up_ref(BIO *b)
 
 static STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(X509_STORE *store) {
     return store->objs;
-}
-
-static X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *store)
-{
-    return store->param;
 }
 
 static int
