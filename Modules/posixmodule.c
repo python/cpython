@@ -8201,15 +8201,16 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0)
         return -1;
-    #ifdef HAVE_PREADV2
+#ifdef HAVE_PREADV2
     do {
         Py_BEGIN_ALLOW_THREADS
         n = preadv2(fd, iov, cnt, offset, flags);
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    #else
+#else
     if(flags != 0){
         PyErr_SetString(PyExc_OSError, "preadv2() not available in this system");
+        iov_cleanup(iov, buf, cnt);
         return -1;
     }
     do {
@@ -8217,7 +8218,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         n = preadv(fd, iov, cnt, offset);
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    #endif
+#endif
 
     iov_cleanup(iov, buf, cnt);
     if (n < 0) {
@@ -8228,7 +8229,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     return n;
 }
-#endif /* HAVE_PREADV2 */
+#endif /* HAVE_PREADV */
 
 
 /*[clinic input]
