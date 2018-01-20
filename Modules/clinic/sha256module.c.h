@@ -78,7 +78,7 @@ static PyObject *
 _sha256_sha256_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha256_sha256(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha256_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -108,7 +108,7 @@ static PyObject *
 _sha256_sha224_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha256_sha224(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha256_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -124,4 +124,4 @@ _sha256_sha224(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84e7b8365b3ca4d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4b90199bc9f7cc88 input=a9049054013a1b77]*/

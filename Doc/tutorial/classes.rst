@@ -876,9 +876,9 @@ Generator Expressions
 =====================
 
 Some simple generators can be coded succinctly as expressions using a syntax
-similar to list comprehensions but with parentheses instead of brackets.  These
-expressions are designed for situations where the generator is used right away
-by an enclosing function.  Generator expressions are more compact but less
+similar to list comprehensions but with parentheses instead of square brackets.
+These expressions are designed for situations where the generator is used right
+away by an enclosing function.  Generator expressions are more compact but less
 versatile than full generator definitions and tend to be more memory friendly
 than equivalent list comprehensions.
 

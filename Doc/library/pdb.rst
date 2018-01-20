@@ -61,6 +61,12 @@ useful than quitting the debugger upon program's exit.
    :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
    in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
 
+.. versionadded:: 3.7
+   :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
+   ``python3 -m`` does. As with a script, the debugger will pause execution just
+   before the first line of the module.
+
+
 The typical usage to break into the debugger from a running program is to
 insert ::
 
@@ -118,11 +124,15 @@ slightly different way:
    is entered.
 
 
-.. function:: set_trace()
+.. function:: set_trace(*, header=None)
 
-   Enter the debugger at the calling stack frame.  This is useful to hard-code a
-   breakpoint at a given point in a program, even if the code is not otherwise
-   being debugged (e.g. when an assertion fails).
+   Enter the debugger at the calling stack frame.  This is useful to hard-code
+   a breakpoint at a given point in a program, even if the code is not
+   otherwise being debugged (e.g. when an assertion fails).  If given,
+   *header* is printed to the console just before debugging begins.
+
+   .. versionchanged:: 3.7
+      The keyword-only argument *header*.
 
 
 .. function:: post_mortem(traceback=None)

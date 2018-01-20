@@ -29,6 +29,17 @@ Functions and classes provided:
    .. versionadded:: 3.6
 
 
+.. class:: AbstractAsyncContextManager
+
+   An :term:`abstract base class` for classes that implement
+   :meth:`object.__aenter__` and :meth:`object.__aexit__`. A default
+   implementation for :meth:`object.__aenter__` is provided which returns
+   ``self`` while :meth:`object.__aexit__` is an abstract method which by default
+   returns ``None``. See also the definition of
+   :ref:`async-context-managers`.
+
+   .. versionadded:: 3.7
+
 
 .. decorator:: contextmanager
 
@@ -135,6 +146,28 @@ Functions and classes provided:
 
    without needing to explicitly close ``page``.  Even if an error occurs,
    ``page.close()`` will be called when the :keyword:`with` block is exited.
+
+
+.. _simplifying-support-for-single-optional-context-managers:
+
+.. function:: nullcontext(enter_result=None)
+
+   Return a context manager that returns enter_result from ``__enter__``, but
+   otherwise does nothing. It is intended to be used as a stand-in for an
+   optional context manager, for example::
+
+      def process_file(file_or_path):
+          if isinstance(file_or_path, str):
+              # If string, open file
+              cm = open(file_or_path)
+          else:
+              # Caller is responsible for closing file
+              cm = nullcontext(file_or_path)
+
+          with cm as file:
+              # Perform processing on the file
+
+   .. versionadded:: 3.7
 
 
 .. function:: suppress(*exceptions)
@@ -431,24 +464,6 @@ some of the context managers being optional::
 As shown, :class:`ExitStack` also makes it quite easy to use :keyword:`with`
 statements to manage arbitrary resources that don't natively support the
 context management protocol.
-
-
-Simplifying support for single optional context managers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In the specific case of a single optional context manager, :class:`ExitStack`
-instances can be used as a "do nothing" context manager, allowing a context
-manager to easily be omitted without affecting the overall structure of
-the source code::
-
-   def debug_trace(details):
-       if __debug__:
-           return TraceContext(details)
-       # Don't do anything special with the context in release mode
-       return ExitStack()
-
-   with debug_trace():
-       # Suite is traced in debug mode, but runs normally otherwise
 
 
 Catching exceptions from ``__enter__`` methods

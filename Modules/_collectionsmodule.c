@@ -912,7 +912,7 @@ done:
 }
 
 static PyObject *
-deque_rotate(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
+deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t n=1;
 
@@ -938,8 +938,7 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     Py_ssize_t n = Py_SIZE(deque) >> 1;
     PyObject *tmp;
 
-    n++;
-    while (--n) {
+    while (--n >= 0) {
         /* Validate that pointers haven't met in the middle */
         assert(leftblock != rightblock || leftindex < rightindex);
         CHECK_NOT_END(leftblock);
@@ -981,8 +980,7 @@ deque_count(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    n++;
-    while (--n) {
+    while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -1019,8 +1017,7 @@ deque_contains(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    n++;
-    while (--n) {
+    while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -1048,7 +1045,7 @@ deque_len(dequeobject *deque)
 }
 
 static PyObject *
-deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
+deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t i, n, start=0, stop=Py_SIZE(deque);
     PyObject *v, *item;
@@ -1088,13 +1085,13 @@ deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
         }
     }
 
-    n = stop - i + 1;
-    while (--n) {
+    n = stop - i;
+    while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         if (cmp > 0)
-            return PyLong_FromSsize_t(stop - n);
+            return PyLong_FromSsize_t(stop - n - 1);
         if (cmp < 0)
             return NULL;
         if (start_state != deque->state) {
@@ -1125,7 +1122,7 @@ PyDoc_STRVAR(index_doc,
 */
 
 static PyObject *
-deque_insert(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
+deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t index;
     Py_ssize_t n = Py_SIZE(deque);
@@ -1228,16 +1225,14 @@ deque_item(dequeobject *deque, Py_ssize_t i)
         i = (Py_ssize_t)((size_t) i % BLOCKLEN);
         if (index < (Py_SIZE(deque) >> 1)) {
             b = deque->leftblock;
-            n++;
-            while (--n)
+            while (--n >= 0)
                 b = b->rightlink;
         } else {
             n = (Py_ssize_t)(
                     ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                     / BLOCKLEN - n);
             b = deque->rightblock;
-            n++;
-            while (--n)
+            while (--n >= 0)
                 b = b->leftlink;
         }
     }
@@ -1281,16 +1276,14 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     i = (Py_ssize_t)((size_t) i % BLOCKLEN);
     if (index <= halflen) {
         b = deque->leftblock;
-        n++;
-        while (--n)
+        while (--n >= 0)
             b = b->rightlink;
     } else {
         n = (Py_ssize_t)(
                 ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                 / BLOCKLEN - n);
         b = deque->rightblock;
-        n++;
-        while (--n)
+        while (--n >= 0)
             b = b->leftlink;
     }
     Py_INCREF(v);
@@ -1391,10 +1384,12 @@ deque_repr(PyObject *deque)
         return NULL;
     }
     if (((dequeobject *)deque)->maxlen >= 0)
-        result = PyUnicode_FromFormat("deque(%R, maxlen=%zd)",
-                                      aslist, ((dequeobject *)deque)->maxlen);
+        result = PyUnicode_FromFormat("%s(%R, maxlen=%zd)",
+                                      _PyType_Name(Py_TYPE(deque)), aslist,
+                                      ((dequeobject *)deque)->maxlen);
     else
-        result = PyUnicode_FromFormat("deque(%R)", aslist);
+        result = PyUnicode_FromFormat("%s(%R)",
+                                      _PyType_Name(Py_TYPE(deque)), aslist);
     Py_ReprLeave(deque);
     Py_DECREF(aslist);
     return result;
@@ -2134,7 +2129,8 @@ defdict_repr(defdictobject *dd)
         Py_DECREF(baserepr);
         return NULL;
     }
-    result = PyUnicode_FromFormat("defaultdict(%U, %U)",
+    result = PyUnicode_FromFormat("%s(%U, %U)",
+                                  _PyType_Name(Py_TYPE(dd)),
                                   defrepr, baserepr);
     Py_DECREF(defrepr);
     Py_DECREF(baserepr);
@@ -2281,7 +2277,9 @@ _count_elements(PyObject *self, PyObject *args)
     dict_setitem = _PyType_LookupId(&PyDict_Type, &PyId___setitem__);
 
     if (mapping_get != NULL && mapping_get == dict_get &&
-        mapping_setitem != NULL && mapping_setitem == dict_setitem) {
+        mapping_setitem != NULL && mapping_setitem == dict_setitem &&
+        PyDict_Check(mapping))
+    {
         while (1) {
             /* Fast path advantages:
                    1. Eliminate double hashing

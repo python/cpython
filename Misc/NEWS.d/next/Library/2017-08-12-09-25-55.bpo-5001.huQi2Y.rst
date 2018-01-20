@@ -1,9 +1,0 @@
-There are a number of uninformative asserts in the `multiprocessing` module,
-as noted in issue 5001. This change fixes two of the most potentially
-problematic ones, since they are in error-reporting code, in the
-`multiprocessing.managers.convert_to_error` function. (It also makes more
-informative a ValueError message.) The only potentially problematic change
-is that the AssertionError is now a TypeError; however, this should also
-help distinguish it from an AssertionError being *reported* by the
-function/its caller (such as in issue 31169). - Patch by Allen W. Smith
-(drallensmith on github).

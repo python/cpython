@@ -85,7 +85,7 @@ static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
 
 static PyObject *
-gc_collect(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
@@ -255,4 +255,74 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
-/*[clinic end generated code: output=5a58583f00ab018e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gc_freeze__doc__,
+"freeze($module, /)\n"
+"--\n"
+"\n"
+"Freeze all current tracked objects and ignore them for future collections.\n"
+"\n"
+"This can be used before a POSIX fork() call to make the gc copy-on-write friendly.\n"
+"Note: collection before a POSIX fork() call may free pages for future allocation\n"
+"which can cause copy-on-write.");
+
+#define GC_FREEZE_METHODDEF    \
+    {"freeze", (PyCFunction)gc_freeze, METH_NOARGS, gc_freeze__doc__},
+
+static PyObject *
+gc_freeze_impl(PyObject *module);
+
+static PyObject *
+gc_freeze(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return gc_freeze_impl(module);
+}
+
+PyDoc_STRVAR(gc_unfreeze__doc__,
+"unfreeze($module, /)\n"
+"--\n"
+"\n"
+"Unfreeze all objects in the permanent generation.\n"
+"\n"
+"Put all objects in the permanent generation back into oldest generation.");
+
+#define GC_UNFREEZE_METHODDEF    \
+    {"unfreeze", (PyCFunction)gc_unfreeze, METH_NOARGS, gc_unfreeze__doc__},
+
+static PyObject *
+gc_unfreeze_impl(PyObject *module);
+
+static PyObject *
+gc_unfreeze(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return gc_unfreeze_impl(module);
+}
+
+PyDoc_STRVAR(gc_get_freeze_count__doc__,
+"get_freeze_count($module, /)\n"
+"--\n"
+"\n"
+"Return the number of objects in the permanent generation.");
+
+#define GC_GET_FREEZE_COUNT_METHODDEF    \
+    {"get_freeze_count", (PyCFunction)gc_get_freeze_count, METH_NOARGS, gc_get_freeze_count__doc__},
+
+static Py_ssize_t
+gc_get_freeze_count_impl(PyObject *module);
+
+static PyObject *
+gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = gc_get_freeze_count_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=21dc9270b10b7891 input=a9049054013a1b77]*/

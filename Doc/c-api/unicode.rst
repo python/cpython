@@ -770,11 +770,19 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_DecodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler. Previously, :c:func:`Py_DecodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
@@ -797,11 +805,19 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_EncodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler. Previously, :c:func:`Py_EncodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 File System Encoding

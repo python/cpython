@@ -3,8 +3,23 @@ dist: trusty
 sudo: false
 group: beta
 
-# To cache doc-building dependencies.
-cache: pip
+# To cache doc-building dependencies and C compiler output.
+cache:
+    - pip
+    - ccache
+    - directories:
+        - $HOME/multissl
+
+env:
+  global:
+    - OPENSSL=1.1.0g
+    - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
+    - PATH="${OPENSSL_DIR}/bin:$PATH"
+    - CFLAGS="-I${OPENSSL_DIR}/include"
+    - LDFLAGS="-L${OPENSSL_DIR}/lib"
+    # Set rpath with env var instead of -Wl,-rpath linker flag
+    # OpenSSL ignores LDFLAGS when linking bin/openssl
+    - LD_RUN_PATH="${OPENSSL_DIR}/lib"
 
 branches:
   only:
@@ -23,15 +38,6 @@ matrix:
       # compiler here and the other to run the coverage build. Clang is preferred
       # in this instance for its better error messages.
       env: TESTING=cpython
-    - os: osx
-      language: c
-      compiler: clang
-      # Testing under macOS is optional until testing stability has been demonstrated.
-      env: OPTIONAL=true
-      before_install:
-        - brew install openssl xz
-        - export CPPFLAGS="-I$(brew --prefix openssl)/include"
-        - export LDFLAGS="-L$(brew --prefix openssl)/lib"
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
@@ -41,7 +47,7 @@ matrix:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
-        - python -m pip install sphinx~=1.6.1
+        - python -m pip install sphinx~=1.6.1 blurb
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - os: linux
@@ -55,6 +61,10 @@ matrix:
               echo "Only docs were updated, stopping build process."
               exit
             fi
+            python3 Tools/ssl/multissltests.py  --steps=library \
+                --base-directory ${HOME}/multissl \
+                --openssl ${OPENSSL} >/dev/null
+            openssl version
             ./configure
             make -s -j4
             # Need a venv that can parse covered code.
@@ -63,7 +73,7 @@ matrix:
             ./venv/bin/python -m test.pythoninfo
       script:
         # Skip tests that re-run the entire test suite.
-        - ./venv/bin/python -m coverage run --pylib -m test -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn
+        - ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
@@ -78,6 +88,13 @@ before_script:
         echo "Only docs were updated, stopping build process."
         exit
       fi
+      if [ "${TESTING}" != "docs" ]; then
+        # clang complains about unused-parameter a lot, redirect stderr
+        python3 Tools/ssl/multissltests.py --steps=library \
+            --base-directory ${HOME}/multissl \
+            --openssl ${OPENSSL} >/dev/null 2>&1
+      fi
+      openssl version
       ./configure --with-pydebug
       make -j4
       make -j4 regen-all clinic
@@ -98,6 +115,8 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST; fi
   # `-r -w` implicitly provided through `make buildbottest`.
   - make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  # Check that all symbols exported by libpython start with "Py" or "_Py"
+  - make smelly
 
 notifications:
   email: false

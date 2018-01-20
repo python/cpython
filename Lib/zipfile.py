@@ -12,11 +12,7 @@ import stat
 import shutil
 import struct
 import binascii
-
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
+import threading
 
 try:
     import zlib # We may need its compression method
