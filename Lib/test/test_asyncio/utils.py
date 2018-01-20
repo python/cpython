@@ -50,17 +50,23 @@ ONLYCERT = data_file('ssl_cert.pem')
 ONLYKEY = data_file('ssl_key.pem')
 SIGNED_CERTFILE = data_file('keycert3.pem')
 SIGNING_CA = data_file('pycacert.pem')
-PEERCERT = {'serialNumber': 'B09264B1F2DA21D1',
-            'version': 1,
-            'subject': ((('countryName', 'XY'),),
-                    (('localityName', 'Castle Anthrax'),),
-                    (('organizationName', 'Python Software Foundation'),),
-                    (('commonName', 'localhost'),)),
-            'issuer': ((('countryName', 'XY'),),
-                    (('organizationName', 'Python Software Foundation CA'),),
-                    (('commonName', 'our-ca-server'),)),
-            'notAfter': 'Nov 13 19:47:07 2022 GMT',
-            'notBefore': 'Jan  4 19:47:07 2013 GMT'}
+PEERCERT = {
+    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
+    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
+    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
+    'issuer': ((('countryName', 'XY'),),
+            (('organizationName', 'Python Software Foundation CA'),),
+            (('commonName', 'our-ca-server'),)),
+    'notAfter': 'Nov 28 19:09:06 2027 GMT',
+    'notBefore': 'Jan 19 19:09:06 2018 GMT',
+    'serialNumber': '82EDBF41C880919C',
+    'subject': ((('countryName', 'XY'),),
+             (('localityName', 'Castle Anthrax'),),
+             (('organizationName', 'Python Software Foundation'),),
+             (('commonName', 'localhost'),)),
+    'subjectAltName': (('DNS', 'localhost'),),
+    'version': 3
+}
 
 
 def simple_server_sslcontext():
