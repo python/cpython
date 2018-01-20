@@ -23,10 +23,10 @@ def _captured_script(script):
     return wrapped, open(r)
 
 
-def _run_output(interp, request):
+def _run_output(interp, request, shared=None):
     script, chan = _captured_script(request)
     with chan:
-        interpreters.run_string(interp, script)
+        interpreters.run_string(interp, script, shared)
         return chan.read()
 
 
@@ -1098,9 +1098,20 @@ class ChannelTests(TestBase):
         with self.assertRaises(interpreters.ChannelEmptyError):
             interpreters.channel_recv(cid)
 
-    @unittest.skip('not implemented yet')
     def test_run_string_arg(self):
-        raise NotImplementedError
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+
+        out = _run_output(interp, dedent("""
+            import _interpreters
+            print(cid.end)
+            _interpreters.channel_send(cid, b'spam')
+            """),
+            dict(cid=cid.send))
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, b'spam')
+        self.assertEqual(out.strip(), 'send')
 
 
 if __name__ == '__main__':

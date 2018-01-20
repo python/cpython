@@ -1006,8 +1006,7 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
         end = CHANNEL_RECV;
     }
 
-    id = (PyObject *)newchannelid(cls, cid, end, _global_channels(), force);
-    return id;
+    return (PyObject *)newchannelid(cls, cid, end, _global_channels(), force);
 }
 
 static void
@@ -1129,6 +1128,32 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
             Py_RETURN_FALSE;
     }
     Py_RETURN_RICHCOMPARE(othercid != cid, 0, op);
+}
+
+struct _channelid_xid {
+    int64_t id;
+    int end;
+};
+
+static PyObject *
+_channelid_from_xid(_PyCrossInterpreterData *data)
+{
+    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    return (PyObject *)newchannelid(&ChannelIDtype, xid->id, xid->end, _global_channels(), 0);
+}
+
+static int
+_channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    struct _channelid_xid *xid = PyMem_Malloc(sizeof(struct _channelid_xid));
+    xid->id = ((channelid *)obj)->id;
+    xid->end = ((channelid *)obj)->end;
+
+    data->data = xid;
+    data->obj = obj;
+    data->new_object = _channelid_from_xid;
+    data->free = PyMem_Free;
+    return 0;
 }
 
 static PyObject *
@@ -1859,6 +1884,9 @@ PyInit__interpreters(void)
     /* Add other types */
     Py_INCREF(&ChannelIDtype);
     PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype);
+
+    if (_PyCrossInterpreterData_Register_Class(&ChannelIDtype, _channelid_shared))
+        return NULL;
 
     return module;
 }
