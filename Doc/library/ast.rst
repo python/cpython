@@ -261,5 +261,5 @@ and classes for traversing abstract syntax trees:
 
 .. seealso::
 
-    `Green Tree Snakes <https://greentreesnakes.readthedocs.org/>`_, an external documentation resource, has good
+    `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external documentation resource, has good
     details on working with Python ASTs.

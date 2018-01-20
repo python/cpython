@@ -458,4 +458,4 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 
 This script is also available for download `online
-<https://gist.github.com/4673395>`_.
+<https://gist.github.com/vsajip/4673395>`_.

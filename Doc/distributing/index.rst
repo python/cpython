@@ -62,7 +62,7 @@ Key terms
   locally.
 
 .. _setuptools: https://setuptools.readthedocs.io/en/latest/
-.. _wheel: https://wheel.readthedocs.org
+.. _wheel: https://wheel.readthedocs.io/
 
 Open source licensing and collaboration
 =======================================
@@ -111,7 +111,7 @@ by invoking the ``pip`` module at the command line::
 The Python Packaging User Guide includes more details on the `currently
 recommended tools`_.
 
-.. _currently recommended tools: https://packaging.python.org/en/latest/current/#packaging-tool-recommendations
+.. _currently recommended tools: https://packaging.python.org/guides/tool-recommendations/#packaging-tool-recommendations
 
 Reading the guide
 =================
@@ -124,11 +124,11 @@ involved in creating a project:
 * `Uploading the project to the Python Packaging Index`_
 
 .. _Project structure: \
-   https://packaging.python.org/en/latest/distributing/
+    https://packaging.python.org/tutorials/distributing-packages/
 .. _Building and packaging the project: \
-   https://packaging.python.org/en/latest/distributing/#packaging-your-project
+   https://packaging.python.org/tutorials/distributing-packages/#packaging-your-project
 .. _Uploading the project to the Python Packaging Index: \
-   https://packaging.python.org/en/latest/distributing/#uploading-your-project-to-pypi
+   https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
 
 
 How do I...?
@@ -160,7 +160,7 @@ Python Packaging User Guide for more information and recommendations.
 .. seealso::
 
    `Python Packaging User Guide: Binary Extensions
-   <https://packaging.python.org/en/latest/extensions>`__
+   <https://packaging.python.org/guides/packaging-binary-extensions/>`__
 
 .. other topics:
 

@@ -562,7 +562,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <http://csrc.nist.gov/publications/nistpubs/800-106/NIST-SP-800-106.pdf>`_)
+    <https://csrc.nist.gov/publications/detail/sp/800-106/final>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -728,7 +728,7 @@ Domain Dedication 1.0 Universal:
    https://blake2.net
       Official BLAKE2 website.
 
-   http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
+   https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
       The FIPS 180-2 publication on Secure Hash Algorithms.
 
    https://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms

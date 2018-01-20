@@ -330,7 +330,7 @@ statement, only the ``from ... import`` form.
    :pep:`328` - Imports: Multi-Line and Absolute/Relative
       PEP written by Aahz; implemented by Thomas Wouters.
 
-   https://pylib.readthedocs.org/
+   https://pylib.readthedocs.io/
       The py library by Holger Krekel, which contains the :mod:`py.std` package.
 
 .. ======================================================================

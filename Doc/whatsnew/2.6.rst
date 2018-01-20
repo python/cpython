@@ -172,7 +172,7 @@ this edition of "What's New in Python" links to the bug/patch
 item for each change.
 
 Hosting of the Python bug tracker is kindly provided by
-`Upfront Systems <http://www.upfrontsystems.co.za/>`__
+`Upfront Systems <http://www.upfrontsoftware.co.za>`__
 of Stellenbosch, South Africa.  Martin von Löwis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at

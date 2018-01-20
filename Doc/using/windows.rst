@@ -307,11 +307,11 @@ key features:
 `ActivePython <https://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Anaconda <https://www.continuum.io/downloads/>`_
+`Anaconda <https://www.anaconda.com/download/>`_
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Canopy <https://www.enthought.com/products/canopy/>`_
+`Canopy <https://www.enthought.com/product/canopy/>`_
     A "comprehensive Python analysis environment" with editors and other
     development tools.
 
@@ -377,7 +377,7 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://support.microsoft.com/kb/100843
+    https://support.microsoft.com/en-us/help/100843/environment-variables-in-windows-nt
       Environment variables in Windows NT
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
@@ -386,7 +386,7 @@ System variables, you need non-restricted access to your machine
     https://technet.microsoft.com/en-us/library/cc755104.aspx
       The SETX command, for permanently modifying environment variables
 
-    https://support.microsoft.com/kb/310519
+    https://support.microsoft.com/en-us/help/310519/how-to-manage-environment-variables-in-windows-xp
       How To Manage Environment Variables in Windows XP
 
     https://www.chem.gla.ac.uk/~louis/software/faq/q1.html
