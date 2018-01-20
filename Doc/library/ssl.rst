@@ -146,9 +146,10 @@ Functions, Constants, and Exceptions
 
 .. exception:: CertificateError
 
-   Raised to signal an error with a certificate (such as mismatching
-   hostname).  Certificate errors detected by OpenSSL, though, raise
-   an :exc:`SSLCertVerificationError`.
+   An alias for :exc:`SSLCertVerificationError`.
+
+   .. versionchanged:: 3.7
+      The exception is now an alias for :exc:`SSLCertVerificationError`.
 
 
 Socket creation

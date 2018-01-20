@@ -363,6 +363,16 @@ class PyBuildExt(build_ext):
             print_three_column(failed)
             print()
 
+        if any('_ssl' in l
+               for l in (missing, self.failed, self.failed_on_import)):
+            print()
+            print("Could not build the ssl module!")
+            print("Python requires an OpenSSL 1.0.2 or 1.1 compatible "
+                  "libssl with X509_VERIFY_PARAM_set1_host().")
+            print("LibreSSL 2.6.4 and earlier do not provide the necessary "
+                  "APIs, https://github.com/libressl-portable/portable/issues/381")
+            print()
+
     def build_extension(self, ext):
 
         if ext.name == '_ctypes':
