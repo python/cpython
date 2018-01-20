@@ -26,7 +26,7 @@ appearance.
 
 .. seealso::
 
-   `Tk Widget Styling Support <https://www.tcl.tk/cgi-bin/tct/tip/48>`_
+   `Tk Widget Styling Support <https://core.tcl.tk/tips/doc/trunk/tip/48.md>`_
       A document introducing theming support for Tk
 
 
