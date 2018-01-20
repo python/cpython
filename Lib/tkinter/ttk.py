@@ -19,7 +19,7 @@ __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
            "PanedWindow", "Progressbar", "Radiobutton", "Scale", "Scrollbar",
-           "Separator", "Sizegrip", "Style", "Treeview",
+           "Separator", "Sizegrip", "Style", "Treeview", "Spinbox",
            # Extensions
            "LabeledScale", "OptionMenu",
            # functions
@@ -1151,7 +1151,7 @@ class Sizegrip(Widget):
         Widget.__init__(self, master, "ttk::sizegrip", kw)
 
 
-class Spinbox(Combobox):
+class Spinbox(Entry):
     """Ttk Spinbox is an Entry with increment and decrement arrows
 
     It is commonly used for number entry or to select from a list of
@@ -1171,6 +1171,20 @@ class Spinbox(Combobox):
             to, from_, increment, values, wrap, format, command
         """
         Entry.__init__(self, master, "ttk::spinbox", **kw)
+
+    def current(self, newindex=None):
+        """If newindex is supplied, sets the Spinbox value to the
+        element at position newindex in the list of values. Otherwise,
+        returns the index of the current value in the list of values
+        or -1 if the current value does not appear in the list."""
+        if newindex is None:
+            return self.tk.getint(self.tk.call(self._w, "current"))
+        return self.tk.call(self._w, "current", newindex)
+
+
+    def set(self, value):
+        """Sets the value of the Spinbox to value."""
+        self.tk.call(self._w, "set", value)
 
 
 class Treeview(Widget, tkinter.XView, tkinter.YView):
