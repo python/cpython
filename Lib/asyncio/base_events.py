@@ -1555,4 +1555,4 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._debug = enabled
 
         if self.is_running():
-            self._set_coroutine_wrapper(enabled)
+            self.call_soon_threadsafe(self._set_coroutine_origin_tracking, enabled)
