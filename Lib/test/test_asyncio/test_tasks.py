@@ -2163,19 +2163,6 @@ class BaseTaskTests:
         self.assertIsInstance(task, self.Task)
         self.assertEqual(self.loop.run_until_complete(task), 42)
 
-    def test_bare_create_task(self):
-
-        async def inner():
-            return 1
-
-        async def coro():
-            task = asyncio.create_task(inner())
-            self.assertIsInstance(task, self.Task)
-            ret = await task
-            self.assertEqual(1, ret)
-
-        self.loop.run_until_complete(coro())
-
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
