@@ -3,8 +3,6 @@
 
 """Abstract Base Classes (ABCs) according to PEP 3119."""
 
-#from _weakrefset import WeakSet
-
 
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.
@@ -233,16 +231,6 @@ class ABCMeta(type):
         return False
 
 
-from _abc import ABCMeta
-
-
-class ABC(metaclass=ABCMeta):
-    """Helper class that provides a standard way to create an ABC using
-    inheritance.
-    """
-    __slots__ = ()
-
-
 def get_cache_token():
     """Returns the current ABC cache token.
 
@@ -252,4 +240,16 @@ def get_cache_token():
     """
     return ABCMeta._abc_invalidation_counter
 
-from _abc import get_cache_token
+
+try:
+    from _abc import ABCMeta, get_cache_token
+except ImportError:
+    # We postpone this import to speed-up Python start-up time
+    from _weakrefset import WeakSet
+
+
+class ABC(metaclass=ABCMeta):
+    """Helper class that provides a standard way to create an ABC using
+    inheritance.
+    """
+    __slots__ = ()
