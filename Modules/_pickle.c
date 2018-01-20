@@ -119,8 +119,8 @@ enum {
     /* Prefetch size when unpickling (disabled on unpeekable streams) */
     PREFETCH = 8192 * 16,
 
+    FRAME_SIZE_MIN = 4,
     FRAME_SIZE_TARGET = 64 * 1024,
-
     FRAME_HEADER_SIZE = 9
 };
 
@@ -949,13 +949,6 @@ _write_size64(char *out, size_t value)
     }
 }
 
-static void
-_Pickler_WriteFrameHeader(PicklerObject *self, char *qdata, size_t frame_len)
-{
-    qdata[0] = FRAME;
-    _write_size64(qdata + 1, frame_len);
-}
-
 static int
 _Pickler_CommitFrame(PicklerObject *self)
 {
@@ -966,7 +959,14 @@ _Pickler_CommitFrame(PicklerObject *self)
         return 0;
     frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
     qdata = PyBytes_AS_STRING(self->output_buffer) + self->frame_start;
-    _Pickler_WriteFrameHeader(self, qdata, frame_len);
+    if (frame_len >= FRAME_SIZE_MIN) {
+        qdata[0] = FRAME;
+        _write_size64(qdata + 1, frame_len);
+    }
+    else {
+        memmove(qdata, qdata + FRAME_HEADER_SIZE, frame_len);
+        self->output_len -= FRAME_HEADER_SIZE;
+    }
     self->frame_start = -1;
     return 0;
 }

@@ -183,6 +183,7 @@ __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
 
 class _Framer:
 
+    _FRAME_SIZE_MIN = 4
     _FRAME_SIZE_TARGET = 64 * 1024
 
     def __init__(self, file_write):
@@ -203,11 +204,12 @@ class _Framer:
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
                 data = f.getbuffer()
                 write = self.file_write
-                # Issue a single call to the write method of the underlying
-                # file object for the frame opcode with the size of the
-                # frame. The concatenation is expected to be less expensive
-                # than issuing an additional call to write.
-                write(FRAME + pack("<Q", len(data)))
+                if len(data) >= self._FRAME_SIZE_MIN:
+                    # Issue a single call to the write method of the underlying
+                    # file object for the frame opcode with the size of the
+                    # frame. The concatenation is expected to be less expensive
+                    # than issuing an additional call to write.
+                    write(FRAME + pack("<Q", len(data)))
 
                 # Issue a separate call to write to append the frame
                 # contents without concatenation to the above to avoid a
