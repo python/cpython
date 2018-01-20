@@ -135,11 +135,6 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     # Clear ABC registries, restoring previously saved ABC registries.
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
-    if 'typing' in sys.modules:
-        t = sys.modules['typing']
-        # These classes require special treatment because they do not appear
-        # in direct subclasses of collections.abc classes
-        abs_classes = list(abs_classes) + [t.ChainMap, t.Counter, t.DefaultDict]
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
             obj._abc_registry = abcs.get(obj, WeakSet()).copy()

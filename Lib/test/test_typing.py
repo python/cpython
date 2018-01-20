@@ -12,7 +12,7 @@ from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional
 from typing import Tuple, List, MutableMapping
 from typing import Callable
-from typing import Generic, ClassVar, GenericMeta
+from typing import Generic, ClassVar
 from typing import cast
 from typing import get_type_hints
 from typing import no_type_check, no_type_check_decorator
@@ -24,20 +24,8 @@ from typing import Pattern, Match
 import abc
 import typing
 import weakref
-try:
-    import collections.abc as collections_abc
-except ImportError:
-    import collections as collections_abc  # Fallback for PY3.2.
 
-
-try:
-    import mod_generics_cache
-except ImportError:
-    # try to use the builtin one, Python 3.5+
-    from test import mod_generics_cache
-
-
-PY36 = sys.version_info[:2] >= (3, 6)
+from test import mod_generics_cache
 
 
 class BaseTestCase(TestCase):
@@ -606,7 +594,10 @@ class GenericTests(BaseTestCase):
         Y[str]
         with self.assertRaises(TypeError):
             Y[str, str]
-        self.assertIsSubclass(SimpleMapping[str, int], SimpleMapping)
+        SM1 = SimpleMapping[str, int]
+        with self.assertRaises(TypeError):
+            issubclass(SM1, SimpleMapping)
+        self.assertIsInstance(SM1(), SimpleMapping)
 
     def test_generic_errors(self):
         T = TypeVar('T')
@@ -617,6 +608,8 @@ class GenericTests(BaseTestCase):
             Generic[T][T]
         with self.assertRaises(TypeError):
             Generic[T][S]
+        with self.assertRaises(TypeError):
+            class C(Generic[T], Generic[T]): ...
         with self.assertRaises(TypeError):
             isinstance([], List[int])
         with self.assertRaises(TypeError):
@@ -636,7 +629,6 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Generic[T, S, T]
 
-    @skipUnless(PY36, "__init_subclass__ support required")
     def test_init_subclass(self):
         class X(typing.Generic[T]):
             def __init_subclass__(cls, **kwargs):
@@ -659,9 +651,9 @@ class GenericTests(BaseTestCase):
 
     def test_repr(self):
         self.assertEqual(repr(SimpleMapping),
-                         __name__ + '.' + 'SimpleMapping')
+                         "<class 'test.test_typing.SimpleMapping'>")
         self.assertEqual(repr(MySimpleMapping),
-                         __name__ + '.' + 'MySimpleMapping')
+                         "<class 'test.test_typing.MySimpleMapping'>")
 
     def test_chain_repr(self):
         T = TypeVar('T')
@@ -713,7 +705,7 @@ class GenericTests(BaseTestCase):
     def test_new_repr_bare(self):
         T = TypeVar('T')
         self.assertEqual(repr(Generic[T]), 'typing.Generic[~T]')
-        self.assertEqual(repr(typing._Protocol[T]), 'typing.Protocol[~T]')
+        self.assertEqual(repr(typing._Protocol[T]), 'typing._Protocol[~T]')
         class C(typing.Dict[Any, Any]): ...
         # this line should just work
         repr(C.__mro__)
@@ -764,11 +756,13 @@ class GenericTests(BaseTestCase):
 
     def test_abc_registry_kept(self):
         T = TypeVar('T')
-        class C(Generic[T]): ...
+        class C(collections.abc.Mapping, Generic[T]): ...
         C.register(int)
         self.assertIsInstance(1, C)
         C[int]
         self.assertIsInstance(1, C)
+        C._abc_registry.clear()
+        C._abc_cache.clear()  # To keep refleak hunting mode clean
 
     def test_false_subclasses(self):
         class MyMapping(MutableMapping[str, str]): pass
@@ -789,18 +783,17 @@ class GenericTests(BaseTestCase):
                 return 0
         # this should just work
         MM().update()
-        self.assertIsInstance(MM(), collections_abc.MutableMapping)
+        self.assertIsInstance(MM(), collections.abc.MutableMapping)
         self.assertIsInstance(MM(), MutableMapping)
         self.assertNotIsInstance(MM(), List)
         self.assertNotIsInstance({}, MM)
 
     def test_multiple_bases(self):
-        class MM1(MutableMapping[str, str], collections_abc.MutableMapping):
+        class MM1(MutableMapping[str, str], collections.abc.MutableMapping):
             pass
-        with self.assertRaises(TypeError):
-            # consistent MRO not possible
-            class MM2(collections_abc.MutableMapping, MutableMapping[str, str]):
-                pass
+        class MM2(collections.abc.MutableMapping, MutableMapping[str, str]):
+            pass
+        self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     def test_orig_bases(self):
         T = TypeVar('T')
@@ -855,16 +848,17 @@ class GenericTests(BaseTestCase):
         self.assertEqual(D[int].__parameters__, ())
         self.assertEqual(C[int].__args__, (int,))
         self.assertEqual(D[int].__args__, (int,))
-        self.assertEqual(C.__bases__, (List,))
-        self.assertEqual(D.__bases__, (C, List))
+        self.assertEqual(C.__bases__, (list, Generic))
+        self.assertEqual(D.__bases__, (C, list, Generic))
         self.assertEqual(C.__orig_bases__, (List[T][U][V],))
         self.assertEqual(D.__orig_bases__, (C, List[T][U][V]))
 
     def test_subscript_meta(self):
         T = TypeVar('T')
-        self.assertEqual(Type[GenericMeta], Type[GenericMeta])
-        self.assertEqual(Union[T, int][GenericMeta], Union[GenericMeta, int])
-        self.assertEqual(Callable[..., GenericMeta].__args__, (Ellipsis, GenericMeta))
+        class Meta(type): ...
+        self.assertEqual(Type[Meta], Type[Meta])
+        self.assertEqual(Union[T, int][Meta], Union[Meta, int])
+        self.assertEqual(Callable[..., Meta].__args__, (Ellipsis, Meta))
 
     def test_generic_hashes(self):
         class A(Generic[T]):
@@ -939,7 +933,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(repr(Union[Tuple, Callable]).replace('typing.', ''),
                          'Union[Tuple, Callable]')
         self.assertEqual(repr(Union[Tuple, Tuple[int]]).replace('typing.', ''),
-                         'Tuple')
+                         'Union[Tuple, Tuple[int]]')
         self.assertEqual(repr(Callable[..., Optional[T]][int]).replace('typing.', ''),
                          'Callable[..., Union[int, NoneType]]')
         self.assertEqual(repr(Callable[[], List[T]][int]).replace('typing.', ''),
@@ -980,13 +974,15 @@ class GenericTests(BaseTestCase):
 
         self.assertEqual(repr(C1[int]).split('.')[-1], 'C1[int]')
         self.assertEqual(C2.__parameters__, ())
-        self.assertIsInstance(C2(), collections_abc.Callable)
-        self.assertIsSubclass(C2, collections_abc.Callable)
-        self.assertIsSubclass(C1, collections_abc.Callable)
+        self.assertIsInstance(C2(), collections.abc.Callable)
+        self.assertIsSubclass(C2, collections.abc.Callable)
+        self.assertIsSubclass(C1, collections.abc.Callable)
         self.assertIsInstance(T1(), tuple)
         self.assertIsSubclass(T2, tuple)
-        self.assertIsSubclass(Tuple[int, ...], typing.Sequence)
-        self.assertIsSubclass(Tuple[int, ...], typing.Iterable)
+        with self.assertRaises(TypeError):
+            issubclass(Tuple[int, ...], typing.Sequence)
+        with self.assertRaises(TypeError):
+            issubclass(Tuple[int, ...], typing.Iterable)
 
     def test_fail_with_bare_union(self):
         with self.assertRaises(TypeError):
@@ -1006,8 +1002,6 @@ class GenericTests(BaseTestCase):
             Tuple[Generic[T]]
         with self.assertRaises(TypeError):
             List[typing._Protocol]
-        with self.assertRaises(TypeError):
-            isinstance(1, Generic)
 
     def test_type_erasure_special(self):
         T = TypeVar('T')
@@ -1044,21 +1038,6 @@ class GenericTests(BaseTestCase):
                     self.assertNotEqual(repr(base), '')
                     self.assertEqual(base, base)
 
-    def test_substitution_helper(self):
-        T = TypeVar('T')
-        KT = TypeVar('KT')
-        VT = TypeVar('VT')
-        class Map(Generic[KT, VT]):
-            def meth(self, k: KT, v: VT): ...
-        StrMap = Map[str, T]
-        obj = StrMap[int]()
-
-        new_args = typing._subs_tree(obj.__orig_class__)
-        new_annots = {k: typing._replace_arg(v, type(obj).__parameters__, new_args)
-                      for k, v in obj.meth.__annotations__.items()}
-
-        self.assertEqual(new_annots, {'k': str, 'v': int})
-
     def test_pickle(self):
         global C  # pickle wants to reference the class by name
         T = TypeVar('T')
@@ -1078,12 +1057,20 @@ class GenericTests(BaseTestCase):
             self.assertEqual(x.foo, 42)
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
-        simples = [Any, Union, Tuple, Callable, ClassVar, List, typing.Iterable]
-        for s in simples:
+        samples = [Any, Union, Tuple, Callable, ClassVar]
+        for s in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
+        more_samples = [List, typing.Iterable, typing.Type]
+        for s in more_samples:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                z = pickle.dumps(s, proto)
+                x = pickle.loads(z)
+                self.assertEqual(repr(s), repr(x))  # TODO: fix this
+                                                # see also comment in test_copy_and_deepcopy
+                                                # the issue is typing/#512
 
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
@@ -1095,14 +1082,7 @@ class GenericTests(BaseTestCase):
                   Union['T', int], List['T'], typing.Mapping['T', int]]
         for t in things + [Any]:
             self.assertEqual(t, copy(t))
-            self.assertEqual(t, deepcopy(t))
-            if sys.version_info >= (3, 3):
-                # From copy module documentation:
-                # It does "copy" functions and classes (shallow and deeply), by returning
-                # the original object unchanged; this is compatible with the way these
-                # are treated by the pickle module.
-                self.assertTrue(t is copy(t))
-                self.assertTrue(t is deepcopy(t))
+            self.assertEqual(repr(t), repr(deepcopy(t))) # Use repr() because of TypeVars
 
     def test_copy_generic_instances(self):
         T = TypeVar('T')
@@ -1143,7 +1123,6 @@ class GenericTests(BaseTestCase):
 
         c = C()
         c_int = C[int]()
-        self.assertEqual(C.__slots__, C[str].__slots__)
 
         c.potato = 0
         c_int.potato = 0
@@ -1154,8 +1133,6 @@ class GenericTests(BaseTestCase):
 
         def foo(x: C['C']): ...
         self.assertEqual(get_type_hints(foo, globals(), locals())['x'], C[C])
-        self.assertEqual(get_type_hints(foo, globals(), locals())['x'].__slots__,
-                         C.__slots__)
         self.assertEqual(copy(C[int]), deepcopy(C[int]))
 
     def test_parameterized_slots_dict(self):
@@ -1165,7 +1142,6 @@ class GenericTests(BaseTestCase):
 
         d = D()
         d_int = D[int]()
-        self.assertEqual(D.__slots__, D[str].__slots__)
 
         d.banana = 'yes'
         d_int.banana = 'yes'
@@ -1182,30 +1158,22 @@ class GenericTests(BaseTestCase):
                 pass
 
     def test_repr_2(self):
-        PY32 = sys.version_info[:2] < (3, 3)
-
         class C(Generic[T]):
             pass
 
         self.assertEqual(C.__module__, __name__)
-        if not PY32:
-            self.assertEqual(C.__qualname__,
-                             'GenericTests.test_repr_2.<locals>.C')
-        self.assertEqual(repr(C).split('.')[-1], 'C')
+        self.assertEqual(C.__qualname__,
+                         'GenericTests.test_repr_2.<locals>.C')
         X = C[int]
         self.assertEqual(X.__module__, __name__)
-        if not PY32:
-            self.assertTrue(X.__qualname__.endswith('.<locals>.C'))
         self.assertEqual(repr(X).split('.')[-1], 'C[int]')
 
         class Y(C[int]):
             pass
 
         self.assertEqual(Y.__module__, __name__)
-        if not PY32:
-            self.assertEqual(Y.__qualname__,
-                             'GenericTests.test_repr_2.<locals>.Y')
-        self.assertEqual(repr(Y).split('.')[-1], 'Y')
+        self.assertEqual(Y.__qualname__,
+                         'GenericTests.test_repr_2.<locals>.Y')
 
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)
@@ -1237,6 +1205,12 @@ class GenericTests(BaseTestCase):
             pass
 
         self.assertEqual(C.__parameters__, (VT, T, KT))
+
+    def test_multiple_inheritance_special(self):
+        S = TypeVar('S')
+        class B(Generic[S]): ...
+        class C(List[int], B): ...
+        self.assertEqual(C.__mro__, (C, list, B, Generic, object))
 
     def test_nested(self):
 
@@ -1408,22 +1382,22 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(right_hints['node'], Optional[Node[T]])
 
     def test_forwardref_instance_type_error(self):
-        fr = typing._ForwardRef('int')
+        fr = typing.ForwardRef('int')
         with self.assertRaises(TypeError):
             isinstance(42, fr)
 
     def test_forwardref_subclass_type_error(self):
-        fr = typing._ForwardRef('int')
+        fr = typing.ForwardRef('int')
         with self.assertRaises(TypeError):
             issubclass(int, fr)
 
     def test_forward_equality(self):
-        fr = typing._ForwardRef('int')
-        self.assertEqual(fr, typing._ForwardRef('int'))
+        fr = typing.ForwardRef('int')
+        self.assertEqual(fr, typing.ForwardRef('int'))
         self.assertNotEqual(List['int'], List[int])
 
     def test_forward_repr(self):
-        self.assertEqual(repr(List['int']), "typing.List[_ForwardRef('int')]")
+        self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
 
     def test_union_forward(self):
 
@@ -1579,8 +1553,6 @@ class OverloadTests(BaseTestCase):
         blah()
 
 
-ASYNCIO = sys.version_info[:2] >= (3, 5)
-
 ASYNCIO_TESTS = """
 import asyncio
 
@@ -1618,17 +1590,15 @@ class ACM:
         return None
 """
 
-if ASYNCIO:
-    try:
-        exec(ASYNCIO_TESTS)
-    except ImportError:
-        ASYNCIO = False
+try:
+    exec(ASYNCIO_TESTS)
+except ImportError:
+    ASYNCIO = False  # multithreading is not enabled
 else:
-    # fake names for the sake of static analysis
-    asyncio = None
-    AwaitableWrapper = AsyncIteratorWrapper = ACM = object
+    ASYNCIO = True
 
-PY36_TESTS = """
+# Definitions needed for features introduced in Python 3.6
+
 from test import ann_module, ann_module2, ann_module3
 from typing import AsyncContextManager
 
@@ -1681,15 +1651,6 @@ try:
     g_with(ACM()).send(None)
 except StopIteration as e:
     assert e.args[0] == 42
-"""
-
-if PY36:
-    exec(PY36_TESTS)
-else:
-    # fake names for the sake of static analysis
-    ann_module = ann_module2 = ann_module3 = None
-    A = B = CSub = G = CoolEmployee = CoolEmployeeWithDefault = object
-    XMeth = XRepr = NoneAndForward = object
 
 gth = get_type_hints
 
@@ -1704,14 +1665,12 @@ class GetTypeHintTests(BaseTestCase):
         with self.assertRaises(TypeError):
             gth(None)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_modules(self):
         ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     @expectedFailure
     def test_get_type_hints_modules_forwardref(self):
         # FIXME: This currently exposes a bug in typing. Cached forward references
@@ -1721,7 +1680,6 @@ class GetTypeHintTests(BaseTestCase):
                      'default_b': Optional[mod_generics_cache.B]}
         self.assertEqual(gth(mod_generics_cache), mgc_hints)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_classes(self):
         self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
@@ -1744,7 +1702,6 @@ class GetTypeHintTests(BaseTestCase):
                           'my_inner_a2': mod_generics_cache.B.A,
                           'my_outer_a': mod_generics_cache.A})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_respect_no_type_check(self):
         @no_type_check
         class NoTpCheck:
@@ -1783,7 +1740,6 @@ class GetTypeHintTests(BaseTestCase):
         b.__annotations__ = {'x': 'A'}
         self.assertEqual(gth(b, locals()), {'x': A})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_ClassVar(self):
         self.assertEqual(gth(ann_module2.CV, ann_module2.__dict__),
                          {'var': typing.ClassVar[ann_module2.CV]})
@@ -2082,7 +2038,6 @@ class CollectionsAbcTests(BaseTestCase):
         with self.assertRaises(TypeError):
             typing.Generator[int, int, int]()
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_async_generator(self):
         ns = {}
         exec("async def f():\n"
@@ -2090,7 +2045,6 @@ class CollectionsAbcTests(BaseTestCase):
         g = ns['f']()
         self.assertIsSubclass(type(g), typing.AsyncGenerator)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_no_async_generator_instantiation(self):
         with self.assertRaises(TypeError):
             typing.AsyncGenerator()
@@ -2147,13 +2101,14 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MMC, typing.Mapping)
 
         self.assertIsInstance(MMB[KT, VT](), typing.Mapping)
-        self.assertIsInstance(MMB[KT, VT](), collections_abc.Mapping)
+        self.assertIsInstance(MMB[KT, VT](), collections.abc.Mapping)
 
-        self.assertIsSubclass(MMA, collections_abc.Mapping)
-        self.assertIsSubclass(MMB, collections_abc.Mapping)
-        self.assertIsSubclass(MMC, collections_abc.Mapping)
+        self.assertIsSubclass(MMA, collections.abc.Mapping)
+        self.assertIsSubclass(MMB, collections.abc.Mapping)
+        self.assertIsSubclass(MMC, collections.abc.Mapping)
 
-        self.assertIsSubclass(MMB[str, str], typing.Mapping)
+        with self.assertRaises(TypeError):
+            issubclass(MMB[str, str], typing.Mapping)
         self.assertIsSubclass(MMC, MMA)
 
         class I(typing.Iterable): ...
@@ -2163,12 +2118,10 @@ class CollectionsAbcTests(BaseTestCase):
         def g(): yield 0
         self.assertIsSubclass(G, typing.Generator)
         self.assertIsSubclass(G, typing.Iterable)
-        if hasattr(collections_abc, 'Generator'):
-            self.assertIsSubclass(G, collections_abc.Generator)
-        self.assertIsSubclass(G, collections_abc.Iterable)
+        self.assertIsSubclass(G, collections.abc.Generator)
+        self.assertIsSubclass(G, collections.abc.Iterable)
         self.assertNotIsSubclass(type(g), G)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_subclassing_async_generator(self):
         class G(typing.AsyncGenerator[int, int]):
             def asend(self, value):
@@ -2181,15 +2134,15 @@ class CollectionsAbcTests(BaseTestCase):
         g = ns['g']
         self.assertIsSubclass(G, typing.AsyncGenerator)
         self.assertIsSubclass(G, typing.AsyncIterable)
-        self.assertIsSubclass(G, collections_abc.AsyncGenerator)
-        self.assertIsSubclass(G, collections_abc.AsyncIterable)
+        self.assertIsSubclass(G, collections.abc.AsyncGenerator)
+        self.assertIsSubclass(G, collections.abc.AsyncIterable)
         self.assertNotIsSubclass(type(g), G)
 
         instance = G()
         self.assertIsInstance(instance, typing.AsyncGenerator)
         self.assertIsInstance(instance, typing.AsyncIterable)
-        self.assertIsInstance(instance, collections_abc.AsyncGenerator)
-        self.assertIsInstance(instance, collections_abc.AsyncIterable)
+        self.assertIsInstance(instance, collections.abc.AsyncGenerator)
+        self.assertIsInstance(instance, collections.abc.AsyncIterable)
         self.assertNotIsInstance(type(g), G)
         self.assertNotIsInstance(g, G)
 
@@ -2226,23 +2179,23 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(D, B)
 
         class M(): ...
-        collections_abc.MutableMapping.register(M)
+        collections.abc.MutableMapping.register(M)
         self.assertIsSubclass(M, typing.Mapping)
 
     def test_collections_as_base(self):
 
-        class M(collections_abc.Mapping): ...
+        class M(collections.abc.Mapping): ...
         self.assertIsSubclass(M, typing.Mapping)
         self.assertIsSubclass(M, typing.Iterable)
 
-        class S(collections_abc.MutableSequence): ...
+        class S(collections.abc.MutableSequence): ...
         self.assertIsSubclass(S, typing.MutableSequence)
         self.assertIsSubclass(S, typing.Iterable)
 
-        class I(collections_abc.Iterable): ...
+        class I(collections.abc.Iterable): ...
         self.assertIsSubclass(I, typing.Iterable)
 
-        class A(collections_abc.Mapping, metaclass=abc.ABCMeta): ...
+        class A(collections.abc.Mapping, metaclass=abc.ABCMeta): ...
         class B: ...
         A.register(B)
         self.assertIsSubclass(B, typing.Mapping)
@@ -2363,7 +2316,6 @@ class NamedTupleTests(BaseTestCase):
                 class NotYet(NamedTuple):
                     whatever = 0
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage(self):
         tim = CoolEmployee('Tim', 9000)
         self.assertIsInstance(tim, CoolEmployee)
@@ -2376,7 +2328,6 @@ class NamedTupleTests(BaseTestCase):
                          collections.OrderedDict(name=str, cool=int))
         self.assertIs(CoolEmployee._field_types, CoolEmployee.__annotations__)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage_with_default(self):
         jelle = CoolEmployeeWithDefault('Jelle')
         self.assertIsInstance(jelle, CoolEmployeeWithDefault)
@@ -2398,7 +2349,6 @@ class NonDefaultAfterDefault(NamedTuple):
     y: int
 """)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage_with_methods(self):
         self.assertEqual(XMeth(1).double(), 2)
         self.assertEqual(XMeth(42).x, XMeth(42)[0])
@@ -2421,7 +2371,6 @@ class XMethBad2(NamedTuple):
         return 'no chance for this as well'
 """)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
         nick = LocalEmployee('Nick', 25)
@@ -2506,15 +2455,8 @@ class RETests(BaseTestCase):
         self.assertNotEqual(Pattern[str], str)
 
     def test_errors(self):
-        with self.assertRaises(TypeError):
-            # Doesn't fit AnyStr.
-            Pattern[int]
-        with self.assertRaises(TypeError):
-            # Can't change type vars?
-            Match[T]
         m = Match[Union[str, bytes]]
         with self.assertRaises(TypeError):
-            # Too complicated?
             m[str]
         with self.assertRaises(TypeError):
             # We don't support isinstance().
@@ -2524,12 +2466,12 @@ class RETests(BaseTestCase):
             issubclass(Pattern[bytes], Pattern[str])
 
     def test_repr(self):
-        self.assertEqual(repr(Pattern), 'Pattern[~AnyStr]')
-        self.assertEqual(repr(Pattern[str]), 'Pattern[str]')
-        self.assertEqual(repr(Pattern[bytes]), 'Pattern[bytes]')
-        self.assertEqual(repr(Match), 'Match[~AnyStr]')
-        self.assertEqual(repr(Match[str]), 'Match[str]')
-        self.assertEqual(repr(Match[bytes]), 'Match[bytes]')
+        self.assertEqual(repr(Pattern), 'typing.Pattern')
+        self.assertEqual(repr(Pattern[str]), 'typing.Pattern[str]')
+        self.assertEqual(repr(Pattern[bytes]), 'typing.Pattern[bytes]')
+        self.assertEqual(repr(Match), 'typing.Match')
+        self.assertEqual(repr(Match[str]), 'typing.Match[str]')
+        self.assertEqual(repr(Match[bytes]), 'typing.Match[bytes]')
 
     def test_re_submodule(self):
         from typing.re import Match, Pattern, __all__, __name__
@@ -2545,7 +2487,7 @@ class RETests(BaseTestCase):
                 pass
 
         self.assertEqual(str(ex.exception),
-                         "Cannot subclass typing._TypeAlias")
+                         "type 're.Match' is not an acceptable base type")
 
 
 class AllTests(BaseTestCase):
