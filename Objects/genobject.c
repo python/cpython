@@ -32,9 +32,8 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
-        Py_VISIT(((PyCoroObject *)gen)->cr_origin);
-    }
+    /* No need to visit cr_origin, because it's just tuples/str/int, so can't
+       participate in a reference cycle. */
     return exc_state_traverse(&gen->gi_exc_state, visit, arg);
 }
 
@@ -1166,10 +1165,17 @@ PyTypeObject _PyCoroWrapper_Type = {
 static PyObject *
 compute_cr_origin(int origin_depth)
 {
-    PyObject *cr_origin = PyList_New(origin_depth);
     PyFrameObject *frame = PyEval_GetFrame();
-    int i = 0;
-    for (; frame && i < origin_depth; ++i) {
+    /* First count how many frames we have */
+    int frame_count = 0;
+    for (; frame && frame_count < origin_depth; ++frame_count) {
+        frame = frame->f_back;
+    }
+
+    /* Now collect them */
+    PyObject *cr_origin = PyTuple_New(frame_count);
+    frame = PyEval_GetFrame();
+    for (int i = 0; i < frame_count; ++i) {
         PyObject *frameinfo = Py_BuildValue(
             "OiO",
             frame->f_code->co_filename,
@@ -1179,15 +1185,8 @@ compute_cr_origin(int origin_depth)
             Py_DECREF(cr_origin);
             return NULL;
         }
-        PyList_SET_ITEM(cr_origin, i, frameinfo);
+        PyTuple_SET_ITEM(cr_origin, i, frameinfo);
         frame = frame->f_back;
-    }
-    /* Truncate the list if necessary */
-    if (i < origin_depth) {
-        if (PyList_SetSlice(cr_origin, i, origin_depth, NULL) < 0) {
-            Py_DECREF(cr_origin);
-            return NULL;
-        }
     }
 
     return cr_origin;

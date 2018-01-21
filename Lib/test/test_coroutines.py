@@ -2067,7 +2067,7 @@ class OriginTrackingTest(unittest.TestCase):
             fname, lineno = self.here()
             with contextlib.closing(corofn()) as coro:
                 self.assertEqual(coro.cr_origin,
-                                 [(fname, lineno + 1, "test_origin_tracking")])
+                                 ((fname, lineno + 1, "test_origin_tracking"),))
 
             sys.set_coroutine_origin_tracking_depth(2)
             self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 2)
@@ -2078,8 +2078,8 @@ class OriginTrackingTest(unittest.TestCase):
             ((nested_fname, nested_lineno), coro) = nested()
             with contextlib.closing(coro):
                 self.assertEqual(coro.cr_origin,
-                                 [(nested_fname, nested_lineno, "nested"),
-                                  (fname, lineno + 1, "test_origin_tracking")])
+                                 ((nested_fname, nested_lineno, "nested"),
+                                  (fname, lineno + 1, "test_origin_tracking")))
 
             # Check we handle running out of frames correctly
             sys.set_coroutine_origin_tracking_depth(1000)

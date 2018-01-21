@@ -1232,7 +1232,7 @@ always available.
 
    Allows enabling or disabling coroutine origin tracking. When
    enabled, the ``cr_origin`` attribute on coroutine objects will
-   contain a list of (filename, line number, function name) tuples
+   contain a tuple of (filename, line number, function name) tuples
    describing the traceback where the coroutine object was created,
    with the most recent call first. When disabled, ``cr_origin`` will
    be None.
