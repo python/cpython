@@ -541,6 +541,7 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
+    @unittest.skipIf(os.name == "nt", "Test cannot run on Windows")
     def test_build_extensions_as_builtins(self):
         # https://bugs.python.org/issue32232
 
