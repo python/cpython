@@ -78,10 +78,14 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     result->abc_negative_cache = PySet_New(NULL);
     if (!result->abc_registry || !result->abc_cache ||
         !result->abc_negative_cache) {
+        Py_DECREF(result);
         return NULL;
     }
     result->abc_negative_cache_version = abc_invalidation_counter;
-    abstracts = PyFrozenSet_New(NULL);
+    if (!(abstracts = PyFrozenSet_New(NULL))) {
+        Py_DECREF(result);
+        return NULL;
+    }
     /* Stage 1: direct abstract methods */
     /* Safe to assume everything is fine since type.__new__ succeeded */
     ns = PyTuple_GET_ITEM(args, 2);
@@ -95,6 +99,8 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 Py_DECREF(item);
                 Py_DECREF(items);
+                Py_DECREF(result);
+                Py_DECREF(abstracts);
                 return NULL;
             }
             PyErr_Clear();
@@ -104,6 +110,8 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (is_abstract == Py_True && PySet_Add(abstracts, key) < 0) {
             Py_DECREF(item);
             Py_DECREF(items);
+            Py_DECREF(result);
+            Py_DECREF(abstracts);
             return NULL;
         }
         Py_DECREF(item);
@@ -116,12 +124,16 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         base_abstracts = _PyObject_GetAttrId(item, &PyId___abstractmethods__);
         if (!base_abstracts) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                Py_DECREF(result);
+                Py_DECREF(abstracts);
                 return NULL;
             }
             PyErr_Clear();
             continue;
         }
         if (!(iter = PyObject_GetIter(base_abstracts))) {
+            Py_DECREF(result);
+            Py_DECREF(abstracts);
             return NULL;
         }
         while ((key = PyIter_Next(iter))) {
@@ -131,6 +143,8 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_DECREF(key);
                     Py_DECREF(value);
                     Py_DECREF(iter);
+                    Py_DECREF(result);
+                    Py_DECREF(abstracts);
                     return NULL;
                 }
                 PyErr_Clear();
@@ -144,6 +158,8 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_DECREF(key);
                     Py_DECREF(value);
                     Py_DECREF(iter);
+                    Py_DECREF(result);
+                    Py_DECREF(abstracts);
                     return NULL;
                 }
                 PyErr_Clear();
@@ -155,6 +171,8 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(key);
                 Py_DECREF(value);
                 Py_DECREF(iter);
+                Py_DECREF(result);
+                Py_DECREF(abstracts);
                 return NULL;
             }
             Py_DECREF(key);
@@ -163,6 +181,8 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(iter);
     }
     if (_PyObject_SetAttrId((PyObject *)result, &PyId___abstractmethods__, abstracts) < 0) {
+        Py_DECREF(result);
+        Py_DECREF(abstracts);
         return NULL;
     }
     return (PyObject *)result;
@@ -196,7 +216,7 @@ abcmeta_register(abc *self, PyObject *args)
     if (result < 0) {
         return NULL;
     }
-    if (PySet_Add(self->abc_registry, subclass) < 0) {
+    if (PySet_Add(self->abc_registry, PyWeakref_NewRef(subclass, NULL)) < 0) {
         return NULL;
     }
     Py_INCREF(subclass);
@@ -231,7 +251,7 @@ static PyObject *
 abcmeta_subclasscheck(abc *self, PyObject *args)
 {
     PyObject *subclasses, *subclass = NULL;
-    PyObject *ok, *mro, *iter, *key;
+    PyObject *ok, *mro, *iter, *key, *rkey;
     Py_ssize_t pos;
     int result;
     if (!PyArg_UnpackTuple(args, "__subclasscheck__", 1, 1, &subclass)) {
@@ -261,7 +281,11 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     }
     iter = PyObject_GetIter(self->abc_registry);
     while ((key = PyIter_Next(iter))) {
-        result = PyObject_IsSubclass(subclass, key);
+        rkey = PyWeakref_GetObject(key);
+        if (rkey == Py_None) {
+            continue;
+        }
+        result = PyObject_IsSubclass(subclass, rkey);
         if (result > 0) {
             Py_INCREF(Py_True);
             Py_DECREF(key);
@@ -302,8 +326,10 @@ _print_message(PyObject *file, const char* message)
         return -1;
     }
     if (PyFile_WriteObject(mo, file, Py_PRINT_RAW)) {
+        Py_DECREF(mo);
         return -1;
     }
+    Py_DECREF(mo);
     return 0;
 }
 
@@ -314,6 +340,7 @@ abcmeta_dump(abc *self, PyObject *args)
     PyObject *sizeo, *version = PyLong_FromSsize_t(self->abc_negative_cache_version);
     Py_ssize_t size;
     if (!PyArg_UnpackTuple(args, "_dump_registry", 0, 1, &file)) {
+        Py_XDECREF(version);
         return NULL;
     }
     if (!version) {
@@ -323,66 +350,95 @@ abcmeta_dump(abc *self, PyObject *args)
         file = _PySys_GetObjectId(&PyId_stdout);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+            Py_DECREF(version);
             return NULL;
         }
     }
     /* Header */
     if (_print_message(file, "Class: ")) {
+        Py_DECREF(version);
         return NULL;
     }
     if (_print_message(file, ((PyTypeObject *)self)->tp_name)) {
+        Py_DECREF(version);
         return NULL;
     }
     if (_print_message(file, "\n")) {
+        Py_DECREF(version);
         return NULL;
     }
     /* Registry */
     if (_print_message(file, "Registry: ")) {
+        Py_DECREF(version);
         return NULL;
     }
     if (PyFile_WriteObject(self->abc_registry, file, Py_PRINT_RAW)) {
+        Py_DECREF(version);
         return NULL;
     }
     if (_print_message(file, "\n")) {
+        Py_DECREF(version);
         return NULL;
     }
     /* Postive cahce */
     if (_print_message(file, "Positive cache: ")) {
+        Py_DECREF(version);
         return NULL;
     }
     size = PySet_GET_SIZE(self->abc_cache);
     if (!(sizeo = PyLong_FromSsize_t(size))) {
+        Py_DECREF(version);
         return NULL;
     }
     if (PyFile_WriteObject(sizeo, file, Py_PRINT_RAW)) {
+        Py_DECREF(version);
+        Py_DECREF(sizeo);
         return NULL;
     }
     if (_print_message(file, " items\n")) {
+        Py_DECREF(version);
+        Py_DECREF(sizeo);
         return NULL;
     }
     /* Negative cahce */
     if (_print_message(file, "Negative cache: ")) {
+        Py_DECREF(version);
+        Py_DECREF(sizeo);
         return NULL;
     }
+    Py_DECREF(sizeo);
     size = PySet_GET_SIZE(self->abc_cache);
     if (!(sizeo = PyLong_FromSsize_t(size))) {
+        Py_DECREF(version);
         return NULL;
     }
     if (PyFile_WriteObject(sizeo, file, Py_PRINT_RAW)) {
+        Py_DECREF(sizeo);
+        Py_DECREF(version);
         return NULL;
     }
     if (_print_message(file, " items\n")) {
+        Py_DECREF(sizeo);
+        Py_DECREF(version);
         return NULL;
     }
     if (_print_message(file, "Negative cache version: ")) {
+        Py_DECREF(sizeo);
+        Py_DECREF(version);
         return NULL;
     }
     if (PyFile_WriteObject(version, file, Py_PRINT_RAW)) {
+        Py_DECREF(sizeo);
+        Py_DECREF(version);
         return NULL;
     }
     if (_print_message(file, "\n")) {
+        Py_DECREF(sizeo);
+        Py_DECREF(version);
         return NULL;
     }
+    Py_DECREF(sizeo);
+    Py_DECREF(version);
     Py_INCREF(Py_None);
     return Py_None;
 }
