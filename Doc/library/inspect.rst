@@ -34,6 +34,9 @@ provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
 attributes:
 
+.. this function name is too big to fit in the ascii-art table below
+.. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
+
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
@@ -215,6 +218,10 @@ attributes:
 +-----------+-------------------+---------------------------+
 |           | cr_code           | code                      |
 +-----------+-------------------+---------------------------+
+|           | cr_origin         | where coroutine was       |
+|           |                   | created, or ``None``. See |
+|           |                   | |coroutine-origin-link|   |
++-----------+-------------------+---------------------------+
 | builtin   | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | original name of this     |
@@ -234,6 +241,9 @@ attributes:
    The ``__name__`` attribute of generators is now set from the function
    name, instead of the code name, and it can now be modified.
 
+.. versionchanged:: 3.7
+
+   Add ``cr_origin`` attribute to coroutines.
 
 .. function:: getmembers(object[, predicate])
 
