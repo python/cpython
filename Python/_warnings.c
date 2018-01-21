@@ -1153,6 +1153,53 @@ exit:
     return ret;
 }
 
+void
+_PyErr_WarnUnawaitedCoroutine(PyObject *coro)
+{
+    /* First, we attempt to funnel the warning through
+       warnings._warn_unawaited_coroutine.
+
+       This could raise an exception, due to:
+       - a bug
+       - some kind of shutdown-related brokenness
+       - succeeding, but with an "error" warning filter installed, so the
+         warning is converted into a RuntimeWarning exception
+
+       In the first two cases, we want to print the error (so we know what it
+       is!), and then print a warning directly as a fallback. In the last
+       case, we want to print the error (since it's the warning!), but *not*
+       do a fallback. And after we print the error we can't check for what
+       type of error it was (because PyErr_WriteUnraisable clears it), so we
+       need a flag to keep track.
+
+       Since this is called from __del__ context, it's careful to never raise
+       an exception.
+    */
+    _Py_IDENTIFIER(_warn_unawaited_coroutine);
+    int warned = 0;
+    PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
+    if (fn) {
+        PyObject *res = PyObject_CallFunctionObjArgs(fn, coro, NULL);
+        Py_DECREF(fn);
+        if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
+            warned = 1;
+        }
+        Py_XDECREF(res);
+    }
+
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(coro);
+    }
+    if (!warned) {
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+                         "coroutine '%.50S' was never awaited",
+                         ((PyCoroObject *)coro)->cr_qualname);
+        /* Maybe *that* got converted into an exception */
+        if (PyErr_Occurred()) {
+            PyErr_WriteUnraisable(coro);
+        }
+    }
+}
 
 PyDoc_STRVAR(warn_explicit_doc,
 "Low-level inferface to warnings functionality.");

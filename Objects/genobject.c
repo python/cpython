@@ -32,6 +32,8 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
+    /* No need to visit cr_origin, because it's just tuples/str/int, so can't
+       participate in a reference cycle. */
     return exc_state_traverse(&gen->gi_exc_state, visit, arg);
 }
 
@@ -75,9 +77,7 @@ _PyGen_Finalize(PyObject *self)
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
         gen->gi_frame->f_lasti == -1) {
         if (!error_value) {
-            PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                             "coroutine '%.50S' was never awaited",
-                             gen->gi_qualname);
+            _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
         }
     }
     else {
@@ -136,6 +136,9 @@ gen_dealloc(PyGenObject *gen)
     if (gen->gi_frame != NULL) {
         gen->gi_frame->f_gen = NULL;
         Py_CLEAR(gen->gi_frame);
+    }
+    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
+        Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
     }
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
@@ -990,6 +993,7 @@ static PyMemberDef coro_memberlist[] = {
     {"cr_frame",     T_OBJECT, offsetof(PyCoroObject, cr_frame),    READONLY},
     {"cr_running",   T_BOOL,   offsetof(PyCoroObject, cr_running),  READONLY},
     {"cr_code",      T_OBJECT, offsetof(PyCoroObject, cr_code),     READONLY},
+    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin),   READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1158,10 +1162,59 @@ PyTypeObject _PyCoroWrapper_Type = {
     0,                                          /* tp_free */
 };
 
+static PyObject *
+compute_cr_origin(int origin_depth)
+{
+    PyFrameObject *frame = PyEval_GetFrame();
+    /* First count how many frames we have */
+    int frame_count = 0;
+    for (; frame && frame_count < origin_depth; ++frame_count) {
+        frame = frame->f_back;
+    }
+
+    /* Now collect them */
+    PyObject *cr_origin = PyTuple_New(frame_count);
+    frame = PyEval_GetFrame();
+    for (int i = 0; i < frame_count; ++i) {
+        PyObject *frameinfo = Py_BuildValue(
+            "OiO",
+            frame->f_code->co_filename,
+            PyFrame_GetLineNumber(frame),
+            frame->f_code->co_name);
+        if (!frameinfo) {
+            Py_DECREF(cr_origin);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(cr_origin, i, frameinfo);
+        frame = frame->f_back;
+    }
+
+    return cr_origin;
+}
+
 PyObject *
 PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
-    return gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
+    PyObject *coro = gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
+    if (!coro) {
+        return NULL;
+    }
+
+    PyThreadState *tstate = PyThreadState_GET();
+    int origin_depth = tstate->coroutine_origin_tracking_depth;
+
+    if (origin_depth == 0) {
+        ((PyCoroObject *)coro)->cr_origin = NULL;
+    } else {
+        PyObject *cr_origin = compute_cr_origin(origin_depth);
+        if (!cr_origin) {
+            Py_DECREF(coro);
+            return NULL;
+        }
+        ((PyCoroObject *)coro)->cr_origin = cr_origin;
+    }
+
+    return coro;
 }
 
 
