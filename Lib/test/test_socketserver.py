@@ -196,6 +196,11 @@ class SocketServerTest(unittest.TestCase):
                             socketserver.StreamRequestHandler,
                             self.stream_examine)
 
+    def test_ProcessingTCPServer(self):
+        self.run_server(socketserver.ProcessingTCPServer,
+                        socketserver.StreamRequestHandler,
+                        self.stream_examine)
+
     @requires_unix_sockets
     def test_UnixStreamServer(self):
         self.run_server(socketserver.UnixStreamServer,
@@ -232,6 +237,11 @@ class SocketServerTest(unittest.TestCase):
             self.run_server(socketserver.ForkingUDPServer,
                             socketserver.DatagramRequestHandler,
                             self.dgram_examine)
+
+    def test_ProcessingUDPServer(self):
+        self.run_server(socketserver.ProcessingUDPServer,
+                        socketserver.DatagramRequestHandler,
+                        self.dgram_examine)
 
     @requires_unix_sockets
     def test_UnixDatagramServer(self):

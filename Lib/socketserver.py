@@ -134,7 +134,9 @@ from time import monotonic as time
 __all__ = ["BaseServer", "TCPServer", "UDPServer",
            "ThreadingUDPServer", "ThreadingTCPServer",
            "BaseRequestHandler", "StreamRequestHandler",
-           "DatagramRequestHandler", "ThreadingMixIn"]
+           "DatagramRequestHandler", "ThreadingMixIn",
+           "ProcessingUDPServer", "ProcessingTCPServer",
+           "ProcessingMixIn", "ChildProcessManagerMixIn"]
 if hasattr(os, "fork"):
     __all__.extend(["ForkingUDPServer","ForkingTCPServer", "ForkingMixIn"])
 if hasattr(socket, "AF_UNIX"):
@@ -536,62 +538,76 @@ class UDPServer(TCPServer):
         # No need to close anything.
         pass
 
+
+class ChildProcessManagerMixIn:
+    """Mix-in class to handle each request in a new process."""
+
+    timeout = 300
+    active_children = None
+    max_children = 40
+
+    def collect_children(self, *, blocking=False):
+        """Internal routine to wait for children that have exited."""
+        if self.active_children is None:
+            return
+
+        # If we're above the max number of children, wait and reap them until
+        # we go back below threshold. Note that we use waitpid(-1) below to be
+        # able to collect children in size(<defunct children>) syscalls instead
+        # of size(<children>): the downside is that this might reap children
+        # which we didn't spawn, which is why we only resort to this when we're
+        # above max_children.
+        while len(self.active_children) >= self.max_children:
+            try:
+                pid, _ = os.waitpid(-1, 0)
+                self.active_children.discard(pid)
+            except ChildProcessError:
+                # we don't have any children, we're done
+                self.active_children.clear()
+            except OSError:
+                break
+
+        # Now reap all defunct children.
+        for pid in self.active_children.copy():
+            try:
+                flags = 0 if blocking else os.WNOHANG
+                pid, _ = os.waitpid(pid, flags)
+                # if the child hasn't exited yet, pid will be 0 and ignored by
+                # discard() below
+                self.active_children.discard(pid)
+            except ChildProcessError:
+                # someone else reaped it
+                self.active_children.discard(pid)
+            except OSError:
+                pass
+
+    def handle_timeout(self):
+        """Wait for zombies after self.timeout seconds of inactivity.
+
+        May be extended, do not override.
+        """
+        self.collect_children()
+
+    def service_actions(self):
+        """Collect the zombie child processes regularly in the ForkingMixIn.
+
+        service_actions is called in the BaseServer's serve_forver loop.
+        """
+        self.collect_children()
+
+    def process_request(self, request, client_address):
+        """
+        Implementors should create a new subprocess to process the request.
+        """
+        pass
+
+    def server_close(self):
+        super().server_close()
+        self.collect_children(blocking=True)
+
 if hasattr(os, "fork"):
-    class ForkingMixIn:
+    class ForkingMixIn(ChildProcessManagerMixIn):
         """Mix-in class to handle each request in a new process."""
-
-        timeout = 300
-        active_children = None
-        max_children = 40
-
-        def collect_children(self, *, blocking=False):
-            """Internal routine to wait for children that have exited."""
-            if self.active_children is None:
-                return
-
-            # If we're above the max number of children, wait and reap them until
-            # we go back below threshold. Note that we use waitpid(-1) below to be
-            # able to collect children in size(<defunct children>) syscalls instead
-            # of size(<children>): the downside is that this might reap children
-            # which we didn't spawn, which is why we only resort to this when we're
-            # above max_children.
-            while len(self.active_children) >= self.max_children:
-                try:
-                    pid, _ = os.waitpid(-1, 0)
-                    self.active_children.discard(pid)
-                except ChildProcessError:
-                    # we don't have any children, we're done
-                    self.active_children.clear()
-                except OSError:
-                    break
-
-            # Now reap all defunct children.
-            for pid in self.active_children.copy():
-                try:
-                    flags = 0 if blocking else os.WNOHANG
-                    pid, _ = os.waitpid(pid, flags)
-                    # if the child hasn't exited yet, pid will be 0 and ignored by
-                    # discard() below
-                    self.active_children.discard(pid)
-                except ChildProcessError:
-                    # someone else reaped it
-                    self.active_children.discard(pid)
-                except OSError:
-                    pass
-
-        def handle_timeout(self):
-            """Wait for zombies after self.timeout seconds of inactivity.
-
-            May be extended, do not override.
-            """
-            self.collect_children()
-
-        def service_actions(self):
-            """Collect the zombie child processes regularly in the ForkingMixIn.
-
-            service_actions is called in the BaseServer's serve_forver loop.
-            """
-            self.collect_children()
 
         def process_request(self, request, client_address):
             """Fork a new subprocess to process the request."""
@@ -618,9 +634,32 @@ if hasattr(os, "fork"):
                     finally:
                         os._exit(status)
 
-        def server_close(self):
-            super().server_close()
-            self.collect_children(blocking=True)
+
+class ProcessingMixIn(ChildProcessManagerMixIn):
+    """Mix-in class to handle each request in a new child :class:`Process`."""
+
+    def _process_request_in_child(self, request, client_address):
+        """Handles the actual request in the new child process."""
+        try:
+            self.finish_request(request, client_address)
+        except Exception:
+            self.handle_error(request, client_address)
+        finally:
+            self.shutdown_request(request)
+
+    def process_request(self, request, client_address):
+        """Create a new :class:`Process` to process the request."""
+        from multiprocessing import Process
+        p = Process(target=self._process_request_in_child,
+                    args=(request, client_address))
+        p.start()
+        if self.active_children is None:
+            self.active_children = set()
+        self.active_children.add(p.pid)
+        self.close_request(request)
+
+class ProcessingUDPServer(ProcessingMixIn, UDPServer): pass
+class ProcessingTCPServer(ProcessingMixIn, TCPServer): pass
 
 
 class ThreadingMixIn:

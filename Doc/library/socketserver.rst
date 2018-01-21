@@ -44,8 +44,8 @@ completed before the next request can be started.  This isn't suitable if each
 request takes a long time to complete, because it requires a lot of computation,
 or because it returns a lot of data which the client is slow to process.  The
 solution is to create a separate process or thread to handle each request; the
-:class:`ForkingMixIn` and :class:`ThreadingMixIn` mix-in classes can be used to
-support asynchronous behaviour.
+:class:`ForkingMixIn`, :class:`ProcessingMixIn`, and :class:`ThreadingMixIn`
+mix-in classes can be used to support asynchronous behaviour.
 
 Creating a server requires several steps.  First, you must create a request
 handler class by subclassing the :class:`BaseRequestHandler` class and
@@ -99,11 +99,12 @@ server classes.
 
 
 .. class:: ForkingMixIn
+           ProcessingMixIn
            ThreadingMixIn
 
-   Forking and threading versions of each type of server can be created
-   using these mix-in classes.  For instance, :class:`ThreadingUDPServer`
-   is created as follows::
+   Forking, multiprocessing, and threading versions of each type of server can
+   be created using these mix-in classes.  For instance,
+   :class:`ThreadingUDPServer` is created as follows::
 
       class ThreadingUDPServer(ThreadingMixIn, UDPServer):
           pass
@@ -112,11 +113,24 @@ server classes.
    :class:`UDPServer`.  Setting the various attributes also changes the
    behavior of the underlying server mechanism.
 
+   The :class:`ForkingMixIn` and :class:`ProcessingMixIn` classes are very
+   similar in terms of diverting the request connection to a child process.
+   :class:`ForkingMixIn` does this by spawning a child process via the low-level
+   :func:`~os.fork` method, while :class:`ProcessingMixIn` does this via the
+   :class:`multiprocessing.Process` object.
+
+   Determining which mix-in class to use depends on the specific scenario for
+   the server.  The :class:`ForkingMixIn` is best suited for light-weight
+   applications, while the :class:`ProcessingMixIn` is best suited for
+   applications that make heavy use of the :mod:`multiprocessing` module.
+
    :class:`ForkingMixIn` and the Forking classes mentioned below are
    only available on POSIX platforms that support :func:`~os.fork`.
 
 .. class:: ForkingTCPServer
            ForkingUDPServer
+           ProcessingTCPServer
+           ProcessingUDPServer
            ThreadingTCPServer
            ThreadingUDPServer
 
@@ -142,7 +156,7 @@ On the other hand, if you are building an HTTP server where all data is stored
 externally (for instance, in the file system), a synchronous class will
 essentially render the service "deaf" while one request is being handled --
 which may be for a very long time if a client is slow to receive all the data it
-has requested.  Here a threading or forking server is appropriate.
+has requested.  Here a threading, processing, or forking server is appropriate.
 
 In some cases, it may be appropriate to process part of a request synchronously,
 but to finish processing in a forked child depending on the request data.  This
@@ -573,8 +587,8 @@ The output of the example should look exactly like for the TCP server example.
 Asynchronous Mixins
 ~~~~~~~~~~~~~~~~~~~
 
-To build asynchronous handlers, use the :class:`ThreadingMixIn` and
-:class:`ForkingMixIn` classes.
+To build asynchronous handlers, use the :class:`ThreadingMixIn`,
+:class:`ForkingMixIn`, and :class:`ProcessingMixIn` classes.
 
 An example for the :class:`ThreadingMixIn` class::
 
@@ -634,7 +648,7 @@ The output of the example should look something like this:
    Received: Thread-4: Hello World 3
 
 
-The :class:`ForkingMixIn` class is used in the same way, except that the server
-will spawn a new process for each request.
+The :class:`ForkingMixIn` and :class:`ProcessingMixIn` classes can be used in
+the same way, except that the server will spawn a new process for each request.
 Available only on POSIX platforms that support :func:`~os.fork`.
 
