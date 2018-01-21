@@ -159,7 +159,7 @@ class upload(PyPIRCCommand):
                 body.write(title.encode('utf-8'))
                 body.write(b"\r\n\r\n")
                 body.write(value)
-                if value and value[-1:] == b'\r':
+                if value and (value[-1:] == b'\r') and (key != 'content'):
                     body.write(b'\n')  # write an extra newline (lurve Macs)
         body.write(end_boundary)
         body = body.getvalue()
