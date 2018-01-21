@@ -1105,6 +1105,198 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
             self.nb.event_generate('<Alt-a>')
         self.assertEqual(self.nb.select(), str(self.child1))
 
+@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+class SpinboxTest(EntryTest, unittest.TestCase):
+    OPTIONS = (
+        'background', 'class', 'command', 'cursor', 'format',
+        'from',  'increment', 'invalidcommand', 'justify',
+        'show', 'state', 'style', 'takefocus', 'textvariable',
+        'to', 'validate', 'validatecommand', 'values',
+        'width', 'wrap', 'xscrollcommand',
+    )
+
+    def setUp(self):
+        super().setUp()
+        self.spin = self.create()
+        self.spin.pack()
+
+    def create(self, **kwargs):
+        return ttk.Spinbox(self.root, **kwargs)
+
+    def _click_increment_arrow(self):
+        width = self.spin.winfo_width()
+        self.spin.event_generate('<ButtonPress-1>', x=width - 5, y=5)
+        self.spin.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
+        self.spin.update_idletasks()
+
+    def _click_decrement_arrow(self):
+        width = self.spin.winfo_width()
+        self.spin.event_generate('<ButtonPress-1>', x=width - 5, y=15)
+        self.spin.event_generate('<ButtonRelease-1>', x=width - 5, y=15)
+        self.spin.update_idletasks()
+
+    def test_command(self):
+        success = []
+
+        self.spin['command'] = lambda: success.append(True)
+        self.spin.pack()
+        self.spin.wait_visibility()
+        self._click_increment_arrow()
+        self.assertTrue(success)
+
+        self._click_decrement_arrow()
+        self.assertEqual(len(success), 2)
+
+        # testing postcommand removal
+        self.spin['command'] = ''
+        self._click_increment_arrow()
+        self._click_decrement_arrow()
+        self.assertEqual(len(success), 2)
+
+    def test_to(self):
+        self.spin['from'] = 0
+        self.spin['to'] = 5
+        self.spin.set(4)
+        self.spin.update()
+        self._click_increment_arrow()  # 5
+
+        self.assertEqual(self.spin.get(), '5')
+
+        self._click_increment_arrow()  # 5
+        self.assertEqual(self.spin.get(), '5')
+
+    def test_from(self):
+        self.spin['from'] = 1
+        self.spin['to'] = 10
+        self.spin.set(2)
+        self.spin.update()
+        self._click_decrement_arrow()  # 1
+        self.assertEqual(self.spin.get(), '1')
+        self._click_decrement_arrow()  # 1
+        self.assertEqual(self.spin.get(), '1')
+
+    def test_increment(self):
+        self.spin['from'] = 0
+        self.spin['to'] = 10
+        self.spin['increment'] = 4
+        self.spin.set(1)
+        self.spin.update()
+
+        self._click_increment_arrow()  # 5
+        self.assertEqual(self.spin.get(), '5')
+        self.spin['increment'] = 2
+        self.spin.update()
+        self._click_decrement_arrow()  # 3
+        self.assertEqual(self.spin.get(), '3')
+
+    def test_format(self):
+        self.spin.set(1)
+        self.spin['format'] = '%10.3f'
+        self.spin.update()
+        self._click_increment_arrow()
+        value = self.spin.get()
+
+        self.assertEqual(len(value), 10)
+        self.assertEqual(value.index('.'), 6)
+
+        self.spin['format'] = ''
+        self.spin.update()
+        self._click_increment_arrow()
+        value = self.spin.get()
+        self.assertTrue('.' not in value)
+        self.assertEqual(len(value), 1)
+
+    def test_wrap(self):
+        self.spin['to'] = 10
+        self.spin['from'] = 1
+        self.spin.set(1)
+        self.spin['wrap'] = True
+        self.spin.update()
+
+        self._click_decrement_arrow()
+        self.assertEqual(self.spin.get(), '10')
+
+        self._click_increment_arrow()
+        self.assertEqual(self.spin.get(), '1')
+
+        self.spin['wrap'] = False
+        self.spin.update()
+
+        self._click_decrement_arrow()
+        self.assertEqual(self.spin.get(), '1')
+
+    def test_values(self):
+
+
+        def check_get_current(getval, currval):
+            self.assertEqual(self.spin.get(), getval)
+            self.assertEqual(self.spin.current(), currval)
+
+        self.assertEqual(self.spin['values'],
+                         () if tcl_version < (8, 5) else '')
+        check_get_current('', -1)
+
+        self.checkParam(self.spin, 'values', 'mon tue wed thur',
+                        expected=('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.spin, 'values', ('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.spin, 'values', (42, 3.14, '', 'any string'))
+        self.checkParam(self.spin, 'values', '',
+                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
+
+        self.spin['values'] = ['a', 1, 'c']
+
+        self.spin.set('c')
+        check_get_current('c', 2)
+
+        self.spin.current(0)
+        check_get_current('a', 0)
+
+        self.spin.set('d')
+        check_get_current('d', -1)
+
+        # testing values with empty string
+        self.spin.set('')
+        self.spin['values'] = (1, 2, '', 3)
+        check_get_current('', 2)
+
+        # testing values with empty string set through configure
+        self.spin.configure(values=[1, '', 2])
+        self.assertEqual(self.spin['values'],
+                         ('1', '', '2') if self.wantobjects else
+                         '1 {} 2')
+
+        # testing values with spaces
+        self.spin['values'] = ['a b', 'a\tb', 'a\nb']
+        self.assertEqual(self.spin['values'],
+                         ('a b', 'a\tb', 'a\nb') if self.wantobjects else
+                         '{a b} {a\tb} {a\nb}')
+
+        # testing values with special characters
+        self.spin['values'] = [r'a\tb', '"a"', '} {']
+        self.assertEqual(self.spin['values'],
+                         (r'a\tb', '"a"', '} {') if self.wantobjects else
+                         r'a\\tb {"a"} \}\ \{')
+
+        # testing increment and decrement
+        self.spin.set('')
+        self.spin['values'] = ['a', 'b', 'c']
+        self._click_increment_arrow()
+        self._click_increment_arrow()
+        check_get_current('b', 1)
+        self._click_decrement_arrow()
+        check_get_current('a', 0)
+
+        # out of range
+        self.assertRaises(tkinter.TclError, self.spin.current,
+            len(self.spin['values']))
+        # it expects an integer (or something that can be converted to int)
+        self.assertRaises(tkinter.TclError, self.spin.current, '')
+
+        # testing creating spinbox with empty string in values
+        spin2 = ttk.Spinbox(self.root, values=[1, 2, ''])
+        self.assertEqual(spin2['values'],
+                         ('1', '2', '') if self.wantobjects else '1 2 {}')
+        spin2.destroy()
 
 @add_standard_options(StandardTtkOptionsTests)
 class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
