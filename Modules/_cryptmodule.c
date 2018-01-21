@@ -5,6 +5,10 @@
 
 #include <sys/types.h>
 
+#ifndef _XOPEN_CRYPT
+#include <crypt.h>
+#endif
+
 /* Module crypt */
 
 /*[clinic input]
