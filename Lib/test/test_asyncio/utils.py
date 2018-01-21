@@ -485,6 +485,14 @@ class MockPattern(str):
         return bool(re.search(str(self), other, re.S))
 
 
+class MockInstanceOf:
+    def __init__(self, type):
+        self._type = type
+
+    def __eq__(self, other):
+        return isinstance(other, self._type)
+
+
 def get_function_source(func):
     source = format_helpers._get_function_source(func)
     if source is None:
