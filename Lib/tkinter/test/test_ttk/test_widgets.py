@@ -1226,15 +1226,18 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.assertEqual(self.spin.get(), '1')
 
     def test_values(self):
-
         self.assertEqual(self.spin['values'],
                          () if tcl_version < (8, 5) else '')
         self.checkParam(self.spin, 'values', 'mon tue wed thur',
                         expected=('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.spin, 'values', ('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.spin, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(self.spin, 'values', '',
-                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
+        self.checkParam(
+            self.spin,
+            'values',
+            '',
+            expected='' if get_tk_patchlevel() < (8, 5, 10) else ()
+        )
 
         self.spin['values'] = ['a', 1, 'c']
 
@@ -1246,7 +1249,6 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
         self._click_decrement_arrow()
         self.assertEqual(self.spin.get(), 'a')
-
 
         # testing values with empty string set through configure
         self.spin.configure(values=[1, '', 2])
@@ -1265,7 +1267,6 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.assertEqual(self.spin['values'],
                          (r'a\tb', '"a"', '} {') if self.wantobjects else
                          r'a\\tb {"a"} \}\ \{')
-
 
         # testing creating spinbox with empty string in values
         spin2 = ttk.Spinbox(self.root, values=[1, 2, ''])
