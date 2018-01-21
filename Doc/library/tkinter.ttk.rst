@@ -562,7 +562,7 @@ ttk.Notebook
       * :kbd:`Control-Tab`: selects the tab following the currently selected one.
       * :kbd:`Shift-Control-Tab`: selects the tab preceding the currently selected one.
       * :kbd:`Alt-K`: where *K* is the mnemonic (underlined) character of any tab, will
-        select that tab.
+	select that tab.
 
       Multiple notebooks in a single toplevel may be enabled for traversal,
       including nested notebooks. However, notebook traversal only works
@@ -690,6 +690,92 @@ Bugs
   or bottom of the screen (e.g. ....), the :class:`Sizegrip` widget will
   not resize the window.
 * This widget supports only "southeast" resizing.
+
+
+Spinbox
+-------
+The :class:`ttk.Spinbox` widget is a :class:`ttk.Entry` enhanced with increment
+and decrement arrows.  It can be used for numbers or lists of string values.
+This widget is a subclass of :class:`Entry`.
+
+Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
+:meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
+and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
+:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
+:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.xview`,
+it has some other methods, described at :class:`ttk.Spinbox`.
+
+Options
+^^^^^^^
+
+This widget accepts the following specific options:
+
+  .. tabularcolumns:: |l|L|
+
++----------------------+------------------------------------------------------+
+| Option               | Description                                          |
++======================+======================================================+
+| from                 | Float value.  If set, this is the minimum value to   |
+|                      | which the decrement button will decrement.  Must be  |
+|                      | spelled as `from_` when used as an argument, since   |
+|                      | `from` is a Python keyword.                          |
++----------------------+------------------------------------------------------+
+| to                   | Float value.  If set, this is the maximum value to   |
+|                      | which the increment button will increment.           |
++----------------------+------------------------------------------------------+
+| increment            | Float value.  Specifies the amount which the         |
+|                      | increment/decrement buttons change the               |
+|                      | value. Defaults to 1.0.                              |
++----------------------+------------------------------------------------------+
+| values               | Sequence of string or float values.  If specified,   |
+|                      | the increment/decrement buttons will cycle through   |
+|                      | the items in this sequence rather than incrementing  |
+|                      | or decrementing numbers.                             |
+|                      |                                                      |
++----------------------+------------------------------------------------------+
+| wrap                 | Boolean value.  If `True`, increment and decrement   |
+|                      | buttons will cycle from the `to` value to the `from` |
+|                      | value or the `from` value to the `to` value,         |
+|                      | respectively.                                        |
++----------------------+------------------------------------------------------+
+| format               | String value.  This specifies the format of numbers  |
+|                      | set by the increment/decrement buttons.  It must be  |
+|                      | in the form "%W.Pf", where W is the padded width of  |
+|                      | the value, P is the precision, and '%' and 'f' are   |
+|                      | literal.                                             |
++----------------------+------------------------------------------------------+
+| command              | Python callable.  Will be called with no arguments   |
+|                      | whenever either of the increment or decrement buttons|
+|                      |are pressed.                                          |
+|                      |                                                      |
++----------------------+------------------------------------------------------+
+
+
+Virtual events
+^^^^^^^^^^^^^^
+
+The spinbox widget generates a **<<Increment>>** virtual event when the user presses <Up>, and a **<<Decrement>>** virtual event when the user presses <Down>.
+
+ttk.Spinbox
+^^^^^^^^^^^^
+
+.. class:: Spinbox
+
+   .. method:: current(newindex=None)
+
+      If *newindex* is specified, sets the spinbox value to the element
+      position *newindex*. Otherwise, returns the index of the current value or
+      -1 if the current value is not in the values list.
+
+
+   .. method:: get()
+
+      Returns the current value of the spinbox.
+
+
+   .. method:: set(value)
+
+      Sets the value of the spinbox to *value*.
 
 
 Treeview
@@ -908,19 +994,19 @@ ttk.Treeview
       The valid options/values are:
 
       * id
-         Returns the column name. This is a read-only option.
+	 Returns the column name. This is a read-only option.
       * anchor: One of the standard Tk anchor values.
-         Specifies how the text in this column should be aligned with respect
-         to the cell.
+	 Specifies how the text in this column should be aligned with respect
+	 to the cell.
       * minwidth: width
-         The minimum width of the column in pixels. The treeview widget will
-         not make the column any smaller than specified by this option when
-         the widget is resized or the user drags a column.
+	 The minimum width of the column in pixels. The treeview widget will
+	 not make the column any smaller than specified by this option when
+	 the widget is resized or the user drags a column.
       * stretch: True/False
-         Specifies whether the column's width should be adjusted when
-         the widget is resized.
+	 Specifies whether the column's width should be adjusted when
+	 the widget is resized.
       * width: width
-         The width of the column in pixels.
+	 The width of the column in pixels.
 
       To configure the tree column, call this with column = "#0"
 
@@ -963,14 +1049,14 @@ ttk.Treeview
       The valid options/values are:
 
       * text: text
-         The text to display in the column heading.
+	 The text to display in the column heading.
       * image: imageName
-         Specifies an image to display to the right of the column heading.
+	 Specifies an image to display to the right of the column heading.
       * anchor: anchor
-         Specifies how the heading text should be aligned. One of the standard
-         Tk anchor values.
+	 Specifies how the heading text should be aligned. One of the standard
+	 Tk anchor values.
       * command: callback
-         A callback to be invoked when the heading label is pressed.
+	 A callback to be invoked when the heading label is pressed.
 
       To configure the tree column heading, call this with column = "#0".
 
@@ -1100,8 +1186,8 @@ ttk.Treeview
       act according to the following selection methods.
 
       .. deprecated-removed:: 3.6 3.8
-         Using ``selection()`` for changing the selection state is deprecated.
-         Use the following selection methods instead.
+	 Using ``selection()`` for changing the selection state is deprecated.
+	 Use the following selection methods instead.
 
 
    .. method:: selection_set(*items)
@@ -1109,7 +1195,7 @@ ttk.Treeview
       *items* becomes the new selection.
 
       .. versionchanged:: 3.6
-         *items* can be passed as separate arguments, not just as a single tuple.
+	 *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: selection_add(*items)
@@ -1117,7 +1203,7 @@ ttk.Treeview
       Add *items* to the selection.
 
       .. versionchanged:: 3.6
-         *items* can be passed as separate arguments, not just as a single tuple.
+	 *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: selection_remove(*items)
@@ -1125,7 +1211,7 @@ ttk.Treeview
       Remove *items* from the selection.
 
       .. versionchanged:: 3.6
-         *items* can be passed as separate arguments, not just as a single tuple.
+	 *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: selection_toggle(*items)
@@ -1133,7 +1219,7 @@ ttk.Treeview
       Toggle the selection state of each item in *items*.
 
       .. versionchanged:: 3.6
-         *items* can be passed as separate arguments, not just as a single tuple.
+	 *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: set(item, column=None, value=None)
@@ -1213,18 +1299,18 @@ option. If you don't know the class name of a widget, use the method
       For example, to change every default button to be a flat button with
       some padding and a different background color::
 
-         from tkinter import ttk
-         import tkinter
+	 from tkinter import ttk
+	 import tkinter
 
-         root = tkinter.Tk()
+	 root = tkinter.Tk()
 
-         ttk.Style().configure("TButton", padding=6, relief="flat",
-            background="#ccc")
+	 ttk.Style().configure("TButton", padding=6, relief="flat",
+	    background="#ccc")
 
-         btn = ttk.Button(text="Sample")
-         btn.pack()
+	 btn = ttk.Button(text="Sample")
+	 btn.pack()
 
-         root.mainloop()
+	 root.mainloop()
 
 
    .. method:: map(style, query_opt=None, **kw)
@@ -1238,20 +1324,20 @@ option. If you don't know the class name of a widget, use the method
 
       An example may make it more understandable::
 
-         import tkinter
-         from tkinter import ttk
+	 import tkinter
+	 from tkinter import ttk
 
-         root = tkinter.Tk()
+	 root = tkinter.Tk()
 
-         style = ttk.Style()
-         style.map("C.TButton",
-             foreground=[('pressed', 'red'), ('active', 'blue')],
-             background=[('pressed', '!disabled', 'black'), ('active', 'white')]
-             )
+	 style = ttk.Style()
+	 style.map("C.TButton",
+	     foreground=[('pressed', 'red'), ('active', 'blue')],
+	     background=[('pressed', '!disabled', 'black'), ('active', 'white')]
+	     )
 
-         colored_btn = ttk.Button(text="Test", style="C.TButton").pack()
+	 colored_btn = ttk.Button(text="Test", style="C.TButton").pack()
 
-         root.mainloop()
+	 root.mainloop()
 
 
       Note that the order of the (states, value) sequences for an option does
@@ -1270,9 +1356,9 @@ option. If you don't know the class name of a widget, use the method
 
       To check what font a Button uses by default::
 
-         from tkinter import ttk
+	 from tkinter import ttk
 
-         print(ttk.Style().lookup("TButton", "font"))
+	 print(ttk.Style().lookup("TButton", "font"))
 
 
    .. method:: layout(style, layoutspec=None)
@@ -1288,26 +1374,26 @@ option. If you don't know the class name of a widget, use the method
       To understand the format, see the following example (it is not
       intended to do anything useful)::
 
-         from tkinter import ttk
-         import tkinter
+	 from tkinter import ttk
+	 import tkinter
 
-         root = tkinter.Tk()
+	 root = tkinter.Tk()
 
-         style = ttk.Style()
-         style.layout("TMenubutton", [
-            ("Menubutton.background", None),
-            ("Menubutton.button", {"children":
-                [("Menubutton.focus", {"children":
-                    [("Menubutton.padding", {"children":
-                        [("Menubutton.label", {"side": "left", "expand": 1})]
-                    })]
-                })]
-            }),
-         ])
+	 style = ttk.Style()
+	 style.layout("TMenubutton", [
+	    ("Menubutton.background", None),
+	    ("Menubutton.button", {"children":
+		[("Menubutton.focus", {"children":
+		    [("Menubutton.padding", {"children":
+			[("Menubutton.label", {"side": "left", "expand": 1})]
+		    })]
+		})]
+	    }),
+	 ])
 
-         mbtn = ttk.Menubutton(text='Text')
-         mbtn.pack()
-         root.mainloop()
+	 mbtn = ttk.Menubutton(text='Text')
+	 mbtn.pack()
+	 root.mainloop()
 
 
    .. method:: element_create(elementname, etype, *args, **kw)
@@ -1321,24 +1407,24 @@ option. If you don't know the class name of a widget, use the method
       following options:
 
        * border=padding
-          padding is a list of up to four integers, specifying the left, top,
-          right, and bottom borders, respectively.
+	  padding is a list of up to four integers, specifying the left, top,
+	  right, and bottom borders, respectively.
 
        * height=height
-          Specifies a minimum height for the element. If less than zero, the
-          base image's height is used as a default.
+	  Specifies a minimum height for the element. If less than zero, the
+	  base image's height is used as a default.
 
        * padding=padding
-          Specifies the element's interior padding. Defaults to border's value
-          if not specified.
+	  Specifies the element's interior padding. Defaults to border's value
+	  if not specified.
 
        * sticky=spec
-          Specifies how the image is placed within the final parcel. spec
-          contains zero or more characters "n", "s", "w", or "e".
+	  Specifies how the image is placed within the final parcel. spec
+	  contains zero or more characters "n", "s", "w", or "e".
 
        * width=width
-          Specifies a minimum width for the element. If less than zero, the
-          base image's width is used as a default.
+	  Specifies a minimum width for the element. If less than zero, the
+	  base image's width is used as a default.
 
       If "from" is used as the value of *etype*,
       :meth:`element_create` will clone an existing
@@ -1381,28 +1467,28 @@ option. If you don't know the class name of a widget, use the method
 
       As an example, let's change the Combobox for the default theme a bit::
 
-         from tkinter import ttk
-         import tkinter
+	 from tkinter import ttk
+	 import tkinter
 
-         root = tkinter.Tk()
+	 root = tkinter.Tk()
 
-         style = ttk.Style()
-         style.theme_settings("default", {
-            "TCombobox": {
-                "configure": {"padding": 5},
-                "map": {
-                    "background": [("active", "green2"),
-                                   ("!disabled", "green4")],
-                    "fieldbackground": [("!disabled", "green3")],
-                    "foreground": [("focus", "OliveDrab1"),
-                                   ("!disabled", "OliveDrab2")]
-                }
-            }
-         })
+	 style = ttk.Style()
+	 style.theme_settings("default", {
+	    "TCombobox": {
+		"configure": {"padding": 5},
+		"map": {
+		    "background": [("active", "green2"),
+				   ("!disabled", "green4")],
+		    "fieldbackground": [("!disabled", "green3")],
+		    "foreground": [("focus", "OliveDrab1"),
+				   ("!disabled", "OliveDrab2")]
+		}
+	    }
+	 })
 
-         combo = ttk.Combobox().pack()
+	 combo = ttk.Combobox().pack()
 
-         root.mainloop()
+	 root.mainloop()
 
 
    .. method:: theme_names()
