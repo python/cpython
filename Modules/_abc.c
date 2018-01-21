@@ -3,7 +3,6 @@
 /* TODO: Global check where checks are needed, and where I made objects myself */
 /* In particular use capitals like PyList_GET_SIZE */
 /* Think (ask) about inlining some calls, like __subclasses__ */
-/* Use PyId instead of string attrs */
 /* Work on INCREF/DECREF */
 /* Be sure to return NULL where exception possible */
 /* Use macros */
@@ -16,14 +15,17 @@ PyDoc_STRVAR(_abc__doc__,
 #define DEFERRED_ADDRESS(ADDR) 0
 
 _Py_IDENTIFIER(stdout);
+_Py_IDENTIFIER(__isabstractmethod__);
+_Py_IDENTIFIER(__abstractmethods__);
+_Py_IDENTIFIER(__class__);
 
 static Py_ssize_t abc_invalidation_counter = 0;
 
 typedef struct {
     PyHeapTypeObject tp;
-    PyObject *abc_registry; /* normal set of weakrefs without callback */
-    PyObject *abc_cache;          /* normal set of weakrefs with callback (we never iterate over it) */
-    PyObject *abc_negative_cache; /* normal set of weakrefs with callback */
+    PyObject *abc_registry; /* these three are normal set of weakrefs without callback */
+    PyObject *abc_cache;
+    PyObject *abc_negative_cache;
     Py_ssize_t abc_negative_cache_version;
 } abc;
 
@@ -33,7 +35,7 @@ abcmeta_dealloc(abc *tp)
     Py_CLEAR(tp->abc_registry);
     Py_CLEAR(tp->abc_cache);
     Py_CLEAR(tp->abc_negative_cache);
-    PyType_Type.tp_dealloc((PyObject *)tp);
+    Py_TYPE(tp)->tp_free((PyObject *)tp);
 }
 
 static int
@@ -48,7 +50,7 @@ abcmeta_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 abcmeta_clear(abc *tp)
 {
-    if (tp->abc_registry) { /* This may be because _abc_registry is writeable (and was shared by typing) */
+    if (tp->abc_registry) {
         PySet_Clear(tp->abc_registry);
     }
     if (tp->abc_cache) {
@@ -88,23 +90,30 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         item = PySequence_GetItem(items, pos);
         key = PyTuple_GetItem(item, 0);
         value = PyTuple_GetItem(item, 1);
-        is_abstract = PyObject_GetAttrString(value, "__isabstractmethod__");
+        is_abstract = _PyObject_GetAttrId(value, &PyId___isabstractmethod__);
         if (!is_abstract) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                Py_DECREF(item);
+                Py_DECREF(items);
                 return NULL;
             }
             PyErr_Clear();
+            Py_DECREF(item);
             continue;
         }
         if (is_abstract == Py_True && PySet_Add(abstracts, key) < 0) {
+            Py_DECREF(item);
+            Py_DECREF(items);
             return NULL;
         }
+        Py_DECREF(item);
     }
+    Py_DECREF(items);
     /* Stage 2: inherited abstract methods */
     bases = PyTuple_GET_ITEM(args, 1);
     for (pos = 0; pos < PyTuple_Size(bases); pos++) {
-        item = PyTuple_GetItem(bases, pos);
-        base_abstracts = PyObject_GetAttrString(item, "__abstractmethods__");
+        item = PyTuple_GET_ITEM(bases, pos);
+        base_abstracts = _PyObject_GetAttrId(item, &PyId___abstractmethods__);
         if (!base_abstracts) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 return NULL;
@@ -119,27 +128,41 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             value = PyObject_GetAttr((PyObject *)result, key);
             if (!value) {
                 if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                    Py_DECREF(key);
+                    Py_DECREF(value);
+                    Py_DECREF(iter);
                     return NULL;
                 }
                 PyErr_Clear();
+                Py_DECREF(key);
+                Py_DECREF(value);
                 continue;
             }
-            is_abstract = PyObject_GetAttrString(value, "__isabstractmethod__");
+            is_abstract = _PyObject_GetAttrId(value, &PyId___isabstractmethod__);
             if (!is_abstract) {
                 if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                    Py_DECREF(key);
+                    Py_DECREF(value);
+                    Py_DECREF(iter);
                     return NULL;
                 }
                 PyErr_Clear();
+                Py_DECREF(key);
+                Py_DECREF(value);
                 continue;
             }
             if (is_abstract == Py_True && PySet_Add(abstracts, key) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                Py_DECREF(iter);
                 return NULL;
             }
             Py_DECREF(key);
+            Py_DECREF(value);
         }
         Py_DECREF(iter);
     }
-    if (PyObject_SetAttrString((PyObject *)result, "__abstractmethods__", abstracts) < 0) {
+    if (_PyObject_SetAttrId((PyObject *)result, &PyId___abstractmethods__, abstracts) < 0) {
         return NULL;
     }
     return (PyObject *)result;
@@ -200,7 +223,7 @@ abcmeta_instancecheck(abc *self, PyObject *args)
     if (result == Py_True) { /* TODO: Refactor to avoid packing */
         return Py_True;
     }
-    subclass = PyObject_GetAttrString(instance, "__class__");
+    subclass = _PyObject_GetAttrId(instance, &PyId___class__);
     return abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass));
 }
 
@@ -215,7 +238,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         return NULL;
     }
     /* TODO: clear the registry from dead refs from time to time
-       on iteration here (have a counter for this) or maybe better durin a .register() call */
+       on iteration here (have a counter for this) or maybe better during a .register() call */
     /* TODO: Reset caches every n-th succes/failure correspondingly
        so that they don't grow too large */
     ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
@@ -223,13 +246,12 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         return NULL;
     }
     if (ok == Py_True) {
-        Py_INCREF(Py_True);
         return Py_True;
     }
     if (ok == Py_False) {
-        Py_INCREF(Py_False);
         return Py_False;
     }
+    Py_DECREF(ok);
     mro = ((PyTypeObject *)subclass)->tp_mro;
     for (pos = 0; pos < PyTuple_Size(mro); pos++) {
         if ((PyObject *)self == PyTuple_GetItem(mro, pos)) {
@@ -242,9 +264,13 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         result = PyObject_IsSubclass(subclass, key);
         if (result > 0) {
             Py_INCREF(Py_True);
+            Py_DECREF(key);
+            Py_DECREF(iter);
             return Py_True;
         }
         if (result < 0) {
+            Py_DECREF(key);
+            Py_DECREF(iter);
             return NULL;
         }
         Py_DECREF(key);
@@ -255,13 +281,16 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         result = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
         if (result > 0) {
             Py_INCREF(Py_True);
+            Py_DECREF(subclasses);
             return Py_True;
         }
         if (result < 0) {
+            Py_DECREF(subclasses);
             return NULL;
         }
     }
     Py_INCREF(Py_False);
+    Py_DECREF(subclasses);
     return Py_False;
 }
 
@@ -376,13 +405,13 @@ static PyMethodDef abcmeta_methods[] = {
 };
 
 static PyMemberDef abc_members[] = {
-    {"_abc_registry", T_OBJECT, offsetof(abc, abc_registry), 0, /* Maybe make these READONLY */
+    {"_abc_registry", T_OBJECT, offsetof(abc, abc_registry), READONLY,
      PyDoc_STR("ABC registry (private).")},
-    {"_abc_cache", T_OBJECT, offsetof(abc, abc_cache), 0,
+    {"_abc_cache", T_OBJECT, offsetof(abc, abc_cache), READONLY,
      PyDoc_STR("ABC positive cache (private).")},
-    {"_abc_negative_cache", T_OBJECT, offsetof(abc, abc_negative_cache), 0,
+    {"_abc_negative_cache", T_OBJECT, offsetof(abc, abc_negative_cache), READONLY,
      PyDoc_STR("ABC negative cache (private).")},
-    {"_abc_negative_cache_version", T_OBJECT, offsetof(abc, abc_negative_cache), 0,
+    {"_abc_negative_cache_version", T_OBJECT, offsetof(abc, abc_negative_cache), READONLY,
      PyDoc_STR("ABC negative cache version (private).")},
     {NULL}
 };

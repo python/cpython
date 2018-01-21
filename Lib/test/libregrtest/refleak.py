@@ -113,7 +113,6 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copyreg
     import collections.abc
-    from weakref import WeakSet
 
     # Restore some original values.
     warnings.filters[:] = fs
@@ -137,7 +136,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
-            obj._abc_registry = abcs.get(obj, WeakSet()).copy()
+            for el in abcs.get(obj, set()):
+                obj._abc_registry.add(el)
             obj._abc_cache.clear()
             obj._abc_negative_cache.clear()
 
