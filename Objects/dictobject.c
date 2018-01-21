@@ -617,23 +617,14 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
 
 
 static PyObject *
-clone_dict(PyObject *s)
+clone_dict(PyDictObject *orig)
 {
-    assert(PyDict_CheckExact(s));
-
-    PyDictKeysObject *keys;
-    PyDictObject *new;
-    PyDictObject *orig = (PyDictObject*)s;
-    Py_ssize_t i, n, keys_size;
-    PyDictKeyEntry *entry, *ep0;
-    PyObject *value;
-
+    assert(PyDict_CheckExact(orig));
     assert(orig->ma_values == NULL);
     assert(orig->ma_keys->dk_refcnt == 1);
-    assert(orig->ma_used == orig->ma_keys->dk_nentries);
 
-    keys_size = _PyDict_KeysSize(orig->ma_keys);
-    keys = PyObject_MALLOC(keys_size);
+    Py_ssize_t keys_size = _PyDict_KeysSize(orig->ma_keys);
+    PyDictKeysObject *keys = PyObject_MALLOC(keys_size);
     if (keys == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -641,23 +632,23 @@ clone_dict(PyObject *s)
 
     memcpy(keys, orig->ma_keys, keys_size);
 
-    /* After copying key/value pairs, we need to inref all
+    /* After copying key/value pairs, we need to incref all
        keys and values and they are about to be co-owned by a
        new dict object. */
-    ep0 = DK_ENTRIES(keys);
-    n = keys->dk_nentries;
-    for (i = 0; i < n; i++) {
-        entry = &ep0[i];
-        value = entry->me_value;
+    PyDictKeyEntry *ep0 = DK_ENTRIES(keys);
+    Py_ssize_t n = keys->dk_nentries;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyDictKeyEntry *entry = &ep0[i];
+        PyObject *value = entry->me_value;
         if (value != NULL) {
             Py_INCREF(value);
             Py_INCREF(entry->me_key);
         }
     }
 
-    new = (PyDictObject *)new_dict(keys, NULL);
+    PyDictObject *new = (PyDictObject *)new_dict(keys, NULL);
     if (new == NULL) {
-        /* In case of an error, `new_dict()` will take care of
+        /* In case of an error, `new_dict()` takes care of
            cleaning up `keys`. */
         return NULL;
     }
@@ -2539,7 +2530,13 @@ PyDict_Copy(PyObject *o)
         PyErr_BadInternalCall();
         return NULL;
     }
+
     mp = (PyDictObject *)o;
+    if (mp->ma_used == 0) {
+        /* The dict is empty; just return a new dict. */
+        return PyDict_New();
+    }
+
     if (_PyDict_HasSplitTable(mp)) {
         PyDictObject *split_copy;
         Py_ssize_t size = USABLE_FRACTION(DK_SIZE(mp->ma_keys));
@@ -2566,11 +2563,25 @@ PyDict_Copy(PyObject *o)
         return (PyObject *)split_copy;
     }
 
-    if (PyDict_CheckExact(o) && mp->ma_values == NULL &&
-            mp->ma_keys->dk_refcnt == 1 &&
-            mp->ma_used == mp->ma_keys->dk_nentries)
+    if (PyDict_CheckExact(mp) &&
+            mp->ma_values == NULL && mp->ma_keys->dk_refcnt == 1 &&
+            mp->ma_used >= mp->ma_keys->dk_nentries - 3)
     {
-        return clone_dict(o);
+        /* Use fast-copy if:
+
+           (1) 'mp' is an instance of a subclassed dict; and
+
+           (2) 'mp' is not a split-dict; and
+
+           (3) if 'mp' is non-compact ('del' operation does not resize dicts),
+               do fast-copy only if it has at most 3 non-used keys.
+
+           The last condition (3) is important to guard against a pathalogical
+           case when a large dict is almost emptied with multiple del/pop
+           operations and copied after that.  In cases like this, we defer to
+           PyDict_Merge, which produces a compacted copy.
+        */
+        return clone_dict(mp);
     }
 
     copy = PyDict_New();
