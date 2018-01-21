@@ -1,0 +1,1 @@
+distutils no longer corrupts tar files ending with b'\x0d'
