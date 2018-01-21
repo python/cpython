@@ -230,7 +230,7 @@ ZipFile Objects
    With *mode* ``'r'`` the file-like object
    (``ZipExtFile``) is read-only and provides the following methods:
    :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
-   :meth:`~io.IOBase.readlines`, :meth:`~io.IOBase.seek`, 
+   :meth:`~io.IOBase.readlines`, :meth:`~io.IOBase.seek`,
    :meth:`~io.IOBase.tell`, :meth:`__iter__`, :meth:`~iterator.__next__`.
    These objects can operate independently of the ZipFile.
 
