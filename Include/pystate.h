@@ -262,6 +262,8 @@ typedef struct _ts {
     void (*on_delete)(void *);
     void *on_delete_data;
 
+    int coroutine_origin_tracking_depth;
+
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 

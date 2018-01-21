@@ -510,6 +510,9 @@ sys
 
 Added :attr:`sys.flags.dev_mode` flag for the new development mode.
 
+Deprecated :func:`sys.set_coroutine_wrapper` and
+:func:`sys.get_coroutine_wrapper`.
+
 time
 ----
 
