@@ -690,6 +690,18 @@ class _SharedFile:
         self._close = close
         self._lock = lock
         self._writing = writing
+        self.seekable = file.seekable
+        self.tell = file.tell
+
+    def seek(self, offset, whence=0):
+        with self._lock:
+            if self.writing():
+                raise ValueError("Can't reposition in the ZIP file while "
+                        "there is an open writing handle on it. "
+                        "Close the writing handle before trying to read.")
+            self._file.seek(self._pos)
+            self._pos = self._file.tell()
+            return self._pos
 
     def read(self, n=-1):
         with self._lock:
@@ -974,7 +986,7 @@ class ZipExtFile(io.BufferedIOBase):
     def seekable(self):
         return self._seekable
 
-    def seek(self, offset, whence = 0):
+    def seek(self, offset, whence=0):
         if not self._seekable:
             raise io.UnsupportedOperation("underlying stream is not seekable")
         curr_pos = self.tell()
@@ -1011,7 +1023,7 @@ class ZipExtFile(io.BufferedIOBase):
             read_offset = new_pos
 
         while read_offset > 0:
-            read_len = min(MAX_SEEK_READ, read_offset)
+            read_len = min(self.MAX_SEEK_READ, read_offset)
             self.read(read_len)
             read_offset -= read_len
 
