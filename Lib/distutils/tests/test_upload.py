@@ -143,6 +143,31 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         results = self.get_logs(INFO)
         self.assertEqual(results[-1], 75 * '-' + '\nxyzzy\n' + 75 * '-')
 
+    def test_upload_correct_cr(self):
+        # content ends with \r - should not be corrected
+        tmp = self.mkdtemp()
+        path = os.path.join(tmp, 'xxx')
+        self.write_file(path, content='yy\r')
+        command, pyversion, filename = 'xxx', '2.6', path
+        dist_files = [(command, pyversion, filename)]
+        self.write_file(self.rc, PYPIRC_LONG_PASSWORD)
+
+        # description ends with \r - should be corrected
+        pkg_dir, dist = self.create_dist(
+            dist_files=dist_files,
+            description='long description\r'
+        )
+        cmd = upload(dist)
+        cmd.show_response = 1
+        cmd.ensure_finalized()
+        cmd.run()
+
+        # an extra character should have been added to the description,
+        # but not to the content
+        headers = dict(self.last_open.req.headers)
+        self.assertEqual(headers['Content-length'], '2173')
+        self.assertIn(b'long description\r\n', self.last_open.req.data)
+
     def test_upload_fails(self):
         self.next_msg = "Not Found"
         self.next_code = 404
