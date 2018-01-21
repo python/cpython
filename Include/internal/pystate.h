@@ -7,6 +7,8 @@ extern "C" {
 #include "pystate.h"
 #include "pyatomic.h"
 #include "pythread.h"
+#include "pyerrors.h"
+#include "pylifecycle.h"
 
 #include "internal/mem.h"
 #include "internal/ceval.h"
