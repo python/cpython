@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 import unittest
+from distutils.ccompiler import new_compiler, gen_lib_options
 from test import support
 
 TESTFN = support.TESTFN
@@ -539,6 +540,21 @@ class TestSupport(unittest.TestCase):
             support.set_match_tests(['test_access', 'DONTMATCH'])
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
+
+    def test_build_extensions_as_builtins(self):
+        # https://bugs.python.org/issue32232
+
+        compiler = new_compiler()
+        workdir = "."
+
+        for _dir in ["./Python","./Include","./Objects","."]:
+            compiler.add_include_dir(_dir)
+
+        compiler.define_macro(name="Py_BUILD_CORE",value=1)
+
+        object_file, = compiler.compile(["./Modules/_elementtree.c"])
+
+        os.unlink(object_file)
 
 
     # XXX -follows a list of untested API
