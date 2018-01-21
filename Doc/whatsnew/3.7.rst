@@ -859,7 +859,7 @@ Changes in Python behavior
       f(1 for x in [1],)
 
       class C(1 for x in [1]):
-	  pass
+          pass
 
   Python 3.7 now correctly raises a :exc:`SyntaxError`, as a generator
   expression always needs to be directly inside a set of parentheses
