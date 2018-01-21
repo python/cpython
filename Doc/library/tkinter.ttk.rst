@@ -761,13 +761,6 @@ ttk.Spinbox
 
 .. class:: Spinbox
 
-   .. method:: current(newindex=None)
-
-      If *newindex* is specified, sets the spinbox value to the element
-      position *newindex*. Otherwise, returns the index of the current value or
-      -1 if the current value is not in the values list.
-
-
    .. method:: get()
 
       Returns the current value of the spinbox.

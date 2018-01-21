@@ -1172,15 +1172,6 @@ class Spinbox(Entry):
         """
         Entry.__init__(self, master, "ttk::spinbox", **kw)
 
-    def current(self, newindex=None):
-        """If newindex is supplied, sets the Spinbox value to the
-        element at position newindex in the list of values. Otherwise,
-        returns the index of the current value in the list of values
-        or -1 if the current value does not appear in the list."""
-        if newindex is None:
-            return self.tk.getint(self.tk.call(self._w, "current"))
-        return self.tk.call(self._w, "current", newindex)
-
 
     def set(self, value):
         """Sets the value of the Spinbox to value."""

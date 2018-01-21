@@ -1227,15 +1227,8 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
     def test_values(self):
 
-
-        def check_get_current(getval, currval):
-            self.assertEqual(self.spin.get(), getval)
-            self.assertEqual(self.spin.current(), currval)
-
         self.assertEqual(self.spin['values'],
                          () if tcl_version < (8, 5) else '')
-        check_get_current('', -1)
-
         self.checkParam(self.spin, 'values', 'mon tue wed thur',
                         expected=('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.spin, 'values', ('mon', 'tue', 'wed', 'thur'))
@@ -1245,19 +1238,15 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
         self.spin['values'] = ['a', 1, 'c']
 
-        self.spin.set('c')
-        check_get_current('c', 2)
+        # test incrementing / decrementing values
+        self.spin.set('a')
+        self.spin.update()
+        self._click_increment_arrow()
+        self.assertEqual(self.spin.get(), '1')
 
-        self.spin.current(0)
-        check_get_current('a', 0)
+        self._click_decrement_arrow()
+        self.assertEqual(self.spin.get(), 'a')
 
-        self.spin.set('d')
-        check_get_current('d', -1)
-
-        # testing values with empty string
-        self.spin.set('')
-        self.spin['values'] = (1, 2, '', 3)
-        check_get_current('', 2)
 
         # testing values with empty string set through configure
         self.spin.configure(values=[1, '', 2])
@@ -1277,26 +1266,13 @@ class SpinboxTest(EntryTest, unittest.TestCase):
                          (r'a\tb', '"a"', '} {') if self.wantobjects else
                          r'a\\tb {"a"} \}\ \{')
 
-        # testing increment and decrement
-        self.spin.set('')
-        self.spin['values'] = ['a', 'b', 'c']
-        self._click_increment_arrow()
-        self._click_increment_arrow()
-        check_get_current('b', 1)
-        self._click_decrement_arrow()
-        check_get_current('a', 0)
-
-        # out of range
-        self.assertRaises(tkinter.TclError, self.spin.current,
-            len(self.spin['values']))
-        # it expects an integer (or something that can be converted to int)
-        self.assertRaises(tkinter.TclError, self.spin.current, '')
 
         # testing creating spinbox with empty string in values
         spin2 = ttk.Spinbox(self.root, values=[1, 2, ''])
         self.assertEqual(spin2['values'],
                          ('1', '2', '') if self.wantobjects else '1 2 {}')
         spin2.destroy()
+
 
 @add_standard_options(StandardTtkOptionsTests)
 class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
