@@ -1024,6 +1024,7 @@ Supported ``_sunder_`` names
   overridden
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
+.. versionadded:: 3.7 ``_ignore_``
 
 To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
 be provided.  It will be checked against the actual order of the enumeration
