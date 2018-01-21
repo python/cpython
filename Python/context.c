@@ -30,9 +30,6 @@ context_new_from_vars(PyHamtObject *vars);
 static inline PyContext *
 context_get(void);
 
-static inline PyContext *
-context_copy(void);
-
 static PyContextToken *
 token_new(PyContext *ctx, PyContextVar *var, PyObject *val);
 
@@ -61,9 +58,21 @@ PyContext_New(void)
 
 
 PyContext *
-PyContext_Copy(void)
+PyContext_Copy(PyContext * ctx)
 {
-    return context_copy();
+    return context_new_from_vars(ctx->ctx_vars);
+}
+
+
+PyContext *
+PyContext_CopyCurrent(void)
+{
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return NULL;
+    }
+
+    return context_new_from_vars(ctx->ctx_vars);
 }
 
 
@@ -339,17 +348,6 @@ context_get(void)
         ts->context = (PyObject *)current_ctx;
     }
     return current_ctx;
-}
-
-static inline PyContext *
-context_copy(void)
-{
-    PyContext *ctx = context_get();
-    if (ctx == NULL) {
-        return NULL;
-    }
-
-    return context_new_from_vars(ctx->ctx_vars);
 }
 
 static int
