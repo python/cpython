@@ -1156,10 +1156,6 @@ exit:
 void
 _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 {
-    _Py_IDENTIFIER(_warn_unawaited_coroutine);
-    PyObject *fn = NULL, *res = NULL;
-    int warned = 0;
-
     /* First, we attempt to funnel the warning through
        warnings._warn_unawaited_coroutine.
 
@@ -1179,24 +1175,29 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
        Since this is called from __del__ context, it's careful to never raise
        an exception.
     */
-    fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
+    _Py_IDENTIFIER(_warn_unawaited_coroutine);
+    int warned = 0;
+    PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
     if (fn) {
-        res = PyObject_CallFunctionObjArgs(fn, coro, NULL);
-        if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning))
+        PyObject *res = PyObject_CallFunctionObjArgs(fn, coro, NULL);
+        Py_DECREF(fn);
+        if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
             warned = 1;
+        }
+        Py_XDECREF(res);
     }
-    Py_XDECREF(fn);
-    Py_XDECREF(res);
 
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
         PyErr_WriteUnraisable(coro);
+    }
     if (!warned) {
         PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
                          "coroutine '%.50S' was never awaited",
                          ((PyCoroObject *)coro)->cr_qualname);
         /* Maybe *that* got converted into an exception */
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
             PyErr_WriteUnraisable(coro);
+        }
     }
 }
 

@@ -743,6 +743,11 @@ sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
 static PyObject *
 sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "set_coroutine_wrapper is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     if (wrapper != Py_None) {
         if (!PyCallable_Check(wrapper)) {
             PyErr_Format(PyExc_TypeError,
@@ -767,6 +772,10 @@ Set a wrapper for coroutine objects."
 static PyObject *
 sys_get_coroutine_wrapper(PyObject *self, PyObject *args)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "get_coroutine_wrapper is deprecated", 1) < 0) {
+        return NULL;
+    }
     PyObject *wrapper = _PyEval_GetCoroutineWrapper();
     if (wrapper == NULL) {
         wrapper = Py_None;

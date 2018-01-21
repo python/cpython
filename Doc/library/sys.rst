@@ -686,6 +686,10 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
+
 
 .. data:: hash_info
 
@@ -1217,8 +1221,9 @@ always available.
    Allows enabling or disabling coroutine origin tracking. When
    enabled, the ``cr_origin`` attribute on coroutine objects will
    contain a list of (filename, line number, function name) tuples
-   describing the traceback where the coroutine object was created.
-   When disabled, ``cr_origin`` will be None.
+   describing the traceback where the coroutine object was created,
+   with the most recent call first. When disabled, ``cr_origin`` will
+   be None.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,
@@ -1226,7 +1231,7 @@ always available.
 
    Returns the old value of *depth*.
 
-   This setting is thread-local.
+   This setting is thread-specific.
 
    .. versionadded:: 3.7
 
@@ -1272,6 +1277,10 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
+
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
 
 .. function:: _enablelegacywindowsfsencoding()
 

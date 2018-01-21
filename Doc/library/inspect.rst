@@ -34,6 +34,9 @@ provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
 attributes:
 
+.. this function name is too big to fit in the ascii-art table below
+.. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
+
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
@@ -216,8 +219,8 @@ attributes:
 |           | cr_code           | code                      |
 +-----------+-------------------+---------------------------+
 |           | cr_origin         | where coroutine was       |
-|           |                   | created, if coroutine     |
-|           |                   | origin tracking is enabled|
+|           |                   | created, or ``None``. See |
+|           |                   | |coroutine-origin-link|   |
 +-----------+-------------------+---------------------------+
 | builtin   | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+

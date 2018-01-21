@@ -79,39 +79,16 @@ class CoroWrapper:
         return self.gen.gi_code
 
     def __await__(self):
-        cr_await = getattr(self.gen, 'cr_await', None)
-        if cr_await is not None:
-            raise RuntimeError(
-                f"Cannot await on coroutine {self.gen!r} while it's "
-                f"awaiting for {cr_await!r}")
         return self
 
     @property
     def gi_yieldfrom(self):
         return self.gen.gi_yieldfrom
 
-    @property
-    def cr_await(self):
-        return self.gen.cr_await
-
-    @property
-    def cr_running(self):
-        return self.gen.cr_running
-
-    @property
-    def cr_code(self):
-        return self.gen.cr_code
-
-    @property
-    def cr_frame(self):
-        return self.gen.cr_frame
-
     def __del__(self):
         # Be careful accessing self.gen.frame -- self.gen might not exist.
         gen = getattr(self, 'gen', None)
         frame = getattr(gen, 'gi_frame', None)
-        if frame is None:
-            frame = getattr(gen, 'cr_frame', None)
         if frame is not None and frame.f_lasti == -1:
             msg = f'{self!r} was never yielded from'
             tb = getattr(self, '_source_traceback', ())

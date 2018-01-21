@@ -32,8 +32,9 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE)
+    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
         Py_VISIT(((PyCoroObject *)gen)->cr_origin);
+    }
     return exc_state_traverse(&gen->gi_exc_state, visit, arg);
 }
 
@@ -76,8 +77,9 @@ _PyGen_Finalize(PyObject *self)
     if (gen->gi_code != NULL &&
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
         gen->gi_frame->f_lasti == -1) {
-        if (!error_value)
+        if (!error_value) {
             _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
+        }
     }
     else {
         res = gen_close(gen, NULL);
@@ -136,8 +138,9 @@ gen_dealloc(PyGenObject *gen)
         gen->gi_frame->f_gen = NULL;
         Py_CLEAR(gen->gi_frame);
     }
-    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE)
+    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
         Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
+    }
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
@@ -1160,47 +1163,56 @@ PyTypeObject _PyCoroWrapper_Type = {
     0,                                          /* tp_free */
 };
 
+static PyObject *
+compute_cr_origin(int origin_depth)
+{
+    PyObject *cr_origin = PyList_New(origin_depth);
+    PyFrameObject *frame = PyEval_GetFrame();
+    int i = 0;
+    for (; frame && i < origin_depth; ++i) {
+        PyObject *frameinfo = Py_BuildValue(
+            "OiO",
+            frame->f_code->co_filename,
+            PyFrame_GetLineNumber(frame),
+            frame->f_code->co_name);
+        if (!frameinfo) {
+            Py_DECREF(cr_origin);
+            return NULL;
+        }
+        PyList_SET_ITEM(cr_origin, i, frameinfo);
+        frame = frame->f_back;
+    }
+    /* Truncate the list if necessary */
+    if (i < origin_depth) {
+        if (PyList_SetSlice(cr_origin, i, origin_depth, NULL) < 0) {
+            Py_DECREF(cr_origin);
+            return NULL;
+        }
+    }
+
+    return cr_origin;
+}
+
 PyObject *
 PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
     PyObject *coro = gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
-    if (!coro)
+    if (!coro) {
         return NULL;
+    }
 
     PyThreadState *tstate = PyThreadState_GET();
-    int depth = tstate->coroutine_origin_tracking_depth;
+    int origin_depth = tstate->coroutine_origin_tracking_depth;
 
-    if (depth == 0) {
+    if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin = NULL;
     } else {
-        PyObject *origin = PyList_New(depth);
-        /* Immediately pass ownership to coro, so on error paths we don't have
-           to worry about it separately. */
-        ((PyCoroObject *)coro)->cr_origin = origin;
-        PyFrameObject *frame = PyEval_GetFrame();
-        int i = 0;
-        for (; i < depth; ++i) {
-            if (!frame)
-                break;
-
-            PyObject *frameinfo = Py_BuildValue(
-                "OiO",
-                frame->f_code->co_filename,
-                PyFrame_GetLineNumber(frame),
-                frame->f_code->co_name);
-            if (!frameinfo) {
-                Py_DECREF(coro);
-                return NULL;
-            }
-            PyList_SET_ITEM(origin, i, frameinfo);
-
-            frame = frame->f_back;
-        }
-        /* Truncate the list if necessary */
-        if (PyList_SetSlice(origin, i, depth, NULL) < 0) {
+        PyObject *cr_origin = compute_cr_origin(origin_depth);
+        if (!cr_origin) {
             Py_DECREF(coro);
             return NULL;
         }
+        ((PyCoroObject *)coro)->cr_origin = cr_origin;
     }
 
     return coro;

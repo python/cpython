@@ -34,13 +34,13 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
+from . import constants
 from . import coroutines
 from . import events
 from . import futures
 from . import sslproto
 from . import tasks
 from .log import logger
-from .constants import DEBUG_STACK_DEPTH
 
 
 __all__ = 'BaseEventLoop',
@@ -1534,17 +1534,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         handle = None  # Needed to break cycles when an exception occurs.
 
     def _set_coroutine_origin_tracking(self, enabled):
-        if enabled == self._coroutine_origin_tracking_enabled:
+        if bool(enabled) == bool(self._coroutine_origin_tracking_enabled):
             return
 
         if enabled:
             self._coroutine_origin_tracking_saved_depth = (
-                sys.set_coroutine_origin_tracking_depth(DEBUG_STACK_DEPTH)
-            )
+                sys.set_coroutine_origin_tracking_depth(
+                    constants.DEBUG_STACK_DEPTH))
         else:
             sys.set_coroutine_origin_tracking_depth(
-                self._coroutine_origin_tracking_saved_depth
-            )
+                self._coroutine_origin_tracking_saved_depth)
 
         self._coroutine_origin_tracking_enabled = enabled
 

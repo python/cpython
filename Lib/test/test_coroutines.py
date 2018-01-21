@@ -1,12 +1,12 @@
-from contextlib import contextmanager, closing
+import contextlib
 import copy
 import inspect
 import pickle
+import re
 import sys
 import types
 import unittest
 import warnings
-import re
 from test import support
 
 
@@ -59,7 +59,7 @@ def run_async__await__(coro):
     return buffer, result
 
 
-@contextmanager
+@contextlib.contextmanager
 def silence_coro_gc():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -1975,9 +1975,11 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             wrapped = gen
             return gen
 
-        self.assertIsNone(sys.get_coroutine_wrapper())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(sys.get_coroutine_wrapper())
 
-        sys.set_coroutine_wrapper(wrap)
+        with self.assertWarns(DeprecationWarning):
+            sys.set_coroutine_wrapper(wrap)
         self.assertIs(sys.get_coroutine_wrapper(), wrap)
         try:
             f = foo()
@@ -2053,13 +2055,13 @@ class OriginTrackingTest(unittest.TestCase):
             async def corofn():
                 pass
 
-            with closing(corofn()) as coro:
+            with contextlib.closing(corofn()) as coro:
                 self.assertIsNone(coro.cr_origin)
 
             self.assertEqual(sys.set_coroutine_origin_tracking_depth(1), 0)
 
             fname, lineno = self.here()
-            with closing(corofn()) as coro:
+            with contextlib.closing(corofn()) as coro:
                 self.assertEqual(coro.cr_origin,
                                  [(fname, lineno + 1, "test_origin_tracking")])
 
@@ -2068,14 +2070,14 @@ class OriginTrackingTest(unittest.TestCase):
                 return (self.here(), corofn())
             fname, lineno = self.here()
             ((nested_fname, nested_lineno), coro) = nested()
-            with closing(coro):
+            with contextlib.closing(coro):
                 self.assertEqual(coro.cr_origin,
                                  [(nested_fname, nested_lineno, "nested"),
                                   (fname, lineno + 1, "test_origin_tracking")])
 
             # Check we handle running out of frames correctly
             sys.set_coroutine_origin_tracking_depth(1000)
-            with closing(corofn()) as coro:
+            with contextlib.closing(corofn()) as coro:
                 self.assertTrue(2 < len(coro.cr_origin) < 1000)
 
             # We can't set depth negative

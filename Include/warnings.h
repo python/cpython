@@ -57,7 +57,7 @@ PyErr_WarnExplicitFormat(PyObject *category,
 #endif
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
+void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
 #endif
 
 #ifdef __cplusplus

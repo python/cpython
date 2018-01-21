@@ -502,6 +502,12 @@ def _warn_unawaited_coroutine(coro):
         msg_lines.append("Coroutine created at (most recent call last)\n")
         msg_lines += traceback.format_list(list(extract()))
     msg = "".join(msg_lines).rstrip("\n")
+    # Passing source= here means that if the user happens to have tracemalloc
+    # enabled and tracking where the coroutine was created, the warning will
+    # contain that traceback. This does mean that if they have *both*
+    # coroutine origin tracking *and* tracemalloc enabled, they'll get two
+    # partially-redundant tracebacks. If we wanted to be clever we could
+    # probably detect this case and avoid it, but for now we don't bother.
     warn(msg, category=RuntimeWarning, stacklevel=2, source=coro)
 
 
