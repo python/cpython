@@ -19,7 +19,7 @@ __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
            "PanedWindow", "Progressbar", "Radiobutton", "Scale", "Scrollbar",
-           "Separator", "Sizegrip", "Style", "Treeview", "Spinbox",
+           "Separator", "Sizegrip", "Spinbox", "Style", "Treeview",
            # Extensions
            "LabeledScale", "OptionMenu",
            # functions
