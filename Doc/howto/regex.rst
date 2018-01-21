@@ -457,7 +457,7 @@ In actual programs, the most common style is to store the
 Two pattern methods return all of the matches for a pattern.
 :meth:`~re.Pattern.findall` returns a list of matching strings::
 
-   >>> p = re.compile('\d+')
+   >>> p = re.compile(r'\d+')
    >>> p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
    ['12', '11', '10']
 
@@ -1096,11 +1096,11 @@ following calls::
 The module-level function :func:`re.split` adds the RE to be used as the first
 argument, but is otherwise the same.   ::
 
-   >>> re.split('[\W]+', 'Words, words, words.')
+   >>> re.split(r'[\W]+', 'Words, words, words.')
    ['Words', 'words', 'words', '']
-   >>> re.split('([\W]+)', 'Words, words, words.')
+   >>> re.split(r'([\W]+)', 'Words, words, words.')
    ['Words', ', ', 'words', ', ', 'words', '.', '']
-   >>> re.split('[\W]+', 'Words, words, words.', 1)
+   >>> re.split(r'[\W]+', 'Words, words, words.', 1)
    ['Words', 'words, words.']
 
 
@@ -1233,7 +1233,7 @@ either side.  This takes the job beyond  :meth:`!replace`'s abilities.)
 
 Another common task is deleting every occurrence of a single character from a
 string or replacing it with another single character.  You might do this with
-something like ``re.sub('\n', ' ', S)``, but :meth:`~str.translate` is capable of
+something like ``re.sub(r'\n', ' ', S)``, but :meth:`~str.translate` is capable of
 doing both tasks and will be faster than any regular expression operation can
 be.
 
