@@ -400,11 +400,14 @@ class SSLContext(_SSLContext):
 
     def __init__(self, protocol=PROTOCOL_TLS):
         self.protocol = protocol
+        self.suppress_ragged_eofs = False
 
     def wrap_socket(self, sock, server_side=False,
                     do_handshake_on_connect=True,
-                    suppress_ragged_eofs=True,
+                    suppress_ragged_eofs=None,
                     server_hostname=None, session=None):
+        if suppress_ragged_eofs is None:
+            suppress_ragged_eofs = self.suppress_ragged_eofs
         return self.sslsocket_class(
             sock=sock,
             server_side=server_side,
@@ -737,7 +740,7 @@ class SSLSocket(socket):
                  ssl_version=PROTOCOL_TLS, ca_certs=None,
                  do_handshake_on_connect=True,
                  family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
-                 suppress_ragged_eofs=True, npn_protocols=None, ciphers=None,
+                 suppress_ragged_eofs=False, npn_protocols=None, ciphers=None,
                  server_hostname=None,
                  _context=None, _session=None):
 
@@ -1156,7 +1159,7 @@ def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
                 ssl_version=PROTOCOL_TLS, ca_certs=None,
                 do_handshake_on_connect=True,
-                suppress_ragged_eofs=True,
+                suppress_ragged_eofs=False,
                 ciphers=None):
     return SSLSocket(sock=sock, keyfile=keyfile, certfile=certfile,
                      server_side=server_side, cert_reqs=cert_reqs,

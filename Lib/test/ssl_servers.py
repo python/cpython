@@ -41,6 +41,23 @@ class HTTPSServer(_HTTPServer):
             raise
         return sslconn, addr
 
+    def finish_request(self, request, client_address):
+        super().finish_request(request, client_address)
+        try:
+            request.unwrap()
+        except OSError:
+            # SSL_shutdown() can raise SSL_ERROR_SYSCALL without setting
+            # errno if the remote end closed the low-level connection (Issue
+            # 10808)
+            pass
+
+    def handle_error(self, request, client_address):
+        [_, exc, _] = sys.exc_info()
+        # SSLEOFError is triggered when particular tests abort the request
+        if not isinstance(exc, ssl.SSLEOFError):
+            super().handle_error(request, client_address)
+
+
 class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
     # need to override translate_path to get a known root,
     # instead of using os.curdir, since the test could be

@@ -158,7 +158,7 @@ The following function allows for standalone socket creation.  Starting from
 Python 3.2, it can be more flexible to use :meth:`SSLContext.wrap_socket`
 instead.
 
-.. function:: wrap_socket(sock, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None, do_handshake_on_connect=True, suppress_ragged_eofs=True, ciphers=None)
+.. function:: wrap_socket(sock, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None, do_handshake_on_connect=True, suppress_ragged_eofs=False, ciphers=None)
 
    Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance
    of :class:`ssl.SSLSocket`, a subtype of :class:`socket.socket`, which wraps
@@ -243,14 +243,18 @@ instead.
    blocking behavior of the socket I/O involved in the handshake.
 
    The parameter ``suppress_ragged_eofs`` specifies how the
-   :meth:`SSLSocket.recv` method should signal unexpected EOF from the other end
-   of the connection.  If specified as :const:`True` (the default), it returns a
+   :meth:`SSLSocket.recv` method should handle the connection being shut
+   down outside the protocol.  If specified as :const:`True`, it returns a
    normal EOF (an empty bytes object) in response to unexpected EOF errors
-   raised from the underlying socket; if :const:`False`, it will raise the
-   exceptions back to the caller.
+   raised from the underlying socket; if :const:`False`, it will raise
+   :exc:`SSLEOFError` back to the caller.
 
    .. versionchanged:: 3.2
       New optional argument *ciphers*.
+
+   .. versionchanged:: 3.7
+      *suppress_ragged_eofs* now defaults to :const:`False`.
+
 
 Context creation
 ^^^^^^^^^^^^^^^^
@@ -987,7 +991,8 @@ SSL Sockets
      the same limitation)
    - :meth:`~socket.socket.sendfile()` (but :mod:`os.sendfile` will be used
      for plain-text sockets only, else :meth:`~socket.socket.send()` will be used)
-   - :meth:`~socket.socket.shutdown()`
+   - :meth:`~socket.socket.shutdown()` (bypasses SSL and shuts down the
+     OS-level socket)
 
    However, since the SSL (and TLS) protocol has its own framing atop
    of TCP, the SSL sockets abstraction can, in certain respects, diverge from
@@ -1593,8 +1598,16 @@ to speed up repeated connections from the same clients.
       `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy>`_
          Vincent Bernat.
 
+.. attribute:: SSLContext.suppress_ragged_eofs
+
+   This flag has the same meaning as in the top-level :func:`wrap_socket`
+   function.  It affects the :class:`SSLSocket` objects returned by
+   the context's :meth:`~SSLContext.wrap_socket` method.
+
+   .. versionadded:: 3.7
+
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \
-      do_handshake_on_connect=True, suppress_ragged_eofs=True, \
+      do_handshake_on_connect=True, suppress_ragged_eofs=None, \
       server_hostname=None, session=None)
 
    Wrap an existing Python socket *sock* and return an instance of
@@ -1603,9 +1616,10 @@ to speed up repeated connections from the same clients.
    types are unsupported.
 
    The returned SSL socket is tied to the context, its settings and
-   certificates.  The parameters *server_side*, *do_handshake_on_connect*
-   and *suppress_ragged_eofs* have the same meaning as in the top-level
-   :func:`wrap_socket` function.
+   certificates.  The parameters *server_side* and *do_handshake_on_connect*
+   have the same meaning as in the top-level :func:`wrap_socket` function.
+   The parameter *suppress_ragged_eofs* overrides the context's
+   :attr:`suppress_ragged_eofs` setting.
 
    On client connections, the optional parameter *server_hostname* specifies
    the hostname of the service which we are connecting to.  This allows a
@@ -1625,6 +1639,10 @@ to speed up repeated connections from the same clients.
     .. versionchanged:: 3.7
       The method returns on instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
+
+   .. versionchanged:: 3.7
+      *suppress_ragged_eofs* now defaults to the context's setting.
+
 
 .. attribute:: SSLContext.sslsocket_class
 
@@ -2038,8 +2056,8 @@ method to create a server-side SSL socket for the connection::
        connstream = context.wrap_socket(newsocket, server_side=True)
        try:
            deal_with_client(connstream)
+           connstream = connstream.unwrap()
        finally:
-           connstream.shutdown(socket.SHUT_RDWR)
            connstream.close()
 
 Then you'll read data from the ``connstream`` and do something with it till you

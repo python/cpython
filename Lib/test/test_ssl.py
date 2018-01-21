@@ -1893,6 +1893,26 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertEqual(buf, b'foo\n')
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
 
+    def test_insecure_shutdown(self):
+        s = socket.create_connection(self.server_addr)
+        self.addCleanup(s.close)
+        s = test_wrap_socket(s)
+        self.addCleanup(s.close)
+        s.send(b'shutdown')
+        self.assertRaises(ssl.SSLEOFError, s.recv, 300)
+
+    def test_context_ragged_eof(self):
+        s = socket.create_connection(self.server_addr)
+        self.addCleanup(s.close)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        self.assertFalse(ctx.suppress_ragged_eofs)
+        ctx.suppress_ragged_eofs = True
+        self.assertTrue(ctx.suppress_ragged_eofs)
+        s = ctx.wrap_socket(s)
+        self.addCleanup(s.close)
+        s.send(b'shutdown')
+        self.assertEqual(s.recv(300), b'')
+
 
 class NetworkedTests(unittest.TestCase):
 
@@ -2028,24 +2048,25 @@ class ThreadedEchoServer(threading.Thread):
                     return
             while self.running:
                 try:
-                    msg = self.read()
+                    try:
+                        msg = self.read()
+                    except ssl.SSLEOFError:
+                        self.running = False
+                        self.close()
+                        continue
                     stripped = msg.strip()
                     if not stripped:
                         # eof, so quit this handler
                         self.running = False
-                        try:
-                            self.sock = self.sslconn.unwrap()
-                        except OSError:
-                            # Many tests shut the TCP connection down
-                            # without an SSL shutdown. This causes
-                            # unwrap() to raise OSError with errno=0!
-                            pass
-                        else:
-                            self.sslconn = None
+                        self.sock = self.sslconn.unwrap()
                         self.close()
                     elif stripped == b'over':
                         if support.verbose and self.server.connectionchatty:
                             sys.stdout.write(" server: client closed connection\n")
+                        self.close()
+                        return
+                    elif stripped == b'shutdown':
+                        self.sslconn.shutdown(socket.SHUT_RDWR)
                         self.close()
                         return
                     elif (self.server.starttls_server and
@@ -2169,9 +2190,17 @@ class AsyncoreEchoServer(threading.Thread):
         class ConnectionHandler(asyncore.dispatcher_with_send):
 
             def __init__(self, conn, certfile):
+                # The "asyncore" module already makes errors like
+                # ECONNRESET look like secure EOF signals, so there is
+                # not much benefit in setting suppress_ragged_eofs=False
+                # (and it would make the server behaviour more
+                # complicated due to the race between the server sending
+                # the last unread response and the client shutting the
+                # connection down)
                 self.socket = test_wrap_socket(conn, server_side=True,
                                               certfile=certfile,
-                                              do_handshake_on_connect=False)
++                                              do_handshake_on_connect=False,
++                                              suppress_ragged_eofs=True)
                 asyncore.dispatcher_with_send.__init__(self, self.socket)
                 self._ssl_accepting = True
                 self._do_ssl_handshake()
@@ -3200,6 +3229,8 @@ class ThreadedTests(unittest.TestCase):
             evt.set()
             remote, peer = server.accept()
             remote.recv(1)
+            unwrapped = remote.unwrap()
+            unwrapped.close()
 
         t = threading.Thread(target=serve)
         t.start()
@@ -3208,9 +3239,9 @@ class ThreadedTests(unittest.TestCase):
         client = context.wrap_socket(socket.socket())
         client.connect((host, port))
         client_addr = client.getsockname()
+        client = client.unwrap()
         client.close()
         t.join()
-        remote.close()
         server.close()
         # Sanity checks.
         self.assertIsInstance(remote, ssl.SSLSocket)

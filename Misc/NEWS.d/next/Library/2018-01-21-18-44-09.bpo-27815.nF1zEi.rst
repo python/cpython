@@ -1,0 +1,9 @@
+SSL
+
+The *suppress_ragged_eofs* setting is now disabled by default. This means
+that by default a TCP shutdown, which may not be secure, raises
+:exc:`~ssl.SSLEOFError`, and applications can distinguish a secure SSL
+shutdown from a truncation attack.  There is a new
+:attr:`SSLContext.suppress_ragged_eofs
+<ssl.SSLContext.suppress_ragged_eofs>` attribute, which can be used to re-
+enable the setting via a context object.

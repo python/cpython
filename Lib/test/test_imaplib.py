@@ -635,7 +635,11 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 self.wfile.write(b'* OK')
 
         with self.reaped_server(EOFHandler) as server:
-            self.assertRaises(imaplib.IMAP4.abort,
+            if isinstance(server, SecureTCPServer):
+                exception = ssl.SSLEOFError
+            else:
+                exception = imaplib.IMAP4.abort
+            self.assertRaises(exception,
                               self.imap_class, *server.server_address)
 
     @reap_threads
