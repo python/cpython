@@ -230,21 +230,29 @@ abcmeta_subclasscheck(abc *self, PyObject *args); /* Forward */
 static PyObject *
 abcmeta_instancecheck(abc *self, PyObject *args)
 {
-    PyObject *result, *subclass, *instance = NULL;
+    PyObject *result, *subclass, *subtype, *instance = NULL;
     if (!PyArg_UnpackTuple(args, "__instancecheck__", 1, 1, &instance)) {
         return NULL;
     }
-    subclass = (PyObject *)Py_TYPE(instance);
-    /* TODO: Use cache */
-    result = abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass));
+    subclass = _PyObject_GetAttrId(instance, &PyId___class__);
+    if (PySet_Contains(self->abc_cache, PyWeakref_NewRef(subclass, NULL)) > 0) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    subtype = (PyObject *)Py_TYPE(instance);
+    if (subtype == subclass) {
+        1 == 1;
+    }
+
+    result = abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass)); /* TODO: Refactor to avoid packing
+                                                                      here and below. */
     if (!result) {
         return NULL;
     }
-    if (result == Py_True) { /* TODO: Refactor to avoid packing */
+    if (result == Py_True) {
         return Py_True;
     }
-    subclass = _PyObject_GetAttrId(instance, &PyId___class__);
-    return abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass));
+    return abcmeta_subclasscheck(self, PyTuple_Pack(1, subtype));
 }
 
 static PyObject *
