@@ -150,18 +150,13 @@ class CoroutineTests(BaseTest):
         self.assertEqual(data, 'spam')
 
     def test_debug_mode_manages_coroutine_origin_tracking(self):
-        def get_depth():
-            depth = sys.set_coroutine_origin_tracking_depth(0)
-            sys.set_coroutine_origin_tracking_depth(depth)
-            return depth
-
         async def start():
-            self.assertTrue(get_depth() > 0)
+            self.assertTrue(sys.get_coroutine_origin_tracking_depth() > 0)
 
+        self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
         self.loop.set_debug(True)
         self.loop.run_until_complete(start())
-
-        self.assertEqual(get_depth(), 0)
+        self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
 
     def test_types_coroutine(self):
         def gen():

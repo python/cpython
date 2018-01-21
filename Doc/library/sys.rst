@@ -675,6 +675,18 @@ always available.
       for details.)
 
 
+.. function:: get_coroutine_origin_tracking_depth()
+
+   Get the current coroutine origin tracking depth, as set by
+   func:`set_coroutine_origin_tracking_depth`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
+
 .. function:: get_coroutine_wrapper()
 
    Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
@@ -1228,8 +1240,6 @@ always available.
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,
    pass set *depth* to zero.
-
-   Returns the old value of *depth*.
 
    This setting is thread-specific.
 

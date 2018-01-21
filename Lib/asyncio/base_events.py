@@ -1539,8 +1539,9 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if enabled:
             self._coroutine_origin_tracking_saved_depth = (
-                sys.set_coroutine_origin_tracking_depth(
-                    constants.DEBUG_STACK_DEPTH))
+                sys.get_coroutine_origin_tracking_depth())
+            sys.set_coroutine_origin_tracking_depth(
+                constants.DEBUG_STACK_DEPTH)
         else:
             sys.set_coroutine_origin_tracking_depth(
                 self._coroutine_origin_tracking_saved_depth)

@@ -2050,22 +2050,28 @@ class OriginTrackingTest(unittest.TestCase):
         return (info.filename, info.lineno)
 
     def test_origin_tracking(self):
-        orig_depth = sys.set_coroutine_origin_tracking_depth(0)
+        orig_depth = sys.get_coroutine_origin_tracking_depth()
         try:
             async def corofn():
                 pass
 
+            sys.set_coroutine_origin_tracking_depth(0)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
+
             with contextlib.closing(corofn()) as coro:
                 self.assertIsNone(coro.cr_origin)
 
-            self.assertEqual(sys.set_coroutine_origin_tracking_depth(1), 0)
+            sys.set_coroutine_origin_tracking_depth(1)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 1)
 
             fname, lineno = self.here()
             with contextlib.closing(corofn()) as coro:
                 self.assertEqual(coro.cr_origin,
                                  [(fname, lineno + 1, "test_origin_tracking")])
 
-            self.assertEqual(sys.set_coroutine_origin_tracking_depth(2), 1)
+            sys.set_coroutine_origin_tracking_depth(2)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 2)
+
             def nested():
                 return (self.here(), corofn())
             fname, lineno = self.here()
@@ -2084,7 +2090,7 @@ class OriginTrackingTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 sys.set_coroutine_origin_tracking_depth(-1)
             # And trying leaves it unchanged
-            self.assertEqual(sys.set_coroutine_origin_tracking_depth(0), 1000)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 1000)
 
         finally:
             sys.set_coroutine_origin_tracking_depth(orig_depth)
@@ -2115,7 +2121,7 @@ class OriginTrackingTest(unittest.TestCase):
             self.assertIs(wlist[0].category, RuntimeWarning)
             self.assertEqual(msg, str(wlist[0].message))
 
-        orig_depth = sys.set_coroutine_origin_tracking_depth(0)
+        orig_depth = sys.get_coroutine_origin_tracking_depth()
         try:
             msg = check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
             check(1, "".join([
