@@ -141,7 +141,6 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (!value) {
                 if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                     Py_DECREF(key);
-                    Py_DECREF(value);
                     Py_DECREF(iter);
                     Py_DECREF(result);
                     Py_DECREF(abstracts);
@@ -149,7 +148,6 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 }
                 PyErr_Clear();
                 Py_DECREF(key);
-                Py_DECREF(value);
                 continue;
             }
             is_abstract = _PyObject_GetAttrId(value, &PyId___isabstractmethod__);
