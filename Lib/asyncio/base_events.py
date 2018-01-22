@@ -927,6 +927,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Return amount of sent bytes.
         """
+        if transport.is_closing():
+            raise RuntimeError("Transport is closing")
         mode = getattr(transport, '_sendfile_compatible',
                        constants._SendfileMode.UNSUPPORTED)
         if mode is constants._SendfileMode.UNSUPPORTED:

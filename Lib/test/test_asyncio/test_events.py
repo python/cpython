@@ -2216,6 +2216,15 @@ class SendfileMixin:
         self.assertEqual(srv_proto.nbytes, len(self.DATA)+len(BUF))
         self.assertEqual(self.sfile.tell(), len(self.DATA))
 
+    def test_sendfile_for_closing_transp(self):
+        srv_proto, cli_proto = self.prepare()
+        cli_proto.transport.close()
+        with self.assertRaisesRegex(RuntimeError, "is closing"):
+            self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, 0)
+        self.assertEqual(self.sfile.tell(), 0)
+
 
 if sys.platform == 'win32':
 
