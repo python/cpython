@@ -2564,7 +2564,7 @@ PyDict_Copy(PyObject *o)
     }
 
     if (PyDict_CheckExact(mp) && mp->ma_values == NULL &&
-            ((double)mp->ma_used / mp->ma_keys->dk_nentries) >= 0.8)
+            (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3))
     {
         /* Use fast-copy if:
 
@@ -2573,7 +2573,7 @@ PyDict_Copy(PyObject *o)
            (2) 'mp' is not a split-dict; and
 
            (3) if 'mp' is non-compact ('del' operation does not resize dicts),
-               do fast-copy only if it has at most 20% non-used keys.
+               do fast-copy only if it has at most 1/3 non-used keys.
 
            The last condition (3) is important to guard against a pathalogical
            case when a large dict is almost emptied with multiple del/pop

@@ -309,6 +309,19 @@ class DictTest(unittest.TestCase):
             d2 = d.copy()
             self.assertEqual(gc.is_tracked(d), gc.is_tracked(d2))
 
+    def test_copy_noncompact(self):
+        # Dicts don't compact themselves on del/pop operations.
+        # Copy will use a slow merging strategy that produces
+        # a compacted copy when roughly 33% of dict is a non-used
+        # keys-space (to optimize memory footprint).
+        # In this test we want to hit the slow/compacting
+        # branch of dict.copy() and make sure it works OK.
+        d = {k: k for k in range(1000)}
+        for k in range(950):
+            del d[k]
+        d2 = d.copy()
+        self.assertEqual(d2, d)
+
     def test_get(self):
         d = {}
         self.assertIs(d.get('c'), None)
