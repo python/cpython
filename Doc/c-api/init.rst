@@ -1091,7 +1091,7 @@ Python-level trace functions in previous versions.
    | :const:`PyTrace_C_RETURN`    | Function object being called.        |
    +------------------------------+--------------------------------------+
 
-   Any trace function registered using :c:func:`PyEval_SetTrace` will not recieve
+   Any trace function registered using :c:func:`PyEval_SetTrace` will not receive
    :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION`, :const:`PyTrace_C_RETURN`
    or :const:`PyTrace_LINE` as a value for the *what* parameter.
 
