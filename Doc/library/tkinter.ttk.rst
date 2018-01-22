@@ -435,7 +435,7 @@ This widget accepts the following specific options:
 +----------------------+------------------------------------------------------+
 | command              | Python callable.  Will be called with no arguments   |
 |                      | whenever either of the increment or decrement buttons|
-|                      |are pressed.                                          |
+|                      | are pressed.                                         |
 |                      |                                                      |
 +----------------------+------------------------------------------------------+
 
