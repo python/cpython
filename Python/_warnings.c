@@ -1191,11 +1191,10 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
         PyErr_WriteUnraisable(coro);
     }
     if (!warned) {
-        PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                         "coroutine '%.50S' was never awaited",
-                         ((PyCoroObject *)coro)->cr_qualname);
-        /* Maybe *that* got converted into an exception */
-        if (PyErr_Occurred()) {
+        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+                             "coroutine '%.50S' was never awaited",
+                             ((PyCoroObject *)coro)->cr_qualname) < 0)
+        {
             PyErr_WriteUnraisable(coro);
         }
     }
