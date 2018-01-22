@@ -173,7 +173,7 @@ class _SendfileProtocol(protocols.Protocol):
 
     def connection_made(self, transport):
         raise RuntimeError("Invalid state, "
-                           "connection should be established already.")
+                           "connection should have been established already.")
 
     def connection_lost(self, exc):
         if self._paused is not None:
