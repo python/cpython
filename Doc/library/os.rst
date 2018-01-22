@@ -1195,6 +1195,32 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
+.. function:: preadv(fd, buffers, offset, flags = None)
+
+   Combines the functionality of :func:`os.readv` and :func:`os.pread`. It
+   performs the same task as :func:`os.readv`, but adds a fourth argument,
+   offset, which specifies the file offset at which the input operation is
+   to be performed.
+
+   If the *flags* argument is provided it will invoke the *preadv2* system
+   call, which modifies the behavior on a per-call basis based on the value
+   of the *flags* argument. If this argument is ommited, the *preadv* system
+   call will be called instead.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+.. data:: RWF_HIPRI
+          RWF_NOWAIT
+
+   The above constants are available on Linux Kernel 4.11 and 4.6 (or newer)
+   respectively.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
+
+
 .. function:: tcgetpgrp(fd)
 
    Return the process group associated with the terminal given by *fd* (an open
