@@ -540,6 +540,22 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result((conn, address))
 
+    async def _sendfile_native(self, transp, file, offset, count):
+        del self._transports[transp._sock_fd]
+        resume_reading = transp.is_reading()
+        transp.pause_reading()
+        fut = transp._make_empty_waiter()
+        await fut
+        sock = transp._sock
+        try:
+            return await self.sock_sendfile(sock, file, offset, count,
+                                            fallback=False)
+        finally:
+            transp._reset_empty_waiter()
+            if resume_reading:
+                transp.resume_reading()
+            self._transports[transp._sock_fd] = transp
+
     def _process_events(self, event_list):
         for key, mask in event_list:
             fileobj, (reader, writer) = key.fileobj, key.data
@@ -695,12 +711,14 @@ class _SelectorTransport(transports._FlowControlMixin,
 class _SelectorSocketTransport(_SelectorTransport):
 
     _start_tls_compatible = True
+    _sendfile_compatible = constants._SendfileMode.NATIVE
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, extra, server)
         self._eof = False
         self._paused = False
+        self._empty_waiter = None
 
         # Disable the Nagle algorithm -- small writes will be
         # sent without waiting for the TCP ACK.  This generally
@@ -765,6 +783,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                             f'not {type(data).__name__!r}')
         if self._eof:
             raise RuntimeError('Cannot call write() after write_eof()')
+        if self._empty_waiter is not None:
+            raise RuntimeError('Cannot call write() when loop.sendfile() '
+                               'is not finished')
         if not data:
             return
 
@@ -798,6 +819,8 @@ class _SelectorSocketTransport(_SelectorTransport):
         assert self._buffer, 'Data should not be empty'
 
         if self._conn_lost:
+            if self._empty_waiter is not None:
+                self._empty_waiter.set_result(True)
             return
         try:
             n = self._sock.send(self._buffer)
@@ -807,12 +830,16 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._loop._remove_writer(self._sock_fd)
             self._buffer.clear()
             self._fatal_error(exc, 'Fatal write error on socket transport')
+            if self._empty_waiter is not None:
+                self._empty_waiter.set_exception(exc)
         else:
             if n:
                 del self._buffer[:n]
             self._maybe_resume_protocol()  # May append to buffer.
             if not self._buffer:
                 self._loop._remove_writer(self._sock_fd)
+                if self._empty_waiter is not None:
+                    self._empty_waiter.set_result(False)
                 if self._closing:
                     self._call_connection_lost(None)
                 elif self._eof:
@@ -827,6 +854,17 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def can_write_eof(self):
         return True
+
+    def _make_empty_waiter(self):
+        if self._empty_waiter is not None:
+            raise RuntimeError("Empty waiter is already set")
+        self._empty_waiter = self._loop.create_future()
+        if not self._buffer:
+            self._empty_waiter.set_result(None)
+        return self._empty_waiter
+
+    def _reset_empty_waiter(self):
+        self._empty_waiter = None
 
 
 class _SelectorDatagramTransport(_SelectorTransport):

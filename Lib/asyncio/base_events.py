@@ -38,6 +38,7 @@ from . import constants
 from . import coroutines
 from . import events
 from . import futures
+from . import protocols
 from . import sslproto
 from . import tasks
 from .log import logger
@@ -153,6 +154,60 @@ def _run_until_complete_cb(fut):
             # stop it.
             return
     futures._get_loop(fut).stop()
+
+
+
+class _SendfileProtocol(protocols.Protocol):
+    def __init__(self, transp):
+        # transport should be _FlowControlMixin instance
+        self._transport = transp
+        self._proto = transp.get_protocol()
+        self._resume_reading = transp.is_reading()
+        self._write_paused = transp._protocol_paused
+        transp.pause_reading()
+        transp.set_protocol(self)
+        if self._write_paused:
+            self._paused = self._transport._loop.create_future()
+        else:
+            self._paused = None
+
+    def connection_made(self, transport):
+        raise RuntimeError("Broken state, "
+                           "connection should be established already.")
+
+    def connection_lost(self, exc):
+        if self._paused is not None:
+            if exc is None:
+                self._paused.set_result(True)
+            else:
+                self._paused.set_exception(exc)
+        self._proto.connection_lost(exc)
+
+    def pause_writing(self):
+        if self._paused is not None:
+            return
+        self._paused = self._transport._loop.create_future()
+
+    def resume_writing(self):
+        if self._paused is None:
+            return
+        self._paused.set_result(False)
+        self._paused = None
+
+    def data_received(self, data):
+        raise RuntimeError("Broken state, reading should be paused")
+
+    def eof_received(self):
+        raise RuntimeError("Broken state, reading should be paused")
+
+    async def restore(self):
+        self._transport.set_protocol(self._proto)
+        if self._resume_reading:
+            self._transport.resume_reading()
+        if self._paused is not None:
+            await self._paused
+        if self._write_paused:
+            self._proto.resume_writing()
 
 
 class Server(events.AbstractServer):
@@ -865,6 +920,62 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise
 
         return transport, protocol
+
+    async def sendfile(self, transport, file, offset=0, count=None,
+                       *, fallback=True):
+        """Send a file through a transport.
+
+        Return amount of sent bytes.
+        """
+        mode = getattr(transport, '_sendfile_compatible',
+                       constants._SendfileMode.UNSUPPORTED)
+        if mode is constants._SendfileMode.UNSUPPORTED:
+            raise RuntimeError(
+                f"sendfile is not supported for transport {transport!r}")
+        if mode is constants._SendfileMode.NATIVE:
+            try:
+                await self._sendfile_native(transport, file,
+                                            offset, count)
+                return
+            except events.SendfileNotAvailableError as exc:
+                if not fallback:
+                    raise
+        # the mode is FALLBACK or fallback is True
+        await self._sendfile_fallback(transport, file,
+                                      offset, count)
+
+    async def _sendfile_native(self, transp, file, offset, count):
+        raise events.SendfileNotAvailableError(
+            "sendfile syscall is not supported")
+
+    async def _sendfile_fallback(self, transp, file, offset, count):
+        if offset:
+            file.seek(offset)
+        blocksize = min(count, 16384) if count else 16384
+        buf = bytearray(blocksize)
+        total_sent = 0
+        proto = _SendfileProtocol(transp)
+        try:
+            while True:
+                if count:
+                    blocksize = min(count - total_sent, blocksize)
+                    if blocksize <= 0:
+                        break
+                fut = proto._paused
+                if fut is not None:
+                    if await fut:
+                        # eof received
+                        return
+                view = memoryview(buf)[:blocksize]
+                read = file.readinto(view)
+                if not read:
+                    break  # EOF
+                transp.write(view)
+                total_sent += read
+        finally:
+            if total_sent > 0 and hasattr(file, 'seek'):
+                file.seek(offset + total_sent)
+            await proto.restore()
 
     async def start_tls(self, transport, protocol, sslcontext, *,
                         server_side=False,

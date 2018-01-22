@@ -1788,7 +1788,7 @@ class RunningLoopTests(unittest.TestCase):
             outer_loop.close()
 
 
-class BaseLoopSendfileTests(test_utils.TestCase):
+class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
 

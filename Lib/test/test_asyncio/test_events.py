@@ -2090,14 +2090,144 @@ class SubprocessTestsMixin:
             self.loop.run_until_complete(connect(shell=False))
 
 
+class SendfileMixin:
+    # Note: sendfile via SSL transport is equal to sendfile fallback
+
+    LARGE_DATA = b"12345abcde" * 16 * 1024 * 1024  # 16 MiB
+    DATA = memoryview(LARGE_DATA)[:160 * 1024]  # 160 Kib
+
+    @classmethod
+    def setUpClass(cls):
+        with open(support.TESTFN + '.long', 'wb') as fp:
+            fp.write(cls.LARGE_DATA)
+        with open(support.TESTFN + '.short', 'wb') as fp:
+            fp.write(cls.DATA)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(support.TESTFN + '.long')
+        support.unlink(support.TESTFN + '.short')
+        super().tearDownClass()
+
+    def setUp(self):
+        self.sfile = open(support.TESTFN + '.short', 'rb')
+        self.addCleanup(self.sfile.close)
+        self.lfile = open(support.TESTFN + '.long', 'rb')
+        self.addCleanup(self.lfile.close)
+        super().setUp()
+
+    def run_loop(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def prepare(self, is_ssl=False):
+        port = support.find_unused_port()
+        srv_proto = MyBaseProto(loop=self.loop)
+        if is_ssl:
+            srv_ctx = test_utils.simple_server_sslcontext()
+            cli_ctx = test_utils.simple_client_sslcontext()
+        else:
+            srv_ctx = None
+            cli_ctx = None
+        server = self.run_loop(self.loop.create_server(
+            lambda: srv_proto, support.HOST, port, ssl=srv_ctx))
+
+        cli_proto = MyBaseProto()
+        tr, pr = self.run_loop(self.loop.create_connection(
+            lambda: cli_proto, support.HOST, port, ssl=cli_ctx))
+
+        def cleanup():
+            srv_proto.transport.close()
+            cli_proto.transport.close()
+
+            server.close()
+            self.run_loop(server.wait_closed())
+
+        self.addCleanup(cleanup)
+        return srv_proto, cli_proto
+
+    def test_sendfile_not_supported(self):
+        tr, pr = self.run_loop(
+            self.loop.create_datagram_endpoint(
+                lambda: MyDatagramProto(loop=self.loop),
+                family=socket.AF_INET))
+        try:
+            with self.assertRaisesRegex(RuntimeError, "not supported"):
+                self.run_loop(
+                    self.loop.sendfile(tr, self.sfile))
+            self.assertEqual(0, self.sfile.tell())
+        finally:
+            # don't use self.addCleanup because it produces resource warning
+            tr.close()
+
+    def test_sendfile(self):
+        srv_proto, cli_proto = self.prepare()
+        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(self.sfile.tell(), len(self.DATA))
+
+    def test_sendfile_ssl(self):
+        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        self.assertFalse(cli_proto.transport._protocol_paused)
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(self.sfile.tell(), len(self.DATA))
+
+    def test_sendfile_large(self):
+        srv_proto, cli_proto = self.prepare()
+        self.run_loop(self.loop.sendfile(cli_proto.transport, self.lfile))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, len(self.LARGE_DATA))
+        self.assertEqual(self.lfile.tell(), len(self.LARGE_DATA))
+
+    def test_sendfile_ssl_large(self):
+        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        self.run_loop(self.loop.sendfile(cli_proto.transport, self.lfile))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, len(self.LARGE_DATA))
+        self.assertEqual(self.lfile.tell(), len(self.LARGE_DATA))
+
+    def test_sendfile_ssl_already_paused(self):
+        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(self.sfile.tell(), len(self.DATA))
+
+    def test_sendfile_ssl_already_paused(self):
+        # 10 MB is enough to not fit into single sock.send() call
+        BUF = b'1234567890' * 1024 * 1024
+        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        cli_proto.transport.set_write_buffer_limits(2, 1)
+        cli_proto.transport.write(BUF)
+        self.assertTrue(cli_proto.transport._protocol_paused)
+        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        # writing is always restored by fallback if was paused
+        self.assertFalse(cli_proto.transport._protocol_paused)
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, len(self.DATA)+len(BUF))
+        self.assertEqual(self.sfile.tell(), len(self.DATA))
+
+
 if sys.platform == 'win32':
 
-    class SelectEventLoopTests(EventLoopTestsMixin, test_utils.TestCase):
+    class SelectEventLoopTests(EventLoopTestsMixin,
+                               SendfileMixin,
+                               test_utils.TestCase):
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop()
 
     class ProactorEventLoopTests(EventLoopTestsMixin,
+                                 SendfileMixin,
                                  SubprocessTestsMixin,
                                  test_utils.TestCase):
 
@@ -2125,7 +2255,7 @@ if sys.platform == 'win32':
 else:
     import selectors
 
-    class UnixEventLoopTestsMixin(EventLoopTestsMixin):
+    class UnixEventLoopTestsMixin(EventLoopTestsMixin, SendfileMixin):
         def setUp(self):
             super().setUp()
             watcher = asyncio.SafeChildWatcher()
@@ -2556,7 +2686,9 @@ class AbstractEventLoopTests(unittest.TestCase):
             with self.assertRaises(NotImplementedError):
                 await loop.sock_accept(f)
             with self.assertRaises(NotImplementedError):
-                await loop.sock_sendfile(f, mock.Mock())
+                await loop.sock_sendfile(f, f)
+            with self.assertRaises(NotImplementedError):
+                await loop.sendfile(f, f)
             with self.assertRaises(NotImplementedError):
                 await loop.connect_read_pipe(f, mock.sentinel.pipe)
             with self.assertRaises(NotImplementedError):
