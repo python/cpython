@@ -2598,9 +2598,6 @@ class RecvmsgGenericTests(SendrecvmsgBase):
     def _testRecvmsgShorter(self):
         self.sendToServer(MSG)
 
-    # FreeBSD < 8 doesn't always set the MSG_TRUNC flag when a truncated
-    # datagram is received (issue #13001).
-    @support.requires_freebsd_version(8)
     def testRecvmsgTrunc(self):
         # Receive part of message, check for truncation indicators.
         msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
@@ -2610,7 +2607,6 @@ class RecvmsgGenericTests(SendrecvmsgBase):
         self.assertEqual(ancdata, [])
         self.checkFlags(flags, eor=False)
 
-    @support.requires_freebsd_version(8)
     def _testRecvmsgTrunc(self):
         self.sendToServer(MSG)
 

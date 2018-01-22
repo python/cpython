@@ -1471,8 +1471,6 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     @unittest.skipIf(sys.platform == 'darwin', 'test hangs on MacOS')
-    # Issue #20495: The test hangs on FreeBSD 7.2 but pass on FreeBSD 9
-    @support.requires_freebsd_version(8)
     def test_read_pty_output(self):
         proto = MyReadPipeProto(loop=self.loop)
 

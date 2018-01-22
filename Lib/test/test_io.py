@@ -4107,8 +4107,6 @@ class SignalsTest(unittest.TestCase):
     def test_interrupted_write_buffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb")
 
-    # Issue #22331: The test hangs on FreeBSD 7.2
-    @support.requires_freebsd_version(8)
     def test_interrupted_write_text(self):
         self.check_interrupted_write("xy", b"xy", mode="w", encoding="ascii")
 

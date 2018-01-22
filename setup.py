@@ -1571,12 +1571,6 @@ class PyBuildExt(build_ext):
             macros = dict()
             libraries = []
 
-        elif host_platform in ('freebsd4', 'freebsd5', 'freebsd6', 'freebsd7', 'freebsd8'):
-            # FreeBSD's P1003.1b semaphore support is very experimental
-            # and has many known problems. (as of June 2008)
-            macros = dict()
-            libraries = []
-
         elif host_platform.startswith('openbsd'):
             macros = dict()
             libraries = []

@@ -773,14 +773,7 @@ class TestSMTPServer(smtpd.SMTPServer):
                               :func:`select` or :func:`poll` call by
                               :func:`asyncore.loop`.
         """
-        try:
-            asyncore.loop(poll_interval, map=self._map)
-        except OSError:
-            # On FreeBSD 8, closing the server repeatably
-            # raises this error. We swallow it if the
-            # server has been closed.
-            if self.connected or self.accepting:
-                raise
+        asyncore.loop(poll_interval, map=self._map)
 
     def stop(self, timeout=None):
         """
