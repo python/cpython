@@ -1043,7 +1043,7 @@ class CodecCallbackTest(unittest.TestCase):
             # unicode-internal has been deprecated
             for (encoding, data) in baddata:
                 with self.assertRaises(TypeError):
-                    data.decode(encoding, "test.replacing")
+                    data.decode(encoding, "test.mutating")
 
     def test_fake_error_class(self):
         handlers = [
