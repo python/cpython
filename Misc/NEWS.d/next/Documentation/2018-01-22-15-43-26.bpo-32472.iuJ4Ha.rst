@@ -1,0 +1,2 @@
+Mention __await__ in abstract methods of Coroutine in collections.abc
+documentation
