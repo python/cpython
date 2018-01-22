@@ -617,14 +617,14 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
 
 
 static PyObject *
-clone_dict(PyDictObject *orig)
+clone_combined_dict(PyDictObject *orig)
 {
     assert(PyDict_CheckExact(orig));
     assert(orig->ma_values == NULL);
     assert(orig->ma_keys->dk_refcnt == 1);
 
     Py_ssize_t keys_size = _PyDict_KeysSize(orig->ma_keys);
-    PyDictKeysObject *keys = PyObject_MALLOC(keys_size);
+    PyDictKeysObject *keys = PyObject_Malloc(keys_size);
     if (keys == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -2563,9 +2563,8 @@ PyDict_Copy(PyObject *o)
         return (PyObject *)split_copy;
     }
 
-    if (PyDict_CheckExact(mp) &&
-            mp->ma_values == NULL && mp->ma_keys->dk_refcnt == 1 &&
-            mp->ma_used >= mp->ma_keys->dk_nentries - 3)
+    if (PyDict_CheckExact(mp) && mp->ma_values == NULL &&
+            ((double)mp->ma_used / mp->ma_keys->dk_nentries) >= 0.8)
     {
         /* Use fast-copy if:
 
@@ -2574,14 +2573,14 @@ PyDict_Copy(PyObject *o)
            (2) 'mp' is not a split-dict; and
 
            (3) if 'mp' is non-compact ('del' operation does not resize dicts),
-               do fast-copy only if it has at most 3 non-used keys.
+               do fast-copy only if it has at most 20% non-used keys.
 
            The last condition (3) is important to guard against a pathalogical
            case when a large dict is almost emptied with multiple del/pop
            operations and copied after that.  In cases like this, we defer to
            PyDict_Merge, which produces a compacted copy.
         */
-        return clone_dict(mp);
+        return clone_combined_dict(mp);
     }
 
     copy = PyDict_New();
