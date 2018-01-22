@@ -162,17 +162,17 @@ class _SendfileProtocol(protocols.Protocol):
         # transport should be _FlowControlMixin instance
         self._transport = transp
         self._proto = transp.get_protocol()
-        self._resume_reading = transp.is_reading()
-        self._write_paused = transp._protocol_paused
+        self._should_resume_reading = transp.is_reading()
+        self._should_resume_writing = transp._protocol_paused
         transp.pause_reading()
         transp.set_protocol(self)
-        if self._write_paused:
+        if self._should_resume_writing:
             self._paused = self._transport._loop.create_future()
         else:
             self._paused = None
 
     def connection_made(self, transport):
-        raise RuntimeError("Broken state, "
+        raise RuntimeError("Invalid state, "
                            "connection should be established already.")
 
     def connection_lost(self, exc):
@@ -195,18 +195,18 @@ class _SendfileProtocol(protocols.Protocol):
         self._paused = None
 
     def data_received(self, data):
-        raise RuntimeError("Broken state, reading should be paused")
+        raise RuntimeError("Invalid state, reading should be paused")
 
     def eof_received(self):
-        raise RuntimeError("Broken state, reading should be paused")
+        raise RuntimeError("Invalid state, reading should be paused")
 
     async def restore(self):
         self._transport.set_protocol(self._proto)
-        if self._resume_reading:
+        if self._should_resume_reading:
             self._transport.resume_reading()
         if self._paused is not None:
             await self._paused
-        if self._write_paused:
+        if self._should_resume_writing:
             self._proto.resume_writing()
 
 
@@ -932,7 +932,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if mode is constants._SendfileMode.UNSUPPORTED:
             raise RuntimeError(
                 f"sendfile is not supported for transport {transport!r}")
-        if mode is constants._SendfileMode.NATIVE:
+        if mode is constants._SendfileMode.TRY_NATIVE:
             try:
                 await self._sendfile_native(transport, file,
                                             offset, count)
@@ -941,6 +941,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if not fallback:
                     raise
         # the mode is FALLBACK or fallback is True
+        assert (mode is constants._SendfileMode.FALLBACK or mode is
+                constants._SendfileMode.TRY_NATIVE and fallback), mode
         await self._sendfile_fallback(transport, file,
                                       offset, count)
 

@@ -18,5 +18,5 @@ SSL_HANDSHAKE_TIMEOUT = 10.0
 # base_events and sslproto
 class _SendfileMode(enum.Enum):
     UNSUPPORTED = enum.auto()
-    NATIVE = enum.auto()
+    TRY_NATIVE = enum.auto()
     FALLBACK = enum.auto()

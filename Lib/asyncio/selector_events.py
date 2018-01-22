@@ -711,7 +711,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 class _SelectorSocketTransport(_SelectorTransport):
 
     _start_tls_compatible = True
-    _sendfile_compatible = constants._SendfileMode.NATIVE
+    _sendfile_compatible = constants._SendfileMode.TRY_NATIVE
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
