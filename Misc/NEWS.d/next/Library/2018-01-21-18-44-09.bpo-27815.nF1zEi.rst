@@ -6,4 +6,4 @@ that by default a TCP shutdown, which may not be secure, raises
 shutdown from a truncation attack.  There is a new
 :attr:`SSLContext.suppress_ragged_eofs
 <ssl.SSLContext.suppress_ragged_eofs>` attribute, which can be used to re-
-enable the setting via a context object.
+enable the setting via a context object.  Patch by Martin Panter.
