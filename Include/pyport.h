@@ -784,8 +784,13 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-#include <android/api-level.h>
+/* The Android langinfo.h header is not used. */
+#undef HAVE_LANGINFO_H
+#undef CODESET
 #endif
+
+/* Maximum value of the Windows DWORD type */
+#define PY_DWORD_MAX 4294967295U
 
 /* This macro used to tell whether Python was built with multithreading
  * enabled.  Now multithreading is always enabled, but keep the macro

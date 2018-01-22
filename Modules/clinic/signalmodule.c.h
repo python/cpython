@@ -80,7 +80,7 @@ static PyObject *
 signal_signal_impl(PyObject *module, int signalnum, PyObject *handler);
 
 static PyObject *
-signal_signal(PyObject *module, PyObject **args, Py_ssize_t nargs)
+signal_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int signalnum;
@@ -147,7 +147,7 @@ static PyObject *
 signal_siginterrupt_impl(PyObject *module, int signalnum, int flag);
 
 static PyObject *
-signal_siginterrupt(PyObject *module, PyObject **args, Py_ssize_t nargs)
+signal_siginterrupt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int signalnum;
@@ -186,7 +186,7 @@ signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
                       PyObject *interval);
 
 static PyObject *
-signal_setitimer(PyObject *module, PyObject **args, Py_ssize_t nargs)
+signal_setitimer(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int which;
@@ -251,7 +251,7 @@ static PyObject *
 signal_pthread_sigmask_impl(PyObject *module, int how, PyObject *mask);
 
 static PyObject *
-signal_pthread_sigmask(PyObject *module, PyObject **args, Py_ssize_t nargs)
+signal_pthread_sigmask(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int how;
@@ -344,7 +344,7 @@ signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
                          PyObject *timeout_obj);
 
 static PyObject *
-signal_sigtimedwait(PyObject *module, PyObject **args, Py_ssize_t nargs)
+signal_sigtimedwait(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sigset;
@@ -379,7 +379,7 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
                          int signalnum);
 
 static PyObject *
-signal_pthread_kill(PyObject *module, PyObject **args, Py_ssize_t nargs)
+signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     unsigned long thread_id;
@@ -440,4 +440,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=a003d3fea9a33daa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36132f4189381fe0 input=a9049054013a1b77]*/

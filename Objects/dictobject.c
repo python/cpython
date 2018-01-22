@@ -1032,7 +1032,7 @@ Fail:
 }
 
 /*
-Internal routine used by dictresize() to buid a hashtable of entries.
+Internal routine used by dictresize() to build a hashtable of entries.
 */
 static void
 build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep, Py_ssize_t n)
@@ -2183,16 +2183,25 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
     PyObject *arg = NULL;
     int result = 0;
 
-    if (!PyArg_UnpackTuple(args, methname, 0, 1, &arg))
+    if (!PyArg_UnpackTuple(args, methname, 0, 1, &arg)) {
         result = -1;
-
+    }
     else if (arg != NULL) {
         _Py_IDENTIFIER(keys);
-        if (_PyObject_HasAttrId(arg, &PyId_keys))
+        PyObject *func = _PyObject_GetAttrId(arg, &PyId_keys);
+        if (func != NULL) {
+            Py_DECREF(func);
             result = PyDict_Merge(self, arg, 1);
-        else
+        }
+        else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
             result = PyDict_MergeFromSeq2(self, arg, 1);
+        }
+        else {
+            result = -1;
+        }
     }
+
     if (result == 0 && kwds != NULL) {
         if (PyArg_ValidateKeywordArguments(kwds))
             result = PyDict_Merge(self, kwds, 1);

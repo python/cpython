@@ -39,21 +39,20 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
     }
 
     Py_INCREF(connection);
-    self->connection = connection;
-    self->statement = NULL;
-    self->next_row = NULL;
-    self->in_weakreflist = NULL;
+    Py_XSETREF(self->connection, connection);
+    Py_CLEAR(self->statement);
+    Py_CLEAR(self->next_row);
 
-    self->row_cast_map = PyList_New(0);
+    Py_XSETREF(self->row_cast_map, PyList_New(0));
     if (!self->row_cast_map) {
         return -1;
     }
 
     Py_INCREF(Py_None);
-    self->description = Py_None;
+    Py_XSETREF(self->description, Py_None);
 
     Py_INCREF(Py_None);
-    self->lastrowid= Py_None;
+    Py_XSETREF(self->lastrowid, Py_None);
 
     self->arraysize = 1;
     self->closed = 0;
@@ -62,7 +61,7 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
     self->rowcount = -1L;
 
     Py_INCREF(Py_None);
-    self->row_factory = Py_None;
+    Py_XSETREF(self->row_factory, Py_None);
 
     if (!pysqlite_check_thread(self->connection)) {
         return -1;
@@ -890,6 +889,11 @@ PyObject* pysqlite_noop(pysqlite_Connection* self, PyObject* args)
 
 PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
 {
+    if (!self->connection) {
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Base Cursor.__init__ not called.");
+        return NULL;
+    }
     if (!pysqlite_check_thread(self->connection) || !pysqlite_check_connection(self->connection)) {
         return NULL;
     }

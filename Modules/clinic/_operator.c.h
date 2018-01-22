@@ -43,7 +43,7 @@ static PyObject *
 _operator_add_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_add(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -73,7 +73,7 @@ static PyObject *
 _operator_sub_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_sub(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_sub(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -103,7 +103,7 @@ static PyObject *
 _operator_mul_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_mul(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -133,7 +133,7 @@ static PyObject *
 _operator_matmul_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_matmul(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_matmul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -163,7 +163,7 @@ static PyObject *
 _operator_floordiv_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_floordiv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_floordiv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -193,7 +193,7 @@ static PyObject *
 _operator_truediv_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_truediv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_truediv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -223,7 +223,7 @@ static PyObject *
 _operator_mod_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_mod(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_mod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -298,7 +298,7 @@ static PyObject *
 _operator_lshift_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_lshift(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_lshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -328,7 +328,7 @@ static PyObject *
 _operator_rshift_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_rshift(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_rshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -386,7 +386,7 @@ static PyObject *
 _operator_and__impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_and_(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_and_(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -416,7 +416,7 @@ static PyObject *
 _operator_xor_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_xor(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_xor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -446,7 +446,7 @@ static PyObject *
 _operator_or__impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_or_(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_or_(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -476,7 +476,7 @@ static PyObject *
 _operator_iadd_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_iadd(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_iadd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -506,7 +506,7 @@ static PyObject *
 _operator_isub_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_isub(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_isub(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -536,7 +536,7 @@ static PyObject *
 _operator_imul_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_imul(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_imul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -566,7 +566,7 @@ static PyObject *
 _operator_imatmul_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_imatmul(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_imatmul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -596,7 +596,7 @@ static PyObject *
 _operator_ifloordiv_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_ifloordiv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_ifloordiv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -626,7 +626,7 @@ static PyObject *
 _operator_itruediv_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_itruediv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_itruediv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -656,7 +656,7 @@ static PyObject *
 _operator_imod_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_imod(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_imod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -686,7 +686,7 @@ static PyObject *
 _operator_ilshift_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_ilshift(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_ilshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -716,7 +716,7 @@ static PyObject *
 _operator_irshift_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_irshift(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_irshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -746,7 +746,7 @@ static PyObject *
 _operator_iand_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_iand(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_iand(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -776,7 +776,7 @@ static PyObject *
 _operator_ixor_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_ixor(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_ixor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -806,7 +806,7 @@ static PyObject *
 _operator_ior_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_ior(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_ior(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -836,7 +836,7 @@ static PyObject *
 _operator_concat_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_concat(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_concat(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -866,7 +866,7 @@ static PyObject *
 _operator_iconcat_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_iconcat(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_iconcat(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -896,7 +896,7 @@ static int
 _operator_contains_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_contains(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_contains(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -931,7 +931,7 @@ static Py_ssize_t
 _operator_indexOf_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_indexOf(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_indexOf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -966,7 +966,7 @@ static Py_ssize_t
 _operator_countOf_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_countOf(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_countOf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1001,7 +1001,7 @@ static PyObject *
 _operator_getitem_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_getitem(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_getitem(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1032,7 +1032,7 @@ _operator_setitem_impl(PyObject *module, PyObject *a, PyObject *b,
                        PyObject *c);
 
 static PyObject *
-_operator_setitem(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_setitem(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1063,7 +1063,7 @@ static PyObject *
 _operator_delitem_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_delitem(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_delitem(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1093,7 +1093,7 @@ static PyObject *
 _operator_eq_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_eq(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_eq(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1123,7 +1123,7 @@ static PyObject *
 _operator_ne_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_ne(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_ne(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1153,7 +1153,7 @@ static PyObject *
 _operator_lt_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_lt(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_lt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1183,7 +1183,7 @@ static PyObject *
 _operator_le_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_le(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_le(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1213,7 +1213,7 @@ static PyObject *
 _operator_gt_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_gt(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_gt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1243,7 +1243,7 @@ static PyObject *
 _operator_ge_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_ge(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_ge(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1273,7 +1273,7 @@ static PyObject *
 _operator_pow_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_pow(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1303,7 +1303,7 @@ static PyObject *
 _operator_ipow_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_ipow(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_ipow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1342,7 +1342,7 @@ static PyObject *
 _operator_is__impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_is_(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_is_(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1372,7 +1372,7 @@ static PyObject *
 _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator_is_not(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_is_not(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1409,7 +1409,7 @@ _operator_length_hint_impl(PyObject *module, PyObject *obj,
                            Py_ssize_t default_value);
 
 static PyObject *
-_operator_length_hint(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator_length_hint(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -1453,7 +1453,7 @@ static PyObject *
 _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-_operator__compare_digest(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -1469,4 +1469,4 @@ _operator__compare_digest(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7c42956af269cb21 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d840f7ea76af2372 input=a9049054013a1b77]*/

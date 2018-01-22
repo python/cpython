@@ -64,6 +64,13 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/rand.h"
 #include "openssl/bio.h"
 
+/* Set HAVE_X509_VERIFY_PARAM_SET1_HOST for non-autoconf builds */
+#ifndef HAVE_X509_VERIFY_PARAM_SET1_HOST
+#  if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER > 0x1000200fL
+#    define HAVE_X509_VERIFY_PARAM_SET1_HOST
+#  endif
+#endif
+
 /* SSL error object */
 static PyObject *PySSLErrorObject;
 static PyObject *PySSLCertVerificationErrorObject;
@@ -2798,7 +2805,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
     SSL_CTX_set_options(self->ctx, options);
 
-    /* A bare minimum cipher list without completly broken cipher suites.
+    /* A bare minimum cipher list without completely broken cipher suites.
      * It's far from perfect but gives users a better head start. */
     if (proto_version != PY_SSL_VERSION_SSL2) {
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL:!MD5");

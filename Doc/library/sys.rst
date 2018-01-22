@@ -313,6 +313,9 @@ always available.
       has caught :exc:`SystemExit` (such as an error flushing buffered data
       in the standard streams), the exit status is changed to 120.
 
+   .. versionchanged:: 3.7
+      Added ``utf8_mode`` attribute for the new :option:`-X` ``utf8`` flag.
+
 
 .. data:: flags
 
@@ -334,6 +337,8 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
+   :const:`dev_mode`             :option:`-X` ``dev``
+   :const:`utf8_mode`            :option:`-X` ``utf8``
    ============================= =============================
 
    .. versionchanged:: 3.2
@@ -344,6 +349,10 @@ always available.
 
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
+
+   .. versionchanged:: 3.7
+      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
+      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
 
 
 .. data:: float_info
@@ -488,6 +497,8 @@ always available.
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
+   * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
+
    * On Mac OS X, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the locale encoding.
@@ -501,6 +512,10 @@ always available.
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
       and :func:`_enablelegacywindowsfsencoding` for more information.
+
+   .. versionchanged:: 3.7
+      Return 'utf-8' in the UTF-8 mode.
+
 
 .. function:: getfilesystemencodeerrors()
 
@@ -660,6 +675,18 @@ always available.
       for details.)
 
 
+.. function:: get_coroutine_origin_tracking_depth()
+
+   Get the current coroutine origin tracking depth, as set by
+   func:`set_coroutine_origin_tracking_depth`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
+
 .. function:: get_coroutine_wrapper()
 
    Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
@@ -670,6 +697,10 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
+
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
 
 
 .. data:: hash_info
@@ -1197,6 +1228,26 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)
 
+.. function:: set_coroutine_origin_tracking_depth(depth)
+
+   Allows enabling or disabling coroutine origin tracking. When
+   enabled, the ``cr_origin`` attribute on coroutine objects will
+   contain a tuple of (filename, line number, function name) tuples
+   describing the traceback where the coroutine object was created,
+   with the most recent call first. When disabled, ``cr_origin`` will
+   be None.
+
+   To enable, pass a *depth* value greater than zero; this sets the
+   number of frames whose information will be captured. To disable,
+   pass set *depth* to zero.
+
+   This setting is thread-specific.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
 
 .. function:: set_coroutine_wrapper(wrapper)
 
@@ -1236,6 +1287,10 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
+
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
 
 .. function:: _enablelegacywindowsfsencoding()
 
@@ -1336,7 +1391,7 @@ always available.
    |                  |  * ``None`` if this information is unknown              |
    +------------------+---------------------------------------------------------+
    | :const:`version` | Name and version of the thread library. It is a string, |
-   |                  | or ``None`` if these informations are unknown.          |
+   |                  | or ``None`` if this information is unknown.             |
    +------------------+---------------------------------------------------------+
 
    .. versionadded:: 3.3

@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "internal/import.h"
 #include "internal/pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
@@ -321,6 +322,12 @@ get_module_info(ZipImporter *self, PyObject *fullname)
     PyObject *subname;
     PyObject *path, *fullpath, *item;
     struct st_zip_searchorder *zso;
+
+    if (self->prefix == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "zipimporter.__init__() wasn't called");
+        return MI_ERROR;
+    }
 
     subname = get_subname(fullname);
     if (subname == NULL)
@@ -651,6 +658,12 @@ zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *path)
     PyObject *key;
     PyObject *toc_entry;
     Py_ssize_t path_start, path_len, len;
+
+    if (self->archive == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "zipimporter.__init__() wasn't called");
+        return NULL;
+    }
 
 #ifdef ALTSEP
     path = _PyObject_CallMethodId((PyObject *)&PyUnicode_Type, &PyId_replace,
@@ -1293,7 +1306,7 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
     unsigned char *buf = (unsigned char *)PyBytes_AsString(data);
     Py_ssize_t size = PyBytes_Size(data);
 
-    if (size < 12) {
+    if (size < 16) {
         PyErr_SetString(ZipImportError,
                         "bad pyc data");
         return NULL;
@@ -1307,7 +1320,16 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
         Py_RETURN_NONE;  /* signal caller to try alternative */
     }
 
-    if (mtime != 0 && !eq_mtime(get_uint32(buf + 4), mtime)) {
+    uint32_t flags = get_uint32(buf + 4);
+    if (flags != 0) {
+        // Hash-based pyc. We currently refuse to handle checked hash-based
+        // pycs. We could validate hash-based pycs against the source, but it
+        // seems likely that most people putting hash-based pycs in a zipfile
+        // will use unchecked ones.
+        if (strcmp(_Py_CheckHashBasedPycsMode, "never") &&
+            (flags != 0x1 || !strcmp(_Py_CheckHashBasedPycsMode, "always")))
+            Py_RETURN_NONE;
+    } else if ((mtime != 0 && !eq_mtime(get_uint32(buf + 8), mtime))) {
         if (Py_VerboseFlag) {
             PySys_FormatStderr("# %R has bad mtime\n",
                                pathname);
@@ -1317,7 +1339,7 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
 
     /* XXX the pyc's size field is ignored; timestamp collisions are probably
        unimportant with zip files. */
-    code = PyMarshal_ReadObjectFromString((char *)buf + 12, size - 12);
+    code = PyMarshal_ReadObjectFromString((char *)buf + 16, size - 16);
     if (code == NULL) {
         return NULL;
     }
@@ -1475,6 +1497,12 @@ get_module_code(ZipImporter *self, PyObject *fullname,
     PyObject *code = NULL, *toc_entry, *subname;
     PyObject *path, *fullpath = NULL;
     struct st_zip_searchorder *zso;
+
+    if (self->prefix == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "zipimporter.__init__() wasn't called");
+        return NULL;
+    }
 
     subname = get_subname(fullname);
     if (subname == NULL)
