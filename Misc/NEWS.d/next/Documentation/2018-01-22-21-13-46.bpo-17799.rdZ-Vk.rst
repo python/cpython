@@ -1,0 +1,2 @@
+Explain real behaviour of sys.settrace regarding C function object calls.
+Patch by Pablo Galindo Salgado.
