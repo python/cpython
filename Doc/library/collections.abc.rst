@@ -90,7 +90,8 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`ValuesView`        :class:`MappingView`,                          ``__contains__``, ``__iter__``
                            :class:`Collection`
 :class:`Awaitable`                                ``__await__``
-:class:`Coroutine`         :class:`Awaitable`     ``send``, ``throw``     ``close``
+:class:`Coroutine`         :class:`Awaitable`     ``__await__``           ``close``
+                                                  ``send``, ``throw``
 :class:`AsyncIterable`                            ``__aiter__``
 :class:`AsyncIterator`     :class:`AsyncIterable` ``__anext__``           ``__aiter__``
 :class:`AsyncGenerator`    :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
