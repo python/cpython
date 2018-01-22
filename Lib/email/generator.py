@@ -189,7 +189,7 @@ class Generator:
             try:
                 msg.replace_header('content-transfer-encoding', munge_cte[0])
             except KeyError:
-                 msg.add_header('content-transfer-encoding', munge_cte[0])
+                msg.add_header('content-transfer-encoding', munge_cte[0])
             try:
                 msg.replace_header('content-type', munge_cte[1])
             except KeyError:
