@@ -1195,12 +1195,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: preadv(fd, buffers, offset, flags = None)
+.. function:: preadv(fd, buffers, offset, flags=0)
 
    Combines the functionality of :func:`os.readv` and :func:`os.pread`. It
-   performs the same task as :func:`os.readv`, but adds a fourth argument,
-   offset, which specifies the file offset at which the input operation is
-   to be performed.
+   reads from a file descriptor *fd* into a number of mutable :term:`bytes-like
+   objects <bytes-like object>` *buffers*. As :func:`os.readv`, it will transfer
+   data into each buffer until it is full and then move on to the next buffer in
+   the sequence to hold the rest of the data. Its fourth argument, *offset*,
+   specifies the file offset at which the input operation is to be performed.
+   :func:`~os.preadv` return the total number of bytes read (which may be less than
+   the total capacity of all the objects).
 
    If the *flags* argument is provided it will invoke the *preadv2* system
    call, which modifies the behavior on a per-call basis based on the value
