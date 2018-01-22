@@ -19,6 +19,12 @@ _Py_IDENTIFIER(__isabstractmethod__);
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 
+
+/* A global counter that is incremented each time a class is
+   registered as a virtual subclass of anything.  It forces the
+   negative cache to be cleared before its next use.
+   Note: this counter is private. Use `abc.get_cache_token()` for
+   external code. */
 static Py_ssize_t abc_invalidation_counter = 0;
 
 typedef struct {
@@ -73,11 +79,11 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!result) {
         return NULL;
     }
+    /* Set up inheritance registry. */
     result->abc_registry = PySet_New(NULL);
     result->abc_cache = PySet_New(NULL);
     result->abc_negative_cache = PySet_New(NULL);
-    if (!result->abc_registry || !result->abc_cache ||
-        !result->abc_negative_cache) {
+    if (!result->abc_registry || !result->abc_cache || !result->abc_negative_cache) {
         Py_DECREF(result);
         return NULL;
     }
@@ -86,8 +92,9 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(result);
         return NULL;
     }
-    /* Stage 1: direct abstract methods */
-    /* Safe to assume everything is fine since type.__new__ succeeded */
+    /* Compute set of abstract method names in two stages:
+       Stage 1: direct abstract methods.
+       (It is safe to assume everything is fine since type.__new__ succeeded.) */
     ns = PyTuple_GET_ITEM(args, 2);
     items = PyMapping_Items(ns); /* TODO: Fast path for exact dicts with PyDict_Next */
     for (pos = 0; pos < PySequence_Size(items); pos++) {
@@ -113,7 +120,7 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(item);
     }
     Py_DECREF(items);
-    /* Stage 2: inherited abstract methods */
+    /* Stage 2: inherited abstract methods. */
     bases = PyTuple_GET_ITEM(args, 1);
     for (pos = 0; pos < PyTuple_Size(bases); pos++) {
         item = PyTuple_GET_ITEM(bases, pos);
@@ -174,6 +181,37 @@ error:
     return NULL;
 }
 
+int
+_in_weak_set(PyObject *set, PyObject *obj)
+{
+    PyObject *ref;
+    int res;
+    ref = PyWeakref_NewRef(obj, NULL);
+    if (!ref) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            return 0;
+        }
+        return -1;
+    }
+    res = PySet_Contains(set, ref);
+    Py_DECREF(ref);
+    return res;
+}
+
+int
+_add_weak_set(PyObject *set, PyObject *obj)
+{
+    PyObject *ref;
+    ref = PyWeakref_NewRef(obj, NULL);
+    if (!ref) {
+        return 0;
+    }
+    if (PySet_Add(set, ref) < 0) {
+        return 0;
+    }
+    return 1;
+}
+
 static PyObject *
 abcmeta_register(abc *self, PyObject *args)
 {
@@ -189,24 +227,27 @@ abcmeta_register(abc *self, PyObject *args)
     result = PyObject_IsSubclass(subclass, (PyObject *)self);
     if (result > 0) {
         Py_INCREF(subclass);
-        return subclass;
+        return subclass;  /* Already a subclass. */
     }
     if (result < 0) {
         return NULL;
     }
+    /* Subtle: test for cycles *after* testing for "already a subclass";
+       this means we allow X.register(X) and interpret it as a no-op. */
     result = PyObject_IsSubclass((PyObject *)self, subclass);
     if (result > 0) {
+        /* This would create a cycle, which is bad for the algorithm below. */
         PyErr_SetString(PyExc_RuntimeError, "Refusing to create an inheritance cycle");
         return NULL;
     }
     if (result < 0) {
         return NULL;
     }
-    if (PySet_Add(self->abc_registry, PyWeakref_NewRef(subclass, NULL)) < 0) {
+    if (!_add_weak_set(self->abc_registry, subclass)) {
         return NULL;
     }
     Py_INCREF(subclass);
-    abc_invalidation_counter++;
+    abc_invalidation_counter++;  /* Invalidate negative cache */
     return subclass;
 }
 
@@ -217,28 +258,41 @@ static PyObject *
 abcmeta_instancecheck(abc *self, PyObject *args)
 {
     PyObject *result, *subclass, *subtype, *instance = NULL;
+    int incache;
     if (!PyArg_UnpackTuple(args, "__instancecheck__", 1, 1, &instance)) {
         return NULL;
     }
     subclass = _PyObject_GetAttrId(instance, &PyId___class__);
-    if (PySet_Contains(self->abc_cache, PyWeakref_NewRef(subclass, NULL)) > 0) {
+    /* Inline the cache checking. */
+    incache = _in_weak_set(self->abc_cache, subclass);
+    if (incache < 0) {
+        return NULL;
+    }
+    if (incache > 0) {
         Py_INCREF(Py_True);
         return Py_True;
     }
     subtype = (PyObject *)Py_TYPE(instance);
     if (subtype == subclass) {
-        1 == 1;
+        incache = _in_weak_set(self->abc_negative_cache, subclass);
+        if (incache < 0) {
+            return NULL;
+        }
+        if (self->abc_negative_cache_version == abc_invalidation_counter && incache) {
+            Py_INCREF(Py_False);
+            return Py_False;
+        }
+        /* Fall back to the subclass check. */
+        return PyObject_CallMethod((PyObject *)self, "__subclasscheck__", "O", subclass);
     }
-
-    result = abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass)); /* TODO: Refactor to avoid packing
-                                                                        here and below. */
+    result = PyObject_CallMethod((PyObject *)self, "__subclasscheck__", "O", subclass);
     if (!result) {
         return NULL;
     }
     if (result == Py_True) {
         return Py_True;
     }
-    return abcmeta_subclasscheck(self, PyTuple_Pack(1, subtype));
+    return PyObject_CallMethod((PyObject *)self, "__subclasscheck__", "O", subtype);
 }
 
 static PyObject *
@@ -247,7 +301,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     PyObject *subclasses, *subclass = NULL;
     PyObject *ok, *mro, *iter, *key, *rkey;
     Py_ssize_t pos;
-    int result;
+    int incache, result;
     if (!PyArg_UnpackTuple(args, "__subclasscheck__", 1, 1, &subclass)) {
         return NULL;
     }
@@ -255,24 +309,64 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
        on iteration here (have a counter for this) or maybe during a .register() call */
     /* TODO: Reset caches every n-th succes/failure correspondingly
        so that they don't grow too large */
+
+    /* 1. Check cache. */
+    incache = _in_weak_set(self->abc_cache, subclass);
+    if (incache < 0) {
+        return NULL;
+    }
+    if (incache > 0) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    /* 2. Check negative cache; may have to invalidate. */
+    incache = _in_weak_set(self->abc_negative_cache, subclass);
+    if (incache < 0) {
+        return NULL;
+    }
+    if (self->abc_negative_cache_version < abc_invalidation_counter) {
+        /* Invalidate the negative cache. */
+        self->abc_negative_cache = PySet_New(NULL);
+        if (!self->abc_negative_cache) {
+            return NULL;
+        }
+        self->abc_negative_cache_version = abc_invalidation_counter;
+    } else if (incache) {
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+    /* 3. Check the subclass hook. */
     ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
     if (!ok) {
         return NULL;
     }
     if (ok == Py_True) {
+        if (!_add_weak_set(self->abc_cache, subclass)) {
+            Py_DECREF(ok);
+            return NULL;
+        }
         return Py_True;
     }
     if (ok == Py_False) {
+        if (!_add_weak_set(self->abc_negative_cache, subclass)) {
+            Py_DECREF(ok);
+            return NULL;
+        }
         return Py_False;
     }
     Py_DECREF(ok);
+    /* 4. Check if it's a direct subclass. */
     mro = ((PyTypeObject *)subclass)->tp_mro;
     for (pos = 0; pos < PyTuple_Size(mro); pos++) {
         if ((PyObject *)self == PyTuple_GetItem(mro, pos)) {
             Py_INCREF(Py_True);
+            if (!_add_weak_set(self->abc_cache, subclass)) {
+                return NULL;
+            }
             return Py_True;
         }
     }
+    /* 5. Check if it's a subclass of a registered class (recursive). */
     iter = PyObject_GetIter(self->abc_registry);
     while ((key = PyIter_Next(iter))) {
         rkey = PyWeakref_GetObject(key);
@@ -281,9 +375,12 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         }
         result = PyObject_IsSubclass(subclass, rkey);
         if (result > 0) {
-            Py_INCREF(Py_True);
             Py_DECREF(key);
             Py_DECREF(iter);
+            if (!_add_weak_set(self->abc_cache, subclass)) {
+                return NULL;
+            }
+            Py_INCREF(Py_True);
             return Py_True;
         }
         if (result < 0) {
@@ -294,12 +391,16 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         Py_DECREF(key);
     }
     Py_DECREF(iter);
+    /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod((PyObject *)self, "__subclasses__", NULL);
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
         result = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
         if (result > 0) {
-            Py_INCREF(Py_True);
+            if (!_add_weak_set(self->abc_cache, subclass)) {
+                return NULL;
+            }
             Py_DECREF(subclasses);
+            Py_INCREF(Py_True);
             return Py_True;
         }
         if (result < 0) {
@@ -307,8 +408,12 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
             return NULL;
         }
     }
-    Py_INCREF(Py_False);
     Py_DECREF(subclasses);
+    /* No dice; update negative cache. */
+    if (!_add_weak_set(self->abc_negative_cache, subclass)) {
+        return NULL;
+    }
+    Py_INCREF(Py_False);
     return Py_False;
 }
 
