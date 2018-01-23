@@ -22,7 +22,6 @@ NLCRE = re.compile(r'\r\n|\r|\n')
 fcre = re.compile(r'^From ', re.MULTILINE)
 
 
-
 class Generator:
     """Generates output from a Message object tree.
 
@@ -122,7 +121,7 @@ class Generator:
         """Clone this generator with the exact same options."""
         return self.__class__(fp,
                               self._mangle_from_,
-                              None, # Use policy setting, which we've adjusted
+                              None,  # Use policy setting, which we've adjusted
                               policy=self.policy)
 
     #
@@ -159,7 +158,7 @@ class Generator:
         # XXX logic tells me this else should be needed, but the tests fail
         # with it and pass without it.  (NLCRE.split ends with a blank element
         # if and only if there was a trailing newline.)
-        #else:
+        # else:
         #    self.write(self._NL)
 
     def _write(self, msg):
@@ -188,7 +187,7 @@ class Generator:
             msg = deepcopy(msg)
             if msg.get('content-transfer-encoding', None) is not None:
                 msg.replace_header('content-transfer-encoding', munge_cte[0])
-            else: 
+            else:
                 msg.add_header('content-transfer-encoding', munge_cte[0])
             if msg.get('content-type', None) is not None:
                 msg.replace_header('content-type', munge_cte[1])
@@ -383,7 +382,8 @@ class Generator:
         b = boundary
         counter = 0
         while True:
-            cre = cls._compile_re('^--' + re.escape(b) + '(--)?$', re.MULTILINE)
+            cre = cls._compile_re('^--' + re.escape(b) + '(--)?$',
+                                  re.MULTILINE)
             if not cre.search(text):
                 break
             b = boundary + '.' + str(counter)
@@ -430,12 +430,12 @@ class BytesGenerator(Generator):
         # just write it back out.
         if msg._payload is None:
             return
-        if _has_surrogates(msg._payload) and not self.policy.cte_type=='7bit':
+        if _has_surrogates(msg._payload) and self.policy.cte_type != '7bit':
             if self._mangle_from_:
                 msg._payload = fcre.sub(">From ", msg._payload)
             self._write_lines(msg._payload)
         else:
-            super(BytesGenerator,self)._handle_text(msg)
+            super(BytesGenerator, self)._handle_text(msg)
 
     # Default body handler
     _writeBody = _handle_text
@@ -445,8 +445,8 @@ class BytesGenerator(Generator):
         return re.compile(s.encode('ascii'), flags)
 
 
-
 _FMT = '[Non-text (%(type)s) part of message omitted, filename %(filename)s]'
+
 
 class DecodedGenerator(Generator):
     """Generates a text representation of a message.
@@ -454,8 +454,8 @@ class DecodedGenerator(Generator):
     Like the Generator base class, except that non-text parts are substituted
     with a format string representing the part.
     """
-    def __init__(self, outfp, mangle_from_=None, maxheaderlen=None, fmt=None, *,
-                 policy=None):
+    def __init__(self, outfp, mangle_from_=None, maxheaderlen=None, fmt=None,
+                 *, policy=None):
         """Like Generator.__init__() except that an additional optional
         argument is allowed.
 
@@ -494,18 +494,17 @@ class DecodedGenerator(Generator):
                 pass
             else:
                 print(self._fmt % {
-                    'type'       : part.get_content_type(),
-                    'maintype'   : part.get_content_maintype(),
-                    'subtype'    : part.get_content_subtype(),
-                    'filename'   : part.get_filename('[no filename]'),
+                    'type': part.get_content_type(),
+                    'maintype': part.get_content_maintype(),
+                    'subtype': part.get_content_subtype(),
+                    'filename': part.get_filename('[no filename]'),
                     'description': part.get('Content-Description',
                                             '[no description]'),
-                    'encoding'   : part.get('Content-Transfer-Encoding',
-                                            '[no encoding]'),
+                    'encoding': part.get('Content-Transfer-Encoding',
+                                         '[no encoding]'),
                     }, file=self)
 
 
-
 # Helper used by Generator._make_boundary
 _width = len(repr(sys.maxsize-1))
 _fmt = '%%0%dd' % _width
