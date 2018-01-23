@@ -1032,7 +1032,7 @@ class CodecCallbackTest(unittest.TestCase):
 
         def mutating(exc):
             if isinstance(exc, UnicodeDecodeError):
-                exc.object[:] = b""
+                exc.object = b""
                 return ("\u4242", 0)
             else:
                 raise TypeError("don't know how to handle %r" % exc)
@@ -1042,8 +1042,7 @@ class CodecCallbackTest(unittest.TestCase):
         with test.support.check_warnings():
             # unicode-internal has been deprecated
             for (encoding, data) in baddata:
-                with self.assertRaises(TypeError):
-                    data.decode(encoding, "test.replacing")
+                self.assertEqual(data.decode(encoding, "test.mutating"), "\u4242")
 
     def test_fake_error_class(self):
         handlers = [
