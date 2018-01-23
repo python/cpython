@@ -623,6 +623,9 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+OPENSSL_LDFLAGS
+OPENSSL_LIBS
+OPENSSL_INCLUDES
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
@@ -779,7 +782,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -833,12 +835,12 @@ with_c_locale_coercion
 with_c_locale_warning
 with_valgrind
 with_dtrace
-with_fpectl
 with_libm
 with_libc
 enable_big_digits
 with_computed_gotos
 with_ensurepip
+with_openssl
 '
       ac_precious_vars='build_alias
 host_alias
@@ -891,7 +893,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1144,15 +1145,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1290,7 +1282,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1443,7 +1435,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1540,7 +1531,6 @@ Optional Packages:
                           locale
   --with-valgrind         Enable Valgrind support
   --with(out)-dtrace      disable/enable DTrace support
-  --with-fpectl           enable SIGFPE catching
   --with-libm=STRING      math library
   --with-libc=STRING      C library
   --with(out)-computed-gotos
@@ -1548,6 +1538,7 @@ Optional Packages:
                           default on supported compilers)
   --with(out)-ensurepip=[=upgrade]
                           "install" or "upgrade" using bundled pip
+  --with-openssl=DIR      root of the OpenSSL directory
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -2690,6 +2681,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -3372,10 +3365,6 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
   # but used in struct sockaddr.sa_family. Reported by Tim Rice.
   SCO_SV/3.2)
-    define_xopen_source=no;;
-  # On FreeBSD 4, the math functions C89 does not cover are never defined
-  # with _XOPEN_SOURCE and __BSD_VISIBLE does not re-enable them.
-  FreeBSD/4.*)
     define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
@@ -7704,7 +7693,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 fi
 
-for ac_header in asm/types.h conio.h direct.h dlfcn.h errno.h \
+for ac_header in asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -9573,8 +9562,9 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for RFC4122 - uuid support on AIX" >&5
-$as_echo_n "checking for RFC4122 - uuid support on AIX... " >&6; }
+# FreeBSD and OpenBSD provides support as well
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
+$as_echo_n "checking for uuid_create... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <uuid.h>
@@ -13704,29 +13694,6 @@ fi
 fi
 
 
-# Check for --with-fpectl
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-fpectl" >&5
-$as_echo_n "checking for --with-fpectl... " >&6; }
-
-# Check whether --with-fpectl was given.
-if test "${with_fpectl+set}" = set; then :
-  withval=$with_fpectl;
-if test "$withval" != no
-then
-
-$as_echo "#define WANT_SIGFPE_HANDLER 1" >>confdefs.h
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
 # check for --with-libm=...
 
 case $ac_sys_system in
@@ -16716,6 +16683,265 @@ if test "$have_getrandom" = yes; then
 
 $as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 
+fi
+
+# Check for usable OpenSSL
+
+    found=false
+
+# Check whether --with-openssl was given.
+if test "${with_openssl+set}" = set; then :
+  withval=$with_openssl;
+            case "$withval" in
+            "" | y | ye | yes | n | no)
+            as_fn_error $? "Invalid --with-openssl value" "$LINENO" 5
+              ;;
+            *) ssldirs="$withval"
+              ;;
+            esac
+
+else
+
+            # if pkg-config is installed and openssl has installed a .pc file,
+            # then use that information and don't search ssldirs
+            if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$PKG_CONFIG"; then
+  ac_cv_prog_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_PKG_CONFIG="${ac_tool_prefix}pkg-config"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+PKG_CONFIG=$ac_cv_prog_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_PKG_CONFIG"; then
+  ac_ct_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_PKG_CONFIG"; then
+  ac_cv_prog_ac_ct_PKG_CONFIG="$ac_ct_PKG_CONFIG" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_PKG_CONFIG="pkg-config"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_PKG_CONFIG=$ac_cv_prog_ac_ct_PKG_CONFIG
+if test -n "$ac_ct_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_PKG_CONFIG" >&5
+$as_echo "$ac_ct_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_ct_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_prog_PKG_CONFIG"
+fi
+
+            if test x"$PKG_CONFIG" != x""; then
+                OPENSSL_LDFLAGS=`$PKG_CONFIG openssl --libs-only-L 2>/dev/null`
+                if test $? = 0; then
+                    OPENSSL_LIBS=`$PKG_CONFIG openssl --libs-only-l 2>/dev/null`
+                    OPENSSL_INCLUDES=`$PKG_CONFIG openssl --cflags-only-I 2>/dev/null`
+                    found=true
+                fi
+            fi
+
+            # no such luck; use some default ssldirs
+            if ! $found; then
+                ssldirs="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr"
+            fi
+
+
+fi
+
+
+
+    # note that we #include <openssl/foo.h>, so the OpenSSL headers have to be in
+    # an 'openssl' subdirectory
+
+    if ! $found; then
+        OPENSSL_INCLUDES=
+        for ssldir in $ssldirs; do
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for openssl/ssl.h in $ssldir" >&5
+$as_echo_n "checking for openssl/ssl.h in $ssldir... " >&6; }
+            if test -f "$ssldir/include/openssl/ssl.h"; then
+                OPENSSL_INCLUDES="-I$ssldir/include"
+                OPENSSL_LDFLAGS="-L$ssldir/lib"
+                OPENSSL_LIBS="-lssl -lcrypto"
+                found=true
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+                break
+            else
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+            fi
+        done
+
+        # if the file wasn't found, well, go ahead and try the link anyway -- maybe
+        # it will just work!
+    fi
+
+    # try the preprocessor and linker with our new flags,
+    # being careful not to pollute the global LIBS, LDFLAGS, and CPPFLAGS
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether compiling and linking against OpenSSL works" >&5
+$as_echo_n "checking whether compiling and linking against OpenSSL works... " >&6; }
+    echo "Trying link with OPENSSL_LDFLAGS=$OPENSSL_LDFLAGS;" \
+        "OPENSSL_LIBS=$OPENSSL_LIBS; OPENSSL_INCLUDES=$OPENSSL_INCLUDES" >&5
+
+    save_LIBS="$LIBS"
+    save_LDFLAGS="$LDFLAGS"
+    save_CPPFLAGS="$CPPFLAGS"
+    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+    LIBS="$OPENSSL_LIBS $LIBS"
+    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+int
+main ()
+{
+SSL_new(NULL)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+            have_openssl=yes
+
+else
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+            have_openssl=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    CPPFLAGS="$save_CPPFLAGS"
+    LDFLAGS="$save_LDFLAGS"
+    LIBS="$save_LIBS"
+
+
+
+
+
+
+if test "$have_openssl" = yes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X509_VERIFY_PARAM_set1_host in libssl" >&5
+$as_echo_n "checking for X509_VERIFY_PARAM_set1_host in libssl... " >&6; }
+
+    save_LIBS="$LIBS"
+    save_LDFLAGS="$LDFLAGS"
+    save_CPPFLAGS="$CPPFLAGS"
+    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+    LIBS="$OPENSSL_LIBS $LIBS"
+    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+        #include <openssl/x509_vfy.h>
+
+int
+main ()
+{
+
+        X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();
+        X509_VERIFY_PARAM_set1_host(p, "localhost", 0);
+        X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");
+        X509_VERIFY_PARAM_set_hostflags(p, 0);
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+        ac_cv_has_x509_verify_param_set1_host=yes
+
+else
+
+        ac_cv_has_x509_verify_param_set1_host=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_x509_verify_param_set1_host" >&5
+$as_echo "$ac_cv_has_x509_verify_param_set1_host" >&6; }
+    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
+
+$as_echo "#define HAVE_X509_VERIFY_PARAM_SET1_HOST 1" >>confdefs.h
+
+    fi
+
+    CPPFLAGS="$save_CPPFLAGS"
+    LDFLAGS="$save_LDFLAGS"
+    LIBS="$save_LIBS"
 fi
 
 # generate output files

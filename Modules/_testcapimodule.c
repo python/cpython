@@ -4438,6 +4438,13 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
 }
 
 
+static PyObject*
+new_hamt(PyObject *self, PyObject *args)
+{
+    return _PyContext_NewHamtForTests();
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4655,6 +4662,7 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_values", get_mapping_values, METH_O},
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
+    {"hamt", new_hamt, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -5064,6 +5072,7 @@ static void
 generic_alias_dealloc(PyGenericAliasObject *self)
 {
     Py_CLEAR(self->item);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -5104,17 +5113,13 @@ typedef struct {
 } PyGenericObject;
 
 static PyObject *
-generic_class_getitem(PyObject *self, PyObject *args)
+generic_class_getitem(PyObject *type, PyObject *item)
 {
-    PyObject *type, *item;
-    if (!PyArg_UnpackTuple(args, "__class_getitem__", 2, 2, &type, &item)) {
-        return NULL;
-    }
     return generic_alias_new(item);
 }
 
 static PyMethodDef generic_methods[] = {
-    {"__class_getitem__", generic_class_getitem, METH_VARARGS|METH_STATIC, NULL},
+    {"__class_getitem__", generic_class_getitem, METH_O|METH_CLASS, NULL},
     {NULL}  /* sentinel */
 };
 

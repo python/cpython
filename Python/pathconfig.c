@@ -367,13 +367,12 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
     fseek(env_file, 0, SEEK_SET);
     while (!feof(env_file)) {
         char * p = fgets(buffer, MAXPATHLEN*2, env_file);
-        wchar_t *tmpbuffer;
-        int n;
 
         if (p == NULL) {
             break;
         }
-        n = strlen(p);
+
+        size_t n = strlen(p);
         if (p[n - 1] != '\n') {
             /* line has overflowed - bail */
             break;
@@ -382,8 +381,9 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
             /* Comment - skip */
             continue;
         }
-        tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n, NULL);
-        if (tmpbuffer != NULL) {
+
+        wchar_t *tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n);
+        if (tmpbuffer) {
             wchar_t * state;
             wchar_t * tok = wcstok(tmpbuffer, L" \t\r\n", &state);
             if ((tok != NULL) && !wcscmp(tok, key)) {
