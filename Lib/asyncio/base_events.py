@@ -177,8 +177,10 @@ class _SendfileProtocol(protocols.Protocol):
 
     def connection_lost(self, exc):
         if self._paused is not None:
+            # never happens if peer disconnects after sending the whole content
             if exc is None:
-                self._paused.set_result(True)
+                self._paused.set_exception(
+                    ConnectionResetError("Connection reset by peer"))
             else:
                 self._paused.set_exception(exc)
         self._proto.connection_lost(exc)
@@ -966,9 +968,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         return total_sent
                 fut = proto._paused
                 if fut is not None:
-                    if await fut:
-                        # eof received
-                        return total_sent
+                    await fut
                 view = memoryview(buf)[:blocksize]
                 read = file.readinto(view)
                 if not read:
