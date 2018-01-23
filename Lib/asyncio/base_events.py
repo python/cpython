@@ -177,7 +177,8 @@ class _SendfileProtocol(protocols.Protocol):
 
     def connection_lost(self, exc):
         if self._paused is not None:
-            # never happens if peer disconnects after sending the whole content
+            # Never happens if peer disconnects after sending the whole content
+            # Thus disconnection is always an exception from user perspective
             if exc is None:
                 self._paused.set_exception(
                     ConnectionResetError("Connection reset by peer"))
