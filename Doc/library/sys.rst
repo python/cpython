@@ -1292,6 +1292,66 @@ always available.
       The coroutine wrapper functionality has been deprecated, and
       will be removed in 3.8. See :issue:`32591` for details.
 
+.. function:: set_unawaited_coroutine_tracking_enabled(enabled)
+
+   Enables or disables "unawaited coroutine tracking mode". This is a
+   thread-specific value, and is initially disabled. When disabled,
+   coroutine objects are handled normally. When enabled, then every
+   coroutine is initially placed on an internal list, and the first
+   time it's iterated, it's removed from this list. At any given time,
+   therefore, the list contains all "unawaited" coroutines. For
+   example, a test suite could use this to easily and reliably check
+   after each test whether that test generated any unawaited
+   coroutines.
+
+   You can check whether the list currently contains any coroutines
+   with :func:`have_unawaited_coroutines`, and retrieve the contents
+   of the list with :func:`get_unawaited_coroutines`. Or if you want
+   to know whether tracking is currently enabled, see
+   :func:`get_unawaited_coroutine_tracking_enabled`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
+.. function:: get_unawaited_coroutine_tracking_enabled()
+
+   Checks whether unawaited coroutine tracking mode is enabled. See
+   :func:`set_unawaited_coroutine_tracking_enabled`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
+.. function:: have_unawaited_coroutines()
+
+   Returns True if unawaited coroutine tracking mode is enabled, and
+   there are currently unawaited coroutines in the internal list.
+   Otherwise, returns False. See
+   :func:`set_unawaited_coroutine_tracking_enabled`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
+.. function:: get_unawaited_coroutines()
+
+   If unawaited tracking mode is enabled, returns the internal list of
+   unawaited coroutines as a Python list object, and clears the
+   internal list. Otherwise, raises :exc:`RuntimeError`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the default filesystem encoding and errors mode to 'mbcs' and

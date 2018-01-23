@@ -312,6 +312,9 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->coroutine_wrapper = NULL;
         tstate->in_coroutine_wrapper = 0;
 
+        tstate->unawaited_coroutine_tracking_enabled = 0;
+        tstate->first_unawaited_coroutine = NULL;
+
         tstate->async_gen_firstiter = NULL;
         tstate->async_gen_finalizer = NULL;
 
@@ -506,6 +509,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->coroutine_wrapper);
     Py_CLEAR(tstate->async_gen_firstiter);
     Py_CLEAR(tstate->async_gen_finalizer);
+    PyObject *coro;
+    while ((coro = _PyCoro_PopUnawaited())) {
+        Py_DECREF(coro);
+    }
 
     Py_CLEAR(tstate->context);
 }
