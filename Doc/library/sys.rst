@@ -1086,9 +1086,6 @@ always available.
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
 
-   Note that as an exception is propagated down the chain of callers, an
-   ``'exception'`` event is generated at each level.
-
 .. function:: setrecursionlimit(limit)
 
    Set the maximum depth of the Python interpreter stack to *limit*.  This limit
