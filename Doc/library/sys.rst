@@ -1062,15 +1062,14 @@ always available.
 
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
-   ``'line'``, ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
+   ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
    ``'c_exception'``, ``'opcode'``. *arg* depends on the event type.
 
    The events have the following meaning:
 
    ``'call'``
       A function is called (or some other code block entered).  The
-      global trace function is called; *arg* is ``None``; the return value
-      specifies the local trace function.
+      profile function is called; *arg* is ``None``.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
