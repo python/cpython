@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "internal/pystate.h"
+#include "internal/context.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus

@@ -365,7 +365,7 @@ class TestLoop(base_events.BaseEventLoop):
                 raise AssertionError("Time generator is not finished")
 
     def _add_reader(self, fd, callback, *args):
-        self.readers[fd] = events.Handle(callback, args, self)
+        self.readers[fd] = events.Handle(callback, args, self, None)
 
     def _remove_reader(self, fd):
         self.remove_reader_count[fd] += 1
@@ -391,7 +391,7 @@ class TestLoop(base_events.BaseEventLoop):
             raise AssertionError(f'fd {fd} is registered')
 
     def _add_writer(self, fd, callback, *args):
-        self.writers[fd] = events.Handle(callback, args, self)
+        self.writers[fd] = events.Handle(callback, args, self, None)
 
     def _remove_writer(self, fd):
         self.remove_writer_count[fd] += 1
@@ -457,9 +457,9 @@ class TestLoop(base_events.BaseEventLoop):
             self.advance_time(advance)
         self._timers = []
 
-    def call_at(self, when, callback, *args):
+    def call_at(self, when, callback, *args, context=None):
         self._timers.append(when)
-        return super().call_at(when, callback, *args)
+        return super().call_at(when, callback, *args, context=context)
 
     def _process_events(self, event_list):
         return

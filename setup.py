@@ -644,6 +644,9 @@ class PyBuildExt(build_ext):
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
 
+        # Context Variables
+        exts.append( Extension('_contextvars', ['_contextvarsmodule.c']) )
+
         shared_math = 'Modules/_math.o'
         # complex math library functions
         exts.append( Extension('cmath', ['cmathmodule.c'],
