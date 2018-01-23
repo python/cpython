@@ -1909,11 +1909,21 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         return -1;
     }
 
+    /* Global configuration variables should be set to read the core
+       configuration, and then get again to get updated values.
+
+       _PyPathConfig_Init() tests !Py_FrozenFlag to avoid some warnings.
+       Moreover, on Windows, it modifies Py_IsolatedFlag and Py_NoSiteFlag
+       variables if a "._pth" file is found. */
+    pymain_set_global_config(pymain, &cmdline);
+
     err = _PyCoreConfig_Read(config);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
     }
+
+    pymain_get_global_config(pymain, cmdline);
     return 0;
 }
 
@@ -1937,6 +1947,8 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     int locale_coerced = 0;
     int loops = 0;
     int init_ignore_env = pymain->config.ignore_environment;
+    int init_isolated = pymain->config.isolated;
+    int init_no_site = pymain->config.no_site_import;
 
     while (1) {
         int utf8_mode = pymain->config.utf8_mode;
@@ -1994,9 +2006,12 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 
         /* Reset the configuration, except UTF-8 Mode. Set Py_UTF8Mode for
            Py_DecodeLocale(). Reset Py_IgnoreEnvironmentFlag, modified by
-           pymain_read_conf_impl(). */
+           pymain_read_conf_impl(). Reset Py_IsolatedFlag and Py_NoSiteFlag
+           modified by _PyCoreConfig_Read(). */
         Py_UTF8Mode = pymain->config.utf8_mode;
         Py_IgnoreEnvironmentFlag = init_ignore_env;
+        Py_IsolatedFlag = init_isolated;
+        Py_NoSiteFlag = init_no_site;
         _PyCoreConfig_Clear(&pymain->config);
         pymain_clear_cmdline(pymain, cmdline);
         pymain_get_global_config(pymain, cmdline);
