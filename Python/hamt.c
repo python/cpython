@@ -1116,7 +1116,6 @@ hamt_node_bitmap_find(PyHamtNode_Bitmap *self,
     }
 
     idx = hamt_bitindex(self->b_bitmap, bit);
-    assert(idx >= 0);
     key_idx = idx * 2;
     val_idx = key_idx + 1;
 
