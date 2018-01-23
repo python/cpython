@@ -8485,7 +8485,11 @@ os_pipe_impl(PyObject *module)
 
 #ifdef HAVE_PIPE2
     Py_BEGIN_ALLOW_THREADS
+#ifdef __VXWORKS__
+    res = pipe2(fds, 0);
+#else
     res = pipe2(fds, O_CLOEXEC);
+#endif
     Py_END_ALLOW_THREADS
 
     if (res != 0 && errno == ENOSYS)
