@@ -354,6 +354,8 @@ PYTHON_OBJS=	\
 		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
+		Python/context.o \
+		Python/hamt.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
@@ -996,6 +998,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
+		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/pystrcmp.h \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pystrhex.h \
@@ -1023,6 +1026,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/mem.h \
 		$(srcdir)/Include/internal/pygetopt.h \
 		$(srcdir)/Include/internal/pystate.h \
+		$(srcdir)/Include/internal/context.h \
 		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
 
