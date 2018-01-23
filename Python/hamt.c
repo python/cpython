@@ -4,11 +4,6 @@
 #include "internal/pystate.h"
 #include "internal/hamt.h"
 
-/* popcnt support in Visual Studio */
-#ifdef _MSC_VER
-#include <intrin.h>
-#endif
-
 /*
 This file provides an implemention of an immutable mapping using the
 Hash Array Mapped Trie (or HAMT) datastructure.
@@ -440,18 +435,21 @@ hamt_bitpos(int32_t hash, uint32_t shift)
 static inline uint32_t
 hamt_bitcount(uint32_t i)
 {
-#if defined(__GNUC__) && (__GNUC__ > 4)
-    return (uint32_t)__builtin_popcountl(i);
-#elif defined(__clang__) && (__clang_major__ > 3)
-    return (uint32_t)__builtin_popcountl(i);
-#elif defined(_MSC_VER)
-    return (uint32_t)__popcnt(i);
-#else
-    /* https://graphics.stanford.edu/~seander/bithacks.html */
+    /* We could use native popcount instruction but that would
+       require to either add configure flags to enable SSE4.2
+       support or to detect it dynamically.  Otherwise, we have
+       a risk of CPython not working properly on older hardware.
+
+       In practice, there's no observable difference in
+       performance between using a popcount instruction or the
+       following fallback code.
+
+       The algorithm is copied from:
+       https://graphics.stanford.edu/~seander/bithacks.html
+    */
     i = i - ((i >> 1) & 0x55555555);
     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
     return ((i + (i >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
-#endif
 }
 
 static inline uint32_t
