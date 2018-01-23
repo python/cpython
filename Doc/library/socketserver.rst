@@ -648,7 +648,11 @@ The output of the example should look something like this:
    Received: Thread-4: Hello World 3
 
 
-The :class:`ForkingMixIn` and :class:`ProcessingMixIn` classes can be used in
-the same way, except that the server will spawn a new process for each request.
-Available only on POSIX platforms that support :func:`~os.fork`.
+On POSIX platforms that support :func:`~os.fork`, both the :class:`ForkingMixIn`
+and :class:`ProcessingMixIn` classes can be used in the same way, except that the
+server will spawn a new process for each request as opposed to a new thread.
 
+On systems that do not support :func:`~os.fork`, the :class:`ProcessingMixIn` is
+still available since it relies on :class:`multiprocessing.Process` to spawn new
+processes.  The :class:`ForkingMixIn` class is not available on systems that do
+not support :func:`~os.fork`.
