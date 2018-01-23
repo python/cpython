@@ -156,6 +156,15 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
+    def test_string_with_leading_whitespace(self):
+        python2_print_str = '''if 1:
+            print "Hello World"
+        '''
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print("Hello World")', str(context.exception))
+
     def test_stream_redirection_hint_for_py2_migration(self):
         # Test correct hint produced for Py2 redirection syntax
         with self.assertRaises(TypeError) as context:

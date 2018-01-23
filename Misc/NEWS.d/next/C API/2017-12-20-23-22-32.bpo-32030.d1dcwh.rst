@@ -1,2 +1,0 @@
-Py_Initialize() doesn't reset the memory allocators to default if the
-``PYTHONMALLOC`` environment variable is not set.

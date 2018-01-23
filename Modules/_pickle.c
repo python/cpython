@@ -119,8 +119,8 @@ enum {
     /* Prefetch size when unpickling (disabled on unpeekable streams) */
     PREFETCH = 8192 * 16,
 
+    FRAME_SIZE_MIN = 4,
     FRAME_SIZE_TARGET = 64 * 1024,
-
     FRAME_HEADER_SIZE = 9
 };
 
@@ -949,13 +949,6 @@ _write_size64(char *out, size_t value)
     }
 }
 
-static void
-_Pickler_WriteFrameHeader(PicklerObject *self, char *qdata, size_t frame_len)
-{
-    qdata[0] = FRAME;
-    _write_size64(qdata + 1, frame_len);
-}
-
 static int
 _Pickler_CommitFrame(PicklerObject *self)
 {
@@ -966,23 +959,16 @@ _Pickler_CommitFrame(PicklerObject *self)
         return 0;
     frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
     qdata = PyBytes_AS_STRING(self->output_buffer) + self->frame_start;
-    _Pickler_WriteFrameHeader(self, qdata, frame_len);
+    if (frame_len >= FRAME_SIZE_MIN) {
+        qdata[0] = FRAME;
+        _write_size64(qdata + 1, frame_len);
+    }
+    else {
+        memmove(qdata, qdata + FRAME_HEADER_SIZE, frame_len);
+        self->output_len -= FRAME_HEADER_SIZE;
+    }
     self->frame_start = -1;
     return 0;
-}
-
-static int
-_Pickler_OpcodeBoundary(PicklerObject *self)
-{
-    Py_ssize_t frame_len;
-
-    if (!self->framing || self->frame_start == -1)
-        return 0;
-    frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
-    if (frame_len >= FRAME_SIZE_TARGET)
-        return _Pickler_CommitFrame(self);
-    else
-        return 0;
 }
 
 static PyObject *
@@ -1017,6 +1003,38 @@ _Pickler_FlushToFile(PicklerObject *self)
     result = _Pickle_FastCall(self->write, output);
     Py_XDECREF(result);
     return (result == NULL) ? -1 : 0;
+}
+
+static int
+_Pickler_OpcodeBoundary(PicklerObject *self)
+{
+    Py_ssize_t frame_len;
+
+    if (!self->framing || self->frame_start == -1) {
+        return 0;
+    }
+    frame_len = self->output_len - self->frame_start - FRAME_HEADER_SIZE;
+    if (frame_len >= FRAME_SIZE_TARGET) {
+        if(_Pickler_CommitFrame(self)) {
+            return -1;
+        }
+        /* Flush the content of the commited frame to the underlying
+         * file and reuse the pickler buffer for the next frame so as
+         * to limit memory usage when dumping large complex objects to
+         * a file.
+         *
+         * self->write is NULL when called via dumps.
+         */
+        if (self->write != NULL) {
+            if (_Pickler_FlushToFile(self) < 0) {
+                return -1;
+            }
+            if (_Pickler_ClearBuffer(self) < 0) {
+                return -1;
+            }
+        }
+    }
+    return 0;
 }
 
 static Py_ssize_t
@@ -2124,6 +2142,79 @@ done:
     return 0;
 }
 
+/* Perform direct write of the header and payload of the binary object.
+
+   The large contiguous data is written directly into the underlying file
+   object, bypassing the output_buffer of the Pickler.  We intentionally
+   do not insert a protocol 4 frame opcode to make it possible to optimize
+   file.read calls in the loader.
+ */
+static int
+_Pickler_write_bytes(PicklerObject *self,
+                     const char *header, Py_ssize_t header_size,
+                     const char *data, Py_ssize_t data_size,
+                     PyObject *payload)
+{
+    int bypass_buffer = (data_size >= FRAME_SIZE_TARGET);
+    int framing = self->framing;
+
+    if (bypass_buffer) {
+        assert(self->output_buffer != NULL);
+        /* Commit the previous frame. */
+        if (_Pickler_CommitFrame(self)) {
+            return -1;
+        }
+        /* Disable framing temporarily */
+        self->framing = 0;
+    }
+
+    if (_Pickler_Write(self, header, header_size) < 0) {
+        return -1;
+    }
+
+    if (bypass_buffer && self->write != NULL) {
+        /* Bypass the in-memory buffer to directly stream large data
+           into the underlying file object. */
+        PyObject *result, *mem = NULL;
+        /* Dump the output buffer to the file. */
+        if (_Pickler_FlushToFile(self) < 0) {
+            return -1;
+        }
+
+        /* Stream write the payload into the file without going through the
+           output buffer. */
+        if (payload == NULL) {
+            /* TODO: It would be better to use a memoryview with a linked
+               original string if this is possible. */
+            payload = mem = PyBytes_FromStringAndSize(data, data_size);
+            if (payload == NULL) {
+                return -1;
+            }
+        }
+        result = PyObject_CallFunctionObjArgs(self->write, payload, NULL);
+        Py_XDECREF(mem);
+        if (result == NULL) {
+            return -1;
+        }
+        Py_DECREF(result);
+
+        /* Reinitialize the buffer for subsequent calls to _Pickler_Write. */
+        if (_Pickler_ClearBuffer(self) < 0) {
+            return -1;
+        }
+    }
+    else {
+        if (_Pickler_Write(self, data, data_size) < 0) {
+            return -1;
+        }
+    }
+
+    /* Re-enable framing for subsequent calls to _Pickler_Write. */
+    self->framing = framing;
+
+    return 0;
+}
+
 static int
 save_bytes(PicklerObject *self, PyObject *obj)
 {
@@ -2202,11 +2293,11 @@ save_bytes(PicklerObject *self, PyObject *obj)
             return -1;          /* string too large */
         }
 
-        if (_Pickler_Write(self, header, len) < 0)
+        if (_Pickler_write_bytes(self, header, len,
+                                 PyBytes_AS_STRING(obj), size, obj) < 0)
+        {
             return -1;
-
-        if (_Pickler_Write(self, PyBytes_AS_STRING(obj), size) < 0)
-            return -1;
+        }
 
         if (memo_put(self, obj) < 0)
             return -1;
@@ -2287,10 +2378,29 @@ error:
 }
 
 static int
-write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
+write_unicode_binary(PicklerObject *self, PyObject *obj)
 {
     char header[9];
     Py_ssize_t len;
+    PyObject *encoded = NULL;
+    Py_ssize_t size;
+    const char *data;
+
+    if (PyUnicode_READY(obj))
+        return -1;
+
+    data = PyUnicode_AsUTF8AndSize(obj, &size);
+    if (data == NULL) {
+        /* Issue #8383: for strings with lone surrogates, fallback on the
+           "surrogatepass" error handler. */
+        PyErr_Clear();
+        encoded = PyUnicode_AsEncodedString(obj, "utf-8", "surrogatepass");
+        if (encoded == NULL)
+            return -1;
+
+        data = PyBytes_AS_STRING(encoded);
+        size = PyBytes_GET_SIZE(encoded);
+    }
 
     assert(size >= 0);
     if (size <= 0xff && self->proto >= 4) {
@@ -2314,43 +2424,16 @@ write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
     else {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot serialize a string larger than 4GiB");
+        Py_XDECREF(encoded);
         return -1;
     }
 
-    if (_Pickler_Write(self, header, len) < 0)
+    if (_Pickler_write_bytes(self, header, len, data, size, encoded) < 0) {
+        Py_XDECREF(encoded);
         return -1;
-    if (_Pickler_Write(self, data, size) < 0)
-        return -1;
-
+    }
+    Py_XDECREF(encoded);
     return 0;
-}
-
-static int
-write_unicode_binary(PicklerObject *self, PyObject *obj)
-{
-    PyObject *encoded = NULL;
-    Py_ssize_t size;
-    const char *data;
-    int r;
-
-    if (PyUnicode_READY(obj))
-        return -1;
-
-    data = PyUnicode_AsUTF8AndSize(obj, &size);
-    if (data != NULL)
-        return write_utf8(self, data, size);
-
-    /* Issue #8383: for strings with lone surrogates, fallback on the
-       "surrogatepass" error handler. */
-    PyErr_Clear();
-    encoded = PyUnicode_AsEncodedString(obj, "utf-8", "surrogatepass");
-    if (encoded == NULL)
-        return -1;
-
-    r = write_utf8(self, PyBytes_AS_STRING(encoded),
-                   PyBytes_GET_SIZE(encoded));
-    Py_DECREF(encoded);
-    return r;
 }
 
 static int

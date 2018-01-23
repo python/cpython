@@ -117,6 +117,8 @@ import sys, os, re, subprocess
 
 import warnings
 
+_vxworks = sys.platform == "vxworks";
+
 ### Globals & Constants
 
 # Determine the platform's /dev/null device
@@ -753,7 +755,7 @@ def _syscmd_uname(option, default=''):
         return default
     try:
         f = os.popen('uname %s 2> %s' % (option, DEV_NULL))
-    except (AttributeError, OSError):
+    except (AttributeError, OSError, ValueError):
         return default
     output = f.read().strip()
     rc = f.close()

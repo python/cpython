@@ -12,6 +12,7 @@ MODULE_NAME " provides basic warning filtering support.\n"
 _Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
 #ifndef Py_DEBUG
+_Py_IDENTIFIER(default);
 _Py_IDENTIFIER(ignore);
 #endif
 
@@ -22,8 +23,20 @@ check_matched(PyObject *obj, PyObject *arg)
     _Py_IDENTIFIER(match);
     int rc;
 
+    /* A 'None' filter always matches */
     if (obj == Py_None)
         return 1;
+
+    /* An internal plain text default filter must match exactly */
+    if (PyUnicode_CheckExact(obj)) {
+        int cmp_result = PyUnicode_Compare(obj, arg);
+        if (cmp_result == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        return !cmp_result;
+    }
+
+    /* Otherwise assume a regex filter and call its match() method */
     result = _PyObject_CallMethodIdObjArgs(obj, &PyId_match, arg, NULL);
     if (result == NULL)
         return -1;
@@ -1140,6 +1153,52 @@ exit:
     return ret;
 }
 
+void
+_PyErr_WarnUnawaitedCoroutine(PyObject *coro)
+{
+    /* First, we attempt to funnel the warning through
+       warnings._warn_unawaited_coroutine.
+
+       This could raise an exception, due to:
+       - a bug
+       - some kind of shutdown-related brokenness
+       - succeeding, but with an "error" warning filter installed, so the
+         warning is converted into a RuntimeWarning exception
+
+       In the first two cases, we want to print the error (so we know what it
+       is!), and then print a warning directly as a fallback. In the last
+       case, we want to print the error (since it's the warning!), but *not*
+       do a fallback. And after we print the error we can't check for what
+       type of error it was (because PyErr_WriteUnraisable clears it), so we
+       need a flag to keep track.
+
+       Since this is called from __del__ context, it's careful to never raise
+       an exception.
+    */
+    _Py_IDENTIFIER(_warn_unawaited_coroutine);
+    int warned = 0;
+    PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
+    if (fn) {
+        PyObject *res = PyObject_CallFunctionObjArgs(fn, coro, NULL);
+        Py_DECREF(fn);
+        if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
+            warned = 1;
+        }
+        Py_XDECREF(res);
+    }
+
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(coro);
+    }
+    if (!warned) {
+        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+                             "coroutine '%.50S' was never awaited",
+                             ((PyCoroObject *)coro)->cr_qualname) < 0)
+        {
+            PyErr_WriteUnraisable(coro);
+        }
+    }
+}
 
 PyDoc_STRVAR(warn_explicit_doc,
 "Low-level inferface to warnings functionality.");
@@ -1158,16 +1217,27 @@ static PyMethodDef warnings_functions[] = {
 
 #ifndef Py_DEBUG
 static PyObject *
-create_filter(PyObject *category, _Py_Identifier *id)
+create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
 {
+    PyObject *modname_obj = NULL;
     PyObject *action_str = _PyUnicode_FromId(id);
     if (action_str == NULL) {
         return NULL;
     }
 
+    /* Default to "no module name" for initial filter set */
+    if (modname != NULL) {
+        modname_obj = PyUnicode_InternFromString(modname);
+        if (modname_obj == NULL) {
+            return NULL;
+        }
+    } else {
+        modname_obj = Py_None;
+    }
+
     /* This assumes the line number is zero for now. */
     return PyTuple_Pack(5, action_str, Py_None,
-                        category, Py_None, _PyLong_Zero);
+                        category, modname_obj, _PyLong_Zero);
 }
 #endif
 
@@ -1180,20 +1250,22 @@ init_filters(void)
     return PyList_New(0);
 #else
     /* Other builds ignore a number of warning categories by default */
-    PyObject *filters = PyList_New(4);
+    PyObject *filters = PyList_New(5);
     if (filters == NULL) {
         return NULL;
     }
 
     size_t pos = 0;  /* Post-incremented in each use. */
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_DeprecationWarning, &PyId_ignore));
+                    create_filter(PyExc_DeprecationWarning, &PyId_default, "__main__"));
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore));
+                    create_filter(PyExc_DeprecationWarning, &PyId_ignore, NULL));
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_ImportWarning, &PyId_ignore));
+                    create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore, NULL));
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_ResourceWarning, &PyId_ignore));
+                    create_filter(PyExc_ImportWarning, &PyId_ignore, NULL));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ResourceWarning, &PyId_ignore, NULL));
 
     for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {

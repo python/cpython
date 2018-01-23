@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+
 /* Fields are packed into successive bytes, each viewed as unsigned and
  * big-endian, unless otherwise noted:
  *
@@ -193,12 +194,10 @@ typedef struct {
 
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
-
 #else
 
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
-
 #define PyDateTime_IMPORT \
     PyDateTimeAPI = (PyDateTime_CAPI *)PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)
 
