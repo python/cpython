@@ -1511,6 +1511,16 @@ class SSLErrorTests(unittest.TestCase):
             ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
                          server_hostname="xn--.com")
 
+    def test_bad_server_hostname(self):
+        ctx = ssl.create_default_context()
+        with self.assertRaises(ValueError):
+            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                         server_hostname="")
+        with self.assertRaises(ValueError):
+            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                         server_hostname=".example.org")
+
+
 class MemoryBIOTests(unittest.TestCase):
 
     def test_read_write(self):

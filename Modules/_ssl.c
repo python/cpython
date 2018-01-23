@@ -713,8 +713,22 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
     int retval = -1;
     ASN1_OCTET_STRING *ip;
     PyObject *hostname;
+    size_t len;
 
     assert(server_hostname);
+
+    /* Disable OpenSSL's special mode with leading dot in hostname:
+     * When name starts with a dot (e.g ".example.com"), it will be
+     * matched by a certificate valid for any sub-domain of name.
+     */
+    len = strlen(server_hostname);
+    if (len == 0 || *server_hostname == '.') {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "server_hostname cannot be an empty string or start with a "
+            "leading dot.");
+        return retval;
+    }
 
     /* inet_pton is not available on all platforms. */
     ip = a2i_IPADDRESS(server_hostname);
@@ -722,8 +736,7 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
         ERR_clear_error();
     }
 
-    hostname = PyUnicode_Decode(server_hostname, strlen(server_hostname),
-                                "idna", "strict");
+    hostname = PyUnicode_Decode(server_hostname, len, "idna", "strict");
     if (hostname == NULL) {
         goto error;
     }
@@ -2811,10 +2824,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
     self->ctx = ctx;
-    self->hostflags = (
-        X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS |
-        X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS
-    );
+    self->hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
 #if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     self->npn_protocols = NULL;
 #endif
@@ -5564,30 +5574,12 @@ PyInit__ssl(void)
                             SSL_OP_NO_COMPRESSION);
 #endif
 
-#ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
-    PyModule_AddIntConstant(m, "HOSTFLAG_ALWAYS_CHECK_SUBJECT",
-                            X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
-#endif
 #ifdef X509_CHECK_FLAG_NEVER_CHECK_SUBJECT
     PyModule_AddIntConstant(m, "HOSTFLAG_NEVER_CHECK_SUBJECT",
                             X509_CHECK_FLAG_NEVER_CHECK_SUBJECT);
 #endif
-#ifdef X509_CHECK_FLAG_NO_WILDCARDS
-    PyModule_AddIntConstant(m, "HOSTFLAG_NO_WILDCARDS",
-                            X509_CHECK_FLAG_NO_WILDCARDS);
-#endif
-#ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
     PyModule_AddIntConstant(m, "HOSTFLAG_NO_PARTIAL_WILDCARDS",
                             X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
-#endif
-#ifdef X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS
-    PyModule_AddIntConstant(m, "HOSTFLAG_MULTI_LABEL_WILDCARDS",
-                            X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS);
-#endif
-#ifdef X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS
-    PyModule_AddIntConstant(m, "HOSTFLAG_SINGLE_LABEL_SUBDOMAINS",
-                            X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
-#endif
 
 #if HAVE_SNI
     r = Py_True;

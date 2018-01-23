@@ -431,11 +431,12 @@ Certificate handling
       of the certificate, is now supported.
 
    .. versionchanged:: 3.7
-      The function is no longer used. Hostname matching is now performed
-      by OpenSSL.
+      The function is no longer used to TLS connections. Hostname matching
+      is now performed by OpenSSL.
 
       Allow wildcard when it is the leftmost and the only character
-      in that segment.
+      in that segment. Partial wildcards like ``www*.example.com`` are no
+      longer supported.
 
    .. deprecated:: 3.7
 
@@ -599,31 +600,15 @@ Constants
 
    .. versionadded:: 3.7
 
-.. attribute:: HostFlags.HOSTFLAG_ALWAYS_CHECK_SUBJECT
-
-   Consider subject CN even if the certificate contains at least one subject
-   alternative name. This flag violates :rfc:`6125`.
-
-.. attribute:: HostFlags.HOSTFLAG_NO_WILDCARDS
-
-   Don't support wildcard certificate, e.g. ``*.example.org``.
-
 .. attribute:: HostFlags.HOSTFLAG_NO_PARTIAL_WILDCARDS
 
    Dont' support wildcard certificate with partial matches, e.g.
    ``www*.example.org``.
 
-.. attribute:: HostFlags.HOSTFLAG_MULTI_LABEL_WILDCARDS
-
-   Wildcards match multiple labels, e.g. ``www.subdomain.example.org``
-   matches ``*.example.org`` This flag violates :rfc:`6125`.
-
-.. attribute:: HostFlags.HOSTFLAG_SINGLE_LABEL_SUBDOMAINS
-
 .. attribute:: HostFlags.HOSTFLAG_NEVER_CHECK_SUBJECT
 
    Ignore subject CN even if the certificate has no subject alternative
-   names.
+   name extension.
 
    .. note:: The flag is not available when the ssl module is compiled
       with OpenSSL 1.0.2 or LibreSSL.
@@ -1781,8 +1766,7 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.host_flags
 
    The flags for validating host names. By default
-   :data:`HostFlags.HOSTFLAG_SINGLE_LABEL_SUBDOMAINS` and
-   :data:`HostFlags.HOSTFLAG_NO_PARTIAL_WILDCARDS` are set.
+   :data:`HostFlags.HOSTFLAG_NO_PARTIAL_WILDCARDS` is set.
 
    .. versionadded:: 3.7
 

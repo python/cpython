@@ -590,7 +590,6 @@ class SSLProtocol(protocols.Protocol):
                 raise handshake_exc
 
             peercert = sslobj.getpeercert()
-            # Since 3.7, the hostname is matched by OpenSSL during handshake.
         except BaseException as exc:
             if self._loop.get_debug():
                 if isinstance(exc, ssl.CertificateError):
