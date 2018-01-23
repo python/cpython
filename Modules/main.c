@@ -1915,7 +1915,7 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
        _PyPathConfig_Init() tests !Py_FrozenFlag to avoid some warnings.
        Moreover, on Windows, it modifies Py_IsolatedFlag and Py_NoSiteFlag
        variables if a "._pth" file is found. */
-    pymain_set_global_config(pymain, &cmdline);
+    pymain_set_global_config(pymain, cmdline);
 
     err = _PyCoreConfig_Read(config);
     if (_Py_INIT_FAILED(err)) {
@@ -1947,8 +1947,8 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     int locale_coerced = 0;
     int loops = 0;
     int init_ignore_env = pymain->config.ignore_environment;
-    int init_isolated = pymain->config.isolated;
-    int init_no_site = pymain->config.no_site_import;
+    int init_isolated = cmdline->isolated;
+    int init_no_site = cmdline->no_site_import;
 
     while (1) {
         int utf8_mode = pymain->config.utf8_mode;
