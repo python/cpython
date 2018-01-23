@@ -936,17 +936,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                 f"sendfile is not supported for transport {transport!r}")
         if mode is constants._SendfileMode.TRY_NATIVE:
             try:
-                await self._sendfile_native(transport, file,
-                                            offset, count)
-                return
+                return await self._sendfile_native(transport, file,
+                                                   offset, count)
             except events.SendfileNotAvailableError as exc:
                 if not fallback:
                     raise
         # the mode is FALLBACK or fallback is True
         assert (mode is constants._SendfileMode.FALLBACK or mode is
                 constants._SendfileMode.TRY_NATIVE and fallback), mode
-        await self._sendfile_fallback(transport, file,
-                                      offset, count)
+        return await self._sendfile_fallback(transport, file,
+                                             offset, count)
 
     async def _sendfile_native(self, transp, file, offset, count):
         raise events.SendfileNotAvailableError(
@@ -964,16 +963,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if count:
                     blocksize = min(count - total_sent, blocksize)
                     if blocksize <= 0:
-                        break
+                        return total_sent
                 fut = proto._paused
                 if fut is not None:
                     if await fut:
                         # eof received
-                        return
+                        return total_sent
                 view = memoryview(buf)[:blocksize]
                 read = file.readinto(view)
                 if not read:
-                    break  # EOF
+                    return total_sent  # EOF
                 transp.write(view)
                 total_sent += read
         finally:

@@ -26,6 +26,7 @@ if sys.platform != 'win32':
     import tty
 
 import asyncio
+from asyncio import base_events
 from asyncio import coroutines
 from asyncio import events
 from asyncio import proactor_events
@@ -2090,6 +2091,17 @@ class SubprocessTestsMixin:
             self.loop.run_until_complete(connect(shell=False))
 
 
+class MySendfileProto(MyBaseProto):
+
+    def __init__(self, loop=None):
+        super().__init__(loop)
+        self.data = bytearray()
+
+    def data_received(self, data):
+        self.data.extend(data)
+        super().data_received(data)
+
+
 class SendfileMixin:
     # Note: sendfile via SSL transport is equal to sendfile fallback
 
@@ -2122,7 +2134,7 @@ class SendfileMixin:
 
     def prepare(self, is_ssl=False):
         port = support.find_unused_port()
-        srv_proto = MyBaseProto(loop=self.loop)
+        srv_proto = MySendfileProto(loop=self.loop)
         if is_ssl:
             srv_ctx = test_utils.simple_server_sslcontext()
             cli_ctx = test_utils.simple_client_sslcontext()
@@ -2132,7 +2144,7 @@ class SendfileMixin:
         server = self.run_loop(self.loop.create_server(
             lambda: srv_proto, support.HOST, port, ssl=srv_ctx))
 
-        cli_proto = MyBaseProto()
+        cli_proto = MySendfileProto()
         tr, pr = self.run_loop(self.loop.create_connection(
             lambda: cli_proto, support.HOST, port, ssl=cli_ctx))
 
@@ -2162,42 +2174,76 @@ class SendfileMixin:
 
     def test_sendfile(self):
         srv_proto, cli_proto = self.prepare()
-        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile))
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(self.sfile.tell(), len(self.DATA))
+
+    def test_sendfile_force_fallback(self):
+        srv_proto, cli_proto = self.prepare()
+
+        def sendfile_native(transp, file, offset, count):
+            # to raise SendfileNotAvailableError
+            return base_events.BaseEventLoop._sendfile_native(
+                self.loop, transp, file, offset, count)
+
+        self.loop._sendfile_native = sendfile_native
+
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(srv_proto.nbytes, len(self.DATA))
         self.assertEqual(self.sfile.tell(), len(self.DATA))
 
     def test_sendfile_ssl(self):
         srv_proto, cli_proto = self.prepare(is_ssl=True)
-        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile))
         self.assertFalse(cli_proto.transport._protocol_paused)
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(srv_proto.nbytes, len(self.DATA))
         self.assertEqual(self.sfile.tell(), len(self.DATA))
 
     def test_sendfile_large(self):
         srv_proto, cli_proto = self.prepare()
-        self.run_loop(self.loop.sendfile(cli_proto.transport, self.lfile))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.lfile))
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.LARGE_DATA))
+        self.assertEqual(srv_proto.data, self.LARGE_DATA)
         self.assertEqual(srv_proto.nbytes, len(self.LARGE_DATA))
         self.assertEqual(self.lfile.tell(), len(self.LARGE_DATA))
 
     def test_sendfile_ssl_large(self):
         srv_proto, cli_proto = self.prepare(is_ssl=True)
-        self.run_loop(self.loop.sendfile(cli_proto.transport, self.lfile))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.lfile))
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.LARGE_DATA))
+        self.assertEqual(srv_proto.data, self.LARGE_DATA)
         self.assertEqual(srv_proto.nbytes, len(self.LARGE_DATA))
         self.assertEqual(self.lfile.tell(), len(self.LARGE_DATA))
 
     def test_sendfile_ssl_already_paused(self):
         srv_proto, cli_proto = self.prepare(is_ssl=True)
-        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile))
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(srv_proto.nbytes, len(self.DATA))
         self.assertEqual(self.sfile.tell(), len(self.DATA))
 
@@ -2208,11 +2254,14 @@ class SendfileMixin:
         cli_proto.transport.set_write_buffer_limits(2, 1)
         cli_proto.transport.write(BUF)
         self.assertTrue(cli_proto.transport._protocol_paused)
-        self.run_loop(self.loop.sendfile(cli_proto.transport, self.sfile))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile))
         # writing is always restored by fallback if was paused
         self.assertFalse(cli_proto.transport._protocol_paused)
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, BUF + self.DATA)
         self.assertEqual(srv_proto.nbytes, len(self.DATA)+len(BUF))
         self.assertEqual(self.sfile.tell(), len(self.DATA))
 
@@ -2224,6 +2273,55 @@ class SendfileMixin:
         self.run_loop(srv_proto.done)
         self.assertEqual(srv_proto.nbytes, 0)
         self.assertEqual(self.sfile.tell(), 0)
+
+    def test_sendfile_pre_and_post_data(self):
+        srv_proto, cli_proto = self.prepare()
+        PREFIX = b'zxcvbnm' * 1024 * 1024
+        SUFFIX = b'0987654321' * 1024 * 1024
+        cli_proto.transport.write(PREFIX)
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile))
+        cli_proto.transport.write(SUFFIX)
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, PREFIX + self.DATA + SUFFIX)
+        self.assertEqual(self.sfile.tell(), len(self.DATA))
+
+    def test_sendfile_ssl_pre_and_post_data(self):
+        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        PREFIX = b'zxcvbnm' * 1024 * 1024
+        SUFFIX = b'0987654321' * 1024 * 1024
+        cli_proto.transport.write(PREFIX)
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile))
+        cli_proto.transport.write(SUFFIX)
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, PREFIX + self.DATA + SUFFIX)
+        self.assertEqual(self.sfile.tell(), len(self.DATA))
+
+    def test_sendfile_partial(self):
+        srv_proto, cli_proto = self.prepare()
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile, 1000, 100))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, 100)
+        self.assertEqual(srv_proto.data, self.DATA[1000:1100])
+        self.assertEqual(self.sfile.tell(), 1100)
+
+    def test_sendfile_ssl_partial(self):
+        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.sfile, 1000, 100))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, 100)
+        self.assertEqual(srv_proto.data, self.DATA[1000:1100])
+        self.assertEqual(self.sfile.tell(), 1100)
+
 
 
 if sys.platform == 'win32':
