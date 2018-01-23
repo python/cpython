@@ -2342,7 +2342,8 @@ class SetMethodsTest:
             await asyncio.sleep(0.1, loop=self.loop)
             return 10
 
-        task = self.new_task(self.loop, foo())
+        coro = foo()
+        task = self.new_task(self.loop, coro)
         Future.set_result(task, 'spam')
 
         self.assertEqual(
@@ -2355,6 +2356,8 @@ class SetMethodsTest:
                                     r'step\(\): already done'):
             raise exc
 
+        coro.close()
+
     def test_set_exception_causes_invalid_state(self):
         class MyExc(Exception):
             pass
@@ -2366,7 +2369,8 @@ class SetMethodsTest:
             await asyncio.sleep(0.1, loop=self.loop)
             return 10
 
-        task = self.new_task(self.loop, foo())
+        coro = foo()
+        task = self.new_task(self.loop, coro)
         Future.set_exception(task, MyExc())
 
         with self.assertRaises(MyExc):
@@ -2377,6 +2381,8 @@ class SetMethodsTest:
         with self.assertRaisesRegex(asyncio.InvalidStateError,
                                     r'step\(\): already done'):
             raise exc
+
+        coro.close()
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and
