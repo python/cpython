@@ -122,7 +122,6 @@ incr_false(void)
 }
 
 
-/* Invariant: NULL or the most recently accessed thread local context */
 static PyContextVar *current_context_var;
 
 /* Template for creating new thread contexts, calling Context() without
@@ -1512,8 +1511,6 @@ init_current_context(void)
     return tl_context;
 }
 
-
-/* Get the context from the thread state dictionary. */
 static inline PyObject *
 current_context(void)
 {
@@ -1523,7 +1520,6 @@ current_context(void)
     }
 
     if (tl_context != NULL) {
-        /* We already have a thread local context. */
         return tl_context;
     }
 
