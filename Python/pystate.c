@@ -173,6 +173,8 @@ PyInterpreterState_New(void)
     }
     HEAD_UNLOCK();
 
+    interp->tstate_next_unique_id = 0;
+
     return interp;
 }
 
@@ -312,6 +314,11 @@ new_threadstate(PyInterpreterState *interp, int init)
 
         tstate->async_gen_firstiter = NULL;
         tstate->async_gen_finalizer = NULL;
+
+        tstate->context = NULL;
+        tstate->context_ver = 1;
+
+        tstate->id = ++interp->tstate_next_unique_id;
 
         if (init)
             _PyThreadState_Init(tstate);
@@ -499,6 +506,8 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->coroutine_wrapper);
     Py_CLEAR(tstate->async_gen_firstiter);
     Py_CLEAR(tstate->async_gen_finalizer);
+
+    Py_CLEAR(tstate->context);
 }
 
 
