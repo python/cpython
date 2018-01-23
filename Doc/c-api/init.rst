@@ -1147,8 +1147,8 @@ Python-level trace functions in previous versions.
    function as its first parameter, and may be any Python object, or *NULL*.  If
    the profile function needs to maintain state, using a different value for *obj*
    for each thread provides a convenient and thread-safe place to store it.  The
-   profile function is called for all monitored events except the line-number
-   events.
+   profile function is called for all monitored events except :const:`PyTrace_LINE`
+   and :const:`PyTrace_EXCEPTION`.
 
 
 .. c:function:: void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)
