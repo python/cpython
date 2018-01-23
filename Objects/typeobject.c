@@ -55,6 +55,7 @@ static size_t method_cache_collisions = 0;
 /* alphabetical order */
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
+_Py_IDENTIFIER(__class_getitem__);
 _Py_IDENTIFIER(__delitem__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__doc__);
@@ -2372,7 +2373,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         }
 
         /* SF bug 475327 -- if that didn't trigger, we need 3
-           arguments. but PyArg_ParseTupleAndKeywords below may give
+           arguments. but PyArg_ParseTuple below may give
            a msg saying type() needs exactly 3. */
         if (nargs != 3) {
             PyErr_SetString(PyExc_TypeError,
@@ -2694,14 +2695,26 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         Py_DECREF(tmp);
     }
 
-    /* Special-case __init_subclass__: if it's a plain function,
-       make it a classmethod */
+    /* Special-case __init_subclass__ and __class_getitem__:
+       if they are plain functions, make them classmethods */
     tmp = _PyDict_GetItemId(dict, &PyId___init_subclass__);
     if (tmp != NULL && PyFunction_Check(tmp)) {
         tmp = PyClassMethod_New(tmp);
         if (tmp == NULL)
             goto error;
         if (_PyDict_SetItemId(dict, &PyId___init_subclass__, tmp) < 0) {
+            Py_DECREF(tmp);
+            goto error;
+        }
+        Py_DECREF(tmp);
+    }
+
+    tmp = _PyDict_GetItemId(dict, &PyId___class_getitem__);
+    if (tmp != NULL && PyFunction_Check(tmp)) {
+        tmp = PyClassMethod_New(tmp);
+        if (tmp == NULL)
+            goto error;
+        if (_PyDict_SetItemId(dict, &PyId___class_getitem__, tmp) < 0) {
             Py_DECREF(tmp);
             goto error;
         }

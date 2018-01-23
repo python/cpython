@@ -62,7 +62,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    * :meth:`~urllib.response.addinfourl.info` --- return the meta-information of the page, such as headers,
      in the form of an :func:`email.message_from_string` instance (see
-     `Quick Reference to HTTP Headers <https://www.cs.tut.fi/~jkorpela/http.html>`_)
+     `Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_)
 
    * :meth:`~urllib.response.addinfourl.getcode` -- return the HTTP status code of the response.
 

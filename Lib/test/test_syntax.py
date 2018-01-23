@@ -668,12 +668,12 @@ class SyntaxTestCase(unittest.TestCase):
                           "positional argument follows keyword argument")
 
     def test_kwargs_last2(self):
-        self._check_error("int(**{base: 10}, '2')",
+        self._check_error("int(**{'base': 10}, '2')",
                           "positional argument follows "
                           "keyword argument unpacking")
 
     def test_kwargs_last3(self):
-        self._check_error("int(**{base: 10}, *['2'])",
+        self._check_error("int(**{'base': 10}, *['2'])",
                           "iterable argument unpacking follows "
                           "keyword argument unpacking")
 

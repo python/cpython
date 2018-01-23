@@ -537,6 +537,38 @@ Creating listening connections
    .. versionadded:: 3.5.3
 
 
+TLS Upgrade
+-----------
+
+.. coroutinemethod:: AbstractEventLoop.start_tls(transport, protocol, sslcontext, \*, server_side=False, server_hostname=None, ssl_handshake_timeout=None)
+
+   Upgrades an existing connection to TLS.
+
+   Returns a new transport instance, that the *protocol* must start using
+   immediately after the *await*.  The *transport* instance passed to
+   the *start_tls* method should never be used again.
+
+   Parameters:
+
+   * *transport* and *protocol* instances that methods like
+     :meth:`~AbstractEventLoop.create_server` and
+     :meth:`~AbstractEventLoop.create_connection` return.
+
+   * *sslcontext*: a configured instance of :class:`~ssl.SSLContext`.
+
+   * *server_side* pass ``True`` when a server-side connection is being
+     upgraded (like the one created by :meth:`~AbstractEventLoop.create_server`).
+
+   * *server_hostname*: sets or overrides the host name that the target
+     server's certificate will be matched against.
+
+   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
+     wait for the SSL handshake to complete before aborting the connection.
+     ``10.0`` seconds if ``None`` (default).
+
+   .. versionadded:: 3.7
+
+
 Watch file descriptors
 ----------------------
 
@@ -668,6 +700,36 @@ Low-level socket operations
    .. seealso::
 
       :meth:`AbstractEventLoop.create_server` and :func:`start_server`.
+
+.. coroutinemethod:: AbstractEventLoop.sock_sendfile(sock, file, \
+                                                     offset=0, count=None, \
+                                                     *, fallback=True)
+
+   Send a file using high-performance :mod:`os.sendfile` if possible
+   and return the total number of bytes which were sent.
+
+   Asynchronous version of :meth:`socket.socket.sendfile`.
+
+   *sock* must be non-blocking :class:`~socket.socket` of
+   :const:`socket.SOCK_STREAM` type.
+
+   *file* must be a regular file object opened in binary mode.
+
+   *offset* tells from where to start reading the file. If specified,
+   *count* is the total number of bytes to transmit as opposed to
+   sending the file until EOF is reached. File position is updated on
+   return or also in case of error in which case :meth:`file.tell()
+   <io.IOBase.tell>` can be used to figure out the number of bytes
+   which were sent.
+
+   *fallback* set to ``True`` makes asyncio to manually read and send
+   the file when the platform does not support the sendfile syscall
+   (e.g. Windows or SSL socket on Unix).
+
+   Raise :exc:`SendfileNotAvailableError` if the system does not support
+   *sendfile* syscall and *fallback* is ``False``.
+
+   .. versionadded:: 3.7
 
 
 Resolve host name
@@ -881,6 +943,12 @@ Server
       The server is closed asynchronously, use the :meth:`wait_closed`
       coroutine to wait until the server is closed.
 
+   .. method:: get_loop()
+
+      Gives the event loop associated with the server object.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
@@ -910,6 +978,18 @@ Handle
       Return ``True`` if the call was cancelled.
 
       .. versionadded:: 3.7
+
+
+SendfileNotAvailableError
+-------------------------
+
+
+.. exception:: SendfileNotAvailableError
+
+   Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
+
+   Raised if the OS does not support senfile syscall for
+   given socket or file type.
 
 
 Event loop examples

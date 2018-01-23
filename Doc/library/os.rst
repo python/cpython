@@ -735,12 +735,16 @@ as internal buffering of data.
 
 .. function:: dup2(fd, fd2, inheritable=True)
 
-   Duplicate file descriptor *fd* to *fd2*, closing the latter first if necessary.
-   The file descriptor *fd2* is :ref:`inheritable <fd_inheritance>` by default,
-   or non-inheritable if *inheritable* is ``False``.
+   Duplicate file descriptor *fd* to *fd2*, closing the latter first if
+   necessary. Return *fd2*. The new file descriptor is :ref:`inheritable
+   <fd_inheritance>` by default or non-inheritable if *inheritable*
+   is ``False``.
 
    .. versionchanged:: 3.4
       Add the optional *inheritable* parameter.
+
+   .. versionchanged:: 3.7
+      Return *fd2* on success. Previously, ``None`` was always returned.
 
 
 .. function:: fchmod(fd, mode)

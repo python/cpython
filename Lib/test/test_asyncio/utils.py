@@ -35,6 +35,55 @@ from asyncio.log import logger
 from test import support
 
 
+def data_file(filename):
+    if hasattr(support, 'TEST_HOME_DIR'):
+        fullname = os.path.join(support.TEST_HOME_DIR, filename)
+        if os.path.isfile(fullname):
+            return fullname
+    fullname = os.path.join(os.path.dirname(__file__), filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(filename)
+
+
+ONLYCERT = data_file('ssl_cert.pem')
+ONLYKEY = data_file('ssl_key.pem')
+SIGNED_CERTFILE = data_file('keycert3.pem')
+SIGNING_CA = data_file('pycacert.pem')
+PEERCERT = {
+    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
+    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
+    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
+    'issuer': ((('countryName', 'XY'),),
+            (('organizationName', 'Python Software Foundation CA'),),
+            (('commonName', 'our-ca-server'),)),
+    'notAfter': 'Nov 28 19:09:06 2027 GMT',
+    'notBefore': 'Jan 19 19:09:06 2018 GMT',
+    'serialNumber': '82EDBF41C880919C',
+    'subject': ((('countryName', 'XY'),),
+             (('localityName', 'Castle Anthrax'),),
+             (('organizationName', 'Python Software Foundation'),),
+             (('commonName', 'localhost'),)),
+    'subjectAltName': (('DNS', 'localhost'),),
+    'version': 3
+}
+
+
+def simple_server_sslcontext():
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(ONLYCERT, ONLYKEY)
+    server_context.check_hostname = False
+    server_context.verify_mode = ssl.CERT_NONE
+    return server_context
+
+
+def simple_client_sslcontext():
+    client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_context.check_hostname = False
+    client_context.verify_mode = ssl.CERT_NONE
+    return client_context
+
+
 def dummy_ssl_context():
     if ssl is None:
         return None
@@ -434,6 +483,14 @@ class MockPattern(str):
     """
     def __eq__(self, other):
         return bool(re.search(str(self), other, re.S))
+
+
+class MockInstanceOf:
+    def __init__(self, type):
+        self._type = type
+
+    def __eq__(self, other):
+        return isinstance(other, self._type)
 
 
 def get_function_source(func):
