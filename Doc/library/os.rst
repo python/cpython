@@ -1112,13 +1112,22 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :func:`~os.pwritev` writes the contents of each object to the file descriptor
    and returns the total number of bytes written.
 
-   If the *flags* argument is provided it will invoke the *pwritev2* system
-   call, which modifies the behavior on a per-call basis based on the value
-   of the *flags* argument. If this argument is ommited, the *pwritev* system
-   call will be called instead.
+   :func:`~os.pwritev` will call *pwritev2* system call if available, which modifies
+   the behavior on a per-call basis based on the value of the *flags* argument. If
+   the *flags* argument is provided and different than zero, and *pwritev2* is not
+   available, it will raise a :exc:`NotImplementedError`.
+
+   *pwritev2* and flags different than zero are available since Linux version
+   4.7 and newer.
 
    The flags argument contains a bitwise OR of zero or more of the following
    flags:
+
+   Availability: Unix (version 2.6.30), FreeBSD (version 6.0 and newer),
+   OpenBSD (version 2.7 and newer).
+
+   .. versionadded:: 3.7
+
 
 .. data:: RWF_DSYNC
           RWF_SYNC
@@ -1235,13 +1244,22 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :func:`~os.preadv` return the total number of bytes read (which may be less than
    the total capacity of all the objects).
 
-   If the *flags* argument is provided it will invoke the *preadv2* system
-   call, which modifies the behavior on a per-call basis based on the value
-   of the *flags* argument. If this argument is ommited, the *preadv* system
-   call will be called instead.
+   :func:`~os.preadv` will call *preadv2* system call if available, which modifies
+   the behavior on a per-call basis based on the value of the *flags* argument. If
+   the *flags* argument is provided and different than zero, and *preadv2* is not
+   available, it will raise a :exc:`NotImplementedError`.
+
+   *preadv2* and flags different than zero are available since Linux version
+   4.6 and newer.
 
    The flags argument contains a bitwise OR of zero or more of the following
    flags:
+
+   Availability: Unix (version 2.6.30), FreeBSD (version 6.0 and newer),
+   OpenBSD (version 2.7 and newer).
+
+   .. versionadded:: 3.7
+
 
 .. data:: RWF_HIPRI
           RWF_NOWAIT

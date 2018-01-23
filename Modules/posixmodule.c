@@ -8196,11 +8196,20 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     }
 
     cnt = PySequence_Size(buffers);
-    if (cnt < 0)
+    if (cnt < 0){
         return -1;
+    }
 
-    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0)
+#ifndef HAVE_PREADV2
+    if(flags != 0){
+        argument_unavailable_error("preadv2", "preadv2() not available in this system");
         return -1;
+    }
+#endif
+
+    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0){
+        return -1;
+    }
 #ifdef HAVE_PREADV2
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -8210,11 +8219,6 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
-    if(flags != 0){
-        PyErr_SetString(PyExc_OSError, "preadv2() not available in this system");
-        iov_cleanup(iov, buf, cnt);
-        return -1;
-    }
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
@@ -8720,11 +8724,20 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     }
 
     cnt = PySequence_Size(buffers);
-    if (cnt < 0)
+    if (cnt < 0){
         return -1;
+    }
 
-    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0)
+#ifndef HAVE_PWRITEV2
+    if(flags != 0){
+        argument_unavailable_error("pwritev2", "pwritev2() not available in this system");
         return -1;
+    }
+#endif
+
+    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0){
+        return -1;
+    }
 #ifdef HAVE_PWRITEV2
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -8734,11 +8747,6 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
-    if(flags != 0){
-        PyErr_SetString(PyExc_OSError, "pwritev2() not available in this system");
-        iov_cleanup(iov, buf, cnt);
-        return -1;
-    }
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
