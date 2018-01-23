@@ -100,7 +100,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyObject *rl_loop;
-#ifdef HAVE_GETPID
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
     pid_t rl_pid;
 #endif
 } PyRunningLoopHolder;
@@ -262,7 +262,7 @@ get_running_loop(PyObject **loop)
         goto not_found;
     }
 
-#ifdef HAVE_GETPID
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
     /* On Windows there is no getpid, but there is also no os.fork(),
        so there is no need for this check.
     */
@@ -3197,7 +3197,7 @@ new_running_loop_holder(PyObject *loop)
         return NULL;
     }
 
-#ifdef HAVE_GETPID
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
     rl->rl_pid = getpid();
 #endif
 
