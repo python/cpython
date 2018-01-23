@@ -188,13 +188,13 @@ class Generator:
             msg = deepcopy(msg)
             # Try to replace header with new data and extend it
             # if some records are missed
-            try:
+            if msg.get('content-transfer-encoding', None) is not None:
                 msg.replace_header('content-transfer-encoding', munge_cte[0])
-            except KeyError: 
+            else: 
                 msg.add_header('content-transfer-encoding', munge_cte[0])
-            try:
+            if msg.get('content-type', None) is not None:
                 msg.replace_header('content-type', munge_cte[1])
-            except KeyError:
+            else:
                 msg.add_header('content-type', munge_cte[1])
         # Write the headers.  First we see if the message object wants to
         # handle that itself.  If not, we'll do it generically.
