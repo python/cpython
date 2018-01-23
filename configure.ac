@@ -401,6 +401,7 @@ then
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
+	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
