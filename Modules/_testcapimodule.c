@@ -10,7 +10,17 @@
 #include "Python.h"
 #include <float.h>
 #include "structmember.h"
+//Hack to make this compile statically
+//ref: https://bugs.python.org/issue19348
+#ifdef Py_BUILD_CORE
+#undef Py_BUILD_CORE
 #include "datetime.h"
+#define Py_BUILD_CORE
+#else
+#include "datetime.h"
+#endif
+
+
 #include "marshal.h"
 #include <signal.h>
 

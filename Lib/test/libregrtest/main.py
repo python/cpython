@@ -24,6 +24,7 @@ try:
 except ImportError:
     gc = None
 
+_vxworks = sys.platform == "vxworks";
 
 # When tests are run from the Python build directory, it is best practice
 # to keep the test files in a subfolder.  This eases the cleanup of leftover
@@ -422,8 +423,11 @@ class Regrtest:
     def display_header(self):
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
-        print("==", platform.platform(aliased=True),
+        if not _vxworks:
+            print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
+        else:
+            print("VxWorks 7");
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
