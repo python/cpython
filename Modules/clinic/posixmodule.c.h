@@ -4007,6 +4007,51 @@ exit:
 
 #endif /* defined(HAVE_PWRITE) */
 
+#if (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2))
+
+PyDoc_STRVAR(os_pwritev__doc__,
+"pwritev($module, fd, buffers, offset, flags=0, /)\n"
+"--\n"
+"\n"
+"Write bytes to a file descriptor starting at a particular offset.\n"
+"\n"
+"Write buffer to fd, starting at offset bytes from the beginning of\n"
+"the file.  Returns the number of bytes writte.  Does not change the\n"
+"current file offset.");
+
+#define OS_PWRITEV_METHODDEF    \
+    {"pwritev", (PyCFunction)os_pwritev, METH_FASTCALL, os_pwritev__doc__},
+
+static Py_ssize_t
+os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
+                int flags);
+
+static PyObject *
+os_pwritev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    PyObject *buffers;
+    Py_off_t offset;
+    int flags = 0;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:pwritev",
+        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+        goto exit;
+    }
+    _return_value = os_pwritev_impl(module, fd, buffers, offset, flags);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
+
 #if defined(HAVE_MKFIFO)
 
 PyDoc_STRVAR(os_mkfifo__doc__,
@@ -6303,6 +6348,10 @@ exit:
     #define OS_PWRITE_METHODDEF
 #endif /* !defined(OS_PWRITE_METHODDEF) */
 
+#ifndef OS_PWRITEV_METHODDEF
+    #define OS_PWRITEV_METHODDEF
+#endif /* !defined(OS_PWRITEV_METHODDEF) */
+
 #ifndef OS_MKFIFO_METHODDEF
     #define OS_MKFIFO_METHODDEF
 #endif /* !defined(OS_MKFIFO_METHODDEF) */
@@ -6458,4 +6507,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=52cbdec1822e34f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d50830cf566cb297 input=a9049054013a1b77]*/

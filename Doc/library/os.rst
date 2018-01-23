@@ -1101,6 +1101,35 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
+.. function:: pwritev(fd, buffers, offset, flags=0)
+
+   Combines the functionality of :func:`os.writev` and :func:`os.pwrite`. It
+   writes the contents of *buffers* to file descriptor *fd*. *buffers* must be
+   a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
+   processed in array order. Entire contents of first buffer is written before
+   proceeding to second, and so on. The operating system may set a limit
+   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
+   :func:`~os.pwritev` writes the contents of each object to the file descriptor
+   and returns the total number of bytes written.
+
+   If the *flags* argument is provided it will invoke the *pwritev2* system
+   call, which modifies the behavior on a per-call basis based on the value
+   of the *flags* argument. If this argument is ommited, the *pwritev* system
+   call will be called instead.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+.. data:: RWF_DSYNC
+          RWF_SYNC
+
+   The above constants are available on Linux Kernel 4.7 (or newer).
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
+
+
 .. function:: read(fd, n)
 
    Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
