@@ -1055,6 +1055,10 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
 #endif
 
                 PyHamtNode_Bitmap *clone = hamt_node_bitmap_clone(self);
+                if (clone == NULL) {
+                    return W_ERROR;
+                }
+
                 Py_SETREF(clone->b_array[val_idx],
                           (PyObject *)sub_node);  /* borrow */
 
