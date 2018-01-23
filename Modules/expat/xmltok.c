@@ -405,16 +405,20 @@ utf8_toUtf8(const ENCODING *UNUSED_P(enc),
   }
 
   /* Avoid copying partial characters (from incomplete input). */
-  const char * const fromLimBefore = fromLim;
-  align_limit_to_full_utf8_characters(*fromP, &fromLim);
-  if (fromLim < fromLimBefore) {
-    input_incomplete = true;
+  {
+    const char * const fromLimBefore = fromLim;
+    align_limit_to_full_utf8_characters(*fromP, &fromLim);
+    if (fromLim < fromLimBefore) {
+      input_incomplete = true;
+    }
   }
 
-  const ptrdiff_t bytesToCopy = fromLim - *fromP;
-  memcpy((void *)*toP, (const void *)*fromP, (size_t)bytesToCopy);
-  *fromP += bytesToCopy;
-  *toP += bytesToCopy;
+  {
+    const ptrdiff_t bytesToCopy = fromLim - *fromP;
+    memcpy((void *)*toP, (const void *)*fromP, (size_t)bytesToCopy);
+    *fromP += bytesToCopy;
+    *toP += bytesToCopy;
+  }
 
   if (output_exhausted)  // needs to go first
     return XML_CONVERT_OUTPUT_EXHAUSTED;
