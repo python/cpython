@@ -319,9 +319,9 @@ class BaseTestUUID:
 
         # Confirm that uuid.getnode ignores hardware addresses larger than 48
         # bits. Mock out each platform's *_getnode helper functions to return
-        # something just larger than 2^48 to test. This will cause uuid.getnode
-        # to fall back on uuid._random_getnode, which will generate a valid
-        # value.
+        # something just larger than 48 bits to test. This will cause
+        # uuid.getnode to fall back on uuid._random_getnode, which will
+        # generate a valid value.
         too_large_getter = lambda: 1 << 48
         with unittest.mock.patch.multiple(
             self.uuid,
