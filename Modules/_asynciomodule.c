@@ -3217,7 +3217,7 @@ PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 
 
 static PyTypeObject PyRunningLoopHolder_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_RunningLoopHolder",
     sizeof(PyRunningLoopHolder),
     .tp_getattro = PyObject_GenericGetAttr,
@@ -3406,6 +3406,9 @@ PyInit__asyncio(void)
         return NULL;
     }
     if (PyType_Ready(&TaskType) < 0) {
+        return NULL;
+    }
+    if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
         return NULL;
     }
 
