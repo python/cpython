@@ -2343,16 +2343,17 @@ class SendfileMixin:
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
-    def xtest_sendfile_close_peer_in_middle_of_receiving(self):
+    def test_sendfile_close_peer_in_middle_of_receiving(self):
         srv_proto, cli_proto = self.prepare(close_after=1024)
-        ret = self.run_loop(
-            self.loop.sendfile(cli_proto.transport, self.file))
-        cli_proto.transport.close()
+        with self.assertRaises(ConnectionResetError):
+            self.run_loop(
+                self.loop.sendfile(cli_proto.transport, self.file))
         self.run_loop(srv_proto.done)
-        self.assertEqual(ret, len(self.DATA))
-        self.assertEqual(srv_proto.nbytes, len(self.DATA))
-        self.assertEqual(srv_proto.data, self.DATA)
-        self.assertEqual(self.file.tell(), len(self.DATA))
+
+        self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
+                        srv_proto.nbytes)
+        self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
+                        self.file.tell())
 
     def test_sendfile_fallback_close_peer_in_middle_of_receiving(self):
 
@@ -2364,11 +2365,11 @@ class SendfileMixin:
         self.loop._sendfile_native = sendfile_native
 
         srv_proto, cli_proto = self.prepare(close_after=1024)
-        cli_proto.transport.set_write_buffer_limits(0)
         with self.assertRaises(ConnectionResetError):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file))
         self.run_loop(srv_proto.done)
+
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
                         srv_proto.nbytes)
         self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
