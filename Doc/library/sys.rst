@@ -1062,8 +1062,8 @@ always available.
 
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
-   ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
-   ``'c_exception'``. *arg* depends on the event type.
+   ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
+   on the event type.
 
    The events have the following meaning:
 
