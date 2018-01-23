@@ -8,7 +8,9 @@
 **/*asyncio*                  @1st1 @asvetlov
 
 # Core
+**/*context*                  @1st1
 **/*genobject*                @1st1
+**/*hamt*                     @1st1
 
 # Hashing
 **/*hashlib*                  @python/crypto-team
