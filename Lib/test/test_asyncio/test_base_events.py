@@ -14,6 +14,7 @@ from unittest import mock
 import asyncio
 from asyncio import base_events
 from asyncio import constants
+from asyncio import events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -191,14 +192,14 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
 
     def test__add_callback_handle(self):
-        h = asyncio.Handle(lambda: False, (), self.loop)
+        h = asyncio.Handle(lambda: False, (), self.loop, None)
 
         self.loop._add_callback(h)
         self.assertFalse(self.loop._scheduled)
         self.assertIn(h, self.loop._ready)
 
     def test__add_callback_cancelled_handle(self):
-        h = asyncio.Handle(lambda: False, (), self.loop)
+        h = asyncio.Handle(lambda: False, (), self.loop, None)
         h.cancel()
 
         self.loop._add_callback(h)
@@ -332,9 +333,9 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     def test__run_once(self):
         h1 = asyncio.TimerHandle(time.monotonic() + 5.0, lambda: True, (),
-                                 self.loop)
+                                 self.loop, None)
         h2 = asyncio.TimerHandle(time.monotonic() + 10.0, lambda: True, (),
-                                 self.loop)
+                                 self.loop, None)
 
         h1.cancel()
 
@@ -389,7 +390,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             handle = loop.call_soon(lambda: True)
 
         h = asyncio.TimerHandle(time.monotonic() - 1, cb, (self.loop,),
-                                self.loop)
+                                self.loop, None)
 
         self.loop._process_events = mock.Mock()
         self.loop._scheduled.append(h)
@@ -1860,7 +1861,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
     def test__sock_sendfile_native_failure(self):
         sock, proto = self.prepare()
 
-        with self.assertRaisesRegex(base_events._SendfileNotAvailable,
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                     "sendfile is not available"):
             self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                           0, None))
@@ -1871,7 +1872,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_no_fallback(self):
         sock, proto = self.prepare()
 
-        with self.assertRaisesRegex(RuntimeError,
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
                                     "sendfile is not available"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                   fallback=False))

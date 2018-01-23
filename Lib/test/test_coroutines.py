@@ -2,6 +2,7 @@ import contextlib
 import copy
 import inspect
 import pickle
+import re
 import sys
 import types
 import unittest
@@ -1974,9 +1975,11 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             wrapped = gen
             return gen
 
-        self.assertIsNone(sys.get_coroutine_wrapper())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(sys.get_coroutine_wrapper())
 
-        sys.set_coroutine_wrapper(wrap)
+        with self.assertWarns(DeprecationWarning):
+            sys.set_coroutine_wrapper(wrap)
         self.assertIs(sys.get_coroutine_wrapper(), wrap)
         try:
             f = foo()
@@ -2040,6 +2043,130 @@ class SysSetCoroWrapperTest(unittest.TestCase):
         finally:
             sys.set_coroutine_wrapper(None)
 
+
+class OriginTrackingTest(unittest.TestCase):
+    def here(self):
+        info = inspect.getframeinfo(inspect.currentframe().f_back)
+        return (info.filename, info.lineno)
+
+    def test_origin_tracking(self):
+        orig_depth = sys.get_coroutine_origin_tracking_depth()
+        try:
+            async def corofn():
+                pass
+
+            sys.set_coroutine_origin_tracking_depth(0)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
+
+            with contextlib.closing(corofn()) as coro:
+                self.assertIsNone(coro.cr_origin)
+
+            sys.set_coroutine_origin_tracking_depth(1)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 1)
+
+            fname, lineno = self.here()
+            with contextlib.closing(corofn()) as coro:
+                self.assertEqual(coro.cr_origin,
+                                 ((fname, lineno + 1, "test_origin_tracking"),))
+
+            sys.set_coroutine_origin_tracking_depth(2)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 2)
+
+            def nested():
+                return (self.here(), corofn())
+            fname, lineno = self.here()
+            ((nested_fname, nested_lineno), coro) = nested()
+            with contextlib.closing(coro):
+                self.assertEqual(coro.cr_origin,
+                                 ((nested_fname, nested_lineno, "nested"),
+                                  (fname, lineno + 1, "test_origin_tracking")))
+
+            # Check we handle running out of frames correctly
+            sys.set_coroutine_origin_tracking_depth(1000)
+            with contextlib.closing(corofn()) as coro:
+                self.assertTrue(2 < len(coro.cr_origin) < 1000)
+
+            # We can't set depth negative
+            with self.assertRaises(ValueError):
+                sys.set_coroutine_origin_tracking_depth(-1)
+            # And trying leaves it unchanged
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 1000)
+
+        finally:
+            sys.set_coroutine_origin_tracking_depth(orig_depth)
+
+    def test_origin_tracking_warning(self):
+        async def corofn():
+            pass
+
+        a1_filename, a1_lineno = self.here()
+        def a1():
+            return corofn()  # comment in a1
+        a1_lineno += 2
+
+        a2_filename, a2_lineno = self.here()
+        def a2():
+            return a1()  # comment in a2
+        a2_lineno += 2
+
+        def check(depth, msg):
+            sys.set_coroutine_origin_tracking_depth(depth)
+            with warnings.catch_warnings(record=True) as wlist:
+                a2()
+                support.gc_collect()
+            # This might be fragile if other warnings somehow get triggered
+            # inside our 'with' block... let's worry about that if/when it
+            # happens.
+            self.assertTrue(len(wlist) == 1)
+            self.assertIs(wlist[0].category, RuntimeWarning)
+            self.assertEqual(msg, str(wlist[0].message))
+
+        orig_depth = sys.get_coroutine_origin_tracking_depth()
+        try:
+            msg = check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
+            check(1, "".join([
+                f"coroutine '{corofn.__qualname__}' was never awaited\n",
+                "Coroutine created at (most recent call last)\n",
+                f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
+                f'    return corofn()  # comment in a1',
+            ]))
+            check(2, "".join([
+                f"coroutine '{corofn.__qualname__}' was never awaited\n",
+                "Coroutine created at (most recent call last)\n",
+                f'  File "{a2_filename}", line {a2_lineno}, in a2\n',
+                f'    return a1()  # comment in a2\n',
+                f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
+                f'    return corofn()  # comment in a1',
+            ]))
+
+        finally:
+            sys.set_coroutine_origin_tracking_depth(orig_depth)
+
+    def test_unawaited_warning_when_module_broken(self):
+        # Make sure we don't blow up too bad if
+        # warnings._warn_unawaited_coroutine is broken somehow (e.g. because
+        # of shutdown problems)
+        async def corofn():
+            pass
+
+        orig_wuc = warnings._warn_unawaited_coroutine
+        try:
+            warnings._warn_unawaited_coroutine = lambda coro: 1/0
+            with support.captured_stderr() as stream:
+                corofn()
+                support.gc_collect()
+            self.assertIn("Exception ignored in", stream.getvalue())
+            self.assertIn("ZeroDivisionError", stream.getvalue())
+            self.assertIn("was never awaited", stream.getvalue())
+
+            del warnings._warn_unawaited_coroutine
+            with support.captured_stderr() as stream:
+                corofn()
+                support.gc_collect()
+            self.assertIn("was never awaited", stream.getvalue())
+
+        finally:
+            warnings._warn_unawaited_coroutine = orig_wuc
 
 @support.cpython_only
 class CAPITest(unittest.TestCase):

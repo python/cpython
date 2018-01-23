@@ -1,0 +1,1 @@
+Make dict.copy() up to 5.5 times faster.
