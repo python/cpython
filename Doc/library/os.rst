@@ -1112,18 +1112,23 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :func:`~os.pwritev` writes the contents of each object to the file descriptor
    and returns the total number of bytes written.
 
-   :func:`~os.pwritev` will call *pwritev2* system call if available, which modifies
-   the behavior on a per-call basis based on the value of the *flags* argument. If
-   the *flags* argument is provided and different than zero, and *pwritev2* is not
-   available, it will raise a :exc:`NotImplementedError`.
 
-   *pwritev2* and flags different than zero are available since Linux version
-   4.7 and newer.
-
-   The flags argument contains a bitwise OR of zero or more of the following
+   The *flags* argument contains a bitwise OR of zero or more of the following
    flags:
 
-   Availability: Unix (version 2.6.30), FreeBSD (version 6.0 and newer),
+       - RWF_DSYNC
+       - RWF_SYNC
+
+   :func:`~os.pwritev` will call *pwritev2* system call if available, which modifies
+   the behavior on a per-call basis based on the value of the *flags* argument. The
+   :func:`~os.pwritev2` function is required to pass flags.
+
+   *pwritev2* and *flags* different than zero are available since Linux version
+   4.7 and newer.
+
+   The :func:`~os.pwritev2` function is required to pass flags.
+
+   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
    OpenBSD (version 2.7 and newer).
 
    .. versionadded:: 3.7
@@ -1134,7 +1139,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    The above constants are available on Linux Kernel 4.7 (or newer).
 
-   Availability: Unix.
+   Availability: Linux.
 
    .. versionadded:: 3.7
 
@@ -1244,18 +1249,20 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :func:`~os.preadv` return the total number of bytes read (which may be less than
    the total capacity of all the objects).
 
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+       - RWF_HIPRI
+       - RWF_NOWAIT
+
    :func:`~os.preadv` will call *preadv2* system call if available, which modifies
-   the behavior on a per-call basis based on the value of the *flags* argument. If
-   the *flags* argument is provided and different than zero, and *preadv2* is not
-   available, it will raise a :exc:`NotImplementedError`.
+   the behavior on a per-call basis based on the value of the *flags* argument. The
+   :func:`~os.preadv2` function is required to pass flags.
 
    *preadv2* and flags different than zero are available since Linux version
    4.6 and newer.
 
-   The flags argument contains a bitwise OR of zero or more of the following
-   flags:
-
-   Availability: Unix (version 2.6.30), FreeBSD (version 6.0 and newer),
+   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
    OpenBSD (version 2.7 and newer).
 
    .. versionadded:: 3.7
@@ -1267,7 +1274,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The above constants are available on Linux Kernel 4.11 and 4.6 (or newer)
    respectively.
 
-   Availability: Unix.
+   Availability: Linux.
 
    .. versionadded:: 3.7
 

@@ -8196,18 +8196,18 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     }
 
     cnt = PySequence_Size(buffers);
-    if (cnt < 0){
+    if (cnt < 0) {
         return -1;
     }
 
 #ifndef HAVE_PREADV2
-    if(flags != 0){
-        argument_unavailable_error("preadv2", "preadv2() not available in this system");
+    if(flags != 0) {
+        argument_unavailable_error("preadv2", "flags");
         return -1;
     }
 #endif
 
-    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0){
+    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0) {
         return -1;
     }
 #ifdef HAVE_PREADV2
@@ -8724,18 +8724,18 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     }
 
     cnt = PySequence_Size(buffers);
-    if (cnt < 0){
+    if (cnt < 0) {
         return -1;
     }
 
 #ifndef HAVE_PWRITEV2
-    if(flags != 0){
-        argument_unavailable_error("pwritev2", "pwritev2() not available in this system");
+    if(flags != 0) {
+        argument_unavailable_error("pwritev2", "flags");
         return -1;
     }
 #endif
 
-    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0){
+    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0) {
         return -1;
     }
 #ifdef HAVE_PWRITEV2
