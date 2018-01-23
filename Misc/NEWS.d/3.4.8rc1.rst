@@ -1,0 +1,61 @@
+.. bpo: 30657
+.. date: 2017-12-01-18-51-03
+.. nonce: Fd8kId
+.. release date: 2018-01-23
+.. section: Security
+
+Fixed possible integer overflow in PyBytes_DecodeEscape, CVE-2017-1000158.
+Original patch by Jay Bosamiya; rebased to Python 3 by Miro Hrončok.
+
+..
+
+.. bpo: 30947
+.. date: 2017-09-05-20-34-44
+.. nonce: iNMmm4
+.. section: Security
+
+Upgrade libexpat embedded copy from version 2.2.1 to 2.2.3 to get security
+fixes.
+
+..
+
+.. bpo: 29169
+.. date: 2017-08-16-17-34-02
+.. nonce: GRXsSt
+.. section: Security
+
+Update zlib from 1.2.8 to 1.2.11 to get security fixes.
+
+..
+
+.. bpo: 32072
+.. date: 2017-11-18-21-13-52
+.. nonce: nwDV8L
+.. section: Library
+
+Fixed issues with binary plists:
+
+* Fixed saving bytearrays.
+* Identical objects will be saved only once.
+* Equal references will be load as identical objects.
+* Added support for saving and loading recursive data structures.
+
+..
+
+.. bpo: 31170
+.. date: 2017-09-05-20-35-21
+.. nonce: QGmJ1t
+.. section: Library
+
+expat: Update libexpat from 2.2.3 to 2.2.4. Fix copying of partial
+characters for UTF-8 input (libexpat bug 115):
+https://github.com/libexpat/libexpat/issues/115
+
+..
+
+.. bpo: 29572
+.. date: 2017-09-07-19-19-19
+.. nonce: iZ1XKK
+.. section: Build
+
+Update Windows build and OS X installers to use OpenSSL 1.0.2k.
