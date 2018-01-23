@@ -968,13 +968,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                     blocksize = min(count - total_sent, blocksize)
                     if blocksize <= 0:
                         return total_sent
-                fut = proto._paused
-                if fut is not None:
-                    await fut
                 view = memoryview(buf)[:blocksize]
                 read = file.readinto(view)
                 if not read:
                     return total_sent  # EOF
+                fut = proto._paused
+                if fut is not None:
+                    await fut
                 transp.write(view)
                 total_sent += read
         finally:
