@@ -1,0 +1,13 @@
+The ``sys.path[0]`` initialization change for bpo-29139 caused a regression
+by revealing an inconsistency in how sys.path is initialized when executing
+``__main__`` from a zipfile, directory, or other import location. This is
+considered a potential security issue, as it may lead to privileged
+processes unexpectedly loading code from user controlled directories in
+situations where that was not previously the case.
+
+The interpreter now consistently avoids ever adding the import location's
+parent directory to ``sys.path``, and ensures no other ``sys.path`` entries
+are inadvertently modified when inserting the import location named on the
+command line. (Originally reported as bpo-29723 against Python 3.6rc1, but
+it was missed at the time that the then upcoming Python 3.5.4 release would
+also be affected)
