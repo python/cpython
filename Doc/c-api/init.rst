@@ -1091,11 +1091,6 @@ Python-level trace functions in previous versions.
    | :const:`PyTrace_C_RETURN`    | Function object being called.        |
    +------------------------------+--------------------------------------+
 
-   Any trace function registered using :c:func:`PyEval_SetTrace` will not receive
-   :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or :const:`PyTrace_C_RETURN`
-   as a value for the *what* parameter.
-
-
 .. c:var:: int PyTrace_CALL
 
    The value of the *what* parameter to a :c:type:`Py_tracefunc` function when a new
@@ -1160,8 +1155,10 @@ Python-level trace functions in previous versions.
 
    Set the tracing function to *func*.  This is similar to
    :c:func:`PyEval_SetProfile`, except the tracing function does receive line-number
-   events and does not receive any event related to C function objects being called.
-
+   events and does not receive any event related to C function objects being called.Any
+   trace function registered using :c:func:`PyEval_SetTrace` will not receive
+   :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or :const:`PyTrace_C_RETURN`
+   as a value for the *what* parameter.
 
 .. _advanced-debugging:
 
