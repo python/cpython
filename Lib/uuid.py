@@ -656,6 +656,11 @@ def _random_getnode():
 
 _node = None
 
+_node_getters_win32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+
+_node_getters_unix = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
+                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
+
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
 
@@ -668,12 +673,10 @@ def getnode(*, getters=None):
     if _node is not None:
         return _node
 
-    if getters is None:
-        if sys.platform == 'win32':
-            getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
-        else:
-            getters = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                       _arp_getnode, _lanscan_getnode, _netstat_getnode]
+    if sys.platform == 'win32':
+        getters = _node_getters_win32
+    else:
+        getters = _node_getters_unix
 
     for getter in getters + [_random_getnode]:
         try:
@@ -682,7 +685,8 @@ def getnode(*, getters=None):
             continue
         if (_node is not None) and (0 <= _node < (1 << 48)):
             return _node
-    assert False, '_random_getnode() returned an invalid value'
+
+    assert False, '_random_getnode() returned invalid value: {}'.format(_node)
 
 
 _last_timestamp = None
