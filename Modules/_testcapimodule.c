@@ -4438,6 +4438,13 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
 }
 
 
+static PyObject*
+new_hamt(PyObject *self, PyObject *args)
+{
+    return _PyContext_NewHamtForTests();
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4655,6 +4662,7 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_values", get_mapping_values, METH_O},
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
+    {"hamt", new_hamt, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
