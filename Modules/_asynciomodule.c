@@ -127,11 +127,10 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 
 
 /* Get FutureIter from Future */
-static PyObject* future_new_iter(PyObject *);
+static PyObject * future_new_iter(PyObject *);
 static inline int future_call_schedule_callbacks(FutureObj *);
 
-static PyRunningLoopHolder *
-new_running_loop_holder(PyObject *);
+static PyRunningLoopHolder * new_running_loop_holder(PyObject *);
 
 
 static int
