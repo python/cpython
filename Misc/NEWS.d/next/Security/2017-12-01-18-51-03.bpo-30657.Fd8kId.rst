@@ -1,2 +1,0 @@
-Fixed possible integer overflow in PyBytes_DecodeEscape, CVE-2017-1000158.
-Original patch by Jay Bosamiya; rebased to Python 3 by Miro Hrončok.
