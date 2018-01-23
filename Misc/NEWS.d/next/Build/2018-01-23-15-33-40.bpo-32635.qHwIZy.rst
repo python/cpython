@@ -1,0 +1,2 @@
+Fix segfault of the crypt module when libxcrypt is provided instead of
+libcrypt at the system.
