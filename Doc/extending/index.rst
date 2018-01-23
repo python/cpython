@@ -32,7 +32,7 @@ approaches to creating C and C++ extensions for Python.
 
 .. seealso::
 
-   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/en/latest/extensions/>`_
+   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/guides/packaging-binary-extensions/>`_
       The Python Packaging User Guide not only covers several available
       tools that simplify the creation of binary extensions, but also
       discusses the various reasons why creating an extension module may be

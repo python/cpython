@@ -3,7 +3,7 @@
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle',
+    'Handle', 'TimerHandle', 'SendfileNotAvailableError',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     'get_child_watcher', 'set_child_watcher',
@@ -18,6 +18,14 @@ import sys
 import threading
 
 from . import format_helpers
+
+
+class SendfileNotAvailableError(RuntimeError):
+    """Sendfile syscall is not available.
+
+    Raised if OS does not support senfile syscall for given socket or
+    file type.
+    """
 
 
 class Handle:
@@ -462,6 +470,10 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     async def sock_accept(self, sock):
+        raise NotImplementedError
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None,
+                            *, fallback=None):
         raise NotImplementedError
 
     # Signal handling.

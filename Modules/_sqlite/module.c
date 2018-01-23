@@ -35,13 +35,20 @@
 
 /* static objects at module-level */
 
-PyObject* pysqlite_Error, *pysqlite_Warning, *pysqlite_InterfaceError, *pysqlite_DatabaseError,
-    *pysqlite_InternalError, *pysqlite_OperationalError, *pysqlite_ProgrammingError,
-    *pysqlite_IntegrityError, *pysqlite_DataError, *pysqlite_NotSupportedError;
+PyObject *pysqlite_Error = NULL;
+PyObject *pysqlite_Warning = NULL;
+PyObject *pysqlite_InterfaceError = NULL;
+PyObject *pysqlite_DatabaseError = NULL;
+PyObject *pysqlite_InternalError = NULL;
+PyObject *pysqlite_OperationalError = NULL;
+PyObject *pysqlite_ProgrammingError = NULL;
+PyObject *pysqlite_IntegrityError = NULL;
+PyObject *pysqlite_DataError = NULL;
+PyObject *pysqlite_NotSupportedError = NULL;
 
-PyObject* converters;
-int _enable_callback_tracebacks;
-int pysqlite_BaseTypeAdapted;
+PyObject* converters = NULL;
+int _enable_callback_tracebacks = 0;
+int pysqlite_BaseTypeAdapted = 0;
 
 static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         kwargs)
@@ -460,10 +467,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     /* initialize the default converters */
     converters_init(dict);
-
-    _enable_callback_tracebacks = 0;
-
-    pysqlite_BaseTypeAdapted = 0;
 
 error:
     if (PyErr_Occurred())

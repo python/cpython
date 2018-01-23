@@ -2074,7 +2074,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(p('f'), False)
         self.assertEqual(p('local'), 3)
         self.assertEqual(p('sys'), sys.maxsize)
-        self.assertEqual(p('exp'), sys.maxsize - 1)
+        self.assertNotIn('exp', signature.parameters)
 
         test_callable(object)
 

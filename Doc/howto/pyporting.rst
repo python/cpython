@@ -433,12 +433,12 @@ to make sure everything functions as expected in both versions of Python.
 .. _Futurize: http://python-future.org/automatic_conversion.html
 .. _importlib: https://docs.python.org/3/library/importlib.html#module-importlib
 .. _importlib2: https://pypi.python.org/pypi/importlib2
-.. _Modernize: https://python-modernize.readthedocs.org/en/latest/
+.. _Modernize: https://python-modernize.readthedocs.io/
 .. _mypy: http://mypy-lang.org/
 .. _Porting to Python 3: http://python3porting.com/
 .. _Pylint: https://pypi.python.org/pypi/pylint
 
-.. _Python 3 Q & A: https://ncoghlan-devs-python-notes.readthedocs.org/en/latest/python3/questions_and_answers.html
+.. _Python 3 Q & A: https://ncoghlan-devs-python-notes.readthedocs.io/en/latest/python3/questions_and_answers.html
 
 .. _pytype: https://github.com/google/pytype
 .. _python-future: http://python-future.org/

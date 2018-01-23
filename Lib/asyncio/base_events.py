@@ -34,6 +34,7 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
+from . import constants
 from . import coroutines
 from . import events
 from . import futures
@@ -224,16 +225,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         self.slow_callback_duration = 0.1
         self._current_handle = None
         self._task_factory = None
-        self._coroutine_wrapper_set = False
+        self._coroutine_origin_tracking_enabled = False
+        self._coroutine_origin_tracking_saved_depth = None
 
-        if hasattr(sys, 'get_asyncgen_hooks'):
-            # Python >= 3.6
-            # A weak set of all asynchronous generators that are
-            # being iterated by the loop.
-            self._asyncgens = weakref.WeakSet()
-        else:
-            self._asyncgens = None
-
+        # A weak set of all asynchronous generators that are
+        # being iterated by the loop.
+        self._asyncgens = weakref.WeakSet()
         # Set to True when `loop.shutdown_asyncgens` is called.
         self._asyncgens_shutdown_called = False
 
@@ -352,7 +349,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Shutdown all active asynchronous generators."""
         self._asyncgens_shutdown_called = True
 
-        if self._asyncgens is None or not len(self._asyncgens):
+        if not len(self._asyncgens):
             # If Python version is <3.6 or we don't have any asynchronous
             # generators alive.
             return
@@ -382,12 +379,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         if events._get_running_loop() is not None:
             raise RuntimeError(
                 'Cannot run the event loop while another loop is running')
-        self._set_coroutine_wrapper(self._debug)
+        self._set_coroutine_origin_tracking(self._debug)
         self._thread_id = threading.get_ident()
-        if self._asyncgens is not None:
-            old_agen_hooks = sys.get_asyncgen_hooks()
-            sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
-                                   finalizer=self._asyncgen_finalizer_hook)
+
+        old_agen_hooks = sys.get_asyncgen_hooks()
+        sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
+                               finalizer=self._asyncgen_finalizer_hook)
         try:
             events._set_running_loop(self)
             while True:
@@ -398,9 +395,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._stopping = False
             self._thread_id = None
             events._set_running_loop(None)
-            self._set_coroutine_wrapper(False)
-            if self._asyncgens is not None:
-                sys.set_asyncgen_hooks(*old_agen_hooks)
+            self._set_coroutine_origin_tracking(False)
+            sys.set_asyncgen_hooks(*old_agen_hooks)
 
     def run_until_complete(self, future):
         """Run until the Future is done.
@@ -646,6 +642,71 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def getnameinfo(self, sockaddr, flags=0):
         return await self.run_in_executor(
             None, socket.getnameinfo, sockaddr, flags)
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None,
+                            *, fallback=True):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+        self._check_sendfile_params(sock, file, offset, count)
+        try:
+            return await self._sock_sendfile_native(sock, file,
+                                                    offset, count)
+        except events.SendfileNotAvailableError as exc:
+            if not fallback:
+                raise
+        return await self._sock_sendfile_fallback(sock, file,
+                                                  offset, count)
+
+    async def _sock_sendfile_native(self, sock, file, offset, count):
+        # NB: sendfile syscall is not supported for SSL sockets and
+        # non-mmap files even if sendfile is supported by OS
+        raise events.SendfileNotAvailableError(
+            f"syscall sendfile is not available for socket {sock!r} "
+            "and file {file!r} combination")
+
+    async def _sock_sendfile_fallback(self, sock, file, offset, count):
+        if offset:
+            file.seek(offset)
+        blocksize = min(count, 16384) if count else 16384
+        buf = bytearray(blocksize)
+        total_sent = 0
+        try:
+            while True:
+                if count:
+                    blocksize = min(count - total_sent, blocksize)
+                    if blocksize <= 0:
+                        break
+                view = memoryview(buf)[:blocksize]
+                read = file.readinto(view)
+                if not read:
+                    break  # EOF
+                await self.sock_sendall(sock, view)
+                total_sent += read
+            return total_sent
+        finally:
+            if total_sent > 0 and hasattr(file, 'seek'):
+                file.seek(offset + total_sent)
+
+    def _check_sendfile_params(self, sock, file, offset, count):
+        if 'b' not in getattr(file, 'mode', 'b'):
+            raise ValueError("file should be opened in binary mode")
+        if not sock.type == socket.SOCK_STREAM:
+            raise ValueError("only SOCK_STREAM type sockets are supported")
+        if count is not None:
+            if not isinstance(count, int):
+                raise TypeError(
+                    "count must be a positive integer (got {!r})".format(count))
+            if count <= 0:
+                raise ValueError(
+                    "count must be a positive integer (got {!r})".format(count))
+        if not isinstance(offset, int):
+            raise TypeError(
+                "offset must be a non-negative integer (got {!r})".format(
+                    offset))
+        if offset < 0:
+            raise ValueError(
+                "offset must be a non-negative integer (got {!r})".format(
+                    offset))
 
     async def create_connection(
             self, protocol_factory, host=None, port=None,
@@ -1307,6 +1368,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         - 'message': Error message;
         - 'exception' (optional): Exception object;
         - 'future' (optional): Future instance;
+        - 'task' (optional): Task instance;
         - 'handle' (optional): Handle instance;
         - 'protocol' (optional): Protocol instance;
         - 'transport' (optional): Transport instance;
@@ -1466,39 +1528,20 @@ class BaseEventLoop(events.AbstractEventLoop):
                 handle._run()
         handle = None  # Needed to break cycles when an exception occurs.
 
-    def _set_coroutine_wrapper(self, enabled):
-        try:
-            set_wrapper = sys.set_coroutine_wrapper
-            get_wrapper = sys.get_coroutine_wrapper
-        except AttributeError:
+    def _set_coroutine_origin_tracking(self, enabled):
+        if bool(enabled) == bool(self._coroutine_origin_tracking_enabled):
             return
-
-        enabled = bool(enabled)
-        if self._coroutine_wrapper_set == enabled:
-            return
-
-        wrapper = coroutines.debug_wrapper
-        current_wrapper = get_wrapper()
 
         if enabled:
-            if current_wrapper not in (None, wrapper):
-                warnings.warn(
-                    f"loop.set_debug(True): cannot set debug coroutine "
-                    f"wrapper; another wrapper is already set "
-                    f"{current_wrapper!r}",
-                    RuntimeWarning)
-            else:
-                set_wrapper(wrapper)
-                self._coroutine_wrapper_set = True
+            self._coroutine_origin_tracking_saved_depth = (
+                sys.get_coroutine_origin_tracking_depth())
+            sys.set_coroutine_origin_tracking_depth(
+                constants.DEBUG_STACK_DEPTH)
         else:
-            if current_wrapper not in (None, wrapper):
-                warnings.warn(
-                    f"loop.set_debug(False): cannot unset debug coroutine "
-                    f"wrapper; another wrapper was set {current_wrapper!r}",
-                    RuntimeWarning)
-            else:
-                set_wrapper(None)
-                self._coroutine_wrapper_set = False
+            sys.set_coroutine_origin_tracking_depth(
+                self._coroutine_origin_tracking_saved_depth)
+
+        self._coroutine_origin_tracking_enabled = enabled
 
     def get_debug(self):
         return self._debug
@@ -1507,4 +1550,4 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._debug = enabled
 
         if self.is_running():
-            self._set_coroutine_wrapper(enabled)
+            self.call_soon_threadsafe(self._set_coroutine_origin_tracking, enabled)

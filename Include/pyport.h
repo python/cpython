@@ -564,18 +564,8 @@ extern char * _getpty(int *, int, mode_t, int);
  * workaround was provided by Tim Robbins of FreeBSD project.
  */
 
-#ifdef __FreeBSD__
-#include <osreldate.h>
-#if (__FreeBSD_version >= 500040 && __FreeBSD_version < 602113) || \
-    (__FreeBSD_version >= 700000 && __FreeBSD_version < 700054) || \
-    (__FreeBSD_version >= 800000 && __FreeBSD_version < 800001)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
-#endif
-#endif
-
-
 #if defined(__APPLE__)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
+#  define _PY_PORT_CTYPE_UTF8_ISSUE
 #endif
 
 #ifdef _PY_PORT_CTYPE_UTF8_ISSUE
