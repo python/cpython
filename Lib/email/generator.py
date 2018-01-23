@@ -186,8 +186,6 @@ class Generator:
         # If we munged the cte, copy the message again and re-fix the CTE.
         if munge_cte:
             msg = deepcopy(msg)
-            # Try to replace header with new data and extend it
-            # if some records are missed
             if msg.get('content-transfer-encoding', None) is not None:
                 msg.replace_header('content-transfer-encoding', munge_cte[0])
             else: 
