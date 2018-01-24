@@ -1917,6 +1917,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
 
     def test_nonstream_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
         self.addCleanup(sock.close)
         with self.assertRaisesRegex(ValueError, "only SOCK_STREAM type"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file))
