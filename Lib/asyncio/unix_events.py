@@ -92,7 +92,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         except (ValueError, OSError) as exc:
             raise RuntimeError(str(exc))
 
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         self._signal_handlers[sig] = handle
 
         try:
