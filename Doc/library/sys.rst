@@ -1053,11 +1053,11 @@ always available.
    Set the system's profile function, which allows you to implement a Python source
    code profiler in Python.  See chapter :ref:`profile` for more information on the
    Python profiler.  The system's profile function is called similarly to the
-   system's trace function (see :func:`settrace`), but it isn't called for each
-   executed line of code (only on call and return, but the return event is reported
-   even when an exception has been set).  The function is thread-specific, but
-   there is no way for the profiler to know about context switches between threads,
-   so it does not make sense to use this in the presence of multiple threads. Also,
+   system's trace function (see :func:`settrace`), but it is called with different events,
+   for example it isn't called for each executed line of code (only on call and return,
+   but the return event is reported even when an exception has been set). The function is
+   thread-specific, but there is no way for the profiler to know about context switches between
+   threads, so it does not make sense to use this in the presence of multiple threads. Also,
    its return value is not used, so it can simply return ``None``.
 
    Profile functions should have three arguments: *frame*, *event*, and
