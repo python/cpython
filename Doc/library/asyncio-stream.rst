@@ -203,11 +203,10 @@ StreamWriter
 
    .. coroutinemethod:: wait_closed()
 
-      Wait for writer closing.
+      Wait until the writer is closed.
 
-      Should be called after :meth:`close` to waiting for finishing
-      all writer activities (:meth:`BaseProtocol.connection_lost`
-      callback call actually).
+      Should be called after :meth:`close`  to wait until the underlying
+      connection (and the associated transport/protocol pair) is closed.
 
       .. versionadded:: 3.7
 
