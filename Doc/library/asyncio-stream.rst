@@ -201,6 +201,16 @@ StreamWriter
 
       Close the transport: see :meth:`BaseTransport.close`.
 
+   .. coroutinemethod:: wait_closed()
+
+      Wait for writer closing.
+
+      Should be called after :meth:`close` to waiting for finishing
+      all writer activities (:meth:`BaseProtocol.connection_lost`
+      callback call actually).
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: drain()
 
       Let the write buffer of the underlying transport a chance to be flushed.
