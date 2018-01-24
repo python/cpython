@@ -172,7 +172,7 @@ class _SendfileProtocol(protocols.Protocol):
             self._paused = None
 
     def connection_made(self, transport):
-        raise RuntimeError("Invalid state, "
+        raise RuntimeError("Invalid state: "
                            "connection should have been established already.")
 
     def connection_lost(self, exc):
@@ -198,10 +198,10 @@ class _SendfileProtocol(protocols.Protocol):
         self._paused = None
 
     def data_received(self, data):
-        raise RuntimeError("Invalid state, reading should be paused")
+        raise RuntimeError("Invalid state: reading should be paused")
 
     def eof_received(self):
-        raise RuntimeError("Invalid state, reading should be paused")
+        raise RuntimeError("Invalid state: reading should be paused")
 
     async def restore(self):
         self._transport.set_protocol(self._proto)
