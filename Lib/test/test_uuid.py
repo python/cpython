@@ -314,8 +314,6 @@ class BaseTestUUID:
     # bpo-32502: UUID1 requires a 48-bit identifier, but hardware identifiers
     # need not necessarily be 48 bits (e.g., EUI-64).
     def test_uuid1_eui64(self):
-        self.uuid._node = None
-
         # Confirm that uuid.getnode ignores hardware addresses larger than 48
         # bits. Mock out each platform's *_getnode helper functions to return
         # something just larger than 48 bits to test. This will cause
