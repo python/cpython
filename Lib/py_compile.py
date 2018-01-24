@@ -147,6 +147,14 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         pass
     if invalidation_mode == PycInvalidationMode.TIMESTAMP:
         source_stats = loader.path_stats(file)
+        source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
+        if source_date_epoch:
+            try:
+                source_date_epoch = int(source_date_epoch)
+            except ValueError:
+                raise ValueError("SOURCE_DATE_EPOCH is not a valid integer")
+            if source_stats['mtime'] > source_date_epoch:
+                source_stats['mtime'] = source_date_epoch
         bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(
             code, source_stats['mtime'], source_stats['size'])
     else:
