@@ -692,6 +692,9 @@ calculate_pth_file(_PyPathConfig *config, wchar_t *prefix)
         return 0;
     }
 
+    /* FIXME, bpo-32030: Global configuration variables should not be modified
+       here, _PyPathConfig_Init() is called early in Python initialization:
+       see pymain_cmdline(). */
     return read_pth_file(config, prefix, spbuffer,
                          &Py_IsolatedFlag, &Py_NoSiteFlag);
 }
