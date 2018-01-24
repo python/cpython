@@ -201,6 +201,12 @@ StreamWriter
 
       Close the transport: see :meth:`BaseTransport.close`.
 
+   .. method:: is_closing()
+
+      Return ``True`` if the writer is closing or is closed.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: wait_closed()
 
       Wait until the writer is closed.
