@@ -49,7 +49,7 @@ import warnings
 import functools
 import builtins
 from operator import attrgetter
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -1771,7 +1771,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                 del new_params[param_name]
                 new_params[param_name] = new_param
             elif param.kind in (_KEYWORD_ONLY, _VAR_KEYWORD):
-                new_params[param_name] = new_params.pop(param_name)
+                new_params[param_name] = new_params.pop(param_name) # move `param_name` to an end
             elif param.kind is _VAR_POSITIONAL:
                 new_params.pop(param.name)
 
@@ -2759,8 +2759,7 @@ class Signature:
 
                     params[name] = param
             else:
-                params = dict(((param.name, param)
-                               for param in parameters))
+                params = {param.name: param for param in parameters}
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation

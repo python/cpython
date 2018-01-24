@@ -1,1 +1,1 @@
-Remove references of OrderedDict in the module `inspect`
+Remove imports of OrderedDict in the module `inspect`
