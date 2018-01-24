@@ -328,8 +328,12 @@ importlib.resources
 This module provides several new APIs and one new ABC for access to, opening,
 and reading *resources* inside packages.  Resources are roughly akin to files
 inside of packages, but they needn't be actual files on the physical file
-system.  Module loaders can provide :class:`importlib.abc.ResourceReader`
-implementations to support this new module's API.
+system.  Module loaders can provide a :meth:`get_resource_reader()` function
+which returns a :class:`importlib.abc.ResourceReader` instance to support this
+new API.  Built-in file path loaders and zip file loaders both support this.
+(see the PyPI package
+`importlib_resources <http://importlib-resources.readthedocs.io/en/latest/>`_
+as a compatible back port for older Python versions).
 
 
 Improved Modules

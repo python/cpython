@@ -9,6 +9,7 @@ import io
 import random
 import re
 import sys
+import textwrap
 import types
 import unittest
 import weakref
@@ -1401,17 +1402,6 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertIsNone(t.result())
 
-    def test_step_with_baseexception(self):
-        @asyncio.coroutine
-        def notmutch():
-            raise BaseException()
-
-        task = self.new_task(self.loop, notmutch())
-        self.assertRaises(BaseException, task._step)
-
-        self.assertTrue(task.done())
-        self.assertIsInstance(task.exception(), BaseException)
-
     def test_baseexception_during_cancel(self):
 
         def gen():
@@ -2275,22 +2265,12 @@ def add_subclass_tests(cls):
             self.calls = collections.defaultdict(lambda: 0)
             super().__init__(*args, **kwargs)
 
-        def _schedule_callbacks(self):
-            self.calls['_schedule_callbacks'] += 1
-            return super()._schedule_callbacks()
-
         def add_done_callback(self, *args, **kwargs):
             self.calls['add_done_callback'] += 1
             return super().add_done_callback(*args, **kwargs)
 
     class Task(CommonFuture, BaseTask):
-        def _step(self, *args):
-            self.calls['_step'] += 1
-            return super()._step(*args)
-
-        def _wakeup(self, *args):
-            self.calls['_wakeup'] += 1
-            return super()._wakeup(*args)
+        pass
 
     class Future(CommonFuture, BaseFuture):
         pass
@@ -2310,12 +2290,11 @@ def add_subclass_tests(cls):
 
         self.assertEqual(
             dict(task.calls),
-            {'_step': 2, '_wakeup': 1, 'add_done_callback': 1,
-             '_schedule_callbacks': 1})
+            {'add_done_callback': 1})
 
         self.assertEqual(
             dict(fut.calls),
-            {'add_done_callback': 1, '_schedule_callbacks': 1})
+            {'add_done_callback': 1})
 
     # Add patched Task & Future back to the test case
     cls.Task = Task
@@ -2469,7 +2448,7 @@ class CTask_Future_Tests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         try:
             fut = Fut(loop=self.loop)
-            self.loop.call_later(0.1, fut.set_result(1))
+            self.loop.call_later(0.1, fut.set_result, 1)
             task = asyncio.Task(coro(), loop=self.loop)
             res = self.loop.run_until_complete(task)
         finally:
@@ -3111,6 +3090,22 @@ class CompatibilityTests(test_utils.TestCase):
 
         result = self.loop.run_until_complete(inner())
         self.assertEqual(['ok1', 'ok2'], result)
+
+    def test_debug_mode_interop(self):
+        # https://bugs.python.org/issue32636
+        code = textwrap.dedent("""
+            import asyncio
+
+            async def native_coro():
+                pass
+
+            @asyncio.coroutine
+            def old_style_coro():
+                yield from native_coro()
+
+            asyncio.run(old_style_coro())
+        """)
+        assert_python_ok("-c", code, PYTHONASYNCIODEBUG="1")
 
 
 if __name__ == '__main__':
