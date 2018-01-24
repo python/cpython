@@ -784,6 +784,35 @@ zipimport_zipimporter_get_source_impl(ZipImporter *self, PyObject *fullname)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+zipimport.zipimporter.get_resource_reader
+
+    fullname: unicode
+    /
+
+Return the ResourceReader for a package in a zip file.
+
+If 'fullname' is a package within the zip file, return the 'ResourceReader'
+object for the package.  Otherwise return None.
+
+[clinic start generated code]*/
+
+static PyObject *
+zipimport_zipimporter_get_resource_reader_impl(ZipImporter *self,
+                                               PyObject *fullname)
+/*[clinic end generated code: output=5e367d431f830726 input=bfab94d736e99151]*/
+{
+    PyObject *module = PyImport_ImportModule("importlib.resources");
+    if (module == NULL) {
+        return NULL;
+    }
+    PyObject *retval = PyObject_CallMethod(
+        module, "_zipimport_get_resource_reader",
+        "OO", (PyObject *)self, fullname);
+    Py_DECREF(module);
+    return retval;
+}
+
 
 static PyMethodDef zipimporter_methods[] = {
     ZIPIMPORT_ZIPIMPORTER_FIND_MODULE_METHODDEF
@@ -794,6 +823,7 @@ static PyMethodDef zipimporter_methods[] = {
     ZIPIMPORT_ZIPIMPORTER_GET_DATA_METHODDEF
     ZIPIMPORT_ZIPIMPORTER_GET_CODE_METHODDEF
     ZIPIMPORT_ZIPIMPORTER_GET_SOURCE_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_GET_RESOURCE_READER_METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
