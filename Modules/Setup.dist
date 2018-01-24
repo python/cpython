@@ -93,11 +93,7 @@ SITEPATH=
 # Standard path components for test modules
 TESTPATH=
 
-# Path components for machine- or system-dependent modules and shared libraries
-MACHDEPPATH=:$(PLATDIR)
-EXTRAMACHDEPPATH=
-
-COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(EXTRAMACHDEPPATH)
+COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
@@ -176,6 +172,7 @@ _symtable symtablemodule.c
 #array arraymodule.c	# array objects
 #cmath cmathmodule.c _math.c # -lm # complex math library functions
 #math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
+#_contextvars _contextvarsmodule.c  # Context Variables
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module

@@ -10,6 +10,7 @@ __all__ = (
 )
 
 import concurrent.futures
+import contextvars
 import functools
 import inspect
 import types
@@ -96,8 +97,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
+        self._context = contextvars.copy_context()
 
-        self._loop.call_soon(self._step)
+        self._loop.call_soon(self.__step, context=self._context)
         _register_task(self)
 
     def __del__(self):
@@ -183,11 +185,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 # catches and ignores the cancellation so we may have
                 # to cancel it again later.
                 return True
-        # It must be the case that self._step is already scheduled.
+        # It must be the case that self.__step is already scheduled.
         self._must_cancel = True
         return True
 
-    def _step(self, exc=None):
+    def __step(self, exc=None):
         if self.done():
             raise futures.InvalidStateError(
                 f'_step(): already done: {self!r}, {exc!r}')
@@ -229,15 +231,18 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                     new_exc = RuntimeError(
                         f'Task {self!r} got Future '
                         f'{result!r} attached to a different loop')
-                    self._loop.call_soon(self._step, new_exc)
+                    self._loop.call_soon(
+                        self.__step, new_exc, context=self._context)
                 elif blocking:
                     if result is self:
                         new_exc = RuntimeError(
                             f'Task cannot await on itself: {self!r}')
-                        self._loop.call_soon(self._step, new_exc)
+                        self._loop.call_soon(
+                            self.__step, new_exc, context=self._context)
                     else:
                         result._asyncio_future_blocking = False
-                        result.add_done_callback(self._wakeup)
+                        result.add_done_callback(
+                            self.__wakeup, context=self._context)
                         self._fut_waiter = result
                         if self._must_cancel:
                             if self._fut_waiter.cancel():
@@ -246,31 +251,34 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                     new_exc = RuntimeError(
                         f'yield was used instead of yield from '
                         f'in task {self!r} with {result!r}')
-                    self._loop.call_soon(self._step, new_exc)
+                    self._loop.call_soon(
+                        self.__step, new_exc, context=self._context)
 
             elif result is None:
                 # Bare yield relinquishes control for one event loop iteration.
-                self._loop.call_soon(self._step)
+                self._loop.call_soon(self.__step, context=self._context)
             elif inspect.isgenerator(result):
                 # Yielding a generator is just wrong.
                 new_exc = RuntimeError(
                     f'yield was used instead of yield from for '
                     f'generator in task {self!r} with {result}')
-                self._loop.call_soon(self._step, new_exc)
+                self._loop.call_soon(
+                    self.__step, new_exc, context=self._context)
             else:
                 # Yielding something else is an error.
                 new_exc = RuntimeError(f'Task got bad yield: {result!r}')
-                self._loop.call_soon(self._step, new_exc)
+                self._loop.call_soon(
+                    self.__step, new_exc, context=self._context)
         finally:
             _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
-    def _wakeup(self, future):
+    def __wakeup(self, future):
         try:
             future.result()
         except Exception as exc:
             # This may also be a cancellation.
-            self._step(exc)
+            self.__step(exc)
         else:
             # Don't pass the value of `future.result()` explicitly,
             # as `Future.__iter__` and `Future.__await__` don't need it.
@@ -278,7 +286,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             # Python eval loop would use `.send(value)` method call,
             # instead of `__next__()`, which is slower for futures
             # that return non-generator iterators from their `__iter__`.
-            self._step()
+            self.__step()
         self = None  # Needed to break cycles when an exception occurs.
 
 
@@ -505,7 +513,7 @@ def __sleep0():
 
     This is a private helper for 'asyncio.sleep()', used
     when the 'delay' is set to 0.  It uses a bare 'yield'
-    expression (which Task._step knows how to handle)
+    expression (which Task.__step knows how to handle)
     instead of creating a Future object.
     """
     yield

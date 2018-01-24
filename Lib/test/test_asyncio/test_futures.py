@@ -176,10 +176,6 @@ class BaseFutureTests:
             fut.remove_done_callback(lambda f: None)
 
         fut = self.cls.__new__(self.cls, loop=self.loop)
-        with self.assertRaises((RuntimeError, AttributeError)):
-            fut._schedule_callbacks()
-
-        fut = self.cls.__new__(self.cls, loop=self.loop)
         try:
             repr(fut)
         except (RuntimeError, AttributeError):
@@ -565,16 +561,22 @@ class BaseFutureTests:
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CFutureTests(BaseFutureTests, test_utils.TestCase):
-    cls = futures._CFuture
+    try:
+        cls = futures._CFuture
+    except AttributeError:
+        cls = None
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CSubFutureTests(BaseFutureTests, test_utils.TestCase):
-    class CSubFuture(futures._CFuture):
-        pass
+    try:
+        class CSubFuture(futures._CFuture):
+            pass
 
-    cls = CSubFuture
+        cls = CSubFuture
+    except AttributeError:
+        cls = None
 
 
 class PyFutureTests(BaseFutureTests, test_utils.TestCase):
