@@ -1080,6 +1080,7 @@ Python-level trace functions in previous versions.
    | :const:`PyTrace_C_RETURN`    | Function object being called.        |
    +------------------------------+--------------------------------------+
 
+
 .. c:var:: int PyTrace_CALL
 
    The value of the *what* parameter to a :c:type:`Py_tracefunc` function when a new
@@ -1190,7 +1191,6 @@ Python-level trace functions in previous versions.
 
    This function is only present if Python is compiled with :const:`CALL_PROFILE`
    defined.
-
 
 .. _advanced-debugging:
 
