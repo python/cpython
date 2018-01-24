@@ -19,7 +19,7 @@ import asyncio
 from test.test_asyncio import utils as test_utils
 
 
-class StreamReaderTests(test_utils.TestCase):
+class StreamTests(test_utils.TestCase):
 
     DATA = b'line1\nline2\nline3\n'
 
@@ -859,6 +859,35 @@ os.close(fd)
                 e2 = pickle.loads(pickle.dumps(e, protocol=proto))
                 self.assertEqual(str(e), str(e2))
                 self.assertEqual(e.consumed, e2.consumed)
+
+    def test_wait_closed_on_close(self):
+        with test_utils.run_test_server() as httpd:
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address, loop=self.loop))
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            f = rd.readline()
+            data = self.loop.run_until_complete(f)
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            f = rd.read()
+            data = self.loop.run_until_complete(f)
+            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertFalse(wr.is_closing())
+            wr.close()
+            self.assertTrue(wr.is_closing())
+            self.loop.run_until_complete(wr.wait_closed())
+
+    def test_wait_closed_on_close_with_unread_data(self):
+        with test_utils.run_test_server() as httpd:
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address, loop=self.loop))
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            f = rd.readline()
+            data = self.loop.run_until_complete(f)
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            wr.close()
+            self.loop.run_until_complete(wr.wait_closed())
 
 
 if __name__ == '__main__':
