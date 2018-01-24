@@ -286,7 +286,7 @@ static PyObject *
 abcmeta_subclasscheck(abc *self, PyObject *args)
 {
     PyObject *subclasses, *subclass = NULL;
-    PyObject *ok, *mro, *iter, *key, *rkey;
+    PyObject *ok, *mro, *key, *rkey;
     Py_ssize_t pos;
     int incache, result;
     if (!PyArg_UnpackTuple(args, "__subclasscheck__", 1, 1, &subclass)) {
@@ -350,30 +350,27 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
             Py_RETURN_TRUE;
         }
     }
+
     /* 5. Check if it's a subclass of a registered class (recursive). */
-    iter = PyObject_GetIter(self->abc_registry);
-    while ((key = PyIter_Next(iter))) {
+    pos = 0;
+    Py_hash_t hash;
+    while (_PySet_NextEntry(self->abc_registry, &pos, &key, &hash)) {
         rkey = PyWeakref_GetObject(key);
         if (rkey == Py_None) {
             continue;
         }
         result = PyObject_IsSubclass(subclass, rkey);
+        if (result < 0) {
+            return NULL;
+        }
         if (result > 0) {
-            Py_DECREF(key);
-            Py_DECREF(iter);
             if (!_add_weak_set(self->abc_cache, subclass)) {
                 return NULL;
             }
             Py_RETURN_TRUE;
         }
-        if (result < 0) {
-            Py_DECREF(key);
-            Py_DECREF(iter);
-            return NULL;
-        }
-        Py_DECREF(key);
     }
-    Py_DECREF(iter);
+
     /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod((PyObject *)self, "__subclasses__", NULL);
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
@@ -581,7 +578,8 @@ get_cache_token(void)
 }
 
 static struct PyMethodDef module_functions[] = {
-    {"get_cache_token", get_cache_token, METH_NOARGS, _cache_token_doc},
+    {"get_cache_token", (PyCFunction)get_cache_token, METH_NOARGS,
+        _cache_token_doc},
     {NULL,       NULL}          /* sentinel */
 };
 
