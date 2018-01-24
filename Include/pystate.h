@@ -143,6 +143,8 @@ typedef struct _is {
     /* AtExit module */
     void (*pyexitfunc)(PyObject *);
     PyObject *pyexitmodule;
+
+    uint64_t tstate_next_unique_id;
 } PyInterpreterState;
 #endif   /* !Py_LIMITED_API */
 
@@ -262,11 +264,19 @@ typedef struct _ts {
     void (*on_delete)(void *);
     void *on_delete_data;
 
+    int coroutine_origin_tracking_depth;
+
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
+
+    PyObject *context;
+    uint64_t context_ver;
+
+    /* Unique thread state id. */
+    uint64_t id;
 
     /* XXX signal handlers should also be here */
 

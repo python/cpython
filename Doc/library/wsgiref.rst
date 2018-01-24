@@ -26,8 +26,8 @@ for implementing WSGI servers, a demo HTTP server that serves WSGI applications,
 and a validation tool that checks WSGI servers and applications for conformance
 to the WSGI specification (:pep:`3333`).
 
-See https://wsgi.readthedocs.org/ for more information about WSGI, and links to
-tutorials and other resources.
+See `wsgi.readthedocs.io <https://wsgi.readthedocs.io/>`_ for more information about WSGI, and links
+to tutorials and other resources.
 
 .. XXX If you're just trying to write a web application...
 

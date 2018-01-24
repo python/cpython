@@ -216,6 +216,57 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(TypeError, Point._make, [11])                     # catch too few args
         self.assertRaises(TypeError, Point._make, [11, 22, 33])             # catch too many args
 
+    def test_defaults(self):
+        Point = namedtuple('Point', 'x y', defaults=(10, 20))              # 2 defaults
+        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+        self.assertEqual(Point(), (10, 20))
+
+        Point = namedtuple('Point', 'x y', defaults=(20,))                 # 1 default
+        self.assertEqual(Point._fields_defaults, {'y': 20})
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+
+        Point = namedtuple('Point', 'x y', defaults=())                     # 0 defaults
+        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point(1, 2), (1, 2))
+        with self.assertRaises(TypeError):
+            Point(1)
+
+        with self.assertRaises(TypeError):                                  # catch too few args
+            Point()
+        with self.assertRaises(TypeError):                                  # catch too many args
+            Point(1, 2, 3)
+        with self.assertRaises(TypeError):                                  # too many defaults
+            Point = namedtuple('Point', 'x y', defaults=(10, 20, 30))
+        with self.assertRaises(TypeError):                                  # non-iterable defaults
+            Point = namedtuple('Point', 'x y', defaults=10)
+        with self.assertRaises(TypeError):                                  # another non-iterable default
+            Point = namedtuple('Point', 'x y', defaults=False)
+
+        Point = namedtuple('Point', 'x y', defaults=None)                   # default is None
+        self.assertEqual(Point._fields_defaults, {})
+        self.assertIsNone(Point.__new__.__defaults__, None)
+        self.assertEqual(Point(10, 20), (10, 20))
+        with self.assertRaises(TypeError):                                  # catch too few args
+            Point(10)
+
+        Point = namedtuple('Point', 'x y', defaults=[10, 20])               # allow non-tuple iterable
+        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point.__new__.__defaults__, (10, 20))
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+        self.assertEqual(Point(), (10, 20))
+
+        Point = namedtuple('Point', 'x y', defaults=iter([10, 20]))         # allow plain iterator
+        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point.__new__.__defaults__, (10, 20))
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+        self.assertEqual(Point(), (10, 20))
+
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_factory_doc_attr(self):
@@ -792,13 +843,13 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertFalse(issubclass(type(x), Collection), repr(type(x)))
         # Check some non-collection iterables
         non_col_iterables = [_test_gen(), iter(b''), iter(bytearray()),
-                             (x for x in []), dict().values()]
+                             (x for x in [])]
         for x in non_col_iterables:
             self.assertNotIsInstance(x, Collection)
             self.assertFalse(issubclass(type(x), Collection), repr(type(x)))
         # Check some collections
         samples = [set(), frozenset(), dict(), bytes(), str(), tuple(),
-                   list(), dict().keys(), dict().items()]
+                   list(), dict().keys(), dict().items(), dict().values()]
         for x in samples:
             self.assertIsInstance(x, Collection)
             self.assertTrue(issubclass(type(x), Collection), repr(type(x)))

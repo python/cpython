@@ -223,6 +223,8 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                                       transports.WriteTransport):
     """Transport for write pipes."""
 
+    _start_tls_compatible = True
+
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(

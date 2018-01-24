@@ -256,7 +256,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -292,7 +292,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _add_writer(self, fd, callback, *args):
         self._check_closed()
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -693,6 +693,8 @@ class _SelectorTransport(transports._FlowControlMixin,
 
 
 class _SelectorSocketTransport(_SelectorTransport):
+
+    _start_tls_compatible = True
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):

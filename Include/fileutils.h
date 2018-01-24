@@ -20,10 +20,41 @@ PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
 #endif
 
 #ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
+    const char *arg,
+    Py_ssize_t arglen,
+    wchar_t **wstr,
+    size_t *wlen,
+    const char **reason,
+    int surrogateescape);
+
+PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
+    const wchar_t *text,
+    char **str,
+    size_t *error_pos,
+    const char **reason,
+    int raw_malloc,
+    int surrogateescape);
+
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
-    const char *s,
-    Py_ssize_t size,
-    size_t *p_wlen);
+    const char *arg,
+    Py_ssize_t arglen);
+
+PyAPI_FUNC(int) _Py_DecodeLocaleEx(
+    const char *arg,
+    wchar_t **wstr,
+    size_t *wlen,
+    const char **reason,
+    int current_locale,
+    int surrogateescape);
+
+PyAPI_FUNC(int) _Py_EncodeLocaleEx(
+    const wchar_t *text,
+    char **str,
+    size_t *error_pos,
+    const char **reason,
+    int current_locale,
+    int surrogateescape);
 #endif
 
 #ifndef Py_LIMITED_API
@@ -128,6 +159,11 @@ PyAPI_FUNC(int) _Py_get_blocking(int fd);
 
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
 #endif   /* !MS_WINDOWS */
+
+PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
+    PyObject **decimal_point,
+    PyObject **thousands_sep,
+    const char **grouping);
 
 #endif   /* Py_LIMITED_API */
 

@@ -1,2 +1,0 @@
-PEP 560: Add support for __mro_entries__ and __class_getitem__. Implemented
-by Ivan Levkivskyi.

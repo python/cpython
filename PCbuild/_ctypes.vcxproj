@@ -64,7 +64,6 @@
       <AdditionalIncludeDirectories>..\Modules\_ctypes\libffi_msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <BaseAddress>0x1D1A0000</BaseAddress>
       <AdditionalOptions>/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
