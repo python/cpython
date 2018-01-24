@@ -6036,10 +6036,12 @@ static PyDateTime_CAPI CAPI = {
     &PyDateTime_TimeType,
     &PyDateTime_DeltaType,
     &PyDateTime_TZInfoType,
+    NULL,                       // PyDatetime_TimeZone_UTC not initialized yet
     new_date_ex,
     new_datetime_ex,
     new_time_ex,
     new_delta_ex,
+    new_timezone,
     datetime_fromtimestamp,
     date_fromtimestamp,
     new_datetime_ex2,
@@ -6168,6 +6170,7 @@ PyInit__datetime(void)
     if (x == NULL || PyDict_SetItemString(d, "utc", x) < 0)
         return NULL;
     PyDateTime_TimeZone_UTC = x;
+    CAPI.TimeZone_UTC = PyDateTime_TimeZone_UTC;
 
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL)
