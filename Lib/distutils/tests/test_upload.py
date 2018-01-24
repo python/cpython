@@ -143,8 +143,10 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         results = self.get_logs(INFO)
         self.assertEqual(results[-1], 75 * '-' + '\nxyzzy\n' + 75 * '-')
 
+    # bpo-32304: archives whose last byte was b'\r' were corrupted due to
+    # normalization intended for Mac OS 9.
     def test_upload_correct_cr(self):
-        # content ends with \r - should not be corrected
+        # content that ends with \r should not be modified.
         tmp = self.mkdtemp()
         path = os.path.join(tmp, 'xxx')
         self.write_file(path, content='yy\r')
@@ -152,7 +154,7 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         dist_files = [(command, pyversion, filename)]
         self.write_file(self.rc, PYPIRC_LONG_PASSWORD)
 
-        # description ends with \r - should be corrected
+        # other fields that end with \r should not be modified.
         pkg_dir, dist = self.create_dist(
             dist_files=dist_files,
             description='long description\r'
@@ -165,8 +167,8 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         # an extra character should have been added to the description,
         # but not to the content
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2173')
-        self.assertIn(b'long description\r\n', self.last_open.req.data)
+        self.assertEqual(headers['Content-length'], '2172')
+        self.assertIn(b'long description\r', self.last_open.req.data)
 
     def test_upload_fails(self):
         self.next_msg = "Not Found"
