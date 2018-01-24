@@ -806,15 +806,10 @@ zipimport_zipimporter_get_resource_reader_impl(ZipImporter *self,
     if (module == NULL) {
         return NULL;
     }
-    PyObject *function = PyObject_GetAttrString(
-        module, "_zipimport_get_resource_reader");
+    PyObject *retval = PyObject_CallMethod(
+        module, "_zipimport_get_resource_reader",
+        "OO", (PyObject *)self, fullname);
     Py_DECREF(module);
-    if (function == NULL) {
-        return NULL;
-    }
-    PyObject *retval = PyObject_CallFunction(
-        function, "OO", (PyObject *)self, fullname);
-    Py_DECREF(function);
     return retval;
 }
 
