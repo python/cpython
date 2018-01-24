@@ -26,7 +26,6 @@ _Py_IDENTIFIER(_wakeup);
 /* State of the _asyncio module */
 static PyObject *asyncio_mod;
 static PyObject *inspect_isgenerator;
-static PyObject *os_getpid;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
 static PyObject *asyncio_future_repr_info_func;
@@ -37,6 +36,9 @@ static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *context_kwname;
+
+static PyObject *cached_running_holder;
+static volatile uint64_t cached_running_holder_tsid;
 
 
 /* WeakSet containing all alive tasks. */
@@ -95,9 +97,18 @@ typedef struct {
     TaskObj *ww_task;
 } TaskWakeupMethWrapper;
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *rl_loop;
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
+    pid_t rl_pid;
+#endif
+} PyRunningLoopHolder;
+
 
 static PyTypeObject FutureType;
 static PyTypeObject TaskType;
+static PyTypeObject PyRunningLoopHolder_Type;
 
 
 #define Future_CheckExact(obj) (Py_TYPE(obj) == &FutureType)
@@ -116,8 +127,10 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 
 
 /* Get FutureIter from Future */
-static PyObject* future_new_iter(PyObject *);
+static PyObject * future_new_iter(PyObject *);
 static inline int future_call_schedule_callbacks(FutureObj *);
+
+static PyRunningLoopHolder * new_running_loop_holder(PyObject *);
 
 
 static int
@@ -214,58 +227,55 @@ get_future_loop(PyObject *fut)
 static int
 get_running_loop(PyObject **loop)
 {
-    PyObject *ts_dict;
-    PyObject *running_tuple;
-    PyObject *running_loop;
-    PyObject *running_loop_pid;
-    PyObject *current_pid;
-    int same_pid;
+    PyObject *rl;
 
-    ts_dict = PyThreadState_GetDict();  // borrowed
-    if (ts_dict == NULL) {
-        PyErr_SetString(
-            PyExc_RuntimeError, "thread-local storage is not available");
-        goto error;
+    PyThreadState *ts = PyThreadState_Get();
+    if (ts->id == cached_running_holder_tsid && cached_running_holder != NULL) {
+        // Fast path, check the cache.
+        rl = cached_running_holder;  // borrowed
+    }
+    else {
+        if (ts->dict == NULL) {
+            goto not_found;
+        }
+
+        rl = _PyDict_GetItemIdWithError(
+            ts->dict, &PyId___asyncio_running_event_loop__);  // borrowed
+        if (rl == NULL) {
+            if (PyErr_Occurred()) {
+                goto error;
+            }
+            else {
+                goto not_found;
+            }
+        }
+
+        cached_running_holder = rl;  // borrowed
+        cached_running_holder_tsid = ts->id;
     }
 
-    running_tuple = _PyDict_GetItemId(
-        ts_dict, &PyId___asyncio_running_event_loop__);  // borrowed
-    if (running_tuple == NULL) {
-        /* _PyDict_GetItemId doesn't set an error if key is not found */
-        goto not_found;
-    }
-
-    assert(PyTuple_CheckExact(running_tuple));
-    assert(PyTuple_Size(running_tuple) == 2);
-    running_loop = PyTuple_GET_ITEM(running_tuple, 0);  // borrowed
-    running_loop_pid = PyTuple_GET_ITEM(running_tuple, 1);  // borrowed
+    assert(Py_TYPE(rl) == &PyRunningLoopHolder_Type);
+    PyObject *running_loop = ((PyRunningLoopHolder *)rl)->rl_loop;
 
     if (running_loop == Py_None) {
         goto not_found;
     }
 
-    current_pid = _PyObject_CallNoArg(os_getpid);
-    if (current_pid == NULL) {
-        goto error;
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
+    /* On Windows there is no getpid, but there is also no os.fork(),
+       so there is no need for this check.
+    */
+    if (getpid() != ((PyRunningLoopHolder *)rl)->rl_pid) {
+        goto not_found;
     }
-    same_pid = PyObject_RichCompareBool(current_pid, running_loop_pid, Py_EQ);
-    Py_DECREF(current_pid);
-    if (same_pid == -1) {
-        goto error;
-    }
+#endif
 
-    if (same_pid) {
-        // current_pid == running_loop_pid
-        goto found;
-    }
+    Py_INCREF(running_loop);
+    *loop = running_loop;
+    return 0;
 
 not_found:
     *loop = NULL;
-    return 0;
-
-found:
-    Py_INCREF(running_loop);
-    *loop = running_loop;
     return 0;
 
 error:
@@ -277,38 +287,28 @@ error:
 static int
 set_running_loop(PyObject *loop)
 {
-    PyObject *ts_dict;
-    PyObject *running_tuple;
-    PyObject *current_pid;
+    cached_running_holder = NULL;
+    cached_running_holder_tsid = 0;
 
-    ts_dict = PyThreadState_GetDict();  // borrowed
+    PyObject *ts_dict = PyThreadState_GetDict();  // borrowed
     if (ts_dict == NULL) {
         PyErr_SetString(
             PyExc_RuntimeError, "thread-local storage is not available");
         return -1;
     }
 
-    current_pid = _PyObject_CallNoArg(os_getpid);
-    if (current_pid == NULL) {
+    PyRunningLoopHolder *rl = new_running_loop_holder(loop);
+    if (rl == NULL) {
         return -1;
     }
-
-    running_tuple = PyTuple_New(2);
-    if (running_tuple == NULL) {
-        Py_DECREF(current_pid);
-        return -1;
-    }
-
-    Py_INCREF(loop);
-    PyTuple_SET_ITEM(running_tuple, 0, loop);
-    PyTuple_SET_ITEM(running_tuple, 1, current_pid);  // borrowed
 
     if (_PyDict_SetItemId(
-            ts_dict, &PyId___asyncio_running_event_loop__, running_tuple)) {
-        Py_DECREF(running_tuple);  // will cleanup loop & current_pid
+            ts_dict, &PyId___asyncio_running_event_loop__, (PyObject *)rl) < 0)
+    {
+        Py_DECREF(rl);  // will cleanup loop & current_pid
         return -1;
     }
-    Py_DECREF(running_tuple);
+    Py_DECREF(rl);
 
     return 0;
 }
@@ -3184,6 +3184,47 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 }
 
 
+/*********************** PyRunningLoopHolder ********************/
+
+
+static PyRunningLoopHolder *
+new_running_loop_holder(PyObject *loop)
+{
+    PyRunningLoopHolder *rl = PyObject_New(
+        PyRunningLoopHolder, &PyRunningLoopHolder_Type);
+    if (rl == NULL) {
+        return NULL;
+    }
+
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
+    rl->rl_pid = getpid();
+#endif
+
+    Py_INCREF(loop);
+    rl->rl_loop = loop;
+
+    return rl;
+}
+
+
+static void
+PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
+{
+    Py_CLEAR(rl->rl_loop);
+    PyObject_Free(rl);
+}
+
+
+static PyTypeObject PyRunningLoopHolder_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_RunningLoopHolder",
+    sizeof(PyRunningLoopHolder),
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_dealloc = (destructor)PyRunningLoopHolder_tp_dealloc,
+};
+
+
 /*********************** Module **************************/
 
 
@@ -3212,7 +3253,6 @@ module_free(void *m)
 {
     Py_CLEAR(asyncio_mod);
     Py_CLEAR(inspect_isgenerator);
-    Py_CLEAR(os_getpid);
     Py_CLEAR(traceback_extract_stack);
     Py_CLEAR(asyncio_future_repr_info_func);
     Py_CLEAR(asyncio_get_event_loop_policy);
@@ -3295,9 +3335,6 @@ module_init(void)
     WITH_MOD("inspect")
     GET_MOD_ATTR(inspect_isgenerator, "isgenerator")
 
-    WITH_MOD("os")
-    GET_MOD_ATTR(os_getpid, "getpid")
-
     WITH_MOD("traceback")
     GET_MOD_ATTR(traceback_extract_stack, "extract_stack")
 
@@ -3368,6 +3405,9 @@ PyInit__asyncio(void)
         return NULL;
     }
     if (PyType_Ready(&TaskType) < 0) {
+        return NULL;
+    }
+    if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
         return NULL;
     }
 
