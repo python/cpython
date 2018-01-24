@@ -996,6 +996,7 @@ class DictTest(unittest.TestCase):
         a = C()
 
         a.a = 1
+        a.b = 2
         self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
 
         # dict.pop() convert it to combined table
@@ -1009,10 +1010,11 @@ class DictTest(unittest.TestCase):
         # Same for popitem()
         a = C()
         a.a = 2
+        a.b = 3
         self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
         a.__dict__.popitem()
         self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-        a.a = 3
+        a.a = 4
         self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
 
     def test_iterator_pickling(self):

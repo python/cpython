@@ -1475,6 +1475,18 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     return insertdict(mp, key, hash, value);
 }
 
+// Resize dict if dk_size is too large.
+static int
+after_removed(PyDictObject *mp)
+{
+    if (mp->ma_used == 0) {
+        PyDict_Clear((PyObject *)mp);
+    } else if (mp->ma_used < mp->ma_keys->dk_size/8) {
+        return insertion_resize(mp);
+    }
+    return 0;
+}
+
 static int
 delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
                PyObject *old_value)
@@ -1497,7 +1509,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     Py_DECREF(old_value);
 
     assert(_PyDict_CheckConsistency(mp));
-    return 0;
+    return after_removed(mp);
 }
 
 int
@@ -1767,6 +1779,10 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
     Py_DECREF(old_key);
 
     assert(_PyDict_CheckConsistency(mp));
+    if (after_removed(mp) < 0) {
+        Py_DECREF(old_value);
+        return NULL;
+    }
     return old_value;
 }
 
@@ -2950,6 +2966,10 @@ dict_popitem(PyDictObject *mp)
     mp->ma_used--;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     assert(_PyDict_CheckConsistency(mp));
+    if (after_removed(mp) < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
     return res;
 }
 
