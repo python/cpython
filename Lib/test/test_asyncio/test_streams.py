@@ -872,7 +872,9 @@ os.close(fd)
             f = rd.read()
             data = self.loop.run_until_complete(f)
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertFalse(wr.is_closing())
             wr.close()
+            self.assertTrue(wr.is_closing())
             self.loop.run_until_complete(wr.wait_closed())
 
     def test_wait_closed_on_close_with_unread_data(self):
