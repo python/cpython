@@ -36,6 +36,11 @@
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
     "for more information."
 
+#if defined(__ANDROID_API__) && __ANDROID_API__ < 20
+   /* Before Android API 20, locales are completely broken. */
+#  define BROKEN_LOCALES
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1936,11 +1941,13 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 {
     int res = -1;
 
+#ifndef BROKEN_LOCALES
     char *oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
     if (oldloc == NULL) {
         pymain->err = _Py_INIT_NO_MEMORY();
         goto done;
     }
+#endif
 
     /* Reconfigure the locale to the default for this process */
     _Py_SetLocaleFromEnv(LC_ALL);
@@ -2023,10 +2030,12 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     res = 0;
 
 done:
+#ifndef BROKEN_LOCALES
     if (oldloc != NULL) {
         setlocale(LC_ALL, oldloc);
         PyMem_RawFree(oldloc);
     }
+#endif
 
     return res;
 }

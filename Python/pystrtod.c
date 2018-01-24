@@ -178,8 +178,14 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
     fail_pos = NULL;
 
     locale_data = localeconv();
+#if defined(__ANDROID_API__) and __ANDROID_API__ < 21
+    /* Before Android API 21, localeconv() is broken. */
+    decimal_point = ".";
+    decimal_point_len = 1;
+#else
     decimal_point = locale_data->decimal_point;
     decimal_point_len = strlen(decimal_point);
+#endif
 
     assert(decimal_point_len != 0);
 

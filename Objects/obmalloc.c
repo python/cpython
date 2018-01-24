@@ -2,6 +2,12 @@
 
 #include <stdbool.h>
 
+#if defined(__ANDROID_API__) && __ANDROID_API__ < 21
+/* mmap() is implemted but not declared in Android headers before API 21 */
+extern void *mmap(void *addr, size_t length, int prot, int flags,
+                  int fd, off_t offset);
+#endif
+
 
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
