@@ -1,0 +1,1 @@
+Implement :meth:`asyncio.StreamWriter.wait_closed` method
