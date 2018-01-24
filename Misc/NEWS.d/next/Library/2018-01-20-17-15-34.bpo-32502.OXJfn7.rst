@@ -1,0 +1,2 @@
+uuid.uuid1 no longer raises an exception if a 64-bit hardware address is
+encountered.
