@@ -340,16 +340,22 @@ search_for_prefix(const _PyCoreConfig *core_config,
     }
 
     /* Search from argv0_path, until root is found */
+    printf("%ls\n",prefix);
     copy_absolute(prefix, calculate->argv0_path, MAXPATHLEN+1);
+    printf("%ls\n",calculate->argv0_path);
+    printf("%ls\n",prefix);
     do {
         n = wcslen(prefix);
+        printf("%zu\n",n);
         joinpath(prefix, calculate->lib_python);
         joinpath(prefix, LANDMARK);
         if (ismodule(prefix)) {
             return 1;
         }
         prefix[n] = L'\0';
+        printf("%ls\n", prefix);
         reduce(prefix);
+        printf("%ls\n", prefix);
     } while (prefix[0]);
 
     /* Look at configure's PREFIX */
@@ -371,6 +377,7 @@ calculate_prefix(const _PyCoreConfig *core_config,
                  PyCalculatePath *calculate, wchar_t *prefix)
 {
     calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
+    printf("%ls\n",prefix);
     if (!calculate->prefix_found) {
         if (!Py_FrozenFlag) {
             fprintf(stderr,
@@ -833,12 +840,6 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
             buf[end] = '\0';
         }
         else {
-#ifdef __VXWORKS__
-        	//VXWORKS uses ; instead of : as seperator
-        	wchar_t * pwc;
-        	while(pwc = wcsstr(defpath,L":"))
-        		wcsncpy(pwc,L";",1);
-#endif
         	wcscat(buf, defpath);
             break;
         }
