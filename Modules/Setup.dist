@@ -93,11 +93,7 @@ SITEPATH=
 # Standard path components for test modules
 TESTPATH=
 
-# Path components for machine- or system-dependent modules and shared libraries
-MACHDEPPATH=:$(PLATDIR)
-EXTRAMACHDEPPATH=
-
-COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(EXTRAMACHDEPPATH)
+COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
