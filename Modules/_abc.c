@@ -269,8 +269,7 @@ abcmeta_instancecheck(abc *self, PyObject *args)
         return NULL;
     }
     if (incache > 0) {
-        Py_INCREF(Py_True);
-        return Py_True;
+        Py_RETURN_TRUE;
     }
     subtype = (PyObject *)Py_TYPE(instance);
     if (subtype == subclass) {
@@ -279,8 +278,7 @@ abcmeta_instancecheck(abc *self, PyObject *args)
             return NULL;
         }
         if (self->abc_negative_cache_version == abc_invalidation_counter && incache) {
-            Py_INCREF(Py_False);
-            return Py_False;
+            Py_RETURN_FALSE;
         }
         /* Fall back to the subclass check. */
         return PyObject_CallMethod((PyObject *)self, "__subclasscheck__", "O", subclass);
@@ -292,6 +290,7 @@ abcmeta_instancecheck(abc *self, PyObject *args)
     if (result == Py_True) {
         return Py_True;
     }
+    Py_DECREF(result);
     return PyObject_CallMethod((PyObject *)self, "__subclasscheck__", "O", subtype);
 }
 
@@ -316,8 +315,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         return NULL;
     }
     if (incache > 0) {
-        Py_INCREF(Py_True);
-        return Py_True;
+        Py_RETURN_TRUE;
     }
     /* 2. Check negative cache; may have to invalidate. */
     incache = _in_weak_set(self->abc_negative_cache, subclass);
@@ -332,8 +330,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         }
         self->abc_negative_cache_version = abc_invalidation_counter;
     } else if (incache) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
     /* 3. Check the subclass hook. */
     ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
@@ -359,11 +356,10 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     mro = ((PyTypeObject *)subclass)->tp_mro;
     for (pos = 0; pos < PyTuple_Size(mro); pos++) {
         if ((PyObject *)self == PyTuple_GetItem(mro, pos)) {
-            Py_INCREF(Py_True);
             if (!_add_weak_set(self->abc_cache, subclass)) {
                 return NULL;
             }
-            return Py_True;
+            Py_RETURN_TRUE;
         }
     }
     /* 5. Check if it's a subclass of a registered class (recursive). */
@@ -380,8 +376,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
             if (!_add_weak_set(self->abc_cache, subclass)) {
                 return NULL;
             }
-            Py_INCREF(Py_True);
-            return Py_True;
+            Py_RETURN_TRUE;
         }
         if (result < 0) {
             Py_DECREF(key);
@@ -400,8 +395,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
                 return NULL;
             }
             Py_DECREF(subclasses);
-            Py_INCREF(Py_True);
-            return Py_True;
+            Py_RETURN_TRUE;
         }
         if (result < 0) {
             Py_DECREF(subclasses);
@@ -413,8 +407,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     if (!_add_weak_set(self->abc_negative_cache, subclass)) {
         return NULL;
     }
-    Py_INCREF(Py_False);
-    return Py_False;
+    Py_RETURN_FALSE;
 }
 
 int
