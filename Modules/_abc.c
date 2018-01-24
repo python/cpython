@@ -15,7 +15,6 @@ PyDoc_STRVAR(_abc__doc__,
 #define DEFERRED_ADDRESS(ADDR) 0
 
 _Py_IDENTIFIER(stdout);
-_Py_IDENTIFIER(__isabstractmethod__);
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 
@@ -72,7 +71,7 @@ static PyObject *
 abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     abc *result = NULL;
-    PyObject *ns, *bases, *items, *abstracts, *is_abstract, *base_abstracts;
+    PyObject *ns, *bases, *items, *abstracts, *base_abstracts;
     PyObject *key, *value, *item, *iter;
     Py_ssize_t pos = 0;
     result = (abc *)PyType_Type.tp_new(type, args, kwds);
@@ -92,6 +91,7 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(result);
         return NULL;
     }
+
     /* Compute set of abstract method names in two stages:
        Stage 1: direct abstract methods.
        (It is safe to assume everything is fine since type.__new__ succeeded.) */
@@ -101,18 +101,13 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         item = PySequence_GetItem(items, pos);
         key = PyTuple_GetItem(item, 0);
         value = PyTuple_GetItem(item, 1);
-        is_abstract = _PyObject_GetAttrId(value, &PyId___isabstractmethod__);
-        if (!is_abstract) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                Py_DECREF(item);
-                Py_DECREF(items);
-                goto error;
-            }
-            PyErr_Clear();
+        int is_abstract = _PyObject_IsAbstract(value);
+        if (is_abstract < 0) {
             Py_DECREF(item);
-            continue;
+            Py_DECREF(items);
+            goto error;
         }
-        if (is_abstract == Py_True && PySet_Add(abstracts, key) < 0) {
+        if (is_abstract && PySet_Add(abstracts, key) < 0) {
             Py_DECREF(item);
             Py_DECREF(items);
             goto error;
@@ -120,6 +115,7 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(item);
     }
     Py_DECREF(items);
+
     /* Stage 2: inherited abstract methods. */
     bases = PyTuple_GET_ITEM(args, 1);
     for (pos = 0; pos < PyTuple_Size(bases); pos++) {
@@ -147,27 +143,19 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(key);
                 continue;
             }
-            is_abstract = _PyObject_GetAttrId(value, &PyId___isabstractmethod__);
-            if (!is_abstract) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    Py_DECREF(key);
-                    Py_DECREF(value);
-                    Py_DECREF(iter);
-                    goto error;
-                }
-                PyErr_Clear();
+            int is_abstract = _PyObject_IsAbstract(value);
+            Py_DECREF(value);
+            if (is_abstract < 0) {
                 Py_DECREF(key);
-                Py_DECREF(value);
-                continue;
+                Py_DECREF(iter);
+                goto error;
             }
-            if (is_abstract == Py_True && PySet_Add(abstracts, key) < 0) {
+            if (is_abstract && PySet_Add(abstracts, key) < 0) {
                 Py_DECREF(key);
-                Py_DECREF(value);
                 Py_DECREF(iter);
                 goto error;
             }
             Py_DECREF(key);
-            Py_DECREF(value);
         }
         Py_DECREF(iter);
     }
