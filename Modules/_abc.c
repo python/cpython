@@ -490,8 +490,7 @@ abcmeta_dump(abc *self, PyObject *args)
         return NULL;
     }
     Py_DECREF(version);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(_register_doc,
