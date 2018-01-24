@@ -1,0 +1,2 @@
+In the :func:`os.getlogin()` documentation, recommend
+func:`getpass.getuser()`.
