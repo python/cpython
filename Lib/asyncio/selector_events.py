@@ -70,11 +70,15 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return _SelectorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
-    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
-                            *, server_side=False, server_hostname=None,
-                            extra=None, server=None):
-        ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
-                                            server_side, server_hostname)
+    def _make_ssl_transport(
+            self, rawsock, protocol, sslcontext, waiter=None,
+            *, server_side=False, server_hostname=None,
+            extra=None, server=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+        ssl_protocol = sslproto.SSLProtocol(
+                self, protocol, sslcontext, waiter,
+                server_side, server_hostname,
+                ssl_handshake_timeout=ssl_handshake_timeout)
         _SelectorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -143,12 +147,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                  exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
-                       sslcontext=None, server=None, backlog=100):
+                       sslcontext=None, server=None, backlog=100,
+                       ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         self._add_reader(sock.fileno(), self._accept_connection,
-                         protocol_factory, sock, sslcontext, server, backlog)
+                         protocol_factory, sock, sslcontext, server, backlog,
+                         ssl_handshake_timeout)
 
-    def _accept_connection(self, protocol_factory, sock,
-                           sslcontext=None, server=None, backlog=100):
+    def _accept_connection(
+            self, protocol_factory, sock,
+            sslcontext=None, server=None, backlog=100,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         # This method is only called once for each event loop tick where the
         # listening socket has triggered an EVENT_READ. There may be multiple
         # connections waiting for an .accept() so it is called in a loop.
@@ -179,17 +187,20 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     self.call_later(constants.ACCEPT_RETRY_DELAY,
                                     self._start_serving,
                                     protocol_factory, sock, sslcontext, server,
-                                    backlog)
+                                    backlog, ssl_handshake_timeout)
                 else:
                     raise  # The event loop will catch, log and ignore it.
             else:
                 extra = {'peername': addr}
                 accept = self._accept_connection2(
-                    protocol_factory, conn, extra, sslcontext, server)
+                    protocol_factory, conn, extra, sslcontext, server,
+                    ssl_handshake_timeout)
                 self.create_task(accept)
 
-    async def _accept_connection2(self, protocol_factory, conn, extra,
-                                  sslcontext=None, server=None):
+    async def _accept_connection2(
+            self, protocol_factory, conn, extra,
+            sslcontext=None, server=None,
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
         protocol = None
         transport = None
         try:
@@ -198,7 +209,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             if sslcontext:
                 transport = self._make_ssl_transport(
                     conn, protocol, sslcontext, waiter=waiter,
-                    server_side=True, extra=extra, server=server)
+                    server_side=True, extra=extra, server=server,
+                    ssl_handshake_timeout=ssl_handshake_timeout)
             else:
                 transport = self._make_socket_transport(
                     conn, protocol, waiter=waiter, extra=extra,
@@ -244,7 +256,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -280,7 +292,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _add_writer(self, fd, callback, *args):
         self._check_closed()
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -336,20 +348,18 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         return self._remove_writer(fd)
 
-    def sock_recv(self, sock, n):
+    async def sock_recv(self, sock, n):
         """Receive data from the socket.
 
         The return value is a bytes object representing the data received.
         The maximum amount of data to be received at once is specified by
         nbytes.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_recv(fut, None, sock, n)
-        return fut
+        return await fut
 
     def _sock_recv(self, fut, registered_fd, sock, n):
         # _sock_recv() can add itself as an I/O callback if the operation can't
@@ -372,19 +382,17 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(data)
 
-    def sock_recv_into(self, sock, buf):
+    async def sock_recv_into(self, sock, buf):
         """Receive data from the socket.
 
         The received data is written into *buf* (a writable buffer).
         The return value is the number of bytes written.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_recv_into(fut, None, sock, buf)
-        return fut
+        return await fut
 
     def _sock_recv_into(self, fut, registered_fd, sock, buf):
         # _sock_recv_into() can add itself as an I/O callback if the operation
@@ -408,7 +416,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(nbytes)
 
-    def sock_sendall(self, sock, data):
+    async def sock_sendall(self, sock, data):
         """Send data to the socket.
 
         The socket must be connected to a remote socket. This method continues
@@ -416,8 +424,6 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         error occurs. None is returned on success. On error, an exception is
         raised, and there is no way to determine how much data, if any, was
         successfully processed by the receiving end of the connection.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
@@ -426,7 +432,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._sock_sendall(fut, None, sock, data)
         else:
             fut.set_result(None)
-        return fut
+        return await fut
 
     def _sock_sendall(self, fut, registered_fd, sock, data):
         if registered_fd is not None:
@@ -459,11 +465,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             raise ValueError("the socket must be non-blocking")
 
         if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
-            resolved = base_events._ensure_resolved(
+            resolved = await self._ensure_resolved(
                 address, family=sock.family, proto=sock.proto, loop=self)
-            if not resolved.done():
-                await resolved
-            _, _, _, _, address = resolved.result()[0]
+            _, _, _, _, address = resolved[0]
 
         fut = self.create_future()
         self._sock_connect(fut, sock, address)
@@ -506,21 +510,19 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(None)
 
-    def sock_accept(self, sock):
+    async def sock_accept(self, sock):
         """Accept a connection.
 
         The socket must be bound to an address and listening for connections.
         The return value is a pair (conn, address) where conn is a new socket
         object usable to send and receive data on the connection, and address
         is the address bound to the socket on the other end of the connection.
-
-        This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
         self._sock_accept(fut, False, sock)
-        return fut
+        return await fut
 
     def _sock_accept(self, fut, registered, sock):
         fd = sock.fileno()
@@ -692,6 +694,8 @@ class _SelectorTransport(transports._FlowControlMixin,
 
 class _SelectorSocketTransport(_SelectorTransport):
 
+    _start_tls_compatible = True
+
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, extra, server)
@@ -712,22 +716,21 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
 
+    def is_reading(self):
+        return not self._paused and not self._closing
+
     def pause_reading(self):
-        if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
+        if self._closing or self._paused:
+            return
         self._paused = True
         self._loop._remove_reader(self._sock_fd)
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
-        if self._closing:
+        if self._closing or not self._paused:
             return
+        self._paused = False
         self._loop._add_reader(self._sock_fd, self._read_ready)
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)

@@ -7,9 +7,6 @@ extern "C" {
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
 #endif
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(PyObject*) _PyWarnings_InitWithConfig(const _PyCoreConfig *config);
-#endif
 
 PyAPI_FUNC(int) PyErr_WarnEx(
     PyObject *category,
@@ -57,6 +54,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
 /* DEPRECATED: Use PyErr_WarnEx() instead. */
 #ifndef Py_LIMITED_API
 #define PyErr_Warn(category, msg) PyErr_WarnEx(category, msg, 1)
+#endif
+
+#ifndef Py_LIMITED_API
+void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
 #endif
 
 #ifdef __cplusplus

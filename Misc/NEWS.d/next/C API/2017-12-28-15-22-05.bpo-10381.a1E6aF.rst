@@ -1,0 +1,2 @@
+Add C API access to the ``datetime.timezone`` constructor and
+``datetime.timzone.UTC`` singleton.

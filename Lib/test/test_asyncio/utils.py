@@ -28,10 +28,60 @@ except ImportError:  # pragma: no cover
 
 from asyncio import base_events
 from asyncio import events
+from asyncio import format_helpers
 from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
+
+
+def data_file(filename):
+    if hasattr(support, 'TEST_HOME_DIR'):
+        fullname = os.path.join(support.TEST_HOME_DIR, filename)
+        if os.path.isfile(fullname):
+            return fullname
+    fullname = os.path.join(os.path.dirname(__file__), filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(filename)
+
+
+ONLYCERT = data_file('ssl_cert.pem')
+ONLYKEY = data_file('ssl_key.pem')
+SIGNED_CERTFILE = data_file('keycert3.pem')
+SIGNING_CA = data_file('pycacert.pem')
+PEERCERT = {
+    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
+    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
+    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
+    'issuer': ((('countryName', 'XY'),),
+            (('organizationName', 'Python Software Foundation CA'),),
+            (('commonName', 'our-ca-server'),)),
+    'notAfter': 'Nov 28 19:09:06 2027 GMT',
+    'notBefore': 'Jan 19 19:09:06 2018 GMT',
+    'serialNumber': '82EDBF41C880919C',
+    'subject': ((('countryName', 'XY'),),
+             (('localityName', 'Castle Anthrax'),),
+             (('organizationName', 'Python Software Foundation'),),
+             (('commonName', 'localhost'),)),
+    'subjectAltName': (('DNS', 'localhost'),),
+    'version': 3
+}
+
+
+def simple_server_sslcontext():
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(ONLYCERT, ONLYKEY)
+    server_context.check_hostname = False
+    server_context.verify_mode = ssl.CERT_NONE
+    return server_context
+
+
+def simple_client_sslcontext():
+    client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_context.check_hostname = False
+    client_context.verify_mode = ssl.CERT_NONE
+    return client_context
 
 
 def dummy_ssl_context():
@@ -315,7 +365,7 @@ class TestLoop(base_events.BaseEventLoop):
                 raise AssertionError("Time generator is not finished")
 
     def _add_reader(self, fd, callback, *args):
-        self.readers[fd] = events.Handle(callback, args, self)
+        self.readers[fd] = events.Handle(callback, args, self, None)
 
     def _remove_reader(self, fd):
         self.remove_reader_count[fd] += 1
@@ -326,15 +376,22 @@ class TestLoop(base_events.BaseEventLoop):
             return False
 
     def assert_reader(self, fd, callback, *args):
-        assert fd in self.readers, 'fd {} is not registered'.format(fd)
+        if fd not in self.readers:
+            raise AssertionError(f'fd {fd} is not registered')
         handle = self.readers[fd]
-        assert handle._callback == callback, '{!r} != {!r}'.format(
-            handle._callback, callback)
-        assert handle._args == args, '{!r} != {!r}'.format(
-            handle._args, args)
+        if handle._callback != callback:
+            raise AssertionError(
+                f'unexpected callback: {handle._callback} != {callback}')
+        if handle._args != args:
+            raise AssertionError(
+                f'unexpected callback args: {handle._args} != {args}')
+
+    def assert_no_reader(self, fd):
+        if fd in self.readers:
+            raise AssertionError(f'fd {fd} is registered')
 
     def _add_writer(self, fd, callback, *args):
-        self.writers[fd] = events.Handle(callback, args, self)
+        self.writers[fd] = events.Handle(callback, args, self, None)
 
     def _remove_writer(self, fd):
         self.remove_writer_count[fd] += 1
@@ -400,9 +457,9 @@ class TestLoop(base_events.BaseEventLoop):
             self.advance_time(advance)
         self._timers = []
 
-    def call_at(self, when, callback, *args):
+    def call_at(self, when, callback, *args, context=None):
         self._timers.append(when)
-        return super().call_at(when, callback, *args)
+        return super().call_at(when, callback, *args, context=context)
 
     def _process_events(self, event_list):
         return
@@ -428,8 +485,16 @@ class MockPattern(str):
         return bool(re.search(str(self), other, re.S))
 
 
+class MockInstanceOf:
+    def __init__(self, type):
+        self._type = type
+
+    def __eq__(self, other):
+        return isinstance(other, self._type)
+
+
 def get_function_source(func):
-    source = events._get_function_source(func)
+    source = format_helpers._get_function_source(func)
     if source is None:
         raise ValueError("unable to get the source of %r" % (func,))
     return source

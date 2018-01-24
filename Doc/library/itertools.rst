@@ -32,7 +32,7 @@ operator can be mapped across two vectors to form an efficient dot-product:
 ``sum(map(operator.mul, vector1, vector2))``.
 
 
-**Infinite Iterators:**
+**Infinite iterators:**
 
 ==================  =================       =================================================               =========================================
 Iterator            Arguments               Results                                                         Example
@@ -61,7 +61,7 @@ Iterator                        Arguments                       Results         
 :func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
 ============================    ============================    =================================================   =============================================================
 
-**Combinatoric generators:**
+**Combinatoric iterators:**
 
 ==============================================   ====================       =============================================================
 Iterator                                         Arguments                  Results
@@ -858,6 +858,29 @@ which incur interpreter overhead.
        n = len(pool)
        indices = sorted(random.randrange(n) for i in range(r))
        return tuple(pool[i] for i in indices)
+
+   def nth_combination(iterable, r, index):
+       'Equivalent to list(combinations(iterable, r))[index]'
+       pool = tuple(iterable)
+       n = len(pool)
+       if r < 0 or r > n:
+           raise ValueError
+       c = 1
+       k = min(r, n-r)
+       for i in range(1, k+1):
+           c = c * (n - k + i) // i
+       if index < 0:
+           index += c
+       if index < 0 or index >= c:
+           raise IndexError
+       result = []
+       while r:
+           c, n, r = c*r//n, n-1, r-1
+           while index >= c:
+               index -= c
+               c, n = c*(n-r)//n, n-1
+           result.append(pool[-1-n])
+       return tuple(result)
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the

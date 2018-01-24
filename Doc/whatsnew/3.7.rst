@@ -70,6 +70,7 @@ Summary -- Release highlights
 New Features
 ============
 
+
 .. _whatsnew37-pep538:
 
 PEP 538: Legacy C Locale Coercion
@@ -106,6 +107,7 @@ locale remains active when the core interpreter is initialized.
 
     :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
        PEP written and implemented by Nick Coghlan.
+
 
 .. _whatsnew37-pep553:
 
@@ -159,6 +161,24 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 562: Customization of access to module attributes
+-----------------------------------------------------
+
+It is sometimes convenient to customize or otherwise have control over access
+to module attributes. A typical example is managing deprecation warnings.
+Typical workarounds are assigning ``__class__`` of a module object to
+a custom subclass of :class:`types.ModuleType` or replacing the ``sys.modules``
+item with a custom wrapper instance. This procedure is now simplified by
+recognizing ``__getattr__`` defined directly in a module that would act like
+a normal ``__getattr__`` method, except that it will be defined on module
+*instances*.
+
+.. seealso::
+
+    :pep:`562` -- Module ``__getattr__`` and ``__dir__``
+       PEP written and implemented by Ivan Levkivskyi
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
@@ -185,17 +205,69 @@ resolution on Linux and Windows.
        PEP written and implemented by Victor Stinner
 
 
+.. _whatsnew37-pep565:
+
+PEP 565: Show DeprecationWarning in ``__main__``
+------------------------------------------------
+
+The default handling of :exc:`DeprecationWarning` has been changed such that
+these warnings are once more shown by default, but only when the code
+triggering them is running directly in the ``__main__`` module. As a result,
+developers of single file scripts and those using Python interactively should
+once again start seeing deprecation warnings for the APIs they use, but
+deprecation warnings triggered by imported application, library and framework
+modules will continue to be hidden by default.
+
+As a result of this change, the standard library now allows developers to choose
+between three different deprecation warning behaviours:
+
+* :exc:`FutureWarning`: always displayed by default, recommended for warnings
+  intended to be seen by application end users (e.g. for deprecated application
+  configuration settings).
+* :exc:`DeprecationWarning`: displayed by default only in ``__main__`` and when
+  running tests, recommended for warnings intended to be seen by other Python
+  developers where a version upgrade may result in changed behaviour or an
+  error.
+* :exc:`PendingDeprecationWarning`: displayed by default only when running
+  tests, intended for cases where a future version upgrade will change the
+  warning category to :exc:`DeprecationWarning` or :exc:`FutureWarning`.
+
+Previously both :exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`
+were only visible when running tests, which meant that developers primarily
+writing single file scripts or using Python interactively could be surprised
+by breaking changes in the APIs they used.
+
+.. seealso::
+
+    :pep:`565` -- Show DeprecationWarning in ``__main__``
+      PEP written and implemented by Nick Coghlan
+
+
+PEP 540: Add a new UTF-8 mode
+-----------------------------
+
+Add a new UTF-8 mode to ignore the locale, use the UTF-8 encoding, and change
+:data:`sys.stdin` and :data:`sys.stdout` error handlers to ``surrogateescape``.
+This mode is enabled by default in the POSIX locale, but otherwise disabled by
+default.
+
+The new :option:`-X` ``utf8`` command line option and :envvar:`PYTHONUTF8`
+environment variable are added to control the UTF-8 mode.
+
+.. seealso::
+
+    :pep:`540` -- Add a new UTF-8 mode
+       PEP written and implemented by Victor Stinner
+
+
 New Development Mode: -X dev
 ----------------------------
 
-Add a new "development mode": ``-X dev`` command line option to enable debug
-checks at runtime.
-
-In short, ``python3 -X dev ...`` behaves as ``PYTHONMALLOC=debug python3 -W
-default -X faulthandler ...``, except that the PYTHONMALLOC environment
-variable is not set in practice.
-
-See :option:`-X` ``dev`` for the details.
+Add a new "development mode": :option:`-X` ``dev`` command line option and
+:envvar:`PYTHONDEVMODE` environment variable to enable CPython's "development
+mode", introducing additional runtime checks which are too expensive to be
+enabled by default. See :option:`-X` ``dev`` documentation for the effects of
+the development mode.
 
 Hash-based pycs
 ---------------
@@ -250,7 +322,18 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+importlib.resources
+-------------------
+
+This module provides several new APIs and one new ABC for access to, opening,
+and reading *resources* inside packages.  Resources are roughly akin to files
+inside of packages, but they needn't be actual files on the physical file
+system.  Module loaders can provide a :meth:`get_resource_reader()` function
+which returns a :class:`importlib.abc.ResourceReader` instance to support this
+new API.  Built-in file path loaders and zip file loaders both support this.
+(see the PyPI package
+`importlib_resources <http://importlib-resources.readthedocs.io/en/latest/>`_
+as a compatible back port for older Python versions).
 
 
 Improved Modules
@@ -292,8 +375,9 @@ is a list of strings, not bytes.
 contextlib
 ----------
 
-:func:`contextlib.asynccontextmanager` has been added. (Contributed by
-Jelle Zijlstra in :issue:`29679`.)
+:func:`~contextlib.asynccontextmanager` and
+:class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
+by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
 
 cProfile
 --------
@@ -349,12 +433,22 @@ and the ``--directory`` to the command line of the module :mod:`~http.server`.
 With this parameter, the server serves the specified directory, by default it uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
+importlib
+---------
+
+The :class:`importlib.abc.ResourceReader` ABC was introduced to
+support the loading of resource from packages.
+
 locale
 ------
 
 Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
+The :func:`locale.getpreferredencoding` function now always returns ``'UTF-8'``
+on Android or in the UTF-8 mode  (:option:`-X` ``utf8`` option), the locale and
+the *do_setlocale* argument are ignored.
 
 math
 ----
@@ -382,6 +476,10 @@ pdb
 argument.  If given, this is printed to the console just before debugging
 begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
+pdb command line now accepts `-m module_name` as an alternative to
+script file. (Contributed by Mario Corchero in :issue:`32206`.)
+
+
 re
 --
 
@@ -400,10 +498,24 @@ string
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
+subprocess
+----------
+
+On Windows the default for *close_fds* was changed from :const:`False` to
+:const:`True` when redirecting the standard handles. It's now possible to set
+*close_fds* to :const:`True` when redirecting the standard handles. See
+:class:`subprocess.Popen`.
+
+This means that *close_fds* now defaults to :const:`True` on all supported
+platforms.
+
 sys
 ---
 
 Added :attr:`sys.flags.dev_mode` flag for the new development mode.
+
+Deprecated :func:`sys.set_coroutine_wrapper` and
+:func:`sys.get_coroutine_wrapper`.
 
 time
 ----
@@ -481,6 +593,29 @@ Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
+warnings
+--------
+
+The initialization of the default warnings filters has changed as follows:
+
+* warnings enabled via command line options (including those for :option:`-b`
+  and the new CPython-specific ``-X dev`` option) are always passed to the
+  warnings machinery via the ``sys.warnoptions`` attribute.
+* warnings filters enabled via the command line or the environment now have the
+  following precedence order:
+
+     * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
+     * any filters specified with :option:`-W`
+     * any filters specified with :envvar:`PYTHONWARNINGS`
+     * any other CPython specific filters (e.g. the ``default`` filter added
+       for the new ``-X dev`` mode)
+     * any implicit filters defined directly by the warnings machinery
+* in CPython debug builds, all warnings are now displayed by default (the
+  implicit filter list is empty)
+
+(Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
+:issue:`32043`, and :issue:`32230`)
+
 xml.etree
 ---------
 
@@ -538,6 +673,9 @@ Optimizations
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
   and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
   heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
+
+* Constant folding is moved from peephole optimizer to new AST optimizer.
+  (Contributed by Eugene Toder and INADA Naoki in :issue:`29469`)
 
 Build and C API Changes
 =======================
@@ -636,6 +774,9 @@ Deprecated
 
 - The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
 
+- The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
+  favour of :class:`importlib.abc.ResourceReader`.
+
 
 Changes in the C API
 --------------------
@@ -660,14 +801,19 @@ Windows Only
   been used. If the specified version is not available py.exe will error exit.
   (Contributed by Steve Barnes in :issue:`30291`.)
 
-- The launcher can be run as "py -0" to produce a list of the installed pythons,
-  *with default marked with an asterix*. Running "py -0p" will include the paths.
+- The launcher can be run as ``py -0`` to produce a list of the installed pythons,
+  *with default marked with an asterisk*. Running ``py -0p`` will include the paths.
   If py is run with a version specifier that cannot be matched it will also print
   the *short form* list of available specifiers.
   (Contributed by Steve Barnes in :issue:`30362`.)
 
 Removed
 =======
+
+Platform Support Removals
+-------------------------
+
+* FreeBSD 9 and older are no longer supported.
 
 API and Feature Removals
 ------------------------
@@ -731,6 +877,9 @@ Changes in Python behavior
 
 Changes in the Python API
 -------------------------
+
+* The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+  locale to the ``LC_NUMERIC`` locale in some cases.
 
 * The ``asyncio.windows_utils.socketpair()`` function has been
   removed: use directly :func:`socket.socketpair` which is available on all
@@ -800,8 +949,9 @@ Changes in the Python API
 * The result of splitting a string on a :mod:`regular expression <re>`
   that could match an empty string has been changed.  For example
   splitting on ``r'\s*'`` will now split not only on whitespaces as it
-  did previously, but also between any pair of non-whitespace
-  characters.  The previous behavior can be restored by changing the pattern
+  did previously, but also on empty strings before all non-whitespace
+  characters and just before the end of the string.
+  The previous behavior can be restored by changing the pattern
   to ``r'\s+'``.  A :exc:`FutureWarning` was emitted for such patterns since
   Python 3.5.
 
@@ -812,13 +962,34 @@ Changes in the Python API
   positions 2--3.  To match only blank lines, the pattern should be rewritten
   as ``r'(?m)^[^\S\n]*$'``.
 
-  (Contributed by Serhiy Storchaka in :issue:`25054`.)
+  :func:`re.sub()` now replaces empty matches adjacent to a previous
+  non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
+  ``'-a-b--d-'`` instead of ``'-a-b--d-'`` (the first minus between 'b' and
+  'd' replaces 'x', and the second minus replaces an empty string between
+  'x' and 'd').
+
+  (Contributed by Serhiy Storchaka in :issue:`25054` and :issue:`32308`.)
 
 * :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
   recent to be more consistent with :mod:`traceback`.
   (Contributed by Jesse Bakker in :issue:`32121`.)
 
+* On OSes that support :const:`socket.SOCK_NONBLOCK` or
+  :const:`socket.SOCK_CLOEXEC` bit flags, the
+  :attr:`socket.type <socket.socket.type>` no longer has them applied.
+  Therefore, checks like ``if sock.type == socket.SOCK_STREAM``
+  work as expected on all platforms.
+  (Contributed by Yury Selivanov in :issue:`32331`.)
+
 .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+* On Windows the default for the *close_fds* argument of
+  :class:`subprocess.Popen` was changed from :const:`False` to :const:`True`
+  when redirecting the standard handles. If you previously depended on handles
+  being inherited when using :class:`subprocess.Popen` with standard io
+  redirection, you will have to pass ``close_fds=False`` to preserve the
+  previous behaviour, or use
+  :attr:`STARTUPINFO.lpAttributeList <subprocess.STARTUPINFO.lpAttributeList>`.
 
 
 Changes in the C API
@@ -854,6 +1025,12 @@ Other CPython implementation changes
   either in embedding applications, or in CPython itself.
   (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
 
+* Due to changes in the way the default warnings filters are configured,
+  setting ``Py_BytesWarningFlag`` to a value greater than one is no longer
+  sufficient to both emit ``BytesWarning`` messages and have them converted
+  to exceptions. Instead, the flag must be set (to cause the warnings to be
+  emitted in the first place), and an explicit ``error::BytesWarning``
+  warnings filter added to convert them to exceptions.
 
 Documentation
 =============

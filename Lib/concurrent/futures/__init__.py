@@ -15,5 +15,36 @@ from concurrent.futures._base import (FIRST_COMPLETED,
                                       Executor,
                                       wait,
                                       as_completed)
-from concurrent.futures.process import ProcessPoolExecutor
-from concurrent.futures.thread import ThreadPoolExecutor
+
+__all__ = (
+    'FIRST_COMPLETED',
+    'FIRST_EXCEPTION',
+    'ALL_COMPLETED',
+    'CancelledError',
+    'TimeoutError',
+    'BrokenExecutor',
+    'Future',
+    'Executor',
+    'wait',
+    'as_completed',
+    'ProcessPoolExecutor',
+    'ThreadPoolExecutor',
+)
+
+
+def __dir__():
+    return __all__ + ('__author__', '__doc__')
+
+
+def __getattr__(name):
+    global ProcessPoolExecutor, ThreadPoolExecutor
+
+    if name == 'ProcessPoolExecutor':
+        from .process import ProcessPoolExecutor
+        return ProcessPoolExecutor
+
+    if name == 'ThreadPoolExecutor':
+        from .thread import ThreadPoolExecutor
+        return ThreadPoolExecutor
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")

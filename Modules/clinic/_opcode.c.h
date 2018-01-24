@@ -15,7 +15,7 @@ static int
 _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg);
 
 static PyObject *
-_opcode_stack_effect(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int opcode;
@@ -35,4 +35,4 @@ _opcode_stack_effect(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=616105b05b55eb45 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=577a91c9aa5559a9 input=a9049054013a1b77]*/

@@ -571,7 +571,7 @@ that a single backslash followed by a newline is interpreted as those two
 characters as part of the literal, *not* as a line continuation.
 
 
-.. _string-catenation:
+.. _string-concatenation:
 
 String literal concatenation
 ----------------------------
@@ -654,9 +654,11 @@ expression or conversion result.  An empty string is passed when the
 format specifier is omitted.  The formatted result is then included in
 the final value of the whole string.
 
-Top-level format specifiers may include nested replacement fields.
-These nested fields may include their own conversion fields and
-format specifiers, but may not include more deeply-nested replacement fields.
+Top-level format specifiers may include nested replacement fields. These nested
+fields may include their own conversion fields and :ref:`format specifiers
+<formatspec>`, but may not include more deeply-nested replacement fields. The
+:ref:`format specifier mini-language <formatspec>` is the same as that used by
+the string .format() method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.

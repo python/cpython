@@ -2262,6 +2262,30 @@ Samuele
 ...     # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
 ...     return next(filter(pred, iterable), default)
 
+>>> def nth_combination(iterable, r, index):
+...     'Equivalent to list(combinations(iterable, r))[index]'
+...     pool = tuple(iterable)
+...     n = len(pool)
+...     if r < 0 or r > n:
+...         raise ValueError
+...     c = 1
+...     k = min(r, n-r)
+...     for i in range(1, k+1):
+...         c = c * (n - k + i) // i
+...     if index < 0:
+...         index += c
+...     if index < 0 or index >= c:
+...         raise IndexError
+...     result = []
+...     while r:
+...         c, n, r = c*r//n, n-1, r-1
+...         while index >= c:
+...             index -= c
+...             c, n = c*(n-r)//n, n-1
+...         result.append(pool[-1-n])
+...     return tuple(result)
+
+
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.
 
@@ -2344,6 +2368,15 @@ True
 
 >>> first_true('ABC0DEF1', '9', str.isdigit)
 '0'
+
+>>> population = 'ABCDEFGH'
+>>> for r in range(len(population) + 1):
+...     seq = list(combinations(population, r))
+...     for i in range(len(seq)):
+...         assert nth_combination(population, r, i) == seq[i]
+...     for i in range(-len(seq), 0):
+...         assert nth_combination(population, r, i) == seq[i]
+
 
 """
 

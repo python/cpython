@@ -181,6 +181,11 @@ RUNSHARED=       @RUNSHARED@
 # ensurepip options
 ENSUREPIP=      @ENSUREPIP@
 
+# OpenSSL options for setup.py so sysconfig can pick up AC_SUBST() vars.
+OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
+OPENSSL_LIBS=@OPENSSL_LIBS@
+OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
+
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
 DIRMODE=	755
@@ -319,6 +324,7 @@ PYTHON_OBJS=	\
 		Python/Python-ast.o \
 		Python/asdl.o \
 		Python/ast.o \
+		Python/ast_opt.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
 		Python/compile.o \
@@ -348,6 +354,8 @@ PYTHON_OBJS=	\
 		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
+		Python/context.o \
+		Python/hamt.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
@@ -986,11 +994,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymath.h \
-		$(srcdir)/Include/pygetopt.h \
 		$(srcdir)/Include/pymacro.h \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
+		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/pystrcmp.h \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pystrhex.h \
@@ -1016,7 +1024,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/ceval.h \
 		$(srcdir)/Include/internal/gil.h \
 		$(srcdir)/Include/internal/mem.h \
+		$(srcdir)/Include/internal/pygetopt.h \
 		$(srcdir)/Include/internal/pystate.h \
+		$(srcdir)/Include/internal/context.h \
 		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
 
@@ -1085,7 +1095,7 @@ quicktest:	@DEF_MAKE_RULE@ platform
 # SSL tests
 .PHONY: multisslcompile multissltest
 multisslcompile: build_all
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --compile-only
+	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --steps=modules
 
 multissltest: build_all
 	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py
@@ -1249,9 +1259,26 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/circular_imports/subpkg \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		importlib \
+		test/test_importlib \
+		test/test_importlib/builtin \
+		test/test_importlib/data01 \
+		test/test_importlib/data01/subdirectory \
+		test/test_importlib/data02 \
+		test/test_importlib/data02/one \
+		test/test_importlib/data02/two \
+		test/test_importlib/data03 \
+		test/test_importlib/data03/namespace \
+		test/test_importlib/data03/namespace/portion1 \
+		test/test_importlib/data03/namespace/portion2 \
+		test/test_importlib/extension \
+		test/test_importlib/frozen \
+		test/test_importlib/import_ \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
+		test/test_importlib/namespace_pkgs/module_and_namespace_package \
+		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg/foo \
 		test/test_importlib/namespace_pkgs/portion1 \
@@ -1267,8 +1294,9 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/namespace_pkgs/project3 \
 		test/test_importlib/namespace_pkgs/project3/parent \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
-                test/test_importlib/namespace_pkgs/module_and_namespace_package \
-                test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
+		test/test_importlib/source \
+		test/test_importlib/zipdata01 \
+		test/test_importlib/zipdata02 \
 		asyncio \
 		test/test_asyncio \
 		collections concurrent concurrent/futures encodings \
@@ -1283,9 +1311,6 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		ctypes ctypes/test ctypes/macholib \
 		idlelib idlelib/Icons idlelib/idle_test \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
-		importlib test/test_importlib test/test_importlib/builtin \
-		test/test_importlib/extension test/test_importlib/frozen \
-		test/test_importlib/import_ test/test_importlib/source \
 		test/test_tools test/test_warnings test/test_warnings/data \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \

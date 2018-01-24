@@ -809,8 +809,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen,
-                                                "surrogateescape");
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;

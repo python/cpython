@@ -3,7 +3,7 @@
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle',
+    'Handle', 'TimerHandle', 'SendfileNotAvailableError',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     'get_child_watcher', 'set_child_watcher',
@@ -11,102 +11,43 @@ __all__ = (
     '_get_running_loop',
 )
 
-import functools
-import inspect
+import contextvars
 import os
-import reprlib
 import socket
 import subprocess
 import sys
 import threading
-import traceback
 
-from . import constants
-
-
-def _get_function_source(func):
-    func = inspect.unwrap(func)
-    if inspect.isfunction(func):
-        code = func.__code__
-        return (code.co_filename, code.co_firstlineno)
-    if isinstance(func, functools.partial):
-        return _get_function_source(func.func)
-    if isinstance(func, functools.partialmethod):
-        return _get_function_source(func.func)
-    return None
+from . import format_helpers
 
 
-def _format_args_and_kwargs(args, kwargs):
-    """Format function arguments and keyword arguments.
+class SendfileNotAvailableError(RuntimeError):
+    """Sendfile syscall is not available.
 
-    Special case for a single parameter: ('hello',) is formatted as ('hello').
+    Raised if OS does not support senfile syscall for given socket or
+    file type.
     """
-    # use reprlib to limit the length of the output
-    items = []
-    if args:
-        items.extend(reprlib.repr(arg) for arg in args)
-    if kwargs:
-        items.extend(f'{k}={reprlib.repr(v)}' for k, v in kwargs.items())
-    return '({})'.format(', '.join(items))
-
-
-def _format_callback(func, args, kwargs, suffix=''):
-    if isinstance(func, functools.partial):
-        suffix = _format_args_and_kwargs(args, kwargs) + suffix
-        return _format_callback(func.func, func.args, func.keywords, suffix)
-
-    if hasattr(func, '__qualname__'):
-        func_repr = getattr(func, '__qualname__')
-    elif hasattr(func, '__name__'):
-        func_repr = getattr(func, '__name__')
-    else:
-        func_repr = repr(func)
-
-    func_repr += _format_args_and_kwargs(args, kwargs)
-    if suffix:
-        func_repr += suffix
-    return func_repr
-
-
-def _format_callback_source(func, args):
-    func_repr = _format_callback(func, args, None)
-    source = _get_function_source(func)
-    if source:
-        func_repr += f' at {source[0]}:{source[1]}'
-    return func_repr
-
-
-def extract_stack(f=None, limit=None):
-    """Replacement for traceback.extract_stack() that only does the
-    necessary work for asyncio debug mode.
-    """
-    if f is None:
-        f = sys._getframe().f_back
-    if limit is None:
-        # Limit the amount of work to a reasonable amount, as extract_stack()
-        # can be called for each coroutine and future in debug mode.
-        limit = constants.DEBUG_STACK_DEPTH
-    stack = traceback.StackSummary.extract(traceback.walk_stack(f),
-                                           limit=limit,
-                                           lookup_lines=False)
-    stack.reverse()
-    return stack
 
 
 class Handle:
     """Object returned by callback registration methods."""
 
     __slots__ = ('_callback', '_args', '_cancelled', '_loop',
-                 '_source_traceback', '_repr', '__weakref__')
+                 '_source_traceback', '_repr', '__weakref__',
+                 '_context')
 
-    def __init__(self, callback, args, loop):
+    def __init__(self, callback, args, loop, context=None):
+        if context is None:
+            context = contextvars.copy_context()
+        self._context = context
         self._loop = loop
         self._callback = callback
         self._args = args
         self._cancelled = False
         self._repr = None
         if self._loop.get_debug():
-            self._source_traceback = extract_stack(sys._getframe(1))
+            self._source_traceback = format_helpers.extract_stack(
+                sys._getframe(1))
         else:
             self._source_traceback = None
 
@@ -115,7 +56,8 @@ class Handle:
         if self._cancelled:
             info.append('cancelled')
         if self._callback is not None:
-            info.append(_format_callback_source(self._callback, self._args))
+            info.append(format_helpers._format_callback_source(
+                self._callback, self._args))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append(f'created at {frame[0]}:{frame[1]}')
@@ -143,9 +85,10 @@ class Handle:
 
     def _run(self):
         try:
-            self._callback(*self._args)
+            self._context.run(self._callback, *self._args)
         except Exception as exc:
-            cb = _format_callback_source(self._callback, self._args)
+            cb = format_helpers._format_callback_source(
+                self._callback, self._args)
             msg = f'Exception in callback {cb}'
             context = {
                 'message': msg,
@@ -163,9 +106,9 @@ class TimerHandle(Handle):
 
     __slots__ = ['_scheduled', '_when']
 
-    def __init__(self, when, callback, args, loop):
+    def __init__(self, when, callback, args, loop, context=None):
         assert when is not None
-        super().__init__(callback, args, loop)
+        super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
         self._when = when
@@ -219,11 +162,15 @@ class AbstractServer:
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
-        return NotImplemented
+        raise NotImplementedError
 
     async def wait_closed(self):
         """Coroutine to wait until service is closed."""
-        return NotImplemented
+        raise NotImplementedError
+
+    def get_loop(self):
+        """ Get the event loop the Server object is attached to."""
+        raise NotImplementedError
 
 
 class AbstractEventLoop:
@@ -319,16 +266,20 @@ class AbstractEventLoop:
     async def getnameinfo(self, sockaddr, flags=0):
         raise NotImplementedError
 
-    async def create_connection(self, protocol_factory, host=None, port=None,
-                                *, ssl=None, family=0, proto=0,
-                                flags=0, sock=None, local_addr=None,
-                                server_hostname=None):
+    async def create_connection(
+            self, protocol_factory, host=None, port=None,
+            *, ssl=None, family=0, proto=0,
+            flags=0, sock=None, local_addr=None,
+            server_hostname=None,
+            ssl_handshake_timeout=None):
         raise NotImplementedError
 
-    async def create_server(self, protocol_factory, host=None, port=None,
-                            *, family=socket.AF_UNSPEC,
-                            flags=socket.AI_PASSIVE, sock=None, backlog=100,
-                            ssl=None, reuse_address=None, reuse_port=None):
+    async def create_server(
+            self, protocol_factory, host=None, port=None,
+            *, family=socket.AF_UNSPEC,
+            flags=socket.AI_PASSIVE, sock=None, backlog=100,
+            ssl=None, reuse_address=None, reuse_port=None,
+            ssl_handshake_timeout=None):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -363,16 +314,36 @@ class AbstractEventLoop:
         the same port as other existing endpoints are bound to, so long as
         they all set this flag when being created. This option is not
         supported on Windows.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for completion of the SSL handshake before aborting the
+        connection. Default is 10s, longer timeouts may increase vulnerability
+        to DoS attacks (see https://support.f5.com/csp/article/K13834)
         """
         raise NotImplementedError
 
-    async def create_unix_connection(self, protocol_factory, path=None, *,
-                                     ssl=None, sock=None,
-                                     server_hostname=None):
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade a transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
+        """
         raise NotImplementedError
 
-    async def create_unix_server(self, protocol_factory, path=None, *,
-                                 sock=None, backlog=100, ssl=None):
+    async def create_unix_connection(
+            self, protocol_factory, path=None, *,
+            ssl=None, sock=None,
+            server_hostname=None,
+            ssl_handshake_timeout=None):
+        raise NotImplementedError
+
+    async def create_unix_server(
+            self, protocol_factory, path=None, *,
+            sock=None, backlog=100, ssl=None,
+            ssl_handshake_timeout=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop
@@ -389,6 +360,9 @@ class AbstractEventLoop:
 
         ssl can be set to an SSLContext to enable SSL over the
         accepted connections.
+
+        ssl_handshake_timeout is the time in seconds that an SSL server
+        will wait for the SSL handshake to complete (defaults to 10s).
         """
         raise NotImplementedError
 
@@ -501,6 +475,10 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     async def sock_accept(self, sock):
+        raise NotImplementedError
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None,
+                            *, fallback=None):
         raise NotImplementedError
 
     # Signal handling.
@@ -652,6 +630,7 @@ def get_running_loop():
 
     This function is thread-specific.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     loop = _get_running_loop()
     if loop is None:
         raise RuntimeError('no running event loop')
@@ -664,6 +643,7 @@ def _get_running_loop():
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     running_loop, pid = _running_loop.loop_pid
     if running_loop is not None and pid == os.getpid():
         return running_loop
@@ -675,6 +655,7 @@ def _set_running_loop(loop):
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     _running_loop.loop_pid = (loop, os.getpid())
 
 
@@ -711,6 +692,7 @@ def get_event_loop():
     If there is no running event loop set, the function will return
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
+    # NOTE: this function is implemented in C (see _asynciomodule.c)
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
@@ -736,3 +718,26 @@ def set_child_watcher(watcher):
     """Equivalent to calling
     get_event_loop_policy().set_child_watcher(watcher)."""
     return get_event_loop_policy().set_child_watcher(watcher)
+
+
+# Alias pure-Python implementations for testing purposes.
+_py__get_running_loop = _get_running_loop
+_py__set_running_loop = _set_running_loop
+_py_get_running_loop = get_running_loop
+_py_get_event_loop = get_event_loop
+
+
+try:
+    # get_event_loop() is one of the most frequently called
+    # functions in asyncio.  Pure Python implementation is
+    # about 4 times slower than C-accelerated.
+    from _asyncio import (_get_running_loop, _set_running_loop,
+                          get_running_loop, get_event_loop)
+except ImportError:
+    pass
+else:
+    # Alias C implementations for testing purposes.
+    _c__get_running_loop = _get_running_loop
+    _c__set_running_loop = _set_running_loop
+    _c_get_running_loop = get_running_loop
+    _c_get_event_loop = get_event_loop

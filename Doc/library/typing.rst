@@ -774,9 +774,9 @@ The module defines the following classes, functions and decorators:
 
    Wrapper namespace for I/O stream types.
 
-   This defines the generic type ``IO[AnyStr]`` and aliases ``TextIO``
-   and ``BinaryIO`` for respectively ``IO[str]`` and ``IO[bytes]``.
-   These represent the types of I/O streams such as returned by
+   This defines the generic type ``IO[AnyStr]`` and subclasses ``TextIO``
+   and ``BinaryIO``, deriving from ``IO[str]`` and ``IO[bytes]``,
+   respectively. These represent the types of I/O streams such as returned by
    :func:`open`.
 
    These types are also accessible directly as ``typing.IO``,
