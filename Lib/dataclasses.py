@@ -389,7 +389,8 @@ def _get_field(cls, a_name, a_type):
     if typing is not None:
         # This test uses a typing internal class, but it's the best
         #  way to test if this is a ClassVar.
-        if type(a_type) is typing._ClassVar:
+        if (type(a_type) is typing._GenericAlias and
+                a_type.__origin__ is typing.ClassVar):
             # This field is a ClassVar, so it's not a field.
             f._field_type = _FIELD_CLASSVAR
 

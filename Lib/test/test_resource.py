@@ -138,7 +138,6 @@ class ResourceTest(unittest.TestCase):
             with contextlib.suppress(AttributeError):
                 self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 
-    @support.requires_freebsd_version(9)
     def test_freebsd_contants(self):
         for attr in ['SWAP', 'SBSIZE', 'NPTS']:
             with contextlib.suppress(AttributeError):
