@@ -406,8 +406,8 @@ This widget accepts the following specific options:
 +======================+======================================================+
 | from                 | Float value.  If set, this is the minimum value to   |
 |                      | which the decrement button will decrement.  Must be  |
-|                      | spelled as `from_` when used as an argument, since   |
-|                      | `from` is a Python keyword.                          |
+|                      | spelled as ``from_`` when used as an argument, since |
+|                      | ``from`` is a Python keyword.                        |
 +----------------------+------------------------------------------------------+
 | to                   | Float value.  If set, this is the maximum value to   |
 |                      | which the increment button will increment.           |
@@ -422,10 +422,10 @@ This widget accepts the following specific options:
 |                      | or decrementing numbers.                             |
 |                      |                                                      |
 +----------------------+------------------------------------------------------+
-| wrap                 | Boolean value.  If `True`, increment and decrement   |
-|                      | buttons will cycle from the `to` value to the `from` |
-|                      | value or the `from` value to the `to` value,         |
-|                      | respectively.                                        |
+| wrap                 | Boolean value.  If ``True``, increment and decrement |
+|                      | buttons will cycle from the ``to`` value to the      |
+|                      | ``from`` value or the ``from`` value to the ``to``   |
+|                      | value, respectively.                                 |
 +----------------------+------------------------------------------------------+
 | format               | String value.  This specifies the format of numbers  |
 |                      | set by the increment/decrement buttons.  It must be  |
