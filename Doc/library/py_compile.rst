@@ -72,8 +72,8 @@ byte-code cache files in the directory containing the source code.
 
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added as specified in :pep:`552`.
-      If the :envvar:`SOURCE_DATE_EPOCH` environment variable is set, this will
-      be forced to `CHECKED_HASH`.
+      If the :envvar:`SOURCE_DATE_EPOCH` environment variable is set,
+      *invalidation_mode* will be forced to `CHECKED_HASH`.
 
 
 .. class:: PycInvalidationMode
