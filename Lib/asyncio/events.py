@@ -3,7 +3,7 @@
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle',
+    'Handle', 'TimerHandle', 'SendfileNotAvailableError',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     'get_child_watcher', 'set_child_watcher',
@@ -11,6 +11,7 @@ __all__ = (
     '_get_running_loop',
 )
 
+import contextvars
 import os
 import socket
 import subprocess
@@ -20,13 +21,25 @@ import threading
 from . import format_helpers
 
 
+class SendfileNotAvailableError(RuntimeError):
+    """Sendfile syscall is not available.
+
+    Raised if OS does not support senfile syscall for given socket or
+    file type.
+    """
+
+
 class Handle:
     """Object returned by callback registration methods."""
 
     __slots__ = ('_callback', '_args', '_cancelled', '_loop',
-                 '_source_traceback', '_repr', '__weakref__')
+                 '_source_traceback', '_repr', '__weakref__',
+                 '_context')
 
-    def __init__(self, callback, args, loop):
+    def __init__(self, callback, args, loop, context=None):
+        if context is None:
+            context = contextvars.copy_context()
+        self._context = context
         self._loop = loop
         self._callback = callback
         self._args = args
@@ -72,7 +85,7 @@ class Handle:
 
     def _run(self):
         try:
-            self._callback(*self._args)
+            self._context.run(self._callback, *self._args)
         except Exception as exc:
             cb = format_helpers._format_callback_source(
                 self._callback, self._args)
@@ -93,9 +106,9 @@ class TimerHandle(Handle):
 
     __slots__ = ['_scheduled', '_when']
 
-    def __init__(self, when, callback, args, loop):
+    def __init__(self, when, callback, args, loop, context=None):
         assert when is not None
-        super().__init__(callback, args, loop)
+        super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
         self._when = when

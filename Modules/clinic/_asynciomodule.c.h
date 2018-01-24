@@ -110,7 +110,7 @@ PyDoc_STRVAR(_asyncio_Future_set_exception__doc__,
     {"set_exception", (PyCFunction)_asyncio_Future_set_exception, METH_O, _asyncio_Future_set_exception__doc__},
 
 PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
-"add_done_callback($self, fn, /)\n"
+"add_done_callback($self, fn, /, *, context=None)\n"
 "--\n"
 "\n"
 "Add a callback to be run when the future becomes done.\n"
@@ -120,7 +120,30 @@ PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
 "scheduled with call_soon.");
 
 #define _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF    \
-    {"add_done_callback", (PyCFunction)_asyncio_Future_add_done_callback, METH_O, _asyncio_Future_add_done_callback__doc__},
+    {"add_done_callback", (PyCFunction)_asyncio_Future_add_done_callback, METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_add_done_callback__doc__},
+
+static PyObject *
+_asyncio_Future_add_done_callback_impl(FutureObj *self, PyObject *fn,
+                                       PyObject *context);
+
+static PyObject *
+_asyncio_Future_add_done_callback(FutureObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "context", NULL};
+    static _PyArg_Parser _parser = {"O|$O:add_done_callback", _keywords, 0};
+    PyObject *fn;
+    PyObject *context = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &fn, &context)) {
+        goto exit;
+    }
+    return_value = _asyncio_Future_add_done_callback_impl(self, fn, context);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_asyncio_Future_remove_done_callback__doc__,
 "remove_done_callback($self, fn, /)\n"
@@ -763,4 +786,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=616e814431893dcc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bcbaf1b2480f4aa9 input=a9049054013a1b77]*/
