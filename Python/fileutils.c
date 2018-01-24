@@ -1803,7 +1803,7 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
     if (change_locale) {
         oldloc = setlocale(LC_CTYPE, NULL);
         if (!oldloc) {
-            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            PyErr_SetString(PyExc_RuntimeWarning, "failed to get LC_CTYPE locale");
             return -1;
         }
 
