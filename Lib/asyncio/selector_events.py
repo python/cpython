@@ -820,7 +820,8 @@ class _SelectorSocketTransport(_SelectorTransport):
 
         if self._conn_lost:
             if self._empty_waiter is not None:
-                self._empty_waiter.set_result(True)
+                self._empty_waiter.set_exception(
+                    ConnectionError("Connection is closed by peer"))
             return
         try:
             n = self._sock.send(self._buffer)
@@ -839,7 +840,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             if not self._buffer:
                 self._loop._remove_writer(self._sock_fd)
                 if self._empty_waiter is not None:
-                    self._empty_waiter.set_result(False)
+                    self._empty_waiter.set_result(None)
                 if self._closing:
                     self._call_connection_lost(None)
                 elif self._eof:

@@ -181,7 +181,7 @@ class _SendfileProtocol(protocols.Protocol):
             # Thus disconnection is always an exception from user perspective
             if exc is None:
                 self._paused.set_exception(
-                    ConnectionResetError("Connection reset by peer"))
+                    ConnectionError("Connection is closed by peer"))
             else:
                 self._paused.set_exception(exc)
         self._proto.connection_lost(exc)
