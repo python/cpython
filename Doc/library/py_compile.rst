@@ -56,7 +56,8 @@ byte-code cache files in the directory containing the source code.
    *invalidation_mode* should be a member of the :class:`PycInvalidationMode`
    enum and controls how the generated ``.pyc`` files are invalidated at
    runtime. If the :envvar:`SOURCE_DATE_EPOCH` environment variable is set,
-   *invalidation_mode* will be forced to `CHECKED_HASH`.
+   *invalidation_mode* will be forced to
+   :attr:`PycInvalidationMode.CHECKED_HASH`.
 
    .. versionchanged:: 3.2
       Changed default value of *cfile* to be :PEP:`3147`-compliant.  Previous
@@ -73,7 +74,8 @@ byte-code cache files in the directory containing the source code.
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added as specified in :pep:`552`.
       If the :envvar:`SOURCE_DATE_EPOCH` environment variable is set,
-      *invalidation_mode* will be forced to `CHECKED_HASH`.
+      *invalidation_mode* will be forced to
+      :attr:`PycInvalidationMode.CHECKED_HASH`.
 
 
 .. class:: PycInvalidationMode
