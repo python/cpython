@@ -827,15 +827,19 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
         }
 
         if (delim) {
-        	printf("test  ");
             size_t len = delim - defpath + 1;
             size_t end = wcslen(buf) + len;
             wcsncat(buf, defpath, len);
             buf[end] = '\0';
         }
         else {
-
-            //wcscat(buf, defpath);
+#ifdef __VXWORKS__
+        	//VXWORKS uses ; instead of : as seperator
+        	wchar_t * pwc;
+        	while(pwc = wcsstr(defpath,L":"))
+        		wcsncpy(pwc,L";",1);
+#endif
+        	wcscat(buf, defpath);
             break;
         }
         defpath = delim + 1;
@@ -864,7 +868,6 @@ calculate_init(PyCalculatePath *calculate,
     }
 
     calculate->pythonpath = Py_DecodeLocale(PYTHONPATH, &len);
-    printf("aa%ls\n",calculate->pythonpath);
     if (!calculate->pythonpath) {
         return DECODE_LOCALE_ERR("PYTHONPATH define", len);
     }

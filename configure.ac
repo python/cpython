@@ -73,7 +73,7 @@ if test "$cross_compiling" = yes; then
 	done
         if test x$interp = x; then
 	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
-	fi
+        fi
         AC_MSG_RESULT($interp)
 	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
     fi
