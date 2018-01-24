@@ -8485,6 +8485,8 @@ os_pipe_impl(PyObject *module)
 
 #ifdef HAVE_PIPE2
     Py_BEGIN_ALLOW_THREADS
+
+//VXWORKS doesnt support O_CLOEXEC yet ref: V7COR-4478
 #ifdef __VXWORKS__
     res = pipe2(fds, 0);
 #else

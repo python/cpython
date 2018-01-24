@@ -88,6 +88,7 @@ _PyPathConfig_Init(const _PyCoreConfig *core_config)
     _PyPathConfig_Clear(&_Py_path_config);
     _Py_path_config = new_config;
 
+    printf("%ls\n",new_config.prefix);
     err = _Py_INIT_OK();
 
 done:

@@ -416,6 +416,7 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
                        PyCalculatePath *calculate, wchar_t *exec_prefix)
 {
     size_t n;
+    
 
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (core_config->home) {
@@ -460,6 +461,7 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
         }
     }
 
+    
     /* Search from argv0_path, until root is found */
     copy_absolute(exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
     do {
@@ -825,22 +827,24 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
         }
 
         if (delim) {
+        	printf("test  ");
             size_t len = delim - defpath + 1;
             size_t end = wcslen(buf) + len;
             wcsncat(buf, defpath, len);
             buf[end] = '\0';
         }
         else {
-            wcscat(buf, defpath);
+
+            //wcscat(buf, defpath);
             break;
         }
         defpath = delim + 1;
     }
     wcscat(buf, delimiter);
 
+
     /* Finally, on goes the directory for dynamic-load modules */
     wcscat(buf, exec_prefix);
-
     config->module_search_path = buf;
     return _Py_INIT_OK();
 }
@@ -860,6 +864,7 @@ calculate_init(PyCalculatePath *calculate,
     }
 
     calculate->pythonpath = Py_DecodeLocale(PYTHONPATH, &len);
+    printf("aa%ls\n",calculate->pythonpath);
     if (!calculate->pythonpath) {
         return DECODE_LOCALE_ERR("PYTHONPATH define", len);
     }
