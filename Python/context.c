@@ -1171,7 +1171,7 @@ get_token_missing(void)
 int
 PyContext_ClearFreeList(void)
 {
-    int size = ctx_freelist_len;
+    Py_ssize_t size = ctx_freelist_len;
     while (ctx_freelist_len) {
         PyContext *ctx = ctx_freelist;
         ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
