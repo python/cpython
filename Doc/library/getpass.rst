@@ -48,4 +48,4 @@ The :mod:`getpass` module provides two functions:
    systems which support the :mod:`pwd` module, otherwise, an exception is
    raised.
 
-   In general, this function should be preferred over :func:`os.getlogin()`
+   In general, this function should be preferred over :func:`os.getlogin()`.
