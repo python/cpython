@@ -177,6 +177,14 @@ PyDelta_FromDSU:int:days::
 PyDelta_FromDSU:int:seconds::
 PyDelta_FromDSU:int:useconds::
 
+PyTimeZone_FromOffset:PyObject*::+1:
+PyTimeZone_FromOffset:PyDateTime_DeltaType*:offset:+1:Reference count not increased if offset is +00:00
+
+PyTimeZone_FromOffsetAndName:PyObject*::+1:
+PyTimeZone_FromOffsetAndName:PyDateTime_DeltaType*:offset:+1:Reference count not increased if offset is +00:00 and name == NULL
+PyTimeZone_FromOffsetAndName:PyUnicode*:name:+1:
+
+
 PyDescr_NewClassMethod:PyObject*::+1:
 PyDescr_NewClassMethod:PyTypeObject*:type::
 PyDescr_NewClassMethod:PyMethodDef*:method::
