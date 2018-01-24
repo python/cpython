@@ -1771,14 +1771,14 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
         }
     }
     if (thousands_sep != NULL) {
-        *thousands_sep = PyUnicode_FromString(",");
+        *thousands_sep = PyUnicode_FromString("");
         if (*thousands_sep == NULL) {
             return -1;
         }
     }
 
     if (grouping != NULL) {
-        *grouping = "\003\003";
+        *grouping = "";
     }
     return 0;
 #else
