@@ -314,7 +314,6 @@ class BaseTestUUID:
     # bpo-32502: UUID1 requires a 48-bit identifier, but hardware identifiers
     # need not necessarily be 48 bits (e.g., EUI-64).
     def test_uuid1_eui64(self):
-        # Reset any cached node value.
         self.uuid._node = None
 
         # Confirm that uuid.getnode ignores hardware addresses larger than 48
@@ -325,8 +324,9 @@ class BaseTestUUID:
         too_large_getter = lambda: 1 << 48
         with unittest.mock.patch.multiple(
             self.uuid,
-            _node_getters_win32=[too_large_getter],
-            _node_getters_unix=[too_large_getter],
+            _node=None,  # Ignore any cached node value.
+            _NODE_GETTERS_WIN32=[too_large_getter],
+            _NODE_GETTERS_UNIX=[too_large_getter],
         ):
             node = self.uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
