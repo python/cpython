@@ -484,8 +484,11 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 
         def cleanup():
-            proto.transport.close()
-            self.run_loop(proto.wait_closed())
+            if proto.transport is not None:
+                # can be None if the task was cancelled before
+                # connection_made callback
+                proto.transport.close()
+                self.run_loop(proto.wait_closed())
 
             server.close()
             self.run_loop(server.wait_closed())
