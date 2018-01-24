@@ -244,10 +244,11 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._stream_reader.feed_eof()
             else:
                 self._stream_reader.set_exception(exc)
-        if exc is None:
-            self._closed.set_result(None)
-        else:
-            self._closed.set_exception(exc)
+        if not self._closed.done():
+            if exc is None:
+                self._closed.set_result(None)
+            else:
+                self._closed.set_exception(exc)
         super().connection_lost(exc)
         self._stream_reader = None
         self._stream_writer = None
@@ -263,6 +264,12 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             # has no effect when using ssl"
             return False
         return True
+
+    def __del__(self):
+        # Prevent reports about unhandled exceptions.
+        # Better than self._closed._log_traceback = False hack
+        if self._closed.done():
+            self._closed.exception()
 
 
 class StreamWriter:
@@ -312,7 +319,8 @@ class StreamWriter:
         return self._transport.is_closing()
 
     async def wait_closed(self):
-        await self._protocol._closed
+        if self._transport is not None:
+            await self._protocol._closed
 
     def get_extra_info(self, name, default=None):
         return self._transport.get_extra_info(name, default)
