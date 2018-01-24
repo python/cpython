@@ -2448,7 +2448,7 @@ class CTask_Future_Tests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         try:
             fut = Fut(loop=self.loop)
-            self.loop.call_later(0.1, fut.set_result(1))
+            self.loop.call_later(0.1, fut.set_result, 1)
             task = asyncio.Task(coro(), loop=self.loop)
             res = self.loop.run_until_complete(task)
         finally:
