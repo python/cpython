@@ -1923,6 +1923,7 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         return -1;
     }
 
+    Py_UTF8Mode = pymain->config.utf8_mode;
     pymain_get_global_config(pymain, cmdline);
     return 0;
 }
