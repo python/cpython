@@ -314,19 +314,19 @@ class TestUUID(unittest.TestCase):
         # generate a valid value.
         too_large_getter = lambda: 1 << 48
         with unittest.mock.patch.multiple(
-            self.uuid,
+            uuid,
             _node=None,  # Ignore any cached node value.
             _NODE_GETTERS_WIN32=[too_large_getter],
             _NODE_GETTERS_UNIX=[too_large_getter],
         ):
-            node = self.uuid.getnode()
+            node = uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
 
         # Confirm that uuid1 can use the generated node, i.e., the that
         # uuid.getnode fell back on uuid._random_getnode() rather than using
         # the value from too_large_getter above.
         try:
-            self.uuid.uuid1(node=node)
+            uuid.uuid1(node=node)
         except ValueError as e:
             self.fail('uuid1 was given an invalid node ID')
 
