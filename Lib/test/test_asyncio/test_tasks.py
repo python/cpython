@@ -1401,17 +1401,6 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertIsNone(t.result())
 
-    def test_step_with_baseexception(self):
-        @asyncio.coroutine
-        def notmutch():
-            raise BaseException()
-
-        task = self.new_task(self.loop, notmutch())
-        self.assertRaises(BaseException, task._step)
-
-        self.assertTrue(task.done())
-        self.assertIsInstance(task.exception(), BaseException)
-
     def test_baseexception_during_cancel(self):
 
         def gen():
@@ -2275,22 +2264,12 @@ def add_subclass_tests(cls):
             self.calls = collections.defaultdict(lambda: 0)
             super().__init__(*args, **kwargs)
 
-        def _schedule_callbacks(self):
-            self.calls['_schedule_callbacks'] += 1
-            return super()._schedule_callbacks()
-
         def add_done_callback(self, *args, **kwargs):
             self.calls['add_done_callback'] += 1
             return super().add_done_callback(*args, **kwargs)
 
     class Task(CommonFuture, BaseTask):
-        def _step(self, *args):
-            self.calls['_step'] += 1
-            return super()._step(*args)
-
-        def _wakeup(self, *args):
-            self.calls['_wakeup'] += 1
-            return super()._wakeup(*args)
+        pass
 
     class Future(CommonFuture, BaseFuture):
         pass
@@ -2310,12 +2289,11 @@ def add_subclass_tests(cls):
 
         self.assertEqual(
             dict(task.calls),
-            {'_step': 2, '_wakeup': 1, 'add_done_callback': 1,
-             '_schedule_callbacks': 1})
+            {'add_done_callback': 1})
 
         self.assertEqual(
             dict(fut.calls),
-            {'add_done_callback': 1, '_schedule_callbacks': 1})
+            {'add_done_callback': 1})
 
     # Add patched Task & Future back to the test case
     cls.Task = Task
