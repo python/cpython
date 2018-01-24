@@ -2373,6 +2373,22 @@ class SendfileMixin:
         self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
                         self.file.tell())
 
+    def test_sendfile_prevents_bare_write(self):
+        srv_proto, cli_proto = self.prepare()
+        fut = self.loop.create_future()
+
+        async def coro():
+            fut.set_result(None)
+            return await self.loop.sendfile(cli_proto.transport, self.file)
+
+        t = self.loop.create_task(coro())
+        self.run_loop(fut)
+        with self.assertRaisesRegex(RuntimeError,
+                                    r"loop\.sendfile\(\) is not finished"):
+            cli_proto.transport.write(b'data')
+        ret = self.run_loop(t)
+        self.assertEqual(ret, len(self.DATA))
+
 
 if sys.platform == 'win32':
 
