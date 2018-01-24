@@ -386,6 +386,13 @@ static int win32_can_symlink = 0;
 #endif
 #endif
 
+
+#if defined(__ANDROID_API__) && __ANDROID_API__ < 21
+/* sendfile() is implemted but not declared in Android headers before API 21 */
+extern ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count);
+#endif
+
+
 #ifdef MS_WINDOWS
 #define INITFUNC PyInit_nt
 #define MODNAME "nt"
