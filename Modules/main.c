@@ -1909,22 +1909,24 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         return -1;
     }
 
-    /* Global configuration variables should be set to read the core
-       configuration, and then get again to get updated values.
-
-       _PyPathConfig_Init() tests !Py_FrozenFlag to avoid some warnings.
-       Moreover, on Windows, it modifies Py_IsolatedFlag and Py_NoSiteFlag
-       variables if a "._pth" file is found. */
-    pymain_set_global_config(pymain, cmdline);
+    /* On Windows, _PyPathConfig_Init() modifies Py_IsolatedFlag and
+       Py_NoSiteFlag variables if a "._pth" file is found. */
+    int init_isolated = Py_IsolatedFlag;
+    int init_no_site = Py_NoSiteFlag;
+    Py_IsolatedFlag = cmdline->isolated;
+    Py_NoSiteFlag = cmdline->no_site_import;
 
     err = _PyCoreConfig_Read(config);
+
+    cmdline->isolated = Py_IsolatedFlag;
+    cmdline->no_site_import = Py_NoSiteFlag;
+    Py_IsolatedFlag = init_isolated;
+    Py_NoSiteFlag = init_no_site;
+
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
     }
-
-    Py_UTF8Mode = pymain->config.utf8_mode;
-    pymain_get_global_config(pymain, cmdline);
     return 0;
 }
 
@@ -1948,8 +1950,6 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     int locale_coerced = 0;
     int loops = 0;
     int init_ignore_env = pymain->config.ignore_environment;
-    int init_isolated = cmdline->isolated;
-    int init_no_site = cmdline->no_site_import;
 
     while (1) {
         int utf8_mode = pymain->config.utf8_mode;
@@ -2011,8 +2011,6 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
            modified by _PyCoreConfig_Read(). */
         Py_UTF8Mode = pymain->config.utf8_mode;
         Py_IgnoreEnvironmentFlag = init_ignore_env;
-        Py_IsolatedFlag = init_isolated;
-        Py_NoSiteFlag = init_no_site;
         _PyCoreConfig_Clear(&pymain->config);
         pymain_clear_cmdline(pymain, cmdline);
         pymain_get_global_config(pymain, cmdline);
