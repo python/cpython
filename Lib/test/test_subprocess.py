@@ -697,7 +697,7 @@ class ProcessTestCase(BaseTestCase):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             # ignore errors that indicate the command was not found
-            if c.exception.errno not in (errno.ENOENT, errno.EACCES):
+            if c.exception.errno not in (errno.ENOENT, errno.ENOTDIR, errno.EACCES):
                 raise c.exception
 
     @unittest.skipIf(threading is None, "threading required")
