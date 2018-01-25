@@ -1,1 +1,2 @@
-distutils no longer corrupts tar files ending with b'\x0d'
+distutils' upload command no longer corrupts tar files ending with a CR byte,
+and no longer tries to convert CR to CRLF in any of the upload text fields.
