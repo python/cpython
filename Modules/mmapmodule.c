@@ -80,7 +80,7 @@ my_getpagesize(void)
 #endif
 
 #if defined(__ANDROID_API__) && __ANDROID_API__ < 21
-/* mmap() is implemted but not declared in Android headers before API 21 */
+/* mmap() is implemented but not declared in Android headers before API 21 */
 extern void *mmap(void *addr, size_t length, int prot, int flags,
                   int fd, off_t offset);
 #endif
