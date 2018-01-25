@@ -133,18 +133,12 @@ static int
 iobase_is_closed(PyObject *self)
 {
     PyObject *res;
+    int ret;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    res = _PyObject_GetAttrId(self, &PyId___IOBase_closed);
-    if (res == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return -1;
-        }
-        PyErr_Clear();
-        return 0;
-    }
-    Py_DECREF(res);
-    return 1;
+    ret = _PyObject_LookupAttrId(self, &PyId___IOBase_closed, &res);
+    Py_XDECREF(res);
+    return ret;
 }
 
 /* Flush and close methods */
@@ -190,20 +184,16 @@ iobase_check_closed(PyObject *self)
     int closed;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    res = _PyObject_GetAttrWithoutError(self, _PyIO_str_closed);
-    if (res == NULL) {
-        if (PyErr_Occurred()) {
+    closed = _PyObject_LookupAttr(self, _PyIO_str_closed, &res);
+    if (closed > 0) {
+        closed = PyObject_IsTrue(res);
+        Py_DECREF(res);
+        if (closed > 0) {
+            PyErr_SetString(PyExc_ValueError, "I/O operation on closed file.");
             return -1;
         }
-        return 0;
     }
-    closed = PyObject_IsTrue(res);
-    Py_DECREF(res);
-    if (closed <= 0) {
-        return closed;
-    }
-    PyErr_SetString(PyExc_ValueError, "I/O operation on closed file.");
-    return -1;
+    return closed;
 }
 
 PyObject *
@@ -273,8 +263,7 @@ iobase_finalize(PyObject *self)
 
     /* If `closed` doesn't exist or can't be evaluated as bool, then the
        object is probably in an unusable state, so ignore. */
-    res = _PyObject_GetAttrWithoutError(self, _PyIO_str_closed);
-    if (res == NULL) {
+    if (_PyObject_LookupAttr(self, _PyIO_str_closed, &res) <= 0) {
         PyErr_Clear();
         closed = -1;
     }
@@ -538,8 +527,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
     PyObject *peek, *buffer, *result;
     Py_ssize_t old_size = -1;
 
-    peek = _PyObject_GetAttrWithoutError(self, _PyIO_str_peek);
-    if (peek == NULL && PyErr_Occurred()) {
+    if (_PyObject_LookupAttr(self, _PyIO_str_peek, &peek) < 0) {
         return NULL;
     }
 
