@@ -214,7 +214,7 @@ following syntax valid::
     class B:
         ...
 
-Since this change breaks compatibiltiy, the new behavior can be enabled
+Since this change breaks compatibility, the new behavior can be enabled
 on a per-module basis in Python 3.7 using a ``__future__`` import, like
 this::
 
