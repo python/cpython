@@ -479,6 +479,17 @@ begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 pdb command line now accepts `-m module_name` as an alternative to
 script file. (Contributed by Mario Corchero in :issue:`32206`.)
 
+py_compile
+----------
+
+:func:`py_compile.compile` -- and by extension, :mod:`compileall` -- now
+respects the :envvar:`SOURCE_DATE_EPOCH` environment variable by
+unconditionally creating ``.pyc`` files for hash-based validation.
+This allows for guaranteeing
+`reproducible builds <https://reproducible-builds.org/>`_ of ``.pyc``
+files when they are created eagerly. (Contributed by Bernhard M. Wiedemann
+in :issue:`29708`.)
+
 
 re
 --
@@ -544,6 +555,12 @@ Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
 to get per-thread CPU time measurements.
 (Contributed by Antoine Pitrou in :issue:`32025`.)
 
+unicodedata
+-----------
+
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
+<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+Peterson.)
 
 unittest
 --------
@@ -564,20 +581,6 @@ New function :const:`~unittest.mock.seal` will disable the creation of mock
 children by preventing to get or set any new attribute on the sealed mock.
 The sealing process is performed recursively. (Contributed by Mario Corchero
 in :issue:`30541`.)
-
-xmlrpc.server
--------------
-
-:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
-its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
-:issue:`7769`.)
-
-unicodedata
------------
-
-The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
-<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
-Peterson.)
 
 urllib.parse
 ------------
@@ -623,6 +626,13 @@ xml.etree
 methods can now compare text of the current node with ``[. = "text"]``,
 not only text in children.  Predicates also allow adding spaces for
 better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
+
+xmlrpc.server
+-------------
+
+:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
+its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
+:issue:`7769`.)
 
 zipapp
 ------
@@ -680,10 +690,16 @@ Optimizations
 Build and C API Changes
 =======================
 
+* :mod:`py_compile` and :mod:`compileall` now support the
+  :envvar:`SOURCE_DATE_EPOCH` environment variable by unconditionally
+  building ``.pyc`` files for hash verification instead of potentially
+  timestamp-based ``.pyc`` files. See the notes for the `py_compile`_
+  improvement notes for more details.
+
 * A full copy of libffi is no longer bundled for use when building the
   :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
   of libffi is now required when building ``_ctypes`` on such platforms.
-  Contributed by Zachary Ware in :issue:`27979`.
+  (Contributed by Zachary Ware in :issue:`27979`.)
 
 * The fields :c:member:`name` and :c:member:`doc` of structures
   :c:type:`PyMemberDef`, :c:type:`PyGetSetDef`,
