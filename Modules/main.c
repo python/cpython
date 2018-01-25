@@ -1048,36 +1048,6 @@ config_init_warnoptions(_PyCoreConfig *config, _Py_CommandLineDetails *cmdline)
 }
 
 
-static int
-main_config_init_warnoptions(_PyMainInterpreterConfig *main_config,
-                             const _PyCoreConfig *config)
-{
-    PyObject *warnoptions = PyList_New(0);
-    if (warnoptions == NULL) {
-        return -1;
-    }
-
-    for (int i = 0; i < config->nwarnoption; i++) {
-        PyObject *option = PyUnicode_FromWideChar(config->warnoptions[i], -1);
-        if (option == NULL) {
-            goto error;
-        }
-        if (PyList_Append(warnoptions, option)) {
-            Py_DECREF(option);
-            goto error;
-        }
-        Py_DECREF(option);
-    }
-
-    main_config->warnoptions = warnoptions;
-    return 0;
-
-error:
-    Py_DECREF(warnoptions);
-    return -1;
-}
-
-
 /* Get warning options from PYTHONWARNINGS environment variable.
    Return 0 on success.
    Set pymain->err and return -1 on error. */
@@ -1324,34 +1294,25 @@ pymain_init_core_argv(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 }
 
 
-static int
-main_config_init_argv(_PyMainInterpreterConfig *main_config,
-                      const _PyCoreConfig *config)
+static PyObject*
+wstrlist_as_pylist(int len, wchar_t **list)
 {
-    if (config->argc < 0) {
-        return 0;
+    assert(list != NULL || len < 1);
+
+    PyObject *pylist = PyList_New(len);
+    if (pylist == NULL) {
+        return NULL;
     }
 
-    int argc = config->argc;
-    wchar_t** argv = config->argv;
-    assert(argc >= 1 && argv != NULL);
-
-    PyObject *list = PyList_New(argc);
-    if (list == NULL) {
-        return -1;
-    }
-
-    for (int i = 0; i < argc; i++) {
-        PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
+    for (int i = 0; i < len; i++) {
+        PyObject *v = PyUnicode_FromWideChar(list[i], -1);
         if (v == NULL) {
-            Py_DECREF(list);
-            return -1;
+            Py_DECREF(pylist);
+            return NULL;
         }
-        PyList_SET_ITEM(list, i, v);
+        PyList_SET_ITEM(pylist, i, v);
     }
-
-    main_config->argv = list;
-    return 0;
+    return pylist;
 }
 
 
@@ -1948,7 +1909,20 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         return -1;
     }
 
+    /* On Windows, _PyPathConfig_Init() modifies Py_IsolatedFlag and
+       Py_NoSiteFlag variables if a "._pth" file is found. */
+    int init_isolated = Py_IsolatedFlag;
+    int init_no_site = Py_NoSiteFlag;
+    Py_IsolatedFlag = cmdline->isolated;
+    Py_NoSiteFlag = cmdline->no_site_import;
+
     err = _PyCoreConfig_Read(config);
+
+    cmdline->isolated = Py_IsolatedFlag;
+    cmdline->no_site_import = Py_NoSiteFlag;
+    Py_IsolatedFlag = init_isolated;
+    Py_NoSiteFlag = init_no_site;
+
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
@@ -2033,7 +2007,8 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 
         /* Reset the configuration, except UTF-8 Mode. Set Py_UTF8Mode for
            Py_DecodeLocale(). Reset Py_IgnoreEnvironmentFlag, modified by
-           pymain_read_conf_impl(). */
+           pymain_read_conf_impl(). Reset Py_IsolatedFlag and Py_NoSiteFlag
+           modified by _PyCoreConfig_Read(). */
         Py_UTF8Mode = pymain->config.utf8_mode;
         Py_IgnoreEnvironmentFlag = init_ignore_env;
         _PyCoreConfig_Clear(&pymain->config);
@@ -2082,6 +2057,101 @@ config_init_locale(_PyCoreConfig *config)
     }
 }
 
+
+static _PyInitError
+config_init_module_search_paths(_PyCoreConfig *config)
+{
+    assert(config->module_search_paths == NULL);
+    assert(config->nmodule_search_path < 0);
+
+    config->nmodule_search_path = 0;
+
+    const wchar_t *sys_path = Py_GetPath();
+    const wchar_t delim = DELIM;
+    const wchar_t *p = sys_path;
+    while (1) {
+        p = wcschr(sys_path, delim);
+        if (p == NULL) {
+            p = sys_path + wcslen(sys_path); /* End of string */
+        }
+
+        size_t path_len = (p - sys_path);
+        wchar_t *path = PyMem_RawMalloc((path_len + 1) * sizeof(wchar_t));
+        if (path == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+        memcpy(path, sys_path, path_len * sizeof(wchar_t));
+        path[path_len] = L'\0';
+
+        _PyInitError err = wstrlist_append(&config->nmodule_search_path,
+                                           &config->module_search_paths,
+                                           path);
+        PyMem_RawFree(path);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+
+        if (*p == '\0') {
+            break;
+        }
+        sys_path = p + 1;
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_init_path_config(_PyCoreConfig *config)
+{
+    _PyInitError err = _PyPathConfig_Init(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    if (config->nmodule_search_path < 0) {
+        err = config_init_module_search_paths(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    if (config->executable == NULL) {
+        config->executable = _PyMem_RawWcsdup(Py_GetProgramFullPath());
+        if (config->executable == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->prefix == NULL) {
+        config->prefix = _PyMem_RawWcsdup(Py_GetPrefix());
+        if (config->prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->exec_prefix == NULL) {
+        config->exec_prefix = _PyMem_RawWcsdup(Py_GetExecPrefix());
+        if (config->exec_prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->base_prefix == NULL) {
+        config->base_prefix = _PyMem_RawWcsdup(config->prefix);
+        if (config->base_prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->base_exec_prefix == NULL) {
+        config->base_exec_prefix = _PyMem_RawWcsdup(config->exec_prefix);
+        if (config->base_exec_prefix == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    return _Py_INIT_OK();
+}
 
 /* Read configuration settings from standard locations
  *
@@ -2140,6 +2210,12 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         config->install_signal_handlers = 1;
     }
 
+    if (!config->_disable_importlib) {
+        err = config_init_path_config(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
     return _Py_INIT_OK();
 }
 
@@ -2152,26 +2228,33 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
         PyMem_RawFree(ATTR); \
         ATTR = NULL; \
     } while (0)
+#define CLEAR_WSTRLIST(LEN, LIST) \
+    do { \
+        clear_wstrlist(LEN, LIST); \
+        LEN = 0; \
+        LIST = NULL; \
+    } while (0)
 
     CLEAR(config->module_search_path_env);
     CLEAR(config->home);
     CLEAR(config->program_name);
     CLEAR(config->program);
 
-    if (config->argc >= 0) {
-        clear_wstrlist(config->argc, config->argv);
-        config->argc = -1;
-        config->argv = NULL;
-    }
+    CLEAR_WSTRLIST(config->argc, config->argv);
+    config->argc = -1;
 
-    clear_wstrlist(config->nwarnoption, config->warnoptions);
-    config->nwarnoption = 0;
-    config->warnoptions = NULL;
+    CLEAR_WSTRLIST(config->nwarnoption, config->warnoptions);
+    CLEAR_WSTRLIST(config->nxoption, config->xoptions);
+    CLEAR_WSTRLIST(config->nmodule_search_path, config->module_search_paths);
+    config->nmodule_search_path = -1;
 
-    clear_wstrlist(config->nxoption, config->xoptions);
-    config->nxoption = 0;
-    config->xoptions = NULL;
+    CLEAR(config->executable);
+    CLEAR(config->prefix);
+    CLEAR(config->base_prefix);
+    CLEAR(config->exec_prefix);
+    CLEAR(config->base_exec_prefix);
 #undef CLEAR
+#undef CLEAR_WSTRLIST
 }
 
 
@@ -2189,6 +2272,16 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
                 return -1; \
             } \
         } \
+    } while (0)
+#define COPY_WSTRLIST(LEN, LIST) \
+    do { \
+        if (config2->LIST != NULL) { \
+            config->LIST = copy_wstrlist(config2->LEN, config2->LIST); \
+            if (config->LIST == NULL) { \
+                return -1; \
+            } \
+        } \
+        config->LEN = config2->LEN; \
     } while (0)
 
     COPY_ATTR(ignore_environment);
@@ -2211,33 +2304,20 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_STR_ATTR(program_name);
     COPY_STR_ATTR(program);
 
-    if (config2->argc >= 0) {
-        wchar_t **argv = copy_wstrlist(config2->argc, config2->argv);
-        if (argv == NULL) {
-            return -1;
-        }
-        config->argv = argv;
-    }
-    COPY_ATTR(argc);
+    COPY_WSTRLIST(argc, argv);
+    COPY_WSTRLIST(nwarnoption, warnoptions);
+    COPY_WSTRLIST(nxoption, xoptions);
+    COPY_WSTRLIST(nmodule_search_path, module_search_paths);
 
-    if (config2->nwarnoption > 0) {
-        config->warnoptions = copy_wstrlist(config2->nwarnoption, config2->warnoptions);
-        if (config->warnoptions == NULL) {
-            return -1;
-        }
-    }
-    COPY_ATTR(nwarnoption);
-
-    if (config2->nxoption > 0) {
-        config->xoptions = copy_wstrlist(config2->nxoption, config2->xoptions);
-        if (config->xoptions == NULL) {
-            return -1;
-        }
-    }
-    COPY_ATTR(nxoption);
+    COPY_STR_ATTR(executable);
+    COPY_STR_ATTR(prefix);
+    COPY_STR_ATTR(base_prefix);
+    COPY_STR_ATTR(exec_prefix);
+    COPY_STR_ATTR(base_exec_prefix);
 
 #undef COPY_ATTR
 #undef COPY_STR_ATTR
+#undef COPY_WSTRLIST
     return 0;
 }
 
@@ -2313,52 +2393,10 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
 
 
 
-static PyObject *
-create_path_list(const wchar_t *path, wchar_t delim)
-{
-    int i, n;
-    const wchar_t *p;
-    PyObject *v;
-
-    n = 1;
-    p = path;
-    while ((p = wcschr(p, delim)) != NULL) {
-        n++;
-        p++;
-    }
-    v = PyList_New(n);
-    if (v == NULL) {
-        return NULL;
-    }
-    for (i = 0; ; i++) {
-        p = wcschr(path, delim);
-        if (p == NULL) {
-            p = path + wcslen(path); /* End of string */
-        }
-        PyObject *w = PyUnicode_FromWideChar(path, (Py_ssize_t)(p - path));
-        if (w == NULL) {
-            Py_DECREF(v);
-            return NULL;
-        }
-        PyList_SET_ITEM(v, i, w);
-        if (*p == '\0') {
-            break;
-        }
-        path = p+1;
-    }
-    return v;
-}
-
-
 _PyInitError
 _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
                               const _PyCoreConfig *config)
 {
-    _PyInitError err = _PyPathConfig_Init(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
     if (main_config->install_signal_handlers < 0) {
         main_config->install_signal_handlers = config->install_signal_handlers;
     }
@@ -2370,59 +2408,46 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
         }
     }
 
-    if (main_config->argv == NULL) {
-        if (main_config_init_argv(main_config, config) < 0) {
-            return _Py_INIT_ERR("failed to create sys.argv");
-        }
+#define COPY_WSTR(ATTR) \
+    do { \
+        if (main_config->ATTR == NULL) { \
+            main_config->ATTR = PyUnicode_FromWideChar(config->ATTR, -1); \
+            if (main_config->ATTR == NULL) { \
+                return _Py_INIT_NO_MEMORY(); \
+            } \
+        } \
+    } while (0)
+#define COPY_WSTRLIST(ATTR, LEN, LIST) \
+    do { \
+        if (ATTR == NULL) { \
+            ATTR = wstrlist_as_pylist(LEN, LIST); \
+            if (ATTR == NULL) { \
+                return _Py_INIT_NO_MEMORY(); \
+            } \
+        } \
+    } while (0)
+
+    COPY_WSTRLIST(main_config->warnoptions,
+                  config->nwarnoption, config->warnoptions);
+    if (config->argc >= 0) {
+        COPY_WSTRLIST(main_config->argv,
+                      config->argc, config->argv);
     }
 
-    if (main_config->warnoptions == NULL) {
-        if (main_config_init_warnoptions(main_config, config) < 0) {
-            return _Py_INIT_NO_MEMORY();
-        }
+    if (!config->_disable_importlib) {
+        COPY_WSTR(executable);
+        COPY_WSTR(prefix);
+        COPY_WSTR(base_prefix);
+        COPY_WSTR(exec_prefix);
+        COPY_WSTR(base_exec_prefix);
+
+        COPY_WSTRLIST(main_config->module_search_path,
+                      config->nmodule_search_path, config->module_search_paths);
     }
 
-    if (main_config->module_search_path == NULL &&
-        !config->_disable_importlib)
-    {
-        wchar_t *sys_path = Py_GetPath();
-        main_config->module_search_path = create_path_list(sys_path, DELIM);
-        if (main_config->module_search_path == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (main_config->executable == NULL) {
-        main_config->executable = PyUnicode_FromWideChar(Py_GetProgramFullPath(), -1);
-        if (main_config->executable == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (main_config->prefix == NULL) {
-        main_config->prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
-        if (main_config->prefix == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (main_config->exec_prefix == NULL) {
-        main_config->exec_prefix = PyUnicode_FromWideChar(Py_GetExecPrefix(), -1);
-        if (main_config->exec_prefix == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (main_config->base_prefix == NULL) {
-        Py_INCREF(main_config->prefix);
-        main_config->base_prefix = main_config->prefix;
-    }
-
-    if (main_config->base_exec_prefix == NULL) {
-        Py_INCREF(main_config->exec_prefix);
-        main_config->base_exec_prefix = main_config->exec_prefix;
-    }
     return _Py_INIT_OK();
+#undef COPY_WSTR
+#undef COPY_WSTRLIST
 }
 
 

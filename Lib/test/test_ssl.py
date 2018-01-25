@@ -54,6 +54,21 @@ BYTES_CAPATH = os.fsencode(CAPATH)
 CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
 
+CERTFILE_INFO = {
+    'issuer': ((('countryName', 'XY'),),
+               (('localityName', 'Castle Anthrax'),),
+               (('organizationName', 'Python Software Foundation'),),
+               (('commonName', 'localhost'),)),
+    'notAfter': 'Jan 17 19:09:06 2028 GMT',
+    'notBefore': 'Jan 19 19:09:06 2018 GMT',
+    'serialNumber': 'F9BA076D5B6ABD9B',
+    'subject': ((('countryName', 'XY'),),
+             (('localityName', 'Castle Anthrax'),),
+             (('organizationName', 'Python Software Foundation'),),
+             (('commonName', 'localhost'),)),
+    'subjectAltName': (('DNS', 'localhost'),),
+    'version': 3
+}
 
 # empty CRL
 CRLFILE = data_file("revocation.crl")
@@ -61,8 +76,30 @@ CRLFILE = data_file("revocation.crl")
 # Two keys and certs signed by the same CA (for SNI tests)
 SIGNED_CERTFILE = data_file("keycert3.pem")
 SIGNED_CERTFILE_HOSTNAME = 'localhost'
+
+SIGNED_CERTFILE_INFO = {
+    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
+    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
+    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
+    'issuer': ((('countryName', 'XY'),),
+            (('organizationName', 'Python Software Foundation CA'),),
+            (('commonName', 'our-ca-server'),)),
+    'notAfter': 'Nov 28 19:09:06 2027 GMT',
+    'notBefore': 'Jan 19 19:09:06 2018 GMT',
+    'serialNumber': '82EDBF41C880919C',
+    'subject': ((('countryName', 'XY'),),
+             (('localityName', 'Castle Anthrax'),),
+             (('organizationName', 'Python Software Foundation'),),
+             (('commonName', 'localhost'),)),
+    'subjectAltName': (('DNS', 'localhost'),),
+    'version': 3
+}
+
 SIGNED_CERTFILE2 = data_file("keycert4.pem")
 SIGNED_CERTFILE2_HOSTNAME = 'fakehostname'
+SIGNED_CERTFILE_ECC = data_file("keycertecc.pem")
+SIGNED_CERTFILE_ECC_HOSTNAME = 'localhost-ecc'
+
 # Same certificate as pycacert.pem, but without extra text in file
 SIGNING_CA = data_file("capath", "ceff1710.0")
 # cert with all kinds of subject alt names
@@ -276,26 +313,15 @@ class BasicSocketTests(unittest.TestCase):
         # note that this uses an 'unofficial' function in _ssl.c,
         # provided solely for this test, to exercise the certificate
         # parsing code
-        p = ssl._ssl._test_decode_cert(CERTFILE)
-        if support.verbose:
-            sys.stdout.write("\n" + pprint.pformat(p) + "\n")
-        self.assertEqual(p['issuer'],
-                         ((('countryName', 'XY'),),
-                          (('localityName', 'Castle Anthrax'),),
-                          (('organizationName', 'Python Software Foundation'),),
-                          (('commonName', 'localhost'),))
-                        )
-        # Note the next three asserts will fail if the keys are regenerated
-        self.assertEqual(p['notAfter'], asn1time('Oct  5 23:01:56 2020 GMT'))
-        self.assertEqual(p['notBefore'], asn1time('Oct  8 23:01:56 2010 GMT'))
-        self.assertEqual(p['serialNumber'], 'D7C7381919AFC24E')
-        self.assertEqual(p['subject'],
-                         ((('countryName', 'XY'),),
-                          (('localityName', 'Castle Anthrax'),),
-                          (('organizationName', 'Python Software Foundation'),),
-                          (('commonName', 'localhost'),))
-                        )
-        self.assertEqual(p['subjectAltName'], (('DNS', 'localhost'),))
+        self.assertEqual(
+            ssl._ssl._test_decode_cert(CERTFILE),
+            CERTFILE_INFO
+        )
+        self.assertEqual(
+            ssl._ssl._test_decode_cert(SIGNED_CERTFILE),
+            SIGNED_CERTFILE_INFO
+        )
+
         # Issue #13034: the subjectAltName in some certificates
         # (notably projects.developer.nokia.com:443) wasn't parsed
         p = ssl._ssl._test_decode_cert(NOKIACERT)
@@ -2337,8 +2363,8 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
 
     for ctx in (client_context, server_context):
         ctx.verify_mode = certsreqs
-        ctx.load_cert_chain(CERTFILE)
-        ctx.load_verify_locations(CERTFILE)
+        ctx.load_cert_chain(SIGNED_CERTFILE)
+        ctx.load_verify_locations(SIGNING_CA)
     try:
         stats = server_params_test(client_context, server_context,
                                    chatty=False, connectionchatty=False)
@@ -2521,6 +2547,50 @@ class ThreadedTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,
                                             "check_hostname requires server_hostname"):
                     client_context.wrap_socket(s)
+
+    def test_ecc_cert(self):
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.load_verify_locations(SIGNING_CA)
+        client_context.set_ciphers('ECDHE:ECDSA:!NULL:!aRSA')
+        hostname = SIGNED_CERTFILE_ECC_HOSTNAME
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        # load ECC cert
+        server_context.load_cert_chain(SIGNED_CERTFILE_ECC)
+
+        # correct hostname should verify
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                cert = s.getpeercert()
+                self.assertTrue(cert, "Can't get peer certificate.")
+                cipher = s.cipher()[0].split('-')
+                self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+
+    def test_dual_rsa_ecc(self):
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.load_verify_locations(SIGNING_CA)
+        # only ECDSA certs
+        client_context.set_ciphers('ECDHE:ECDSA:!NULL:!aRSA')
+        hostname = SIGNED_CERTFILE_ECC_HOSTNAME
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        # load ECC and RSA key/cert pairs
+        server_context.load_cert_chain(SIGNED_CERTFILE_ECC)
+        server_context.load_cert_chain(SIGNED_CERTFILE)
+
+        # correct hostname should verify
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                cert = s.getpeercert()
+                self.assertTrue(cert, "Can't get peer certificate.")
+                cipher = s.cipher()[0].split('-')
+                self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
 
     def test_wrong_cert(self):
         """Connecting when the server rejects the client's certificate
@@ -2819,7 +2889,7 @@ class ThreadedTests(unittest.TestCase):
 
     def test_socketserver(self):
         """Using socketserver to create and manage SSL connections."""
-        server = make_https_server(self, certfile=CERTFILE)
+        server = make_https_server(self, certfile=SIGNED_CERTFILE)
         # try to connect
         if support.verbose:
             sys.stdout.write('\n')
@@ -2829,7 +2899,7 @@ class ThreadedTests(unittest.TestCase):
         # now fetch the same data from the HTTPS server
         url = 'https://localhost:%d/%s' % (
             server.port, os.path.split(CERTFILE)[1])
-        context = ssl.create_default_context(cafile=CERTFILE)
+        context = ssl.create_default_context(cafile=SIGNING_CA)
         f = urllib.request.urlopen(url, context=context)
         try:
             dlen = f.info().get("content-length")
@@ -3112,8 +3182,8 @@ class ThreadedTests(unittest.TestCase):
         # SSLContext.wrap_socket().
         context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         context.verify_mode = ssl.CERT_REQUIRED
-        context.load_verify_locations(CERTFILE)
-        context.load_cert_chain(CERTFILE)
+        context.load_verify_locations(SIGNING_CA)
+        context.load_cert_chain(SIGNED_CERTFILE)
         server = socket.socket(socket.AF_INET)
         host = "127.0.0.1"
         port = support.bind_port(server)
@@ -3562,8 +3632,8 @@ class ThreadedTests(unittest.TestCase):
         self.addCleanup(support.unlink, support.TESTFN)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         context.verify_mode = ssl.CERT_REQUIRED
-        context.load_verify_locations(CERTFILE)
-        context.load_cert_chain(CERTFILE)
+        context.load_verify_locations(SIGNING_CA)
+        context.load_cert_chain(SIGNED_CERTFILE)
         server = ThreadedEchoServer(context=context, chatty=False)
         with server:
             with context.wrap_socket(socket.socket()) as s:

@@ -4388,6 +4388,21 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 }
 
 void
+_PyEval_SetCoroutineOriginTrackingDepth(int new_depth)
+{
+    assert(new_depth >= 0);
+    PyThreadState *tstate = PyThreadState_GET();
+    tstate->coroutine_origin_tracking_depth = new_depth;
+}
+
+int
+_PyEval_GetCoroutineOriginTrackingDepth(void)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    return tstate->coroutine_origin_tracking_depth;
+}
+
+void
 _PyEval_SetCoroutineWrapper(PyObject *wrapper)
 {
     PyThreadState *tstate = PyThreadState_GET();
@@ -4798,13 +4813,12 @@ import_from(PyObject *v, PyObject *name)
     _Py_IDENTIFIER(__name__);
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
-    x = PyObject_GetAttr(v, name);
-    if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
+    if (_PyObject_LookupAttr(v, name, &x) != 0) {
         return x;
+    }
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
-    PyErr_Clear();
     pkgname = _PyObject_GetAttrId(v, &PyId___name__);
     if (pkgname == NULL) {
         goto error;
@@ -4866,21 +4880,20 @@ import_all_from(PyObject *locals, PyObject *v)
 {
     _Py_IDENTIFIER(__all__);
     _Py_IDENTIFIER(__dict__);
-    PyObject *all = _PyObject_GetAttrId(v, &PyId___all__);
-    PyObject *dict, *name, *value;
+    PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
 
+    if (_PyObject_LookupAttrId(v, &PyId___all__, &all) < 0) {
+        return -1; /* Unexpected error */
+    }
     if (all == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-            return -1; /* Unexpected error */
-        PyErr_Clear();
-        dict = _PyObject_GetAttrId(v, &PyId___dict__);
+        if (_PyObject_LookupAttrId(v, &PyId___dict__, &dict) < 0) {
+            return -1;
+        }
         if (dict == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                return -1;
             PyErr_SetString(PyExc_ImportError,
-            "from-import-* object has no __dict__ and no __all__");
+                    "from-import-* object has no __dict__ and no __all__");
             return -1;
         }
         all = PyMapping_Keys(dict);
