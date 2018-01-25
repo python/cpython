@@ -2300,8 +2300,10 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
         return NULL;
     }
     if (macro) {
+        Py_INCREF(PyDateTime_TimeZone_UTC);
         return PyDateTime_TimeZone_UTC;
     } else {
+        Py_INCREF(PyDateTimeAPI->TimeZone_UTC);
         return PyDateTimeAPI->TimeZone_UTC;
     }
 }
