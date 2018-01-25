@@ -379,6 +379,9 @@ contextlib
 :class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
 by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
 
+:class:`contextlib.AsyncExitStack` has been added. (Contributed by
+Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
+
 cProfile
 --------
 
