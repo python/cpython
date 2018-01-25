@@ -2403,18 +2403,14 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             if (PyType_Check(tmp)) {
                 continue;
             }
-            tmp = _PyObject_GetAttrId(tmp, &PyId___mro_entries__);
+            if (_PyObject_LookupAttrId(tmp, &PyId___mro_entries__, &tmp) < 0) {
+                return NULL;
+            }
             if (tmp != NULL) {
                 PyErr_SetString(PyExc_TypeError,
                                 "type() doesn't support MRO entry resolution; "
                                 "use types.new_class()");
                 Py_DECREF(tmp);
-                return NULL;
-            }
-            else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
-            }
-            else {
                 return NULL;
             }
         }
@@ -4099,14 +4095,11 @@ _PyObject_GetState(PyObject *obj, int required)
     PyObject *getstate;
     _Py_IDENTIFIER(__getstate__);
 
-    getstate = _PyObject_GetAttrId(obj, &PyId___getstate__);
+    if (_PyObject_LookupAttrId(obj, &PyId___getstate__, &getstate) < 0) {
+        return NULL;
+    }
     if (getstate == NULL) {
         PyObject *slotnames;
-
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return NULL;
-        }
-        PyErr_Clear();
 
         if (required && obj->ob_type->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
@@ -4174,14 +4167,12 @@ _PyObject_GetState(PyObject *obj, int required)
 
                 name = PyList_GET_ITEM(slotnames, i);
                 Py_INCREF(name);
-                value = PyObject_GetAttr(obj, name);
+                if (_PyObject_LookupAttr(obj, name, &value) < 0) {
+                    goto error;
+                }
                 if (value == NULL) {
                     Py_DECREF(name);
-                    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                        goto error;
-                    }
                     /* It is not an error if the attribute is not present. */
-                    PyErr_Clear();
                 }
                 else {
                     int err = PyDict_SetItem(slots, name, value);

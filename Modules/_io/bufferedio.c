@@ -1541,7 +1541,9 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    readall = _PyObject_GetAttrWithoutError(self->raw, _PyIO_str_readall);
+    if (_PyObject_LookupAttr(self->raw, _PyIO_str_readall, &readall) < 0) {
+        goto cleanup;
+    }
     if (readall) {
         tmp = _PyObject_CallNoArg(readall);
         Py_DECREF(readall);
@@ -1559,9 +1561,6 @@ _bufferedreader_read_all(buffered *self)
             }
             res = data;
         }
-        goto cleanup;
-    }
-    else if (PyErr_Occurred()) {
         goto cleanup;
     }
 
