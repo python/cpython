@@ -97,8 +97,16 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
        (It is safe to assume everything is fine since type.__new__ succeeded.) */
     ns = PyTuple_GET_ITEM(args, 2);
     items = PyMapping_Items(ns); /* TODO: Fast path for exact dicts with PyDict_Next */
+    if (!items) {
+        Py_DECREF(result);
+        return NULL;
+    }
     for (pos = 0; pos < PySequence_Size(items); pos++) {
         item = PySequence_GetItem(items, pos);
+        if (!PyTuple_Check(item) || (PyTuple_GET_SIZE(item) != 2)) {
+            PyErr_SetString(PyExc_TypeError, "Iteration over class namespace must"
+                                             " yield length-two tuples");
+        }
         key = PyTuple_GetItem(item, 0);
         value = PyTuple_GetItem(item, 1);
         int is_abstract = _PyObject_IsAbstract(value);
@@ -158,6 +166,9 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(key);
         }
         Py_DECREF(iter);
+        if (PyErr_Occurred()) {
+            goto error;
+        }
     }
     if (_PyObject_SetAttrId((PyObject *)result, &PyId___abstractmethods__, abstracts) < 0) {
         goto error;
