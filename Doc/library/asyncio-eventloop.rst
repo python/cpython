@@ -1015,6 +1015,12 @@ Server
 
       .. versionadded:: 3.7
 
+   .. method:: is_serving()
+
+      Return ``True`` if the server is accepting new connections.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
