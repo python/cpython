@@ -154,7 +154,8 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         dist_files = [(command, pyversion, filename)]
         self.write_file(self.rc, PYPIRC_LONG_PASSWORD)
 
-        # other fields that end with \r should not be modified.
+        # other fields that ended with \r used to be modified, now are
+        # preserved.
         pkg_dir, dist = self.create_dist(
             dist_files=dist_files,
             description='long description\r'
@@ -164,8 +165,6 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         cmd.ensure_finalized()
         cmd.run()
 
-        # an extra character should have been added to the description,
-        # but not to the content
         headers = dict(self.last_open.req.headers)
         self.assertEqual(headers['Content-length'], '2172')
         self.assertIn(b'long description\r', self.last_open.req.data)
