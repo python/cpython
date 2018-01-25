@@ -2390,6 +2390,14 @@ features:
 
       Time of file creation.
 
+   On Solaris and derivatives, the following attributes may also be
+   available:
+
+   .. attribute:: st_fstype
+
+      String that uniquely identifies the type of the filesystem that
+      contains the file.
+
    On Mac OS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
