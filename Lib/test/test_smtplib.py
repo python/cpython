@@ -1072,6 +1072,19 @@ class SMTPSimTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, smtp.sendmail, 'Alice', 'Böb', '')
         self.assertRaises(UnicodeEncodeError, smtp.mail, 'Älice')
 
+    def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
+        # This test is located here and not in the SMTPUTF8SimTests
+        # class because it needs a "regular" SMTP server to work
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.send_message(msg)
+
 
 class SimSMTPUTF8Server(SimSMTPServer):
 
@@ -1201,17 +1214,6 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
 
-    def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
-        msg = EmailMessage()
-        msg['From'] = "Páolo <főo@bar.com>"
-        msg['To'] = 'Dinsdale'
-        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
-        smtp = smtplib.SMTP(
-            HOST, self.port, local_hostname='localhost', timeout=3)
-        self.addCleanup(smtp.close)
-        self.assertRaises(smtplib.SMTPNotSupportedError,
-                          smtp.send_message(msg))
-
 
 EXPECTED_RESPONSE = encode_base64(b'\0psu\0doesnotexist', eol='')
 
@@ -1289,6 +1291,7 @@ def test_main(verbose=None):
         SMTPAUTHInitialResponseSimTests,
         SMTPSimTests,
         TooLongLineTests,
+        SMTPUTF8SimTests,
         )
 
 
