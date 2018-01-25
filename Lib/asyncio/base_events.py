@@ -223,8 +223,8 @@ class Server(events.AbstractServer):
 
         self._serving = False
 
-        if self._serving_forever_fut is not None and \
-                not self._serving_forever_fut.done():
+        if (self._serving_forever_fut is not None and
+                not self._serving_forever_fut.done()):
             self._serving_forever_fut.cancel()
             self._serving_forever_fut = None
 
@@ -249,6 +249,7 @@ class Server(events.AbstractServer):
         except futures.CancelledError:
             try:
                 self.close()
+                await self.wait_closed()
             finally:
                 raise
         finally:
