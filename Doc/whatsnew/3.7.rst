@@ -479,6 +479,17 @@ begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 pdb command line now accepts `-m module_name` as an alternative to
 script file. (Contributed by Mario Corchero in :issue:`32206`.)
 
+py_compile
+----------
+
+:func:`py_compile.compile` -- and by extension, :mod:`compileall` -- now
+respects the :envvar:`SOURCE_DATE_EPOCH` environment variable by
+unconditionally creating ``.pyc`` files for hash-based validation.
+This allows for guaranteeing
+`reproducible builds <https://reproducible-builds.org/>`_ of ``.pyc``
+files when they are created eagerly. (Contributed by Bernhard M. Wiedemann
+in :issue:`29708`.)
+
 
 re
 --
@@ -678,6 +689,12 @@ Optimizations
 
 Build and C API Changes
 =======================
+
+* :mod:`py_compile` and :mod:`compileall` now support the
+  :envvar:`SOURCE_DATE_EPOCH` environment variable by unconditionally
+  building ``.pyc`` files for hash verification instead of potentially
+  timestamp-based ``.pyc`` files. See the notes for the `py_compile`_
+  improvement notes for more details.
 
 * A full copy of libffi is no longer bundled for use when building the
   :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
