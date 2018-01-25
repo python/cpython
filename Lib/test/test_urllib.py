@@ -968,8 +968,6 @@ class UnquotingTests(unittest.TestCase):
                          "%s" % result)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
-        with support.check_warnings(('', BytesWarning), quiet=True):
-            self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, b'')
 
     def test_unquoting_badpercent(self):
         # Test unquoting on bad percent-escapes
@@ -1128,6 +1126,24 @@ class UnquotingTests(unittest.TestCase):
         expect = '\u6f22\u00fc'
         self.assertEqual(expect, result,
                          "using unquote(): %r != %r" % (expect, result))
+
+    def test_unquoting_with_bytes_input(self):
+        # Make sure unquoting of all ASCII values works
+        escape_list = []
+        for num in range(128):
+            given = bytes([num])
+            expect = chr(num)
+            result = urllib.parse.unquote(given)
+            self.assertEqual(expect, result,
+                             "using unquote(): %r != %r" % (expect, result))
+            escape_list.append(given)
+        escape_string = b''.join(escape_list)
+        del escape_list
+        result = urllib.parse.unquote(escape_string)
+        self.assertEqual(result.count('%'), 1,
+                         "using unquote(): not all characters escaped: "
+                         "%s" % result)
+
 
 class urlencode_Tests(unittest.TestCase):
     """Tests for urlencode()"""
