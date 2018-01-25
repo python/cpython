@@ -60,6 +60,27 @@ class TestTool(unittest.TestCase):
     ]
     """)
 
+    jsonlines_data = """\
+    {"ingredients":["frog", "water", "chocolate", "glucose"]}
+    {"ingredients":["chocolate","steel bolts"]}\
+    """
+
+    jsonlines_expect = textwrap.dedent("""\
+    {
+        "ingredients": [
+            "frog",
+            "water",
+            "chocolate",
+            "glucose"
+        ]
+    }
+    {
+        "ingredients": [
+            "chocolate",
+            "steel bolts"
+        ]
+    }""")
+
     def test_stdin_stdout(self):
         args = sys.executable, '-m', 'json.tool'
         with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
@@ -90,6 +111,13 @@ class TestTool(unittest.TestCase):
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    def test_jsonlines(self):
+        args = sys.executable, '-m', 'json.tool', '--jsonlines'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            out, err = proc.communicate(self.jsonlines_data.encode())
+        self.assertEqual(out.splitlines(), self.jsonlines_expect.encode().splitlines())
         self.assertEqual(err, b'')
 
     def test_help_flag(self):

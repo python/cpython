@@ -15,6 +15,25 @@ import collections
 import json
 import sys
 
+def parse_json_from_filehandle(infile, sort_keys):
+    try:
+        if sort_keys:
+            return json.load(infile)
+        else:
+            return json.load(infile,
+                            object_pairs_hook=collections.OrderedDict)
+    except ValueError as e:
+        raise SystemExit(e)
+
+def parse_json_from_string(input, sort_keys):
+    try:
+        if sort_keys:
+            return json.loads(input)
+        else:
+            return json.loads(input,
+                            object_pairs_hook=collections.OrderedDict)
+    except ValueError as e:
+        raise SystemExit(e)
 
 def main():
     prog = 'python -m json.tool'
@@ -27,23 +46,28 @@ def main():
                         help='write the output of infile to outfile')
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
+    parser.add_argument('--jsonlines', action='store_true', default=False,
+                        help='parse input using the jsonlines format')
     options = parser.parse_args()
 
     infile = options.infile or sys.stdin
     outfile = options.outfile or sys.stdout
     sort_keys = options.sort_keys
-    with infile:
-        try:
-            if sort_keys:
-                obj = json.load(infile)
-            else:
-                obj = json.load(infile,
-                                object_pairs_hook=collections.OrderedDict)
-        except ValueError as e:
-            raise SystemExit(e)
+    jsonlines = options.jsonlines
+    objs = []
+
+    if jsonlines:
+        with infile:
+            for line in infile:
+                objs.append(parse_json_from_string(line, sort_keys))
+    else:
+        with infile:
+            objs = [parse_json_from_filehandle(infile, sort_keys)]
+
     with outfile:
-        json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
-        outfile.write('\n')
+        for obj in objs:
+            json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
+            outfile.write('\n')
 
 
 if __name__ == '__main__':
