@@ -125,7 +125,8 @@ class Queue:
                     # Clean self._putters from canceled putters.
                     self._putters.remove(putter)
                 except ValueError:
-                    # The putter could be removed from self._putters by a previous get_nowait call.
+                    # The putter could be removed from self._putters by a
+                    # previous get_nowait call.
                     pass
                 if not self.full() and not putter.cancelled():
                     # We were woken up by get_nowait(), but can't take
@@ -162,7 +163,8 @@ class Queue:
                     # Clean self._getters from canceled getters.
                     self._getters.remove(getter)
                 except ValueError:
-                    # The getter could be removed from self._getters by a previous put_nowait call.
+                    # The getter could be removed from self._getters by a
+                    # previous put_nowait call.
                     pass
                 if not self.empty() and not getter.cancelled():
                     # We were woken up by put_nowait(), but can't take

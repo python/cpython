@@ -535,7 +535,8 @@ class QueuePutTests(_QueueTestBase):
         put_task = loop.create_task(queue.put(1))
         loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
 
-        # Check that the putter is correctly removed from queue._putters when the task is canceled.
+        # Check that the putter is correctly removed from queue._putters when
+        # the task is canceled.
         self.assertEqual(len(queue._putters), 1)
         put_task.cancel()
         with self.assertRaises(asyncio.CancelledError):
@@ -559,11 +560,12 @@ class QueuePutTests(_QueueTestBase):
 
         # get_nowait() remove the future of put_task from queue._putters.
         queue.get_nowait()
-        # When canceled, queue.put is going to remove its future from self._putters
-        # but it was removed previously by queue.get_nowait().
+        # When canceled, queue.put is going to remove its future from
+        # self._putters but it was removed previously by queue.get_nowait().
         put_task.cancel()
 
-        # The ValueError exception triggered by queue._putters.remove(putter) inside queue.put should be silenced.
+        # The ValueError exception triggered by queue._putters.remove(putter)
+        # inside queue.put should be silenced.
         # If the ValueError is silenced we should catch a CancelledError.
         with self.assertRaises(asyncio.CancelledError):
             loop.run_until_complete(put_task)
