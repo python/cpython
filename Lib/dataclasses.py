@@ -18,6 +18,92 @@ __all__ = ['dataclass',
            'is_dataclass',
            ]
 
+# Conditions for adding methods:
+# yes   = method is added
+# no    = method is not added
+# raise = ValueError is raised
+
+# __init__
+#
+#   +--- init=?
+#   |
+#   v    | yes   | no    |  <--- class has __init__?
+# -------+-------+-------+
+#  False | no    | no    |
+# -------+-------+-------+
+#  True  | no    | yes   |
+# -------+-------+-------+
+
+# __repr__
+#
+#   +--- repr=?
+#   |
+#   v    | yes   | no    |  <--- class has __repr__?
+# -------+-------+-------+
+#  False | no    | no    |
+# -------+-------+-------+
+#  True  | no    | yes   |
+# -------+-------+-------+
+
+# __setattr__
+# __delattr__
+#
+#   +--- frozen=?
+#   |
+#   v    | yes   | no    |  <--- class has __setattr__ or __delattr__?
+# -------+-------+-------+
+#  False | no    | no    |
+# -------+-------+-------+
+#  True  | raise | yes   |
+# -------+-------+-------+
+
+# __eq__
+#
+#   +--- eq=?
+#   |
+#   v    | yes   | no    |  <--- class has __eq__?
+# -------+-------+-------+
+#  False | no    | no    |
+# -------+-------+-------+
+#  True  | no    | yes   |
+# -------+-------+-------+
+
+# __lt__
+# __le__
+# __gt__
+# __ge__
+#
+#   +--- order=?
+#   |
+#   v    | yes   | no    |  <--- class has comparison method?
+# -------+-------+-------+
+#  True  | no    | yes   |
+# -------+-------+-------+
+#  False | no    | no    |
+# -------+-------+-------+
+
+# __hash__
+
+#   +------------------- hash=?
+#   |       +----------- eq=?
+#   |       |       +--- frozen=?
+#   |       |       |
+#   v    |  v    |  v    | yes   | no    |  <--- class has __hash__?
+# -------+-------+-------+-------+-------+
+#  False | False | False | no    | no    |
+#  False | False | True  | no    | no    |
+#  False | True  | False | no    | no    |
+#  False | True  | True  | no    | no    |
+#  True  | False | False | no    | yes   |
+#  True  | False | True  | no    | yes   |
+#  True  | True  | False | no    | yes   |
+#  True  | True  | True  | no    | yes   |
+#  None  | False | False | no    | no    |
+#  None  | False | True  | no    | no    |
+#  None  | True  | False | no    | None  |
+#  None  | True  | True  | no    | yes   |
+
+
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
 
@@ -329,32 +415,6 @@ def _cmp_fn(name, op, self_tuple, other_tuple):
                         'return NotImplemented'])
 
 
-def _set_eq_fns(cls, fields):
-    # Create and set the equality comparison methods on cls.
-    # Pre-compute self_tuple and other_tuple, then re-use them for
-    #  each function.
-    self_tuple = _tuple_str('self', fields)
-    other_tuple = _tuple_str('other', fields)
-    for name, op in [('__eq__', '=='),
-                     ('__ne__', '!='),
-                     ]:
-        _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple))
-
-
-def _set_order_fns(cls, fields):
-    # Create and set the ordering methods on cls.
-    # Pre-compute self_tuple and other_tuple, then re-use them for
-    #  each function.
-    self_tuple = _tuple_str('self', fields)
-    other_tuple = _tuple_str('other', fields)
-    for name, op in [('__lt__', '<'),
-                     ('__le__', '<='),
-                     ('__gt__', '>'),
-                     ('__ge__', '>='),
-                     ]:
-        _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple))
-
-
 def _hash_fn(fields):
     self_tuple = _tuple_str('self', fields)
     return _create_fn('__hash__',
@@ -431,20 +491,18 @@ def _find_fields(cls):
     #  a Field(), then it contains additional info beyond (and
     #  possibly including) the actual default value.  Pseudo-fields
     #  ClassVars and InitVars are included, despite the fact that
-    #  they're not real fields.  That's deal with later.
+    #  they're not real fields.  That's dealt with later.
 
     annotations = getattr(cls, '__annotations__', {})
-
     return [_get_field(cls, a_name, a_type)
             for a_name, a_type in annotations.items()]
 
 
-def _set_attribute(cls, name, value):
-    # Raise TypeError if an attribute by this name already exists.
-    if name in cls.__dict__:
-        raise TypeError(f'Cannot overwrite attribute {name} '
-                        f'in {cls.__name__}')
-    setattr(cls, name, value)
+def _set_attribute(cls, name, value, replace_if_exists):
+    exists = name in cls.__dict__
+    if not exists or replace_if_exists:
+        setattr(cls, name, value)
+    return exists
 
 
 def _process_class(cls, repr, eq, order, hash, init, frozen):
@@ -515,7 +573,8 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                                 #  in __init__.  Use "self" if possible.
                                 '__dataclass_self__' if 'self' in fields
                                     else 'self',
-                                ))
+                                ),
+                       replace_if_exists=False)
 
     # Get the fields as a list, and include only real fields.  This is
     #  used in all of the following methods.
@@ -524,11 +583,12 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 
     if repr:
         _set_attribute(cls, '__repr__',
-                       _repr_fn(list(filter(lambda f: f.repr, field_list))))
+                       _repr_fn(list(filter(lambda f: f.repr, field_list))),
+                       replace_if_exists=False)
 
     if is_frozen:
-        _set_attribute(cls, '__setattr__', _frozen_setattr)
-        _set_attribute(cls, '__delattr__', _frozen_delattr)
+        _set_attribute(cls, '__setattr__', _frozen_setattr, replace_if_exists=False)
+        _set_attribute(cls, '__delattr__', _frozen_delattr, replace_if_exists=False)
 
     generate_hash = False
     if hash is None:
@@ -537,7 +597,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
             generate_hash = True
         elif eq and not frozen:
             # Not hashable.
-            _set_attribute(cls, '__hash__', None)
+            _set_attribute(cls, '__hash__', None, replace_if_exists=False)
         elif not eq:
             # Otherwise, use the base class definition of hash().  That is,
             #  don't set anything on this class.
@@ -551,16 +611,30 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                        _hash_fn(list(filter(lambda f: f.compare
                                                       if f.hash is None
                                                       else f.hash,
-                                            field_list))))
+                                            field_list))),
+                       replace_if_exists=False)
 
     if eq:
-        # Create and __eq__ and __ne__ methods.
-        _set_eq_fns(cls, list(filter(lambda f: f.compare, field_list)))
+        # Create _eq__ method.  There's no need for a __ne__ method,
+        #  since python will call __eq__ and negate it.
+        fields = list(filter(lambda f: f.compare, field_list))
+        self_tuple = _tuple_str('self', fields)
+        other_tuple = _tuple_str('other', fields)
+        _set_attribute(cls, '__eq__', _cmp_fn('__eq__', '==', self_tuple, other_tuple), replace_if_exists=False)
 
     if order:
-        # Create and __lt__, __le__, __gt__, and __ge__ methods.
-        # Create and set the comparison functions.
-        _set_order_fns(cls, list(filter(lambda f: f.compare, field_list)))
+        # Create and set the ordering methods on cls.
+        # Pre-compute self_tuple and other_tuple, then re-use them for
+        #  each function.
+        fields = list(filter(lambda f: f.compare, field_list))
+        self_tuple = _tuple_str('self', fields)
+        other_tuple = _tuple_str('other', fields)
+        for name, op in [('__lt__', '<'),
+                         ('__le__', '<='),
+                         ('__gt__', '>'),
+                         ('__ge__', '>='),
+                         ]:
+            _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple), replace_if_exists=False)
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.

@@ -100,14 +100,19 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C(5).x, 10)
 
     def test_overwriting_repr(self):
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __repr__ '
-                                    'in C'):
-            @dataclass
-            class C:
-                x: int
-                def __repr__(self):
-                    pass
+        @dataclass
+        class C:
+            x: int
+            def __repr__(self):
+                return 'x'
+        self.assertEqual(repr(C(0)), 'x')
+
+        @dataclass(repr=True)
+        class C:
+            x: int
+            def __repr__(self):
+                return 'x'
+        self.assertEqual(repr(C(0)), 'xxxxxxx')
 
         @dataclass(repr=False)
         class C:
@@ -513,21 +518,18 @@ class TestCase(unittest.TestCase):
 
                     if result == 'neither':
                         self.assertNotIn('__eq__', C.__dict__)
-                        self.assertNotIn('__ne__', C.__dict__)
                         self.assertNotIn('__lt__', C.__dict__)
                         self.assertNotIn('__le__', C.__dict__)
                         self.assertNotIn('__gt__', C.__dict__)
                         self.assertNotIn('__ge__', C.__dict__)
                     elif result == 'both':
                         self.assertIn('__eq__', C.__dict__)
-                        self.assertIn('__ne__', C.__dict__)
                         self.assertIn('__lt__', C.__dict__)
                         self.assertIn('__le__', C.__dict__)
                         self.assertIn('__gt__', C.__dict__)
                         self.assertIn('__ge__', C.__dict__)
                     elif result == 'eq_only':
                         self.assertIn('__eq__', C.__dict__)
-                        self.assertIn('__ne__', C.__dict__)
                         self.assertNotIn('__lt__', C.__dict__)
                         self.assertNotIn('__le__', C.__dict__)
                         self.assertNotIn('__gt__', C.__dict__)
