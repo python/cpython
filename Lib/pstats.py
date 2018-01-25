@@ -34,7 +34,7 @@ __all__ = ["Stats", "SortKey"]
 class SortKey(str, Enum):
     CALLS = 'calls', 'ncalls'
     CUMULATIVE = 'cumulative', 'cumtime'
-    MODULE = 'module', 'filename'
+    FILENAME = 'filename', 'module'
     LINE = 'line'
     NAME = 'name'
     NFL = 'nfl'
