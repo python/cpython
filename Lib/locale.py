@@ -43,11 +43,8 @@ def _strxfrm(s):
     return s
 
 try:
-
     from _locale import *
-
 except ImportError:
-
     # Locale emulation
 
     CHAR_MAX = 127
@@ -60,7 +57,30 @@ except ImportError:
     LC_TIME = 2
     Error = ValueError
 
-    def localeconv():
+    def setlocale(category, value=None):
+        """ setlocale(integer,string=None) -> string.
+            Activates/queries locale processing.
+        """
+        if value not in (None, '', 'C'):
+            raise Error('_locale emulation only supports "C" locale')
+        return 'C'
+
+
+# These may or may not exist in _locale, so be sure to set them.
+if 'strxfrm' not in globals():
+    strxfrm = _strxfrm
+if 'strcoll' not in globals():
+    strcoll = _strcoll
+
+
+try:
+    _localeconv = localeconv
+except NameError:
+    # Locale emulation for localeconv() if the _locale module is missing
+    # or if the _locale module does not implement the localeconv() function
+    # (ex: Android API 19)
+
+    def _localeconv():
         """ localeconv() -> dict.
             Returns numeric and monetary locale-specific parameters.
         """
@@ -84,22 +104,6 @@ except ImportError:
                 'mon_decimal_point': '',
                 'int_frac_digits': 127}
 
-    def setlocale(category, value=None):
-        """ setlocale(integer,string=None) -> string.
-            Activates/queries locale processing.
-        """
-        if value not in (None, '', 'C'):
-            raise Error('_locale emulation only supports "C" locale')
-        return 'C'
-
-# These may or may not exist in _locale, so be sure to set them.
-if 'strxfrm' not in globals():
-    strxfrm = _strxfrm
-if 'strcoll' not in globals():
-    strcoll = _strcoll
-
-
-_localeconv = localeconv
 
 # With this dict, you can override some items of localeconv's return value.
 # This is useful for testing purposes.
