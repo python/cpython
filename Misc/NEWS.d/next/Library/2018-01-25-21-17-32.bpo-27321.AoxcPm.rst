@@ -1,0 +1,2 @@
+Only replace the munged Content-Type-Encoding header when it actually exists
+while flattening an email.
