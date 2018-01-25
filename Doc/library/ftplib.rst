@@ -40,7 +40,7 @@ Here's a sample session using the :mod:`ftplib` module::
 
 The module defines the following items:
 
-.. class:: FTP(host='', user='', passwd='', acct='', timeout=None, source_address=None)
+.. class:: FTP(host='', user='', passwd='', acct='', timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None)
 
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
    method call ``connect(host)`` is made.  When *user* is given, additionally
@@ -72,7 +72,7 @@ The module defines the following items:
       *source_address* parameter was added.
 
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT source_address=None)
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
@@ -176,7 +176,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    debugging output, logging each line sent and received on the control connection.
 
 
-.. method:: FTP.connect(host='', port=0, timeout=None, source_address=None)
+.. method:: FTP.connect(host='', port=0, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None)
 
    Connect to the given host and port.  The default port number is ``21``, as
    specified by the FTP protocol specification.  It is rarely needed to specify a

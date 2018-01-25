@@ -132,7 +132,7 @@ class FTP:
                 if self.sock is not None:
                     self.close()
 
-    def connect(self, host='', port=0, timeout=-999, source_address=None):
+    def connect(self, host='', port=0, timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
         '''Connect to host.  Arguments are:
          - host: hostname to connect to (string, default previous host)
          - port: port to connect to (integer, default previous port)
@@ -144,7 +144,7 @@ class FTP:
             self.host = host
         if port > 0:
             self.port = port
-        if timeout != -999:
+        if timeout is not _GLOBAL_DEFAULT_TIMEOUT:
             self.timeout = timeout
         if source_address is not None:
             self.source_address = source_address

@@ -1,0 +1,1 @@
+Update on ftplib and poplib documentation timeout value
