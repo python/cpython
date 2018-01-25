@@ -424,7 +424,7 @@ Creating connections
 Creating listening connections
 ------------------------------
 
-.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None, ssl_handshake_timeout=None)
+.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None, ssl_handshake_timeout=None, start_serving=True)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
    *host* and *port*.
@@ -472,9 +472,15 @@ Creating listening connections
      for the SSL handshake to complete before aborting the connection.
      ``10.0`` seconds if ``None`` (default).
 
+   * *start_serving* set to ``True`` (the default) causes the created server
+     to start accepting connections immediately.  When set to ``False``,
+     the user should await on :meth:`Server.start_serving` or
+     :meth:`Server.serve_forever` to make the server to start accepting
+     connections.
+
    .. versionadded:: 3.7
 
-      The *ssl_handshake_timeout* parameter.
+      *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. versionchanged:: 3.5
 
@@ -490,7 +496,7 @@ Creating listening connections
       The *host* parameter can now be a sequence of strings.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None, ssl_handshake_timeout=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None, ssl_handshake_timeout=None, start_serving=True)
 
    Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
@@ -929,8 +935,26 @@ Server
 
    Server listening on sockets.
 
-   Object created by the :meth:`AbstractEventLoop.create_server` method and the
-   :func:`start_server` function. Don't instantiate the class directly.
+   Object created by :meth:`AbstractEventLoop.create_server`,
+   :meth:`AbstractEventLoop.create_unix_server`, :func:`start_server`,
+   and :func:`start_unix_server` functions.  Don't instantiate the class
+   directly.
+
+   *Server* objects are asynchronous context managers.  When used in an
+   ``async with`` statement, it's guaranteed that the Server object is
+   closed and not accepting new connections when the ``async with``
+   statement is completed::
+
+      srv = await loop.create_server(...)
+
+      async with srv:
+          # some code
+
+      # At this point, srv is closed and no longer accepts new connections.
+
+
+   .. versionchanged:: 3.7
+      Server object is an asynchronous context manager since Python 3.7.
 
    .. method:: close()
 
@@ -949,6 +973,54 @@ Server
 
       .. versionadded:: 3.7
 
+   .. coroutinemethod:: start_serving()
+
+      Start accepting connections.
+
+      This method is idempotent, so it can be called when
+      the server is already being serving.
+
+      The new *start_serving* keyword-only parameter to
+      :meth:`AbstractEventLoop.create_server` and
+      :meth:`asyncio.start_server` allows to create a Server object
+      that is not accepting connections right away.  In which case
+      this method, or :meth:`Server.serve_forever` can be used
+      to make the Server object to start accepting connections.
+
+      .. versionadded:: 3.7
+
+   .. coroutinemethod:: serve_forever()
+
+      Start accepting connections until the coroutine is cancelled.
+      Cancellation of ``serve_forever`` task causes the server
+      to be closed.
+
+      This method can be called if the server is already accepting
+      connections.  Only one ``serve_forever`` task can exist per
+      one *Server* object.
+
+      Example::
+
+          async def client_connected(reader, writer):
+              # Communicate with the client with
+              # reader/writer streams.  For example:
+              await reader.readline()
+
+          async def main(host, port):
+              srv = await asyncio.start_server(
+                  client_connected, host, port)
+              await loop.serve_forever()
+
+          asyncio.run(main('127.0.0.1', 0))
+
+      .. versionadded:: 3.7
+
+   .. method:: is_serving()
+
+      Return ``True`` if the server is accepting new connections.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
@@ -957,6 +1029,11 @@ Server
 
       List of :class:`socket.socket` objects the server is listening to, or
       ``None`` if the server is closed.
+
+      .. versionchanged:: 3.7
+         Prior to Python 3.7 ``Server.sockets`` used to return the
+         internal list of server's sockets directly.  In 3.7 a copy
+         of that list is returned.
 
 
 Handle
