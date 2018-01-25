@@ -134,7 +134,9 @@ PyContextVar_New(const char *name, PyObject *def)
     if (pyname == NULL) {
         return NULL;
     }
-    return contextvar_new(pyname, def);
+    PyContextVar *var = contextvar_new(pyname, def);
+    Py_DECREF(pyname);
+    return var;
 }
 
 
@@ -741,8 +743,8 @@ contextvar_new(PyObject *name, PyObject *def)
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
 
-    if (_PyObject_GC_IS_TRACKED(name) ||
-            (def != NULL && _PyObject_GC_IS_TRACKED(def)))
+    if (_PyObject_GC_MAY_BE_TRACKED(name) ||
+            (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))
     {
         PyObject_GC_Track(var);
     }
