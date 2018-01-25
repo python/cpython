@@ -1500,6 +1500,39 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    returned. :func:`dir` converts the returned sequence to a list and sorts it.
 
 
+Customizing module attribute access
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __class__ (module attribute)
+
+For a more fine grained customization of the module behavior (setting
+attributes, properties, etc.), one can set the ``__class__`` attribute of
+a module object to a subclass of :class:`types.ModuleType`. For example::
+
+   import sys
+   from types import ModuleType
+
+   class VerboseModule(ModuleType):
+       def __repr__(self):
+           return f'Verbose {self.__name__}'
+
+       def __setattr__(self, attr, value):
+           print(f'Setting {attr}...')
+           setattr(self, attr, value)
+
+   sys.modules[__name__].__class__ = VerboseModule
+
+.. note::
+   Setting module ``__class__`` only affects lookups made using the attribute
+   access syntax -- directly accessing the module globals (whether by code
+   within the module, or via a reference to the module's globals dictionary)
+   is unaffected.
+
+.. versionadded:: 3.5
+   ``__class__`` module attribute.
+
+
 .. _descriptors:
 
 Implementing Descriptors
