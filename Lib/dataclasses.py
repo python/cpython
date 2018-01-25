@@ -19,8 +19,8 @@ __all__ = ['dataclass',
            ]
 
 # Conditions for adding methods:
-# yes   = method is added
-# no    = method is not added
+# added = method is added
+#       = method is not added
 # raise = TypeError is raised
 
 # __init__
@@ -29,9 +29,9 @@ __all__ = ['dataclass',
 #   |
 #   v    | yes   | no    |  <--- class has __init__?
 # -------+-------+-------+
-#  False | no    | no    |
+#  False |       |       |
 # -------+-------+-------+
-#  True  | no    | yes   |  <- the default
+#  True  |       | added |  <- the default
 # -------+-------+-------+
 
 # __repr__
@@ -40,9 +40,9 @@ __all__ = ['dataclass',
 #   |
 #   v    | yes   | no    |  <--- class has __repr__?
 # -------+-------+-------+
-#  False | no    | no    |
+#  False |       |       |
 # -------+-------+-------+
-#  True  | no    | yes   |  <- the default
+#  True  |       | added |  <- the default
 # -------+-------+-------+
 
 # __setattr__
@@ -52,9 +52,9 @@ __all__ = ['dataclass',
 #   |
 #   v    | yes   | no    |  <--- class has __setattr__ or __delattr__?
 # -------+-------+-------+
-#  False | no    | no    |  <- the default
+#  False |       |       |  <- the default
 # -------+-------+-------+
-#  True  | raise | yes   |
+#  True  | raise | added |
 # -------+-------+-------+
 
 # __eq__
@@ -63,9 +63,9 @@ __all__ = ['dataclass',
 #   |
 #   v    | yes   | no    |  <--- class has __eq__?
 # -------+-------+-------+
-#  False | no    | no    |
+#  False |       |       |
 # -------+-------+-------+
-#  True  | no    | yes   |  <- the default
+#  True  |       | added |  <- the default
 # -------+-------+-------+
 
 # __lt__
@@ -77,9 +77,9 @@ __all__ = ['dataclass',
 #   |
 #   v    | yes   | no    |  <--- class has comparison method?
 # -------+-------+-------+
-#  False | no    | no    |  <- the default
+#  False |       |       |  <- the default
 # -------+-------+-------+
-#  True  | raise | yes   |
+#  True  | raise | added |
 # -------+-------+-------+
 
 # __hash__
@@ -90,18 +90,18 @@ __all__ = ['dataclass',
 #   |       |       |
 #   v    |  v    |  v    | yes   | no    |  <--- class has __hash__?
 # -------+-------+-------+-------+-------+
-#  False | False | False | no    | no    |
-#  False | False | True  | no    | no    |
-#  False | True  | False | no    | no    |
-#  False | True  | True  | no    | no    |
-#  True  | False | False | no    | yes   |
-#  True  | False | True  | no    | yes   |
-#  True  | True  | False | no    | yes   |
-#  True  | True  | True  | no    | yes   |
-#  None  | False | False | no    | no    |
-#  None  | False | True  | no    | no    |
-#  None  | True  | False | no    | None  |
-#  None  | True  | True  | no    | yes   |
+#  False | False | False |       |       |
+#  False | False | True  |       |       |
+#  False | True  | False |       |       |
+#  False | True  | True  |       |       |
+#  True  | False | False |       | added |
+#  True  | False | True  |       | added |
+#  True  | True  | False |       | added |
+#  True  | True  | True  |       | added |
+#  None  | False | False |       |       |
+#  None  | False | True  |       |       |
+#  None  | True  | False |       | None  | <-- the default
+#  None  | True  | True  |       | added |
 
 
 # Raised when an attempt is made to modify a frozen class.
@@ -498,11 +498,12 @@ def _find_fields(cls):
             for a_name, a_type in annotations.items()]
 
 
-def _set_attribute(cls, name, value, replace_if_exists):
+def _set_attribute(cls, name, value):
     exists = name in cls.__dict__
-    if not exists or replace_if_exists:
-        setattr(cls, name, value)
-    return exists
+    if name in cls.__dict__:
+        return True
+    setattr(cls, name, value)
+    return False
 
 
 def _process_class(cls, repr, eq, order, hash, init, frozen):
@@ -573,8 +574,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                                 #  in __init__.  Use "self" if possible.
                                 '__dataclass_self__' if 'self' in fields
                                     else 'self',
-                                ),
-                       replace_if_exists=False)
+                                ))
 
     # Get the fields as a list, and include only real fields.  This is
     #  used in all of the following methods.
@@ -582,8 +582,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 
     if repr:
         flds = [f for f in field_list if f.repr]
-        _set_attribute(cls, '__repr__', _repr_fn(flds),
-                       replace_if_exists=False)
+        _set_attribute(cls, '__repr__', _repr_fn(flds))
 
     if eq:
         # Create _eq__ method.  There's no need for a __ne__ method,
@@ -592,8 +591,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
         self_tuple = _tuple_str('self', flds)
         other_tuple = _tuple_str('other', flds)
         _set_attribute(cls, '__eq__', _cmp_fn('__eq__', '==',
-                                              self_tuple, other_tuple),
-                       replace_if_exists=False)
+                                              self_tuple, other_tuple))
 
     if order:
         # Create and set the ordering methods.
@@ -605,15 +603,18 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                          ('__gt__', '>'),
                          ('__ge__', '>='),
                          ]:
-            _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple),
-                           replace_if_exists=False)
+            if _set_attribute(cls, name,
+                              _cmp_fn(name, op, self_tuple, other_tuple)):
+                raise TypeError(f'Cannot overwrite attribute {name} '
+                                f'in {cls.__name__}. Consider using '
+                                'functools.total_ordering')
 
     if is_frozen:
         for name, fn in [('__setattr__', _frozen_setattr),
                          ('__delattr__', _frozen_delattr)]:
-             if _set_attribute(cls, name, fn, replace_if_exists=False):
-                 raise TypeError(f'Cannot overwrite attribute {name} '
-                                 f'in {cls.__name__}')
+            if _set_attribute(cls, name, fn):
+                raise TypeError(f'Cannot overwrite attribute {name} '
+                                f'in {cls.__name__}')
 
     generate_hash = False
     if hash is None:
@@ -622,7 +623,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
             generate_hash = True
         elif eq and not frozen:
             # Not hashable.
-            _set_attribute(cls, '__hash__', None, replace_if_exists=False)
+            _set_attribute(cls, '__hash__', None)
         elif not eq:
             # Otherwise, use the base class definition of hash().  That is,
             #  don't set anything on this class.
@@ -634,8 +635,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
     if generate_hash:
         flds = [f for f in field_list
                 if (f.compare if f.hash is None else f.hash)]
-        _set_attribute(cls, '__hash__', _hash_fn(flds),
-                       replace_if_exists=False)
+        _set_attribute(cls, '__hash__', _hash_fn(flds))
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.

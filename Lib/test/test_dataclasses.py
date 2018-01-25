@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar
 from collections import deque, OrderedDict, namedtuple
+from functools import total_ordering
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
@@ -190,8 +191,7 @@ class TestCase(unittest.TestCase):
     def test_overwriting_frozen(self):
         # frozen uses __setattr__ and __delattr__
         with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __setattr__ '
-                                    'in C'):
+                                    'Cannot overwrite attribute __setattr__'):
             @dataclass(frozen=True)
             class C:
                 x: int
@@ -199,8 +199,7 @@ class TestCase(unittest.TestCase):
                     pass
 
         with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __delattr__ '
-                                    'in C'):
+                                    'Cannot overwrite attribute __delattr__'):
             @dataclass(frozen=True)
             class C:
                 x: int
@@ -232,6 +231,71 @@ class TestCase(unittest.TestCase):
         #  __delattr__.
         self.assertIsNone(C.__setattr__)
         self.assertNotIn('__delattr__', C.__dict__)
+
+    def test_overwriting_order(self):
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __lt__'
+                                    '.*using functools.total_ordering'):
+            @dataclass(order=True)
+            class C:
+                x: int
+                def __lt__(self):
+                    pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __le__'
+                                    '.*using functools.total_ordering'):
+            @dataclass(order=True)
+            class C:
+                x: int
+                def __le__(self):
+                    pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __gt__'
+                                    '.*using functools.total_ordering'):
+            @dataclass(order=True)
+            class C:
+                x: int
+                def __gt__(self):
+                    pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __ge__'
+                                    '.*using functools.total_ordering'):
+            @dataclass(order=True)
+            class C:
+                x: int
+                def __ge__(self):
+                    pass
+
+        # Test that __lt__ is still called
+        @dataclass(order=False)
+        class C:
+            x: int
+            def __lt__(self, other):
+                return False
+        # Make sure other methods aren't added.
+        self.assertNotIn('__le__', C.__dict__)
+        self.assertNotIn('__ge__', C.__dict__)
+        self.assertNotIn('__gt__', C.__dict__)
+
+
+    def test_functools_total_ordering(self):
+        # Test that functools.total_ordering works with this class.
+        @total_ordering
+        @dataclass
+        class C:
+            x: int
+            def __lt__(self, other):
+                # Perform the test "backward", just to make
+                #  sure this is being called.
+                return self.x >= other
+
+        self.assertLess(C(0), -1)
+        self.assertLessEqual(C(0), -1)
+        self.assertGreater(C(0), 1)
+        self.assertGreaterEqual(C(0), 1)
 
     def test_overwrite_fields_in_derived_class(self):
         # Note that x from C1 replaces x in Base, but the order remains
@@ -473,63 +537,67 @@ class TestCase(unittest.TestCase):
                                     "unhashable type: 'C'"):
             hash(C(1))
 
+    def test_eq_compare(self):
+        # An error if order is true but eq is not.
+        with self.assertRaisesRegex(ValueError, 'eq must be true if order is true'):
+            @dataclass(eq=False, order=True)
+            class C:
+                pass
+
     def test_hash_rules(self):
-        # There are 24 cases of:
+        # There are 12 cases of:
         #  hash=True/False/None
         #  eq=True/False
-        #  order=True/False
         #  frozen=True/False
-        for (hash,  eq,    order, frozen, result  ) in [
-            (False, False, False, False,  'absent'),
-            (False, False, False, True,   'absent'),
-            (False, False, True,  False,  'exception'),
-            (False, False, True,  True,   'exception'),
-            (False, True,  False, False,  'absent'),
-            (False, True,  False, True,   'absent'),
-            (False, True,  True,  False,  'absent'),
-            (False, True,  True,  True,   'absent'),
-            (True,  False, False, False,  'fn'),
-            (True,  False, False, True,   'fn'),
-            (True,  False, True,  False,  'exception'),
-            (True,  False, True,  True,   'exception'),
-            (True,  True,  False, False,  'fn'),
-            (True,  True,  False, True,   'fn'),
-            (True,  True,  True,  False,  'fn'),
-            (True,  True,  True,  True,   'fn'),
-            (None,  False, False, False,  'absent'),
-            (None,  False, False, True,   'absent'),
-            (None,  False, True,  False,  'exception'),
-            (None,  False, True,  True,   'exception'),
-            (None,  True,  False, False,  'none'),
-            (None,  True,  False, True,   'fn'),
-            (None,  True,  True,  False,  'none'),
-            (None,  True,  True,  True,   'fn'),
+        for (hash,  eq,    frozen, result  ) in [
+            (False, False, False,  'absent'),
+            (False, False, True,   'absent'),
+            (False, True,  False,  'absent'),
+            (False, True,  True,   'absent'),
+            (True,  False, False,  'fn'),
+            (True,  False, True,   'fn'),
+            (True,  True,  False,  'fn'),
+            (True,  True,  True,   'fn'),
+            (None,  False, False,  'absent'),
+            (None,  False, True,   'absent'),
+            (None,  True,  False,  'none'),
+            (None,  True,  True,   'fn'),
         ]:
-            with self.subTest(hash=hash, eq=eq, order=order, frozen=frozen):
-                if result == 'exception':
-                    with self.assertRaisesRegex(ValueError, 'eq must be true if order is true'):
-                        @dataclass(hash=hash, eq=eq, order=order, frozen=frozen)
-                        class C:
-                            pass
-                else:
-                    @dataclass(hash=hash, eq=eq, order=order, frozen=frozen)
-                    class C:
-                        pass
+            with self.subTest(hash=hash, eq=eq, frozen=frozen):
+                @dataclass(hash=hash, eq=eq, frozen=frozen)
+                class C:
+                    pass
 
-                    # See if the result matches what's expected.
-                    if result == 'fn':
-                        # __hash__ contains the function we generated.
-                        self.assertIn('__hash__', C.__dict__)
-                        self.assertIsNotNone(C.__dict__['__hash__'])
-                    elif result == 'absent':
-                        # __hash__ is not present in our class.
-                        self.assertNotIn('__hash__', C.__dict__)
-                    elif result == 'none':
-                        # __hash__ is set to None.
-                        self.assertIn('__hash__', C.__dict__)
-                        self.assertIsNone(C.__dict__['__hash__'])
-                    else:
-                        assert False, f'unknown result {result!r}'
+                # See if the result matches what's expected.
+                if result == 'fn':
+                    # __hash__ contains the function we generated.
+                    self.assertIn('__hash__', C.__dict__)
+                    self.assertIsNotNone(C.__dict__['__hash__'])
+                elif result == 'absent':
+                    # __hash__ is not present in our class.
+                    self.assertNotIn('__hash__', C.__dict__)
+                elif result == 'none':
+                    # __hash__ is set to None.
+                    self.assertIn('__hash__', C.__dict__)
+                    self.assertIsNone(C.__dict__['__hash__'])
+                else:
+                    assert False, f'unknown result {result!r}'
+
+                # And now, a class where __hash__ is aleady defined.
+                @dataclass(hash=hash, eq=eq, frozen=frozen)
+                class C:
+                    def __hash__(self):
+                        return 0
+
+    def XXX_test_eq_only(self):
+        @dataclass(hash=True)
+        class C:
+            i: int
+            def __eq__(self, other):
+                return self.i == other.i
+
+        self.assertEqual(C(1), C(1.0))
+        self.assertEqual(hash(C(1)), hash(C(1.0)))
 
     def test_eq_order(self):
         for (eq,    order, result   ) in [
