@@ -352,11 +352,10 @@ gen_close_iter(PyObject *yf)
             return -1;
     }
     else {
-        PyObject *meth = _PyObject_GetAttrId(yf, &PyId_close);
+        PyObject *meth = _PyObject_GetAttrIdWithoutError(yf, &PyId_close);
         if (meth == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+            if (PyErr_Occurred())
                 PyErr_WriteUnraisable(yf);
-            PyErr_Clear();
         }
         else {
             retval = _PyObject_CallNoArg(meth);
@@ -471,13 +470,12 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             gen->gi_running = 0;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
-            PyObject *meth = _PyObject_GetAttrId(yf, &PyId_throw);
+            PyObject *meth = _PyObject_GetAttrIdWithoutError(yf, &PyId_throw);
             if (meth == NULL) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                if (PyErr_Occurred()) {
                     Py_DECREF(yf);
                     return NULL;
                 }
-                PyErr_Clear();
                 Py_DECREF(yf);
                 goto throw_here;
             }

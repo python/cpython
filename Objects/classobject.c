@@ -249,17 +249,14 @@ method_repr(PyMethodObject *a)
     PyObject *funcname = NULL, *result = NULL;
     const char *defname = "?";
 
-    funcname = _PyObject_GetAttrId(func, &PyId___qualname__);
+    funcname = _PyObject_GetAttrIdWithoutError(func, &PyId___qualname__);
     if (funcname == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_Occurred())
             return NULL;
-        PyErr_Clear();
 
-        funcname = _PyObject_GetAttrId(func, &PyId___name__);
-        if (funcname == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                return NULL;
-            PyErr_Clear();
+        funcname = _PyObject_GetAttrIdWithoutError(func, &PyId___name__);
+        if (funcname == NULL && PyErr_Occurred()) {
+            return NULL;
         }
     }
 
@@ -550,11 +547,10 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    funcname = _PyObject_GetAttrId(func, &PyId___name__);
+    funcname = _PyObject_GetAttrIdWithoutError(func, &PyId___name__);
     if (funcname == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_Occurred())
             return NULL;
-        PyErr_Clear();
     }
     else if (!PyUnicode_Check(funcname)) {
         Py_DECREF(funcname);

@@ -924,11 +924,9 @@ _textiowrapper_set_encoder(textio *self, PyObject *codec_info,
         return -1;
 
     /* Get the normalized named of the codec */
-    res = _PyObject_GetAttrId(codec_info, &PyId_name);
+    res = _PyObject_GetAttrIdWithoutError(codec_info, &PyId_name);
     if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
+        if (PyErr_Occurred())
             return -1;
     }
     else if (PyUnicode_Check(res)) {
@@ -1178,12 +1176,10 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     if (Py_TYPE(buffer) == &PyBufferedReader_Type ||
         Py_TYPE(buffer) == &PyBufferedWriter_Type ||
         Py_TYPE(buffer) == &PyBufferedRandom_Type) {
-        raw = _PyObject_GetAttrId(buffer, &PyId_raw);
+        raw = _PyObject_GetAttrIdWithoutError(buffer, &PyId_raw);
         /* Cache the raw FileIO object to speed up 'closed' checks */
         if (raw == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError))
-                PyErr_Clear();
-            else
+            if (PyErr_Occurred())
                 goto error;
         }
         else if (Py_TYPE(raw) == &PyFileIO_Type)

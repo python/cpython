@@ -135,12 +135,11 @@ iobase_is_closed(PyObject *self)
     PyObject *res;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    res = _PyObject_GetAttrId(self, &PyId___IOBase_closed);
+    res = _PyObject_GetAttrIdWithoutError(self, &PyId___IOBase_closed);
     if (res == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        if (PyErr_Occurred()) {
             return -1;
         }
-        PyErr_Clear();
         return 0;
     }
     Py_DECREF(res);
