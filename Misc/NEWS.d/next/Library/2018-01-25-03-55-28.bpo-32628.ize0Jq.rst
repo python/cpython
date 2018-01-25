@@ -1,0 +1,2 @@
+Add directory_index list to SimpleHTTPRequestHandler to support more than
+index.html and index.htm

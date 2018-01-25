@@ -328,6 +328,14 @@ of which this module provides three different variants:
 
       If not specified, the directory to serve is the current working directory.
 
+   .. attribute:: directory_index
+
+      A list of files to potentially serve for a request for a directory,
+      rather than the set of files in the directory. The default list
+      is ``index.html`` and ``index.htm``.
+
+      .. versionadded:: 3.7
+
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
    .. method:: do_HEAD()

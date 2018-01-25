@@ -328,6 +328,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
         pass
 
+    request_handler.directory_index.append("index.test")
     def setUp(self):
         BaseTestCase.setUp(self)
         self.cwd = os.getcwd()
@@ -440,6 +441,26 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             f.write(data)
         response = self.request(self.base_url + '/')
         self.check_status_and_reason(response, HTTPStatus.OK, data)
+        os.remove(os.path.join(self.tempdir_name, 'index.html'))
+
+        # index.test was added at handler setup as a non-standard
+        # directory_index, check to make sure that if present we see
+        # an index file handled at the directory
+        with open(os.path.join(self.tempdir_name, 'index.test'), 'wb') as f:
+            f.write(data)
+        response = self.request(self.base_url + '/')
+        self.check_status_and_reason(response, HTTPStatus.OK, data)
+        os.remove(os.path.join(self.tempdir_name, 'index.test'))
+
+        # index.missing is not a standard index nor on the directory_index
+        # so we should see a list of files when asking for this directory
+        # and we should not see the contents of the index file
+        with open(os.path.join(self.tempdir_name, 'index.missing'), 'wb') as f:
+            f.write(data)
+        response = self.request(self.base_url + '/')
+        body = self.check_status_and_reason(response, HTTPStatus.OK)
+        self.assertIn(b'index.missing', body)
+        self.assertNotIn(b'Dummy', body)
 
         # chmod() doesn't work as expected on Windows, and filesystem
         # permissions are ignored by root on Unix.
