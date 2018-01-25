@@ -223,6 +223,21 @@ class UTF8ModeTests(unittest.TestCase):
             c_arg = arg_ascii
         check('utf8=0', [c_arg], LC_ALL='C')
 
+    def test_optim_level(self):
+        # CPython: check that Py_Main() doesn't increment Py_OptimizeFlag
+        # twice when -X utf8 requires to parse the configuration twice (when
+        # the encoding changes after reading the configuration, the
+        # configuration is read again with the new encoding).
+        code = 'import sys; print(sys.flags.optimize)'
+        out = self.get_output('-X', 'utf8', '-O', '-c', code)
+        self.assertEqual(out, '1')
+        out = self.get_output('-X', 'utf8', '-OO', '-c', code)
+        self.assertEqual(out, '2')
+
+        code = 'import sys; print(sys.flags.ignore_environment)'
+        out = self.get_output('-X', 'utf8', '-E', '-c', code)
+        self.assertEqual(out, '1')
+
 
 if __name__ == "__main__":
     unittest.main()
