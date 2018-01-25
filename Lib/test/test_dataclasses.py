@@ -83,14 +83,22 @@ class TestCase(unittest.TestCase):
                 x: int = 0
 
     def test_overwriting_init(self):
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __init__ '
-                                    'in C'):
-            @dataclass
-            class C:
-                x: int
-                def __init__(self, x):
-                    self.x = 2 * x
+        # If the class has __init__, use it no matter the value of
+        #  init=.
+
+        @dataclass
+        class C:
+            x: int
+            def __init__(self, x):
+                self.x = 2 * x
+        self.assertEqual(C(3).x, 6)
+
+        @dataclass(init=True)
+        class C:
+            x: int
+            def __init__(self, x):
+                self.x = 2 * x
+        self.assertEqual(C(4).x, 8)
 
         @dataclass(init=False)
         class C:
@@ -100,6 +108,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C(5).x, 10)
 
     def test_overwriting_repr(self):
+        # If the class has __repr__, use it no matter the value of
+        #  repr=.
+
         @dataclass
         class C:
             x: int
@@ -112,7 +123,7 @@ class TestCase(unittest.TestCase):
             x: int
             def __repr__(self):
                 return 'x'
-        self.assertEqual(repr(C(0)), 'xxxxxxx')
+        self.assertEqual(repr(C(0)), 'x')
 
         @dataclass(repr=False)
         class C:
@@ -121,34 +132,40 @@ class TestCase(unittest.TestCase):
                 return 'x'
         self.assertEqual(repr(C(0)), 'x')
 
-    def test_overwriting_cmp(self):
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __eq__ '
-                                    'in C'):
-            # This will generate the comparison functions, make sure we can't
-            #  overwrite them.
-            @dataclass(hash=False, frozen=False)
-            class C:
-                x: int
-                def __eq__(self):
-                    pass
+    def test_overwriting_eq(self):
+        # If the class has __eq__, use it no matter the value of
+        #  eq=.
 
-        @dataclass(order=False, eq=False)
+        @dataclass
         class C:
             x: int
             def __eq__(self, other):
-                return True
-        self.assertEqual(C(0), 'x')
+                return other == 3
+        self.assertEqual(C(1), 3)
+        self.assertNotEqual(C(1), 1)
+
+        @dataclass(eq=True)
+        class C:
+            x: int
+            def __eq__(self, other):
+                return other == 4
+        self.assertEqual(C(1), 4)
+        self.assertNotEqual(C(1), 1)
+
+        @dataclass(eq=False)
+        class C:
+            x: int
+            def __eq__(self, other):
+                return other == 5
+        self.assertEqual(C(1), 5)
+        self.assertNotEqual(C(1), 1)
 
     def test_overwriting_hash(self):
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __hash__ '
-                                    'in C'):
-            @dataclass(frozen=True)
-            class C:
-                x: int
-                def __hash__(self):
-                    pass
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            def __hash__(self):
+                pass
 
         @dataclass(frozen=True,hash=False)
         class C:
@@ -157,14 +174,11 @@ class TestCase(unittest.TestCase):
                 return 600
         self.assertEqual(hash(C(0)), 600)
 
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __hash__ '
-                                    'in C'):
-            @dataclass(frozen=True)
-            class C:
-                x: int
-                def __hash__(self):
-                    pass
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            def __hash__(self):
+                pass
 
         @dataclass(frozen=True, hash=False)
         class C:
@@ -199,6 +213,25 @@ class TestCase(unittest.TestCase):
             def __setattr__(self, name, value):
                 self.__dict__['x'] = value * 2
         self.assertEqual(C(10).x, 20)
+
+        # Make sure the methods aren't added, even if an exception
+        #  is raised.
+        class C:
+            x: int
+            __setattr__ = None
+        self.assertIsNone(C.__setattr__)
+        self.assertNotIn('__delattr__', C.__dict__)
+
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __setattr__ '
+                                    'in C'):
+            C = dataclass(frozen=True)(C)
+
+        # And finally make sure that the above call to dataclass(frozen=True),
+        #  which raised an exception, didn't change C.__setattr__ or
+        #  __delattr__.
+        self.assertIsNone(C.__setattr__)
+        self.assertNotIn('__delattr__', C.__dict__)
 
     def test_overwrite_fields_in_derived_class(self):
         # Note that x from C1 replaces x in Base, but the order remains

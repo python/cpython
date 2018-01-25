@@ -563,10 +563,10 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
         has_post_init = hasattr(cls, _POST_INIT_NAME)
 
         # Include InitVars and regular fields (so, not ClassVars).
+        flds = [f for f in fields.values()
+                if f._field_type in (_FIELD, _FIELD_INITVAR)]
         _set_attribute(cls, '__init__',
-                       _init_fn(list(filter(lambda f: f._field_type
-                                              in (_FIELD, _FIELD_INITVAR),
-                                            fields.values())),
+                       _init_fn(flds,
                                 is_frozen,
                                 has_post_init,
                                 # The name to use for the "self" param
@@ -578,17 +578,42 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 
     # Get the fields as a list, and include only real fields.  This is
     #  used in all of the following methods.
-    field_list = list(filter(lambda f: f._field_type is _FIELD,
-                             fields.values()))
+    field_list = [f for f in fields.values() if f._field_type is _FIELD]
 
     if repr:
-        _set_attribute(cls, '__repr__',
-                       _repr_fn(list(filter(lambda f: f.repr, field_list))),
+        flds = [f for f in field_list if f.repr]
+        _set_attribute(cls, '__repr__', _repr_fn(flds),
                        replace_if_exists=False)
 
+    if eq:
+        # Create _eq__ method.  There's no need for a __ne__ method,
+        #  since python will call __eq__ and negate it.
+        flds = [f for f in field_list if f.compare]
+        self_tuple = _tuple_str('self', flds)
+        other_tuple = _tuple_str('other', flds)
+        _set_attribute(cls, '__eq__', _cmp_fn('__eq__', '==',
+                                              self_tuple, other_tuple),
+                       replace_if_exists=False)
+
+    if order:
+        # Create and set the ordering methods.
+        flds = [f for f in field_list if f.compare]
+        self_tuple = _tuple_str('self', flds)
+        other_tuple = _tuple_str('other', flds)
+        for name, op in [('__lt__', '<'),
+                         ('__le__', '<='),
+                         ('__gt__', '>'),
+                         ('__ge__', '>='),
+                         ]:
+            _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple),
+                           replace_if_exists=False)
+
     if is_frozen:
-        _set_attribute(cls, '__setattr__', _frozen_setattr, replace_if_exists=False)
-        _set_attribute(cls, '__delattr__', _frozen_delattr, replace_if_exists=False)
+        for name, fn in [('__setattr__', _frozen_setattr),
+                         ('__delattr__', _frozen_delattr)]:
+             if _set_attribute(cls, name, fn, replace_if_exists=False):
+                 raise TypeError(f'Cannot overwrite attribute {name} '
+                                 f'in {cls.__name__}')
 
     generate_hash = False
     if hash is None:
@@ -607,34 +632,10 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
     else:
         generate_hash = hash
     if generate_hash:
-        _set_attribute(cls, '__hash__',
-                       _hash_fn(list(filter(lambda f: f.compare
-                                                      if f.hash is None
-                                                      else f.hash,
-                                            field_list))),
+        flds = [f for f in field_list
+                if (f.compare if f.hash is None else f.hash)]
+        _set_attribute(cls, '__hash__', _hash_fn(flds),
                        replace_if_exists=False)
-
-    if eq:
-        # Create _eq__ method.  There's no need for a __ne__ method,
-        #  since python will call __eq__ and negate it.
-        fields = list(filter(lambda f: f.compare, field_list))
-        self_tuple = _tuple_str('self', fields)
-        other_tuple = _tuple_str('other', fields)
-        _set_attribute(cls, '__eq__', _cmp_fn('__eq__', '==', self_tuple, other_tuple), replace_if_exists=False)
-
-    if order:
-        # Create and set the ordering methods on cls.
-        # Pre-compute self_tuple and other_tuple, then re-use them for
-        #  each function.
-        fields = list(filter(lambda f: f.compare, field_list))
-        self_tuple = _tuple_str('self', fields)
-        other_tuple = _tuple_str('other', fields)
-        for name, op in [('__lt__', '<'),
-                         ('__le__', '<='),
-                         ('__gt__', '>'),
-                         ('__ge__', '>='),
-                         ]:
-            _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple), replace_if_exists=False)
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
