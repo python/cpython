@@ -21,7 +21,7 @@ __all__ = ['dataclass',
 # Conditions for adding methods:
 # yes   = method is added
 # no    = method is not added
-# raise = ValueError is raised
+# raise = TypeError is raised
 
 # __init__
 #
@@ -31,7 +31,7 @@ __all__ = ['dataclass',
 # -------+-------+-------+
 #  False | no    | no    |
 # -------+-------+-------+
-#  True  | no    | yes   |
+#  True  | no    | yes   |  <- the default
 # -------+-------+-------+
 
 # __repr__
@@ -42,7 +42,7 @@ __all__ = ['dataclass',
 # -------+-------+-------+
 #  False | no    | no    |
 # -------+-------+-------+
-#  True  | no    | yes   |
+#  True  | no    | yes   |  <- the default
 # -------+-------+-------+
 
 # __setattr__
@@ -52,7 +52,7 @@ __all__ = ['dataclass',
 #   |
 #   v    | yes   | no    |  <--- class has __setattr__ or __delattr__?
 # -------+-------+-------+
-#  False | no    | no    |
+#  False | no    | no    |  <- the default
 # -------+-------+-------+
 #  True  | raise | yes   |
 # -------+-------+-------+
@@ -65,7 +65,7 @@ __all__ = ['dataclass',
 # -------+-------+-------+
 #  False | no    | no    |
 # -------+-------+-------+
-#  True  | no    | yes   |
+#  True  | no    | yes   |  <- the default
 # -------+-------+-------+
 
 # __lt__
@@ -77,9 +77,9 @@ __all__ = ['dataclass',
 #   |
 #   v    | yes   | no    |  <--- class has comparison method?
 # -------+-------+-------+
-#  True  | no    | yes   |
+#  False | no    | no    |  <- the default
 # -------+-------+-------+
-#  False | no    | no    |
+#  True  | raise | yes   |
 # -------+-------+-------+
 
 # __hash__
