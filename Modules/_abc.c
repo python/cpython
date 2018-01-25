@@ -26,46 +26,6 @@ _Py_IDENTIFIER(__class__);
    external code. */
 static Py_ssize_t abc_invalidation_counter = 0;
 
-typedef struct {
-    PyHeapTypeObject tp;
-    PyObject *abc_registry; /* these three are normal set of weakrefs without callback */
-    PyObject *abc_cache;
-    PyObject *abc_negative_cache;
-    Py_ssize_t abc_negative_cache_version;
-} abc;
-
-static void
-abcmeta_dealloc(abc *tp)
-{
-    Py_CLEAR(tp->abc_registry);
-    Py_CLEAR(tp->abc_cache);
-    Py_CLEAR(tp->abc_negative_cache);
-    Py_TYPE(tp)->tp_free((PyObject *)tp);
-}
-
-static int
-abcmeta_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(((abc *)self)->abc_registry);
-    Py_VISIT(((abc *)self)->abc_cache);
-    Py_VISIT(((abc *)self)->abc_negative_cache);
-    return PyType_Type.tp_traverse(self, visit, arg);
-}
-
-static int
-abcmeta_clear(abc *tp)
-{
-    if (tp->abc_registry) {
-        PySet_Clear(tp->abc_registry);
-    }
-    if (tp->abc_cache) {
-        PySet_Clear(tp->abc_cache);
-    }
-    if (tp->abc_negative_cache) {
-        PySet_Clear(tp->abc_negative_cache);
-    }
-    return PyType_Type.tp_clear((PyObject *)tp);
-}
 
 static PyObject *
 abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -242,7 +202,7 @@ abcmeta_register(abc *self, PyObject *args)
     if (result < 0) {
         return NULL;
     }
-    if (!_add_weak_set(self->abc_registry, subclass)) {
+    if (!_add_to_registry(self, subclass)) {
         return NULL;
     }
     Py_INCREF(subclass);
@@ -263,7 +223,7 @@ abcmeta_instancecheck(abc *self, PyObject *args)
     }
     subclass = _PyObject_GetAttrId(instance, &PyId___class__);
     /* Inline the cache checking. */
-    incache = _in_weak_set(self->abc_cache, subclass);
+    incache = _in_cache(self, subclass);
     if (incache < 0) {
         return NULL;
     }
@@ -272,11 +232,11 @@ abcmeta_instancecheck(abc *self, PyObject *args)
     }
     subtype = (PyObject *)Py_TYPE(instance);
     if (subtype == subclass) {
-        incache = _in_weak_set(self->abc_negative_cache, subclass);
+        incache = _in_negative_cache(self, subclass);
         if (incache < 0) {
             return NULL;
         }
-        if (self->abc_negative_cache_version == abc_invalidation_counter && incache) {
+        if (_get_negative_cache_version(self) == abc_invalidation_counter && incache) {
             Py_RETURN_FALSE;
         }
         /* Fall back to the subclass check. */
@@ -293,8 +253,80 @@ abcmeta_instancecheck(abc *self, PyObject *args)
     return PyObject_CallMethod((PyObject *)self, "__subclasscheck__", "O", subtype);
 }
 
+int
+_add_to_cache(PyObject *self, PyObject *cls)
+{
+    return 0;
+}
+
+int
+_add_to_negative_cache(PyObject *self, PyObject *cls)
+{
+    return 0;
+}
+
+int
+_in_cache(PyObject *self, PyObject *cls)
+{
+    return 0;
+}
+
+int
+_in_negative_cache(PyObject *self, PyObject *cls)
+{
+    return 0;
+}
+
+int
+_get_registry(PyObject *self)
+{
+    return 0;
+}
+
+int
+_add_to_registry(PyObject *self, PyObject *cls)
+{
+    return 0;
+}
+
+int
+_reset_registry(PyObject *self)
+{
+    return 0;
+}
+
+int
+_reset_cache(PyObject *self)
+{
+    return 0;
+}
+
+int
+_reset_negative_cache(PyObject *self)
+{
+    return 0;
+}
+
+int
+_get_negative_cache_version(PyObject *self)
+{
+    return 0;
+}
+
+int
+_set_negative_cache_version(PyObject *self, Py_ssize_t version)
+{
+    return 0;
+}
+
+PyObject *
+_get_dump()
+{
+    return NULL;
+}
+
 static PyObject *
-abcmeta_subclasscheck(abc *self, PyObject *args)
+abcmeta_subclasscheck(PyObject *self, PyObject *args)
 {
     PyObject *subclasses, *subclass = NULL;
     PyObject *ok, *mro, *key, *rkey;
@@ -309,7 +341,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
        so that they don't grow too large */
 
     /* 1. Check cache. */
-    incache = _in_weak_set(self->abc_cache, subclass);
+    incache = _in_cache(self, subclass);
     if (incache < 0) {
         return NULL;
     }
@@ -317,17 +349,16 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         Py_RETURN_TRUE;
     }
     /* 2. Check negative cache; may have to invalidate. */
-    incache = _in_weak_set(self->abc_negative_cache, subclass);
+    incache = _in_negative_cache(self, subclass);
     if (incache < 0) {
         return NULL;
     }
-    if (self->abc_negative_cache_version < abc_invalidation_counter) {
+    if (_get_negative_cache_version(self) < abc_invalidation_counter) {
         /* Invalidate the negative cache. */
-        self->abc_negative_cache = PySet_New(NULL);
-        if (!self->abc_negative_cache) {
+        if (!_reset_negative_cache(self)) {
             return NULL;
         }
-        self->abc_negative_cache_version = abc_invalidation_counter;
+        _set_negative_cache_version(self, abc_invalidation_counter);
     } else if (incache) {
         Py_RETURN_FALSE;
     }
@@ -337,14 +368,14 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         return NULL;
     }
     if (ok == Py_True) {
-        if (!_add_weak_set(self->abc_cache, subclass)) {
+        if (!_add_to_cache(self, subclass)) {
             Py_DECREF(ok);
             return NULL;
         }
         return Py_True;
     }
     if (ok == Py_False) {
-        if (!_add_weak_set(self->abc_negative_cache, subclass)) {
+        if (!_add_to_negative_cache(self, subclass)) {
             Py_DECREF(ok);
             return NULL;
         }
@@ -355,7 +386,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     mro = ((PyTypeObject *)subclass)->tp_mro;
     for (pos = 0; pos < PyTuple_Size(mro); pos++) {
         if ((PyObject *)self == PyTuple_GetItem(mro, pos)) {
-            if (!_add_weak_set(self->abc_cache, subclass)) {
+            if (!_add_to_cache(self, subclass)) {
                 return NULL;
             }
             Py_RETURN_TRUE;
@@ -365,7 +396,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     /* 5. Check if it's a subclass of a registered class (recursive). */
     pos = 0;
     Py_hash_t hash;
-    while (_PySet_NextEntry(self->abc_registry, &pos, &key, &hash)) {
+    while (_PySet_NextEntry(_get_registry(self), &pos, &key, &hash)) {
         rkey = PyWeakref_GetObject(key);
         if (rkey == Py_None) {
             continue;
@@ -375,7 +406,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
             return NULL;
         }
         if (result > 0) {
-            if (!_add_weak_set(self->abc_cache, subclass)) {
+            if (!_add_to_cache(self, subclass)) {
                 return NULL;
             }
             Py_RETURN_TRUE;
@@ -387,7 +418,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
         result = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
         if (result > 0) {
-            if (!_add_weak_set(self->abc_cache, subclass)) {
+            if (!_add_to_cache(self, subclass)) {
                 return NULL;
             }
             Py_DECREF(subclasses);
@@ -400,180 +431,12 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     }
     Py_DECREF(subclasses);
     /* No dice; update negative cache. */
-    if (!_add_weak_set(self->abc_negative_cache, subclass)) {
+    if (!_add_to_negative_cache(self, subclass)) {
         return NULL;
     }
     Py_RETURN_FALSE;
 }
 
-int
-_print_message(PyObject *file, const char* message)
-{
-    PyObject *mo = PyUnicode_FromString(message);
-    if (!mo) {
-        return -1;
-    }
-    if (PyFile_WriteObject(mo, file, Py_PRINT_RAW)) {
-        Py_DECREF(mo);
-        return -1;
-    }
-    Py_DECREF(mo);
-    return 0;
-}
-
-int
-_dump_attr(PyObject *file, PyObject *obj, char *msg)
-{
-    if (_print_message(file, msg)) {
-        return 0;
-    }
-    if (PyFile_WriteObject(obj, file, Py_PRINT_RAW)) {
-        return 0;
-    }
-    if (_print_message(file, "\n")) {
-        return 0;
-    }
-    return 1;
-}
-
-static PyObject *
-abcmeta_dump(abc *self, PyObject *args)
-{
-    PyObject *file = NULL;
-    PyObject *version;
-    if (!PyArg_UnpackTuple(args, "_dump_registry", 0, 1, &file)) {
-        return NULL;
-    }
-    if (file == NULL || file == Py_None) {
-        file = _PySys_GetObjectId(&PyId_stdout);
-        if (file == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
-            return NULL;
-        }
-    }
-    if (_print_message(file, "Class: ")) {
-        return NULL;
-    }
-    if (_print_message(file, ((PyTypeObject *)self)->tp_name)) {
-        return NULL;
-    }
-    if (_print_message(file, "\n")) {
-        return NULL;
-    }
-    if (!_dump_attr(file, self->abc_registry, "Registry: ")) {
-        return NULL;
-    }
-    if (!_dump_attr(file, self->abc_cache, "Positive cache: ")) {
-        return NULL;
-    }
-    if (!_dump_attr(file, self->abc_negative_cache, "Negative cache: ")) {
-        return NULL;
-    }
-    version = PyLong_FromSsize_t(self->abc_negative_cache_version);
-    if (!version) {
-        return NULL;
-    }
-    if (_print_message(file, "Negative cache version: ")) {
-        Py_DECREF(version);
-        return NULL;
-    }
-    if (PyFile_WriteObject(version, file, Py_PRINT_RAW)) {
-        Py_DECREF(version);
-        return NULL;
-    }
-    if (_print_message(file, "\n")) {
-        Py_DECREF(version);
-        return NULL;
-    }
-    Py_DECREF(version);
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(_register_doc,
-"Register a virtual subclass of an ABC.\n\
-\n\
-Returns the subclass, to allow usage as a class decorator.");
-
-static PyMethodDef abcmeta_methods[] = {
-    {"register", (PyCFunction)abcmeta_register, METH_VARARGS,
-        _register_doc},
-    {"__instancecheck__", (PyCFunction)abcmeta_instancecheck, METH_VARARGS,
-        PyDoc_STR("Override for isinstance(instance, cls).")},
-    {"__subclasscheck__", (PyCFunction)abcmeta_subclasscheck, METH_VARARGS,
-        PyDoc_STR("Override for issubclass(subclass, cls).")},
-    {"_dump_registry", (PyCFunction)abcmeta_dump, METH_VARARGS,
-        PyDoc_STR("Debug helper to print the ABC registry.")},
-    {NULL,      NULL},
-};
-
-static PyMemberDef abc_members[] = {
-    {"_abc_registry", T_OBJECT, offsetof(abc, abc_registry), READONLY,
-     PyDoc_STR("ABC registry (private).")},
-    {"_abc_cache", T_OBJECT, offsetof(abc, abc_cache), READONLY,
-     PyDoc_STR("ABC positive cache (private).")},
-    {"_abc_negative_cache", T_OBJECT, offsetof(abc, abc_negative_cache), READONLY,
-     PyDoc_STR("ABC negative cache (private).")},
-    {"_abc_negative_cache_version", T_OBJECT, offsetof(abc, abc_negative_cache), READONLY,
-     PyDoc_STR("ABC negative cache version (private).")},
-    {NULL}
-};
-
-PyDoc_STRVAR(abcmeta_doc,
- "Metaclass for defining Abstract Base Classes (ABCs).\n\
-\n\
-Use this metaclass to create an ABC.  An ABC can be subclassed\n\
-directly, and then acts as a mix-in class.  You can also register\n\
-unrelated concrete classes (even built-in classes) and unrelated\n\
-ABCs as 'virtual subclasses' -- these and their descendants will\n\
-be considered subclasses of the registering ABC by the built-in\n\
-issubclass() function, but the registering ABC won't show up in\n\
-their MRO (Method Resolution Order) nor will method\n\
-implementations defined by the registering ABC be callable (not\n\
-even via super()).");
-
-PyTypeObject ABCMeta = {
-    PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
-    "ABCMeta",                                  /* tp_name */
-    sizeof(abc),                                /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    (destructor)abcmeta_dealloc,                /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_VERSION_TAG |
-        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TYPE_SUBCLASS,         /* tp_flags */
-    abcmeta_doc,                                /* tp_doc */
-    abcmeta_traverse,                           /* tp_traverse */
-    (inquiry)abcmeta_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    abcmeta_methods,                            /* tp_methods */
-    abc_members,                                /* tp_members */
-    0,                                          /* tp_getset */
-    DEFERRED_ADDRESS(&PyType_Type),             /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    abcmeta_new,                                /* tp_new */
-    0,                                          /* tp_free */
-    0,                                          /* tp_is_gc */
-};
 
 PyDoc_STRVAR(_cache_token_doc,
 "Returns the current ABC cache token.\n\
@@ -610,19 +473,5 @@ static struct PyModuleDef _abcmodule = {
 PyMODINIT_FUNC
 PyInit__abc(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_abcmodule);
-    if (m == NULL)
-        return NULL;
-    ABCMeta.tp_base = &PyType_Type;
-    if (PyType_Ready(&ABCMeta) < 0) {
-        return NULL;
-    }
-    Py_INCREF(&ABCMeta);
-    if (PyModule_AddObject(m, "ABCMeta",
-                           (PyObject *) &ABCMeta) < 0) {
-        return NULL;
-    }
-    return m;
+    return PyModule_Create(&_abcmodule);
 }
