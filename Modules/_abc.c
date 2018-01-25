@@ -34,6 +34,7 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ns, *bases, *items, *abstracts, *base_abstracts;
     PyObject *key, *value, *item, *iter;
     Py_ssize_t pos = 0;
+    int ret;
     result = (abc *)PyType_Type.tp_new(type, args, kwds);
     if (!result) {
         return NULL;
@@ -88,26 +89,22 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     bases = PyTuple_GET_ITEM(args, 1);
     for (pos = 0; pos < PyTuple_Size(bases); pos++) {
         item = PyTuple_GET_ITEM(bases, pos);
-        base_abstracts = _PyObject_GetAttrId(item, &PyId___abstractmethods__);
-        if (!base_abstracts) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                goto error;
-            }
-            PyErr_Clear();
+        ret = _PyObject_LookupAttrId(item, &PyId___abstractmethods__, &base_abstracts);
+        if (ret < 0) {
+            goto error;
+        } else if (!ret) {
             continue;
         }
         if (!(iter = PyObject_GetIter(base_abstracts))) {
             goto error;
         }
         while ((key = PyIter_Next(iter))) {
-            value = PyObject_GetAttr((PyObject *)result, key);
-            if (!value) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    Py_DECREF(key);
-                    Py_DECREF(iter);
-                    goto error;
-                }
-                PyErr_Clear();
+            ret = _PyObject_LookupAttr((PyObject *)result, key, &value);
+            if (ret < 0) {
+                Py_DECREF(key);
+                Py_DECREF(iter);
+                goto error;
+            } else if (!ret) {
                 Py_DECREF(key);
                 continue;
             }
