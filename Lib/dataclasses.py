@@ -229,7 +229,7 @@ def _tuple_str(obj_name, fields):
     #  return "(self.x,self.y)".
 
     # Special case for the 0-tuple.
-    if len(fields) == 0:
+    if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
@@ -373,7 +373,7 @@ def _init_fn(fields, frozen, has_post_init, self_name):
         body_lines += [f'{self_name}.{_POST_INIT_NAME}({params_str})']
 
     # If no body lines, use 'pass'.
-    if len(body_lines) == 0:
+    if not body_lines:
         body_lines = ['pass']
 
     locals = {f'_type_{f.name}': f.type for f in fields}
