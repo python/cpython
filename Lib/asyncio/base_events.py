@@ -169,35 +169,41 @@ class _SendfileFallbackProtocol(protocols.Protocol):
         transp.pause_reading()
         transp.set_protocol(self)
         if self._should_resume_writing:
-            self._paused = self._transport._loop.create_future()
+            self._write_ready_fut = self._transport._loop.create_future()
         else:
-            self._paused = None
+            self._write_ready_fut = None
+
+    async def drain(self):
+        fut = self._write_ready_fut
+        if fut is None:
+            return
+        await fut
 
     def connection_made(self, transport):
         raise RuntimeError("Invalid state: "
                            "connection should have been established already.")
 
     def connection_lost(self, exc):
-        if self._paused is not None:
+        if self._write_ready_fut is not None:
             # Never happens if peer disconnects after sending the whole content
             # Thus disconnection is always an exception from user perspective
             if exc is None:
-                self._paused.set_exception(
+                self._write_ready_fut.set_exception(
                     ConnectionError("Connection is closed by peer"))
             else:
-                self._paused.set_exception(exc)
+                self._write_ready_fut.set_exception(exc)
         self._proto.connection_lost(exc)
 
     def pause_writing(self):
-        if self._paused is not None:
+        if self._write_ready_fut is not None:
             return
-        self._paused = self._transport._loop.create_future()
+        self._write_ready_fut = self._transport._loop.create_future()
 
     def resume_writing(self):
-        if self._paused is None:
+        if self._write_ready_fut is None:
             return
-        self._paused.set_result(False)
-        self._paused = None
+        self._write_ready_fut.set_result(False)
+        self._write_ready_fut = None
 
     def data_received(self, data):
         raise RuntimeError("Invalid state: reading should be paused")
@@ -209,8 +215,8 @@ class _SendfileFallbackProtocol(protocols.Protocol):
         self._transport.set_protocol(self._proto)
         if self._should_resume_reading:
             self._transport.resume_reading()
-        if self._paused is not None:
-            await self._paused
+        if self._write_ready_fut is not None:
+            await self._write_ready_fut
         if self._should_resume_writing:
             self._proto.resume_writing()
 
@@ -1027,9 +1033,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     blocksize = min(count - total_sent, blocksize)
                     if blocksize <= 0:
                         return total_sent
-                fut = proto._paused
-                if fut is not None:
-                    await fut
+                await proto.drain()
                 view = memoryview(buf)[:blocksize]
                 read = file.readinto(view)
                 if not read:
