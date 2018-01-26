@@ -1420,12 +1420,15 @@ class Popen(object):
 
                         if tmp_stdin is not None:
                             os.dup2(tmp_stdin, sys.stdin.fileno())
+                            os.close(tmp_stdin)
 
                         if tmp_stdout is not None:
                             os.dup2(tmp_stdout, sys.stdout.fileno())
+                            os.close(tmp_stdout)
 
                         if tmp_stderr is not None:
                             os.dup2(tmp_stderr, sys.stderr.fileno())
+                            os.close(tmp_stderr)
 
 
                     else:

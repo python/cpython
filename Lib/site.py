@@ -568,10 +568,6 @@ def main():
     execsitecustomize()
     if ENABLE_USER_SITE:
         execusercustomize()
-    #Hack Solution since def loc is /usr/root/gnu/bin and we want /usr/root/
-    # this is all to get -E to work
-    if(sys.platform == "vxworks"):
-        sys.path.append("../../")
 
 # Prevent extending of sys.path when python was started with -S and
 # site is imported later.

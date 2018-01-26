@@ -353,7 +353,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
 #ifdef MS_WINDOWS
     flags |= O_NOINHERIT;
-#elif defined(O_CLOEXEC) && !defined(__VXWORKS__) // VXWorks doesnt support O_CLOEXEC
+#elif defined(O_CLOEXEC)// && !defined(__VXWORKS__) // VXWorks doesnt support O_CLOEXEC
     flags |= O_CLOEXEC;
 #endif
 
