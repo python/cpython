@@ -1164,11 +1164,7 @@ channelid_hash(PyObject *self)
 static PyObject *
 channelid_richcompare(PyObject *self, PyObject *other, int op)
 {
-    switch(op) {
-    case Py_LT:
-    case Py_LE:
-    case Py_GT:
-    case Py_GE:
+    if (op != Py_EQ && op != Py_NE) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
