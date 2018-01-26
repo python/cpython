@@ -463,22 +463,22 @@ Here is a brief demonstration::
    >>> a = set('abracadabra')
    >>> b = set('alacazam')
    >>> a                                  # unique letters in a
-   {'a', 'r', 'b', 'c', 'd'}
+   {'a', 'b', 'c', 'd', 'r'}
    >>> a - b                              # letters in a but not in b
-   {'r', 'd', 'b'}
+   {'b', 'd', 'r'}
    >>> a | b                              # letters in a or b or both
-   {'a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'}
+   {'a', 'b', 'c', 'd', 'l', 'm', 'r', 'z'}
    >>> a & b                              # letters in both a and b
    {'a', 'c'}
    >>> a ^ b                              # letters in a or b but not both
-   {'r', 'd', 'b', 'm', 'z', 'l'}
+   {'b', 'd', 'l', 'm', 'r', 'z'}
 
 Similarly to :ref:`list comprehensions <tut-listcomps>`, set comprehensions
 are also supported::
 
    >>> a = {x for x in 'abracadabra' if x not in 'abc'}
    >>> a
-   {'r', 'd'}
+   {'d', 'r'}
 
 
 .. _tut-dictionaries:
