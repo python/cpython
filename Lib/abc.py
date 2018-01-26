@@ -4,6 +4,29 @@
 """Abstract Base Classes (ABCs) according to PEP 3119."""
 
 
+def get_cache_token():
+    """Returns the current ABC cache token.
+
+    The token is an opaque object (supporting equality testing) identifying the
+    current version of the ABC cache for virtual subclasses. The token changes
+    with every call to ``register()`` on any ABC.
+    """
+    return ABCMeta._abc_invalidation_counter
+
+
+_C_speedup = False
+
+try:
+    from _abc import (get_cache_token, _abc_init, _abc_register,
+                      _abc_instancecheck, _abc_subclasscheck, _get_dump,
+                      _reset_registry, _reset_caches)
+except ImportError:
+    # We postpone this import to speed-up Python start-up time
+    from _weakrefset import WeakSet
+else:
+    _C_speedup = True
+
+
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.
 
@@ -25,8 +48,7 @@ def abstractmethod(funcobj):
 
 
 class abstractclassmethod(classmethod):
-    """
-    A decorator indicating abstract classmethods.
+    """A decorator indicating abstract classmethods.
 
     Similar to abstractmethod.
 
@@ -49,8 +71,7 @@ class abstractclassmethod(classmethod):
 
 
 class abstractstaticmethod(staticmethod):
-    """
-    A decorator indicating abstract staticmethods.
+    """A decorator indicating abstract staticmethods.
 
     Similar to abstractmethod.
 
@@ -73,8 +94,7 @@ class abstractstaticmethod(staticmethod):
 
 
 class abstractproperty(property):
-    """
-    A decorator indicating abstract properties.
+    """A decorator indicating abstract properties.
 
     Requires that the metaclass is ABCMeta or derived from it.  A
     class that has a metaclass derived from ABCMeta cannot be
@@ -105,7 +125,6 @@ class abstractproperty(property):
 
 
 class ABCMeta(type):
-
     """Metaclass for defining Abstract Base Classes (ABCs).
 
     Use this metaclass to create an ABC.  An ABC can be subclassed
@@ -117,7 +136,6 @@ class ABCMeta(type):
     their MRO (Method Resolution Order) nor will method
     implementations defined by the registering ABC be callable (not
     even via super()).
-
     """
 
     # A global counter that is incremented each time a class is
@@ -129,6 +147,9 @@ class ABCMeta(type):
 
     def __new__(mcls, name, bases, namespace, **kwargs):
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
+        if _C_speedup:
+            _abc_init(cls)
+            return cls
         # Compute set of abstract method names
         abstracts = {name
                      for name, value in namespace.items()
@@ -151,6 +172,9 @@ class ABCMeta(type):
 
         Returns the subclass, to allow usage as a class decorator.
         """
+        if _C_speedup:
+            _abc_register(cls, subclass)
+            return subclass
         if not isinstance(subclass, type):
             raise TypeError("Can only register classes")
         if issubclass(subclass, cls):
@@ -166,17 +190,28 @@ class ABCMeta(type):
 
     def _dump_registry(cls, file=None):
         """Debug helper to print the ABC registry."""
-        print("Class: %s.%s" % (cls.__module__, cls.__qualname__), file=file)
-        print("Inv.counter: %s" % ABCMeta._abc_invalidation_counter, file=file)
+        print(f"Class: {cls.__module__}.{cls.__qualname__}"), file=file)
+        print(f"Inv. counter: {get_cache_token()}", file=file)
+        if _C_speedup:
+            (_abc_registry, _abc_cache, _abc_negative_cache,
+             _abc_negative_cache_version) = _get_dump(cls)
+            print(f"_abc_registry: {_abc_registry!r}", file=file)
+            print(f"_abc_cache: {_abc_cache!r}", file=file)
+            print(f"_abc_negative_cache: {_abc_negative_cache!r}", file=file)
+            print(f"_abc_negative_cache_version: {_abc_negative_cache_version!r}",
+                  file=file)
+            return
         for name in cls.__dict__:
             if name.startswith("_abc_"):
                 value = getattr(cls, name)
                 if isinstance(value, WeakSet):
                     value = set(value)
-                print("%s: %r" % (name, value), file=file)
+                print(f"{name}: {value!r}", file=file)
 
     def __instancecheck__(cls, instance):
         """Override for isinstance(instance, cls)."""
+        if _C_speedup:
+            return _abc_instancecheck(cls, instance)
         # Inline the cache checking
         subclass = instance.__class__
         if subclass in cls._abc_cache:
@@ -193,6 +228,8 @@ class ABCMeta(type):
 
     def __subclasscheck__(cls, subclass):
         """Override for issubclass(subclass, cls)."""
+        if _C_speedup:
+            return _abc_subclasscheck(cls, subclass)
         # Check cache
         if subclass in cls._abc_cache:
             return True
@@ -229,23 +266,6 @@ class ABCMeta(type):
         # No dice; update negative cache
         cls._abc_negative_cache.add(subclass)
         return False
-
-
-def get_cache_token():
-    """Returns the current ABC cache token.
-
-    The token is an opaque object (supporting equality testing) identifying the
-    current version of the ABC cache for virtual subclasses. The token changes
-    with every call to ``register()`` on any ABC.
-    """
-    return ABCMeta._abc_invalidation_counter
-
-
-try:
-    from _abc import ABCMeta, get_cache_token
-except ImportError:
-    # We postpone this import to speed-up Python start-up time
-    from _weakrefset import WeakSet
 
 
 class ABC(metaclass=ABCMeta):
