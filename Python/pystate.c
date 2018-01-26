@@ -1108,8 +1108,8 @@ int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
     PyThreadState *tstate = PyThreadState_Get();
-    if (tstate == NULL)
-        return -1;
+    // PyThreadState_Get() aborts if lookup fails, so we don't need
+    // to check the result for NULL.
     PyInterpreterState *interp = tstate->interp;
 
     // Reset data before re-populating.

@@ -10,11 +10,9 @@
 static PyInterpreterState *
 _get_current(void)
 {
-    PyThreadState *tstate;
-
-    tstate = PyThreadState_Get();
-    if (tstate == NULL)
-        return NULL;
+    PyThreadState *tstate = PyThreadState_Get();
+    // PyThreadState_Get() aborts if lookup fails, so we don't need
+    // to check the result for NULL.
     return tstate->interp;
 }
 
