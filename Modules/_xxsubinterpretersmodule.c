@@ -47,21 +47,21 @@ _coerce_id(PyObject *id)
 
 /* data-sharing-specific code ***********************************************/
 
-struct _shareditem {
+typedef struct _shareditem {
     Py_UNICODE *name;
     Py_ssize_t namelen;
     _PyCrossInterpreterData data;
-};
+} _shareditem;
 
 void
-_sharedns_clear(struct _shareditem *shared)
+_sharedns_clear(_shareditem *shared)
 {
-    for (struct _shareditem *item=shared; item->name != NULL; item += 1) {
+    for (_shareditem *item=shared; item->name != NULL; item += 1) {
         _PyCrossInterpreterData_Release(&item->data);
     }
 }
 
-static struct _shareditem *
+static _shareditem *
 _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
 {
     if (shareable == NULL || shareable == Py_None) {
@@ -74,12 +74,12 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
         return NULL;
     }
 
-    struct _shareditem *shared = PyMem_NEW(struct _shareditem, len+1);
+    _shareditem *shared = PyMem_NEW(_shareditem, len+1);
     if (shared == NULL) {
         return NULL;
     }
     for (Py_ssize_t i=0; i < len; i++) {
-        *(shared + i) = (struct _shareditem){0};
+        *(shared + i) = (_shareditem){0};
     }
     Py_ssize_t pos = 0;
     for (Py_ssize_t i=0; i < len; i++) {
@@ -87,7 +87,7 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
         if (PyDict_Next(shareable, &pos, &key, &value) == 0) {
             break;
         }
-        struct _shareditem *item = shared + i;
+        _shareditem *item = shared + i;
 
         if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
             break;
@@ -108,7 +108,7 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
 }
 
 static int
-_shareditem_apply(struct _shareditem *item, PyObject *ns)
+_shareditem_apply(_shareditem *item, PyObject *ns)
 {
     PyObject *name = PyUnicode_FromUnicode(item->name, item->namelen);
     if (name == NULL) {
@@ -130,14 +130,14 @@ _shareditem_apply(struct _shareditem *item, PyObject *ns)
 // simulate, a la traceback.TracebackException), and even chain, a copy
 // of the exception in the calling interpreter.
 
-struct _shared_exception {
+typedef struct _shared_exception {
     char *msg;
-};
+} _shared_exception;
 
-static struct _shared_exception *
+static _shared_exception *
 _get_shared_exception(void)
 {
-    struct _shared_exception *err = PyMem_NEW(struct _shared_exception, 1);
+    _shared_exception *err = PyMem_NEW(_shared_exception, 1);
     if (err == NULL) {
         return NULL;
     }
@@ -184,7 +184,7 @@ interp_exceptions_init(PyObject *ns)
 }
 
 static void
-_apply_shared_exception(struct _shared_exception *exc)
+_apply_shared_exception(_shared_exception *exc)
 {
     PyErr_SetString(RunFailedError, exc->msg);
 }
@@ -246,16 +246,16 @@ channel_exceptions_init(PyObject *ns)
 
 struct _channelend;
 
-struct _channelend {
+typedef struct _channelend {
     struct _channelend *next;
     int64_t interp;
     int open;
-};
+} _channelend;
 
-static struct _channelend *
+static _channelend *
 _channelend_new(int64_t interp)
 {
-    struct _channelend *end = PyMem_Malloc(sizeof(struct _channelend));
+    _channelend *end = PyMem_Malloc(sizeof(_channelend));
     if (end == NULL) {
         return NULL;
     }
@@ -269,19 +269,19 @@ _channelend_new(int64_t interp)
 }
 
 static void
-_channelend_free_all(struct _channelend *end) {
+_channelend_free_all(_channelend *end) {
     while (end != NULL) {
-        struct _channelend *last = end;
+        _channelend *last = end;
         end = end->next;
         PyMem_Free(last);
     }
 }
 
-static struct _channelend *
-_channelend_find(struct _channelend *first, int64_t interp, struct _channelend **pprev)
+static _channelend *
+_channelend_find(_channelend *first, int64_t interp, _channelend **pprev)
 {
-    struct _channelend *prev = NULL;
-    struct _channelend *end = first;
+    _channelend *prev = NULL;
+    _channelend *end = first;
     while (end != NULL) {
         if (end->interp == interp) {
             break;
@@ -297,10 +297,10 @@ _channelend_find(struct _channelend *first, int64_t interp, struct _channelend *
 
 struct _channelitem;
 
-struct _channelitem {
+typedef struct _channelitem {
     _PyCrossInterpreterData *data;
     struct _channelitem *next;
-};
+} _channelitem;
 
 struct _channel;
 
@@ -310,8 +310,8 @@ typedef struct _channel {
     int open;
 
     int64_t count;
-    struct _channelitem *first;
-    struct _channelitem *last;
+    _channelitem *first;
+    _channelitem *last;
 
     // Note that the list entries are never removed for interpreter
     // for which the channel is closed.  This should be a problem in
@@ -319,8 +319,8 @@ typedef struct _channel {
     // interpreter is destroyed.
     int64_t numsendopen;
     int64_t numrecvopen;
-    struct _channelend *send;
-    struct _channelend *recv;
+    _channelend *send;
+    _channelend *recv;
 } _PyChannelState;
 
 static _PyChannelState *
@@ -350,10 +350,10 @@ _channel_new(void)
     return chan;
 }
 
-static struct _channelend *
-_channel_add_end(_PyChannelState *chan, struct _channelend *prev, int64_t interp, int send)
+static _channelend *
+_channel_add_end(_PyChannelState *chan, _channelend *prev, int64_t interp, int send)
 {
-    struct _channelend *end = _channelend_new(interp);
+    _channelend *end = _channelend_new(interp);
     if (end == NULL) {
         return NULL;
     }
@@ -378,7 +378,7 @@ _channel_add_end(_PyChannelState *chan, struct _channelend *prev, int64_t interp
     return end;
 }
 
-static struct _channelend *
+static _channelend *
 _channel_associate_end(_PyChannelState *chan, int64_t interp, int send)
 {
     if (!chan->open) {
@@ -386,8 +386,8 @@ _channel_associate_end(_PyChannelState *chan, int64_t interp, int send)
         return NULL;
     }
 
-    struct _channelend *prev;
-    struct _channelend *end = _channelend_find(send ? chan->send : chan->recv, interp, &prev);
+    _channelend *prev;
+    _channelend *end = _channelend_find(send ? chan->send : chan->recv, interp, &prev);
     if (end != NULL) {
         if (!end->open) {
             PyErr_SetString(ChannelClosedError, "channel already closed");
@@ -400,7 +400,7 @@ _channel_associate_end(_PyChannelState *chan, int64_t interp, int send)
 }
 
 static void
-_channel_close_channelend(_PyChannelState *chan, struct _channelend *end, int send)
+_channel_close_channelend(_PyChannelState *chan, _channelend *end, int send)
 {
     end->open = 0;
     if (send) {
@@ -422,8 +422,8 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interp, int which)
         goto done;
     }
 
-    struct _channelend *prev;
-    struct _channelend *end;
+    _channelend *prev;
+    _channelend *end;
     if (which >= 0) {  // send/both
         end = _channelend_find(chan->send, interp, &prev);
         if (end == NULL) {
@@ -476,7 +476,7 @@ _channel_close_all(_PyChannelState *chan)
     // the channel as closed already.
 
     // Ensure all the "send"-associated interpreters are closed.
-    struct _channelend *end;
+    _channelend *end;
     for (end = chan->send; end != NULL; end = end->next) {
         _channel_close_channelend(chan, end, 1);
     }
@@ -502,7 +502,7 @@ _channel_add(_PyChannelState *chan, int64_t interp, _PyCrossInterpreterData *dat
         goto done;
     }
 
-    struct _channelitem *item = PyMem_Malloc(sizeof(struct _channelitem));
+    _channelitem *item = PyMem_Malloc(sizeof(_channelitem));
     if (item == NULL) {
         goto done;
     }
@@ -530,7 +530,7 @@ _channel_next(_PyChannelState *chan, int64_t interp)
         goto done;
     }
 
-    struct _channelitem *item = chan->first;
+    _channelitem *item = chan->first;
     if (item == NULL) {
         goto done;
     }
@@ -551,11 +551,11 @@ done:
 static void
 _channel_clear(_PyChannelState *chan)
 {
-    struct _channelitem *item = chan->first;
+    _channelitem *item = chan->first;
     while (item != NULL) {
         _PyCrossInterpreterData_Release(item->data);
         PyMem_Free(item->data);
-        struct _channelitem *last = item;
+        _channelitem *last = item;
         item = item->next;
         PyMem_Free(last);
     }
@@ -578,17 +578,17 @@ _channel_free(_PyChannelState *chan)
 
 struct _channelref;
 
-struct _channelref {
+typedef struct _channelref {
     int64_t id;
     _PyChannelState *chan;
     struct _channelref *next;
     Py_ssize_t objcount;
-};
+} _channelref;
 
-static struct _channelref *
+static _channelref *
 _channelref_new(int64_t id, _PyChannelState *chan)
 {
-    struct _channelref *ref = PyMem_Malloc(sizeof(struct _channelref));
+    _channelref *ref = PyMem_Malloc(sizeof(_channelref));
     if (ref == NULL) {
         return NULL;
     }
@@ -599,11 +599,11 @@ _channelref_new(int64_t id, _PyChannelState *chan)
     return ref;
 }
 
-static struct _channelref *
-_channelref_find(struct _channelref *first, int64_t id, struct _channelref **pprev)
+static _channelref *
+_channelref_find(_channelref *first, int64_t id, _channelref **pprev)
 {
-    struct _channelref *prev = NULL;
-    struct _channelref *ref = first;
+    _channelref *prev = NULL;
+    _channelref *ref = first;
     while (ref != NULL) {
         if (ref->id == id) {
             break;
@@ -617,15 +617,15 @@ _channelref_find(struct _channelref *first, int64_t id, struct _channelref **ppr
     return ref;
 }
 
-struct _channels {
+typedef struct _channels {
     PyThread_type_lock mutex;
-    struct _channelref *head;
+    _channelref *head;
     int64_t numopen;
     int64_t next_id;
-};
+} _channels;
 
 static int
-_channels_init(struct _channels *channels)
+_channels_init(_channels *channels)
 {
     if (channels->mutex == NULL) {
         channels->mutex = PyThread_allocate_lock();
@@ -642,7 +642,7 @@ _channels_init(struct _channels *channels)
 }
 
 static int64_t
-_channels_next_id(struct _channels *channels)  // needs lock
+_channels_next_id(_channels *channels)  // needs lock
 {
     int64_t id = channels->next_id;
     if (id < 0) {
@@ -656,7 +656,7 @@ _channels_next_id(struct _channels *channels)  // needs lock
 }
 
 static _PyChannelState *
-_channels_lookup(struct _channels *channels, int64_t id, PyThread_type_lock *pmutex)
+_channels_lookup(_channels *channels, int64_t id, PyThread_type_lock *pmutex)
 {
     _PyChannelState *chan = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
@@ -664,7 +664,7 @@ _channels_lookup(struct _channels *channels, int64_t id, PyThread_type_lock *pmu
         *pmutex = NULL;
     }
 
-    struct _channelref *ref = _channelref_find(channels->head, id, NULL);
+    _channelref *ref = _channelref_find(channels->head, id, NULL);
     if (ref == NULL) {
         PyErr_Format(ChannelNotFoundError, "channel %d not found", id);
         goto done;
@@ -688,7 +688,7 @@ done:
 }
 
 static int64_t
-_channels_add(struct _channels *channels, _PyChannelState *chan)
+_channels_add(_channels *channels, _PyChannelState *chan)
 {
     int64_t cid = -1;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
@@ -698,7 +698,7 @@ _channels_add(struct _channels *channels, _PyChannelState *chan)
     if (id < 0) {
         goto done;
     }
-    struct _channelref *ref = _channelref_new(id, chan);
+    _channelref *ref = _channelref_new(id, chan);
     if (ref == NULL) {
         goto done;
     }
@@ -716,7 +716,7 @@ done:
 }
 
 static int
-_channels_close(struct _channels *channels, int64_t cid, _PyChannelState **pchan)
+_channels_close(_channels *channels, int64_t cid, _PyChannelState **pchan)
 {
     int res = -1;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
@@ -724,7 +724,7 @@ _channels_close(struct _channels *channels, int64_t cid, _PyChannelState **pchan
         *pchan = NULL;
     }
 
-    struct _channelref *ref = _channelref_find(channels->head, cid, NULL);
+    _channelref *ref = _channelref_find(channels->head, cid, NULL);
     if (ref == NULL) {
         PyErr_Format(ChannelNotFoundError, "channel %d not found", cid);
         goto done;
@@ -751,7 +751,7 @@ done:
 }
 
 static void
-_channels_remove_ref(struct _channels *channels, struct _channelref *ref, struct _channelref *prev, _PyChannelState **pchan)
+_channels_remove_ref(_channels *channels, _channelref *ref, _channelref *prev, _PyChannelState **pchan)
 {
     if (ref == channels->head) {
         channels->head = ref->next;
@@ -768,7 +768,7 @@ _channels_remove_ref(struct _channels *channels, struct _channelref *ref, struct
 }
 
 static int
-_channels_remove(struct _channels *channels, int64_t id, _PyChannelState **pchan)
+_channels_remove(_channels *channels, int64_t id, _PyChannelState **pchan)
 {
     int res = -1;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
@@ -777,8 +777,8 @@ _channels_remove(struct _channels *channels, int64_t id, _PyChannelState **pchan
         *pchan = NULL;
     }
 
-    struct _channelref *prev = NULL;
-    struct _channelref *ref = _channelref_find(channels->head, id, &prev);
+    _channelref *prev = NULL;
+    _channelref *ref = _channelref_find(channels->head, id, &prev);
     if (ref == NULL) {
         PyErr_Format(ChannelNotFoundError, "channel %d not found", id);
         goto done;
@@ -793,12 +793,12 @@ done:
 }
 
 static int
-_channels_add_id_object(struct _channels *channels, int64_t id)
+_channels_add_id_object(_channels *channels, int64_t id)
 {
     int res = -1;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
 
-    struct _channelref *ref = _channelref_find(channels->head, id, NULL);
+    _channelref *ref = _channelref_find(channels->head, id, NULL);
     if (ref == NULL) {
         PyErr_Format(ChannelNotFoundError, "channel %d not found", id);
         goto done;
@@ -812,12 +812,12 @@ done:
 }
 
 static void
-_channels_drop_id_object(struct _channels *channels, int64_t id)
+_channels_drop_id_object(_channels *channels, int64_t id)
 {
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
 
-    struct _channelref *prev = NULL;
-    struct _channelref *ref = _channelref_find(channels->head, id, &prev);
+    _channelref *prev = NULL;
+    _channelref *ref = _channelref_find(channels->head, id, &prev);
     if (ref == NULL) {
         // Already destroyed.
         goto done;
@@ -838,7 +838,7 @@ done:
 }
 
 int64_t *
-_channels_list_all(struct _channels *channels, int64_t *count)
+_channels_list_all(_channels *channels, int64_t *count)
 {
     int64_t *cids = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
@@ -846,7 +846,7 @@ _channels_list_all(struct _channels *channels, int64_t *count)
     if (ids == NULL) {
         goto done;
     }
-    struct _channelref *ref = channels->head;
+    _channelref *ref = channels->head;
     for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
         ids[i] = ref->id;
     }
@@ -861,7 +861,7 @@ done:
 /* "high"-level channel-related functions */
 
 static int64_t
-_channel_create(struct _channels *channels)
+_channel_create(_channels *channels)
 {
     _PyChannelState *chan = _channel_new();
     if (chan == NULL) {
@@ -876,7 +876,7 @@ _channel_create(struct _channels *channels)
 }
 
 static int
-_channel_destroy(struct _channels *channels, int64_t id)
+_channel_destroy(_channels *channels, int64_t id)
 {
     _PyChannelState *chan = NULL;
     if (_channels_remove(channels, id, &chan) != 0) {
@@ -889,7 +889,7 @@ _channel_destroy(struct _channels *channels, int64_t id)
 }
 
 static int
-_channel_send(struct _channels *channels, int64_t id, PyObject *obj)
+_channel_send(_channels *channels, int64_t id, PyObject *obj)
 {
     PyInterpreterState *interp = _get_current();
     if (interp == NULL) {
@@ -928,7 +928,7 @@ _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
 }
 
 static PyObject *
-_channel_recv(struct _channels *channels, int64_t id)
+_channel_recv(_channels *channels, int64_t id)
 {
     PyInterpreterState *interp = _get_current();
     if (interp == NULL) {
@@ -962,7 +962,7 @@ _channel_recv(struct _channels *channels, int64_t id)
 }
 
 static int
-_channel_drop(struct _channels *channels, int64_t id, int send, int recv)
+_channel_drop(_channels *channels, int64_t id, int send, int recv)
 {
     PyInterpreterState *interp = _get_current();
     if (interp == NULL) {
@@ -984,7 +984,7 @@ _channel_drop(struct _channels *channels, int64_t id, int send, int recv)
 }
 
 static int
-_channel_close(struct _channels *channels, int64_t id)
+_channel_close(_channels *channels, int64_t id)
 {
     return _channels_close(channels, id, NULL);
 }
@@ -1000,11 +1000,11 @@ typedef struct channelid {
     PyObject_HEAD
     int64_t id;
     int end;
-    struct _channels *channels;
+    _channels *channels;
 } channelid;
 
 static channelid *
-newchannelid(PyTypeObject *cls, int64_t cid, int end, struct _channels *channels, int force)
+newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels, int force)
 {
     channelid *self = PyObject_New(channelid, cls);
     if (self == NULL) {
@@ -1027,7 +1027,7 @@ newchannelid(PyTypeObject *cls, int64_t cid, int end, struct _channels *channels
     return self;
 }
 
-static struct _channels * _global_channels(void);
+static _channels * _global_channels(void);
 
 static PyObject *
 channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
@@ -1075,7 +1075,7 @@ static void
 channelid_dealloc(PyObject *v)
 {
     int64_t cid = ((channelid *)v)->id;
-    struct _channels *channels = ((channelid *)v)->channels;
+    _channels *channels = ((channelid *)v)->channels;
     Py_TYPE(v)->tp_free(v);
 
     _channels_drop_id_object(channels, cid);
@@ -1364,8 +1364,8 @@ _ensure_not_running(PyInterpreterState *interp)
 
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
-            struct _shareditem *shared, Py_ssize_t num_shared,
-            struct _shared_exception **exc)
+            _shareditem *shared, Py_ssize_t num_shared,
+            _shared_exception **exc)
 {
     assert(num_shared >= 0);
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
@@ -1382,7 +1382,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     // Apply the cross-interpreter data.
     if (shared != NULL) {
         for (Py_ssize_t i=0; i < num_shared; i++) {
-            struct _shareditem *item = &shared[i];
+            _shareditem *item = &shared[i];
             if (_shareditem_apply(item, ns) != 0) {
                 Py_DECREF(ns);
                 goto error;
@@ -1417,7 +1417,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     }
 
     Py_ssize_t num_shared = -1;
-    struct _shareditem *shared = _get_shared_ns(shareables, &num_shared);
+    _shareditem *shared = _get_shared_ns(shareables, &num_shared);
     if (shared == NULL && PyErr_Occurred()) {
         return -1;
     }
@@ -1427,7 +1427,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     // Run the script.
-    struct _shared_exception *exc = NULL;
+    _shared_exception *exc = NULL;
     int result = _run_script(interp, codestr, shared, num_shared, &exc);
 
     // Switch back.
@@ -1460,7 +1460,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
    the data that we need to share between interpreters, so it cannot
    hold PyObject values. */
 static struct globals {
-    struct _channels channels;
+    _channels channels;
 } _globals = {0};
 
 static int
@@ -1472,7 +1472,7 @@ _init_globals(void)
     return 0;
 }
 
-static struct _channels *
+static _channels *
 _global_channels(void) {
     return &_globals.channels;
 }
