@@ -40,11 +40,13 @@ def __getattr__(name):
     global ProcessPoolExecutor, ThreadPoolExecutor
 
     if name == 'ProcessPoolExecutor':
-        from .process import ProcessPoolExecutor
-        return ProcessPoolExecutor
+        from .process import ProcessPoolExecutor as pe
+        ProcessPoolExecutor = pe
+        return pe
 
     if name == 'ThreadPoolExecutor':
-        from .thread import ThreadPoolExecutor
-        return ThreadPoolExecutor
+        from .thread import ThreadPoolExecutor as te
+        ThreadPoolExecutor = te
+        return te
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
