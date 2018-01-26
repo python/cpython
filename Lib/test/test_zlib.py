@@ -750,7 +750,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
-        # Register "1.2.3" as "1.2.3.0" or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
+        # Register "1.2.3" as "1.2.3.0"
+        # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
         v = zlib.ZLIB_RUNTIME_VERSION.split('-',1)[0].split('.')
         if len(v)<4:
             v.append('0')
@@ -762,6 +763,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             and ( v[1] > 2 ) or ( v[1] == 2 ) \
             and ( v[2] > 3 ) or ( v[2] == 3)  \
             and ( v[3] >= 5)
+        del v
         
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
