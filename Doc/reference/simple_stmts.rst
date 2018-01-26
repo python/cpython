@@ -853,12 +853,15 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-.. XXX change this if future is cleaned out
+The only feature in Python 3.7 that requires using the future statement is
+``annotations``.
 
-The features recognized by Python 3.0 are ``absolute_import``, ``division``,
-``generators``, ``unicode_literals``, ``print_function``, ``nested_scopes`` and
-``with_statement``.  They are all redundant because they are always enabled, and
-only kept for backwards compatibility.
+All historical features enabled by the future statement are still recognized
+by Python 3.  The list includes ``absolute_import``, ``division``,
+``generators``, ``generator_stop``, ``unicode_literals``,
+``print_function``, ``nested_scopes`` and ``with_statement``.  They are
+all redundant because they are always enabled, and only kept for
+backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating

@@ -1700,12 +1700,29 @@ error:
 }
 
 static int
+compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
+{
+    PyObject *ann_as_str;
+    ann_as_str = _PyAST_ExprAsUnicode(annotation, 1);
+    if (!ann_as_str) {
+        return 0;
+    }
+    ADDOP_N(c, LOAD_CONST, ann_as_str, consts);
+    return 1;
+}
+
+static int
 compiler_visit_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, PyObject *names)
 {
     if (annotation) {
         PyObject *mangled;
-        VISIT(c, expr, annotation);
+        if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+            VISIT(c, annexpr, annotation)
+        }
+        else {
+            VISIT(c, expr, annotation);
+        }
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
@@ -4688,7 +4705,12 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             if (!mangled) {
                 return 0;
             }
-            VISIT(c, expr, s->v.AnnAssign.annotation);
+            if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+                VISIT(c, annexpr, s->v.AnnAssign.annotation)
+            }
+            else {
+                VISIT(c, expr, s->v.AnnAssign.annotation);
+            }
             /* ADDOP_N decrefs its argument */
             ADDOP_N(c, STORE_ANNOTATION, mangled, names);
         }

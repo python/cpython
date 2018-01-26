@@ -179,6 +179,57 @@ a normal ``__getattr__`` method, except that it will be defined on module
        PEP written and implemented by Ivan Levkivskyi
 
 
+PEP 563: Postponed evaluation of annotations
+--------------------------------------------
+
+The advent of type hints in Python uncovered two glaring usability issues
+with the functionality of annotations added in :pep:`3107` and refined
+further in :pep:`526`:
+
+* annotations could only use names which were already available in the
+  current scope, in other words they didn't support forward references
+  of any kind; and
+
+* annotating source code had adverse effects on startup time of Python
+  programs.
+
+Both of these issues are fixed by postponing the evaluation of
+annotations.  Instead of compiling code which executes expressions in
+annotations at their definition time, the compiler stores the annotation
+in a string form equivalent to the AST of the expression in question.
+If needed, annotations can be resolved at runtime using
+``typing.get_type_hints()``.  In the common case where this is not
+required, the annotations are cheaper to store (since short strings
+are interned by the interpreter) and make startup time faster.
+
+Usability-wise, annotations now support forward references, making the
+following syntax valid::
+
+    class C:
+        @classmethod
+        def from_string(cls, source: str) -> C:
+            ...
+
+        def validate_b(self, obj: B) -> bool:
+            ...
+
+    class B:
+        ...
+
+Since this change breaks compatibility, the new behavior can be enabled
+on a per-module basis in Python 3.7 using a ``__future__`` import, like
+this::
+
+    from __future__ import annotations
+
+It will become the default in Python 4.0.
+
+.. seealso::
+
+    :pep:`563` -- Postponed evaluation of annotations
+       PEP written and implemented by Łukasz Langa.
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
