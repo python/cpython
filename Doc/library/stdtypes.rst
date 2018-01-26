@@ -1653,6 +1653,14 @@ expression support in the :mod:`re` module).
    from the "Alphabetic" property defined in the Unicode Standard.
 
 
+.. method:: str.isascii()
+
+   Return true if all characters in the string are ASCII, false otherwise.
+   ASCII characters are characters which :func:`ord` returns less than 128.
+
+   .. versionadded:: 3.7
+
+
 .. method:: str.isdecimal()
 
    Return true if all characters in the string are decimal
