@@ -1104,10 +1104,10 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. function:: pwritev(fd, buffers, offset, flags=0)
 
    Combines the functionality of :func:`os.writev` and :func:`os.pwrite`. It
-   writes the contents of *buffers* to file descriptor *fd*. *buffers* must be
-   a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
-   processed in array order. Entire contents of first buffer is written before
-   proceeding to second, and so on. The operating system may set a limit
+   writes the contents of *buffers* to file descriptor *fd* at offset *offset*.
+   *buffers* must be a sequence of :term:`bytes-like objects <bytes-like object>`.
+   Buffers are processed in array order. Entire contents of first buffer is written
+   before proceeding to second, and so on. The operating system may set a limit
    (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
    :func:`~os.pwritev` writes the contents of each object to the file descriptor
    and returns the total number of bytes written.
@@ -1116,17 +1116,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The *flags* argument contains a bitwise OR of zero or more of the following
    flags:
 
-       - RWF_DSYNC
-       - RWF_SYNC
+   - RWF_DSYNC
+   - RWF_SYNC
 
    :func:`~os.pwritev` will call *pwritev2* system call if available, which modifies
    the behavior on a per-call basis based on the value of the *flags* argument. The
    :func:`~os.pwritev2` function is required to pass flags.
 
-   *pwritev2* and *flags* different than zero are available since Linux version
-   4.7 and newer.
-
    The :func:`~os.pwritev2` function is required to pass flags.
+
+   *pwritev2* and *flags* different than zero are available since Linux version
+   4.7.
 
    Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
    OpenBSD (version 2.7 and newer).
@@ -1246,7 +1246,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    data into each buffer until it is full and then move on to the next buffer in
    the sequence to hold the rest of the data. Its fourth argument, *offset*,
    specifies the file offset at which the input operation is to be performed.
-   :func:`~os.preadv` return the total number of bytes read (which may be less than
+   :func:`~os.preadv` return the total number of bytes read (which can be less than
    the total capacity of all the objects).
 
    The flags argument contains a bitwise OR of zero or more of the following
@@ -1257,7 +1257,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    :func:`~os.preadv` will call *preadv2* system call if available, which modifies
    the behavior on a per-call basis based on the value of the *flags* argument. The
-   :func:`~os.preadv2` function is required to pass flags.
+   :c:func:`preadv2` function is required to pass flags.
 
    *preadv2* and flags different than zero are available since Linux version
    4.6 and newer.
