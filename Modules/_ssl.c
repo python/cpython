@@ -135,6 +135,18 @@ static void _PySSLFixErrno(void) {
 #  define OPENSSL_VERSION_1_1 1
 #endif
 
+/* LibreSSL quirks
+ *
+ * LibreSSL 2.6.1 no longer provides NPN support but does not set the
+ * designated OPENSSL_NO_NEXTPROTONEG feature flag. See upstream issue
+ * https://github.com/libressl-portable/portable/issues/368
+ */
+#if defined(LIBRESSL_VERSION_NUMBER) && !defined(TLSEXT_TYPE_next_proto_neg)
+#  ifndef OPENSSL_NO_NEXTPROTONEG
+#    define OPENSSL_NO_NEXTPROTONEG 1
+#  endif
+#endif
+
 /* Openssl comes with TLSv1.1 and TLSv1.2 between 1.0.0h and 1.0.1
     http://www.openssl.org/news/changelog.html
  */
