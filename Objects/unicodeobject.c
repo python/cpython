@@ -11614,14 +11614,14 @@ unicode_index(PyObject *self, PyObject *args)
 /*[clinic input]
 str.isascii as unicode_isascii
 
-Return True if the string is an ascii string, False otherwise.
+Return True if the string is an ASCII string, False otherwise.
 
-A string is ascii if all(ord(c) < 128 in string).
+A string is ASCII if all(ord(c) < 128 in string).
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isascii_impl(PyObject *self)
-/*[clinic end generated code: output=c5910d64b5a8003f input=73b30d38f16965cd]*/
+/*[clinic end generated code: output=c5910d64b5a8003f input=6ea6763eac6c0352]*/
 {
     if (PyUnicode_READY(self) == -1) {
         return NULL;
