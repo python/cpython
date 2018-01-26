@@ -1006,8 +1006,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if not fallback:
                     raise
         # the mode is FALLBACK or fallback is True
-        assert (mode is constants._SendfileMode.FALLBACK or mode is
-                constants._SendfileMode.TRY_NATIVE and fallback), mode
         return await self._sendfile_fallback(transport, file,
                                              offset, count)
 
