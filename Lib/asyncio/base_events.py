@@ -41,6 +41,7 @@ from . import futures
 from . import protocols
 from . import sslproto
 from . import tasks
+from . import transports
 from .log import logger
 
 

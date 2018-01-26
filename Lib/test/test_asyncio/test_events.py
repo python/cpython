@@ -2384,7 +2384,7 @@ class SendfileMixin:
         t = self.loop.create_task(coro())
         self.run_loop(fut)
         with self.assertRaisesRegex(RuntimeError,
-                                    r"loop\.sendfile\(\) is not finished"):
+                                    "sendfile is in progress"):
             cli_proto.transport.write(b'data')
         ret = self.run_loop(t)
         self.assertEqual(ret, len(self.DATA))

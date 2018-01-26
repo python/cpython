@@ -817,9 +817,6 @@ class _SelectorSocketTransport(_SelectorTransport):
         assert self._buffer, 'Data should not be empty'
 
         if self._conn_lost:
-            if self._empty_waiter is not None:
-                self._empty_waiter.set_exception(
-                    ConnectionError("Connection is closed by peer"))
             return
         try:
             n = self._sock.send(self._buffer)
@@ -853,6 +850,12 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def can_write_eof(self):
         return True
+
+    def _call_connection_lost(self, exc):
+        super()._call_connection_lost(exc)
+        if self._empty_waiter is not None:
+            self._empty_waiter.set_exception(
+                ConnectionError("Connection is closed by peer"))
 
     def _make_empty_waiter(self):
         if self._empty_waiter is not None:
