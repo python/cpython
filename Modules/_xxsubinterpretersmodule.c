@@ -154,7 +154,7 @@ _get_shared_exception(void)
     }
     if (msg == NULL) {
         err->msg = "unable to format exception";
-        return NULL;
+        return err;
     }
     err->msg = (char *)PyUnicode_AsUTF8(msg);
     if (err->msg == NULL) {
