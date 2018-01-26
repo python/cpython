@@ -64,8 +64,10 @@ _sharedns_clear(struct _shareditem *shared)
 static struct _shareditem *
 _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
 {
-    if (shareable == NULL || shareable == Py_None)
+    if (shareable == NULL || shareable == Py_None) {
+        *lenp = 0;
         return NULL;
+    }
     Py_ssize_t len = PyDict_Size(shareable);
     *lenp = len;
     if (len == 0)
@@ -1287,6 +1289,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
             struct _shareditem *shared, Py_ssize_t num_shared,
             struct _shared_exception **exc)
 {
+    assert(num_shared >= 0);
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
     if (main_mod == NULL)
         goto error;
@@ -1331,7 +1334,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     if (_ensure_not_running(interp) < 0)
         return -1;
 
-    Py_ssize_t num_shared;
+    Py_ssize_t num_shared = -1;
     struct _shareditem *shared = _get_shared_ns(shareables, &num_shared);
     if (shared == NULL && PyErr_Occurred())
         return -1;
