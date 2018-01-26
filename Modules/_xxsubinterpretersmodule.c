@@ -130,14 +130,14 @@ _shareditem_apply(_shareditem *item, PyObject *ns)
 // simulate, a la traceback.TracebackException), and even chain, a copy
 // of the exception in the calling interpreter.
 
-typedef struct _shared_exception {
+typedef struct _sharedexception {
     char *msg;
-} _shared_exception;
+} _sharedexception;
 
-static _shared_exception *
+static _sharedexception *
 _get_shared_exception(void)
 {
-    _shared_exception *err = PyMem_NEW(_shared_exception, 1);
+    _sharedexception *err = PyMem_NEW(_sharedexception, 1);
     if (err == NULL) {
         return NULL;
     }
@@ -184,7 +184,7 @@ interp_exceptions_init(PyObject *ns)
 }
 
 static void
-_apply_shared_exception(_shared_exception *exc)
+_apply_shared_exception(_sharedexception *exc)
 {
     PyErr_SetString(RunFailedError, exc->msg);
 }
@@ -1365,7 +1365,7 @@ _ensure_not_running(PyInterpreterState *interp)
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             _shareditem *shared, Py_ssize_t num_shared,
-            _shared_exception **exc)
+            _sharedexception **exc)
 {
     assert(num_shared >= 0);
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
@@ -1427,7 +1427,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     // Run the script.
-    _shared_exception *exc = NULL;
+    _sharedexception *exc = NULL;
     int result = _run_script(interp, codestr, shared, num_shared, &exc);
 
     // Switch back.
