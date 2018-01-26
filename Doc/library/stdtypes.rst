@@ -1656,7 +1656,8 @@ expression support in the :mod:`re` module).
 .. method:: str.isascii()
 
    Return true if all characters in the string are ASCII, false otherwise.
-   ASCII characters are characters which :func:`ord` returns less than 128.
+   ASCII characters have code points in the range U+0000-U+007F.
+   Empty string is ASCII string too.
 
    .. versionadded:: 3.7
 

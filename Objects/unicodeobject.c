@@ -11616,12 +11616,13 @@ str.isascii as unicode_isascii
 
 Return True if the string is an ASCII string, False otherwise.
 
-A string is ASCII if all(ord(c) < 128 in string).
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII string too.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isascii_impl(PyObject *self)
-/*[clinic end generated code: output=c5910d64b5a8003f input=6ea6763eac6c0352]*/
+/*[clinic end generated code: output=c5910d64b5a8003f input=b4856faff03f9dbd]*/
 {
     if (PyUnicode_READY(self) == -1) {
         return NULL;
