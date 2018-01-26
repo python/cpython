@@ -145,7 +145,8 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
 {
     assert(PyContextVar_CheckExact(var));
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
     if (ts->context == NULL) {
         goto not_found;
     }
