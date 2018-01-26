@@ -752,19 +752,19 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # wbits=0 only supported since zlib v1.2.3.5
         # Register "1.2.3" as "1.2.3.0"
         # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
-        v = zlib.ZLIB_RUNTIME_VERSION.split('-',1)[0].split('.')
-        if len(v)<4:
+        v = zlib.ZLIB_RUNTIME_VERSION.split('-', 1)[0].split('.')
+        if len(v) < 4:
             v.append('0')
         elif not v[-1].isnumeric():
-            v[-1]='0'
+            v[-1] = '0'
 
         v = tuple( map( int, v ) )
-        supports_wbits_0 = (v[0]> 1) or ( v[0] == 1 ) \
-            and ( v[1] > 2 ) or ( v[1] == 2 ) \
-            and ( v[2] > 3 ) or ( v[2] == 3)  \
-            and ( v[3] >= 5)
+        supports_wbits_0 = ( v[0] > 1 ) or ( v[0] == 1 ) \
+                and ( v[1] > 2 ) or ( v[1] == 2 ) \
+                and ( v[2] > 3 ) or ( v[2] == 3 ) \
+                and ( v[3] >= 5 )
         del v
-        
+
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
         self.assertEqual(zlib.decompress(zlib15, 15), HAMLET_SCENE)
