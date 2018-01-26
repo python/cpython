@@ -1573,10 +1573,12 @@ interp_list_all(PyObject *self)
     while (interp != NULL) {
         id = _get_id(interp);
         if (id == NULL) {
+            Py_DECREF(ids);
             return NULL;
         }
         // insert at front of list
         if (PyList_Insert(ids, 0, id) < 0) {
+            Py_DECREF(ids);
             return NULL;
         }
 
