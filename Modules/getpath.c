@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <string.h>
 
+
+
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
 #endif
@@ -178,6 +180,7 @@ isfile(wchar_t *filename)          /* Is file, not directory */
 static int
 ismodule(wchar_t *filename)        /* Is module -- check for .pyc too */
 {
+	printf("checking : %ls\n",filename);
     if (isfile(filename)) {
         return 1;
     }
@@ -259,13 +262,31 @@ joinpath(wchar_t *buffer, wchar_t *stuff)
     buffer[n+k] = '\0';
 }
 
+#ifdef __VXWORKS__
+
+// Vxworks has abs paths that dont start with /
+static int
+checkDev(wchar_t *p) {
+	int i = wcscspn(p,":");
+	int b = wcscspn(p,"/");
+	if( b < i )return 0;
+	return 1;
+}
+
+#endif
 
 /* copy_absolute requires that path be allocated at least
    MAXPATHLEN + 1 bytes and that p be no more than MAXPATHLEN bytes. */
 static void
 copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
 {
+	printf("ASD %ls \n", p);
+
+#ifdef __VXWORKS__
+	if (checkDev(&p) || p[0] == SEP) {
+#else
     if (p[0] == SEP) {
+#endif
         wcscpy(path, p);
     }
     else {
@@ -340,22 +361,16 @@ search_for_prefix(const _PyCoreConfig *core_config,
     }
 
     /* Search from argv0_path, until root is found */
-    printf("%ls\n",prefix);
     copy_absolute(prefix, calculate->argv0_path, MAXPATHLEN+1);
-    printf("%ls\n",calculate->argv0_path);
-    printf("%ls\n",prefix);
     do {
         n = wcslen(prefix);
-        printf("%zu\n",n);
         joinpath(prefix, calculate->lib_python);
         joinpath(prefix, LANDMARK);
         if (ismodule(prefix)) {
             return 1;
         }
         prefix[n] = L'\0';
-        printf("%ls\n", prefix);
         reduce(prefix);
-        printf("%ls\n", prefix);
     } while (prefix[0]);
 
     /* Look at configure's PREFIX */
@@ -377,7 +392,6 @@ calculate_prefix(const _PyCoreConfig *core_config,
                  PyCalculatePath *calculate, wchar_t *prefix)
 {
     calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
-    printf("%ls\n",prefix);
     if (!calculate->prefix_found) {
         if (!Py_FrozenFlag) {
             fprintf(stderr,
