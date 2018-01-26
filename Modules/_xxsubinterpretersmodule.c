@@ -974,7 +974,7 @@ static struct _channels * _global_channels(void);
 static PyObject *
 channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "send", "recv", "force"};
+    static char *kwlist[] = {"id", "send", "recv", "force", NULL};
     PyObject *id;
     int send = -1;
     int recv = -1;
