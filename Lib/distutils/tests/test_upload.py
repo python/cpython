@@ -146,12 +146,11 @@ class uploadTestCase(PyPIRCCommandTestCase):
             description='long description\r'
         )
         cmd = upload(dist)
-        cmd.show_response = 1
         cmd.ensure_finalized()
         cmd.run()
 
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2172')
+        self.assertEqual(headers['Content-length'], '2170')
         self.assertIn(b'long description\r', self.last_open.req.data)
 
     def test_upload_fails(self):
