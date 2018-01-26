@@ -2950,6 +2950,16 @@ place, and instead produce new objects.
       False
 
 
+.. method:: bytes.isascii()
+            bytearray.isascii()
+
+   Return true if the sequence is empty or all bytes in the sequence are ASCII,
+   false otherwise.
+   ASCII bytes are in the range 0-0x7F.
+
+   .. versionadded:: 3.7
+
+
 .. method:: bytes.isdigit()
             bytearray.isdigit()
 
