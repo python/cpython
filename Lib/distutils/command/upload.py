@@ -155,8 +155,6 @@ class upload(PyPIRCCommand):
                 body.write(fn)
                 body.write("\r\n\r\n")
                 body.write(value)
-                if value and value[-1] == '\r':
-                    body.write('\n')  # write an extra newline (lurve Macs)
         body.write(end_boundary)
         body = body.getvalue()
 
