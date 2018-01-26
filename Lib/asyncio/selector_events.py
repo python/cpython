@@ -783,8 +783,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         if self._eof:
             raise RuntimeError('Cannot call write() after write_eof()')
         if self._empty_waiter is not None:
-            raise RuntimeError('Cannot call write() when loop.sendfile() '
-                               'is not finished')
+            raise RuntimeError('unable to write; sendfile is in progress')
         if not data:
             return
 
