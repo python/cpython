@@ -1281,19 +1281,5 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
         self.assertEqual(code, 235)
 
 
-@support.reap_threads
-def test_main(verbose=None):
-    support.run_unittest(
-        BadHELOServerTests,
-        DebuggingServerTests,
-        GeneralTests,
-        NonConnectingTests,
-        SMTPAUTHInitialResponseSimTests,
-        SMTPSimTests,
-        TooLongLineTests,
-        SMTPUTF8SimTests,
-        )
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
