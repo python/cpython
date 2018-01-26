@@ -1566,8 +1566,14 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
 
 .. versionadded:: 3.5
    ``__class__`` module attribute.
+
 .. versionadded:: 3.7
    ``__getattr__`` and ``__dir__`` module attributes.
+
+.. seealso::
+
+   :pep:`562` - Module __getattr__ and __dir__
+      Describes the ``__getattr__`` and ``__dir__`` functions on modules.
 
 
 .. _descriptors:
