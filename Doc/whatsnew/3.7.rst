@@ -935,6 +935,12 @@ that may require changes to your code.
 Changes in Python behavior
 --------------------------
 
+* :pep:`479` is enabled for all code in Python 3.7, meaning that
+  :exc:`StopIteration` exceptions raised directly or indirectly in
+  coroutines and generators are transformed into :exc:`RuntimeError`
+  exceptions.
+  (Contributed by Yury Selivanov in :issue:`32670`.)
+
 * Due to an oversight, earlier Python versions erroneously accepted the
   following syntax::
 

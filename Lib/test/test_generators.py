@@ -265,25 +265,15 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
-    def test_stopiteration_warning(self):
+    def test_stopiteration_error(self):
         # See also PEP 479.
 
         def gen():
             raise StopIteration
             yield
 
-        with self.assertRaises(StopIteration), \
-             self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(gen())
-
-        with self.assertRaisesRegex(DeprecationWarning,
-                                    "generator .* raised StopIteration"), \
-             warnings.catch_warnings():
-
-            warnings.simplefilter('error')
-            next(gen())
-
 
     def test_tutorial_stopiteration(self):
         # Raise StopIteration" stops the generator too:
@@ -296,13 +286,7 @@ class ExceptionTest(unittest.TestCase):
         g = f()
         self.assertEqual(next(g), 1)
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            with self.assertRaises(StopIteration):
-                next(g)
-
-        with self.assertRaises(StopIteration):
-            # This time StopIteration isn't raised from the generator's body,
-            # hence no warning.
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(g)
 
     def test_return_tuple(self):
