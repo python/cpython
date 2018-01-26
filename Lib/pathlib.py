@@ -584,7 +584,9 @@ class _PathParents(Sequence):
 
 
 class PurePath(object):
-    """PurePath represents a filesystem path and offers operations which
+    """Deal with paths without any filesystem I/O.
+
+    PurePath represents a filesystem path and offers operations which
     don't imply any actual filesystem I/O.  Depending on your system,
     instantiating a PurePath will return either a PurePosixPath or a
     PureWindowsPath object.  You can also instantiate either of these classes
@@ -939,7 +941,9 @@ os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):
-    """On a POSIX system, instantiating a PurePath should return this object.
+    """PurePath subclass for non-Windows systems.
+
+    On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
     _flavour = _posix_flavour
@@ -947,7 +951,9 @@ class PurePosixPath(PurePath):
 
 
 class PureWindowsPath(PurePath):
-    """On a Windows system, instantiating a PurePath should return this object.
+    """PurePath subclass for Windows systems.
+
+    On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
     _flavour = _windows_flavour
@@ -958,7 +964,9 @@ class PureWindowsPath(PurePath):
 
 
 class Path(PurePath):
-    """Path represents a filesystem path but unlike PurePath, also offers
+    """PurePath subclass that can make system calls.
+
+    Path represents a filesystem path but unlike PurePath, also offers
     methods to do system calls on path objects. Depending on your system,
     instantiating a Path will return either a PosixPath or a WindowsPath
     object. You can also instantiate a PosixPath or WindowsPath directly,
@@ -1439,13 +1447,15 @@ class Path(PurePath):
 
 
 class PosixPath(Path, PurePosixPath):
-    """
+    """Path subclass for non-Windows systems.
+
     On a POSIX system, instantiating a Path should return this object.
     """
     __slots__ = ()
 
 class WindowsPath(Path, PureWindowsPath):
-    """
+    """Path subclass for Windows systems.
+
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
