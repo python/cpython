@@ -1,2 +1,2 @@
-Removing mutable defaults for mail_options and rcpt_options from
+Removed mutable defaults for mail_options and rcpt_options from
 `SMTP.send_message`
