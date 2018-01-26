@@ -391,9 +391,9 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       +------------------+---------------------+----------------------+
       | ``'file'``       | N/A                 | file name            |
       +------------------+---------------------+----------------------+
-      | ``'filename'``   | N/A                 | file name            |
+      | ``'filename'``   | SortKey.FILENAME    | file name            |
       +------------------+---------------------+----------------------+
-      | ``'module'``     | SortKey.FILENAME    | file name            |
+      | ``'module'``     | N/A                 | file name            |
       +------------------+---------------------+----------------------+
       | ``'ncalls'``     | N/A                 | call count           |
       +------------------+---------------------+----------------------+
