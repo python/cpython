@@ -738,6 +738,12 @@ _abc_subclasscheck(PyObject *self, PyObject *args)
         }
         return Py_False;
     }
+    if (ok != Py_NotImplemented) {
+        Py_DECREF(ok);
+        PyErr_SetString(PyExc_AssertionError, "__subclasshook__ must return either"
+                                              " False, True, or NotImplemented");
+        return NULL;
+    }
     Py_DECREF(ok);
     /* 4. Check if it's a direct subclass. */
     mro = ((PyTypeObject *)subclass)->tp_mro;
@@ -777,6 +783,10 @@ _abc_subclasscheck(PyObject *self, PyObject *args)
 
     /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    if(!PyList_Check(subclasses)) {
+        PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
+        return NULL;
+    }
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
         result = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
         if (result > 0) {
