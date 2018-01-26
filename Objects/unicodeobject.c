@@ -11612,6 +11612,28 @@ unicode_index(PyObject *self, PyObject *args)
 }
 
 /*[clinic input]
+str.isascii as unicode_isascii
+
+Return True if the string is an ascii string, False otherwise.
+
+A string is ascii if all(ord(c) < 128 in string).
+[clinic start generated code]*/
+
+static PyObject *
+unicode_isascii_impl(PyObject *self)
+/*[clinic end generated code: output=c5910d64b5a8003f input=73b30d38f16965cd]*/
+{
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+    if (PyUnicode_IS_ASCII(self)) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+/*[clinic input]
 str.islower as unicode_islower
 
 Return True if the string is a lowercase string, False otherwise.
@@ -13801,6 +13823,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_UPPER_METHODDEF
     {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
     {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    UNICODE_ISASCII_METHODDEF
     UNICODE_ISLOWER_METHODDEF
     UNICODE_ISUPPER_METHODDEF
     UNICODE_ISTITLE_METHODDEF
