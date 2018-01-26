@@ -1091,6 +1091,8 @@ class Path(PurePath):
         obj = self._from_parts([os.getcwd()] + self._parts, init=False)
         obj._init(template=self)
         return obj
+    
+    __abs__ = absolute
 
     def resolve(self, strict=False):
         """
