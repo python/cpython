@@ -159,7 +159,8 @@ def _run_until_complete_cb(fut):
 
 class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
-        # transport should be _FlowControlMixin instance
+        if not isinstance(transp, transports._FlowControlMixin):
+            raise TypeError("transport should be _FlowControlMixin instance")
         self._transport = transp
         self._proto = transp.get_protocol()
         self._should_resume_reading = transp.is_reading()
