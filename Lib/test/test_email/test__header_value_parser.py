@@ -490,6 +490,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_bare_quoted_string('  "foo"')
 
+    def test_get_bare_quoted_string_only_quotes(self):
+        self._test_get_x(parser.get_bare_quoted_string,
+                         '""', '""', '', [], '')
+
     def test_get_bare_quoted_string_following_wsp_preserved(self):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
@@ -1466,6 +1470,19 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsNone(angle_addr.domain)
         self.assertIsNone(angle_addr.route)
         self.assertEqual(angle_addr.addr_spec, '<>')
+
+    def test_get_angle_addr_qs_only_quotes(self):
+        angle_addr = self._test_get_x(parser.get_angle_addr,
+            '<""@example.com>',
+            '<""@example.com>',
+            '<""@example.com>',
+            [],
+            '')
+        self.assertEqual(angle_addr.token_type, 'angle-addr')
+        self.assertEqual(angle_addr.local_part, '')
+        self.assertEqual(angle_addr.domain, 'example.com')
+        self.assertIsNone(angle_addr.route)
+        self.assertEqual(angle_addr.addr_spec, '""@example.com')
 
     def test_get_angle_addr_with_cfws(self):
         angle_addr = self._test_get_x(parser.get_angle_addr,
