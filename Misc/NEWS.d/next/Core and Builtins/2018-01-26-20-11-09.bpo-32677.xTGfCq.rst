@@ -1,0 +1,2 @@
+Add ``str.isascii()`` method to check the string contains only ASCII
+characters or not.
