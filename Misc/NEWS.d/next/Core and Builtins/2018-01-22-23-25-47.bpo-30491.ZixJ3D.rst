@@ -1,0 +1,4 @@
+Added a new "unawaited coroutine tracking mode". For example, a test harness
+could use this to quickly and reliably check whether each test left out any
+``await``\s. See sys.{set,get}_unawaited_coroutine_enabled,
+sys.{have,get}_unawaited_coroutines.

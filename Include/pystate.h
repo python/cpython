@@ -283,6 +283,9 @@ typedef struct _ts {
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 
+    int unawaited_coroutine_tracking_enabled;
+    PyObject *first_unawaited_coroutine;
+
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 

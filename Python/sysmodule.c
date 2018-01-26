@@ -804,6 +804,63 @@ PyDoc_STRVAR(get_coroutine_wrapper_doc,
 Return the wrapper for coroutine objects set by sys.set_coroutine_wrapper."
 );
 
+/*[clinic input]
+sys.set_unawaited_coroutine_tracking_enabled
+
+  enabled: bool
+
+Enabled or disable tracking of unawaited coroutines.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_unawaited_coroutine_tracking_enabled_impl(PyObject *module,
+                                                  int enabled)
+/*[clinic end generated code: output=26db1eaf88614b63 input=1d7af84a358cf7c6]*/
+{
+    _PyEval_SetUnawaitedCoroutineTrackingEnabled(enabled);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_unawaited_coroutine_tracking_enabled -> bool
+
+Enabled or disable tracking of unawaited coroutines.
+[clinic start generated code]*/
+
+static int
+sys_get_unawaited_coroutine_tracking_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=dd5ddd90b7f740e3 input=5b28dd289a711f9d]*/
+{
+    return _PyEval_GetUnawaitedCoroutineTrackingEnabled();
+}
+
+/*[clinic input]
+sys.get_unawaited_coroutines
+
+Get a list of unawaited coroutines, clearing them from the internal list.
+
+Raises an error if unawaited coroutine tracking has not been enabled.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_unawaited_coroutines_impl(PyObject *module)
+/*[clinic end generated code: output=831af6614a871114 input=66db8bfa22fb0f46]*/
+{
+    return _PyEval_GetUnawaitedCoroutines();
+}
+
+/*[clinic input]
+sys.have_unawaited_coroutines -> bool
+
+Check whether there are any unawaited coroutines. Never fails.
+[clinic start generated code]*/
+
+static int
+sys_have_unawaited_coroutines_impl(PyObject *module)
+/*[clinic end generated code: output=be5c75d0e8ba3785 input=51f4a4455c44dc6e]*/
+{
+    return _PyEval_HaveUnawaitedCoroutines();
+}
 
 static PyTypeObject AsyncGenHooksType;
 
@@ -1571,6 +1628,10 @@ static PyMethodDef sys_methods[] = {
      set_coroutine_wrapper_doc},
     {"get_coroutine_wrapper", sys_get_coroutine_wrapper, METH_NOARGS,
      get_coroutine_wrapper_doc},
+    SYS_SET_UNAWAITED_COROUTINE_TRACKING_ENABLED_METHODDEF
+    SYS_GET_UNAWAITED_COROUTINE_TRACKING_ENABLED_METHODDEF
+    SYS_GET_UNAWAITED_COROUTINES_METHODDEF
+    SYS_HAVE_UNAWAITED_COROUTINES_METHODDEF
     {"set_asyncgen_hooks", (PyCFunction)sys_set_asyncgen_hooks,
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS,

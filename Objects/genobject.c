@@ -147,12 +147,72 @@ gen_dealloc(PyGenObject *gen)
     PyObject_GC_Del(gen);
 }
 
+static void
+push_unawaited_coroutine(PyThreadState *tstate, PyObject *new_coro)
+{
+    Py_INCREF(new_coro);
+    PyObject *old_coro = tstate->first_unawaited_coroutine;
+    /* We have:
+         PyThreadState <-> old_coro
+
+       We want:
+         PyThreadState <-> new_coro <-> old_coro
+
+       old_coro might be NULL.
+    */
+    /* PyThreadState -> new_coro */
+    tstate->first_unawaited_coroutine = new_coro;
+    /* PyThreadState <- new_coro */
+    ((PyCoroObject *)new_coro)->cr_prev_unawaited_ptr = (
+        &tstate->first_unawaited_coroutine);
+    /* new_coro -> old_coro */
+    ((PyCoroObject *)new_coro)->cr_next_unawaited = old_coro;
+    /* new_coro <- old_coro */
+    if (old_coro) {
+        ((PyCoroObject *)old_coro)->cr_prev_unawaited_ptr = (
+            &(((PyCoroObject *)new_coro)->cr_next_unawaited));
+    }
+}
+
+static void
+gen_clear_unawaited_tracking(PyGenObject *gen)
+{
+    if (!PyCoro_CheckExact((PyObject *)gen)) {
+        return;
+    }
+    PyCoroObject *coro = (PyCoroObject *)gen;
+    if (!coro->cr_prev_unawaited_ptr) {
+        return;
+    }
+    /* We have:
+         A <-> coro <-> B
+
+       We want:
+         A <-> B
+
+       B might be NULL.
+    */
+    /* A -> B */
+    (*coro->cr_prev_unawaited_ptr) = coro->cr_next_unawaited;
+    /* A <- B */
+    if (coro->cr_next_unawaited) {
+        PyCoroObject *next = (PyCoroObject *)coro->cr_next_unawaited;
+        next->cr_prev_unawaited_ptr = coro->cr_prev_unawaited_ptr;
+    }
+    /* clear coro */
+    coro->cr_next_unawaited = NULL;
+    coro->cr_prev_unawaited_ptr = NULL;
+    Py_DECREF((PyObject *)coro);
+}
+
 static PyObject *
 gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 {
     PyThreadState *tstate = PyThreadState_GET();
     PyFrameObject *f = gen->gi_frame;
     PyObject *result;
+
+    gen_clear_unawaited_tracking(gen);
 
     if (gen->gi_running) {
         const char *msg = "generator already executing";
@@ -440,6 +500,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
 {
     PyObject *yf = _PyGen_yf(gen);
     _Py_IDENTIFIER(throw);
+
+    gen_clear_unawaited_tracking(gen);
 
     if (yf) {
         PyObject *ret;
@@ -1198,8 +1260,8 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     }
 
     PyThreadState *tstate = PyThreadState_GET();
-    int origin_depth = tstate->coroutine_origin_tracking_depth;
 
+    int origin_depth = tstate->coroutine_origin_tracking_depth;
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin = NULL;
     } else {
@@ -1211,6 +1273,28 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
         ((PyCoroObject *)coro)->cr_origin = cr_origin;
     }
 
+    if (tstate->unawaited_coroutine_tracking_enabled) {
+        push_unawaited_coroutine(tstate, coro);
+    } else {
+        ((PyCoroObject *)coro)->cr_next_unawaited = NULL;
+        ((PyCoroObject *)coro)->cr_prev_unawaited_ptr = NULL;
+    }
+
+    return coro;
+}
+
+/* Pops and returns an unawaited coroutine from the tracking list, or returns
+ * NULL if the list is empty. Never sets an exception.
+ */
+PyObject *
+_PyCoro_PopUnawaited(void)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject *coro = tstate->first_unawaited_coroutine;
+    if (!coro)
+        return NULL;
+    Py_INCREF(coro);
+    gen_clear_unawaited_tracking((PyGenObject *)coro);
     return coro;
 }
 

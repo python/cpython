@@ -2168,6 +2168,66 @@ class OriginTrackingTest(unittest.TestCase):
         finally:
             warnings._warn_unawaited_coroutine = orig_wuc
 
+
+class UnawaitedTrackingTest(unittest.TestCase):
+    def test_unawaited_tracking(self):
+        was = sys.get_unawaited_coroutine_tracking_enabled()
+        try:
+            sys.set_unawaited_coroutine_tracking_enabled(False)
+            self.assertFalse(sys.get_unawaited_coroutine_tracking_enabled())
+            self.assertFalse(sys.have_unawaited_coroutines())
+            with self.assertRaises(RuntimeError):
+                sys.get_unawaited_coroutines()
+
+            sys.set_unawaited_coroutine_tracking_enabled(True)
+            self.assertTrue(sys.get_unawaited_coroutine_tracking_enabled())
+            self.assertFalse(sys.have_unawaited_coroutines())
+            self.assertEquals(sys.get_unawaited_coroutines(), [])
+
+            @types.coroutine
+            def yielder():
+                yield
+
+            async def corofn():
+                await yielder()
+
+            coro = corofn()
+            self.assertTrue(sys.have_unawaited_coroutines())
+            self.assertEquals(sys.get_unawaited_coroutines(), [coro])
+            # get consumes the coroutines
+            self.assertEquals(sys.get_unawaited_coroutines(), [])
+            coro.close()
+
+            def check_clear_fn(fn):
+                coro = corofn()
+                self.assertTrue(sys.have_unawaited_coroutines())
+                try:
+                    fn(coro)
+                except Exception:
+                    pass
+                self.assertFalse(sys.have_unawaited_coroutines())
+                coro.close()
+
+            check_clear_fn(lambda coro: coro.send(None))
+            check_clear_fn(lambda coro: coro.throw(ValueError))
+            check_clear_fn(lambda coro: coro.close())
+            check_clear_fn(lambda coro: next(coro.__await__()))
+            check_clear_fn(lambda coro: coro.__await__().send(None))
+            check_clear_fn(lambda coro: coro.__await__().throw(ValueError))
+            check_clear_fn(lambda coro: coro.__await__().close())
+
+            # Turning tracking off clears the list
+            coro = corofn()
+            self.assertTrue(sys.have_unawaited_coroutines())
+            sys.set_unawaited_coroutine_tracking_enabled(False)
+            self.assertFalse(sys.have_unawaited_coroutines())
+            sys.set_unawaited_coroutine_tracking_enabled(True)
+            self.assertFalse(sys.have_unawaited_coroutines())
+            coro.close()
+
+        finally:
+            sys.set_unawaited_coroutine_tracking_enabled(was)
+
 @support.cpython_only
 class CAPITest(unittest.TestCase):
 

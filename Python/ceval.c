@@ -4419,6 +4419,54 @@ _PyEval_GetCoroutineWrapper(void)
 }
 
 void
+_PyEval_SetUnawaitedCoroutineTrackingEnabled(int new)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    if (!new) {
+        PyObject *coro;
+        while ((coro = _PyCoro_PopUnawaited()))
+            Py_DECREF(coro);
+    }
+    tstate->unawaited_coroutine_tracking_enabled = new;
+}
+
+int
+_PyEval_GetUnawaitedCoroutineTrackingEnabled(void)
+{
+    return PyThreadState_GET()->unawaited_coroutine_tracking_enabled;
+}
+
+int
+_PyEval_HaveUnawaitedCoroutines(void)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    return (tstate->first_unawaited_coroutine != NULL);
+}
+
+PyObject *
+_PyEval_GetUnawaitedCoroutines(void)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    if (!tstate->unawaited_coroutine_tracking_enabled) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "unawaited coroutine tracking not enabled");
+        return NULL;
+    }
+    PyObject *output = PyList_New(0);
+    if (!output)
+        return NULL;
+    PyObject *coro;
+    while ((coro = _PyCoro_PopUnawaited())) {
+        if (PyList_Append(output, coro) < 0) {
+            Py_DECREF(coro);
+            return NULL;
+        }
+        Py_DECREF(coro);
+    }
+    return output;
+}
+
+void
 _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
 {
     PyThreadState *tstate = PyThreadState_GET();

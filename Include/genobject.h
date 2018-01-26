@@ -52,6 +52,14 @@ PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 typedef struct {
     _PyGenObject_HEAD(cr)
     PyObject *cr_origin;
+    /* Unawaited coroutine tracking. If there is another unawaited coroutine
+       after this one, cr_next_unawaited points to it. If this coroutine is in
+       the unawaited coroutine list, then cr_prev_unawaited_ptr points to
+       either the cr_next_unawaited field of the previous coroutine, or else
+       the first_unawaited_coroutine field in the relevant PyThreadState
+       object. */
+    PyObject *cr_next_unawaited;
+    PyObject **cr_prev_unawaited_ptr;
 } PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
@@ -63,6 +71,8 @@ PyAPI_DATA(PyTypeObject) _PyAIterWrapper_Type;
 PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *) PyCoro_New(struct _frame *,
     PyObject *name, PyObject *qualname);
+
+PyObject * _PyCoro_PopUnawaited(void);
 
 /* Asynchronous Generators */
 
