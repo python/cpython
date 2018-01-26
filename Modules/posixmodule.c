@@ -8230,8 +8230,9 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     iov_cleanup(iov, buf, cnt);
     if (n < 0) {
-        if (!async_err)
+        if (!async_err) {
             posix_error();
+        }
         return -1;
     }
 
@@ -8758,8 +8759,9 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     iov_cleanup(iov, buf, cnt);
     if (result < 0) {
-        if (!async_err)
+        if (!async_err) {
             posix_error();
+        }
         return -1;
     }
 

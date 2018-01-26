@@ -276,23 +276,21 @@ class PosixTester(unittest.TestCase):
     def test_preadv(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:
-            os.write(fd, b'test1tt2t3')
-            os.lseek(fd, 0, os.SEEK_SET)
+            os.write(fd, b'test1tt2t3t5t6t6t8')
             buf = [bytearray(i) for i in [5, 3, 2]]
-            self.assertEqual(posix.preadv(fd, buf, 0), 10)
-            self.assertEqual([b'test1', b'tt2', b't3'], [bytes(i) for i in buf])
+            self.assertEqual(posix.preadv(fd, buf, 3), 10)
+            self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
         finally:
             os.close(fd)
 
-    @unittest.skipUnless(hasattr(posix, 'RWF_HIPRI'), "test needs posix.preadv2()")
-    def test_preadv2(self):
+    @unittest.skipUnless(hasattr(posix, 'RWF_HIPRI'), "test needs posix.RWF_HIPRI")
+    def test_preadv_flags(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:
-            os.write(fd, b'test1tt2t3')
-            os.lseek(fd, 0, os.SEEK_SET)
+            os.write(fd, b'test1tt2t3t5t6t6t8')
             buf = [bytearray(i) for i in [5, 3, 2]]
-            self.assertEqual(posix.preadv(fd, buf, 0, os.RWF_HIPRI), 10)
-            self.assertEqual([b'test1', b'tt2', b't3'], [bytes(i) for i in buf])
+            self.assertEqual(posix.preadv(fd, buf, 3, os.RWF_HIPRI), 10)
+            self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
         finally:
             os.close(fd)
 
@@ -311,26 +309,29 @@ class PosixTester(unittest.TestCase):
     def test_pwritev(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:
-            n = os.pwritev(fd, [b'test1tt2t3'],2)
+            os.write(fd,b"xx")
+            os.lseek(fd, 0, os.SEEK_SET)
+            n = os.pwritev(fd, [b'test1', b'tt2', b't3'], 2)
             self.assertEqual(n, 10)
 
             os.lseek(fd, 0, os.SEEK_SET)
-            self.assertEqual(b'\x00\x00test1tt2', posix.read(fd, 10))
+            self.assertEqual(b'xxtest1tt2', posix.read(fd, 10))
 
         finally:
             os.close(fd)
 
 
-    @unittest.skipUnless(hasattr(posix, 'os.RWF_SYNC'), "test needs posix.pwritev2()")
-    def test_pwritev2(self):
+    @unittest.skipUnless(hasattr(posix, 'os.RWF_SYNC'), "test needs os.RWF_SYNC")
+    def test_pwritev_flags(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:
-            n = os.pwritev(fd, [b'test1tt2t3'],2, os.RWF_SYNC)
+            os.write(fd,b"xx")
+            os.lseek(fd, 0, os.SEEK_SET)
+            n = os.pwritev(fd, [b'test1', b'tt2', b't3'], 2, os.RWF_SYNC)
             self.assertEqual(n, 10)
 
             os.lseek(fd, 0, os.SEEK_SET)
-            self.assertEqual(b'\x00\x00test1tt2', posix.read(fd, 10))
-
+            self.assertEqual(b'xxtest1tt2', posix.read(fd, 10))
         finally:
             os.close(fd)
 
