@@ -593,26 +593,6 @@ Constants
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
    value of the ``ca_certs`` parameter to :func:`wrap_socket`.
 
-.. class:: HostFlags
-
-   :class:`enum.IntFlag` collection of all hostname verification flags for
-   :attr:`SSLContext.host_flags`
-
-   .. versionadded:: 3.7
-
-.. attribute:: HostFlags.HOSTFLAG_NO_PARTIAL_WILDCARDS
-
-   Dont' support wildcard certificate with partial matches, e.g.
-   ``www*.example.org``.
-
-.. attribute:: HostFlags.HOSTFLAG_NEVER_CHECK_SUBJECT
-
-   Ignore subject CN even if the certificate has no subject alternative
-   name extension.
-
-   .. note:: The flag is not available when the ssl module is compiled
-      with OpenSSL 1.0.2 or LibreSSL.
-
 .. class:: VerifyMode
 
    :class:`enum.IntEnum` collection of CERT_* constants.
@@ -876,6 +856,14 @@ Constants
    Protocol Negotiation* TLS extension as described in :rfc:`7301`.
 
    .. versionadded:: 3.5
+
+.. data:: HAS_NEVER_CHECK_COMMON_NAME
+
+   Whether the OpenSSL library has built-in support not checking subject
+   common name and :attr:`SSLContext.hostname_checks_common_name` is
+   writeable.
+
+   .. versionadded:: 3.7
 
 .. data:: HAS_ECDH
 
@@ -1763,12 +1751,16 @@ to speed up repeated connections from the same clients.
    The protocol version chosen when constructing the context.  This attribute
    is read-only.
 
-.. attribute:: SSLContext.host_flags
+.. attribute:: SSLContext.hostname_checks_common_name
 
-   The flags for validating host names. By default
-   :data:`HostFlags.HOSTFLAG_NO_PARTIAL_WILDCARDS` is set.
+   Whether :attr:`~SSLContext.check_hostname` falls back to verify the cert's
+   subject common name in the absence of a subject alternative name
+   extension (default: true).
 
    .. versionadded:: 3.7
+
+   .. note::
+      Only writeable with OpenSSL 1.1.0 or higher.
 
 .. attribute:: SSLContext.verify_flags
 

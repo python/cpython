@@ -988,6 +988,19 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertTrue(ctx.check_hostname)
 
+    def test_hostname_checks_common_name(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertTrue(ctx.hostname_checks_common_name)
+        if ssl.HAS_NEVER_CHECK_COMMON_NAME:
+            ctx.hostname_checks_common_name = True
+            self.assertTrue(ctx.hostname_checks_common_name)
+            ctx.hostname_checks_common_name = False
+            self.assertFalse(ctx.hostname_checks_common_name)
+            ctx.hostname_checks_common_name = True
+            self.assertTrue(ctx.hostname_checks_common_name)
+        else:
+            with self.assertRaises(AttributeError):
+                ctx.hostname_checks_common_name = True
 
     @unittest.skipUnless(have_verify_flags(),
                          "verify_flags need OpenSSL > 0.9.8")

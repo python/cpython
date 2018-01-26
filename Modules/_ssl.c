@@ -4185,8 +4185,8 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
 static PyGetSetDef context_getsetlist[] = {
     {"check_hostname", (getter) get_check_hostname,
                        (setter) set_check_hostname, NULL},
-    {"host_flags", (getter) get_host_flags,
-                   (setter) set_host_flags, NULL},
+    {"_host_flags", (getter) get_host_flags,
+                    (setter) set_host_flags, NULL},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
     {"verify_flags", (getter) get_verify_flags,
@@ -5574,12 +5574,30 @@ PyInit__ssl(void)
                             SSL_OP_NO_COMPRESSION);
 #endif
 
+#ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
+    PyModule_AddIntConstant(m, "HOSTFLAG_ALWAYS_CHECK_SUBJECT",
+                            X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
+#endif
 #ifdef X509_CHECK_FLAG_NEVER_CHECK_SUBJECT
     PyModule_AddIntConstant(m, "HOSTFLAG_NEVER_CHECK_SUBJECT",
                             X509_CHECK_FLAG_NEVER_CHECK_SUBJECT);
 #endif
+#ifdef X509_CHECK_FLAG_NO_WILDCARDS
+    PyModule_AddIntConstant(m, "HOSTFLAG_NO_WILDCARDS",
+                            X509_CHECK_FLAG_NO_WILDCARDS);
+#endif
+#ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
     PyModule_AddIntConstant(m, "HOSTFLAG_NO_PARTIAL_WILDCARDS",
                             X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+#endif
+#ifdef X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS
+    PyModule_AddIntConstant(m, "HOSTFLAG_MULTI_LABEL_WILDCARDS",
+                            X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS);
+#endif
+#ifdef X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS
+    PyModule_AddIntConstant(m, "HOSTFLAG_SINGLE_LABEL_SUBDOMAINS",
+                            X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
+#endif
 
 #if HAVE_SNI
     r = Py_True;

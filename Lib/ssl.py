@@ -148,11 +148,6 @@ _IntEnum._convert(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
-_IntFlag._convert(
-    'HostFlags', __name__,
-    lambda name: name.startswith('HOSTFLAG_'),
-    source=_ssl)
-
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
@@ -175,6 +170,8 @@ if _ssl.HAS_TLS_UNIQUE:
     CHANNEL_BINDING_TYPES = ['tls-unique']
 else:
     CHANNEL_BINDING_TYPES = []
+
+HAS_NEVER_CHECK_COMMON_NAME = hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT')
 
 
 # Disable weak or insecure ciphers by default
@@ -475,13 +472,22 @@ class SSLContext(_SSLContext):
     def options(self, value):
         super(SSLContext, SSLContext).options.__set__(self, value)
 
-    @property
-    def host_flags(self):
-        return HostFlags(super().host_flags)
+    if hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT'):
+        @property
+        def hostname_checks_common_name(self):
+            ncs = self._host_flags & _ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
+            return ncs != _ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
 
-    @host_flags.setter
-    def host_flags(self, value):
-        super(SSLContext, SSLContext).host_flags.__set__(self, value)
+        @hostname_checks_common_name.setter
+        def hostname_checks_common_name(self, value):
+            if value:
+                self._host_flags &= ~_ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
+            else:
+                self._host_flags |= _ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
+    else:
+        @property
+        def hostname_checks_common_name(self):
+            return True
 
     @property
     def verify_flags(self):
