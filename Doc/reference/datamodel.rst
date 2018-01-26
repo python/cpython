@@ -1564,8 +1564,8 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
    the module globals (whether by code within the module, or via a reference
    to the module's globals dictionary) is unaffected.
 
-.. versionadded:: 3.5
-   ``__class__`` module attribute.
+.. versionchanged:: 3.5
+   ``__class__`` module attribute is now writable.
 
 .. versionadded:: 3.7
    ``__getattr__`` and ``__dir__`` module attributes.
