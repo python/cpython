@@ -70,8 +70,9 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
     }
     Py_ssize_t len = PyDict_Size(shareable);
     *lenp = len;
-    if (len == 0)
+    if (len == 0) {
         return NULL;
+    }
 
     struct _shareditem *shared = PyMem_NEW(struct _shareditem, len+1);
     for (Py_ssize_t i=0; i < len; i++) {
@@ -85,8 +86,9 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
         }
         struct _shareditem *item = shared + i;
 
-        if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0)
+        if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
             break;
+        }
         item->name = PyUnicode_AsUnicodeAndSize(key, &item->namelen);
         if (item->name == NULL) {
             _PyCrossInterpreterData_Release(&item->data);
@@ -133,8 +135,9 @@ static struct _shared_exception *
 _get_shared_exception(void)
 {
     struct _shared_exception *err = PyMem_NEW(struct _shared_exception, 1);
-    if (err == NULL)
+    if (err == NULL) {
         return NULL;
+    }
     PyObject *exc;
     PyObject *value;
     PyObject *tb;
@@ -167,8 +170,9 @@ interp_exceptions_init(PyObject *ns)
     // An uncaught exception came out of interp_run_string().
     RunFailedError = PyErr_NewException("_xxsubinterpreters.RunFailedError",
                                         PyExc_RuntimeError, NULL);
-    if (RunFailedError == NULL)
+    if (RunFailedError == NULL) {
         return -1;
+    }
     PyDict_SetItemString(ns, "RunFailedError", RunFailedError);
 
     return 0;
@@ -195,29 +199,33 @@ channel_exceptions_init(PyObject *ns)
     // A channel-related operation failed.
     ChannelError = PyErr_NewException("_xxsubinterpreters.ChannelError",
                                       PyExc_RuntimeError, NULL);
-    if (ChannelError == NULL)
+    if (ChannelError == NULL) {
         return -1;
+    }
     PyDict_SetItemString(ns, "ChannelError", ChannelError);
 
     // An operation tried to use a channel that doesn't exist.
     ChannelNotFoundError = PyErr_NewException("_xxsubinterpreters.ChannelNotFoundError",
                                               ChannelError, NULL);
-    if (ChannelNotFoundError == NULL)
+    if (ChannelNotFoundError == NULL) {
         return -1;
+    }
     PyDict_SetItemString(ns, "ChannelNotFoundError", ChannelNotFoundError);
 
     // An operation tried to use a closed channel.
     ChannelClosedError = PyErr_NewException("_xxsubinterpreters.ChannelClosedError",
                                             ChannelError, NULL);
-    if (ChannelClosedError == NULL)
+    if (ChannelClosedError == NULL) {
         return -1;
+    }
     PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError);
 
     // An operation tried to pop from an empty channel.
     ChannelEmptyError = PyErr_NewException("_xxsubinterpreters.ChannelEmptyError",
                                            ChannelError, NULL);
-    if (ChannelEmptyError == NULL)
+    if (ChannelEmptyError == NULL) {
         return -1;
+    }
     PyDict_SetItemString(ns, "ChannelEmptyError", ChannelEmptyError);
 
     return 0;
@@ -235,8 +243,9 @@ static struct _channelend *
 _channelend_new(int64_t interp)
 {
     struct _channelend *end = PyMem_Malloc(sizeof(struct _channelend));
-    if (end == NULL)
+    if (end == NULL) {
         return NULL;
+    }
 
     end->next = NULL;
     end->interp = interp;
@@ -261,13 +270,15 @@ _channelend_find(struct _channelend *first, int64_t interp, struct _channelend *
     struct _channelend *prev = NULL;
     struct _channelend *end = first;
     while (end != NULL) {
-        if (end->interp == interp)
+        if (end->interp == interp) {
             break;
+        }
         prev = end;
         end = end->next;
     }
-    if (pprev != NULL)
+    if (pprev != NULL) {
         *pprev = prev;
+    }
     return end;
 }
 
@@ -303,8 +314,9 @@ static _PyChannelState *
 _channel_new(void)
 {
     _PyChannelState *chan = PyMem_Malloc(sizeof(_PyChannelState));
-    if (chan == NULL)
+    if (chan == NULL) {
         return NULL;
+    }
     chan->mutex = PyThread_allocate_lock();
     if (chan->mutex == NULL) {
         PyErr_SetString(ChannelError, "can't initialize mutex for new channel");
@@ -329,8 +341,9 @@ static struct _channelend *
 _channel_add_end(_PyChannelState *chan, struct _channelend *prev, int64_t interp, int send)
 {
     struct _channelend *end = _channelend_new(interp);
-    if (end == NULL)
+    if (end == NULL) {
         return NULL;
+    }
 
     if (prev == NULL) {
         if (send) {
@@ -403,8 +416,9 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interp, int which)
         if (end == NULL) {
             // never associated so add it
             end = _channel_add_end(chan, prev, interp, 1);
-            if (end == NULL)
+            if (end == NULL) {
                 goto done;
+            }
         }
         _channel_close_channelend(chan, end, 1);
     }
@@ -413,15 +427,17 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interp, int which)
         if (end == NULL) {
             // never associated so add it
             end = _channel_add_end(chan, prev, interp, 0);
-            if (end == NULL)
+            if (end == NULL) {
                 goto done;
+            }
         }
         _channel_close_channelend(chan, end, 0);
     }
 
     if (chan->numsendopen == 0 && chan->numrecvopen == 0) {
-        if (chan->send != NULL || chan->recv != NULL)
+        if (chan->send != NULL || chan->recv != NULL) {
             chan->open = 0;
+        }
     }
 
     res = 0;
@@ -481,8 +497,9 @@ _channel_add(_PyChannelState *chan, int64_t interp, _PyCrossInterpreterData *dat
     item->next = NULL;
 
     chan->count += 1;
-    if (chan->first == NULL)
+    if (chan->first == NULL) {
         chan->first = item;
+    }
     chan->last = item;
 
     res = 0;
@@ -505,8 +522,9 @@ _channel_next(_PyChannelState *chan, int64_t interp)
         goto done;
     }
     chan->first = item->next;
-    if (chan->last == item)
+    if (chan->last == item) {
         chan->last = NULL;
+    }
     chan->count -= 1;
 
     data = item->data;
@@ -558,8 +576,9 @@ static struct _channelref *
 _channelref_new(int64_t id, _PyChannelState *chan)
 {
     struct _channelref *ref = PyMem_Malloc(sizeof(struct _channelref));
-    if (ref == NULL)
+    if (ref == NULL) {
         return NULL;
+    }
     ref->id = id;
     ref->chan = chan;
     ref->next = NULL;
@@ -573,13 +592,15 @@ _channelref_find(struct _channelref *first, int64_t id, struct _channelref **ppr
     struct _channelref *prev = NULL;
     struct _channelref *ref = first;
     while (ref != NULL) {
-        if (ref->id == id)
+        if (ref->id == id) {
             break;
+        }
         prev = ref;
         ref = ref->next;
     }
-    if (pprev != NULL)
+    if (pprev != NULL) {
         *pprev = prev;
+    }
     return ref;
 }
 
@@ -626,8 +647,9 @@ _channels_lookup(struct _channels *channels, int64_t id, PyThread_type_lock *pmu
 {
     _PyChannelState *chan = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
-    if (pmutex != NULL)
+    if (pmutex != NULL) {
         *pmutex = NULL;
+    }
 
     struct _channelref *ref = _channelref_find(channels->head, id, NULL);
     if (ref == NULL) {
@@ -685,8 +707,9 @@ _channels_close(struct _channels *channels, int64_t cid, _PyChannelState **pchan
 {
     int res = -1;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
-    if (pchan != NULL)
+    if (pchan != NULL) {
         *pchan = NULL;
+    }
 
     struct _channelref *ref = _channelref_find(channels->head, cid, NULL);
     if (ref == NULL) {
@@ -702,8 +725,9 @@ _channels_close(struct _channels *channels, int64_t cid, _PyChannelState **pchan
         if (_channel_close_all(ref->chan) != 0) {
             goto done;
         }
-        if (pchan != NULL)
+        if (pchan != NULL) {
             *pchan = ref->chan;
+        }
         ref->chan = NULL;
     }
 
@@ -724,8 +748,9 @@ _channels_remove_ref(struct _channels *channels, struct _channelref *ref, struct
     }
     channels->numopen -= 1;
 
-    if (pchan != NULL)
+    if (pchan != NULL) {
         *pchan = ref->chan;
+    }
     PyMem_Free(ref);
 }
 
@@ -735,8 +760,9 @@ _channels_remove(struct _channels *channels, int64_t id, _PyChannelState **pchan
     int res = -1;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
 
-    if (pchan != NULL)
+    if (pchan != NULL) {
         *pchan = NULL;
+    }
 
     struct _channelref *prev = NULL;
     struct _channelref *ref = _channelref_find(channels->head, id, &prev);
@@ -789,8 +815,9 @@ _channels_drop_id_object(struct _channels *channels, int64_t id)
     if (ref->objcount == 0) {
         _PyChannelState *chan = NULL;
         _channels_remove_ref(channels, ref, prev, &chan);
-        if (chan != NULL)
+        if (chan != NULL) {
             _channel_free(chan);
+        }
     }
 
 done:
@@ -824,8 +851,9 @@ static int64_t
 _channel_create(struct _channels *channels)
 {
     _PyChannelState *chan = _channel_new();
-    if (chan == NULL)
+    if (chan == NULL) {
         return -1;
+    }
     int64_t id = _channels_add(channels, chan);
     if (id < 0) {
         _channel_free(chan);
@@ -838,10 +866,12 @@ static int
 _channel_destroy(struct _channels *channels, int64_t id)
 {
     _PyChannelState *chan = NULL;
-    if (_channels_remove(channels, id, &chan) != 0)
+    if (_channels_remove(channels, id, &chan) != 0) {
         return -1;
-    if (chan != NULL)
+    }
+    if (chan != NULL) {
         _channel_free(chan);
+    }
     return 0;
 }
 
@@ -849,8 +879,9 @@ static int
 _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
 {
     PyInterpreterState *interp = _get_current();
-    if (interp == NULL)
+    if (interp == NULL) {
         return -1;
+    }
 
     // Look up the channel.
     PyThread_type_lock mutex = NULL;
@@ -883,14 +914,16 @@ static PyObject *
 _channel_recv(struct _channels *channels, int64_t id)
 {
     PyInterpreterState *interp = _get_current();
-    if (interp == NULL)
+    if (interp == NULL) {
         return NULL;
+    }
 
     // Look up the channel.
     PyThread_type_lock mutex = NULL;
     _PyChannelState *chan = _channels_lookup(channels, id, &mutex);
-    if (chan == NULL)
+    if (chan == NULL) {
         return NULL;
+    }
     // Past this point we are responsible for releasing the mutex.
 
     // Pop off the next item from the channel.
@@ -915,8 +948,9 @@ static int
 _channel_drop(struct _channels *channels, int64_t id, int send, int recv)
 {
     PyInterpreterState *interp = _get_current();
-    if (interp == NULL)
+    if (interp == NULL) {
         return -1;
+    }
 
     // Look up the channel.
     PyThread_type_lock mutex = NULL;
@@ -956,8 +990,9 @@ static channelid *
 newchannelid(PyTypeObject *cls, int64_t cid, int end, struct _channels *channels, int force)
 {
     channelid *self = PyObject_New(channelid, cls);
-    if (self == NULL)
+    if (self == NULL) {
         return NULL;
+    }
     self->id = cid;
     self->end = end;
     self->channels = channels;
@@ -996,8 +1031,9 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
     }
     else {
         cid = _coerce_id(id);
-        if (cid < 0)
+        if (cid < 0) {
             return NULL;
+        }
     }
 
     // Handle "send" and "recv".
@@ -1007,8 +1043,9 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
     }
     int end = 0;
     if (send == 1) {
-        if (recv == 0 || recv == -1)
+        if (recv == 0 || recv == -1) {
             end = CHANNEL_SEND;
+        }
     }
     else if (recv == 1) {
         end = CHANNEL_RECV;
@@ -1100,8 +1137,9 @@ channelid_hash(PyObject *self)
 {
     channelid *cid = (channelid *)self;
     PyObject *id = PyLong_FromLongLong(cid->id);
-    if (id == NULL)
+    if (id == NULL) {
         return -1;
+    }
     return PyObject_Hash(id);
 }
 
@@ -1116,15 +1154,17 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (!PyObject_TypeCheck(self, &ChannelIDtype))
+    if (!PyObject_TypeCheck(self, &ChannelIDtype)) {
         Py_RETURN_NOTIMPLEMENTED;
+    }
 
     int64_t cid = ((channelid *)self)->id;
     int64_t othercid;
     if (PyObject_TypeCheck(other, &ChannelIDtype)) {
         othercid = ((channelid *)other)->id;
-        if (((channelid *)other)->end != ((channelid *)self)->end)
+        if (((channelid *)other)->end != ((channelid *)self)->end) {
             Py_RETURN_FALSE;
+        }
     }
     else {
         other = PyNumber_Long(other);
@@ -1133,10 +1173,12 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
             Py_RETURN_NOTIMPLEMENTED;
         }
         othercid = PyLong_AsLongLong(other);
-        if (othercid == -1 && PyErr_Occurred() != NULL)
+        if (othercid == -1 && PyErr_Occurred() != NULL) {
             return NULL;
-        if (othercid < 0 || othercid > INT64_MAX)
+        }
+        if (othercid < 0 || othercid > INT64_MAX) {
             Py_RETURN_FALSE;
+        }
     }
     Py_RETURN_RICHCOMPARE(othercid != cid, 0, op);
 }
@@ -1172,13 +1214,16 @@ channelid_end(PyObject *self, void *end)
 {
     int force = 1;
     channelid *cid = (channelid *)self;
-    if (end != NULL)
+    if (end != NULL) {
         return (PyObject *)newchannelid(Py_TYPE(self), cid->id, *(int *)end, cid->channels, force);
+    }
 
-    if (cid->end == CHANNEL_SEND)
+    if (cid->end == CHANNEL_SEND) {
         return PyUnicode_InternFromString("send");
-    if (cid->end == CHANNEL_RECV)
+    }
+    if (cid->end == CHANNEL_RECV) {
         return PyUnicode_InternFromString("recv");
+    }
     return PyUnicode_InternFromString("both");
 }
 
@@ -1247,8 +1292,9 @@ static PyInterpreterState *
 _look_up(PyObject *requested_id)
 {
     long long id = PyLong_AsLongLong(requested_id);
-    if (id == -1 && PyErr_Occurred() != NULL)
+    if (id == -1 && PyErr_Occurred() != NULL) {
         return NULL;
+    }
     assert(id <= INT64_MAX);
     return _PyInterpreterState_LookUpID(id);
 }
@@ -1257,8 +1303,9 @@ static PyObject *
 _get_id(PyInterpreterState *interp)
 {
     PY_INT64_T id = PyInterpreterState_GetID(interp);
-    if (id < 0)
+    if (id < 0) {
         return NULL;
+    }
     return PyLong_FromLongLong(id);
 }
 
@@ -1273,8 +1320,9 @@ _is_running(PyInterpreterState *interp)
     }
     PyFrameObject *frame = tstate->frame;
     if (frame == NULL) {
-        if (PyErr_Occurred() != NULL)
+        if (PyErr_Occurred() != NULL) {
             return -1;
+        }
         return 0;
     }
     return (int)(frame->f_executing);
@@ -1284,8 +1332,9 @@ static int
 _ensure_not_running(PyInterpreterState *interp)
 {
     int is_running = _is_running(interp);
-    if (is_running < 0)
+    if (is_running < 0) {
         return -1;
+    }
     if (is_running) {
         PyErr_Format(PyExc_RuntimeError, "interpreter already running");
         return -1;
@@ -1300,12 +1349,14 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 {
     assert(num_shared >= 0);
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
-    if (main_mod == NULL)
+    if (main_mod == NULL) {
         goto error;
+    }
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
     Py_DECREF(main_mod);
-    if (ns == NULL)
+    if (ns == NULL) {
         goto error;
+    }
     Py_INCREF(ns);
 
     // Apply the cross-interpreter data.
@@ -1341,13 +1392,15 @@ static int
 _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
                            PyObject *shareables)
 {
-    if (_ensure_not_running(interp) < 0)
+    if (_ensure_not_running(interp) < 0) {
         return -1;
+    }
 
     Py_ssize_t num_shared = -1;
     struct _shareditem *shared = _get_shared_ns(shareables, &num_shared);
-    if (shared == NULL && PyErr_Occurred())
+    if (shared == NULL && PyErr_Occurred()) {
         return -1;
+    }
 
     // Switch to interpreter.
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
@@ -1358,8 +1411,9 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     int result = _run_script(interp, codestr, shared, num_shared, &exc);
 
     // Switch back.
-    if (save_tstate != NULL)
+    if (save_tstate != NULL) {
         PyThreadState_Swap(save_tstate);
+    }
 
     // Propagate any exception out to the caller.
     if (exc != NULL) {
@@ -1392,8 +1446,9 @@ static struct globals {
 static int
 _init_globals(void)
 {
-    if (_channels_init(&_globals.channels) != 0)
+    if (_channels_init(&_globals.channels) != 0) {
         return -1;
+    }
     return 0;
 }
 
@@ -1405,8 +1460,9 @@ _global_channels(void) {
 static PyObject *
 interp_create(PyObject *self, PyObject *args)
 {
-    if (!PyArg_UnpackTuple(args, "create", 0, 0))
+    if (!PyArg_UnpackTuple(args, "create", 0, 0)) {
         return NULL;
+    }
 
     // Create and initialize the new interpreter.
     PyThreadState *tstate, *save_tstate;
@@ -1433,8 +1489,9 @@ static PyObject *
 interp_destroy(PyObject *self, PyObject *args)
 {
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "destroy", 1, 1, &id))
+    if (!PyArg_UnpackTuple(args, "destroy", 1, 1, &id)) {
         return NULL;
+    }
     if (!PyLong_Check(id)) {
         PyErr_SetString(PyExc_TypeError, "ID must be an int");
         return NULL;
@@ -1442,13 +1499,15 @@ interp_destroy(PyObject *self, PyObject *args)
 
     // Look up the interpreter.
     PyInterpreterState *interp = _look_up(id);
-    if (interp == NULL)
+    if (interp == NULL) {
         return NULL;
+    }
 
     // Ensure we don't try to destroy the current interpreter.
     PyInterpreterState *current = _get_current();
-    if (current == NULL)
+    if (current == NULL) {
         return NULL;
+    }
     if (interp == current) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot destroy the current interpreter");
@@ -1458,8 +1517,9 @@ interp_destroy(PyObject *self, PyObject *args)
     // Ensure the interpreter isn't running.
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
-    if (_ensure_not_running(interp) < 0)
+    if (_ensure_not_running(interp) < 0) {
         return NULL;
+    }
 
     // Destroy the interpreter.
     //PyInterpreterState_Delete(interp);
@@ -1488,17 +1548,20 @@ interp_list_all(PyObject *self)
     PyInterpreterState *interp;
 
     ids = PyList_New(0);
-    if (ids == NULL)
+    if (ids == NULL) {
         return NULL;
+    }
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
         id = _get_id(interp);
-        if (id == NULL)
+        if (id == NULL) {
             return NULL;
+        }
         // insert at front of list
-        if (PyList_Insert(ids, 0, id) < 0)
+        if (PyList_Insert(ids, 0, id) < 0) {
             return NULL;
+        }
 
         interp = PyInterpreterState_Next(interp);
     }
@@ -1516,8 +1579,9 @@ static PyObject *
 interp_get_current(PyObject *self)
 {
     PyInterpreterState *interp =_get_current();
-    if (interp == NULL)
+    if (interp == NULL) {
         return NULL;
+    }
     return _get_id(interp);
 }
 
@@ -1545,8 +1609,9 @@ interp_run_string(PyObject *self, PyObject *args)
 {
     PyObject *id, *code;
     PyObject *shared = NULL;
-    if (!PyArg_UnpackTuple(args, "run_string", 2, 3, &id, &code, &shared))
+    if (!PyArg_UnpackTuple(args, "run_string", 2, 3, &id, &code, &shared)) {
         return NULL;
+    }
     if (!PyLong_Check(id)) {
         PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
         return NULL;
@@ -1559,14 +1624,16 @@ interp_run_string(PyObject *self, PyObject *args)
 
     // Look up the interpreter.
     PyInterpreterState *interp = _look_up(id);
-    if (interp == NULL)
+    if (interp == NULL) {
         return NULL;
+    }
 
     // Extract code.
     Py_ssize_t size;
     const char *codestr = PyUnicode_AsUTF8AndSize(code, &size);
-    if (codestr == NULL)
+    if (codestr == NULL) {
         return NULL;
+    }
     if (strlen(codestr) != (size_t)size) {
         PyErr_SetString(PyExc_ValueError,
                         "source code string cannot contain null bytes");
@@ -1574,8 +1641,9 @@ interp_run_string(PyObject *self, PyObject *args)
     }
 
     // Run the code in the interpreter.
-    if (_run_script_in_interpreter(interp, codestr, shared) != 0)
+    if (_run_script_in_interpreter(interp, codestr, shared) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1591,10 +1659,12 @@ static PyObject *
 object_is_shareable(PyObject *self, PyObject *args)
 {
     PyObject *obj;
-    if (!PyArg_UnpackTuple(args, "is_shareable", 1, 1, &obj))
+    if (!PyArg_UnpackTuple(args, "is_shareable", 1, 1, &obj)) {
         return NULL;
-    if (_PyObject_CheckCrossInterpreterData(obj) == 0)
+    }
+    if (_PyObject_CheckCrossInterpreterData(obj) == 0) {
         Py_RETURN_TRUE;
+    }
     PyErr_Clear();
     Py_RETURN_FALSE;
 }
@@ -1610,21 +1680,25 @@ static PyObject *
 interp_is_running(PyObject *self, PyObject *args)
 {
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "is_running", 1, 1, &id))
+    if (!PyArg_UnpackTuple(args, "is_running", 1, 1, &id)) {
         return NULL;
+    }
     if (!PyLong_Check(id)) {
         PyErr_SetString(PyExc_TypeError, "ID must be an int");
         return NULL;
     }
 
     PyInterpreterState *interp = _look_up(id);
-    if (interp == NULL)
+    if (interp == NULL) {
         return NULL;
+    }
     int is_running = _is_running(interp);
-    if (is_running < 0)
+    if (is_running < 0) {
         return NULL;
-    if (is_running)
+    }
+    if (is_running) {
         Py_RETURN_TRUE;
+    }
     Py_RETURN_FALSE;
 }
 
@@ -1637,8 +1711,9 @@ static PyObject *
 channel_create(PyObject *self)
 {
     int64_t cid = _channel_create(&_globals.channels);
-    if (cid < 0)
+    if (cid < 0) {
         return NULL;
+    }
     PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, cid, 0, &_globals.channels, 0);
     if (id == NULL) {
         if (_channel_destroy(&_globals.channels, cid) != 0) {
@@ -1659,14 +1734,17 @@ static PyObject *
 channel_destroy(PyObject *self, PyObject *args)
 {
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_destroy", 1, 1, &id))
+    if (!PyArg_UnpackTuple(args, "channel_destroy", 1, 1, &id)) {
         return NULL;
+    }
     int64_t cid = _coerce_id(id);
-    if (cid < 0)
+    if (cid < 0) {
         return NULL;
+    }
 
-    if (_channel_destroy(&_globals.channels, cid) != 0)
+    if (_channel_destroy(&_globals.channels, cid) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1682,8 +1760,9 @@ channel_list_all(PyObject *self)
     int64_t count = 0;
     int64_t *cids = _channels_list_all(&_globals.channels, &count);
     if (cids == NULL) {
-        if (count == 0)
+        if (count == 0) {
             return PyList_New(0);
+        }
         return NULL;
     }
     PyObject *ids = PyList_New((Py_ssize_t)count);
@@ -1714,14 +1793,17 @@ channel_send(PyObject *self, PyObject *args)
 {
     PyObject *id;
     PyObject *obj;
-    if (!PyArg_UnpackTuple(args, "channel_send", 2, 2, &id, &obj))
+    if (!PyArg_UnpackTuple(args, "channel_send", 2, 2, &id, &obj)) {
         return NULL;
+    }
     int64_t cid = _coerce_id(id);
-    if (cid < 0)
+    if (cid < 0) {
         return NULL;
+    }
 
-    if (_channel_send(&_globals.channels, cid, obj) != 0)
+    if (_channel_send(&_globals.channels, cid, obj) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1734,11 +1816,13 @@ static PyObject *
 channel_recv(PyObject *self, PyObject *args)
 {
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_recv", 1, 1, &id))
+    if (!PyArg_UnpackTuple(args, "channel_recv", 1, 1, &id)) {
         return NULL;
+    }
     int64_t cid = _coerce_id(id);
-    if (cid < 0)
+    if (cid < 0) {
         return NULL;
+    }
 
     return _channel_recv(&_globals.channels, cid);
 }
@@ -1752,14 +1836,17 @@ static PyObject *
 channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_recv", 1, 1, &id))
+    if (!PyArg_UnpackTuple(args, "channel_recv", 1, 1, &id)) {
         return NULL;
+    }
     int64_t cid = _coerce_id(id);
-    if (cid < 0)
+    if (cid < 0) {
         return NULL;
+    }
 
-    if (_channel_close(&_globals.channels, cid) != 0)
+    if (_channel_close(&_globals.channels, cid) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1782,20 +1869,24 @@ channel_drop_interpreter(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 
     int64_t cid = _coerce_id(id);
-    if (cid < 0)
+    if (cid < 0) {
         return NULL;
+    }
     if (send < 0 && recv < 0) {
         send = 1;
         recv = 1;
     }
     else {
-        if (send < 0)
+        if (send < 0) {
             send = 0;
-        if (recv < 0)
+        }
+        if (recv < 0) {
             recv = 0;
+        }
     }
-    if (_channel_drop(&_globals.channels, cid, send, recv) != 0)
+    if (_channel_drop(&_globals.channels, cid, send, recv) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1874,32 +1965,38 @@ static struct PyModuleDef interpretersmodule = {
 PyMODINIT_FUNC
 PyInit__xxsubinterpreters(void)
 {
-    if (_init_globals() != 0)
+    if (_init_globals() != 0) {
         return NULL;
+    }
 
     /* Initialize types */
     ChannelIDtype.tp_base = &PyLong_Type;
-    if (PyType_Ready(&ChannelIDtype) != 0)
+    if (PyType_Ready(&ChannelIDtype) != 0) {
         return NULL;
+    }
 
     /* Create the module */
     PyObject *module = PyModule_Create(&interpretersmodule);
-    if (module == NULL)
+    if (module == NULL) {
         return NULL;
+    }
 
     /* Add exception types */
     PyObject *ns = PyModule_GetDict(module);  // borrowed
-    if (interp_exceptions_init(ns) != 0)
+    if (interp_exceptions_init(ns) != 0) {
         return NULL;
-    if (channel_exceptions_init(ns) != 0)
+    }
+    if (channel_exceptions_init(ns) != 0) {
         return NULL;
+    }
 
     /* Add other types */
     Py_INCREF(&ChannelIDtype);
     PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype);
 
-    if (_PyCrossInterpreterData_Register_Class(&ChannelIDtype, _channelid_shared))
+    if (_PyCrossInterpreterData_Register_Class(&ChannelIDtype, _channelid_shared)) {
         return NULL;
+    }
 
     return module;
 }
