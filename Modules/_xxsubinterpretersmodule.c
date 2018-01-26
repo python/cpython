@@ -332,6 +332,7 @@ _channel_new(void)
     }
     chan->mutex = PyThread_allocate_lock();
     if (chan->mutex == NULL) {
+        PyMem_Free(chan);
         PyErr_SetString(ChannelError, "can't initialize mutex for new channel");
         return NULL;
     }
