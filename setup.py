@@ -746,7 +746,7 @@ class PyBuildExt(build_ext):
         )
 
         # Python interface to subinterpreter C-API.
-        exts.append(Extension('_interpreters', ['_interpretersmodule.c'],
+        exts.append(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c'],
                               define_macros=[('Py_BUILD_CORE', '')]))
 
         #

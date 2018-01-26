@@ -161,7 +161,7 @@ interp_exceptions_init(PyObject *ns)
     // XXX Move the exceptions into per-module memory?
 
     // An uncaught exception came out of interp_run_string().
-    RunFailedError = PyErr_NewException("_interpreters.RunFailedError",
+    RunFailedError = PyErr_NewException("_xxsubinterpreters.RunFailedError",
                                         PyExc_RuntimeError, NULL);
     if (RunFailedError == NULL)
         return -1;
@@ -189,28 +189,28 @@ channel_exceptions_init(PyObject *ns)
     // XXX Move the exceptions into per-module memory?
 
     // A channel-related operation failed.
-    ChannelError = PyErr_NewException("_interpreters.ChannelError",
+    ChannelError = PyErr_NewException("_xxsubinterpreters.ChannelError",
                                       PyExc_RuntimeError, NULL);
     if (ChannelError == NULL)
         return -1;
     PyDict_SetItemString(ns, "ChannelError", ChannelError);
 
     // An operation tried to use a channel that doesn't exist.
-    ChannelNotFoundError = PyErr_NewException("_interpreters.ChannelNotFoundError",
+    ChannelNotFoundError = PyErr_NewException("_xxsubinterpreters.ChannelNotFoundError",
                                               ChannelError, NULL);
     if (ChannelNotFoundError == NULL)
         return -1;
     PyDict_SetItemString(ns, "ChannelNotFoundError", ChannelNotFoundError);
 
     // An operation tried to use a closed channel.
-    ChannelClosedError = PyErr_NewException("_interpreters.ChannelClosedError",
+    ChannelClosedError = PyErr_NewException("_xxsubinterpreters.ChannelClosedError",
                                             ChannelError, NULL);
     if (ChannelClosedError == NULL)
         return -1;
     PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError);
 
     // An operation tried to pop from an empty channel.
-    ChannelEmptyError = PyErr_NewException("_interpreters.ChannelEmptyError",
+    ChannelEmptyError = PyErr_NewException("_xxsubinterpreters.ChannelEmptyError",
                                            ChannelError, NULL);
     if (ChannelEmptyError == NULL)
         return -1;
@@ -1189,44 +1189,44 @@ PyDoc_STRVAR(channelid_doc,
 
 static PyTypeObject ChannelIDtype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "_interpreters.ChannelID",     /* tp_name */
-    sizeof(channelid),             /* tp_size */
-    0,                             /* tp_itemsize */
-    (destructor)channelid_dealloc, /* tp_dealloc */
-    0,                             /* tp_print */
-    0,                             /* tp_getattr */
-    0,                             /* tp_setattr */
-    0,                             /* tp_as_async */
-    (reprfunc)channelid_repr,      /* tp_repr */
-    &channelid_as_number,          /* tp_as_number */
-    0,                             /* tp_as_sequence */
-    0,                             /* tp_as_mapping */
-    channelid_hash,                /* tp_hash */
-    0,                             /* tp_call */
-    0,                             /* tp_str */
-    0,                             /* tp_getattro */
-    0,                             /* tp_setattro */
-    0,                             /* tp_as_buffer */
+    "_xxsubinterpreters.ChannelID", /* tp_name */
+    sizeof(channelid),              /* tp_size */
+    0,                              /* tp_itemsize */
+    (destructor)channelid_dealloc,  /* tp_dealloc */
+    0,                              /* tp_print */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    (reprfunc)channelid_repr,       /* tp_repr */
+    &channelid_as_number,           /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    channelid_hash,                 /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_LONG_SUBCLASS,  /* tp_flags */
-    channelid_doc,                 /* tp_doc */
-    0,                             /* tp_traverse */
-    0,                             /* tp_clear */
-    channelid_richcompare,         /* tp_richcompare */
-    0,                             /* tp_weaklistoffset */
-    0,                             /* tp_iter */
-    0,                             /* tp_iternext */
-    0,                             /* tp_methods */
-    0,                             /* tp_members */
-    channelid_getsets,             /* tp_getset */
-    0,                             /* tp_base */
-    0,                             /* tp_dict */
-    0,                             /* tp_descr_get */
-    0,                             /* tp_descr_set */
-    0,                             /* tp_dictoffset */
-    0,                             /* tp_init */
-    0,                             /* tp_alloc */
-    NULL,                          /* tp_new */
+        Py_TPFLAGS_LONG_SUBCLASS,   /* tp_flags */
+    channelid_doc,                  /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    channelid_richcompare,          /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    channelid_getsets,              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    0,                              /* tp_alloc */
+    NULL,                           /* tp_new */
     //(newfunc)channelid_new,        /* tp_new */
 };
 
@@ -1847,19 +1847,19 @@ The 'interpreters' module provides a more convenient interface.");
 
 static struct PyModuleDef interpretersmodule = {
     PyModuleDef_HEAD_INIT,
-    "_interpreters",  /* m_name */
-    module_doc,       /* m_doc */
-    -1,               /* m_size */
-    module_functions, /* m_methods */
-    NULL,             /* m_slots */
-    NULL,             /* m_traverse */
-    NULL,             /* m_clear */
-    NULL              /* m_free */
+    "_xxsubinterpreters",  /* m_name */
+    module_doc,            /* m_doc */
+    -1,                    /* m_size */
+    module_functions,      /* m_methods */
+    NULL,                  /* m_slots */
+    NULL,                  /* m_traverse */
+    NULL,                  /* m_clear */
+    NULL                   /* m_free */
 };
 
 
 PyMODINIT_FUNC
-PyInit__interpreters(void)
+PyInit__xxsubinterpreters(void)
 {
     if (_init_globals() != 0)
         return NULL;
