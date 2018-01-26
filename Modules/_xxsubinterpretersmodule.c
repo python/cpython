@@ -21,10 +21,12 @@ _coerce_id(PyObject *id)
 {
     id = PyNumber_Long(id);
     if (id == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_SetString(PyExc_TypeError, "'id' must be a non-negative int");
-        else
+        }
+        else {
             PyErr_SetString(PyExc_ValueError, "'id' must be a non-negative int");
+        }
         return -1;
     }
     long long cid = PyLong_AsLongLong(id);
@@ -138,10 +140,12 @@ _get_shared_exception(void)
     PyObject *tb;
     PyErr_Fetch(&exc, &value, &tb);
     PyObject *msg;
-    if (value == NULL)
+    if (value == NULL) {
         msg = PyUnicode_FromFormat("%S", exc);
-    else
+    }
+    else {
         msg = PyUnicode_FromFormat("%S: %S", exc, value);
+    }
     if (msg == NULL) {
         err->msg = "unable to format exception";
         return NULL;
@@ -331,7 +335,8 @@ _channel_add_end(_PyChannelState *chan, struct _channelend *prev, int64_t interp
     if (prev == NULL) {
         if (send) {
             chan->send = end;
-        } else {
+        }
+        else {
             chan->recv = end;
         }
     }
@@ -372,10 +377,12 @@ static void
 _channel_close_channelend(_PyChannelState *chan, struct _channelend *end, int send)
 {
     end->open = 0;
-    if (send)
+    if (send) {
         chan->numsendopen -= 1;
-    else
+    }
+    else {
         chan->numrecvopen -= 1;
+    }
 }
 
 static int
@@ -711,7 +718,8 @@ _channels_remove_ref(struct _channels *channels, struct _channelref *ref, struct
 {
     if (ref == channels->head) {
         channels->head = ref->next;
-    } else {
+    }
+    else {
         prev->next = ref->next;
     }
     channels->numopen -= 1;
@@ -1028,12 +1036,15 @@ channelid_repr(PyObject *self)
 
     channelid *cid = (channelid *)self;
     const char *fmt;
-    if (cid->end == CHANNEL_SEND)
+    if (cid->end == CHANNEL_SEND) {
         fmt = "%s(%d, send=True)";
-    else if (cid->end == CHANNEL_RECV)
+    }
+    else if (cid->end == CHANNEL_RECV) {
         fmt = "%s(%d, recv=True)";
-    else
+    }
+    else {
         fmt = "%s(%d)";
+    }
     return PyUnicode_FromFormat(fmt, name, cid->id);
 }
 
@@ -1313,7 +1324,8 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     Py_DECREF(ns);
     if (result == NULL) {
         goto error;
-    } else {
+    }
+    else {
         Py_DECREF(result);  // We throw away the result.
     }
 
