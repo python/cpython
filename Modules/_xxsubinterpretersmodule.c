@@ -176,7 +176,9 @@ interp_exceptions_init(PyObject *ns)
     if (RunFailedError == NULL) {
         return -1;
     }
-    PyDict_SetItemString(ns, "RunFailedError", RunFailedError);
+    if (PyDict_SetItemString(ns, "RunFailedError", RunFailedError) != 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -205,7 +207,9 @@ channel_exceptions_init(PyObject *ns)
     if (ChannelError == NULL) {
         return -1;
     }
-    PyDict_SetItemString(ns, "ChannelError", ChannelError);
+    if (PyDict_SetItemString(ns, "ChannelError", ChannelError) != 0) {
+        return -1;
+    }
 
     // An operation tried to use a channel that doesn't exist.
     ChannelNotFoundError = PyErr_NewException("_xxsubinterpreters.ChannelNotFoundError",
@@ -213,7 +217,9 @@ channel_exceptions_init(PyObject *ns)
     if (ChannelNotFoundError == NULL) {
         return -1;
     }
-    PyDict_SetItemString(ns, "ChannelNotFoundError", ChannelNotFoundError);
+    if (PyDict_SetItemString(ns, "ChannelNotFoundError", ChannelNotFoundError) != 0) {
+        return -1;
+    }
 
     // An operation tried to use a closed channel.
     ChannelClosedError = PyErr_NewException("_xxsubinterpreters.ChannelClosedError",
@@ -221,7 +227,9 @@ channel_exceptions_init(PyObject *ns)
     if (ChannelClosedError == NULL) {
         return -1;
     }
-    PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError);
+    if (PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError) != 0) {
+        return -1;
+    }
 
     // An operation tried to pop from an empty channel.
     ChannelEmptyError = PyErr_NewException("_xxsubinterpreters.ChannelEmptyError",
@@ -229,7 +237,9 @@ channel_exceptions_init(PyObject *ns)
     if (ChannelEmptyError == NULL) {
         return -1;
     }
-    PyDict_SetItemString(ns, "ChannelEmptyError", ChannelEmptyError);
+    if (PyDict_SetItemString(ns, "ChannelEmptyError", ChannelEmptyError) != 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -2002,7 +2012,9 @@ PyInit__xxsubinterpreters(void)
 
     /* Add other types */
     Py_INCREF(&ChannelIDtype);
-    PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype);
+    if (PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype) != 0) {
+        return NULL;
+    }
 
     if (_PyCrossInterpreterData_Register_Class(&ChannelIDtype, _channelid_shared)) {
         return NULL;
