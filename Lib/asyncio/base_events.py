@@ -157,7 +157,7 @@ def _run_until_complete_cb(fut):
 
 
 
-class _SendfileProtocol(protocols.Protocol):
+class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
         # transport should be _FlowControlMixin instance
         self._transport = transp
@@ -1020,7 +1020,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         blocksize = min(count, 16384) if count else 16384
         buf = bytearray(blocksize)
         total_sent = 0
-        proto = _SendfileProtocol(transp)
+        proto = _SendfileFallbackProtocol(transp)
         try:
             while True:
                 if count:
