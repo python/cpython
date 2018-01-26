@@ -75,6 +75,9 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
     }
 
     struct _shareditem *shared = PyMem_NEW(struct _shareditem, len+1);
+    if (shared == NULL) {
+        return NULL;
+    }
     for (Py_ssize_t i=0; i < len; i++) {
         *(shared + i) = (struct _shareditem){0};
     }
@@ -893,6 +896,10 @@ _channel_send(struct _channels *channels, int64_t id, PyObject *obj)
 
     // Convert the object to cross-interpreter data.
     _PyCrossInterpreterData *data = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
+    if (data == NULL) {
+        PyThread_release_lock(mutex);
+        return -1;
+    }
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
         PyThread_release_lock(mutex);
         return -1;
@@ -1199,6 +1206,9 @@ static int
 _channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
 {
     struct _channelid_xid *xid = PyMem_Malloc(sizeof(struct _channelid_xid));
+    if (xid == NULL) {
+        return -1;
+    }
     xid->id = ((channelid *)obj)->id;
     xid->end = ((channelid *)obj)->end;
 
