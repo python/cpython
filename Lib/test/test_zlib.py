@@ -751,12 +751,11 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
         # Register "1.2.3" as "1.2.3.0"
-        if zlib.ZLIB_RUNTIME_VERSION.find('-')>=0:
-            #  zlib can report "1.2.8-linuxfoundation-mods-v1 or "1.2.8.f-linuxfoundation-mods-v1"
-            v = list(map( int , zlib.ZLIB_RUNTIME_VERSION.split('-',1)[0].split('.')[:3] ))
+        v = zlib.ZLIB_RUNTIME_VERSION.split('-',1)[0]
+        if '-' in v:
+            v = list(map( int , v.split('.')[:3] ))
             v.append(0)
-        else:
-            v = (zlib.ZLIB_RUNTIME_VERSION + ".0").split(".", 4)
+
         supports_wbits_0 = int(v[0]) > 1 or int(v[0]) == 1 \
             and (int(v[1]) > 2 or int(v[1]) == 2
             and (int(v[2]) > 3 or int(v[2]) == 3 and int(v[3]) >= 5))
