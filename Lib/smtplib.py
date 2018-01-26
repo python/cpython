@@ -890,7 +890,7 @@ class SMTP:
         return senderrs
 
     def send_message(self, msg, from_addr=None, to_addrs=None,
-                mail_options=[], rcpt_options={}):
+                mail_options=None, rcpt_options=None):
         """Converts message to a bytestring and passes it to sendmail.
 
         The arguments are as for sendmail, except that msg is an
@@ -939,6 +939,10 @@ class SMTP:
                                        msg[header_prefix + 'Cc'])
                            if f is not None]
             to_addrs = [a[1] for a in email.utils.getaddresses(addr_fields)]
+        if mail_options is None:
+            mail_options = []
+        if rcpt_options is None:
+            rcpt_options = []
         # Make a local copy so we can delete the bcc headers.
         msg_copy = copy.copy(msg)
         del msg_copy['Bcc']
