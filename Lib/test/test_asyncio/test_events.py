@@ -2214,8 +2214,9 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_force_unsupported_native(self):
-        if isinstance(self.loop, asyncio.ProactorEventLoop):
-            self.skipTest("Fails on proactor event loop")
+        if sys.platform == 'win32':
+            if isinstance(self.loop, asyncio.ProactorEventLoop):
+                self.skipTest("Fails on proactor event loop")
         srv_proto, cli_proto = self.prepare()
 
         def sendfile_native(transp, file, offset, count):
