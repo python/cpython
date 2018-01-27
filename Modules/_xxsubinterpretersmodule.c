@@ -854,7 +854,12 @@ _channels_list_all(_channels *channels, int64_t *count)
 {
     int64_t *cids = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
-    int64_t *ids = PyMem_NEW(int64_t, channels->numopen);
+    int64_t numopen = channels->numopen;
+    if (numopen >= PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_RuntimeError, "too many channels open");
+        goto done;
+    }
+    int64_t *ids = PyMem_NEW(int64_t, (Py_ssize_t)(channels->numopen));
     if (ids == NULL) {
         goto done;
     }
