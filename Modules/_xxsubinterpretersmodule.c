@@ -1086,7 +1086,6 @@ static PyObject *
 channelid_repr(PyObject *self)
 {
     PyTypeObject *type = Py_TYPE(self);
-    // XXX Use the qualname?
     const char *name = _PyType_Name(type);
 
     channelid *cid = (channelid *)self;
@@ -1299,8 +1298,12 @@ static PyTypeObject ChannelIDtype = {
     0,                              /* tp_dictoffset */
     0,                              /* tp_init */
     0,                              /* tp_alloc */
+    // Note that we do not set tp_new to channelid_new.  Instead we
+    // set it to NULL, meaning it cannot be instantiated from Python
+    // code.  We do this because there is a strong relationship between
+    // channel IDs and the channel lifecycle, so this limitation avoids
+    // related complications.
     NULL,                           /* tp_new */
-    //(newfunc)channelid_new,        /* tp_new */
 };
 
 /* interpreter-specific functions *******************************************/
