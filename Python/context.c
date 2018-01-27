@@ -85,7 +85,8 @@ PyContext_Enter(PyContext *ctx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
     ctx->ctx_entered = 1;
@@ -107,7 +108,8 @@ PyContext_Exit(PyContext *ctx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
 
     if (ts->context != (PyObject *)ctx) {
         /* Can only happen if someone misuses the C API */
@@ -341,7 +343,8 @@ context_new_from_vars(PyHamtObject *vars)
 static inline PyContext *
 context_get(void)
 {
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
     PyContext *current_ctx = (PyContext *)ts->context;
     if (current_ctx == NULL) {
         current_ctx = context_new_empty();
