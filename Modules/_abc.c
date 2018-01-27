@@ -216,12 +216,28 @@ _in_weak_set(PyObject *set, PyObject *obj)
     return res;
 }
 
+static _abc_data *
+_get_impl(PyObject *self)
+{
+    PyObject *impl;
+    impl = _PyObject_GetAttrId(self, &PyId__abc_impl);
+    if (!impl) {
+        return NULL;
+    }
+    if (PY_TYPE(impl) != &_abc_data_type) {
+        PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
+        Py_DECREF(impl);
+        return NULL;
+    }
+    return (_abc_data *)impl;
+}
+
 static int
 _in_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
     int res;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return -1;
     }
@@ -235,7 +251,7 @@ _in_negative_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
     int res;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return -1;
     }
@@ -326,7 +342,7 @@ _get_registry(PyObject *self)
 {
     _abc_data *impl;
     PyObject *res;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return NULL;
     }
@@ -339,7 +355,7 @@ static int
 _enter_iter(PyObject *self)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return 0;
     }
@@ -355,7 +371,7 @@ _exit_iter(PyObject *self)
     _guarded_set *registry;
     _abc_data *impl;
     int pos;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return 0;
     }
@@ -389,7 +405,7 @@ _add_to_registry(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
     int res;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return 0;
     }
@@ -403,7 +419,7 @@ _add_to_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
     int res;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return 0;
     }
@@ -417,7 +433,7 @@ _add_to_negative_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
     int res;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return 0;
     }
@@ -452,7 +468,7 @@ static int
 _reset_negative_cache(PyObject *self)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return 0;
     }
@@ -477,7 +493,7 @@ _reset_caches(PyObject *m, PyObject *args)
     if (!PyArg_UnpackTuple(args, "_reset_caches", 1, 1, &self)) {
         return NULL;
     }
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return NULL;
     }
@@ -498,7 +514,7 @@ _get_negative_cache_version(PyObject *self)
 {
     _abc_data *impl;
     PyObject *res;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return NULL;
     }
@@ -511,7 +527,7 @@ static int
 _set_negative_cache_version(PyObject *self, PyObject *version)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return 0;
     }
@@ -546,7 +562,7 @@ _get_dump(PyObject *m, PyObject *args)
     if (!registry) {
         return NULL;
     }
-    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    impl = _get_impl(self);
     if (!impl) {
         return NULL;
     }
@@ -585,8 +601,7 @@ compute_abstract_methods(PyObject *self)
 
     PyObject *ns=NULL, *items=NULL, *bases=NULL;  // Py_CLEAR()ed on error.
 
-    /* Stage 1: direct abstract methods.
-       (It is safe to assume everything is fine since type.__new__ succeeded.) */
+    /* Stage 1: direct abstract methods. */
     ns = _PyObject_GetAttrId(self, &PyId___dict__);
     if (!ns) {
         goto error;
