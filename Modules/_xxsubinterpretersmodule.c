@@ -260,7 +260,7 @@ typedef struct _channelend {
 static _channelend *
 _channelend_new(int64_t interp)
 {
-    _channelend *end = PyMem_Malloc(sizeof(_channelend));
+    _channelend *end = PyMem_NEW(_channelend, 1);
     if (end == NULL) {
         return NULL;
     }
@@ -331,7 +331,7 @@ typedef struct _channel {
 static _PyChannelState *
 _channel_new(void)
 {
-    _PyChannelState *chan = PyMem_Malloc(sizeof(_PyChannelState));
+    _PyChannelState *chan = PyMem_NEW(_PyChannelState, 1);
     if (chan == NULL) {
         return NULL;
     }
@@ -512,7 +512,7 @@ _channel_add(_PyChannelState *chan, int64_t interp,
         goto done;
     }
 
-    _channelitem *item = PyMem_Malloc(sizeof(_channelitem));
+    _channelitem *item = PyMem_NEW(_channelitem, 1);
     if (item == NULL) {
         goto done;
     }
@@ -598,7 +598,7 @@ typedef struct _channelref {
 static _channelref *
 _channelref_new(int64_t id, _PyChannelState *chan)
 {
-    _channelref *ref = PyMem_Malloc(sizeof(_channelref));
+    _channelref *ref = PyMem_NEW(_channelref, 1);
     if (ref == NULL) {
         return NULL;
     }
@@ -854,7 +854,7 @@ _channels_list_all(_channels *channels, int64_t *count)
 {
     int64_t *cids = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
-    int64_t *ids = PyMem_Malloc(sizeof(int64_t) * channels->numopen);
+    int64_t *ids = PyMem_NEW(int64_t, channels->numopen);
     if (ids == NULL) {
         goto done;
     }
@@ -1237,7 +1237,7 @@ _channelid_from_xid(_PyCrossInterpreterData *data)
 static int
 _channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    struct _channelid_xid *xid = PyMem_Malloc(sizeof(struct _channelid_xid));
+    struct _channelid_xid *xid = PyMem_NEW(struct _channelid_xid, 1);
     if (xid == NULL) {
         return -1;
     }
