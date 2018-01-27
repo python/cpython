@@ -546,7 +546,7 @@ Creating listening connections
 File Transferring
 -----------------
 
-.. coroutinemethod:: AbstractEventLoop.sendfile(sock, transport, \
+.. coroutinemethod:: AbstractEventLoop.sendfile(transport, file, \
                                                 offset=0, count=None, \
                                                 *, fallback=True)
 
