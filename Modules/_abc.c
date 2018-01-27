@@ -335,23 +335,22 @@ PyDoc_STRVAR(_reset_registry_doc,
 \n\
 Should be only used by refleak.py");
 
-int
-_reset_registry(PyObject *args)
+PyObject *
+_reset_registry(PyObject *m, PyObject *args)
 {
     PyObject *self, *registry;
-    if (!PyArg_UnpackTuple(args, "_get_dump", 1, 1, &self)) {
-        return 0;
+    if (!PyArg_UnpackTuple(args, "_reset_registry", 1, 1, &self)) {
+        return NULL;
     }
     registry = _get_registry(self);
     if (!registry) {
-        return 0;
+        return NULL;
     }
     if (PySet_Clear(registry) < 0) {
-        return 0;
+        return NULL;
     }
-    return 1;
+    Py_RETURN_NONE;
 }
-
 
 int
 _reset_negative_cache(PyObject *self)
@@ -375,26 +374,29 @@ PyDoc_STRVAR(_reset_caches_doc,
 \n\
 Should be only used by refleak.py");
 
-int
-_reset_caches(PyObject *args)
+PyObject *
+_reset_caches(PyObject *m, PyObject *args)
 {
     PyObject *self, *cache, *key;
     if (!PyArg_UnpackTuple(args, "_reset_caches", 1, 1, &self)) {
-        return 0;
+        return NULL;
     }
     key = PyWeakref_NewRef(self, NULL);
     if (!key) {
-        return 0;
+        return NULL;
     }
     cache = PyObject_GetItem(_the_cache, key);
     if (!cache) {
-        return 0;
+        return NULL;
     }
-    if (!PySet_Clear(cache)) {
-        return 0;
+    if (PySet_Clear(cache) < 0) {
+        return NULL;
     }
     /* also the second cache */
-    return _reset_negative_cache(self);
+    if (!_reset_negative_cache(self)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 PyObject *
