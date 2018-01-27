@@ -73,6 +73,11 @@ Run an event loop
 
    .. versionchanged:: 3.5.1
 
+.. method:: AbstractEventLoop.is_stopping()
+
+    Returns True if the event loop has been stopped but has not yet
+    done so.
+
 .. method:: AbstractEventLoop.is_closed()
 
    Returns ``True`` if the event loop was closed.
