@@ -354,6 +354,14 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
+    async def sendfile(self, transport, file, offset=0, count=None,
+                       *, fallback=True):
+        """Send a file through a transport.
+
+        Return an amount of sent bytes.
+        """
+        raise NotImplementedError
+
     async def start_tls(self, transport, protocol, sslcontext, *,
                         server_side=False,
                         server_hostname=None,

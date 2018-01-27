@@ -282,6 +282,8 @@ class _SSLPipe(object):
 class _SSLProtocolTransport(transports._FlowControlMixin,
                             transports.Transport):
 
+    _sendfile_compatible = constants._SendfileMode.FALLBACK
+
     def __init__(self, loop, ssl_protocol):
         self._loop = loop
         # SSLProtocol instance
@@ -364,6 +366,11 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
     def get_write_buffer_size(self):
         """Return the current size of the write buffer."""
         return self._ssl_protocol._transport.get_write_buffer_size()
+
+    @property
+    def _protocol_paused(self):
+        # Required for sendfile fallback pause_writing/resume_writing logic
+        return self._ssl_protocol._transport._protocol_paused
 
     def write(self, data):
         """Write some data bytes to the transport.
