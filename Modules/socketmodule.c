@@ -2836,7 +2836,7 @@ sock_close(PySocketSockObject *s)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(close_doc,
+PyDoc_STRVAR(sock_close_doc,
 "close()\n\
 \n\
 Close the socket.  It cannot be used after this call.");
@@ -4558,7 +4558,7 @@ static PyMethodDef sock_methods[] = {
     {"bind",              (PyCFunction)sock_bind, METH_O,
                       bind_doc},
     {"close",             (PyCFunction)sock_close, METH_NOARGS,
-                      close_doc},
+                      sock_close_doc},
     {"connect",           (PyCFunction)sock_connect, METH_O,
                       connect_doc},
     {"connect_ex",        (PyCFunction)sock_connect_ex, METH_O,
@@ -5456,6 +5456,31 @@ PyDoc_STRVAR(getprotobyname_doc,
 \n\
 Return the protocol number for the named protocol.  (Rarely used.)");
 
+static PyObject *
+socket_close(PyObject *self, PyObject *fdobj)
+{
+    SOCKET_T fd;
+    int res;
+
+    fd = PyLong_AsSocket_t(fdobj);
+    if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    res = SOCKETCLOSE(fd);
+    Py_END_ALLOW_THREADS
+    /* bpo-30319: The peer can already have closed the connection.
+       Python ignores ECONNRESET on close(). */
+    if (res < 0 && !CHECK_ERRNO(ECONNRESET)) {
+        return set_error();
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(close_doc,
+"close(integer) -> None\n\
+\n\
+Close an integer socket file descriptor.  This is like os.close(), but for\n\
+sockets; on some platforms os.close() won't work for socket file descriptors.");
 
 #ifndef NO_DUP
 /* dup() function for socket fds */
@@ -6397,6 +6422,8 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, getservbyport_doc},
     {"getprotobyname",          socket_getprotobyname,
      METH_VARARGS, getprotobyname_doc},
+    {"close",                   socket_close,
+     METH_O, close_doc},
 #ifndef NO_DUP
     {"dup",                     socket_dup,
      METH_O, dup_doc},

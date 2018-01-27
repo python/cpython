@@ -578,6 +578,14 @@ Other functions
 The :mod:`socket` module also offers various network-related services:
 
 
+.. function:: close(fd)
+
+   Close a socket file descriptor. This is like :func:`os.close`, but for
+   sockets. On some platforms (most noticeable Windows) :func:`os.close`
+   does not work for socket file descriptors.
+
+   .. versionadded:: 3.7
+
 .. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
