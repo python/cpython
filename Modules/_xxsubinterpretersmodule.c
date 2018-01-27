@@ -22,24 +22,29 @@ _coerce_id(PyObject *id)
     id = PyNumber_Long(id);
     if (id == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_SetString(PyExc_TypeError, "'id' must be a non-negative int");
+            PyErr_SetString(PyExc_TypeError,
+                            "'id' must be a non-negative int");
         }
         else {
-            PyErr_SetString(PyExc_ValueError, "'id' must be a non-negative int");
+            PyErr_SetString(PyExc_ValueError,
+                            "'id' must be a non-negative int");
         }
         return -1;
     }
     long long cid = PyLong_AsLongLong(id);
     if (cid == -1 && PyErr_Occurred() != NULL) {
-        PyErr_SetString(PyExc_ValueError, "'id' must be a non-negative int");
+        PyErr_SetString(PyExc_ValueError,
+                        "'id' must be a non-negative int");
         return -1;
     }
     if (cid < 0) {
-        PyErr_SetString(PyExc_ValueError, "'id' must be a non-negative int");
+        PyErr_SetString(PyExc_ValueError,
+                        "'id' must be a non-negative int");
         return -1;
     }
     if (cid > INT64_MAX) {
-        PyErr_SetString(PyExc_ValueError, "'id' too large (must be 64-bit int)");
+        PyErr_SetString(PyExc_ValueError,
+                        "'id' too large (must be 64-bit int)");
         return -1;
     }
     return cid;
@@ -212,8 +217,8 @@ channel_exceptions_init(PyObject *ns)
     }
 
     // An operation tried to use a channel that doesn't exist.
-    ChannelNotFoundError = PyErr_NewException("_xxsubinterpreters.ChannelNotFoundError",
-                                              ChannelError, NULL);
+    ChannelNotFoundError = PyErr_NewException(
+            "_xxsubinterpreters.ChannelNotFoundError", ChannelError, NULL);
     if (ChannelNotFoundError == NULL) {
         return -1;
     }
@@ -222,8 +227,8 @@ channel_exceptions_init(PyObject *ns)
     }
 
     // An operation tried to use a closed channel.
-    ChannelClosedError = PyErr_NewException("_xxsubinterpreters.ChannelClosedError",
-                                            ChannelError, NULL);
+    ChannelClosedError = PyErr_NewException(
+            "_xxsubinterpreters.ChannelClosedError", ChannelError, NULL);
     if (ChannelClosedError == NULL) {
         return -1;
     }
@@ -232,8 +237,8 @@ channel_exceptions_init(PyObject *ns)
     }
 
     // An operation tried to pop from an empty channel.
-    ChannelEmptyError = PyErr_NewException("_xxsubinterpreters.ChannelEmptyError",
-                                           ChannelError, NULL);
+    ChannelEmptyError = PyErr_NewException(
+            "_xxsubinterpreters.ChannelEmptyError", ChannelError, NULL);
     if (ChannelEmptyError == NULL) {
         return -1;
     }
@@ -333,7 +338,8 @@ _channel_new(void)
     chan->mutex = PyThread_allocate_lock();
     if (chan->mutex == NULL) {
         PyMem_Free(chan);
-        PyErr_SetString(ChannelError, "can't initialize mutex for new channel");
+        PyErr_SetString(ChannelError,
+                        "can't initialize mutex for new channel");
         return NULL;
     }
 
@@ -352,7 +358,8 @@ _channel_new(void)
 }
 
 static _channelend *
-_channel_add_end(_PyChannelState *chan, _channelend *prev, int64_t interp, int send)
+_channel_add_end(_PyChannelState *chan, _channelend *prev, int64_t interp,
+                 int send)
 {
     _channelend *end = _channelend_new(interp);
     if (end == NULL) {
@@ -388,7 +395,8 @@ _channel_associate_end(_PyChannelState *chan, int64_t interp, int send)
     }
 
     _channelend *prev;
-    _channelend *end = _channelend_find(send ? chan->send : chan->recv, interp, &prev);
+    _channelend *end = _channelend_find(send ? chan->send : chan->recv,
+                                        interp, &prev);
     if (end != NULL) {
         if (!end->open) {
             PyErr_SetString(ChannelClosedError, "channel already closed");
@@ -494,7 +502,8 @@ done:
 }
 
 static int
-_channel_add(_PyChannelState *chan, int64_t interp, _PyCrossInterpreterData *data)
+_channel_add(_PyChannelState *chan, int64_t interp,
+             _PyCrossInterpreterData *data)
 {
     int res = -1;
 
@@ -632,7 +641,8 @@ _channels_init(_channels *channels)
         channels->mutex = PyThread_allocate_lock();
         if (channels->mutex == NULL) {
             PyMem_Free(channels);
-            PyErr_SetString(ChannelError, "can't initialize mutex for channel management");
+            PyErr_SetString(ChannelError,
+                            "can't initialize mutex for channel management");
             return -1;
         }
     }
@@ -752,7 +762,8 @@ done:
 }
 
 static void
-_channels_remove_ref(_channels *channels, _channelref *ref, _channelref *prev, _PyChannelState **pchan)
+_channels_remove_ref(_channels *channels, _channelref *ref, _channelref *prev,
+                     _PyChannelState **pchan)
 {
     if (ref == channels->head) {
         channels->head = ref->next;
@@ -906,7 +917,7 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     // Past this point we are responsible for releasing the mutex.
 
     // Convert the object to cross-interpreter data.
-    _PyCrossInterpreterData *data = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
+    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
     if (data == NULL) {
         PyThread_release_lock(mutex);
         return -1;
@@ -1005,7 +1016,8 @@ typedef struct channelid {
 } channelid;
 
 static channelid *
-newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels, int force)
+newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels,
+             int force)
 {
     channelid *self = PyObject_New(channelid, cls);
     if (self == NULL) {
@@ -1038,7 +1050,8 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
     int send = -1;
     int recv = -1;
     int force = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$ppp:ChannelID.__init__", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O|$ppp:ChannelID.__init__", kwlist,
                                      &id, &send, &recv, &force))
         return NULL;
 
@@ -1056,7 +1069,8 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 
     // Handle "send" and "recv".
     if (send == 0 && recv == 0) {
-        PyErr_SetString(PyExc_ValueError, "'send' and 'recv' cannot both be False");
+        PyErr_SetString(PyExc_ValueError,
+                        "'send' and 'recv' cannot both be False");
         return NULL;
     }
     int end = 0;
@@ -1205,7 +1219,8 @@ static PyObject *
 _channelid_from_xid(_PyCrossInterpreterData *data)
 {
     struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
-    return (PyObject *)newchannelid(&ChannelIDtype, xid->id, xid->end, _global_channels(), 0);
+    return (PyObject *)newchannelid(&ChannelIDtype, xid->id, xid->end,
+                                    _global_channels(), 0);
 }
 
 static int
@@ -1231,7 +1246,8 @@ channelid_end(PyObject *self, void *end)
     int force = 1;
     channelid *cid = (channelid *)self;
     if (end != NULL) {
-        return (PyObject *)newchannelid(Py_TYPE(self), cid->id, *(int *)end, cid->channels, force);
+        return (PyObject *)newchannelid(Py_TYPE(self), cid->id, *(int *)end,
+                                        cid->channels, force);
     }
 
     if (cid->end == CHANNEL_SEND) {
@@ -1736,7 +1752,8 @@ channel_create(PyObject *self)
     if (cid < 0) {
         return NULL;
     }
-    PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, cid, 0, &_globals.channels, 0);
+    PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, cid, 0,
+                                            &_globals.channels, 0);
     if (id == NULL) {
         if (_channel_destroy(&_globals.channels, cid) != 0) {
             // XXX issue a warning?
@@ -1793,7 +1810,8 @@ channel_list_all(PyObject *self)
         return NULL;
     }
     for (int64_t i=0; i < count; cids++, i++) {
-        PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cids, 0, &_globals.channels, 0);
+        PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cids, 0,
+                                                &_globals.channels, 0);
         if (id == NULL) {
             Py_DECREF(ids);
             ids = NULL;
@@ -1886,7 +1904,8 @@ channel_drop_interpreter(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id;
     int send = -1;
     int recv = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$pp:channel_drop_interpreter", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O|$pp:channel_drop_interpreter", kwlist,
                                      &id, &send, &recv))
         return NULL;
 
