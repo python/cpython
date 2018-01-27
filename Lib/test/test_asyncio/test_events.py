@@ -2134,6 +2134,8 @@ class SendfileMixin:
         port = support.find_unused_port()
         srv_proto = MySendfileProto(loop=self.loop, close_after=close_after)
         if is_ssl:
+            if not ssl:
+                self.skipTest("No ssl module")
             srv_ctx = test_utils.simple_server_sslcontext()
             cli_ctx = test_utils.simple_client_sslcontext()
         else:
