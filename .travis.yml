@@ -94,7 +94,7 @@ before_script:
       fi
 
       # Prints changed files in this commit to help debug doc-only build issues.
-      echo "Files_changed: "
+      echo "Files changed: "
       echo $files_changed
 
       if ! echo $files_changed | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
