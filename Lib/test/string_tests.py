@@ -909,6 +909,14 @@ class BaseTest:
         self.checkequal(False, 'abc\n', 'isalnum')
         self.checkraises(TypeError, 'abc', 'isalnum', 42)
 
+    def test_isascii(self):
+        self.checkequal(True, '', 'isascii')
+        self.checkequal(True, '\x00', 'isascii')
+        self.checkequal(True, '\x7f', 'isascii')
+        self.checkequal(True, '\x00\x7f', 'isascii')
+        self.checkequal(False, '\x80', 'isascii')
+        self.checkequal(False, '\xe9', 'isascii')
+
     def test_isdigit(self):
         self.checkequal(False, '', 'isdigit')
         self.checkequal(False, 'a', 'isdigit')
