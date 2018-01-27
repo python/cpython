@@ -248,59 +248,17 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         Py_CLEAR(result);
     }
     else if (!result && PyErr_ExceptionMatches(PyExc_StopIteration)) {
-        /* Check for __future__ generator_stop and conditionally turn
-         * a leaking StopIteration into RuntimeError (with its cause
-         * set appropriately). */
-
-        const int check_stop_iter_error_flags = CO_FUTURE_GENERATOR_STOP |
-                                                CO_COROUTINE |
-                                                CO_ITERABLE_COROUTINE |
-                                                CO_ASYNC_GENERATOR;
-
-        if (gen->gi_code != NULL &&
-            ((PyCodeObject *)gen->gi_code)->co_flags &
-                check_stop_iter_error_flags)
-        {
-            /* `gen` is either:
-                  * a generator with CO_FUTURE_GENERATOR_STOP flag;
-                  * a coroutine;
-                  * a generator with CO_ITERABLE_COROUTINE flag
-                    (decorated with types.coroutine decorator);
-                  * an async generator.
-            */
-            const char *msg = "generator raised StopIteration";
-            if (PyCoro_CheckExact(gen)) {
-                msg = "coroutine raised StopIteration";
-            }
-            else if PyAsyncGen_CheckExact(gen) {
-                msg = "async generator raised StopIteration";
-            }
-            _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
+        const char *msg = "generator raised StopIteration";
+        if (PyCoro_CheckExact(gen)) {
+            msg = "coroutine raised StopIteration";
         }
-        else {
-            /* `gen` is an ordinary generator without
-               CO_FUTURE_GENERATOR_STOP flag.
-            */
-
-            PyObject *exc, *val, *tb;
-
-            /* Pop the exception before issuing a warning. */
-            PyErr_Fetch(&exc, &val, &tb);
-
-            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "generator '%.50S' raised StopIteration",
-                                 gen->gi_qualname)) {
-                /* Warning was converted to an error. */
-                Py_XDECREF(exc);
-                Py_XDECREF(val);
-                Py_XDECREF(tb);
-            }
-            else {
-                PyErr_Restore(exc, val, tb);
-            }
+        else if PyAsyncGen_CheckExact(gen) {
+            msg = "async generator raised StopIteration";
         }
+        _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
+
     }
-    else if (PyAsyncGen_CheckExact(gen) && !result &&
+    else if (!result && PyAsyncGen_CheckExact(gen) &&
              PyErr_ExceptionMatches(PyExc_StopAsyncIteration))
     {
         /* code in `gen` raised a StopAsyncIteration error:

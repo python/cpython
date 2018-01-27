@@ -520,6 +520,56 @@ class QueuePutTests(_QueueTestBase):
         self.loop.run_until_complete(
             asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
 
+    def test_cancelled_puts_not_being_held_in_self_putters(self):
+        def a_generator():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(a_generator)
+
+        # Full queue.
+        queue = asyncio.Queue(loop=loop, maxsize=1)
+        queue.put_nowait(1)
+
+        # Task waiting for space to put an item in the queue.
+        put_task = loop.create_task(queue.put(1))
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        # Check that the putter is correctly removed from queue._putters when
+        # the task is canceled.
+        self.assertEqual(len(queue._putters), 1)
+        put_task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            loop.run_until_complete(put_task)
+        self.assertEqual(len(queue._putters), 0)
+
+    def test_cancelled_put_silence_value_error_exception(self):
+        def gen():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+
+        # Full Queue.
+        queue = asyncio.Queue(1, loop=loop)
+        queue.put_nowait(1)
+
+        # Task waiting for space to put a item in the queue.
+        put_task = loop.create_task(queue.put(1))
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        # get_nowait() remove the future of put_task from queue._putters.
+        queue.get_nowait()
+        # When canceled, queue.put is going to remove its future from
+        # self._putters but it was removed previously by queue.get_nowait().
+        put_task.cancel()
+
+        # The ValueError exception triggered by queue._putters.remove(putter)
+        # inside queue.put should be silenced.
+        # If the ValueError is silenced we should catch a CancelledError.
+        with self.assertRaises(asyncio.CancelledError):
+            loop.run_until_complete(put_task)
+
 
 class LifoQueueTests(_QueueTestBase):
 

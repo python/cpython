@@ -179,6 +179,57 @@ a normal ``__getattr__`` method, except that it will be defined on module
        PEP written and implemented by Ivan Levkivskyi
 
 
+PEP 563: Postponed evaluation of annotations
+--------------------------------------------
+
+The advent of type hints in Python uncovered two glaring usability issues
+with the functionality of annotations added in :pep:`3107` and refined
+further in :pep:`526`:
+
+* annotations could only use names which were already available in the
+  current scope, in other words they didn't support forward references
+  of any kind; and
+
+* annotating source code had adverse effects on startup time of Python
+  programs.
+
+Both of these issues are fixed by postponing the evaluation of
+annotations.  Instead of compiling code which executes expressions in
+annotations at their definition time, the compiler stores the annotation
+in a string form equivalent to the AST of the expression in question.
+If needed, annotations can be resolved at runtime using
+``typing.get_type_hints()``.  In the common case where this is not
+required, the annotations are cheaper to store (since short strings
+are interned by the interpreter) and make startup time faster.
+
+Usability-wise, annotations now support forward references, making the
+following syntax valid::
+
+    class C:
+        @classmethod
+        def from_string(cls, source: str) -> C:
+            ...
+
+        def validate_b(self, obj: B) -> bool:
+            ...
+
+    class B:
+        ...
+
+Since this change breaks compatibility, the new behavior can be enabled
+on a per-module basis in Python 3.7 using a ``__future__`` import, like
+this::
+
+    from __future__ import annotations
+
+It will become the default in Python 4.0.
+
+.. seealso::
+
+    :pep:`563` -- Postponed evaluation of annotations
+       PEP written and implemented by Łukasz Langa.
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
@@ -379,6 +430,9 @@ contextlib
 :class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
 by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
 
+:class:`contextlib.AsyncExitStack` has been added. (Contributed by
+Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
+
 cProfile
 --------
 
@@ -412,6 +466,11 @@ therefore included in source distributions.
 :class:`distutils.core.setup` now warns if the ``classifiers``, ``keywords``
 and ``platforms`` fields are not specified as a list or a string.
 (Contributed by Berker Peksag in :issue:`19610`.)
+
+The ``upload`` command now longer tries to change CR end-of-line characters
+to CRLF.  This fixes a corruption issue with sdists that ended with a byte
+equivalent to CR.
+(Contributed by Bo Bayles in :issue:`32304`.)
 
 http.client
 -----------
@@ -875,6 +934,12 @@ that may require changes to your code.
 
 Changes in Python behavior
 --------------------------
+
+* :pep:`479` is enabled for all code in Python 3.7, meaning that
+  :exc:`StopIteration` exceptions raised directly or indirectly in
+  coroutines and generators are transformed into :exc:`RuntimeError`
+  exceptions.
+  (Contributed by Yury Selivanov in :issue:`32670`.)
 
 * Due to an oversight, earlier Python versions erroneously accepted the
   following syntax::
