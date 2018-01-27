@@ -3705,6 +3705,61 @@ exit:
 
 #endif /* defined(HAVE_PREAD) */
 
+#if (defined(HAVE_PREADV) || defined (HAVE_PREADV2))
+
+PyDoc_STRVAR(os_preadv__doc__,
+"preadv($module, fd, buffers, offset, flags=0, /)\n"
+"--\n"
+"\n"
+"Reads from a file descriptor into a number of mutable bytes-like objects.\n"
+"\n"
+"Combines the functionality of readv() and pread(). As readv(), it will\n"
+"transfer data into each buffer until it is full and then move on to the next\n"
+"buffer in the sequence to hold the rest of the data. Its fourth argument,\n"
+"specifies the file offset at which the input operation is to be performed. It\n"
+"will return the total number of bytes read (which can be less than the total\n"
+"capacity of all the objects).\n"
+"\n"
+"The flags argument contains a bitwise OR of zero or more of the following flags:\n"
+"\n"
+"- RWF_HIPRI\n"
+"- RWF_NOWAIT\n"
+"\n"
+"Using non-zero flags requires Linux 4.6 or newer.");
+
+#define OS_PREADV_METHODDEF    \
+    {"preadv", (PyCFunction)os_preadv, METH_FASTCALL, os_preadv__doc__},
+
+static Py_ssize_t
+os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
+               int flags);
+
+static PyObject *
+os_preadv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    PyObject *buffers;
+    Py_off_t offset;
+    int flags = 0;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:preadv",
+        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+        goto exit;
+    }
+    _return_value = os_preadv_impl(module, fd, buffers, offset, flags);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_PREADV) || defined (HAVE_PREADV2)) */
+
 PyDoc_STRVAR(os_write__doc__,
 "write($module, fd, data, /)\n"
 "--\n"
@@ -3962,6 +4017,61 @@ exit:
 }
 
 #endif /* defined(HAVE_PWRITE) */
+
+#if (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2))
+
+PyDoc_STRVAR(os_pwritev__doc__,
+"pwritev($module, fd, buffers, offset, flags=0, /)\n"
+"--\n"
+"\n"
+"Writes the contents of bytes-like objects to a file descriptor at a given offset.\n"
+"\n"
+"Combines the functionality of writev() and pwrite(). All buffers must be a sequence\n"
+"of bytes-like objects. Buffers are processed in array order. Entire contents of first\n"
+"buffer is written before proceeding to second, and so on. The operating system may\n"
+"set a limit (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.\n"
+"This function writes the contents of each object to the file descriptor and returns\n"
+"the total number of bytes written.\n"
+"\n"
+"The flags argument contains a bitwise OR of zero or more of the following flags:\n"
+"\n"
+"- RWF_DSYNC\n"
+"- RWF_SYNC\n"
+"\n"
+"Using non-zero flags requires Linux 4.7 or newer.");
+
+#define OS_PWRITEV_METHODDEF    \
+    {"pwritev", (PyCFunction)os_pwritev, METH_FASTCALL, os_pwritev__doc__},
+
+static Py_ssize_t
+os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
+                int flags);
+
+static PyObject *
+os_pwritev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    PyObject *buffers;
+    Py_off_t offset;
+    int flags = 0;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:pwritev",
+        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+        goto exit;
+    }
+    _return_value = os_pwritev_impl(module, fd, buffers, offset, flags);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
 #if defined(HAVE_MKFIFO)
 
@@ -6239,6 +6349,10 @@ exit:
     #define OS_PREAD_METHODDEF
 #endif /* !defined(OS_PREAD_METHODDEF) */
 
+#ifndef OS_PREADV_METHODDEF
+    #define OS_PREADV_METHODDEF
+#endif /* !defined(OS_PREADV_METHODDEF) */
+
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
 #endif /* !defined(OS_PIPE_METHODDEF) */
@@ -6254,6 +6368,10 @@ exit:
 #ifndef OS_PWRITE_METHODDEF
     #define OS_PWRITE_METHODDEF
 #endif /* !defined(OS_PWRITE_METHODDEF) */
+
+#ifndef OS_PWRITEV_METHODDEF
+    #define OS_PWRITEV_METHODDEF
+#endif /* !defined(OS_PWRITEV_METHODDEF) */
 
 #ifndef OS_MKFIFO_METHODDEF
     #define OS_MKFIFO_METHODDEF
@@ -6410,4 +6528,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=6345053cd5992caf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06ace805893aa10c input=a9049054013a1b77]*/
