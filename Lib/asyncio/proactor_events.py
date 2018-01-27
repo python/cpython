@@ -345,6 +345,8 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
                                transports.Transport):
     """Transport for connected sockets."""
 
+    _sendfile_compatible = constants._SendfileMode.FALLBACK
+
     def _set_extra(self, sock):
         self._extra['socket'] = sock
 
