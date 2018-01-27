@@ -590,12 +590,6 @@ class SSLProtocol(protocols.Protocol):
                 raise handshake_exc
 
             peercert = sslobj.getpeercert()
-            if not hasattr(self._sslcontext, 'check_hostname'):
-                # Verify hostname if requested, Python 3.4+ uses check_hostname
-                # and checks the hostname in do_handshake()
-                if (self._server_hostname and
-                        self._sslcontext.verify_mode != ssl.CERT_NONE):
-                    ssl.match_hostname(peercert, self._server_hostname)
         except BaseException as exc:
             if self._loop.get_debug():
                 if isinstance(exc, ssl.CertificateError):

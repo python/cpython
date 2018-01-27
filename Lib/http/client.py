@@ -1375,7 +1375,8 @@ else:
             if key_file or cert_file:
                 context.load_cert_chain(cert_file, key_file)
             self._context = context
-            self._check_hostname = check_hostname
+            if check_hostname is not None:
+                self._context.check_hostname = check_hostname
 
         def connect(self):
             "Connect to a host on a given (SSL) port."
@@ -1389,13 +1390,6 @@ else:
 
             self.sock = self._context.wrap_socket(self.sock,
                                                   server_hostname=server_hostname)
-            if not self._context.check_hostname and self._check_hostname:
-                try:
-                    ssl.match_hostname(self.sock.getpeercert(), server_hostname)
-                except Exception:
-                    self.sock.shutdown(socket.SHUT_RDWR)
-                    self.sock.close()
-                    raise
 
     __all__.append("HTTPSConnection")
 

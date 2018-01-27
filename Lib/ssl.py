@@ -148,7 +148,6 @@ _IntEnum._convert(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
-
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
@@ -171,6 +170,8 @@ if _ssl.HAS_TLS_UNIQUE:
     CHANNEL_BINDING_TYPES = ['tls-unique']
 else:
     CHANNEL_BINDING_TYPES = []
+
+HAS_NEVER_CHECK_COMMON_NAME = hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT')
 
 
 # Disable weak or insecure ciphers by default
@@ -216,9 +217,7 @@ _RESTRICTED_SERVER_CIPHERS = (
     '!aNULL:!eNULL:!MD5:!DSS:!RC4:!3DES'
 )
 
-
-class CertificateError(ValueError):
-    pass
+CertificateError = SSLCertVerificationError
 
 
 def _dnsname_match(dn, hostname):
@@ -473,6 +472,23 @@ class SSLContext(_SSLContext):
     def options(self, value):
         super(SSLContext, SSLContext).options.__set__(self, value)
 
+    if hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT'):
+        @property
+        def hostname_checks_common_name(self):
+            ncs = self._host_flags & _ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
+            return ncs != _ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
+
+        @hostname_checks_common_name.setter
+        def hostname_checks_common_name(self, value):
+            if value:
+                self._host_flags &= ~_ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
+            else:
+                self._host_flags |= _ssl.HOSTFLAG_NEVER_CHECK_SUBJECT
+    else:
+        @property
+        def hostname_checks_common_name(self):
+            return True
+
     @property
     def verify_flags(self):
         return VerifyFlags(super().verify_flags)
@@ -699,11 +715,6 @@ class SSLObject:
     def do_handshake(self):
         """Start the SSL/TLS handshake."""
         self._sslobj.do_handshake()
-        if self.context.check_hostname:
-            if not self.server_hostname:
-                raise ValueError("check_hostname needs server_hostname "
-                                 "argument")
-            match_hostname(self.getpeercert(), self.server_hostname)
 
     def unwrap(self):
         """Start the SSL shutdown handshake."""

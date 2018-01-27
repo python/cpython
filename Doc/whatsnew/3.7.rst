@@ -568,6 +568,32 @@ can be set within the scope of a group.
 ``'^$'`` or ``(?=-)`` that matches an empty string.
 (Contributed by Serhiy Storchaka in :issue:`25054`.)
 
+ssl
+---
+
+The ssl module now uses OpenSSL's builtin API instead of
+:func:`~ssl.match_hostname` to check host name or IP address. Values
+are validated during TLS handshake. Any cert validation error including
+a failing host name match now raises :exc:`~ssl.SSLCertVerificationError` and
+aborts the handshake with a proper TLS Alert message. The new exception
+contains additional information. Host name validation can be customized
+with :attr:`~ssl.SSLContext.host_flags`.
+(Contributed by Christian Heimes in :issue:`31399`.)
+
+.. note::
+   The improved host name check requires an OpenSSL 1.0.2 or 1.1 compatible
+   libssl. OpenSSL 0.9.8 and 1.0.1 are no longer supported. LibreSSL is
+   temporarily not supported until it gains the necessary OpenSSL 1.0.2 APIs.
+
+The ssl module no longer sends IP addresses in SNI TLS extension.
+(Contributed by Christian Heimes in :issue:`32185`.)
+
+:func:`~ssl.match_hostname` no longer supports partial wildcards like
+``www*.example.org``. :attr:`~ssl.SSLContext.host_flags` has partial
+wildcard matching disabled by default.
+(Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
+:issue:`31399`.)
+
 string
 ------
 
@@ -1119,6 +1145,12 @@ Other CPython implementation changes
   to exceptions. Instead, the flag must be set (to cause the warnings to be
   emitted in the first place), and an explicit ``error::BytesWarning``
   warnings filter added to convert them to exceptions.
+
+* CPython' :mod:`ssl` module requires OpenSSL 1.0.2 or 1.1 compatible libssl.
+  OpenSSL 1.0.1 has reached end of lifetime on 2016-12-31 and is no longer
+  supported. LibreSSL is temporarily not supported as well. LibreSSL releases
+  up to version 2.6.4 are missing required OpenSSL 1.0.2 APIs.
+
 
 Documentation
 =============
