@@ -672,6 +672,8 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                                 f'in {cls.__name__}')
 
     # Decide if/how we're going to create a hash function.
+    # TODO: Move this table to module scope, so it's not recreated
+    #  all the time.
     generate_hash = {(None,  False, False): ('',     ''),
                      (None,  False, True):  ('',     ''),
                      (None,  True,  False): ('none', ''),
@@ -684,7 +686,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                      (True,  False, True):  ('fn',   'fn-x'),
                      (True,  True,  False): ('fn',   'fn-x'),
                      (True,  True,  True):  ('fn',   'fn-x'),
-                     }[hash if hash is None else bool(hash),   # Force bool() if not None.
+                     }[None if hash is None else bool(hash),   # Force bool() if not None.
                        bool(eq),
                        bool(frozen)]['__hash__' in cls.__dict__]
     # No need to call _set_new_attribute here, since we already know if
@@ -700,7 +702,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                     if (f.compare if f.hash is None else f.hash)]
             cls.__hash__ = _hash_fn(flds)
     else:
-        assert f"can't get here: {generate_hash}"
+        assert False, f"can't get here: {generate_hash}"
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.

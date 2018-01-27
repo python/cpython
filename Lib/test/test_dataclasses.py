@@ -2265,6 +2265,14 @@ class TestHash(unittest.TestCase):
             hash(C(1))
 
     def test_hash_rules(self):
+        def non_bool(value):
+            # Map to something else that's True, but not a bool.
+            if value is None:
+                return None
+            if value:
+                return (3,)
+            return 0
+
         def test(case, hash, eq, frozen, with_hash, result):
             with self.subTest(case=case, hash=hash, eq=eq, frozen=frozen):
                 if with_hash:
@@ -2309,7 +2317,7 @@ class TestHash(unittest.TestCase):
                         # Hash should be overwritten (non-None).
                         self.assertIsNotNone(C.__dict__['__hash__'])
 
-                elif result == 'absent':
+                elif result == '':
                     # __hash__ is not present in our class.
                     if not with_hash:
                         self.assertNotIn('__hash__', C.__dict__)
@@ -2327,14 +2335,14 @@ class TestHash(unittest.TestCase):
         # And for each of these, a different result if
         #  __hash__ is defined or not.
         for case, (hash,  eq,    frozen, result_no, result_yes) in enumerate([
-                  (None,  False, False,  'absent',  'absent'),
-                  (None,  False, True,   'absent',  'absent'),
-                  (None,  True,  False,  'none',    'absent'),
+                  (None,  False, False,  '',        ''),
+                  (None,  False, True,   '',        ''),
+                  (None,  True,  False,  'none',    ''),
                   (None,  True,  True,   'fn',      'fn-x'),
-                  (False, False, False,  'absent',  'absent'),
-                  (False, False, True,   'absent',  'absent'),
-                  (False, True,  False,  'absent',  'absent'),
-                  (False, True,  True,   'absent',  'absent'),
+                  (False, False, False,  '',        ''),
+                  (False, False, True,   '',        ''),
+                  (False, True,  False,  '',        ''),
+                  (False, True,  True,   '',        ''),
                   (True,  False, False,  'fn',      'fn-x'),
                   (True,  False, True,   'fn',      'fn-x'),
                   (True,  True,  False,  'fn',      'fn-x'),
@@ -2342,6 +2350,13 @@ class TestHash(unittest.TestCase):
         ], 1):
             test(case, hash, eq, frozen, False, result_no)
             test(case, hash, eq, frozen, True,  result_yes)
+
+            # Test non-bool truth values, too.  This is just to
+            #  make sure the data-driven table in the decorator
+            #  handles non-bool values.
+            test(case, non_bool(hash), non_bool(eq), non_bool(frozen), False, result_no)
+            test(case, non_bool(hash), non_bool(eq), non_bool(frozen), True,  result_yes)
+
 
     def test_eq_only(self):
         # If a class defines __eq__, __hash__ is automatically added
