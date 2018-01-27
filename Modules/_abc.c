@@ -108,7 +108,7 @@ static PyTypeObject _guarded_set_type = {
     gset_new                            /* tp_new */
     };
 
-int
+static int
 _in_weak_set(PyObject *set, PyObject *obj)
 {
     PyObject *ref;
@@ -125,7 +125,7 @@ _in_weak_set(PyObject *set, PyObject *obj)
     return res;
 }
 
-int
+static int
 _in_cache(PyObject *self, PyObject *cls)
 {
     PyObject *key, *cache;
@@ -140,7 +140,7 @@ _in_cache(PyObject *self, PyObject *cls)
     return _in_weak_set(cache, cls);
 }
 
-int
+static int
 _in_negative_cache(PyObject *self, PyObject *cls)
 {
     PyObject *key, *cache;
@@ -200,7 +200,7 @@ static PyMethodDef _destroy_guarded_def = {
     "_destroy_guarded", (PyCFunction) _destroy_guarded, METH_O
 };
 
-int
+static int
 _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
 {
     PyObject *ref, *wr;
@@ -227,7 +227,7 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
     return 1;
 }
 
-PyObject *
+static PyObject *
 _get_registry(PyObject *self)
 {
     PyObject *key;
@@ -243,7 +243,7 @@ _get_registry(PyObject *self)
     return registry->data;
 }
 
-int
+static int
 _enter_iter(PyObject *self)
 {
     PyObject *key;
@@ -260,7 +260,7 @@ _enter_iter(PyObject *self)
     return 1;
 }
 
-int
+static int
 _exit_iter(PyObject *self)
 {
     PyObject *key, *ref;
@@ -285,7 +285,7 @@ _exit_iter(PyObject *self)
     return 1;
 }
 
-int
+static int
 _add_to_registry(PyObject *self, PyObject *cls)
 {
     PyObject *key, *registry;
@@ -297,7 +297,7 @@ _add_to_registry(PyObject *self, PyObject *cls)
     return _add_to_weak_set(registry, cls, 1);
 }
 
-int
+static int
 _add_to_cache(PyObject *self, PyObject *cls)
 {
     PyObject *key, *cache;
@@ -312,7 +312,7 @@ _add_to_cache(PyObject *self, PyObject *cls)
     return _add_to_weak_set(cache, cls, 0);
 }
 
-int
+static int
 _add_to_negative_cache(PyObject *self, PyObject *cls)
 {
     PyObject *key, *cache;
@@ -332,7 +332,7 @@ PyDoc_STRVAR(_reset_registry_doc,
 \n\
 Should be only used by refleak.py");
 
-PyObject *
+static PyObject *
 _reset_registry(PyObject *m, PyObject *args)
 {
     PyObject *self, *registry;
@@ -349,7 +349,7 @@ _reset_registry(PyObject *m, PyObject *args)
     Py_RETURN_NONE;
 }
 
-int
+static int
 _reset_negative_cache(PyObject *self)
 {
     PyObject *cache, *key = PyWeakref_NewRef(self, NULL);
@@ -371,7 +371,7 @@ PyDoc_STRVAR(_reset_caches_doc,
 \n\
 Should be only used by refleak.py");
 
-PyObject *
+static PyObject *
 _reset_caches(PyObject *m, PyObject *args)
 {
     PyObject *self, *cache, *key;
@@ -396,7 +396,7 @@ _reset_caches(PyObject *m, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyObject *
+static PyObject *
 _get_negative_cache_version(PyObject *self)
 {
     PyObject *key;
@@ -407,7 +407,7 @@ _get_negative_cache_version(PyObject *self)
     return PyObject_GetItem(_the_cache_version, key);
 }
 
-int
+static int
 _set_negative_cache_version(PyObject *self, PyObject *version)
 {
     PyObject *key;
@@ -425,7 +425,7 @@ Return shallow copies of registry, of both caches, and\n\
 negative cache version. Don't call this function directly,\n\
 instead use ABC._dump_registry() for a nice repr.");
 
-PyObject *
+static PyObject *
 _get_dump(PyObject *m, PyObject *args)
 {
     PyObject *self, *key, *registry, *cache, *negative_cache, *cache_version;
