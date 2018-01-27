@@ -864,7 +864,7 @@ class ChannelTests(TestBase):
             import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({int(cid)})
             _interpreters.channel_drop_interpreter({int(cid)})
-            print(obj)
+            print(repr(obj))
             """))
         interpreters.run_string(id1, dedent(f"""
             _interpreters.channel_drop_interpreter({int(cid)})
