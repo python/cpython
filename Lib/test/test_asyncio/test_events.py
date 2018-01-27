@@ -2186,6 +2186,7 @@ class SendfileMixin:
         srv_proto, cli_proto = self.prepare()
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file))
+        import pdb;pdb.set_trace()
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
         self.assertEqual(ret, len(self.DATA))
