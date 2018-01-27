@@ -1173,6 +1173,9 @@ always available.
    function for further tracing in that scope), or ``None`` to turn off tracing
    in that scope.
 
+   If there is any error occurred in the trace function, it will be unset, just
+   like ``settrace(None)`` is called.
+
    The events have the following meaning:
 
    ``'call'``
