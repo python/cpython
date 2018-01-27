@@ -1,9 +1,6 @@
 /* ABCMeta implementation */
 
-/* TODO: Get it compiled */
-/* TODO: Get tests passing */
-/* TODO: DECREF all WeakRefs! */
-/* TODO: Fix refleaks! */
+/* TODO: Fix refleaks: DECREF all WeakRefs! */
 /* TODO: Think (ask) about thread-safety. */
 /* TODO: Add checks only to those calls that can fail and use _GET_SIZE etc. */
 /* TODO: Think about inlining some calls (like __subclasses__) and/or using macros */
