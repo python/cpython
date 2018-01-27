@@ -27,6 +27,7 @@ if sys.platform != 'win32':
 
 import asyncio
 from asyncio import base_events
+from asyncio import constants
 from asyncio import coroutines
 from asyncio import events
 from asyncio import proactor_events
@@ -2380,6 +2381,14 @@ class SendfileMixin:
             cli_proto.transport.write(b'data')
         ret = self.run_loop(t)
         self.assertEqual(ret, len(self.DATA))
+
+    def test_sendfile_no_fallback_for_fallback_transport(self):
+        transport = mock.Mock()
+        transport.is_closing.side_effect = lambda: False
+        transport._sendfile_compatible = constants._SendfileMode.FALLBACK
+        with self.assertRaisesRegex(RuntimeError, 'fallback is disabled'):
+            self.loop.run_until_complete(
+                self.loop.sendfile(transport, None, fallback=False))
 
 
 if sys.platform == 'win32':
