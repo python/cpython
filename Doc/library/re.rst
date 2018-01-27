@@ -1398,7 +1398,7 @@ into a list with each nonempty line having its own entry:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> entries = re.split(r"\n+", text)
+   >>> entries = re.split("\n+", text)
    >>> entries
    ['Ross McFluff: 834.345.1254 155 Elm Street',
    'Ronald Heathmore: 892.345.3428 436 Finley Avenue',
