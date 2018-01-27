@@ -89,11 +89,12 @@ before_script:
         # Pull requests are slightly complicated because merging the PR commit without
         # rebasing causes it to retain its old commit date. Meaning in history if any
         # commits have been made on master that post-date it, they will be accidentally
-        # included in the diff if we use the simple TRAVIS_COMMIT_RANGE method
+        # included in the diff if we use the TRAVIS_COMMIT_RANGE variable.
         files_changed=$(git diff --name-only HEAD $(git merge-base HEAD $TRAVIS_BRANCH))
       fi
 
-      echo "files_changed: "
+      # Prints changed files in this commit to help debug doc-only build issues.
+      echo "Files_changed: "
       echo $files_changed
 
       if ! echo $files_changed | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
