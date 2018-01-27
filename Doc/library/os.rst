@@ -2441,6 +2441,8 @@ features:
    .. versionadded:: 3.5
       Added the :attr:`st_file_attributes` member on Windows.
 
+   .. versionadded:: 3.7
+      Added the :attr:`st_fstype` member to Solaris/derivatives.
 
 .. function:: statvfs(path)
 
