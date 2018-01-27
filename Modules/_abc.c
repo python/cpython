@@ -15,7 +15,6 @@
 PyDoc_STRVAR(_abc__doc__,
 "Module contains faster C implementation of abc.ABCMeta");
 
-_Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__dict__);
@@ -135,11 +134,11 @@ _in_cache(PyObject *self, PyObject *cls)
     PyObject *key, *cache;
     key = PyWeakref_NewRef(self, NULL);
     if (!key) {
-        return 0;
+        return -1;
     }
     cache = PyObject_GetItem(_the_cache, key);
     if (!cache) {
-        return 0;
+        return -1;
     }
     return _in_weak_set(cache, cls);
 }
@@ -150,11 +149,11 @@ _in_negative_cache(PyObject *self, PyObject *cls)
     PyObject *key, *cache;
     key = PyWeakref_NewRef(self, NULL);
     if (!key) {
-        return 0;
+        return -1;
     }
     cache = PyObject_GetItem(_the_negative_cache, key);
     if (!cache) {
-        return 0;
+        return -1;
     }
     return _in_weak_set(cache, cls);
 }
@@ -337,13 +336,20 @@ PyDoc_STRVAR(_reset_registry_doc,
 Should be only used by refleak.py");
 
 int
-_reset_registry(PyObject *self)
+_reset_registry(PyObject *args)
 {
-    PyObject *registry = _get_registry(self);
+    PyObject *self, *registry;
+    if (!PyArg_UnpackTuple(args, "_get_dump", 1, 1, &self)) {
+        return 0;
+    }
+    registry = _get_registry(self);
     if (!registry) {
         return 0;
     }
-    return PySet_Clear(registry);
+    if (PySet_Clear(registry) < 0) {
+        return 0;
+    }
+    return 1;
 }
 
 
@@ -358,7 +364,7 @@ _reset_negative_cache(PyObject *self)
     if (!cache) {
         return 0;
     }
-    if (!PySet_Clear(cache)) {
+    if (PySet_Clear(cache) < 0) {
         return 0;
     }
     return 1;
@@ -370,9 +376,13 @@ PyDoc_STRVAR(_reset_caches_doc,
 Should be only used by refleak.py");
 
 int
-_reset_caches(PyObject *self)
+_reset_caches(PyObject *args)
 {
-    PyObject *cache, *key = PyWeakref_NewRef(self, NULL);
+    PyObject *self, *cache, *key;
+    if (!PyArg_UnpackTuple(args, "_reset_caches", 1, 1, &self)) {
+        return 0;
+    }
+    key = PyWeakref_NewRef(self, NULL);
     if (!key) {
         return 0;
     }
@@ -417,9 +427,13 @@ negative cache version. Don't call this function directly,\n\
 instead use ABC._dump_registry() for a nice repr.");
 
 PyObject *
-_get_dump(PyObject *self)
+_get_dump(PyObject *m, PyObject *args)
 {
-    PyObject *key, *registry, *cache, *negative_cache, *cache_version, *res = PyTuple_New(4);
+    PyObject *self, *key, *registry, *cache, *negative_cache, *cache_version;
+    PyObject *res = PyTuple_New(4);
+    if (!PyArg_UnpackTuple(args, "_get_dump", 1, 1, &self)) {
+        return NULL;
+    }
     registry = _get_registry(self);
     if (!registry) {
         return NULL;
@@ -463,12 +477,15 @@ PyDoc_STRVAR(_abc_init_doc,
 "Internal ABC helper for class set-up. Should be never used outside abc module");
 
 static PyObject *
-_abc_init(PyObject *self)
+_abc_init(PyObject *m, PyObject *args)
 {
-    PyObject *ns, *bases, *keys, *abstracts, *base_abstracts;
+    PyObject *ns, *bases, *keys, *abstracts, *base_abstracts, *self;
     PyObject *key, *value, *item, *iter, *registry, *cache, *ref;
     Py_ssize_t pos = 0;
     int ret;
+    if (!PyArg_UnpackTuple(args, "_abc_init", 1, 1, &self)) {
+        return NULL;
+    }
     /* Set up inheritance registry. */
     ref = PyWeakref_NewRef(self, NULL);
     if (!ref) {
@@ -541,6 +558,9 @@ _abc_init(PyObject *self)
 
     /* Stage 2: inherited abstract methods. */
     bases = _PyObject_GetAttrId(self, &PyId___bases__);
+    if (!bases) {
+        return NULL;
+    }
     for (pos = 0; pos < PyTuple_Size(bases); pos++) {
         item = PyTuple_GET_ITEM(bases, pos);
         ret = _PyObject_LookupAttrId(item, &PyId___abstractmethods__, &base_abstracts);
@@ -594,18 +614,18 @@ PyDoc_STRVAR(_abc_register_doc,
 "Internal ABC helper for subclasss registration. Should be never used outside abc module");
 
 static PyObject *
-_abc_register(PyObject *self, PyObject *args)
+_abc_register(PyObject *m, PyObject *args)
 {
-    PyObject *subclass = NULL;
+    PyObject *self, *subclass = NULL;
     int result;
-    if (!PyArg_UnpackTuple(args, "register", 1, 1, &subclass)) {
+    if (!PyArg_UnpackTuple(args, "_abc_register", 2, 2, &self, &subclass)) {
         return NULL;
     }
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
         return NULL;
     }
-    result = PyObject_IsSubclass(subclass, (PyObject *)self);
+    result = PyObject_IsSubclass(subclass, self);
     if (result > 0) {
         Py_INCREF(subclass);
         return subclass;  /* Already a subclass. */
@@ -615,7 +635,7 @@ _abc_register(PyObject *self, PyObject *args)
     }
     /* Subtle: test for cycles *after* testing for "already a subclass";
        this means we allow X.register(X) and interpret it as a no-op. */
-    result = PyObject_IsSubclass((PyObject *)self, subclass);
+    result = PyObject_IsSubclass(self, subclass);
     if (result > 0) {
         /* This would create a cycle, which is bad for the algorithm below. */
         PyErr_SetString(PyExc_RuntimeError, "Refusing to create an inheritance cycle");
@@ -637,11 +657,11 @@ PyDoc_STRVAR(_abc_instancecheck_doc,
 "Internal ABC helper for instance checks. Should be never used outside abc module");
 
 static PyObject *
-_abc_instancecheck(PyObject *self, PyObject *args)
+_abc_instancecheck(PyObject *m, PyObject *args)
 {
-    PyObject *result, *subclass, *subtype, *instance = NULL;
+    PyObject *self, *result, *subclass, *subtype, *instance = NULL;
     int incache;
-    if (!PyArg_UnpackTuple(args, "__instancecheck__", 1, 1, &instance)) {
+    if (!PyArg_UnpackTuple(args, "_abc_instancecheck", 2, 2, &self, &instance)) {
         return NULL;
     }
     subclass = _PyObject_GetAttrId(instance, &PyId___class__);
@@ -682,13 +702,13 @@ PyDoc_STRVAR(_abc_subclasscheck_doc,
 "Internal ABC helper for subclasss checks. Should be never used outside abc module");
 
 static PyObject *
-_abc_subclasscheck(PyObject *self, PyObject *args)
+_abc_subclasscheck(PyObject *m, PyObject *args)
 {
-    PyObject *subclasses, *subclass = NULL;
+    PyObject *self, *subclasses, *subclass = NULL;
     PyObject *ok, *mro, *key, *rkey;
     Py_ssize_t pos;
     int incache, result;
-    if (!PyArg_UnpackTuple(args, "__subclasscheck__", 1, 1, &subclass)) {
+    if (!PyArg_UnpackTuple(args, "_abc_subclasscheck", 2, 2, &self, &subclass)) {
         return NULL;
     }
     /* TODO: clear the registry from dead refs from time to time
@@ -827,13 +847,13 @@ get_cache_token(void)
 static struct PyMethodDef module_functions[] = {
     {"get_cache_token", (PyCFunction)get_cache_token, METH_NOARGS,
         _cache_token_doc},
-    {"_abc_init", (PyCFunction)_abc_init, METH_O,
+    {"_abc_init", (PyCFunction)_abc_init, METH_VARARGS,
         _abc_init_doc},
-    {"_reset_registry", (PyCFunction)_reset_registry, METH_O,
-        _abc_init_doc},
-    {"_reset_caches", (PyCFunction)_reset_caches, METH_O,
+    {"_reset_registry", (PyCFunction)_reset_registry, METH_VARARGS,
+        _reset_registry_doc},
+    {"_reset_caches", (PyCFunction)_reset_caches, METH_VARARGS,
         _reset_caches_doc},
-    {"_get_dump", (PyCFunction)_get_dump, METH_O,
+    {"_get_dump", (PyCFunction)_get_dump, METH_VARARGS,
         _get_dump_doc},
     {"_abc_register", (PyCFunction)_abc_register, METH_VARARGS,
         _abc_register_doc},
