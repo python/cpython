@@ -36,6 +36,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):
             continue
+        for obj in abc.__subclasses__() + [abc]:
+            _reset_caches(obj)
 
     # bpo-31217: Integer pool to get a single integer object for the same
     # value. The pool is used to prevent false alarm when checking for memory
@@ -133,6 +135,9 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     # Clear ABC registries, restoring previously saved ABC registries.
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
+    for abc in abs_classes:
+        for obj in abc.__subclasses__() + [abc]:
+            _reset_caches(obj)
 
     clear_caches()
 

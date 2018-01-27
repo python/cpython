@@ -224,7 +224,7 @@ _get_impl(PyObject *self)
     if (!impl) {
         return NULL;
     }
-    if (PY_TYPE(impl) != &_abc_data_type) {
+    if (Py_TYPE(impl) != &_abc_data_type) {
         PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
         Py_DECREF(impl);
         return NULL;
@@ -581,6 +581,10 @@ _get_dump(PyObject *m, PyObject *args)
         Py_DECREF(impl);
         return NULL;
     }
+    Py_INCREF(registry);
+    Py_INCREF(cache);
+    Py_INCREF(negative_cache);
+    Py_INCREF(cache_version);
     PyTuple_SetItem(res, 0, registry);
     PyTuple_SetItem(res, 1, cache);
     PyTuple_SetItem(res, 2, negative_cache);
