@@ -31,6 +31,21 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
       MD5 as implicit default digest for *digestmod* is deprecated.
 
 
+.. function:: digest(key, msg, digest)
+
+   Return digest of *msg* for given secret *key* and *digest*. The
+   function is equivalent to ``HMAC(key, msg, digest).digest()``, but
+   uses an optimized C or inline implementation, which is faster for messages
+   that fit into memory. The parameters *key*, *msg*, and *digest* have
+   the same meaning as in :func:`~hmac.new`.
+
+   CPython implementation detail, the optimized C implementation is only used
+   when *digest* is a string and name of a digest algorithm, which is
+   supported by OpenSSL.
+
+   .. versionadded:: 3.7
+
+
 An HMAC object has the following methods:
 
 .. method:: HMAC.update(msg)
