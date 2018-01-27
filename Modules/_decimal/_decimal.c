@@ -1507,7 +1507,6 @@ init_current_context(void)
     }
     Py_DECREF(tok);
 
-    /* Borrowed reference with refcount==1 */
     return tl_context;
 }
 
