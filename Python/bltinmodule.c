@@ -327,7 +327,7 @@ empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
 fromlist is not empty.  The level argument is used to determine whether to\n\
-perform absolute or relative imports, 0 is absolute while a positive number\n\
+perform absolute or relative imports: 0 is absolute while a positive number\n\
 is the number of parent directories to search relative to the current module.");
 
 
