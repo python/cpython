@@ -130,19 +130,19 @@ abc_data_dealloc(_abc_data *self)
 static PyObject *
 abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    abc_data *self;
+    _abc_data *self;
     PyObject *registry;
 
     self = (_abc_data *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        registry = gset_new(&_guarded_set_type, NULL, NULL)
+        registry = gset_new(&_guarded_set_type, NULL, NULL);
         if (!registry) {
             return NULL;
         }
-        self->_abc_registry = registry;
+        self->_abc_registry = (_guarded_set *)registry;
         self->_abc_cache = PySet_New(NULL);
         self->_abc_negative_cache = PySet_New(NULL);
-        if (!self->_abc_cache || !self->_abc_neative_cache) {
+        if (!self->_abc_cache || !self->_abc_negative_cache) {
             return NULL;
         }
         self->_abc_negative_cache_version = abc_invalidation_counter;
@@ -213,22 +213,28 @@ static int
 _in_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    int res;
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return -1;
     }
-    return _in_weak_set(impl->_abc_cache, cls);
+    res = _in_weak_set(impl->_abc_cache, cls);
+    Py_DECREF(impl);
+    return res;
 }
 
 static int
 _in_negative_cache(PyObject *self, PyObject *cls)
 {
-    _abc_data *data;
-    data = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
-    if (!data) {
+    _abc_data *impl;
+    int res;
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
+    if (!impl) {
         return -1;
     }
-    return _in_weak_set(data->_abc_negative_cache, cls);
+    res = _in_weak_set(impl->_abc_negative_cache, cls);
+    Py_DECREF(impl);
+    return res;
 }
 
 static PyObject *
@@ -312,22 +318,26 @@ static PyObject *
 _get_registry(PyObject *self)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    PyObject *res;
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return NULL;
     }
-    return impl->_abc_registry->data;
+    res = impl->_abc_registry->data;
+    Py_DECREF(impl);
+    return res;
 }
 
 static int
 _enter_iter(PyObject *self)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return 0;
     }
     impl->_abc_registry->iterating++;
+    Py_DECREF(impl);
     return 1;
 }
 
@@ -338,27 +348,32 @@ _exit_iter(PyObject *self)
     _guarded_set *registry;
     _abc_data *impl;
     int pos;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return 0;
     }
-    registry = impl->_abc_registry
+    registry = impl->_abc_registry;
     if (!registry) {
+        Py_DECREF(impl);
         return 0;
     }
     registry->iterating--;
     if (registry->iterating) {
+        Py_DECREF(impl);
         return 1;
     }
     for (pos = 0; pos < PyList_GET_SIZE(registry->pending); pos++) {
         ref = PyObject_CallMethod(registry->pending, "pop", NULL);
         if (!ref) {
+            Py_DECREF(impl);
             return 0;
         }
         if (PySet_Discard(registry->data, ref) < 0) {
+            Py_DECREF(impl);
             return 0;
         }
     }
+    Py_DECREF(impl);
     return 1;
 }
 
@@ -366,33 +381,42 @@ static int
 _add_to_registry(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    int res;
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return 0;
     }
-    return _add_to_weak_set(impl->_abc_registry, cls, 1);
+    res = _add_to_weak_set((PyObject *)(impl->_abc_registry), cls, 1);
+    Py_DECREF(impl);
+    return res;
 }
 
 static int
 _add_to_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    int res;
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return 0;
     }
-    return _add_to_weak_set(impl->_abc_cache, cls, 0);
+    res = _add_to_weak_set(impl->_abc_cache, cls, 0);
+    Py_DECREF(impl);
+    return res;
 }
 
 static int
 _add_to_negative_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    int res;
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return 0;
     }
-    return _add_to_weak_set(impl->_abc_negative_cache, cls, 0);
+    res = _add_to_weak_set(impl->_abc_negative_cache, cls, 0);
+    Py_DECREF(impl);
+    return res;
 }
 
 PyDoc_STRVAR(_reset_registry_doc,
@@ -421,13 +445,15 @@ static int
 _reset_negative_cache(PyObject *self)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return 0;
     }
     if (PySet_Clear(impl->_abc_negative_cache) < 0) {
+        Py_DECREF(impl);
         return 0;
     }
+    Py_DECREF(impl);
     return 1;
 }
 
@@ -444,15 +470,17 @@ _reset_caches(PyObject *m, PyObject *args)
     if (!PyArg_UnpackTuple(args, "_reset_caches", 1, 1, &self)) {
         return NULL;
     }
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return NULL;
     }
     if (PySet_Clear(impl->_abc_cache) < 0) {
+        Py_DECREF(impl);
         return NULL;
     }
     /* also the second cache */
     if (!_reset_negative_cache(self)) {
+        Py_DECREF(impl);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -462,25 +490,29 @@ static PyObject *
 _get_negative_cache_version(PyObject *self)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    PyObject *res;
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return NULL;
     }
-    return impl->_abc_negative_cache_version;
+    res = impl->_abc_negative_cache_version;
+    Py_DECREF(impl);
+    return res;
 }
 
 static int
 _set_negative_cache_version(PyObject *self, PyObject *version)
 {
     _abc_data *impl;
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
-        return NULL;
+        return 0;
     }
     Py_DECREF(impl->_abc_negative_cache_version);
     impl->_abc_negative_cache_version = abc_invalidation_counter;
     Py_INCREF(impl->_abc_negative_cache_version);
-    Py_RETURN_NONE;
+    Py_DECREF(impl);
+    return 1;
 }
 
 PyDoc_STRVAR(_get_dump_doc,
@@ -507,26 +539,30 @@ _get_dump(PyObject *m, PyObject *args)
     if (!registry) {
         return NULL;
     }
-    impl = (_abc_data *)_PyObject_GetAttrId(self, PyId__abc_impl);
+    impl = (_abc_data *)_PyObject_GetAttrId(self, &PyId__abc_impl);
     if (!impl) {
         return NULL;
     }
     cache = PyObject_CallMethod(impl->_abc_cache, "copy", NULL);
     if (!cache) {
+        Py_DECREF(impl);
         return NULL;
     }
     negative_cache = PyObject_CallMethod(impl->_abc_negative_cache, "copy", NULL);
     if (!negative_cache) {
+        Py_DECREF(impl);
         return NULL;
     }
     cache_version = _get_negative_cache_version(self);
     if (!cache_version) {
+        Py_DECREF(impl);
         return NULL;
     }
     PyTuple_SetItem(res, 0, registry);
     PyTuple_SetItem(res, 1, cache);
     PyTuple_SetItem(res, 2, negative_cache);
     PyTuple_SetItem(res, 3, cache_version);
+    Py_DECREF(impl);
     return res;
 }
 
@@ -666,7 +702,7 @@ _abc_init(PyObject *m, PyObject *args)
     if (!data) {
         return NULL;
     }
-    if (!_PyObject_GetAttrId(self, PyId__abc_impl, data)) {
+    if (_PyObject_SetAttrId(self, &PyId__abc_impl, data) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -944,9 +980,5 @@ PyMODINIT_FUNC
 PyInit__abc(void)
 {
     abc_invalidation_counter = PyLong_FromLong(0);
-    _the_registry = PyDict_New();
-    _the_cache = PyDict_New();
-    _the_negative_cache = PyDict_New();
-    _the_cache_version = PyDict_New();
     return PyModule_Create(&_abcmodule);
 }
