@@ -533,6 +533,49 @@ class Future(object):
             self._condition.notify_all()
         self._invoke_callbacks()
 
+    def then(self, fn, executor):
+        """Calls the function fn, which takes only the future as an argument,
+        using executor.submit(fn, self) when the callback then_callback
+        is called after being added to the future by add_done_callback
+
+        Args:
+            fn: A callable that will be called with this future as its only
+                argument when the future completes or is cancelled. If the
+                future has already completed or been cancelled then the
+                callable will be called immediately.
+            executor: An executor which will call the callable when this
+                future completes or is cancelled
+
+        Returns:
+            A future that will track the execution of the provided callable
+        """
+        track_future = Future()
+        def then_callback(will_be_self):
+            executor_future = executor.submit(fn, will_be_self)
+
+            def executor_done_callback(will_be_executor_future):
+                if will_be_executor_future.cancelled():
+                    track_future.cancel()
+                if not track_future.set_running_or_notify_cancel():
+                    return
+                exception = will_be_executor_future.exception()
+                if exception is not None:
+                    track_future.set_exception(exception)
+                else:
+                    result = will_be_executor_future.result()
+                    track_future.set_result(result)
+
+            def track_cancel_callback(will_be_track_future):
+                if will_be_track_future.cancelled():
+                    executor_future.cancel()
+
+            track_future.add_done_callback(track_cancel_callback)
+            executor_future.add_done_callback(executor_done_callback)
+
+
+        self.add_done_callback(then_callback)
+        return track_future
+
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
