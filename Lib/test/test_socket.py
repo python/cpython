@@ -1519,6 +1519,22 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertRaises(ValueError, fp.writable)
             self.assertRaises(ValueError, fp.seekable)
 
+    def test_socket_close(self):
+        sock = socket.socket()
+        try:
+            sock.bind((HOST, 0))
+            socket.close(sock.fileno())
+            with self.assertRaises(OSError):
+                sock.listen(1)
+        finally:
+            with self.assertRaises(OSError):
+                # sock.close() fails with EBADF
+                sock.close()
+        with self.assertRaises(TypeError):
+            socket.close(None)
+        with self.assertRaises(OSError):
+            socket.close(-1)
+
     def test_makefile_mode(self):
         for mode in 'r', 'rb', 'rw', 'w', 'wb':
             with self.subTest(mode=mode):

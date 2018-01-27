@@ -1,0 +1,1 @@
+Expose preadv and pwritev system calls in the os module. Patch by Pablo Galindo

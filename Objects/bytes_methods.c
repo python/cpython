@@ -92,6 +92,26 @@ _Py_bytes_isalnum(const char *cptr, Py_ssize_t len)
 }
 
 
+PyDoc_STRVAR_shared(_Py_isascii__doc__,
+"B.isascii() -> bool\n\
+\n\
+Return True if B is empty or all characters in B are ASCII,\n\
+False otherwise.");
+
+PyObject*
+_Py_bytes_isascii(const char *cptr, Py_ssize_t len)
+{
+    const unsigned char *p = (unsigned char *) cptr;
+    const unsigned char *e = p + len;
+    for (; p < e; p++) {
+        if (*p >= 128) {
+            Py_RETURN_FALSE;
+        }
+    }
+    Py_RETURN_TRUE;
+}
+
+
 PyDoc_STRVAR_shared(_Py_isdigit__doc__,
 "B.isdigit() -> bool\n\
 \n\

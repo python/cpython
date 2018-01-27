@@ -146,9 +146,10 @@ Functions, Constants, and Exceptions
 
 .. exception:: CertificateError
 
-   Raised to signal an error with a certificate (such as mismatching
-   hostname).  Certificate errors detected by OpenSSL, though, raise
-   an :exc:`SSLCertVerificationError`.
+   An alias for :exc:`SSLCertVerificationError`.
+
+   .. versionchanged:: 3.7
+      The exception is now an alias for :exc:`SSLCertVerificationError`.
 
 
 Socket creation
@@ -430,8 +431,14 @@ Certificate handling
       of the certificate, is now supported.
 
    .. versionchanged:: 3.7
+      The function is no longer used to TLS connections. Hostname matching
+      is now performed by OpenSSL.
+
       Allow wildcard when it is the leftmost and the only character
-      in that segment.
+      in that segment. Partial wildcards like ``www*.example.com`` are no
+      longer supported.
+
+   .. deprecated:: 3.7
 
 .. function:: cert_time_to_seconds(cert_time)
 
@@ -850,6 +857,14 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: HAS_NEVER_CHECK_COMMON_NAME
+
+   Whether the OpenSSL library has built-in support not checking subject
+   common name and :attr:`SSLContext.hostname_checks_common_name` is
+   writeable.
+
+   .. versionadded:: 3.7
+
 .. data:: HAS_ECDH
 
    Whether the OpenSSL library has built-in support for Elliptic Curve-based
@@ -1074,6 +1089,12 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.5
       The socket timeout is no more reset each time bytes are received or sent.
       The socket timeout is now to maximum total duration of the handshake.
+
+   .. versionchanged:: 3.7
+      Hostname or IP address is matched by OpenSSL during handshake. The
+      function :func:`match_hostname` is no longer used. In case OpenSSL
+      refuses a hostname or IP address, the handshake is aborted early and
+      a TLS alert message is send to the peer.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
@@ -1730,6 +1751,17 @@ to speed up repeated connections from the same clients.
    The protocol version chosen when constructing the context.  This attribute
    is read-only.
 
+.. attribute:: SSLContext.hostname_checks_common_name
+
+   Whether :attr:`~SSLContext.check_hostname` falls back to verify the cert's
+   subject common name in the absence of a subject alternative name
+   extension (default: true).
+
+   .. versionadded:: 3.7
+
+   .. note::
+      Only writeable with OpenSSL 1.1.0 or higher.
+
 .. attribute:: SSLContext.verify_flags
 
    The flags for certificate verification operations. You can set flags like
@@ -2323,6 +2355,10 @@ protocols and applications, the service can be identified by the hostname;
 in this case, the :func:`match_hostname` function can be used.  This common
 check is automatically performed when :attr:`SSLContext.check_hostname` is
 enabled.
+
+.. versionchanged:: 3.7
+   Hostname matchings is now performed by OpenSSL. Python no longer uses
+   :func:`match_hostname`.
 
 In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have

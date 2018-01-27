@@ -23,6 +23,12 @@ stringlib_isalnum(PyObject *self)
 }
 
 static PyObject*
+stringlib_isascii(PyObject *self)
+{
+    return _Py_bytes_isascii(STRINGLIB_STR(self), STRINGLIB_LEN(self));
+}
+
+static PyObject*
 stringlib_isdigit(PyObject *self)
 {
     return _Py_bytes_isdigit(STRINGLIB_STR(self), STRINGLIB_LEN(self));

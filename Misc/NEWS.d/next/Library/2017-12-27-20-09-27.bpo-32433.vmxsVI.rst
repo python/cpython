@@ -1,0 +1,2 @@
+The hmac module now has hmac.digest(), which provides an optimized HMAC
+digest.
