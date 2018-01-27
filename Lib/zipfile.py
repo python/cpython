@@ -1818,9 +1818,9 @@ class PyZipFile(ZipFile):
     """Class to create ZIP archives with Python library files and packages."""
 
     def __init__(self, file, mode="r", compression=ZIP_STORED,
-                 allowZip64=True, optimize=-1, compresslevel=None):
+                 allowZip64=True, optimize=-1):
         ZipFile.__init__(self, file, mode=mode, compression=compression,
-                         allowZip64=allowZip64, compresslevel=compresslevel)
+                         allowZip64=allowZip64)
         self._optimize = optimize
 
     def writepy(self, pathname, basename="", filterfunc=None):
