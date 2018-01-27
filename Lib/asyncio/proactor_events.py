@@ -183,6 +183,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                 if fut.done():
                     # deliver data later in "finally" clause
                     data = fut.result()
+                else:
+                    # the future will be replaced by next proactor.recv call
+                    fut.cancel()
 
             if self._closing:
                 # since close() has been called we ignore any read data

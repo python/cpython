@@ -174,6 +174,8 @@ class _SendfileFallbackProtocol(protocols.Protocol):
             self._write_ready_fut = None
 
     async def drain(self):
+        if self._transport.is_closing():
+            raise ConnectionError("Connection closed by peer")
         fut = self._write_ready_fut
         if fut is None:
             return

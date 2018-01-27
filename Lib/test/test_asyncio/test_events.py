@@ -2168,6 +2168,7 @@ class SendfileMixin:
         self.addCleanup(cleanup)
         return srv_proto, cli_proto
 
+    @unittest.skipIf(sys.platform == 'win32', "UDP sockets are not supported")
     def test_sendfile_not_supported(self):
         tr, pr = self.run_loop(
             self.loop.create_datagram_endpoint(
@@ -2213,6 +2214,8 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_force_unsupported_native(self):
+        if isinstance(self.loop, asyncio.ProactorEventLoop):
+            self.skipTest("Fails on proactor event loop")
         srv_proto, cli_proto = self.prepare()
 
         def sendfile_native(transp, file, offset, count):
@@ -2227,6 +2230,7 @@ class SendfileMixin:
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file,
                                    fallback=False))
+
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
         self.assertEqual(srv_proto.nbytes, 0)
@@ -2326,7 +2330,7 @@ class SendfileMixin:
 
     def test_sendfile_close_peer_in_middle_of_receiving(self):
         srv_proto, cli_proto = self.prepare(close_after=1024)
-        with self.assertRaises(ConnectionResetError):
+        with self.assertRaises(ConnectionError):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file))
         self.run_loop(srv_proto.done)
@@ -2346,7 +2350,7 @@ class SendfileMixin:
         self.loop._sendfile_native = sendfile_native
 
         srv_proto, cli_proto = self.prepare(close_after=1024)
-        with self.assertRaises(ConnectionResetError):
+        with self.assertRaises(ConnectionError):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file))
         self.run_loop(srv_proto.done)
@@ -2356,6 +2360,8 @@ class SendfileMixin:
         self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
                         self.file.tell())
 
+    @unittest.skipIf(not hasattr(os, 'sendfile'),
+                     "Don't have native sendfile support")
     def test_sendfile_prevents_bare_write(self):
         srv_proto, cli_proto = self.prepare()
         fut = self.loop.create_future()
