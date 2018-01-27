@@ -1214,6 +1214,7 @@ class UserString(Sequence):
         return self.data.index(sub, start, end)
     def isalpha(self): return self.data.isalpha()
     def isalnum(self): return self.data.isalnum()
+    def isascii(self): return self.data.isascii()
     def isdecimal(self): return self.data.isdecimal()
     def isdigit(self): return self.data.isdigit()
     def isidentifier(self): return self.data.isidentifier()

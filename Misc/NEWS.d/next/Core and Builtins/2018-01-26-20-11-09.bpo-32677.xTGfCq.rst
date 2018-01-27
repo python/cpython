@@ -1,0 +1,2 @@
+Add ``.isascii()`` method to ``str``, ``bytes`` and ``bytearray``.
+It can be used to test that string contains only ASCII characters.
