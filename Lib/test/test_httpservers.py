@@ -305,7 +305,7 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         self.con.connect()
 
         with support.captured_stderr() as err:
-            self.con.request('GET', '/')
+            self.con.request('GET', '/', headers={'Connection': 'close'})
             self.con.getresponse()
 
         self.assertTrue(
