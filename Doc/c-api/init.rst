@@ -1299,7 +1299,7 @@ Python-level trace functions in previous versions.
    +------------------------------+--------------------------------------+
    | :const:`PyTrace_C_RETURN`    | Function object being called.        |
    +------------------------------+--------------------------------------+
-   | :const:`PyTrace_OPCODE`      | Always ``Py_None``                   |
+   | :const:`PyTrace_OPCODE`      | Always :c:data:`Py_None`             |
    +------------------------------+--------------------------------------+
 
 .. c:var:: int PyTrace_CALL
