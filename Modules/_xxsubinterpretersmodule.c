@@ -1185,12 +1185,15 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    int64_t cid = ((channelid *)self)->id;
-    int64_t othercid;
+    channelid *cid = (channelid *)self;
+    int equal;
     if (PyObject_TypeCheck(other, &ChannelIDtype)) {
-        othercid = ((channelid *)other)->id;
-        if (((channelid *)other)->end != ((channelid *)self)->end) {
-            Py_RETURN_FALSE;
+        channelid *othercid = (channelid *)other;
+        if (cid->end != othercid->end) {
+            equal = 0;
+        }
+        else {
+            equal = (cid->id == othercid->id);
         }
     }
     else {
@@ -1199,15 +1202,23 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
             PyErr_Clear();
             Py_RETURN_NOTIMPLEMENTED;
         }
-        othercid = PyLong_AsLongLong(other);
+        int64_t othercid = PyLong_AsLongLong(other);
+        // XXX decref other here?
         if (othercid == -1 && PyErr_Occurred() != NULL) {
             return NULL;
         }
         if (othercid < 0 || othercid > INT64_MAX) {
-            Py_RETURN_FALSE;
+            equal = 0;
+        }
+        else {
+            equal = (cid->id == othercid);
         }
     }
-    Py_RETURN_RICHCOMPARE(othercid != cid, 0, op);
+
+    if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
 }
 
 struct _channelid_xid {
@@ -1477,7 +1488,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
    hold PyObject values. */
 static struct globals {
     _channels channels;
-} _globals = {0};
+} _globals = {{0}};
 
 static int
 _init_globals(void)
