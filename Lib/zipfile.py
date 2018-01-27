@@ -657,26 +657,22 @@ def _check_compression(compression):
 
 
 def _get_compressor(compress_type, compress_level=None):
-    compressor_kwargs = {}
     # zlib.compressobj defaults to zlib.Z_DEFAULT_COMPRESSION if the level
     # isn't given.
     if compress_type == ZIP_DEFLATED:
         if compress_level is not None:
-            compressor_kwargs['level'] = compress_level
-        compressor_kwargs['method'] = zlib.DEFLATED
-        compressor_kwargs['wbits'] = -15
-        return zlib.compressobj(**compressor_kwargs)
+            return zlib.compressobj(compress_level, zlib.DEFLATED, -15)
+        return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
     # bz2.BZ2Compressor defaults to compresslevel=9 if the level isn't given.
+    # compresslevel=0 is not valid.
     elif compress_type == ZIP_BZIP2:
         if compress_level is not None:
-            compressor_kwargs['compresslevel'] = compress_level
-        return bz2.BZ2Compressor(**compressor_kwargs)
-    # lzma.LZMACompressor defaults to lzma.PRESET_DEFAULT if the level isn't
-    # given.
+            return bz2.BZ2Compressor(compress_level)
+        return bz2.BZ2Compressor()
+    # LZMACompressor (defined below) doesn't allow setting a preset (i.e.,
+    # compression level)
     elif compress_type == ZIP_LZMA:
-        if compress_level is not None:
-            compressor_kwargs['preset'] = compress_level
-        return LZMACompressor(**compressor_kwargs)
+        return LZMACompressor()
     else:
         return None
 
@@ -1065,8 +1061,10 @@ class ZipFile:
                 needed, otherwise it will raise an exception when this would
                 be necessary.
     compresslevel: None (default for the given compression type) or an integer
-                   from 0 to 9 specifying the level or preset to pass to the
-                   compressor.
+                   specifying the level to pass to the compressor.
+                   When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
+                   When using ZIP_DEFLATED integers 0 through 9 are accepted.
+                   When using ZIP_BZIP2 integers 1 through 9 are accepted.
 
     """
 
