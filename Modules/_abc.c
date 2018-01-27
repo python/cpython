@@ -63,6 +63,10 @@ gset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *) self;
 }
 
+PyDoc_STRVAR(guarded_set_doc,
+"Internal weak set guarded against deletion during iteration.\n\
+Used by ABC machinery.");
+
 static PyTypeObject _guarded_set_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_guarded_set",                     /*tp_name*/
@@ -150,6 +154,9 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     return (PyObject *) self;
 }
+
+PyDoc_STRVAR(abc_data_doc,
+"Internal state held by ABC machinery.");
 
 static PyTypeObject _abc_data_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -979,6 +986,16 @@ static struct PyModuleDef _abcmodule = {
 PyMODINIT_FUNC
 PyInit__abc(void)
 {
+    if (PyType_Ready(&_abc_data_type) < 0) {
+        return NULL;
+    }
+    _abc_data_type.tp_doc = abc_data_doc;
+
+    if (PyType_Ready(&_guarded_set_type) < 0) {
+        return NULL;
+    }
+    _guarded_set_type.tp_doc = guarded_set_doc;
+
     abc_invalidation_counter = PyLong_FromLong(0);
     return PyModule_Create(&_abcmodule);
 }
