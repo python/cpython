@@ -997,9 +997,27 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     async def sendfile(self, transport, file, offset=0, count=None,
                        *, fallback=True):
-        """Send a file through a transport.
+        """Send a file to transport.
 
-        Return amount of sent bytes.
+        Return the total number of bytes which were sent.
+
+        The method uses high-performance os.sendfile if available.
+
+        file must be a regular file object opened in binary mode.
+
+        offset tells from where to start reading the file. If specified,
+        count is the total number of bytes to transmit as opposed to
+        sending the file until EOF is reached. File position is updated on
+        return or also in case of error in which case file.tell()
+        can be used to figure out the number of bytes
+        which were sent.
+
+        fallback set to True makes asyncio to manually read and send
+        the file when the platform does not support the sendfile syscall
+        (e.g. Windows or SSL socket on Unix).
+
+        Raise SendfileNotAvailableError if the system does not support
+        sendfile syscall and fallback is False.
         """
         if transport.is_closing():
             raise RuntimeError("Transport is closing")
