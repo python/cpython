@@ -472,19 +472,140 @@ _get_dump(PyObject *m, PyObject *args)
     return res;
 }
 
+// Compute set of abstract method names.
+static int
+compute_abstract_methods(PyObject *self)
+{
+    int ret = -1;
+    PyObject *abstracts = PyFrozenSet_New(NULL);
+    if (!abstracts) {
+        return -1;
+    }
+
+    PyObject *ns=NULL, *items=NULL, *bases=NULL;  // Py_CLEAR()ed on error.
+
+    /* Stage 1: direct abstract methods.
+       (It is safe to assume everything is fine since type.__new__ succeeded.) */
+    ns = _PyObject_GetAttrId(self, &PyId___dict__);
+    if (!ns) {
+        goto error;
+    }
+
+    /* TODO: Fast path for exact dicts with PyDict_Next */
+    items = PyMapping_Items(ns);
+    if (!items) {
+        goto error;
+    }
+
+    for (Py_ssize_t pos = 0; pos < PyList_GET_SIZE(items); pos++) {
+        PyObject *it = PySequence_Fast(
+                PyList_GET_ITEM(items, pos),
+                "items() returned non-sequence item");
+        if (!it) {
+            goto error;
+        }
+        if (PySequence_Fast_GET_SIZE(it) != 2) {
+            PyErr_SetString(PyExc_TypeError, "items() returned not 2-tuple");
+            Py_DECREF(it);
+            goto error;
+        }
+
+        // borrowed
+        PyObject *key = PySequence_Fast_GET_ITEM(it, 0);
+        PyObject *value = PySequence_Fast_GET_ITEM(it, 1);
+        int is_abstract = _PyObject_IsAbstract(value);
+        if (is_abstract < 0 ||
+                (is_abstract && PySet_Add(abstracts, key) < 0)) {
+            Py_DECREF(it);
+            goto error;
+        }
+    }
+
+    /* Stage 2: inherited abstract methods. */
+    bases = _PyObject_GetAttrId(self, &PyId___bases__);
+    if (!bases) {
+        goto error;
+    }
+    if (!PyTuple_Check(bases)) {
+        PyErr_SetString(PyExc_TypeError, "__bases__ is not tuple");
+        goto error;
+    }
+
+    for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(bases); pos++) {
+        PyObject *item = PyTuple_GET_ITEM(bases, pos);  // borrowed
+        PyObject *base_abstracts, *iter;
+
+        if (_PyObject_LookupAttrId(item, &PyId___abstractmethods__,
+                                   &base_abstracts) < 0) {
+            goto error;
+        }
+        if (base_abstracts == NULL) {
+            continue;
+        }
+        if (!(iter = PyObject_GetIter(base_abstracts))) {
+            Py_DECREF(base_abstracts);
+            goto error;
+        }
+
+        PyObject *key, *value;
+        while ((key = PyIter_Next(iter))) {
+            if (_PyObject_LookupAttr(self, key, &value) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(iter);
+                goto error;
+            }
+            if (value == NULL) {
+                Py_DECREF(key);
+                continue;
+            }
+
+            int is_abstract = _PyObject_IsAbstract(value);
+            Py_DECREF(value);
+            if (is_abstract < 0 ||
+                    (is_abstract && PySet_Add(abstracts, key) < 0)) {
+                Py_DECREF(key);
+                Py_DECREF(iter);
+                goto error;
+            }
+            Py_DECREF(key);
+        }
+        Py_DECREF(iter);
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+    }
+
+    if (_PyObject_SetAttrId(self, &PyId___abstractmethods__, abstracts) < 0) {
+        goto error;
+    }
+
+    ret = 0;
+error:
+    Py_DECREF(abstracts);
+    Py_CLEAR(ns);
+    Py_CLEAR(items);
+    Py_CLEAR(bases);
+    return ret;
+}
+
 PyDoc_STRVAR(_abc_init_doc,
 "Internal ABC helper for class set-up. Should be never used outside abc module");
 
 static PyObject *
 _abc_init(PyObject *m, PyObject *args)
 {
-    PyObject *ns, *bases, *keys, *abstracts, *base_abstracts, *self;
+    PyObject *bases, *keys, *abstracts, *base_abstracts, *self;
     PyObject *key, *value, *item, *iter, *registry, *cache, *ref;
     Py_ssize_t pos = 0;
     int ret;
     if (!PyArg_UnpackTuple(args, "_abc_init", 1, 1, &self)) {
         return NULL;
     }
+
+    if (compute_abstract_methods(self) < 0) {
+        return NULL;
+    }
+
     /* Set up inheritance registry. */
     ref = PyWeakref_NewRef(self, NULL);
     if (!ref) {
@@ -513,95 +634,6 @@ _abc_init(PyObject *m, PyObject *args)
     }
     if (PyDict_SetItem(_the_cache_version, ref, abc_invalidation_counter) < 0) {
         return NULL;
-    }
-    if (!(abstracts = PyFrozenSet_New(NULL))) {
-        return NULL;
-    }
-    /* Compute set of abstract method names in two stages:
-       Stage 1: direct abstract methods.
-       (It is safe to assume everything is fine since type.__new__ succeeded.) */
-    ns = _PyObject_GetAttrId(self, &PyId___dict__);
-    keys = PyMapping_Keys(ns); /* TODO: Fast path for exact dicts with PyDict_Next */
-    if (!keys) {
-        return NULL;
-    }
-    for (pos = 0; pos < PySequence_Size(keys); pos++) {
-        key = PySequence_GetItem(keys, pos);
-        if (!key) {
-            Py_DECREF(keys);
-            goto error;
-        }
-        value = PyObject_GetItem(ns, key);
-        if (!value) {
-            Py_DECREF(keys);
-            Py_DECREF(key);
-            goto error;
-        }
-        int is_abstract = _PyObject_IsAbstract(value);
-        if (is_abstract < 0) {
-            Py_DECREF(keys);
-            Py_DECREF(key);
-            Py_DECREF(value);
-            goto error;
-        }
-        if (is_abstract && PySet_Add(abstracts, key) < 0) {
-            Py_DECREF(keys);
-            Py_DECREF(key);
-            Py_DECREF(value);
-            goto error;
-        }
-        Py_DECREF(key);
-        Py_DECREF(value);
-    }
-    Py_DECREF(keys);
-
-    /* Stage 2: inherited abstract methods. */
-    bases = _PyObject_GetAttrId(self, &PyId___bases__);
-    if (!bases) {
-        return NULL;
-    }
-    for (pos = 0; pos < PyTuple_Size(bases); pos++) {
-        item = PyTuple_GET_ITEM(bases, pos);
-        ret = _PyObject_LookupAttrId(item, &PyId___abstractmethods__, &base_abstracts);
-        if (ret < 0) {
-            goto error;
-        } else if (!ret) {
-            continue;
-        }
-        if (!(iter = PyObject_GetIter(base_abstracts))) {
-            goto error;
-        }
-        while ((key = PyIter_Next(iter))) {
-            ret = _PyObject_LookupAttr(self, key, &value);
-            if (ret < 0) {
-                Py_DECREF(key);
-                Py_DECREF(iter);
-                goto error;
-            } else if (!ret) {
-                Py_DECREF(key);
-                continue;
-            }
-            int is_abstract = _PyObject_IsAbstract(value);
-            Py_DECREF(value);
-            if (is_abstract < 0) {
-                Py_DECREF(key);
-                Py_DECREF(iter);
-                goto error;
-            }
-            if (is_abstract && PySet_Add(abstracts, key) < 0) {
-                Py_DECREF(key);
-                Py_DECREF(iter);
-                goto error;
-            }
-            Py_DECREF(key);
-        }
-        Py_DECREF(iter);
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-    }
-    if (_PyObject_SetAttrId(self, &PyId___abstractmethods__, abstracts) < 0) {
-        goto error;
     }
     Py_RETURN_NONE;
 error:
