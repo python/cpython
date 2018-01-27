@@ -2445,6 +2445,9 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
                         return 0;
                     }
                 }
+
+                default:
+                    Py_UNREACHABLE();
             }
         }
     } while (iter_res != I_END);
