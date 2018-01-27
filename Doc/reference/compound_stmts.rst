@@ -559,12 +559,14 @@ Parameters may have annotations of the form "``: expression``" following the
 parameter name.  Any parameter may have an annotation even those of the form
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
-any valid Python expression and are evaluated when the function definition is
-executed.  Annotations may be evaluated in a different order than they appear in
-the source code.  The presence of annotations does not change the semantics of a
-function.  The annotation values are available as values of a dictionary keyed
-by the parameters' names in the :attr:`__annotations__` attribute of the
-function object.
+any valid Python expression.  The presence of annotations does not change the
+semantics of a function.  The annotation values are available as values of
+a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.  If the ``annotations`` import from
+:mod:`__future__` is used, annotations are preserved as strings at runtime which
+enables postponed evaluation.  Otherwise, they are evaluated when the function
+definition is executed.  In this case annotations may be evaluated in
+a different order than they appear in the source code.
 
 .. index:: pair: lambda; expression
 
@@ -586,6 +588,17 @@ access the local variables of the function containing the def.  See section
 
    :pep:`3107` - Function Annotations
       The original specification for function annotations.
+
+   :pep:`484` - Type Hints
+      Definition of a standard meaning for annotations: type hints.
+
+   :pep:`526` - Syntax for Variable Annotations
+      Ability to type hint variable declarations, including class
+      variables and instance variables
+
+   :pep:`563` - Postponed Evaluation of Annotations
+      Support for forward references within annotations by preserving
+      annotations in a string form at runtime instead of eager evaluation.
 
 
 .. _class:
