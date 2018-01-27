@@ -786,17 +786,16 @@ class SSLSocket(socket):
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
         if sock is not None:
-            socket.__init__(self,
-                            family=sock.family,
-                            type=sock.type,
-                            proto=sock.proto,
-                            fileno=sock.fileno())
+            super().__init__(family=sock.family,
+                             type=sock.type,
+                             proto=sock.proto,
+                             fileno=sock.fileno())
             self.settimeout(sock.gettimeout())
             sock.detach()
         elif fileno is not None:
-            socket.__init__(self, fileno=fileno)
+            super().__init__(fileno=fileno)
         else:
-            socket.__init__(self, family=family, type=type, proto=proto)
+            super().__init__(family=family, type=type, proto=proto)
 
         # See if we are connected
         try:
@@ -952,7 +951,7 @@ class SSLSocket(socket):
                     self.__class__)
             return self._sslobj.write(data)
         else:
-            return socket.send(self, data, flags)
+            return super().send(data, flags)
 
     def sendto(self, data, flags_or_addr, addr=None):
         self._checkClosed()
@@ -960,9 +959,9 @@ class SSLSocket(socket):
             raise ValueError("sendto not allowed on instances of %s" %
                              self.__class__)
         elif addr is None:
-            return socket.sendto(self, data, flags_or_addr)
+            return super().sendto(data, flags_or_addr)
         else:
-            return socket.sendto(self, data, flags_or_addr, addr)
+            return super().sendto(data, flags_or_addr, addr)
 
     def sendmsg(self, *args, **kwargs):
         # Ensure programs don't send data unencrypted if they try to
@@ -984,7 +983,7 @@ class SSLSocket(socket):
                     v = self.send(byte_view[count:])
                     count += v
         else:
-            return socket.sendall(self, data, flags)
+            return super().sendall(data, flags)
 
     def sendfile(self, file, offset=0, count=None):
         """Send a file, possibly by using os.sendfile() if this is a
@@ -1005,7 +1004,7 @@ class SSLSocket(socket):
                     self.__class__)
             return self.read(buflen)
         else:
-            return socket.recv(self, buflen, flags)
+            return super().recv(buflen, flags)
 
     def recv_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
@@ -1020,7 +1019,7 @@ class SSLSocket(socket):
                   self.__class__)
             return self.read(nbytes, buffer)
         else:
-            return socket.recv_into(self, buffer, nbytes, flags)
+            return super().recv_into(buffer, nbytes, flags)
 
     def recvfrom(self, buflen=1024, flags=0):
         self._checkClosed()
@@ -1028,7 +1027,7 @@ class SSLSocket(socket):
             raise ValueError("recvfrom not allowed on instances of %s" %
                              self.__class__)
         else:
-            return socket.recvfrom(self, buflen, flags)
+            return super().recvfrom(buflen, flags)
 
     def recvfrom_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
@@ -1036,7 +1035,7 @@ class SSLSocket(socket):
             raise ValueError("recvfrom_into not allowed on instances of %s" %
                              self.__class__)
         else:
-            return socket.recvfrom_into(self, buffer, nbytes, flags)
+            return super().recvfrom_into(buffer, nbytes, flags)
 
     def recvmsg(self, *args, **kwargs):
         raise NotImplementedError("recvmsg not allowed on instances of %s" %
@@ -1056,7 +1055,7 @@ class SSLSocket(socket):
     def shutdown(self, how):
         self._checkClosed()
         self._sslobj = None
-        socket.shutdown(self, how)
+        super().shutdown(how)
 
     def unwrap(self):
         if self._sslobj:
@@ -1068,7 +1067,7 @@ class SSLSocket(socket):
 
     def _real_close(self):
         self._sslobj = None
-        socket._real_close(self)
+        super()._real_close()
 
     def do_handshake(self, block=False):
         """Perform a TLS/SSL handshake."""
@@ -1093,10 +1092,10 @@ class SSLSocket(socket):
                                  session=self._session)
         try:
             if connect_ex:
-                rc = socket.connect_ex(self, addr)
+                rc = super().connect_ex(addr)
             else:
                 rc = None
-                socket.connect(self, addr)
+                super().connect(addr)
             if not rc:
                 self._connected = True
                 if self.do_handshake_on_connect:
@@ -1121,7 +1120,7 @@ class SSLSocket(socket):
         a tuple containing that new connection wrapped with a server-side
         SSL channel, and the address of the remote client."""
 
-        newsock, addr = socket.accept(self)
+        newsock, addr = super().accept()
         newsock = self.context.wrap_socket(newsock,
                     do_handshake_on_connect=self.do_handshake_on_connect,
                     suppress_ragged_eofs=self.suppress_ragged_eofs,
