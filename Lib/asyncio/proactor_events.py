@@ -180,7 +180,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                 assert self._read_fut is fut or (self._read_fut is None and
                                                  self._closing)
                 self._read_fut = None
-                data = fut.result()  # deliver data later in "finally" clause
+                if fut.done():
+                    # deliver data later in "finally" clause
+                    data = fut.result()
 
             if self._closing:
                 # since close() has been called we ignore any read data
