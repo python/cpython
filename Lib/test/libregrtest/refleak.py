@@ -37,6 +37,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
+            abcs[obj] = _get_dump(obj)[0]
             _reset_caches(obj)
 
     # bpo-31217: Integer pool to get a single integer object for the same
@@ -137,7 +138,10 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
-            _reset_caches(obj)
+            for ref in abcs.get(obj, set()):
+                if ref() is not None:
+                    obj.register(ref())
+            # _reset_caches(obj)
 
     clear_caches()
 

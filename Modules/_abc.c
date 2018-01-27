@@ -269,6 +269,7 @@ _destroy(PyObject *setweakref, PyObject *objweakref)
         Py_RETURN_NONE;
     Py_INCREF(set);
     if (PySet_Discard(set, objweakref) < 0) {
+        Py_DECREF(set);
         return NULL;
     }
     Py_DECREF(set);
@@ -299,6 +300,7 @@ _destroy_guarded(PyObject *setweakref, PyObject *objweakref)
         }
     } else {
         if (PySet_Discard(gset->data, objweakref) < 0) {
+            Py_DECREF(set);
             return NULL;
         }
     }
@@ -326,14 +328,19 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
     }
     ref = PyWeakref_NewRef(obj, destroy_cb);
     if (!ref) {
+        Py_DECREF(wr);
         return 0;
     }
     if (guarded) {
         set = ((_guarded_set *) set)->data;
     }
     if (PySet_Add(set, ref) < 0) {
+        Py_DECREF(wr);
+        Py_DECREF(ref);
         return 0;
     }
+    Py_DECREF(wr);
+    Py_DECREF(ref);
     return 1;
 }
 
@@ -392,9 +399,11 @@ _exit_iter(PyObject *self)
             return 0;
         }
         if (PySet_Discard(registry->data, ref) < 0) {
+            Py_DECREF(ref);
             Py_DECREF(impl);
             return 0;
         }
+        Py_DECREF(ref);
     }
     Py_DECREF(impl);
     return 1;
@@ -506,6 +515,7 @@ _reset_caches(PyObject *m, PyObject *args)
         Py_DECREF(impl);
         return NULL;
     }
+    Py_DECREF(impl);
     Py_RETURN_NONE;
 }
 
@@ -740,7 +750,7 @@ PyDoc_STRVAR(_abc_register_doc,
 static PyObject *
 _abc_register(PyObject *m, PyObject *args)
 {
-    PyObject *self, *subclass = NULL;
+    PyObject *self, *one, *subclass = NULL;
     int result;
     if (!PyArg_UnpackTuple(args, "_abc_register", 2, 2, &self, &subclass)) {
         return NULL;
@@ -774,7 +784,9 @@ _abc_register(PyObject *m, PyObject *args)
     Py_INCREF(subclass);
     /* Invalidate negative cache */
     Py_DECREF(abc_invalidation_counter);
-    abc_invalidation_counter = PyNumber_Add(abc_invalidation_counter, PyLong_FromLong(1));
+    one = PyLong_FromLong(1);
+    abc_invalidation_counter = PyNumber_Add(abc_invalidation_counter, one);
+    Py_DECREF(one);
     return subclass;
 }
 
@@ -793,32 +805,41 @@ _abc_instancecheck(PyObject *m, PyObject *args)
     /* Inline the cache checking. */
     incache = _in_cache(self, subclass);
     if (incache < 0) {
+        Py_DECREF(subclass);
         return NULL;
     }
     if (incache > 0) {
+        Py_DECREF(subclass);
         Py_RETURN_TRUE;
     }
     subtype = (PyObject *)Py_TYPE(instance);
     if (subtype == subclass) {
         incache = _in_negative_cache(self, subclass);
         if (incache < 0) {
+            Py_DECREF(subclass);
             return NULL;
         }
         if ((PyObject_RichCompareBool(_get_negative_cache_version(self),
                                       abc_invalidation_counter, Py_EQ) > 0) && incache) {
+            Py_DECREF(subclass);
             Py_RETURN_FALSE;
         }
         /* Fall back to the subclass check. */
-        return PyObject_CallMethod(self, "__subclasscheck__", "O", subclass);
+        result = PyObject_CallMethod(self, "__subclasscheck__", "O", subclass);
+        Py_DECREF(subclass);
+        return result;
     }
     result = PyObject_CallMethod(self, "__subclasscheck__", "O", subclass);
     if (!result) {
+        Py_DECREF(subclass);
         return NULL;
     }
     if (result == Py_True) {
+        Py_DECREF(subclass);
         return Py_True;
     }
     Py_DECREF(result);
+    Py_DECREF(subclass);
     return PyObject_CallMethod(self, "__subclasscheck__", "O", subtype);
 }
 
@@ -904,7 +925,9 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     /* 5. Check if it's a subclass of a registered class (recursive). */
     pos = 0;
     Py_hash_t hash;
-    _enter_iter(self);
+    if (!_enter_iter(self)) {
+        return NULL;
+    }
     while (_PySet_NextEntry(_get_registry(self), &pos, &key, &hash)) {
         rkey = PyWeakref_GetObject(key);
         if (rkey == Py_None) {
@@ -920,11 +943,15 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
                 _exit_iter(self);
                 return NULL;
             }
-            _exit_iter(self);
+            if (!_exit_iter(self)) {
+                return NULL;
+            }
             Py_RETURN_TRUE;
         }
     }
-    _exit_iter(self);
+    if (!_exit_iter(self)) {
+        return NULL;
+    }
 
     /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
