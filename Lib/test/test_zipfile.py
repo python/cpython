@@ -53,9 +53,10 @@ class AbstractTestsWithSourceFile:
         with open(TESTFN, "wb") as fp:
             fp.write(self.data)
 
-    def make_test_archive(self, f, compression):
+    def make_test_archive(self, f, compression, compresslevel=None):
+        kwargs = {'compression': compression, 'compresslevel': compresslevel}
         # Create the ZIP archive
-        with zipfile.ZipFile(f, "w", compression) as zipfp:
+        with zipfile.ZipFile(f, "w", **kwargs) as zipfp:
             zipfp.write(TESTFN, "another.name")
             zipfp.write(TESTFN, TESTFN)
             zipfp.writestr("strfile", self.data)
@@ -63,8 +64,8 @@ class AbstractTestsWithSourceFile:
                 for line in self.line_gen:
                     f.write(line)
 
-    def zip_test(self, f, compression):
-        self.make_test_archive(f, compression)
+    def zip_test(self, f, compression, compresslevel=None):
+        self.make_test_archive(f, compression, compresslevel)
 
         # Read the ZIP archive
         with zipfile.ZipFile(f, "r", compression) as zipfp:
@@ -297,6 +298,13 @@ class AbstractTestsWithSourceFile:
         info = zipfp.getinfo('b.txt')
         self.assertEqual(info.compress_type, self.compression)
 
+    def test_writestr_compresslevel(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w")
+        zipfp.writestr("b.txt", "hello world", compress_type=self.compression,
+                       compress_level=1)
+        info = zipfp.getinfo('b.txt')
+        self.assertEqual(info.compress_type, self.compression)
+
     def test_read_return_size(self):
         # Issue #9837: ZipExtFile.read() shouldn't return more bytes
         # than requested.
@@ -369,6 +377,21 @@ class AbstractTestsWithSourceFile:
                         self.assertIn('compress_type=', r)
                 self.assertIn('[closed]', repr(zipopen))
             self.assertIn('[closed]', repr(zipfp))
+
+    def test_compresslevel_basic(self):
+        for f in get_files(self):
+            self.zip_test(f, self.compression, compresslevel=9)
+
+    def test_per_file_compresslevel(self):
+        """Check that files within a Zip archive can have different
+        compression options."""
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.write(TESTFN, 'compress_1', compress_level=1)
+            zipfp.write(TESTFN, 'compress_9', compress_level=9)
+            one_info = zipfp.getinfo('compress_1')
+            nine_info = zipfp.getinfo('compress_9')
+            self.assertEqual(one_info.compress_level, 1)
+            self.assertEqual(nine_info.compress_level, 9)
 
     def tearDown(self):
         unlink(TESTFN)
