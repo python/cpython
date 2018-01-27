@@ -3711,10 +3711,21 @@ PyDoc_STRVAR(os_preadv__doc__,
 "preadv($module, fd, buffers, offset, flags=0, /)\n"
 "--\n"
 "\n"
-"Read a number of bytes from a file descriptor starting at a particular offset.\n"
+"Reads from a file descriptor into a number of mutable bytes-like objects.\n"
 "\n"
-"Read length bytes from file descriptor fd, starting at offset bytes from\n"
-"the beginning of the file.  The file offset remains unchanged.");
+"Combines the functionality of readv() and pread(). As readv(), it will\n"
+"transfer data into each buffer until it is full and then move on to the next\n"
+"buffer in the sequence to hold the rest of the data. Its fourth argument,\n"
+"specifies the file offset at which the input operation is to be performed. It\n"
+"will return the total number of bytes read (which can be less than the total\n"
+"capacity of all the objects).\n"
+"\n"
+"The flags argument contains a bitwise OR of zero or more of the following flags:\n"
+"\n"
+"- RWF_HIPRI\n"
+"- RWF_NOWAIT\n"
+"\n"
+"Using non-zero flags requires Linux 4.6 or newer.");
 
 #define OS_PREADV_METHODDEF    \
     {"preadv", (PyCFunction)os_preadv, METH_FASTCALL, os_preadv__doc__},
@@ -4013,11 +4024,21 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "pwritev($module, fd, buffers, offset, flags=0, /)\n"
 "--\n"
 "\n"
-"Write bytes to a file descriptor starting at a particular offset.\n"
+"Writes the contents of bytes-like objects to a file descriptor at a given offset.\n"
 "\n"
-"Write buffer to fd, starting at offset bytes from the beginning of\n"
-"the file.  Returns the number of bytes writte.  Does not change the\n"
-"current file offset.");
+"Combines the functionality of writev() and pwrite(). All buffers must be a sequence\n"
+"of bytes-like objects. Buffers are processed in array order. Entire contents of first\n"
+"buffer is written before proceeding to second, and so on. The operating system may\n"
+"set a limit (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.\n"
+"This function writes the contents of each object to the file descriptor and returns\n"
+"the total number of bytes written.\n"
+"\n"
+"The flags argument contains a bitwise OR of zero or more of the following flags:\n"
+"\n"
+"- RWF_DSYNC\n"
+"- RWF_SYNC\n"
+"\n"
+"Using non-zero flags requires Linux 4.7 or newer.");
 
 #define OS_PWRITEV_METHODDEF    \
     {"pwritev", (PyCFunction)os_pwritev, METH_FASTCALL, os_pwritev__doc__},
@@ -6507,4 +6528,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=d50830cf566cb297 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06ace805893aa10c input=a9049054013a1b77]*/

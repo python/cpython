@@ -1,2 +1,1 @@
-Expose preadv (preadv2) and pwritev (pwritev2) system calls in the os module.
-Patch by Pablo Galindo
+Expose preadv and pwritev system calls in the os module. Patch by Pablo Galindo

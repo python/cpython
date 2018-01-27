@@ -309,17 +309,15 @@ class PosixTester(unittest.TestCase):
     def test_pwritev(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:
-            os.write(fd,b"xx")
+            os.write(fd, b"xx")
             os.lseek(fd, 0, os.SEEK_SET)
             n = os.pwritev(fd, [b'test1', b'tt2', b't3'], 2)
             self.assertEqual(n, 10)
 
             os.lseek(fd, 0, os.SEEK_SET)
-            self.assertEqual(b'xxtest1tt2', posix.read(fd, 10))
-
+            self.assertEqual(b'xxtest1tt2t3', posix.read(fd, 100))
         finally:
             os.close(fd)
-
 
     @unittest.skipUnless(hasattr(posix, 'os.RWF_SYNC'), "test needs os.RWF_SYNC")
     def test_pwritev_flags(self):
@@ -331,10 +329,9 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(n, 10)
 
             os.lseek(fd, 0, os.SEEK_SET)
-            self.assertEqual(b'xxtest1tt2', posix.read(fd, 10))
+            self.assertEqual(b'xxtest1tt2', posix.read(fd, 100))
         finally:
             os.close(fd)
-
 
     @unittest.skipUnless(hasattr(posix, 'posix_fallocate'),
         "test needs posix.posix_fallocate()")

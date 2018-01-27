@@ -1112,34 +1112,30 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :func:`~os.pwritev` writes the contents of each object to the file descriptor
    and returns the total number of bytes written.
 
-
    The *flags* argument contains a bitwise OR of zero or more of the following
    flags:
 
    - RWF_DSYNC
    - RWF_SYNC
 
-   :func:`~os.pwritev` will call *pwritev2* system call if available, which modifies
-   the behavior on a per-call basis based on the value of the *flags* argument. The
-   :func:`~os.pwritev2` function is required to pass flags.
-
-   The :func:`~os.pwritev2` function is required to pass flags.
-
-   *pwritev2* and *flags* different than zero are available since Linux version
-   4.7.
+   Using non-zero flags requires Linux 4.7 or newer.
 
    Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
    OpenBSD (version 2.7 and newer).
 
    .. versionadded:: 3.7
 
+.. data:: RWF_DSYNC (since Linux 4.7)
+   Provide a per-write equivalent of the O_DSYNC open(2) flag. This flag
+   is meaningful only for pwritev2(), and its effect applies only to the
+   data range written by the system call.
 
-.. data:: RWF_DSYNC
-          RWF_SYNC
+   .. versionadded:: 3.7
 
-   The above constants are available on Linux Kernel 4.7 (or newer).
-
-   Availability: Linux.
+.. data:: RWF_SYNC (since Linux 4.7)
+   Provide a per-write equivalent of the O_SYNC open(2) flag. This flag is
+   meaningful only for pwritev2(), and its effect applies only to the data
+   range written by the system call.
 
    .. versionadded:: 3.7
 
@@ -1252,15 +1248,10 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The flags argument contains a bitwise OR of zero or more of the following
    flags:
 
-       - RWF_HIPRI
-       - RWF_NOWAIT
+   - RWF_HIPRI
+   - RWF_NOWAIT
 
-   :func:`~os.preadv` will call *preadv2* system call if available, which modifies
-   the behavior on a per-call basis based on the value of the *flags* argument. The
-   :c:func:`preadv2` function is required to pass flags.
-
-   *preadv2* and flags different than zero are available since Linux version
-   4.6 and newer.
+   Using non-zero flags requires Linux 4.6 or newer.
 
    Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
    OpenBSD (version 2.7 and newer).
@@ -1268,13 +1259,22 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
-.. data:: RWF_HIPRI
-          RWF_NOWAIT
+.. data:: RWF_HIPRI (since Linux 4.6)
+   High priority read/write. Allows block-based filesystems to use polling
+   of the device, which provides lower latency, but may use additional
+   resources. (Currently, this feature is usable only on a file descriptor
+   opened using the O_DIRECT flag.)
 
-   The above constants are available on Linux Kernel 4.11 and 4.6 (or newer)
-   respectively.
+   .. versionadded:: 3.7
 
-   Availability: Linux.
+
+.. data:: RWF_NOWAIT (since Linux 4.14)
+   Do not wait for data which is not immediately available. If this flag
+   is  specified, the preadv2() system call will return instantly
+   if it would have to read data from the backing storage or wait for a lock.
+   If some data was successfully read, it will return the number of bytes
+   read. If no bytes were read, it will return -1 and set errno to EAGAIN.
+   Currently, this flag is meaningful only for preadv2().
 
    .. versionadded:: 3.7
 

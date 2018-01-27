@@ -8173,16 +8173,27 @@ os.preadv -> Py_ssize_t
     flags: int = 0
     /
 
-Read a number of bytes from a file descriptor starting at a particular offset.
+Reads from a file descriptor into a number of mutable bytes-like objects.
 
-Read length bytes from file descriptor fd, starting at offset bytes from
-the beginning of the file.  The file offset remains unchanged.
+Combines the functionality of readv() and pread(). As readv(), it will
+transfer data into each buffer until it is full and then move on to the next
+buffer in the sequence to hold the rest of the data. Its fourth argument,
+specifies the file offset at which the input operation is to be performed. It
+will return the total number of bytes read (which can be less than the total
+capacity of all the objects).
+
+The flags argument contains a bitwise OR of zero or more of the following flags:
+
+- RWF_HIPRI
+- RWF_NOWAIT
+
+Using non-zero flags requires Linux 4.6 or newer.
 [clinic start generated code]*/
 
 static Py_ssize_t
 os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                int flags)
-/*[clinic end generated code: output=26fc9c6e58e7ada5 input=5b07b7e2d1825627]*/
+/*[clinic end generated code: output=26fc9c6e58e7ada5 input=4173919dc1f7ed99]*/
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
@@ -8700,17 +8711,27 @@ os.pwritev -> Py_ssize_t
     flags: int = 0
     /
 
-Write bytes to a file descriptor starting at a particular offset.
+Writes the contents of bytes-like objects to a file descriptor at a given offset.
 
-Write buffer to fd, starting at offset bytes from the beginning of
-the file.  Returns the number of bytes writte.  Does not change the
-current file offset.
+Combines the functionality of writev() and pwrite(). All buffers must be a sequence
+of bytes-like objects. Buffers are processed in array order. Entire contents of first
+buffer is written before proceeding to second, and so on. The operating system may
+set a limit (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
+This function writes the contents of each object to the file descriptor and returns
+the total number of bytes written.
+
+The flags argument contains a bitwise OR of zero or more of the following flags:
+
+- RWF_DSYNC
+- RWF_SYNC
+
+Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
 
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=76ec1699089ae61c]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=803dc5ddbf0cfd3b]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
