@@ -687,4 +687,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* framework name */
 #define _PYTHONFRAMEWORK ""
 
+/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
+#define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
+
 #endif /* !Py_CONFIG_H */
