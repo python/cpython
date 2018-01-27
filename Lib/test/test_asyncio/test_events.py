@@ -2151,7 +2151,7 @@ class SendfileMixin:
         # reduce send socket buffer size to test on relative small data sets
         cli_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
         cli_sock.connect((support.HOST, port))
-        cli_proto = MySendfileProto()
+        cli_proto = MySendfileProto(loop=self.loop)
         tr, pr = self.run_loop(self.loop.create_connection(
             lambda: cli_proto, sock=cli_sock,
             ssl=cli_ctx, server_hostname=server_hostname))
@@ -2159,6 +2159,8 @@ class SendfileMixin:
         def cleanup():
             srv_proto.transport.close()
             cli_proto.transport.close()
+            self.run_loop(srv_proto.done)
+            self.run_loop(cli_proto.done)
 
             server.close()
             self.run_loop(server.wait_closed())
