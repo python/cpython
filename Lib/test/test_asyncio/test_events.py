@@ -2234,30 +2234,11 @@ class SendfileMixin:
         srv_proto, cli_proto = self.prepare(is_ssl=True)
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file))
-        self.assertFalse(cli_proto.transport._protocol_paused)
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
         self.assertEqual(ret, len(self.DATA))
         self.assertEqual(srv_proto.nbytes, len(self.DATA))
         self.assertEqual(srv_proto.data, self.DATA)
-        self.assertEqual(self.file.tell(), len(self.DATA))
-
-    def test_sendfile_ssl_already_paused(self):
-        # 30 Kb is enough to not fit into single sock.send() call
-        BUF = b'1234567890' * 1024 * 3
-        srv_proto, cli_proto = self.prepare(is_ssl=True)
-        cli_proto.transport.set_write_buffer_limits(0)
-        cli_proto.transport.write(BUF)
-        self.assertTrue(cli_proto.transport._protocol_paused)
-        ret = self.run_loop(
-            self.loop.sendfile(cli_proto.transport, self.file))
-        # writing is always restored by fallback if was paused
-        self.assertFalse(cli_proto.transport._protocol_paused)
-        cli_proto.transport.close()
-        self.run_loop(srv_proto.done)
-        self.assertEqual(ret, len(self.DATA))
-        self.assertEqual(srv_proto.nbytes, len(self.DATA)+len(BUF))
-        self.assertEqual(srv_proto.data, BUF + self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_for_closing_transp(self):

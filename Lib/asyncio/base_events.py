@@ -216,7 +216,10 @@ class _SendfileFallbackProtocol(protocols.Protocol):
         if self._should_resume_reading:
             self._transport.resume_reading()
         if self._write_ready_fut is not None:
-            await self._write_ready_fut
+            # Cancel the future.
+            # Basically it has no effect because protocol is switched back,
+            # no code should wait for it anymore.
+            self._write_ready_fut.cancel()
         if self._should_resume_writing:
             self._proto.resume_writing()
 
@@ -1033,11 +1036,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                     blocksize = min(count - total_sent, blocksize)
                     if blocksize <= 0:
                         return total_sent
-                await proto.drain()
                 view = memoryview(buf)[:blocksize]
                 read = file.readinto(view)
                 if not read:
                     return total_sent  # EOF
+                await proto.drain()
                 transp.write(view)
                 total_sent += read
         finally:
