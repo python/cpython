@@ -362,6 +362,17 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                             fd, sock, fileno,
                             offset, count, blocksize, total_sent)
         except OSError as exc:
+            if (registered_fd is not None and
+                    exc.errno == errno.ENOTCONN and
+                    type(exc) is not ConnectionError):
+                # If we have an ENOTCONN and this isn't a first call to
+                # sendfile(), i.e. the connection was closed in the middle
+                # of the operation, normalize the error to ConnectionError
+                # to make it consistent across all Posix systems.
+                new_exc = ConnectionError(
+                    "socket is not connected", errno.ENOTCONN)
+                new_exc.__cause__ = exc
+                exc = new_exc
             if total_sent == 0:
                 # We can get here for different reasons, the main
                 # one being 'file' is not a regular mmap(2)-like
