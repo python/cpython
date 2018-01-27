@@ -753,7 +753,6 @@ class ZipExtFile(io.BufferedIOBase):
         self._close_fileobj = close_fileobj
 
         self._compress_type = zipinfo.compress_type
-        self._compress_level = zipinfo.compress_level  # XXX: Is this needed?
         self._compress_left = zipinfo.compress_size
         self._left = zipinfo.file_size
 
