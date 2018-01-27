@@ -59,7 +59,7 @@
     <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
     <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
     <!-- Test modules -->
-    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testembed;_testimportmultiple;_testmultiphase;_testconsole" />
+    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testembed;_testimportmultiple;_testmultiphase;_testconsole;_xxsubinterpreters" />
     <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
     <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
       <!-- Disable parallel build for test modules -->
