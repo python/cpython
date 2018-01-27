@@ -335,7 +335,7 @@ class ZipInfo (object):
 
         # Standard values:
         self.compress_type = ZIP_STORED # Type of compression for the file
-        self.compress_level = None      # Level or preset for the compressor
+        self.compress_level = None      # Level for the compressor
         self.comment = b""              # Comment for each file
         self.extra = b""                # ZIP extra data
         if sys.platform == 'win32':
@@ -657,20 +657,15 @@ def _check_compression(compression):
 
 
 def _get_compressor(compress_type, compress_level=None):
-    # zlib.compressobj defaults to zlib.Z_DEFAULT_COMPRESSION if the level
-    # isn't given.
     if compress_type == ZIP_DEFLATED:
         if compress_level is not None:
             return zlib.compressobj(compress_level, zlib.DEFLATED, -15)
         return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
-    # bz2.BZ2Compressor defaults to compresslevel=9 if the level isn't given.
-    # compresslevel=0 is not valid.
     elif compress_type == ZIP_BZIP2:
         if compress_level is not None:
             return bz2.BZ2Compressor(compress_level)
         return bz2.BZ2Compressor()
-    # LZMACompressor (defined below) doesn't allow setting a preset (i.e.,
-    # compression level)
+    # compress_level is ignored for ZIP_LZMA
     elif compress_type == ZIP_LZMA:
         return LZMACompressor()
     else:
