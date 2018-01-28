@@ -1580,6 +1580,15 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
+    # Test for issue #32695: compresslevel parameter raises TypError when
+    # the mode involves xz.
+    def test_create_with_compresslevel(self):
+        with tarfile.open(tmpname, self.mode, compresslevel=1) as tobj:
+            tobj.add(self.file_path)
+
+        with self.taropen(tmpname, 'w', compresslevel=1) as tobj:
+            tobj.add(self.file_path)
+
 
 class GzipCreateTest(GzipTest, CreateTest):
     pass
