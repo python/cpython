@@ -310,7 +310,7 @@ Should be only used by refleak.py");
 static PyObject *
 _reset_registry(PyObject *m, PyObject *args)
 {
-    PyObject *self, *registry;
+    PyObject *self;
     if (!PyArg_UnpackTuple(args, "_reset_registry", 1, 1, &self)) {
         return NULL;
     }
@@ -318,8 +318,7 @@ _reset_registry(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    *registry = impl->_abc_registry->data;
-    if (PySet_Clear(registry) < 0) {
+    if (PySet_Clear(impl->_abc_registry->data) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -367,7 +366,7 @@ instead use ABC._dump_registry() for a nice repr.");
 static PyObject *
 _get_dump(PyObject *m, PyObject *args)
 {
-    PyObject *self, *registry, *cache, *negative_cache, *cache_version;
+    PyObject *self, *registry, *cache, *negative_cache;
     _abc_data *impl;
     if (!PyArg_UnpackTuple(args, "_get_dump", 1, 1, &self)) {
         return NULL;
@@ -587,7 +586,7 @@ _abc_register(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    if (_add_to_weak_set((PyObject *)(impl->_abc_registry), cls, 1) < 0) {
+    if (_add_to_weak_set((PyObject *)(impl->_abc_registry), subclass, 1) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
