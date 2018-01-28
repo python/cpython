@@ -288,11 +288,6 @@ _exit_iter(_guarded_set *gs)
         PyObject *ref = PyList_GET_ITEM(gs->pending, pos);
         Py_INCREF(Py_None);
         PyList_SET_ITEM(gs->pending, pos, Py_None);
-
-        if (ref == Py_None) {
-            Py_DECREF(ref);
-            continue;
-        }
         if (PySet_Discard(gs->data, ref) < 0) {
             Py_DECREF(ref);
             return -1;
