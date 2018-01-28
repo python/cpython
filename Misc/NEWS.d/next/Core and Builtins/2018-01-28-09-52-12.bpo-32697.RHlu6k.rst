@@ -1,0 +1,3 @@
+Python now explicitly preserves the definition order of keyword-only
+parameters.  It's always preserved their order, but this behavior was never
+guaranteed before; this behavior is now guaranteed and tested.
