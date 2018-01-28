@@ -782,6 +782,12 @@ Resolve host name
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getnameinfo` function but non-blocking.
 
+.. versionchanged:: 3.7
+   Both *getaddrinfo* and *getnameinfo* methods were always documented
+   to return a coroutine, but prior to Python 3.7 they were, in fact,
+   returning :class:`asyncio.Future` objects.  Starting with Python 3.7
+   both methods are coroutines.
+
 
 Connect pipes
 -------------
@@ -852,7 +858,7 @@ Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
 pool of processes). By default, an event loop uses a thread pool executor
 (:class:`~concurrent.futures.ThreadPoolExecutor`).
 
-.. coroutinemethod:: AbstractEventLoop.run_in_executor(executor, func, \*args)
+.. method:: AbstractEventLoop.run_in_executor(executor, func, \*args)
 
    Arrange for a *func* to be called in the specified executor.
 
@@ -862,17 +868,14 @@ pool of processes). By default, an event loop uses a thread pool executor
    :ref:`Use functools.partial to pass keywords to the *func*
    <asyncio-pass-keywords>`.
 
+   This method returns a :class:`asyncio.Future` object.
+
    .. versionchanged:: 3.5.3
       :meth:`BaseEventLoop.run_in_executor` no longer configures the
       ``max_workers`` of the thread pool executor it creates, instead
       leaving it up to the thread pool executor
       (:class:`~concurrent.futures.ThreadPoolExecutor`) to set the
       default.
-
-   .. versionchanged:: 3.7
-      Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned a :class:`Future`.
-      Since Python 3.7, this is an ``async def`` method.
 
 .. method:: AbstractEventLoop.set_default_executor(executor)
 

@@ -2999,9 +2999,8 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         def task_factory(loop, coro):
             raise NameError
 
-        run = self.loop.create_task(
-            self.loop.run_in_executor(
-                None, lambda: self.target(advance_coro=True)))
+        run = self.loop.run_in_executor(
+            None, lambda: self.target(advance_coro=True))
 
         # Set exception handler
         callback = test_utils.MockCallback()
