@@ -26,7 +26,7 @@ static PyObject *abc_invalidation_counter;
 
 typedef struct {
     PyObject_HEAD
-    unsigned long iterating;
+    Py_ssize_t iterating;
     PyObject *data; /* The actual set of weak references. */
     PyObject *pending; /* Pending removals collected during iteration. */
     PyObject *in_weakreflist;
