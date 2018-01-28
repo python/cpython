@@ -85,7 +85,8 @@ PyContext_Enter(PyContext *ctx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
     ctx->ctx_entered = 1;
@@ -107,7 +108,8 @@ PyContext_Exit(PyContext *ctx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
 
     if (ts->context != (PyObject *)ctx) {
         /* Can only happen if someone misuses the C API */
@@ -134,7 +136,9 @@ PyContextVar_New(const char *name, PyObject *def)
     if (pyname == NULL) {
         return NULL;
     }
-    return contextvar_new(pyname, def);
+    PyContextVar *var = contextvar_new(pyname, def);
+    Py_DECREF(pyname);
+    return var;
 }
 
 
@@ -143,7 +147,8 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
 {
     assert(PyContextVar_CheckExact(var));
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
     if (ts->context == NULL) {
         goto not_found;
     }
@@ -338,7 +343,8 @@ context_new_from_vars(PyHamtObject *vars)
 static inline PyContext *
 context_get(void)
 {
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
     PyContext *current_ctx = (PyContext *)ts->context;
     if (current_ctx == NULL) {
         current_ctx = context_new_empty();
@@ -741,8 +747,8 @@ contextvar_new(PyObject *name, PyObject *def)
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
 
-    if (_PyObject_GC_IS_TRACKED(name) ||
-            (def != NULL && _PyObject_GC_IS_TRACKED(def)))
+    if (_PyObject_GC_MAY_BE_TRACKED(name) ||
+            (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))
     {
         PyObject_GC_Track(var);
     }

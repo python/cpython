@@ -2234,17 +2234,16 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
     }
     else if (arg != NULL) {
         _Py_IDENTIFIER(keys);
-        PyObject *func = _PyObject_GetAttrId(arg, &PyId_keys);
-        if (func != NULL) {
+        PyObject *func;
+        if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+            result = -1;
+        }
+        else if (func != NULL) {
             Py_DECREF(func);
             result = PyDict_Merge(self, arg, 1);
         }
-        else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            result = PyDict_MergeFromSeq2(self, arg, 1);
-        }
         else {
-            result = -1;
+            result = PyDict_MergeFromSeq2(self, arg, 1);
         }
     }
 
@@ -3854,14 +3853,22 @@ static PyObject *
 dictview_repr(_PyDictViewObject *dv)
 {
     PyObject *seq;
-    PyObject *result;
+    PyObject *result = NULL;
+    Py_ssize_t rc;
 
+    rc = Py_ReprEnter((PyObject *)dv);
+    if (rc != 0) {
+        return rc > 0 ? PyUnicode_FromString("...") : NULL;
+    }
     seq = PySequence_List((PyObject *)dv);
-    if (seq == NULL)
-        return NULL;
-
+    if (seq == NULL) {
+        goto Done;
+    }
     result = PyUnicode_FromFormat("%s(%R)", Py_TYPE(dv)->tp_name, seq);
     Py_DECREF(seq);
+
+Done:
+    Py_ReprLeave((PyObject *)dv);
     return result;
 }
 
