@@ -1101,17 +1101,17 @@ struct s_MergeState {
     /* This is the function we will use to compare two keys,
      * even when none of our special cases apply and we have to use
      * safe_object_compare. */
-    int (*key_compare)(PyObject*, PyObject*, MergeState*);
+    int (*key_compare)(PyObject *, PyObject *, MergeState *);
 
     /* This function is used by unsafe_object_compare to optimize comparisons
      * when we know our list is type-homogeneous but we can't assume anything else.
      * In the pre-sort check it is set equal to key->ob_type->tp_richcompare */
-    PyObject* (*key_richcompare)(PyObject*, PyObject*, int);
+    PyObject *(*key_richcompare)(PyObject *, PyObject *, int);
 
     /* This function is used by unsafe_tuple_compare to compare the first elements
      * of tuples. It may be set to safe_object_compare, but the idea is that hopefully
      * we can assume more, and use one of the special-case compares. */
-    int (*tuple_elem_compare)(PyObject*, PyObject*, MergeState*);
+    int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
 };
 
 /* binarysort is the best method for sorting small arrays: it does
@@ -1481,11 +1481,11 @@ merge_getmem(MergeState *ms, Py_ssize_t need)
      * we don't care what's in the block.
      */
     merge_freemem(ms);
-    if ((size_t)need > PY_SSIZE_T_MAX / sizeof(PyObject*) / multiplier) {
+    if ((size_t)need > PY_SSIZE_T_MAX / sizeof(PyObject *) / multiplier) {
         PyErr_NoMemory();
         return -1;
     }
-    ms->a.keys = (PyObject**)PyMem_Malloc(multiplier * need
+    ms->a.keys = (PyObject **)PyMem_Malloc(multiplier * need
                                           * sizeof(PyObject *));
     if (ms->a.keys != NULL) {
         ms->alloced = need;
@@ -1942,7 +1942,7 @@ safe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 static int
 unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
-    PyObject* res_obj; int res;
+    PyObject *res_obj; int res;
 
     /* No assumptions, because we check first: */
     if (v->ob_type->tp_richcompare != ms->key_richcompare)
@@ -2183,7 +2183,7 @@ listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             /* Note: for lists of tuples, key is the first element of the tuple
              * lo.keys[i], not lo.keys[i] itself! We verify type-homogeneity 
              * for lists of tuples in the if-statement directly above. */
-            PyObject* key = (keys_are_in_tuples ?
+            PyObject *key = (keys_are_in_tuples ?
                              PyTuple_GET_ITEM(lo.keys[i], 0) :
                              lo.keys[i]);
 
@@ -2594,7 +2594,7 @@ list_sizeof(PyListObject *self)
 }
 
 static PyObject *list_iter(PyObject *seq);
-static PyObject *list_reversed(PyListObject* seq, PyObject* unused);
+static PyObject *list_reversed(PyListObject *seq, PyObject *unused);
 
 PyDoc_STRVAR(getitem_doc,
 "x.__getitem__(y) <==> x[y]");
