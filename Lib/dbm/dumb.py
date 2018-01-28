@@ -24,7 +24,7 @@ is read when the database is opened, and some updates rewrite the whole index)
 import ast as _ast
 import io as _io
 import os as _os
-import collections
+import collections.abc
 
 __all__ = ["error", "open"]
 
@@ -32,7 +32,7 @@ _BLOCKSIZE = 512
 
 error = OSError
 
-class _Database(collections.MutableMapping):
+class _Database(collections.abc.MutableMapping):
 
     # The on-disk directory and data files can remain in mutually
     # inconsistent states for an arbitrarily long time (see comments

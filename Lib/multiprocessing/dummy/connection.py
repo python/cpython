@@ -26,7 +26,9 @@ class Listener(object):
     def close(self):
         self._backlog_queue = None
 
-    address = property(lambda self: self._backlog_queue)
+    @property
+    def address(self):
+        return self._backlog_queue
 
     def __enter__(self):
         return self

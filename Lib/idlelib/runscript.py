@@ -1,22 +1,14 @@
-"""Extension to execute code outside the Python shell window.
+"""Execute code from an editor.
 
-This adds the following commands:
+Check module: do a full syntax check of the current module.
+Also run the tabnanny to catch any inconsistent tabs.
 
-- Check module does a full syntax check of the current module.
-  It also runs the tabnanny to catch any inconsistent tabs.
+Run module: also execute the module's code in the __main__ namespace.
+The window must have been saved previously. The module is added to
+sys.modules, and is also added to the __main__ namespace.
 
-- Run module executes the module's code in the __main__ namespace.  The window
-  must have been saved previously. The module is added to sys.modules, and is
-  also added to the __main__ namespace.
-
-XXX GvR Redesign this interface (yet again) as follows:
-
-- Present a dialog box for ``Run Module''
-
-- Allow specify command line arguments in the dialog box
-
+TODO: Specify command line arguments in a dialog box.
 """
-
 import os
 import tabnanny
 import tokenize
@@ -40,11 +32,6 @@ by Format->Untabify Region and specify the number of columns used by each tab.
 
 class ScriptBinding:
 
-    menudefs = [
-        ('run', [None,
-                 ('Check Module', '<<check-module>>'),
-                 ('Run Module', '<<run-module>>'), ]), ]
-
     def __init__(self, editwin):
         self.editwin = editwin
         # Provide instance variables referenced by debugger
@@ -63,6 +50,7 @@ class ScriptBinding:
             return 'break'
         if not self.tabnanny(filename):
             return 'break'
+        return "break"
 
     def tabnanny(self, filename):
         # XXX: tabnanny should work on binary files as well

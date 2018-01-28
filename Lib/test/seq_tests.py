@@ -301,6 +301,8 @@ class CommonTest(unittest.TestCase):
         u = self.type2test([0, 1])
         u *= 3
         self.assertEqual(u, self.type2test([0, 1, 0, 1, 0, 1]))
+        u *= 0
+        self.assertEqual(u, self.type2test([]))
 
     def test_getitemoverwriteiter(self):
         # Verify that __getitem__ overrides are not recognized by __iter__

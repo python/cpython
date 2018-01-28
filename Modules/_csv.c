@@ -365,14 +365,14 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             Py_INCREF(dialect);
         /* Can we reuse this instance? */
         if (PyObject_TypeCheck(dialect, &Dialect_Type) &&
-            delimiter == 0 &&
-            doublequote == 0 &&
-            escapechar == 0 &&
-            lineterminator == 0 &&
-            quotechar == 0 &&
-            quoting == 0 &&
-            skipinitialspace == 0 &&
-            strict == 0)
+            delimiter == NULL &&
+            doublequote == NULL &&
+            escapechar == NULL &&
+            lineterminator == NULL &&
+            quotechar == NULL &&
+            quoting == NULL &&
+            skipinitialspace == NULL &&
+            strict == NULL)
             return dialect;
     }
 
@@ -1238,7 +1238,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (PyErr_Occurred())
         return NULL;
 
-    if (self->num_fields > 0 && self->rec_size == 0) {
+    if (self->num_fields > 0 && self->rec_len == 0) {
         if (dialect->quoting == QUOTE_NONE) {
             PyErr_Format(_csvstate_global->error_obj,
                 "single empty field record must be quoted");

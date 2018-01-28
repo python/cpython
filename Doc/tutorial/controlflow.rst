@@ -157,7 +157,7 @@ Later we will see more functions that return iterables and take iterables as arg
 :keyword:`break` and :keyword:`continue` Statements, and :keyword:`else` Clauses on Loops
 =========================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the smallest enclosing
+The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an ``else`` clause; it is executed when the loop
@@ -475,7 +475,7 @@ Here's an example that fails due to this restriction::
    ...
    >>> function(0, a=0)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: function() got multiple values for keyword argument 'a'
 
 When a final formal parameter of the form ``**name`` is present, it receives a

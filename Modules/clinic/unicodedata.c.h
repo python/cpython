@@ -20,7 +20,7 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
                              PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_decimal(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicodedata_UCD_decimal(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -28,10 +28,6 @@ unicodedata_UCD_decimal(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObj
 
     if (!_PyArg_ParseStack(args, nargs, "C|O:decimal",
         &chr, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("decimal", kwnames)) {
         goto exit;
     }
     return_value = unicodedata_UCD_decimal_impl(self, chr, default_value);
@@ -57,7 +53,7 @@ static PyObject *
 unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_digit(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicodedata_UCD_digit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -65,10 +61,6 @@ unicodedata_UCD_digit(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObjec
 
     if (!_PyArg_ParseStack(args, nargs, "C|O:digit",
         &chr, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("digit", kwnames)) {
         goto exit;
     }
     return_value = unicodedata_UCD_digit_impl(self, chr, default_value);
@@ -95,7 +87,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
                              PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_numeric(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicodedata_UCD_numeric(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -103,10 +95,6 @@ unicodedata_UCD_numeric(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObj
 
     if (!_PyArg_ParseStack(args, nargs, "C|O:numeric",
         &chr, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("numeric", kwnames)) {
         goto exit;
     }
     return_value = unicodedata_UCD_numeric_impl(self, chr, default_value);
@@ -312,7 +300,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
                                PyObject *input);
 
 static PyObject *
-unicodedata_UCD_normalize(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicodedata_UCD_normalize(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *form;
@@ -320,10 +308,6 @@ unicodedata_UCD_normalize(PyObject *self, PyObject **args, Py_ssize_t nargs, PyO
 
     if (!_PyArg_ParseStack(args, nargs, "sU:normalize",
         &form, &input)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("normalize", kwnames)) {
         goto exit;
     }
     return_value = unicodedata_UCD_normalize_impl(self, form, input);
@@ -348,7 +332,7 @@ static PyObject *
 unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_name(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicodedata_UCD_name(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -356,10 +340,6 @@ unicodedata_UCD_name(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject
 
     if (!_PyArg_ParseStack(args, nargs, "C|O:name",
         &chr, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("name", kwnames)) {
         goto exit;
     }
     return_value = unicodedata_UCD_name_impl(self, chr, default_value);
@@ -399,4 +379,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fcb86aaa3fa40876 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc899bff0ecd14c1 input=a9049054013a1b77]*/

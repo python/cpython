@@ -103,6 +103,10 @@ created.  Socket addresses are represented as follows:
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
 
+  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
+    where both additional parameters are unsigned long integer that represent a
+    CAN identifier (standard or extended).
+
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
   kernel control using a dynamically-assigned ID. The tuple can be used if ID
@@ -148,6 +152,14 @@ created.  Socket addresses are represented as follows:
   Availability Linux 2.6.38, some algorithm types require more recent Kernels.
 
   .. versionadded:: 3.6
+
+- :const:`AF_VSOCK` allows communication between virtual machines and
+  their hosts. The sockets are represented as a ``(CID, port)`` tuple
+  where the context ID or CID and port are integers.
+
+  Availability: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5
+
+  .. versionadded:: 3.7
 
 - Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
   support specific representations.
@@ -303,6 +315,9 @@ Constants
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
+   .. versionchanged:: 3.7
+      ``TCP_NOTSENT_LOWAT`` was added.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -337,6 +352,16 @@ Constants
    Availability: Linux >= 3.6.
 
    .. versionadded:: 3.5
+
+.. data:: CAN_ISOTP
+
+   CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
+   ISO-TP constants, documented in the Linux documentation.
+
+   Availability: Linux >= 2.6.25
+
+   .. versionadded:: 3.7
+
 
 .. data:: AF_RDS
           PF_RDS
@@ -377,6 +402,18 @@ Constants
    Availability: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
+
+
+.. data:: AF_VSOCK
+          IOCTL_VM_SOCKETS_GET_LOCAL_CID
+          VMADDR*
+          SO_VM*
+
+   Constants for Linux host/guest communication.
+
+   Availability: Linux >= 4.8.
+
+   .. versionadded:: 3.7
 
 .. data:: AF_LINK
 
@@ -424,7 +461,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
    constants. The protocol number is usually zero and may be omitted or in the
    case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW` or :const:`CAN_BCM`.  If *fileno* is specified, the other
+   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.  If *fileno* is specified, the other
    arguments are ignored, causing the socket with the specified file descriptor
    to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
    socket and not a duplicate. This may help close a detached socket using
@@ -442,6 +479,22 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.4
       The returned socket is now non-inheritable.
 
+   .. versionchanged:: 3.7
+       The CAN_ISOTP protocol was added.
+
+   .. versionchanged:: 3.7
+      When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
+      bit flags are applied to *type* they are cleared, and
+      :attr:`socket.type` will not reflect them.  They are still passed
+      to the underlying system `socket()` call.  Therefore::
+
+          sock = socket.socket(
+              socket.AF_INET,
+              socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+
+      will still create a non-blocking socket on OSes that support
+      ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
+      ``socket.SOCK_STREAM``.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -524,6 +577,14 @@ Other functions
 
 The :mod:`socket` module also offers various network-related services:
 
+
+.. function:: close(fd)
+
+   Close a socket file descriptor. This is like :func:`os.close`, but for
+   sockets. On some platforms (most noticeable Windows) :func:`os.close`
+   does not work for socket file descriptors.
+
+   .. versionadded:: 3.7
 
 .. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
 
@@ -1026,6 +1087,16 @@ to sockets.
    to decode C structures encoded as byte strings).
 
 
+.. method:: socket.getblocking()
+
+   Return ``True`` if socket is in blocking mode, ``False`` if in
+   non-blocking.
+
+   This is equivalent to checking ``socket.gettimeout() == 0``.
+
+   .. versionadded:: 3.7
+
+
 .. method:: socket.gettimeout()
 
    Return the timeout in seconds (float) associated with socket operations,
@@ -1378,6 +1449,10 @@ to sockets.
 
    * ``sock.setblocking(False)`` is equivalent to ``sock.settimeout(0.0)``
 
+   .. versionchanged:: 3.7
+      The method no longer applies :const:`SOCK_NONBLOCK` flag on
+      :attr:`socket.type`.
+
 
 .. method:: socket.settimeout(value)
 
@@ -1389,6 +1464,10 @@ to sockets.
    non-blocking mode. If ``None`` is given, the socket is put in blocking mode.
 
    For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
+
+   .. versionchanged:: 3.7
+      The method no longer toggles :const:`SOCK_NONBLOCK` flag on
+      :attr:`socket.type`.
 
 
 .. method:: socket.setsockopt(level, optname, value: int)
@@ -1658,7 +1737,7 @@ the interface::
    # disabled promiscuous mode
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
-The last example shows how to use the socket interface to communicate to a CAN
+The next example shows how to use the socket interface to communicate to a CAN
 network using the raw socket protocol. To use CAN with the broadcast
 manager protocol instead, open a socket with::
 
@@ -1668,7 +1747,7 @@ After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, yo
 can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
-This example might require special privileges::
+This last example might require special privileges::
 
    import socket
    import struct

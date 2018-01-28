@@ -149,25 +149,25 @@ def _read_long(file):
     try:
         return struct.unpack('>l', file.read(4))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_ulong(file):
     try:
         return struct.unpack('>L', file.read(4))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_short(file):
     try:
         return struct.unpack('>h', file.read(2))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_ushort(file):
     try:
         return struct.unpack('>H', file.read(2))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_string(file):
     length = ord(file.read(1))
@@ -915,7 +915,10 @@ def open(f, mode=None):
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
 
-openfp = open # B/W compatibility
+def openfp(f, mode=None):
+    warnings.warn("aifc.openfp is deprecated since Python 3.7. "
+                  "Use aifc.open instead.", DeprecationWarning, stacklevel=2)
+    return open(f, mode=mode)
 
 if __name__ == '__main__':
     import sys

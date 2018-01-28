@@ -866,7 +866,7 @@ class _NNTPBase:
         try:
             [resp_num, path] = resp.split()
         except ValueError:
-            raise NNTPReplyError(resp)
+            raise NNTPReplyError(resp) from None
         else:
             return resp, path
 

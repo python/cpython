@@ -6,9 +6,37 @@ import unittest
 import warnings
 import weakref
 import inspect
-import types
 
 from test import support
+
+_testcapi = support.import_module('_testcapi')
+
+
+# This tests to make sure that if a SIGINT arrives just before we send into a
+# yield from chain, the KeyboardInterrupt is raised in the innermost
+# generator (see bpo-30039).
+class SignalAndYieldFromTest(unittest.TestCase):
+
+    def generator1(self):
+        return (yield from self.generator2())
+
+    def generator2(self):
+        try:
+            yield
+        except KeyboardInterrupt:
+            return "PASSED"
+        else:
+            return "FAILED"
+
+    def test_raise_and_yield_from(self):
+        gen = self.generator1()
+        gen.send(None)
+        try:
+            _testcapi.raise_SIGINT_then_send_None(gen)
+        except BaseException as _exc:
+            exc = _exc
+        self.assertIs(type(exc), StopIteration)
+        self.assertEqual(exc.value, "PASSED")
 
 
 class FinalizationTest(unittest.TestCase):
@@ -237,25 +265,15 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
-    def test_stopiteration_warning(self):
+    def test_stopiteration_error(self):
         # See also PEP 479.
 
         def gen():
             raise StopIteration
             yield
 
-        with self.assertRaises(StopIteration), \
-             self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(gen())
-
-        with self.assertRaisesRegex(DeprecationWarning,
-                                    "generator .* raised StopIteration"), \
-             warnings.catch_warnings():
-
-            warnings.simplefilter('error')
-            next(gen())
-
 
     def test_tutorial_stopiteration(self):
         # Raise StopIteration" stops the generator too:
@@ -268,13 +286,7 @@ class ExceptionTest(unittest.TestCase):
         g = f()
         self.assertEqual(next(g), 1)
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            with self.assertRaises(StopIteration):
-                next(g)
-
-        with self.assertRaises(StopIteration):
-            # This time StopIteration isn't raised from the generator's body,
-            # hence no warning.
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(g)
 
     def test_return_tuple(self):
@@ -1430,7 +1442,7 @@ class Knights:
             # If we create a square with one exit, we must visit it next;
             # else somebody else will have to visit it, and since there's
             # only one adjacent, there won't be a way to leave it again.
-            # Finelly, if we create more than one free square with a
+            # Finally, if we create more than one free square with a
             # single exit, we can only move to one of them next, leaving
             # the other one a dead end.
             ne0 = ne1 = 0
@@ -1802,13 +1814,7 @@ Yield by itself yields None:
 [None]
 
 
-
-An obscene abuse of a yield expression within a generator expression:
-
->>> list((yield 21) for i in range(4))
-[21, None, 21, None, 21, None, 21, None]
-
-And a more sane, but still weird usage:
+Yield is allowed only in the outermost iterable in generator expression:
 
 >>> def f(): list(i for i in [(yield 26)])
 >>> type(f())
@@ -2075,10 +2081,6 @@ enclosing function a generator:
 <class 'generator'>
 
 >>> def f(): lambda x=(yield): 1
->>> type(f())
-<class 'generator'>
-
->>> def f(): x=(i for i in (yield) if (yield))
 >>> type(f())
 <class 'generator'>
 

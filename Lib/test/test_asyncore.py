@@ -7,6 +7,7 @@ import sys
 import time
 import errno
 import struct
+import threading
 
 from test import support
 from io import BytesIO
@@ -14,10 +15,6 @@ from io import BytesIO
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 TIMEOUT = 3
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
@@ -326,7 +323,6 @@ class DispatcherWithSendTests(unittest.TestCase):
     def tearDown(self):
         asyncore.close_all()
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_send(self):
         evt = threading.Event()
@@ -364,9 +360,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             self.assertEqual(cap.getvalue(), data*2)
         finally:
-            t.join(timeout=TIMEOUT)
-            if t.is_alive():
-                self.fail("join() timed out")
+            support.join_thread(t, timeout=TIMEOUT)
 
 
 @unittest.skipUnless(hasattr(asyncore, 'file_wrapper'),
@@ -433,7 +427,10 @@ class FileWrapperTest(unittest.TestCase):
         f = asyncore.file_wrapper(fd)
         os.close(fd)
 
-        f.close()
+        os.close(f.fd)  # file_wrapper dupped fd
+        with self.assertRaises(OSError):
+            f.close()
+
         self.assertEqual(f.fd, -1)
         # calling close twice should not fail
         f.close()
@@ -502,7 +499,7 @@ class BaseClient(BaseTestHandler):
 class BaseTestAPI:
 
     def tearDown(self):
-        asyncore.close_all()
+        asyncore.close_all(ignore_all=True)
 
     def loop_waiting_for_flag(self, instance, timeout=5):
         timeout = float(timeout) / 100
@@ -729,14 +726,10 @@ class BaseTestAPI:
     def test_create_socket(self):
         s = asyncore.dispatcher()
         s.create_socket(self.family)
+        self.assertEqual(s.socket.type, socket.SOCK_STREAM)
         self.assertEqual(s.socket.family, self.family)
-        SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
-        sock_type = socket.SOCK_STREAM | SOCK_NONBLOCK
-        if hasattr(socket, 'SOCK_CLOEXEC'):
-            self.assertIn(s.socket.type,
-                          (sock_type | socket.SOCK_CLOEXEC, sock_type))
-        else:
-            self.assertEqual(s.socket.type, sock_type)
+        self.assertEqual(s.socket.gettimeout(), 0)
+        self.assertFalse(s.socket.get_inheritable())
 
     def test_bind(self):
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
@@ -755,50 +748,47 @@ class BaseTestAPI:
     def test_set_reuse_addr(self):
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
             self.skipTest("Not applicable to AF_UNIX sockets.")
-        sock = socket.socket(self.family)
-        try:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        except OSError:
-            unittest.skip("SO_REUSEADDR not supported on this platform")
-        else:
-            # if SO_REUSEADDR succeeded for sock we expect asyncore
-            # to do the same
-            s = asyncore.dispatcher(socket.socket(self.family))
-            self.assertFalse(s.socket.getsockopt(socket.SOL_SOCKET,
-                                                 socket.SO_REUSEADDR))
-            s.socket.close()
-            s.create_socket(self.family)
-            s.set_reuse_addr()
-            self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,
-                                                 socket.SO_REUSEADDR))
-        finally:
-            sock.close()
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
+        with socket.socket(self.family) as sock:
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            except OSError:
+                unittest.skip("SO_REUSEADDR not supported on this platform")
+            else:
+                # if SO_REUSEADDR succeeded for sock we expect asyncore
+                # to do the same
+                s = asyncore.dispatcher(socket.socket(self.family))
+                self.assertFalse(s.socket.getsockopt(socket.SOL_SOCKET,
+                                                     socket.SO_REUSEADDR))
+                s.socket.close()
+                s.create_socket(self.family)
+                s.set_reuse_addr()
+                self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,
+                                                     socket.SO_REUSEADDR))
+
     @support.reap_threads
     def test_quick_connect(self):
         # see: http://bugs.python.org/issue10340
-        if self.family in (socket.AF_INET, getattr(socket, "AF_INET6", object())):
-            server = BaseServer(self.family, self.addr)
-            t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1,
-                                                              count=500))
-            t.start()
-            def cleanup():
-                t.join(timeout=TIMEOUT)
-                if t.is_alive():
-                    self.fail("join() timed out")
-            self.addCleanup(cleanup)
+        if self.family not in (socket.AF_INET, getattr(socket, "AF_INET6", object())):
+            self.skipTest("test specific to AF_INET and AF_INET6")
 
-            s = socket.socket(self.family, socket.SOCK_STREAM)
-            s.settimeout(.2)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-                         struct.pack('ii', 1, 0))
-            try:
-                s.connect(server.address)
-            except OSError:
-                pass
-            finally:
-                s.close()
+        server = BaseServer(self.family, self.addr)
+        # run the thread 500 ms: the socket should be connected in 200 ms
+        t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1,
+                                                          count=5))
+        t.start()
+        try:
+            with socket.socket(self.family, socket.SOCK_STREAM) as s:
+                s.settimeout(.2)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                             struct.pack('ii', 1, 0))
+
+                try:
+                    s.connect(server.address)
+                except OSError:
+                    pass
+        finally:
+            support.join_thread(t, timeout=TIMEOUT)
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET

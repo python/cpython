@@ -286,14 +286,14 @@ _codecs_unicode_internal_decode_impl(PyObject *module, PyObject *obj,
 _codecs.utf_7_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_7_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final)
-/*[clinic end generated code: output=0cd3a944a32a4089 input=bc4d6247ecdb01e6]*/
+/*[clinic end generated code: output=0cd3a944a32a4089 input=2d94a5a1f170c8ae]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF7Stateful(data->buf, data->len,
@@ -306,14 +306,14 @@ _codecs_utf_7_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.utf_8_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_8_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final)
-/*[clinic end generated code: output=10f74dec8d9bb8bf input=39161d71e7422ee2]*/
+/*[clinic end generated code: output=10f74dec8d9bb8bf input=1ea6c21492e8bcbe]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF8Stateful(data->buf, data->len,
@@ -326,14 +326,14 @@ _codecs_utf_8_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.utf_16_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_16_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final)
-/*[clinic end generated code: output=783b442abcbcc2d0 input=f3cf01d1461007ce]*/
+/*[clinic end generated code: output=783b442abcbcc2d0 input=2ba128c28ea0bb40]*/
 {
     int byteorder = 0;
     /* This is overwritten unless final is true. */
@@ -348,14 +348,14 @@ _codecs_utf_16_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.utf_16_le_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_16_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final)
-/*[clinic end generated code: output=899b9e6364379dcd input=a77e3bf97335d94e]*/
+/*[clinic end generated code: output=899b9e6364379dcd input=43aeb8b0461cace5]*/
 {
     int byteorder = -1;
     /* This is overwritten unless final is true. */
@@ -370,14 +370,14 @@ _codecs_utf_16_le_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.utf_16_be_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_16_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final)
-/*[clinic end generated code: output=49f6465ea07669c8 input=606f69fae91b5563]*/
+/*[clinic end generated code: output=49f6465ea07669c8 input=339e554c804f34b2]*/
 {
     int byteorder = 1;
     /* This is overwritten unless final is true. */
@@ -400,14 +400,14 @@ _codecs.utf_16_ex_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
     byteorder: int = 0
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_16_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final)
-/*[clinic end generated code: output=0f385f251ecc1988 input=f6e7f697658c013e]*/
+/*[clinic end generated code: output=0f385f251ecc1988 input=3201aeddb9636889]*/
 {
     /* This is overwritten unless final is true. */
     Py_ssize_t consumed = data->len;
@@ -424,14 +424,14 @@ _codecs_utf_16_ex_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.utf_32_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_32_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final)
-/*[clinic end generated code: output=2fc961807f7b145f input=86d4f41c6c2e763d]*/
+/*[clinic end generated code: output=2fc961807f7b145f input=155a5c673a4e2514]*/
 {
     int byteorder = 0;
     /* This is overwritten unless final is true. */
@@ -446,14 +446,14 @@ _codecs_utf_32_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.utf_32_le_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_32_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final)
-/*[clinic end generated code: output=ec8f46b67a94f3e6 input=d18b650772d188ba]*/
+/*[clinic end generated code: output=ec8f46b67a94f3e6 input=7baf061069e92d3b]*/
 {
     int byteorder = -1;
     /* This is overwritten unless final is true. */
@@ -468,14 +468,14 @@ _codecs_utf_32_le_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.utf_32_be_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_32_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final)
-/*[clinic end generated code: output=ff82bae862c92c4e input=19c271b5d34926d8]*/
+/*[clinic end generated code: output=ff82bae862c92c4e input=b182026300dae595]*/
 {
     int byteorder = 1;
     /* This is overwritten unless final is true. */
@@ -498,14 +498,14 @@ _codecs.utf_32_ex_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
     byteorder: int = 0
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_utf_32_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final)
-/*[clinic end generated code: output=6bfb177dceaf4848 input=4af3e6ccfe34a076]*/
+/*[clinic end generated code: output=6bfb177dceaf4848 input=7b9c2cb819fb237a]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF32Stateful(data->buf, data->len,
@@ -610,14 +610,14 @@ _codecs_charmap_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.mbcs_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_mbcs_decode_impl(PyObject *module, Py_buffer *data,
                          const char *errors, int final)
-/*[clinic end generated code: output=39b65b8598938c4b input=d492c1ca64f4fa8a]*/
+/*[clinic end generated code: output=39b65b8598938c4b input=b5f2fe568f311297]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeMBCSStateful(data->buf, data->len,
@@ -629,14 +629,14 @@ _codecs_mbcs_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.oem_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_oem_decode_impl(PyObject *module, Py_buffer *data,
                         const char *errors, int final)
-/*[clinic end generated code: output=da1617612f3fcad8 input=95b8a92c446b03cd]*/
+/*[clinic end generated code: output=da1617612f3fcad8 input=278709bcfd374a9c]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeCodePageStateful(CP_OEMCP,
@@ -649,14 +649,14 @@ _codecs.code_page_decode
     codepage: int
     data: Py_buffer
     errors: str(accept={str, NoneType}) = NULL
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_code_page_decode_impl(PyObject *module, int codepage,
                               Py_buffer *data, const char *errors, int final)
-/*[clinic end generated code: output=53008ea967da3fff input=4f3152a304e21d51]*/
+/*[clinic end generated code: output=53008ea967da3fff input=51f6169021c68dd5]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeCodePageStateful(codepage,

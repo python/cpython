@@ -332,7 +332,7 @@ weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *tmp;
 
-    if (!_PyArg_NoKeywords("ref()", kwargs))
+    if (!_PyArg_NoKeywords("ref", kwargs))
         return -1;
 
     if (parse_weakref_init_args("__init__", args, kwargs, &tmp, &tmp))

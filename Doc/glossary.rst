@@ -126,11 +126,15 @@ Glossary
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
-      <https://www.python.org/~guido/>`_, Python's creator.
+      <https://gvanrossum.github.io/>`_, Python's creator.
 
    binary file
       A :term:`file object` able to read and write
       :term:`bytes-like objects <bytes-like object>`.
+      Examples of binary files are files opened in binary mode (``'rb'``,
+      ``'wb'`` or ``'rb+'``), :data:`sys.stdin.buffer`,
+      :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
+      :class:`gzip.GzipFile`.
 
       .. seealso::
          A :term:`text file` reads and writes :class:`str` objects.
@@ -155,7 +159,7 @@ Glossary
    bytecode
       Python source code is compiled into bytecode, the internal representation
       of a Python program in the CPython interpreter.  The bytecode is also
-      cached in ``.pyc`` and ``.pyo`` files so that executing the same file is
+      cached in ``.pyc`` files so that executing the same file is
       faster the second time (recompilation from source to bytecode can be
       avoided).  This "intermediate language" is said to run on a
       :term:`virtual machine` that executes the machine code corresponding to
@@ -316,6 +320,11 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the
       core and with user code.
 
+   f-string
+      String literals prefixed with ``'f'`` or ``'F'`` are commonly called
+      "f-strings" which is short for
+      :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
+
    file object
       An object exposing a file-oriented API (with methods such as
       :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending
@@ -363,9 +372,11 @@ Glossary
       may be accessed via the :attr:`__annotations__` special attribute of a
       function object.
 
-      Python itself does not assign any particular meaning to function
-      annotations. They are intended to be interpreted by third-party libraries
-      or tools.  See :pep:`3107`, which describes some of their potential uses.
+      See also the :term:`variable annotation` glossary entry.
+
+      Annotations are meant to provide a standard way for programmers to
+      document types of functions they design.  See :pep:`484`, which
+      describes this functionality.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -382,7 +393,8 @@ Glossary
    garbage collection
       The process of freeing memory when it is not used anymore.  Python
       performs garbage collection via reference counting and a cyclic garbage
-      collector that is able to detect and break reference cycles.
+      collector that is able to detect and break reference cycles.  The
+      garbage collector can be controlled using the :mod:`gc` module.
 
       .. index:: single: generator
 
@@ -449,6 +461,12 @@ Glossary
       is believed that overcoming this performance issue would make the
       implementation much more complicated and therefore costlier to maintain.
 
+
+   hash-based pyc
+      A bytecode cache file that uses the the hash rather than the last-modified
+      time of the corresponding source file to determine its validity. See
+      :ref:`pyc-invalidation`.
+
    hashable
       An object is *hashable* if it has a hash value which never changes during
       its lifetime (it needs a :meth:`__hash__` method), and can be compared to
@@ -458,9 +476,9 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable, while no mutable
-      containers (such as lists or dictionaries) are.  Objects which are
-      instances of user-defined classes are hashable by default; they all
+      All of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not.  Objects which are
+      instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.
 
@@ -526,7 +544,10 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`__iter__` or :meth:`__getitem__` method.  Iterables can be
+      with an :meth:`__iter__` method or with a :meth:`__getitem__` method
+      that implements :term:`Sequence` semantics.
+
+      Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
       needed (:func:`zip`, :func:`map`, ...).  When an iterable object is passed
       as an argument to the built-in function :func:`iter`, it returns an
@@ -966,6 +987,9 @@ Glossary
       A :term:`file object` able to read and write :class:`str` objects.
       Often, a text file actually accesses a byte-oriented datastream
       and handles the :term:`text encoding` automatically.
+      Examples of text files are files opened in text mode (``'r'`` or ``'w'``),
+      :data:`sys.stdin`, :data:`sys.stdout`, and instances of
+      :class:`io.StringIO`.
 
       .. seealso::
          A :term:`binary file` reads and write :class:`bytes` objects.
@@ -999,10 +1023,11 @@ Glossary
       attribute of a class or module object and can be accessed using
       :func:`typing.get_type_hints`.
 
-      Python itself does not assign any particular meaning to variable
-      annotations. They are intended to be interpreted by third-party libraries
-      or type checking tools. See :pep:`526`, :pep:`484` which describe
-      some of their potential uses.
+      See also the :term:`function annotation` glossary entry.
+
+      Annotations are meant to provide a standard way for programmers to
+      document types of functions they design.  See :pep:`484` and :pep:`526`
+      which describe this functionality.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

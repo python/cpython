@@ -10,8 +10,8 @@ import os
 import os.path
 import errno
 import functools
+import pathlib
 import subprocess
-from contextlib import ExitStack
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
@@ -22,8 +22,7 @@ import tarfile
 import zipfile
 
 from test import support
-from test.support import (TESTFN, check_warnings, captured_stdout,
-                          android_not_root)
+from test.support import TESTFN
 
 TESTFN2 = TESTFN + "2"
 
@@ -184,7 +183,7 @@ class TestShutil(unittest.TestCase):
             errors.append(args)
         shutil.rmtree(filename, onerror=onerror)
         self.assertEqual(len(errors), 2)
-        self.assertIs(errors[0][0], os.listdir)
+        self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2][1], NotADirectoryError)
         self.assertIn(errors[0][2][1].filename, possible_args)
@@ -770,7 +769,6 @@ class TestShutil(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
-    @unittest.skipIf(android_not_root, "hard links not allowed, non root user")
     def test_dont_copy_file_onto_link_to_itself(self):
         # bug 851123.
         os.mkdir(TESTFN)
@@ -779,7 +777,10 @@ class TestShutil(unittest.TestCase):
         try:
             with open(src, 'w') as f:
                 f.write('cheddar')
-            os.link(src, dst)
+            try:
+                os.link(src, dst)
+            except PermissionError as e:
+                self.skipTest('os.link(): %s' % e)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
             with open(src, 'r') as f:
                 self.assertEqual(f.read(), 'cheddar')
@@ -823,9 +824,11 @@ class TestShutil(unittest.TestCase):
 
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_copyfile_named_pipe(self):
-        os.mkfifo(TESTFN)
+        try:
+            os.mkfifo(TESTFN)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         try:
             self.assertRaises(shutil.SpecialFileError,
                                 shutil.copyfile, TESTFN, TESTFN2)
@@ -834,7 +837,6 @@ class TestShutil(unittest.TestCase):
         finally:
             os.remove(TESTFN)
 
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @support.skip_unless_symlink
     def test_copytree_named_pipe(self):
@@ -843,7 +845,10 @@ class TestShutil(unittest.TestCase):
             subdir = os.path.join(TESTFN, "subdir")
             os.mkdir(subdir)
             pipe = os.path.join(subdir, "mypipe")
-            os.mkfifo(pipe)
+            try:
+                os.mkfifo(pipe)
+            except PermissionError as e:
+                self.skipTest('os.mkfifo(): %s' % e)
             try:
                 shutil.copytree(TESTFN, TESTFN2)
             except shutil.Error as e:
@@ -1225,6 +1230,18 @@ class TestShutil(unittest.TestCase):
         self.assertNotIn('xxx', formats)
 
     def check_unpack_archive(self, format):
+        self.check_unpack_archive_with_converter(format, lambda path: path)
+        self.check_unpack_archive_with_converter(format, pathlib.Path)
+
+        class MyPath:
+            def __init__(self, path):
+                self.path = path
+            def __fspath__(self):
+                return self.path
+
+        self.check_unpack_archive_with_converter(format, MyPath)
+
+    def check_unpack_archive_with_converter(self, format, converter):
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
@@ -1234,16 +1251,16 @@ class TestShutil(unittest.TestCase):
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
-        unpack_archive(filename, tmpdir2)
+        unpack_archive(converter(filename), converter(tmpdir2))
         self.assertEqual(rlistdir(tmpdir2), expected)
 
         # and again, this time with the format specified
         tmpdir3 = self.mkdtemp()
-        unpack_archive(filename, tmpdir3, format=format)
+        unpack_archive(converter(filename), converter(tmpdir3), format=format)
         self.assertEqual(rlistdir(tmpdir3), expected)
 
-        self.assertRaises(shutil.ReadError, unpack_archive, TESTFN)
-        self.assertRaises(ValueError, unpack_archive, TESTFN, format='xxx')
+        self.assertRaises(shutil.ReadError, unpack_archive, converter(TESTFN))
+        self.assertRaises(ValueError, unpack_archive, converter(TESTFN), format='xxx')
 
     def test_unpack_archive_tar(self):
         self.check_unpack_archive('tar')
@@ -1293,7 +1310,7 @@ class TestShutil(unittest.TestCase):
     @unittest.skipUnless(hasattr(shutil, 'disk_usage'),
                          "disk_usage not available on this platform")
     def test_disk_usage(self):
-        usage = shutil.disk_usage(os.getcwd())
+        usage = shutil.disk_usage(os.path.dirname(__file__))
         self.assertGreater(usage.total, 0)
         self.assertGreater(usage.used, 0)
         self.assertGreaterEqual(usage.free, 0)

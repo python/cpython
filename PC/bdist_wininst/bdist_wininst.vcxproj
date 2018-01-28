@@ -39,7 +39,7 @@
     <RootNamespace>wininst</RootNamespace>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
-  <Import Project="..\..\PCBuild\python.props" />
+  <Import Project="..\..\PCbuild\python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -51,13 +51,17 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\PCBuild\pyproject.props" />
+    <Import Project="..\..\PCbuild\pyproject.props" />
   </ImportGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir>$(PySourcePath)lib\distutils\command\</OutDir>
     <LinkIncremental>false</LinkIncremental>
     <TargetName>wininst-$(VisualStudioVersion)</TargetName>
+    <TargetName Condition="$(PlatformToolset) == 'v140'">wininst-14.0</TargetName>
+    <TargetName Condition="$(PlatformToolset) == 'v120'">wininst-12.0</TargetName>
+    <TargetName Condition="$(PlatformToolset) == 'v110'">wininst-11.0</TargetName>
+    <TargetName Condition="$(PlatformToolset) == 'v100'">wininst-10.0</TargetName>
     <TargetName Condition="$(Platform) == 'x64'">$(TargetName)-amd64</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>

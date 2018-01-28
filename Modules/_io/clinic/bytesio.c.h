@@ -149,7 +149,7 @@ _io_BytesIO_tell(bytesio *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_io_BytesIO_read__doc__,
-"read($self, size=None, /)\n"
+"read($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Read at most size bytes, returned as a bytes object.\n"
@@ -161,24 +161,19 @@ PyDoc_STRVAR(_io_BytesIO_read__doc__,
     {"read", (PyCFunction)_io_BytesIO_read, METH_FASTCALL, _io_BytesIO_read__doc__},
 
 static PyObject *
-_io_BytesIO_read_impl(bytesio *self, PyObject *arg);
+_io_BytesIO_read_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_read(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *arg = Py_None;
+    Py_ssize_t size = -1;
 
-    if (!_PyArg_UnpackStack(args, nargs, "read",
-        0, 1,
-        &arg)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
-        goto exit;
-    }
-    return_value = _io_BytesIO_read_impl(self, arg);
+    return_value = _io_BytesIO_read_impl(self, size);
 
 exit:
     return return_value;
@@ -197,21 +192,16 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
     {"read1", (PyCFunction)_io_BytesIO_read1, METH_FASTCALL, _io_BytesIO_read1__doc__},
 
 static PyObject *
-_io_BytesIO_read1_impl(bytesio *self, PyObject *size);
+_io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read1(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_read1(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *size = Py_None;
+    Py_ssize_t size = -1;
 
-    if (!_PyArg_UnpackStack(args, nargs, "read1",
-        0, 1,
-        &size)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("read1", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read1",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
     return_value = _io_BytesIO_read1_impl(self, size);
@@ -221,7 +211,7 @@ exit:
 }
 
 PyDoc_STRVAR(_io_BytesIO_readline__doc__,
-"readline($self, size=None, /)\n"
+"readline($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Next line from the file, as a bytes object.\n"
@@ -234,24 +224,19 @@ PyDoc_STRVAR(_io_BytesIO_readline__doc__,
     {"readline", (PyCFunction)_io_BytesIO_readline, METH_FASTCALL, _io_BytesIO_readline__doc__},
 
 static PyObject *
-_io_BytesIO_readline_impl(bytesio *self, PyObject *arg);
+_io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_readline(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_readline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *arg = Py_None;
+    Py_ssize_t size = -1;
 
-    if (!_PyArg_UnpackStack(args, nargs, "readline",
-        0, 1,
-        &arg)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
-        goto exit;
-    }
-    return_value = _io_BytesIO_readline_impl(self, arg);
+    return_value = _io_BytesIO_readline_impl(self, size);
 
 exit:
     return return_value;
@@ -274,7 +259,7 @@ static PyObject *
 _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_readlines(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_readlines(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
@@ -282,10 +267,6 @@ _io_BytesIO_readlines(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject
     if (!_PyArg_UnpackStack(args, nargs, "readlines",
         0, 1,
         &arg)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("readlines", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_readlines_impl(self, arg);
@@ -342,24 +323,19 @@ PyDoc_STRVAR(_io_BytesIO_truncate__doc__,
     {"truncate", (PyCFunction)_io_BytesIO_truncate, METH_FASTCALL, _io_BytesIO_truncate__doc__},
 
 static PyObject *
-_io_BytesIO_truncate_impl(bytesio *self, PyObject *arg);
+_io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_truncate(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_truncate(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *arg = Py_None;
+    Py_ssize_t size = self->pos;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &arg)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:truncate",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
-        goto exit;
-    }
-    return_value = _io_BytesIO_truncate_impl(self, arg);
+    return_value = _io_BytesIO_truncate_impl(self, size);
 
 exit:
     return return_value;
@@ -384,7 +360,7 @@ static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence);
 
 static PyObject *
-_io_BytesIO_seek(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
@@ -392,10 +368,6 @@ _io_BytesIO_seek(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 
     if (!_PyArg_ParseStack(args, nargs, "n|i:seek",
         &pos, &whence)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_seek_impl(self, pos, whence);
@@ -472,4 +444,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=138ee6ad6951bc84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ba9a68c8c5669e7 input=a9049054013a1b77]*/

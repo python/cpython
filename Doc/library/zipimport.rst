@@ -9,7 +9,7 @@
 --------------
 
 This module adds the ability to import Python modules (:file:`\*.py`,
-:file:`\*.py[co]`) and packages from ZIP-format archives. It is usually not
+:file:`\*.pyc`) and packages from ZIP-format archives. It is usually not
 needed to use the :mod:`zipimport` module explicitly; it is automatically used
 by the built-in :keyword:`import` mechanism for :data:`sys.path` items that are paths
 to ZIP archives.

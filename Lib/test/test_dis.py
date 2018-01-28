@@ -175,6 +175,13 @@ _BIG_LINENO_FORMAT = """\
               6 RETURN_VALUE
 """
 
+_BIG_LINENO_FORMAT2 = """\
+%4d           0 LOAD_GLOBAL              0 (spam)
+               2 POP_TOP
+               4 LOAD_CONST               0 (None)
+               6 RETURN_VALUE
+"""
+
 dis_module_expected_results = """\
 Disassembly of f:
   4           0 LOAD_CONST               0 (None)
@@ -277,18 +284,18 @@ dis_traceback = """\
              22 POP_TOP
              24 STORE_FAST               0 (e)
              26 POP_TOP
-             28 SETUP_FINALLY           12 (to 42)
+             28 SETUP_FINALLY           10 (to 40)
 
 %3d          30 LOAD_FAST                0 (e)
              32 LOAD_ATTR                1 (__traceback__)
              34 STORE_FAST               1 (tb)
              36 POP_BLOCK
-             38 POP_EXCEPT
-             40 LOAD_CONST               0 (None)
-        >>   42 LOAD_CONST               0 (None)
-             44 STORE_FAST               0 (e)
-             46 DELETE_FAST              0 (e)
-             48 END_FINALLY
+             38 LOAD_CONST               0 (None)
+        >>   40 LOAD_CONST               0 (None)
+             42 STORE_FAST               0 (e)
+             44 DELETE_FAST              0 (e)
+             46 END_FINALLY
+             48 POP_EXCEPT
              50 JUMP_FORWARD             2 (to 54)
         >>   52 END_FINALLY
 
@@ -324,16 +331,85 @@ dis_fstring = """\
 def _g(x):
     yield x
 
+async def _ag(x):
+    yield x
+
+async def _co(x):
+    async for item in _ag(x):
+        pass
+
+def _h(y):
+    def foo(x):
+        '''funcdoc'''
+        return [x + z for z in y]
+    return foo
+
+dis_nested_0 = """\
+%3d           0 LOAD_CLOSURE             0 (y)
+              2 BUILD_TUPLE              1
+              4 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
+              6 LOAD_CONST               2 ('_h.<locals>.foo')
+              8 MAKE_FUNCTION            8
+             10 STORE_FAST               1 (foo)
+
+%3d          12 LOAD_FAST                1 (foo)
+             14 RETURN_VALUE
+""" % (_h.__code__.co_firstlineno + 1,
+       __file__,
+       _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 4,
+)
+
+dis_nested_1 = """%s
+Disassembly of <code object foo at 0x..., file "%s", line %d>:
+%3d           0 LOAD_CLOSURE             0 (x)
+              2 BUILD_TUPLE              1
+              4 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              6 LOAD_CONST               2 ('_h.<locals>.foo.<locals>.<listcomp>')
+              8 MAKE_FUNCTION            8
+             10 LOAD_DEREF               1 (y)
+             12 GET_ITER
+             14 CALL_FUNCTION            1
+             16 RETURN_VALUE
+""" % (dis_nested_0,
+       __file__,
+       _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 3,
+       __file__,
+       _h.__code__.co_firstlineno + 3,
+)
+
+dis_nested_2 = """%s
+Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
+%3d           0 BUILD_LIST               0
+              2 LOAD_FAST                0 (.0)
+        >>    4 FOR_ITER                12 (to 18)
+              6 STORE_FAST               1 (z)
+              8 LOAD_DEREF               0 (x)
+             10 LOAD_FAST                1 (z)
+             12 BINARY_ADD
+             14 LIST_APPEND              2
+             16 JUMP_ABSOLUTE            4
+        >>   18 RETURN_VALUE
+""" % (dis_nested_1,
+       __file__,
+       _h.__code__.co_firstlineno + 3,
+       _h.__code__.co_firstlineno + 3,
+)
+
+
 class DisTests(unittest.TestCase):
 
-    def get_disassembly(self, func, lasti=-1, wrapper=True):
+    maxDiff = None
+
+    def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         # We want to test the default printing behaviour, not the file arg
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             if wrapper:
-                dis.dis(func)
+                dis.dis(func, **kwargs)
             else:
-                dis.disassemble(func, lasti)
+                dis.disassemble(func, lasti, **kwargs)
         return output.getvalue()
 
     def get_disassemble_as_string(self, func, lasti=-1):
@@ -343,7 +419,7 @@ class DisTests(unittest.TestCase):
         return re.sub(r'\b0x[0-9A-Fa-f]+\b', '0x...', text)
 
     def do_disassembly_test(self, func, expected):
-        got = self.get_disassembly(func)
+        got = self.get_disassembly(func, depth=0)
         if got != expected:
             got = self.strip_addresses(got)
         self.assertEqual(got, expected)
@@ -359,6 +435,17 @@ class DisTests(unittest.TestCase):
     def test_boundaries(self):
         self.assertEqual(dis.opmap["EXTENDED_ARG"], dis.EXTENDED_ARG)
         self.assertEqual(dis.opmap["STORE_NAME"], dis.HAVE_ARGUMENT)
+
+    def test_widths(self):
+        for opcode, opname in enumerate(dis.opname):
+            if opname in ('BUILD_MAP_UNPACK_WITH_CALL',
+                          'BUILD_TUPLE_UNPACK_WITH_CALL'):
+                continue
+            with self.subTest(opname=opname):
+                width = dis._OPNAME_WIDTH
+                if opcode < dis.HAVE_ARGUMENT:
+                    width += 1 + dis._OPARG_WIDTH
+                self.assertLessEqual(len(opname), width)
 
     def test_dis(self):
         self.do_disassembly_test(_f, dis_f)
@@ -387,12 +474,44 @@ class DisTests(unittest.TestCase):
             self.do_disassembly_test(func(i), expected)
 
         # Test some larger ranges too
-        for i in range(300, 5000, 10):
+        for i in range(300, 1000, 10):
             expected = _BIG_LINENO_FORMAT % (i + 2)
+            self.do_disassembly_test(func(i), expected)
+
+        for i in range(1000, 5000, 10):
+            expected = _BIG_LINENO_FORMAT2 % (i + 2)
             self.do_disassembly_test(func(i), expected)
 
         from test import dis_module
         self.do_disassembly_test(dis_module, dis_module_expected_results)
+
+    def test_big_offsets(self):
+        def func(count):
+            namespace = {}
+            func = "def foo(x):\n " + ";".join(["x = x + 1"] * count) + "\n return x"
+            exec(func, namespace)
+            return namespace['foo']
+
+        def expected(count, w):
+            s = ['''\
+           %*d LOAD_FAST                0 (x)
+           %*d LOAD_CONST               1 (1)
+           %*d BINARY_ADD
+           %*d STORE_FAST               0 (x)
+''' % (w, 8*i, w, 8*i + 2, w, 8*i + 4, w, 8*i + 6)
+                 for i in range(count)]
+            s += ['''\
+
+  3        %*d LOAD_FAST                0 (x)
+           %*d RETURN_VALUE
+''' % (w, 8*count, w, 8*count + 2)]
+            s[0] = '  2' + s[0][3:]
+            return ''.join(s)
+
+        for i in range(1, 5):
+            self.do_disassembly_test(func(i), expected(i, 4))
+        self.do_disassembly_test(func(1249), expected(1249, 4))
+        self.do_disassembly_test(func(1250), expected(1250, 5))
 
     def test_disassemble_str(self):
         self.do_disassembly_test(expr_str, dis_expr_str)
@@ -420,9 +539,21 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(_C.cm, dis_c_class_method)
 
     def test_disassemble_generator(self):
-        gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
-        gen_disas = self.get_disassembly(_g(1))  # Disassemble generator itself
+        gen_func_disas = self.get_disassembly(_g)  # Generator function
+        gen_disas = self.get_disassembly(_g(1))  # Generator iterator
         self.assertEqual(gen_disas, gen_func_disas)
+
+    def test_disassemble_async_generator(self):
+        agen_func_disas = self.get_disassembly(_ag)  # Async generator function
+        agen_disas = self.get_disassembly(_ag(1))  # Async generator iterator
+        self.assertEqual(agen_disas, agen_func_disas)
+
+    def test_disassemble_coroutine(self):
+        coro_func_disas = self.get_disassembly(_co)  # Coroutine function
+        coro = _co(1)  # Coroutine object
+        coro.close()  # Avoid a RuntimeWarning (never awaited)
+        coro_disas = self.get_disassembly(coro)
+        self.assertEqual(coro_disas, coro_func_disas)
 
     def test_disassemble_fstring(self):
         self.do_disassembly_test(_fstring, dis_fstring)
@@ -452,15 +583,29 @@ class DisTests(unittest.TestCase):
     def test_dis_object(self):
         self.assertRaises(TypeError, dis.dis, object())
 
+    def test_disassemble_recursive(self):
+        def check(expected, **kwargs):
+            dis = self.get_disassembly(_h, **kwargs)
+            dis = self.strip_addresses(dis)
+            self.assertEqual(dis, expected)
+
+        check(dis_nested_0, depth=0)
+        check(dis_nested_1, depth=1)
+        check(dis_nested_2, depth=2)
+        check(dis_nested_2, depth=3)
+        check(dis_nested_2, depth=None)
+        check(dis_nested_2)
+
+
 class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
-    def get_disassembly(self, func, lasti=-1, wrapper=True):
+    def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         output = io.StringIO()
         if wrapper:
-            dis.dis(func, file=output)
+            dis.dis(func, file=output, **kwargs)
         else:
-            dis.disassemble(func, lasti, file=output)
+            dis.disassemble(func, lasti, file=output, **kwargs)
         return output.getvalue()
 
 
@@ -596,7 +741,7 @@ Filename:          (.*)
 Argument count:    0
 Kw-only arguments: 0
 Number of locals:  2
-Stack size:        17
+Stack size:        10
 Flags:             OPTIMIZED, NEWLOCALS, NOFREE, COROUTINE
 Constants:
    0: None
@@ -926,11 +1071,13 @@ class BytecodeTests(unittest.TestCase):
 
     def test_source_line_in_disassembly(self):
         # Use the line in the source code
-        actual = dis.Bytecode(simple).dis()[:3]
-        expected = "{:>3}".format(simple.__code__.co_firstlineno)
+        actual = dis.Bytecode(simple).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
+        expected = str(simple.__code__.co_firstlineno)
         self.assertEqual(actual, expected)
         # Use an explicit first line number
-        actual = dis.Bytecode(simple, first_line=350).dis()[:3]
+        actual = dis.Bytecode(simple, first_line=350).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
         self.assertEqual(actual, "350")
 
     def test_info(self):

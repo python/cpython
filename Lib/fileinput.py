@@ -189,6 +189,8 @@ class FileInput:
                  mode="r", openhook=None):
         if isinstance(files, str):
             files = (files,)
+        elif isinstance(files, os.PathLike):
+            files = (os.fspath(files), )
         else:
             if files is None:
                 files = sys.argv[1:]
@@ -328,7 +330,7 @@ class FileInput:
         else:
             if self._inplace:
                 self._backupfilename = (
-                    self._filename + (self._backup or ".bak"))
+                    os.fspath(self._filename) + (self._backup or ".bak"))
                 try:
                     os.unlink(self._backupfilename)
                 except OSError:

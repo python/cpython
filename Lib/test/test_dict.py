@@ -271,10 +271,56 @@ class DictTest(unittest.TestCase):
         self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
 
     def test_copy(self):
-        d = {1:1, 2:2, 3:3}
-        self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
+        d = {1: 1, 2: 2, 3: 3}
+        self.assertIsNot(d.copy(), d)
+        self.assertEqual(d.copy(), d)
+        self.assertEqual(d.copy(), {1: 1, 2: 2, 3: 3})
+
+        copy = d.copy()
+        d[4] = 4
+        self.assertNotEqual(copy, d)
+
         self.assertEqual({}.copy(), {})
         self.assertRaises(TypeError, d.copy, None)
+
+    def test_copy_fuzz(self):
+        for dict_size in [10, 100, 1000, 10000, 100000]:
+            dict_size = random.randrange(
+                dict_size // 2, dict_size + dict_size // 2)
+            with self.subTest(dict_size=dict_size):
+                d = {}
+                for i in range(dict_size):
+                    d[i] = i
+
+                d2 = d.copy()
+                self.assertIsNot(d2, d)
+                self.assertEqual(d, d2)
+                d2['key'] = 'value'
+                self.assertNotEqual(d, d2)
+                self.assertEqual(len(d2), len(d) + 1)
+
+    def test_copy_maintains_tracking(self):
+        class A:
+            pass
+
+        key = A()
+
+        for d in ({}, {'a': 1}, {key: 'val'}):
+            d2 = d.copy()
+            self.assertEqual(gc.is_tracked(d), gc.is_tracked(d2))
+
+    def test_copy_noncompact(self):
+        # Dicts don't compact themselves on del/pop operations.
+        # Copy will use a slow merging strategy that produces
+        # a compacted copy when roughly 33% of dict is a non-used
+        # keys-space (to optimize memory footprint).
+        # In this test we want to hit the slow/compacting
+        # branch of dict.copy() and make sure it works OK.
+        d = {k: k for k in range(1000)}
+        for k in range(950):
+            del d[k]
+        d2 = d.copy()
+        self.assertEqual(d2, d)
 
     def test_get(self):
         d = {}
@@ -467,6 +513,12 @@ class DictTest(unittest.TestCase):
 
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
+
+    def test_repr_deep(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {1: d}
+        self.assertRaises(RecursionError, repr, d)
 
     def test_eq(self):
         self.assertEqual({}, {})
@@ -1084,6 +1136,91 @@ class DictTest(unittest.TestCase):
         support.check_free_after_iterating(self, lambda d: iter(d.keys()), dict)
         support.check_free_after_iterating(self, lambda d: iter(d.values()), dict)
         support.check_free_after_iterating(self, lambda d: iter(d.items()), dict)
+
+    def test_equal_operator_modifying_operand(self):
+        # test fix for seg fault reported in issue 27945 part 3.
+        class X():
+            def __del__(self):
+                dict_b.clear()
+
+            def __eq__(self, other):
+                dict_a.clear()
+                return True
+
+            def __hash__(self):
+                return 13
+
+        dict_a = {X(): 0}
+        dict_b = {X(): X()}
+        self.assertTrue(dict_a == dict_b)
+
+    def test_fromkeys_operator_modifying_dict_operand(self):
+        # test fix for seg fault reported in issue 27945 part 4a.
+        class X(int):
+            def __hash__(self):
+                return 13
+
+            def __eq__(self, other):
+                if len(d) > 1:
+                    d.clear()
+                return False
+
+        d = {}  # this is required to exist so that d can be constructed!
+        d = {X(1): 1, X(2): 2}
+        try:
+            dict.fromkeys(d)  # shouldn't crash
+        except RuntimeError:  # implementation defined
+            pass
+
+    def test_fromkeys_operator_modifying_set_operand(self):
+        # test fix for seg fault reported in issue 27945 part 4b.
+        class X(int):
+            def __hash__(self):
+                return 13
+
+            def __eq__(self, other):
+                if len(d) > 1:
+                    d.clear()
+                return False
+
+        d = {}  # this is required to exist so that d can be constructed!
+        d = {X(1), X(2)}
+        try:
+            dict.fromkeys(d)  # shouldn't crash
+        except RuntimeError:  # implementation defined
+            pass
+
+    def test_dictitems_contains_use_after_free(self):
+        class X:
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+
+        d = {0: set()}
+        (0, X()) in d.items()
+
+    def test_init_use_after_free(self):
+        class X:
+            def __hash__(self):
+                pair[:] = []
+                return 13
+
+        pair = [X(), 123]
+        dict([pair])
+
+    def test_oob_indexing_dictiter_iternextitem(self):
+        class X(int):
+            def __del__(self):
+                d.clear()
+
+        d = {i: X(i) for i in range(8)}
+
+        def iter_and_mutate():
+            for result in d.items():
+                if result[0] == 2:
+                    d[2] = None # free d[2] --> X(2).__del__ was called
+
+        self.assertRaises(RuntimeError, iter_and_mutate)
 
 
 class CAPITest(unittest.TestCase):

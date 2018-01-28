@@ -2,16 +2,18 @@ import enum
 import inspect
 import pydoc
 import unittest
+import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
+from datetime import timedelta
+
 try:
     import threading
 except ImportError:
     threading = None
-
 
 # for pickle tests
 try:
@@ -1550,6 +1552,34 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(round(Planet.EARTH.surface_gravity, 2), 9.80)
         self.assertEqual(Planet.EARTH.value, (5.976e+24, 6.37814e6))
 
+    def test_ignore(self):
+        class Period(timedelta, Enum):
+            '''
+            different lengths of time
+            '''
+            def __new__(cls, value, period):
+                obj = timedelta.__new__(cls, value)
+                obj._value_ = value
+                obj.period = period
+                return obj
+            _ignore_ = 'Period i'
+            Period = vars()
+            for i in range(13):
+                Period['month_%d' % i] = i*30, 'month'
+            for i in range(53):
+                Period['week_%d' % i] = i*7, 'week'
+            for i in range(32):
+                Period['day_%d' % i] = i, 'day'
+            OneDay = day_1
+            OneWeek = week_1
+            OneMonth = month_1
+        self.assertFalse(hasattr(Period, '_ignore_'))
+        self.assertFalse(hasattr(Period, 'Period'))
+        self.assertFalse(hasattr(Period, 'i'))
+        self.assertTrue(isinstance(Period.day_1, timedelta))
+        self.assertTrue(Period.month_1 is Period.day_30)
+        self.assertTrue(Period.week_4 is Period.day_28)
+
     def test_nonhash_value(self):
         class AutoNumberInAList(Enum):
             def __new__(cls):
@@ -1988,7 +2018,6 @@ class TestFlag(unittest.TestCase):
             d = 6
         self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only
@@ -2291,6 +2320,26 @@ class TestIntFlag(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
 
+    def test_programatic_function_from_empty_list(self):
+        Perm = enum.IntFlag('Perm', [])
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', [])
+        lst = list(Thing)
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
+
+    def test_programatic_function_from_empty_tuple(self):
+        Perm = enum.IntFlag('Perm', ())
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', ())
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
     def test_containment(self):
         Perm = self.Perm
         R, W, X = Perm
@@ -2319,7 +2368,6 @@ class TestIntFlag(unittest.TestCase):
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only

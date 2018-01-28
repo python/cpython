@@ -154,10 +154,7 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: FloatingPointError
 
-   Raised when a floating point operation fails.  This exception is always defined,
-   but can only be raised when Python is configured with the
-   ``--with-fpectl`` option, or the :const:`WANT_SIGFPE_HANDLER` symbol is
-   defined in the :file:`pyconfig.h` file.
+   Not currently used.
 
 
 .. exception:: GeneratorExit
@@ -243,7 +240,7 @@ The following exceptions are the exceptions that are usually raised.
 
    .. note::
 
-      It should not be used to indicate that an operater or method is not
+      It should not be used to indicate that an operator or method is not
       meant to be supported at all -- in that case either leave the operator /
       method undefined or, if a subclass, set it to :data:`None`.
 
@@ -370,17 +367,21 @@ The following exceptions are the exceptions that are usually raised.
    raised, and the value returned by the function is used as the
    :attr:`value` parameter to the constructor of the exception.
 
-   If a generator function defined in the presence of a ``from __future__
-   import generator_stop`` directive raises :exc:`StopIteration`, it will be
-   converted into a :exc:`RuntimeError` (retaining the :exc:`StopIteration`
-   as the new exception's cause).
+   If a generator code directly or indirectly raises :exc:`StopIteration`,
+   it is converted into a :exc:`RuntimeError` (retaining the
+   :exc:`StopIteration` as the new exception's cause).
 
    .. versionchanged:: 3.3
       Added ``value`` attribute and the ability for generator functions to
       use it to return a value.
 
    .. versionchanged:: 3.5
-      Introduced the RuntimeError transformation.
+      Introduced the RuntimeError transformation via
+      ``from __future__ import generator_stop``, see :pep:`479`.
+
+   .. versionchanged:: 3.7
+      Enable :pep:`479` for all code by default: a :exc:`StopIteration`
+      error raised in a generator is transformed into a :exc:`RuntimeError`.
 
 .. exception:: StopAsyncIteration
 
@@ -664,11 +665,13 @@ depending on the system error code.
    :pep:`3151` - Reworking the OS and IO exception hierarchy
 
 
+.. _warning-categories-as-exceptions:
+
 Warnings
 --------
 
-The following exceptions are used as warning categories; see the :mod:`warnings`
-module for more information.
+The following exceptions are used as warning categories; see the
+:ref:`warning-categories` documentation for more details.
 
 .. exception:: Warning
 
@@ -682,12 +685,14 @@ module for more information.
 
 .. exception:: DeprecationWarning
 
-   Base class for warnings about deprecated features.
+   Base class for warnings about deprecated features when those warnings are
+   intended for other Python developers.
 
 
 .. exception:: PendingDeprecationWarning
 
-   Base class for warnings about features which will be deprecated in the future.
+   Base class for warnings about features which will be deprecated in the
+   future.
 
 
 .. exception:: SyntaxWarning
@@ -702,8 +707,8 @@ module for more information.
 
 .. exception:: FutureWarning
 
-   Base class for warnings about constructs that will change semantically in the
-   future.
+   Base class for warnings about deprecated features when those warnings are
+   intended for end users of applications that are written in Python.
 
 
 .. exception:: ImportWarning
@@ -723,7 +728,8 @@ module for more information.
 
 .. exception:: ResourceWarning
 
-   Base class for warnings related to resource usage.
+   Base class for warnings related to resource usage. Ignored by the default
+   warning filters.
 
    .. versionadded:: 3.2
 

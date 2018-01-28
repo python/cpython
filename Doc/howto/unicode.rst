@@ -43,9 +43,9 @@ hold values ranging from 0 to 255.  ASCII codes only went up to 127, so some
 machines assigned values between 128 and 255 to accented characters.  Different
 machines had different codes, however, which led to problems exchanging files.
 Eventually various commonly used sets of values for the 128--255 range emerged.
-Some were true standards, defined by the International Standards Organization,
-and some were *de facto* conventions that were invented by one company or
-another and managed to catch on.
+Some were true standards, defined by the International Organization for
+Standardization, and some were *de facto* conventions that were invented by one
+company or another and managed to catch on.
 
 255 characters aren't very many.  For example, you can't fit both the accented
 characters used in Western Europe and the Cyrillic alphabet used for Russian
@@ -214,10 +214,10 @@ difficult reading.  `A chronology <http://www.unicode.org/history/>`_ of the
 origin and development of Unicode is also available on the site.
 
 To help understand the standard, Jukka Korpela has written `an introductory
-guide <https://www.cs.tut.fi/~jkorpela/unicode/guide.html>`_ to reading the
+guide <http://jkorpela.fi/unicode/guide.html>`_ to reading the
 Unicode character tables.
 
-Another `good introductory article <http://www.joelonsoftware.com/articles/Unicode.html>`_
+Another `good introductory article <https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/>`_
 was written by Joel Spolsky.
 If this introduction didn't make things clear to you, you should try
 reading this alternate article before continuing.
@@ -487,7 +487,7 @@ References
 Some good alternative discussions of Python's Unicode support are:
 
 * `Processing Text Files in Python 3 <http://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html>`_, by Nick Coghlan.
-* `Pragmatic Unicode <http://nedbatchelder.com/text/unipain.html>`_, a PyCon 2012 presentation by Ned Batchelder.
+* `Pragmatic Unicode <https://nedbatchelder.com/text/unipain.html>`_, a PyCon 2012 presentation by Ned Batchelder.
 
 The :class:`str` type is described in the Python library reference at
 :ref:`textseq`.

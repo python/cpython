@@ -48,6 +48,7 @@ string instead.
    same thread.  If a recursive call is made, the *fillvalue* is returned,
    otherwise, the usual :meth:`__repr__` call is made.  For example:
 
+        >>> from reprlib import recursive_repr
         >>> class MyList(list):
         ...     @recursive_repr()
         ...     def __repr__(self):

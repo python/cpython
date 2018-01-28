@@ -555,7 +555,7 @@ class Maildir(Mailbox):
         try:
             return self._toc[key]
         except KeyError:
-            raise KeyError('No message with key: %s' % key)
+            raise KeyError('No message with key: %s' % key) from None
 
     # This method is for backward compatibility only.
     def next(self):
@@ -741,7 +741,7 @@ class _singlefileMailbox(Mailbox):
             try:
                 return self._toc[key]
             except KeyError:
-                raise KeyError('No message with key: %s' % key)
+                raise KeyError('No message with key: %s' % key) from None
 
     def _append_message(self, message):
         """Append message to mailbox and return (start, stop) offsets."""
@@ -1572,7 +1572,7 @@ class MaildirMessage(Message):
         try:
             self._date = float(date)
         except ValueError:
-            raise TypeError("can't convert to float: %s" % date)
+            raise TypeError("can't convert to float: %s" % date) from None
 
     def get_info(self):
         """Get the message's "info" as a string."""

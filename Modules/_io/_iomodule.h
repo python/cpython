@@ -27,8 +27,6 @@ PyAPI_DATA(PyObject *) _PyWindowsConsoleIO_Type;
 #endif /* MS_WINDOWS */
 #endif /* Py_LIMITED_API */
 
-extern int _PyIO_ConvertSsize_t(PyObject *, void *);
-
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.
  * BUT when args=Py_True is passed, they return a borrowed reference.
@@ -69,7 +67,7 @@ extern Py_ssize_t _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
     int kind, const char *start, const char *end, Py_ssize_t *consumed);
 
-/* Return 1 if an EnvironmentError with errno == EINTR is set (and then
+/* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
    Should only be called when PyErr_Occurred() is true.
 */
@@ -166,6 +164,7 @@ extern PyObject *_PyIO_str_getstate;
 extern PyObject *_PyIO_str_isatty;
 extern PyObject *_PyIO_str_newlines;
 extern PyObject *_PyIO_str_nl;
+extern PyObject *_PyIO_str_peek;
 extern PyObject *_PyIO_str_read;
 extern PyObject *_PyIO_str_read1;
 extern PyObject *_PyIO_str_readable;
@@ -183,6 +182,5 @@ extern PyObject *_PyIO_str_write;
 
 extern PyObject *_PyIO_empty_str;
 extern PyObject *_PyIO_empty_bytes;
-extern PyObject *_PyIO_zero;
 
 extern PyTypeObject _PyBytesIOBuffer_Type;

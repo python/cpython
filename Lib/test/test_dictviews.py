@@ -1,6 +1,7 @@
-import collections
+import collections.abc
 import copy
 import pickle
+import sys
 import unittest
 
 class DictSetTest(unittest.TestCase):
@@ -202,6 +203,20 @@ class DictSetTest(unittest.TestCase):
     def test_recursive_repr(self):
         d = {}
         d[42] = d.values()
+        r = repr(d)
+        # Cannot perform a stronger test, as the contents of the repr
+        # are implementation-dependent.  All we can say is that we
+        # want a str result, not an exception of any sort.
+        self.assertIsInstance(r, str)
+        d[42] = d.items()
+        r = repr(d)
+        # Again.
+        self.assertIsInstance(r, str)
+
+    def test_deeply_nested_repr(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {42: d.values()}
         self.assertRaises(RecursionError, repr, d)
 
     def test_copy(self):
@@ -249,23 +264,23 @@ class DictSetTest(unittest.TestCase):
     def test_abc_registry(self):
         d = dict(a=1)
 
-        self.assertIsInstance(d.keys(), collections.KeysView)
-        self.assertIsInstance(d.keys(), collections.MappingView)
-        self.assertIsInstance(d.keys(), collections.Set)
-        self.assertIsInstance(d.keys(), collections.Sized)
-        self.assertIsInstance(d.keys(), collections.Iterable)
-        self.assertIsInstance(d.keys(), collections.Container)
+        self.assertIsInstance(d.keys(), collections.abc.KeysView)
+        self.assertIsInstance(d.keys(), collections.abc.MappingView)
+        self.assertIsInstance(d.keys(), collections.abc.Set)
+        self.assertIsInstance(d.keys(), collections.abc.Sized)
+        self.assertIsInstance(d.keys(), collections.abc.Iterable)
+        self.assertIsInstance(d.keys(), collections.abc.Container)
 
-        self.assertIsInstance(d.values(), collections.ValuesView)
-        self.assertIsInstance(d.values(), collections.MappingView)
-        self.assertIsInstance(d.values(), collections.Sized)
+        self.assertIsInstance(d.values(), collections.abc.ValuesView)
+        self.assertIsInstance(d.values(), collections.abc.MappingView)
+        self.assertIsInstance(d.values(), collections.abc.Sized)
 
-        self.assertIsInstance(d.items(), collections.ItemsView)
-        self.assertIsInstance(d.items(), collections.MappingView)
-        self.assertIsInstance(d.items(), collections.Set)
-        self.assertIsInstance(d.items(), collections.Sized)
-        self.assertIsInstance(d.items(), collections.Iterable)
-        self.assertIsInstance(d.items(), collections.Container)
+        self.assertIsInstance(d.items(), collections.abc.ItemsView)
+        self.assertIsInstance(d.items(), collections.abc.MappingView)
+        self.assertIsInstance(d.items(), collections.abc.Set)
+        self.assertIsInstance(d.items(), collections.abc.Sized)
+        self.assertIsInstance(d.items(), collections.abc.Iterable)
+        self.assertIsInstance(d.items(), collections.abc.Container)
 
 
 if __name__ == "__main__":

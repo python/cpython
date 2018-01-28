@@ -46,7 +46,7 @@ def read_code(stream):
     if magic != importlib.util.MAGIC_NUMBER:
         return None
 
-    stream.read(8) # Skip timestamp and size
+    stream.read(12) # Skip rest of the header
     return marshal.load(stream)
 
 
@@ -119,6 +119,9 @@ def iter_modules(path=None, prefix=''):
     """
     if path is None:
         importers = iter_importers()
+    elif isinstance(path, str):
+        raise ValueError("path must be None or list of paths to look for "
+                        "modules in")
     else:
         importers = map(get_importer, path)
 

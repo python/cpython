@@ -35,8 +35,6 @@ def parse(source, filename='<unknown>', mode='exec'):
     return compile(source, filename, mode, PyCF_ONLY_AST)
 
 
-_NUM_TYPES = (int, float, complex)
-
 def literal_eval(node_or_string):
     """
     Safely evaluate an expression node or a string containing a Python
@@ -48,6 +46,21 @@ def literal_eval(node_or_string):
         node_or_string = parse(node_or_string, mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
+    def _convert_num(node):
+        if isinstance(node, Constant):
+            if isinstance(node.value, (int, float, complex)):
+                return node.value
+        elif isinstance(node, Num):
+            return node.n
+        raise ValueError('malformed node or string: ' + repr(node))
+    def _convert_signed_num(node):
+        if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
+            operand = _convert_num(node.operand)
+            if isinstance(node.op, UAdd):
+                return + operand
+            else:
+                return - operand
+        return _convert_num(node)
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
@@ -62,26 +75,19 @@ def literal_eval(node_or_string):
         elif isinstance(node, Set):
             return set(map(_convert, node.elts))
         elif isinstance(node, Dict):
-            return dict((_convert(k), _convert(v)) for k, v
-                        in zip(node.keys, node.values))
+            return dict(zip(map(_convert, node.keys),
+                            map(_convert, node.values)))
         elif isinstance(node, NameConstant):
             return node.value
-        elif isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
-            operand = _convert(node.operand)
-            if isinstance(operand, _NUM_TYPES):
-                if isinstance(node.op, UAdd):
-                    return + operand
-                else:
-                    return - operand
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
-            left = _convert(node.left)
-            right = _convert(node.right)
-            if isinstance(left, _NUM_TYPES) and isinstance(right, _NUM_TYPES):
+            left = _convert_signed_num(node.left)
+            right = _convert_num(node.right)
+            if isinstance(left, (int, float)) and isinstance(right, complex):
                 if isinstance(node.op, Add):
                     return left + right
                 else:
                     return left - right
-        raise ValueError('malformed node or string: ' + repr(node))
+        return _convert_signed_num(node)
     return _convert(node_or_string)
 
 

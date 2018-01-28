@@ -116,10 +116,10 @@ bytes(cdata)
 #endif
 #include "ctypes.h"
 
-PyObject *PyExc_ArgError;
+PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */
-PyObject *_ctypes_ptrtype_cache;
+PyObject *_ctypes_ptrtype_cache = NULL;
 
 static PyTypeObject Simple_Type;
 
@@ -249,6 +249,71 @@ PyDict_GetItemProxy(PyObject *dict, PyObject *key)
 }
 
 /******************************************************************/
+
+/*
+  Allocate a memory block for a pep3118 format string, filled with
+  a suitable PEP 3118 type code corresponding to the given ctypes
+  type. Returns NULL on failure, with the error indicator set.
+
+  This produces type codes in the standard size mode (cf. struct module),
+  since the endianness may need to be swapped to a non-native one
+  later on.
+ */
+static char *
+_ctypes_alloc_format_string_for_type(char code, int big_endian)
+{
+    char *result;
+    char pep_code = '\0';
+
+    switch (code) {
+#if SIZEOF_INT == 2
+    case 'i': pep_code = 'h'; break;
+    case 'I': pep_code = 'H'; break;
+#elif SIZEOF_INT == 4
+    case 'i': pep_code = 'i'; break;
+    case 'I': pep_code = 'I'; break;
+#elif SIZEOF_INT == 8
+    case 'i': pep_code = 'q'; break;
+    case 'I': pep_code = 'Q'; break;
+#else
+# error SIZEOF_INT has an unexpected value
+#endif /* SIZEOF_INT */
+#if SIZEOF_LONG == 4
+    case 'l': pep_code = 'l'; break;
+    case 'L': pep_code = 'L'; break;
+#elif SIZEOF_LONG == 8
+    case 'l': pep_code = 'q'; break;
+    case 'L': pep_code = 'Q'; break;
+#else
+# error SIZEOF_LONG has an unexpected value
+#endif /* SIZEOF_LONG */
+#if SIZEOF__BOOL == 1
+    case '?': pep_code = '?'; break;
+#elif SIZEOF__BOOL == 2
+    case '?': pep_code = 'H'; break;
+#elif SIZEOF__BOOL == 4
+    case '?': pep_code = 'L'; break;
+#elif SIZEOF__BOOL == 8
+    case '?': pep_code = 'Q'; break;
+#else
+# error SIZEOF__BOOL has an unexpected value
+#endif /* SIZEOF__BOOL */
+    default:
+        /* The standard-size code is the same as the ctypes one */
+        pep_code = code;
+        break;
+    }
+
+    result = PyMem_Malloc(3);
+    if (result == NULL)
+        return NULL;
+
+    result[0] = big_endian ? '>' : '<';
+    result[1] = pep_code;
+    result[2] = '\0';
+    return result;
+}
+
 /*
   Allocate a memory block for a pep3118 format string, copy prefix (if
   non-null) and suffix into it.  Returns NULL on failure, with the error
@@ -1930,9 +1995,9 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->setfunc = fmt->setfunc;
     stgdict->getfunc = fmt->getfunc;
 #ifdef WORDS_BIGENDIAN
-    stgdict->format = _ctypes_alloc_format_string(">", proto_str);
+    stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 1);
 #else
-    stgdict->format = _ctypes_alloc_format_string("<", proto_str);
+    stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
 #endif
     if (stgdict->format == NULL) {
         Py_DECREF(result);
@@ -2600,12 +2665,25 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     int res;
     PyObject *dict, *mydict;
     CDataObject *self = (CDataObject *)myself;
-    if (!PyArg_ParseTuple(args, "Os#", &dict, &data, &len))
+    if (!PyArg_ParseTuple(args, "O!s#",
+                          &PyDict_Type, &dict, &data, &len))
+    {
         return NULL;
+    }
     if (len > self->b_size)
         len = self->b_size;
     memmove(self->b_ptr, data, len);
     mydict = PyObject_GetAttrString(myself, "__dict__");
+    if (mydict == NULL) {
+        return NULL;
+    }
+    if (!PyDict_Check(mydict)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s.__dict__ must be a dictionary, not %.200s",
+                     Py_TYPE(myself)->tp_name, Py_TYPE(mydict)->tp_name);
+        Py_DECREF(mydict);
+        return NULL;
+    }
     res = PyDict_Update(mydict, dict);
     Py_DECREF(mydict);
     if (res == -1)
@@ -3262,7 +3340,9 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         /* Here ftuple is a borrowed reference */
         return NULL;
 
-    if (!PyArg_ParseTuple(ftuple, "O&O", _get_name, &name, &dll)) {
+    if (!PyArg_ParseTuple(ftuple, "O&O;illegal func_spec argument",
+                          _get_name, &name, &dll))
+    {
         Py_DECREF(ftuple);
         return NULL;
     }
@@ -3606,18 +3686,15 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         case PARAMFLAG_FIN | PARAMFLAG_FLCID:
             /* ['in', 'lcid'] parameter.  Always taken from defval,
              if given, else the integer 0. */
-            if (defval == NULL) {
-                defval = PyLong_FromLong(0);
-                if (defval == NULL)
-                    goto error;
-            } else
-                Py_INCREF(defval);
+            if (defval == NULL)
+                defval = _PyLong_Zero;
+            Py_INCREF(defval);
             PyTuple_SET_ITEM(callargs, i, defval);
             break;
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
             *pinoutmask |= (1 << i); /* mark as inout arg */
             (*pnumretvals)++;
-            /* fall through to PARAMFLAG_FIN... */
+            /* fall through */
         case 0:
         case PARAMFLAG_FIN:
             /* 'in' parameter.  Copy it from inargs. */
@@ -3668,12 +3745,12 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
-               the array instance itself. Then, we cannot retrive
+               the array instance itself. Then, we cannot retrieve
                the result from the PyCArgObject.
             */
             if (ob == NULL)
                 goto error;
-            /* The .from_param call that will ocurr later will pass this
+            /* The .from_param call that will occur later will pass this
                as a byref parameter. */
             PyTuple_SET_ITEM(callargs, i, ob);
             *poutmask |= (1 << i); /* mark as out arg */
@@ -4280,11 +4357,10 @@ Array_subscript(PyObject *myself, PyObject *item)
         PyObject *np;
         Py_ssize_t start, stop, step, slicelen, cur, i;
 
-        if (PySlice_GetIndicesEx(item,
-                                 self->b_length, &start, &stop,
-                                 &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
 
         stgdict = PyObject_stgdict((PyObject *)self);
         assert(stgdict); /* Cannot be NULL for array object instances */
@@ -4421,11 +4497,10 @@ Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, otherlen, i, cur;
 
-        if (PySlice_GetIndicesEx(item,
-                                 self->b_length, &start, &stop,
-                                 &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
         if ((step < 0 && start < stop) ||
             (step > 0 && start > stop))
             stop = start;
@@ -5148,7 +5223,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
 
-    a = PySequence_GetSlice(args, 1, PySequence_Size(args));
+    a = PySequence_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (!a)
         return -1;
     status = PyObject_SetAttrString(self, "args", a);
@@ -5348,9 +5423,7 @@ PyInit__ctypes(void)
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
    tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
 */
-#ifdef WITH_THREAD
     PyEval_InitThreads();
-#endif
     m = PyModule_Create(&_ctypesmodule);
     if (!m)
         return NULL;

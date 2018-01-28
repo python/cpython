@@ -139,8 +139,9 @@ PyLocale_localeconv(PyObject* self)
     PyObject *x;
 
     result = PyDict_New();
-    if (!result)
+    if (!result) {
         return NULL;
+    }
 
     /* if LC_NUMERIC is different in the C library, use saved value */
     l = localeconv();
@@ -171,12 +172,6 @@ PyLocale_localeconv(PyObject* self)
         RESULT(#i, x); \
     } while (0)
 
-    /* Numeric information */
-    RESULT_STRING(decimal_point);
-    RESULT_STRING(thousands_sep);
-    x = copy_grouping(l->grouping);
-    RESULT("grouping", x);
-
     /* Monetary information */
     RESULT_STRING(int_curr_symbol);
     RESULT_STRING(currency_symbol);
@@ -195,10 +190,36 @@ PyLocale_localeconv(PyObject* self)
     RESULT_INT(n_sep_by_space);
     RESULT_INT(p_sign_posn);
     RESULT_INT(n_sign_posn);
+
+    /* Numeric information */
+    PyObject *decimal_point, *thousands_sep;
+    const char *grouping;
+    if (_Py_GetLocaleconvNumeric(&decimal_point,
+                                 &thousands_sep,
+                                 &grouping) < 0) {
+        goto failed;
+    }
+
+    if (PyDict_SetItemString(result, "decimal_point", decimal_point) < 0) {
+        Py_DECREF(decimal_point);
+        Py_DECREF(thousands_sep);
+        goto failed;
+    }
+    Py_DECREF(decimal_point);
+
+    if (PyDict_SetItemString(result, "thousands_sep", thousands_sep) < 0) {
+        Py_DECREF(thousands_sep);
+        goto failed;
+    }
+    Py_DECREF(thousands_sep);
+
+    x = copy_grouping(grouping);
+    RESULT("grouping", x);
+
     return result;
 
   failed:
-    Py_XDECREF(result);
+    Py_DECREF(result);
     return NULL;
 }
 
@@ -252,6 +273,11 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     s = PyUnicode_AsWideCharString(str, &n1);
     if (s == NULL)
         goto exit;
+    if (wcslen(s) != (size_t)n1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null character");
+        goto exit;
+    }
 
     /* assume no change in size, first */
     n1 = n1 + 1;
@@ -262,7 +288,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     }
     errno = 0;
     n2 = wcsxfrm(buf, s, n1);
-    if (errno) {
+    if (errno && errno != ERANGE) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto exit;
     }
@@ -567,8 +593,9 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
     if (!PyArg_ParseTuple(args, "sz", &domain, &codeset))
         return NULL;
     codeset = bind_textdomain_codeset(domain, codeset);
-    if (codeset)
+    if (codeset) {
         return PyUnicode_DecodeLocale(codeset, NULL);
+    }
     Py_RETURN_NONE;
 }
 #endif

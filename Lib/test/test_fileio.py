@@ -10,7 +10,7 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
-                          make_bad_fd, cpython_only)
+                          make_bad_fd, cpython_only, swap_attr)
 from collections import UserList
 
 import _io  # C implementation of io
@@ -175,6 +175,12 @@ class AutoFileTests:
                                  (self.modulename, f.name, f.mode))
         finally:
             os.close(fd)
+
+    def testRecursiveRepr(self):
+        # Issue #25455
+        with swap_attr(self.f, 'name', self.f):
+            with self.assertRaises(RuntimeError):
+                repr(self.f)  # Should not crash
 
     def testErrors(self):
         f = self.f

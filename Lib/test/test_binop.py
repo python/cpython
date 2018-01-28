@@ -1,7 +1,6 @@
 """Tests for binary operators on subtypes of built-in types."""
 
 import unittest
-from test import support
 from operator import eq, le, ne
 from abc import ABCMeta
 
@@ -23,7 +22,7 @@ def isnum(x):
     return 0
 
 def isRat(x):
-    """Test wheter an object is an instance of the Rat class."""
+    """Test whether an object is an instance of the Rat class."""
     return isinstance(x, Rat)
 
 class Rat(object):

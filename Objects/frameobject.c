@@ -1,6 +1,7 @@
 /* Frame object implementation */
 
 #include "Python.h"
+#include "internal/pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -15,6 +16,8 @@ static PyMemberDef frame_memberlist[] = {
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
     {"f_lasti",         T_INT,          OFF(f_lasti),     READONLY},
+    {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
+    {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
 };
 
@@ -376,8 +379,7 @@ static PyGetSetDef frame_getsetlist[] = {
 
      * ob_type, ob_size, f_code, f_valuestack;
 
-     * f_locals, f_trace,
-       f_exc_type, f_exc_value, f_exc_traceback are NULL;
+     * f_locals, f_trace are NULL;
 
      * f_localsplus does not require re-allocation and
        the local variables in f_localsplus are NULL.
@@ -435,9 +437,6 @@ frame_dealloc(PyFrameObject *f)
     Py_DECREF(f->f_globals);
     Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
-    Py_CLEAR(f->f_exc_type);
-    Py_CLEAR(f->f_exc_value);
-    Py_CLEAR(f->f_exc_traceback);
 
     co = f->f_code;
     if (co->co_zombieframe == NULL)
@@ -466,9 +465,6 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_globals);
     Py_VISIT(f->f_locals);
     Py_VISIT(f->f_trace);
-    Py_VISIT(f->f_exc_type);
-    Py_VISIT(f->f_exc_value);
-    Py_VISIT(f->f_exc_traceback);
 
     /* locals */
     slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
@@ -499,9 +495,6 @@ frame_tp_clear(PyFrameObject *f)
     f->f_stacktop = NULL;
     f->f_executing = 0;
 
-    Py_CLEAR(f->f_exc_type);
-    Py_CLEAR(f->f_exc_value);
-    Py_CLEAR(f->f_exc_traceback);
     Py_CLEAR(f->f_trace);
 
     /* locals */
@@ -554,6 +547,15 @@ frame_sizeof(PyFrameObject *f)
 PyDoc_STRVAR(sizeof__doc__,
 "F.__sizeof__() -> size of F in memory, in bytes");
 
+static PyObject *
+frame_repr(PyFrameObject *f)
+{
+    int lineno = PyFrame_GetLineNumber(f);
+    return PyUnicode_FromFormat(
+        "<frame at %p, file %R, line %d, code %S>",
+        f, f->f_code->co_filename, lineno, f->f_code->co_name);
+}
+
 static PyMethodDef frame_methods[] = {
     {"clear",           (PyCFunction)frame_clear,       METH_NOARGS,
      clear__doc__},
@@ -572,7 +574,7 @@ PyTypeObject PyFrame_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
-    0,                                          /* tp_repr */
+    (reprfunc)frame_repr,                       /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -695,7 +697,6 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
             f->f_localsplus[i] = NULL;
         f->f_locals = NULL;
         f->f_trace = NULL;
-        f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
     }
     f->f_stacktop = f->f_valuestack;
     f->f_builtins = builtins;
@@ -728,6 +729,8 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     f->f_iblock = 0;
     f->f_executing = 0;
     f->f_gen = NULL;
+    f->f_trace_opcodes = 0;
+    f->f_trace_lines = 1;
 
     return f;
 }
@@ -788,7 +791,7 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
     assert(PyTuple_Check(map));
     assert(PyDict_Check(dict));
     assert(PyTuple_Size(map) >= nmap);
-    for (j = nmap; --j >= 0; ) {
+    for (j=0; j < nmap; j++) {
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = values[j];
         assert(PyUnicode_Check(key));
@@ -841,7 +844,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
     assert(PyTuple_Check(map));
     assert(PyDict_Check(dict));
     assert(PyTuple_Size(map) >= nmap);
-    for (j = nmap; --j >= 0; ) {
+    for (j=0; j < nmap; j++) {
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = PyObject_GetItem(dict, key);
         assert(PyUnicode_Check(key));

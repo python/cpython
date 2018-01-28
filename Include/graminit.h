@@ -81,8 +81,9 @@
 #define arglist 334
 #define argument 335
 #define comp_iter 336
-#define comp_for 337
-#define comp_if 338
-#define encoding_decl 339
-#define yield_expr 340
-#define yield_arg 341
+#define sync_comp_for 337
+#define comp_for 338
+#define comp_if 339
+#define encoding_decl 340
+#define yield_expr 341
+#define yield_arg 342

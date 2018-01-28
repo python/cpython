@@ -291,9 +291,9 @@ for detailed information about platforms with pre-compiled installers.
       by Mark Pilgrim, 2004,
       ISBN 1-59059-356-1
 
-   `For Windows users <http://python.swaroopch.com/installation.html#installation-on-windows>`_
+   `For Windows users <https://python.swaroopch.com/installation.html#installation-on-windows>`_
       in "Installing Python"
-      in "`A Byte of Python <http://python.swaroopch.com/>`_"
+      in "`A Byte of Python <https://python.swaroopch.com/>`_"
       by Swaroop C H, 2003
 
 
@@ -307,11 +307,11 @@ key features:
 `ActivePython <https://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Anaconda <https://www.continuum.io/downloads/>`_
+`Anaconda <https://www.anaconda.com/download/>`_
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Canopy <https://www.enthought.com/products/canopy/>`_
+`Canopy <https://www.enthought.com/product/canopy/>`_
     A "comprehensive Python analysis environment" with editors and other
     development tools.
 
@@ -377,7 +377,7 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://support.microsoft.com/kb/100843
+    https://support.microsoft.com/en-us/help/100843/environment-variables-in-windows-nt
       Environment variables in Windows NT
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
@@ -386,7 +386,7 @@ System variables, you need non-restricted access to your machine
     https://technet.microsoft.com/en-us/library/cc755104.aspx
       The SETX command, for permanently modifying environment variables
 
-    https://support.microsoft.com/kb/310519
+    https://support.microsoft.com/en-us/help/310519/how-to-manage-environment-variables-in-windows-xp
       How To Manage Environment Variables in Windows XP
 
     https://www.chem.gla.ac.uk/~louis/software/faq/q1.html
@@ -550,9 +550,9 @@ Shebang Lines
 
 If the first line of a script file starts with ``#!``, it is known as a
 "shebang" line.  Linux and other Unix like operating systems have native
-support for such lines and are commonly used on such systems to indicate how
-a script should be executed.  This launcher allows the same facilities to be
-using with Python scripts on Windows and the examples above demonstrate their
+support for such lines and they are commonly used on such systems to indicate
+how a script should be executed.  This launcher allows the same facilities to
+be used with Python scripts on Windows and the examples above demonstrate their
 use.
 
 To allow shebang lines in Python scripts to be portable between Unix and
@@ -871,7 +871,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <http://cx-freeze.sourceforge.net/>`_ is a :mod:`distutils`
+`cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ is a :mod:`distutils`
 extension (see :ref:`extending-distutils`) which wraps Python scripts into
 executable Windows programs (:file:`{*}.exe` files).  When you have done this,
 you can distribute your application without requiring your users to install
@@ -896,7 +896,7 @@ Compiling Python on Windows
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<https://docs.python.org/devguide/setup.html#getting-the-source-code>`_.
+<https://devguide.python.org/setup/#getting-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
 Visual Studio 2015, which is the compiler used to build the official Python

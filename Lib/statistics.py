@@ -83,13 +83,12 @@ __all__ = [ 'StatisticsError',
           ]
 
 import collections
-import decimal
 import math
 import numbers
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby, chain
+from itertools import groupby
 from bisect import bisect_left, bisect_right
 
 

@@ -54,6 +54,24 @@ analysis.
    value forces plain text output.  The default value is ``"html"``.
 
 
+.. function:: text(info, context=5)
+
+   This function handles the exception described by *info* (a 3-tuple containing
+   the result of :func:`sys.exc_info`), formatting its traceback as text and
+   returning the result as a string. The optional argument *context* is the
+   number of lines of context to display around the current line of source code
+   in the traceback; this defaults to ``5``.
+
+
+.. function:: html(info, context=5)
+
+   This function handles the exception described by *info* (a 3-tuple containing
+   the result of :func:`sys.exc_info`), formatting its traceback as HTML and
+   returning the result as a string. The optional argument *context* is the
+   number of lines of context to display around the current line of source code
+   in the traceback; this defaults to ``5``.
+
+
 .. function:: handler(info=None)
 
    This function handles an exception using the default settings (that is, show a

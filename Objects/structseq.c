@@ -70,19 +70,27 @@ structseq_dealloc(PyStructSequence *obj)
     PyObject_GC_Del(obj);
 }
 
+/*[clinic input]
+class structseq "PyStructSequence *" "NULL"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d781c6922c77752]*/
+
+#include "clinic/structseq.c.h"
+
+/*[clinic input]
+@classmethod
+structseq.__new__ as structseq_new
+    sequence as arg: object
+    dict: object = NULL
+[clinic start generated code]*/
+
 static PyObject *
-structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
+/*[clinic end generated code: output=baa082e788b171da input=9b44810243907377]*/
 {
-    PyObject *arg = NULL;
-    PyObject *dict = NULL;
     PyObject *ob;
     PyStructSequence *res = NULL;
     Py_ssize_t len, min_len, max_len, i, n_unnamed_fields;
-    static char *kwlist[] = {"sequence", "dict", 0};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:structseq",
-                                     kwlist, &arg, &dict))
-        return NULL;
 
     arg = PySequence_Fast(arg, "constructor requires a sequence");
 

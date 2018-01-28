@@ -48,6 +48,21 @@ PyCStgDict_dealloc(StgDictObject *self)
     PyDict_Type.tp_dealloc((PyObject *)self);
 }
 
+static PyObject *
+PyCStgDict_sizeof(StgDictObject *self, void *unused)
+{
+    Py_ssize_t res;
+
+    res = _PyDict_SizeOf((PyDictObject *)self);
+    res += sizeof(StgDictObject) - sizeof(PyDictObject);
+    if (self->format)
+        res += strlen(self->format) + 1;
+    res += self->ndim * sizeof(Py_ssize_t);
+    if (self->ffi_type_pointer.elements)
+        res += (self->length + 1) * sizeof(ffi_type *);
+    return PyLong_FromSsize_t(res);
+}
+
 int
 PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
 {
@@ -106,6 +121,11 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
     return 0;
 }
 
+static struct PyMethodDef PyCStgDict_methods[] = {
+    {"__sizeof__", (PyCFunction)PyCStgDict_sizeof, METH_NOARGS},
+    {NULL, NULL}                /* sentinel */
+};
+
 PyTypeObject PyCStgDict_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "StgDict",
@@ -134,7 +154,7 @@ PyTypeObject PyCStgDict_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    PyCStgDict_methods,                         /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
@@ -282,7 +302,15 @@ MakeAnonFields(PyObject *type)
             Py_DECREF(anon_names);
             return -1;
         }
-        assert(Py_TYPE(descr) == &PyCField_Type);
+        if (Py_TYPE(descr) != &PyCField_Type) {
+            PyErr_Format(PyExc_AttributeError,
+                         "'%U' is specified in _anonymous_ but not in "
+                         "_fields_",
+                         fname);
+            Py_DECREF(anon_names);
+            Py_DECREF(descr);
+            return -1;
+        }
         descr->anonymous = 1;
 
         /* descr is in the field descriptor. */
@@ -301,7 +329,7 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
-  Retrive the (optional) _pack_ attribute from a type, the _fields_ attribute,
+  Retrieve the (optional) _pack_ attribute from a type, the _fields_ attribute,
   and create an StgDictObject.  Used for Structure and Union subclasses.
 */
 int
@@ -419,7 +447,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         stgdict->format = _ctypes_alloc_format_string(NULL, "T{");
     } else {
         /* PEP3118 doesn't support union, or packed structures (well,
-           only standard packing, but we dont support the pep for
+           only standard packing, but we don't support the pep for
            that). Use 'B' for bytes. */
         stgdict->format = _ctypes_alloc_format_string(NULL, "B");
     }

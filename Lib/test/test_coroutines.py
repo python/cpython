@@ -2,11 +2,13 @@ import contextlib
 import copy
 import inspect
 import pickle
+import re
 import sys
 import types
 import unittest
 import warnings
 from test import support
+from test.support.script_helper import assert_python_ok
 
 
 class AsyncYieldFrom:
@@ -147,6 +149,14 @@ class AsyncBadSyntaxTest(unittest.TestCase):
 
             """def bar():
                  [i async for i in els]
+            """,
+
+            """def bar():
+                 {i: i async for i in els}
+            """,
+
+            """def bar():
+                 {i async for i in els}
             """,
 
             """def bar():
@@ -394,20 +404,14 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         ]
 
         for code in samples:
-            with self.subTest(code=code), self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "'await' will become reserved keywords"):
+            with self.subTest(code=code), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
     def test_badsyntax_3(self):
-        with self.assertRaises(DeprecationWarning):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                compile("async = 1", "<test>", "exec")
+        with self.assertRaises(SyntaxError):
+            compile("async = 1", "<test>", "exec")
 
-    def test_goodsyntax_1(self):
-        # Tests for issue 24619
-
+    def test_badsyntax_4(self):
         samples = [
             '''def foo(await):
                 async def foo(): pass
@@ -454,14 +458,8 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         ]
 
         for code in samples:
-            with self.subTest(code=code):
-                loc = {}
-
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    exec(code, loc, loc)
-
-                self.assertEqual(loc['foo'](10), 11)
+            with self.subTest(code=code), self.assertRaises(SyntaxError):
+                compile(code, "<test>", "exec")
 
 
 class TokenizerRegrTest(unittest.TestCase):
@@ -1103,6 +1101,21 @@ class CoroutineTest(unittest.TestCase):
                                     "coroutine is being awaited already"):
             waiter(coro).send(None)
 
+    def test_await_16(self):
+        # See https://bugs.python.org/issue29600 for details.
+
+        async def f():
+            return ValueError()
+
+        async def g():
+            try:
+                raise KeyError
+            except:
+                return await f()
+
+        _, result = run_async(g())
+        self.assertIsNone(result.__context__)
+
     def test_with_1(self):
         class Manager:
             def __init__(self, name):
@@ -1379,7 +1392,7 @@ class CoroutineTest(unittest.TestCase):
             def __init__(self):
                 self.i = 0
 
-            async def __aiter__(self):
+            def __aiter__(self):
                 nonlocal aiter_calls
                 aiter_calls += 1
                 return self
@@ -1398,9 +1411,8 @@ class CoroutineTest(unittest.TestCase):
 
         buffer = []
         async def test1():
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i1, i2 in AsyncIter():
-                    buffer.append(i1 + i2)
+            async for i1, i2 in AsyncIter():
+                buffer.append(i1 + i2)
 
         yielded, _ = run_async(test1())
         # Make sure that __aiter__ was called only once
@@ -1412,13 +1424,12 @@ class CoroutineTest(unittest.TestCase):
         buffer = []
         async def test2():
             nonlocal buffer
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in AsyncIter():
-                    buffer.append(i[0])
-                    if i[0] == 20:
-                        break
-                else:
-                    buffer.append('what?')
+            async for i in AsyncIter():
+                buffer.append(i[0])
+                if i[0] == 20:
+                    break
+            else:
+                buffer.append('what?')
             buffer.append('end')
 
         yielded, _ = run_async(test2())
@@ -1431,13 +1442,12 @@ class CoroutineTest(unittest.TestCase):
         buffer = []
         async def test3():
             nonlocal buffer
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in AsyncIter():
-                    if i[0] > 20:
-                        continue
-                    buffer.append(i[0])
-                else:
-                    buffer.append('what?')
+            async for i in AsyncIter():
+                if i[0] > 20:
+                    continue
+                buffer.append(i[0])
+            else:
+                buffer.append('what?')
             buffer.append('end')
 
         yielded, _ = run_async(test3())
@@ -1476,7 +1486,7 @@ class CoroutineTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 TypeError,
-                r"async for' received an invalid object.*__aiter.*\: I"):
+                r"that does not implement __anext__"):
 
             run_async(foo())
 
@@ -1504,25 +1514,6 @@ class CoroutineTest(unittest.TestCase):
             run_async(foo())
 
         self.assertEqual(sys.getrefcount(aiter), refs_before)
-
-    def test_for_5(self):
-        class I:
-            async def __aiter__(self):
-                return self
-
-            def __anext__(self):
-                return 123
-
-        async def foo():
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in I():
-                    print('never going to happen')
-
-        with self.assertRaisesRegex(
-                TypeError,
-                "async for' received an invalid object.*__anext.*int"):
-
-            run_async(foo())
 
     def test_for_6(self):
         I = 0
@@ -1619,13 +1610,12 @@ class CoroutineTest(unittest.TestCase):
     def test_for_7(self):
         CNT = 0
         class AI:
-            async def __aiter__(self):
+            def __aiter__(self):
                 1/0
         async def foo():
             nonlocal CNT
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in AI():
-                    CNT += 1
+            async for i in AI():
+                CNT += 1
             CNT += 10
         with self.assertRaises(ZeroDivisionError):
             run_async(foo())
@@ -1649,37 +1639,6 @@ class CoroutineTest(unittest.TestCase):
                 run_async(foo())
         self.assertEqual(CNT, 0)
 
-    def test_for_9(self):
-        # Test that DeprecationWarning can safely be converted into
-        # an exception (__aiter__ should not have a chance to raise
-        # a ZeroDivisionError.)
-        class AI:
-            async def __aiter__(self):
-                1/0
-        async def foo():
-            async for i in AI():
-                pass
-
-        with self.assertRaises(DeprecationWarning):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                run_async(foo())
-
-    def test_for_10(self):
-        # Test that DeprecationWarning can safely be converted into
-        # an exception.
-        class AI:
-            async def __aiter__(self):
-                pass
-        async def foo():
-            async for i in AI():
-                pass
-
-        with self.assertRaises(DeprecationWarning):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                run_async(foo())
-
     def test_for_11(self):
         class F:
             def __aiter__(self):
@@ -1695,24 +1654,6 @@ class CoroutineTest(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError,
                                     'an invalid object from __anext__') as c:
-            main().send(None)
-
-        err = c.exception
-        self.assertIsInstance(err.__cause__, ZeroDivisionError)
-
-    def test_for_12(self):
-        class F:
-            def __aiter__(self):
-                return self
-            def __await__(self):
-                1 / 0
-
-        async def main():
-            async for _ in F():
-                pass
-
-        with self.assertRaisesRegex(TypeError,
-                                    'an invalid object from __aiter__') as c:
             main().send(None)
 
         err = c.exception
@@ -2035,9 +1976,11 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             wrapped = gen
             return gen
 
-        self.assertIsNone(sys.get_coroutine_wrapper())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(sys.get_coroutine_wrapper())
 
-        sys.set_coroutine_wrapper(wrap)
+        with self.assertWarns(DeprecationWarning):
+            sys.set_coroutine_wrapper(wrap)
         self.assertIs(sys.get_coroutine_wrapper(), wrap)
         try:
             f = foo()
@@ -2102,6 +2045,152 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             sys.set_coroutine_wrapper(None)
 
 
+class OriginTrackingTest(unittest.TestCase):
+    def here(self):
+        info = inspect.getframeinfo(inspect.currentframe().f_back)
+        return (info.filename, info.lineno)
+
+    def test_origin_tracking(self):
+        orig_depth = sys.get_coroutine_origin_tracking_depth()
+        try:
+            async def corofn():
+                pass
+
+            sys.set_coroutine_origin_tracking_depth(0)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
+
+            with contextlib.closing(corofn()) as coro:
+                self.assertIsNone(coro.cr_origin)
+
+            sys.set_coroutine_origin_tracking_depth(1)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 1)
+
+            fname, lineno = self.here()
+            with contextlib.closing(corofn()) as coro:
+                self.assertEqual(coro.cr_origin,
+                                 ((fname, lineno + 1, "test_origin_tracking"),))
+
+            sys.set_coroutine_origin_tracking_depth(2)
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 2)
+
+            def nested():
+                return (self.here(), corofn())
+            fname, lineno = self.here()
+            ((nested_fname, nested_lineno), coro) = nested()
+            with contextlib.closing(coro):
+                self.assertEqual(coro.cr_origin,
+                                 ((nested_fname, nested_lineno, "nested"),
+                                  (fname, lineno + 1, "test_origin_tracking")))
+
+            # Check we handle running out of frames correctly
+            sys.set_coroutine_origin_tracking_depth(1000)
+            with contextlib.closing(corofn()) as coro:
+                self.assertTrue(2 < len(coro.cr_origin) < 1000)
+
+            # We can't set depth negative
+            with self.assertRaises(ValueError):
+                sys.set_coroutine_origin_tracking_depth(-1)
+            # And trying leaves it unchanged
+            self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 1000)
+
+        finally:
+            sys.set_coroutine_origin_tracking_depth(orig_depth)
+
+    def test_origin_tracking_warning(self):
+        async def corofn():
+            pass
+
+        a1_filename, a1_lineno = self.here()
+        def a1():
+            return corofn()  # comment in a1
+        a1_lineno += 2
+
+        a2_filename, a2_lineno = self.here()
+        def a2():
+            return a1()  # comment in a2
+        a2_lineno += 2
+
+        def check(depth, msg):
+            sys.set_coroutine_origin_tracking_depth(depth)
+            with warnings.catch_warnings(record=True) as wlist:
+                a2()
+                support.gc_collect()
+            # This might be fragile if other warnings somehow get triggered
+            # inside our 'with' block... let's worry about that if/when it
+            # happens.
+            self.assertTrue(len(wlist) == 1)
+            self.assertIs(wlist[0].category, RuntimeWarning)
+            self.assertEqual(msg, str(wlist[0].message))
+
+        orig_depth = sys.get_coroutine_origin_tracking_depth()
+        try:
+            msg = check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
+            check(1, "".join([
+                f"coroutine '{corofn.__qualname__}' was never awaited\n",
+                "Coroutine created at (most recent call last)\n",
+                f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
+                f'    return corofn()  # comment in a1',
+            ]))
+            check(2, "".join([
+                f"coroutine '{corofn.__qualname__}' was never awaited\n",
+                "Coroutine created at (most recent call last)\n",
+                f'  File "{a2_filename}", line {a2_lineno}, in a2\n',
+                f'    return a1()  # comment in a2\n',
+                f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
+                f'    return corofn()  # comment in a1',
+            ]))
+
+        finally:
+            sys.set_coroutine_origin_tracking_depth(orig_depth)
+
+    def test_unawaited_warning_when_module_broken(self):
+        # Make sure we don't blow up too bad if
+        # warnings._warn_unawaited_coroutine is broken somehow (e.g. because
+        # of shutdown problems)
+        async def corofn():
+            pass
+
+        orig_wuc = warnings._warn_unawaited_coroutine
+        try:
+            warnings._warn_unawaited_coroutine = lambda coro: 1/0
+            with support.captured_stderr() as stream:
+                corofn()
+                support.gc_collect()
+            self.assertIn("Exception ignored in", stream.getvalue())
+            self.assertIn("ZeroDivisionError", stream.getvalue())
+            self.assertIn("was never awaited", stream.getvalue())
+
+            del warnings._warn_unawaited_coroutine
+            with support.captured_stderr() as stream:
+                corofn()
+                support.gc_collect()
+            self.assertIn("was never awaited", stream.getvalue())
+
+        finally:
+            warnings._warn_unawaited_coroutine = orig_wuc
+
+
+class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
+    # https://bugs.python.org/issue32591#msg310726
+    def test_unawaited_warning_during_shutdown(self):
+        code = ("import asyncio\n"
+                "async def f(): pass\n"
+                "asyncio.gather(f())\n")
+        assert_python_ok("-c", code)
+
+        code = ("import sys\n"
+                "async def f(): pass\n"
+                "sys.coro = f()\n")
+        assert_python_ok("-c", code)
+
+        code = ("import sys\n"
+                "async def f(): pass\n"
+                "sys.corocycle = [f()]\n"
+                "sys.corocycle.append(sys.corocycle)\n")
+        assert_python_ok("-c", code)
+
+
+@support.cpython_only
 class CAPITest(unittest.TestCase):
 
     def test_tp_await_1(self):

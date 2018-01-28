@@ -11,13 +11,13 @@ PyDoc_STRVAR(grp_getgrgid__doc__,
 "If id is not valid, raise KeyError.");
 
 #define GRP_GETGRGID_METHODDEF    \
-    {"getgrgid", (PyCFunction)grp_getgrgid, METH_FASTCALL, grp_getgrgid__doc__},
+    {"getgrgid", (PyCFunction)grp_getgrgid, METH_FASTCALL|METH_KEYWORDS, grp_getgrgid__doc__},
 
 static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id);
 
 static PyObject *
-grp_getgrgid(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"id", NULL};
@@ -43,13 +43,13 @@ PyDoc_STRVAR(grp_getgrnam__doc__,
 "If name is not valid, raise KeyError.");
 
 #define GRP_GETGRNAM_METHODDEF    \
-    {"getgrnam", (PyCFunction)grp_getgrnam, METH_FASTCALL, grp_getgrnam__doc__},
+    {"getgrnam", (PyCFunction)grp_getgrnam, METH_FASTCALL|METH_KEYWORDS, grp_getgrnam__doc__},
 
 static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-grp_getgrnam(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
@@ -86,4 +86,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=fb690db5e676d378 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ccba09e8ec14c81 input=a9049054013a1b77]*/

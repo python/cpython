@@ -40,7 +40,7 @@ class TestRaise(unittest.TestCase):
                 exc1 = e
                 raise
         except IndexError as exc2:
-            self.assertTrue(exc1 is exc2)
+            self.assertIs(exc1, exc2)
         else:
             self.fail("No exception raised")
 
@@ -84,7 +84,7 @@ class TestRaise(unittest.TestCase):
             except:
                 raise ValueError() from None
         except ValueError as e:
-            self.assertTrue(isinstance(e.__context__, TypeError))
+            self.assertIsInstance(e.__context__, TypeError)
             self.assertIsNone(e.__cause__)
 
     def test_with_reraise1(self):
@@ -190,7 +190,7 @@ class TestCause(unittest.TestCase):
         try:
             raise IndexError from cause
         except IndexError as e:
-            self.assertTrue(e.__cause__ is cause)
+            self.assertIs(e.__cause__, cause)
         else:
             self.fail("No exception raised")
 
@@ -226,6 +226,72 @@ class TestTraceback(unittest.TestCase):
             self.assertEqual(e.__traceback__.tb_next, tb)
         else:
             self.fail("No exception raised")
+
+
+class TestTracebackType(unittest.TestCase):
+
+    def raiser(self):
+        raise ValueError
+
+    def test_attrs(self):
+        try:
+            self.raiser()
+        except Exception as exc:
+            tb = exc.__traceback__
+
+        self.assertIsInstance(tb.tb_next, types.TracebackType)
+        self.assertIs(tb.tb_frame, sys._getframe())
+        self.assertIsInstance(tb.tb_lasti, int)
+        self.assertIsInstance(tb.tb_lineno, int)
+
+        self.assertIs(tb.tb_next.tb_next, None)
+
+        # Invalid assignments
+        with self.assertRaises(TypeError):
+            del tb.tb_next
+
+        with self.assertRaises(TypeError):
+            tb.tb_next = "asdf"
+
+        # Loops
+        with self.assertRaises(ValueError):
+            tb.tb_next = tb
+
+        with self.assertRaises(ValueError):
+            tb.tb_next.tb_next = tb
+
+        # Valid assignments
+        tb.tb_next = None
+        self.assertIs(tb.tb_next, None)
+
+        new_tb = get_tb()
+        tb.tb_next = new_tb
+        self.assertIs(tb.tb_next, new_tb)
+
+    def test_constructor(self):
+        other_tb = get_tb()
+        frame = sys._getframe()
+
+        tb = types.TracebackType(other_tb, frame, 1, 2)
+        self.assertEqual(tb.tb_next, other_tb)
+        self.assertEqual(tb.tb_frame, frame)
+        self.assertEqual(tb.tb_lasti, 1)
+        self.assertEqual(tb.tb_lineno, 2)
+
+        tb = types.TracebackType(None, frame, 1, 2)
+        self.assertEqual(tb.tb_next, None)
+
+        with self.assertRaises(TypeError):
+            types.TracebackType("no", frame, 1, 2)
+
+        with self.assertRaises(TypeError):
+            types.TracebackType(other_tb, "no", 1, 2)
+
+        with self.assertRaises(TypeError):
+            types.TracebackType(other_tb, frame, "no", 2)
+
+        with self.assertRaises(TypeError):
+            types.TracebackType(other_tb, frame, 1, "nuh-uh")
 
 
 class TestContext(unittest.TestCase):
@@ -296,7 +362,7 @@ class TestContext(unittest.TestCase):
             finally:
                 raise OSError
         except OSError as e:
-            self.assertTrue(e.__context__ is None)
+            self.assertIsNone(e.__context__)
         else:
             self.fail("No exception raised")
 
@@ -333,7 +399,7 @@ class TestContext(unittest.TestCase):
             except ZeroDivisionError as e:
                 raise e
         except ZeroDivisionError as e:
-            self.assertTrue(e.__context__ is None, e.__context__)
+            self.assertIsNone(e.__context__)
 
     def test_reraise_cycle_broken(self):
         # Non-trivial context cycles (through re-raising a previous exception)
@@ -347,7 +413,7 @@ class TestContext(unittest.TestCase):
                 except ZeroDivisionError:
                     raise a
         except NameError as e:
-            self.assertTrue(e.__context__.__context__ is None)
+            self.assertIsNone(e.__context__.__context__)
 
     def test_3118(self):
         # deleting the generator caused the __context__ to be cleared
