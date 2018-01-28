@@ -311,6 +311,24 @@ environment variable are added to control the UTF-8 mode.
        PEP written and implemented by Victor Stinner
 
 
+.. _whatsnew37-pep557:
+
+PEP 557: Data Classes
+---------------------
+
+Adds a new module ``dataclasses``.  It provides a class decorator
+``dataclass`` which inspects the class's variable annotations (see
+:pep:`526`) and using them, adds methods such as ``__init__``,
+``__repr__``, and ``__eq__`` to the class.  It is similar to
+``typing.NamedTuple``, but also works on classes with mutable
+instances, among other features.
+
+.. seealso::
+
+    :pep:`557` -- Data Classes
+       PEP written and implemented by Eric V. Smith
+
+
 New Development Mode: -X dev
 ----------------------------
 
