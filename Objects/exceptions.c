@@ -2840,24 +2840,26 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-    // PRINT_OFFSET is to remove `print ` word from the data.
-    const int PRINT_OFFSET = start + 6;
+    // PRINT_OFFSET is to remove the `print ` prefix from the data.
+    const int PRINT_OFFSET = 6;
     const int STRIP_BOTH = 2;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
     Py_UCS4 semicolon = ';';
-    Py_ssize_t end_pos = PyUnicode_FindChar(self->text, semicolon, PRINT_OFFSET, text_len, 1);
-    if(end_pos == -2){
+    Py_ssize_t end_pos = PyUnicode_FindChar(self->text, semicolon,
+                                            start+PRINT_OFFSET, text_len, 1);
+    if (end_pos < -1) {
       return -1;
-    }
-    else if(end_pos == -1){
+    } else if (end_pos == -1) {
       end_pos = text_len;
     }
+
     PyObject *data = PyUnicode_Substring(self->text, PRINT_OFFSET, end_pos);
     if (data == NULL) {
         return -1;
     }
+
     PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-    if (strip_sep_obj == NULL){
+    if (strip_sep_obj == NULL) {
         Py_DECREF(data);
         return -1;
     }
