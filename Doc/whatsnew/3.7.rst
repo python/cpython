@@ -329,7 +329,7 @@ instances, among other features.
        PEP written and implemented by Eric V. Smith
 
 
-       New Development Mode: -X dev
+New Development Mode: -X dev
 ----------------------------
 
 Add a new "development mode": :option:`-X` ``dev`` command line option and
