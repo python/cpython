@@ -1087,6 +1087,16 @@ to sockets.
    to decode C structures encoded as byte strings).
 
 
+.. method:: socket.getblocking()
+
+   Return ``True`` if socket is in blocking mode, ``False`` if in
+   non-blocking.
+
+   This is equivalent to checking ``socket.gettimeout() == 0``.
+
+   .. versionadded:: 3.7
+
+
 .. method:: socket.gettimeout()
 
    Return the timeout in seconds (float) associated with socket operations,

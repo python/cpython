@@ -98,6 +98,12 @@ def _have_socket_vsock():
     ret = get_cid() is not None
     return ret
 
+
+def _is_fd_in_blocking_mode(sock):
+    return not bool(
+        fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+
+
 HAVE_SOCKET_CAN = _have_socket_can()
 
 HAVE_SOCKET_CAN_ISOTP = _have_socket_can_isotp()
@@ -4079,8 +4085,44 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # Testing whether set blocking works
         self.serv.setblocking(True)
         self.assertIsNone(self.serv.gettimeout())
+        self.assertTrue(self.serv.getblocking())
+        if fcntl:
+            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+
         self.serv.setblocking(False)
         self.assertEqual(self.serv.gettimeout(), 0.0)
+        self.assertFalse(self.serv.getblocking())
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(None)
+        self.assertTrue(self.serv.getblocking())
+        if fcntl:
+            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(0)
+        self.assertFalse(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 0)
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(10)
+        self.assertTrue(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 10)
+        if fcntl:
+            # When a Python socket has a non-zero timeout, it's
+            # switched internally to a non-blocking mode.
+            # Later, sock.sendall(), sock.recv(), and other socket
+            # operations use a `select()` call and handle EWOULDBLOCK/EGAIN
+            # on all socket operations.  That's how timeouts are
+            # enforced.
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(0)
+        self.assertFalse(self.serv.getblocking())
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
         start = time.time()
         try:
             self.serv.accept()
@@ -4113,6 +4155,8 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         self.serv.close()
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
                                                   socket.SOCK_NONBLOCK)
+        self.assertFalse(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 0)
         self.port = support.bind_port(self.serv)
         self.serv.listen()
         # actual testing
@@ -5190,11 +5234,24 @@ class NonblockConstantTest(unittest.TestCase):
             self.assertEqual(s.gettimeout(), timeout)
             self.assertTrue(
                 fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            if timeout == 0:
+                # timeout == 0: means that getblocking() must be False.
+                self.assertFalse(s.getblocking())
+            else:
+                # If timeout > 0, the socket will be in a "blocking" mode
+                # from the standpoint of the Python API.  For Python socket
+                # object, "blocking" means that operations like 'sock.recv()'
+                # will block.  Internally, file descriptors for
+                # "blocking" Python sockets *with timeouts* are in a
+                # *non-blocking* mode, and 'sock.recv()' uses 'select()'
+                # and handles EWOULDBLOCK/EAGAIN to enforce the timeout.
+                self.assertTrue(s.getblocking())
         else:
             self.assertEqual(s.type, socket.SOCK_STREAM)
             self.assertEqual(s.gettimeout(), None)
             self.assertFalse(
                 fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            self.assertTrue(s.getblocking())
 
     @support.requires_linux_version(2, 6, 28)
     def test_SOCK_NONBLOCK(self):
@@ -5204,15 +5261,15 @@ class NonblockConstantTest(unittest.TestCase):
                            socket.SOCK_STREAM | socket.SOCK_NONBLOCK) as s:
             self.checkNonblock(s)
             s.setblocking(1)
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False)
             s.setblocking(0)
             self.checkNonblock(s)
             s.settimeout(None)
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False)
             s.settimeout(2.0)
             self.checkNonblock(s, timeout=2.0)
             s.setblocking(1)
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False)
         # defaulttimeout
         t = socket.getdefaulttimeout()
         socket.setdefaulttimeout(0.0)
