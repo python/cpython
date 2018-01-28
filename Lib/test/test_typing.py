@@ -22,7 +22,6 @@ from typing import NamedTuple
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 import abc
-from _abc import _reset_registry, _reset_caches
 import typing
 import weakref
 
@@ -762,8 +761,8 @@ class GenericTests(BaseTestCase):
         self.assertIsInstance(1, C)
         C[int]
         self.assertIsInstance(1, C)
-        _reset_registry(C)
-        _reset_caches(C)  # To keep refleak hunting mode clean
+        C._abc_registry_clear()
+        C._abc_caches_clear()  # To keep refleak hunting mode clean
 
     def test_false_subclasses(self):
         class MyMapping(MutableMapping[str, str]): pass

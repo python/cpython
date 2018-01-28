@@ -5,7 +5,7 @@ import sys
 import warnings
 from inspect import isabstract
 from test import support
-from _abc import _reset_caches, _get_dump, _reset_registry
+from _abc import _get_dump
 
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
@@ -140,7 +140,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
             for ref in abcs.get(obj, set()):
                 if ref() is not None:
                     obj.register(ref())
-            _reset_caches(obj)
+            obj._abc_caches_clear()
 
     clear_caches()
 

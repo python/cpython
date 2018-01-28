@@ -193,6 +193,15 @@ class _Py_ABCMeta(type):
                     value = set(value)
                 print(f"{name}: {value!r}", file=file)
 
+    def _abc_registry_clear(cls):
+        """Clear the registry (for debugging or testing)."""
+        cls._abc_registry.clear()
+
+    def _abc_caches_clear(cls):
+        """Clear the caches (for debugging or testing)."""
+        cls._abc_cache.clear()
+        cls._abc_negative_cache.clear()
+
     def __instancecheck__(cls, instance):
         """Override for isinstance(instance, cls)."""
         # Inline the cache checking
@@ -281,6 +290,14 @@ class _C_ABCMeta(type):
         print(f"_abc_negative_cache: {_abc_negative_cache!r}", file=file)
         print(f"_abc_negative_cache_version: {_abc_negative_cache_version!r}",
               file=file)
+
+    def _abc_registry_clear(cls):
+        """Clear the registry (for debugging or testing)."""
+        _reset_registry(cls)
+
+    def _abc_caches_clear(cls):
+        """Clear the caches (for debugging or testing)."""
+        _reset_caches(cls)
 
 
 if _C_speedup:
