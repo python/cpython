@@ -635,12 +635,17 @@ compute_abstract_methods(PyObject *self)
         // borrowed
         PyObject *key = PySequence_Fast_GET_ITEM(it, 0);
         PyObject *value = PySequence_Fast_GET_ITEM(it, 1);
+        // items or it may be cleared while accessing __abstractmethod__
+        // So we need to keep strong reference for key
+        Py_INCREF(key);
         int is_abstract = _PyObject_IsAbstract(value);
         if (is_abstract < 0 ||
                 (is_abstract && PySet_Add(abstracts, key) < 0)) {
             Py_DECREF(it);
+            Py_DECREF(key);
             goto error;
         }
+        Py_DECREF(key);
     }
 
     /* Stage 2: inherited abstract methods. */
