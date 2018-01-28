@@ -105,6 +105,9 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
         return self.__class__(self.func, self.args, self.kwds)
 
     def __enter__(self):
+        # do not keep args and kwds alive unnecessarily
+        # they are only needed for recreation, which is not possible anymore
+        del self.args, self.kwds, self.func
         try:
             return next(self.gen)
         except StopIteration:
