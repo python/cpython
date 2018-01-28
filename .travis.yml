@@ -83,7 +83,21 @@ matrix:
 before_script:
   - |
       set -e
-      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
+      if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        files_changed=$(git diff --name-only $TRAVIS_COMMIT_RANGE)
+      else
+        # Pull requests are slightly complicated because merging the PR commit without
+        # rebasing causes it to retain its old commit date. Meaning in history if any
+        # commits have been made on master that post-date it, they will be accidentally
+        # included in the diff if we use the TRAVIS_COMMIT_RANGE variable.
+        files_changed=$(git diff --name-only HEAD $(git merge-base HEAD $TRAVIS_BRANCH))
+      fi
+
+      # Prints changed files in this commit to help debug doc-only build issues.
+      echo "Files changed: "
+      echo $files_changed
+
+      if ! echo $files_changed | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
       then
         echo "Only docs were updated, stopping build process."
         exit
