@@ -10,7 +10,7 @@ Integer Objects
 
 All integers are implemented as "long" integer objects of arbitrary size.
 
-On error, most `PyLong_As*` APIs return ``(return type)-1`` which cannot be
+On error, most ``PyLong_As*`` APIs return ``(return type)-1`` which cannot be
 distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:type:: PyLongObject
