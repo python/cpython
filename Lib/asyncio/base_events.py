@@ -610,6 +610,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Returns True if the event loop is running."""
         return (self._thread_id is not None)
 
+    def is_stopping(self):
+        """Returns True if the event loop has been told to stop
+        but has not done so yet
+        """
+        return self._stopping
+
     def time(self):
         """Return the time according to the event loop's clock.
 
