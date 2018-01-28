@@ -588,10 +588,10 @@ _get_dump(PyObject *m, PyObject *args)
     Py_INCREF(cache_version);
     if ((PyTuple_SetItem(res, 0, registry) < 0) ||
         (PyTuple_SetItem(res, 1, cache) < 0) ||
-        (PyTuple_SetItem(res, 2, negative_cache < 0) ||
+        (PyTuple_SetItem(res, 2, negative_cache) < 0) ||
         (PyTuple_SetItem(res, 3, cache_version) < 0)) {
             Py_DECREF(impl);
-            return NuLL;
+            return NULL;
         }
     Py_DECREF(impl);
     return res;
