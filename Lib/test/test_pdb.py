@@ -1182,7 +1182,10 @@ class PdbTestCase(unittest.TestCase):
             quit
         """
         stdout, stderr = self._run_pdb(["-m", "pdb"], commands)
-        self.assertIn("Debug the Python program given by pyfile.", stdout.splitlines())
+        self.assertIn(
+            pdb._usage,
+            stdout.replace('\r', '')  # remove \r for windows
+        )
 
     def test_module_without_a_main(self):
         module_name = 't_main'
