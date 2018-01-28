@@ -602,7 +602,13 @@ function.
    .. attribute:: Signature.parameters
 
       An ordered mapping of parameters' names to the corresponding
-      :class:`Parameter` objects.
+      :class:`Parameter` objects.  Parameters appear in strict definition
+      order, including keyword-only parameters.
+
+      .. versionchanged:: 3.6
+         Preservation of declaration order was only explicitly guaranteed
+         as of Python 3.6, although it was preserved in all previous versions
+         of Python 3.
 
    .. attribute:: Signature.return_annotation
 
@@ -895,7 +901,7 @@ Classes and functions
    *defaults* is an *n*-tuple of default argument values corresponding to the
    last *n* positional parameters, or ``None`` if there are no such defaults
    defined.
-   *kwonlyargs* is a list of keyword-only parameter names.
+   *kwonlyargs* is a list of keyword-only parameter names in declaration order.
    *kwonlydefaults* is a dictionary mapping parameter names from *kwonlyargs*
    to the default values used if no argument is supplied.
    *annotations* is a dictionary mapping parameter names to annotations.
@@ -919,7 +925,9 @@ Classes and functions
       :func:`signature` in Python 3.5, but that decision has been reversed
       in order to restore a clearly supported standard interface for
       single-source Python 2/3 code migrating away from the legacy
-      :func:`getargspec` API.
+      :func:`getargspec` API.  Also, preservation of declaration order
+      was only explicitly guaranteed as of Python 3.6, although it was
+      preserved in all previous versions of Python 3.
 
 
 .. function:: getargvalues(frame)
