@@ -252,37 +252,58 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             return
 
         nbytes = None
-        try:
-            if fut is not None:
-                assert self._read_fut is fut or (self._read_fut is None and
-                                                 self._closing)
-                self._read_fut = None
+        if fut is not None:
+            assert self._read_fut is fut or (self._read_fut is None and
+                                             self._closing)
+            self._read_fut = None
+            try:
                 if fut.done():
-                    # deliver nbytes later in "finally" clause
                     nbytes = fut.result()
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()
-
-            if self._closing:
-                # since close() has been called we ignore any read data
-                nbytes = None
-                return
+            except ConnectionAbortedError as exc:
+                if not self._closing:
+                    self._fatal_error(exc, 'Fatal read error on pipe transport')
+                elif self._loop.get_debug():
+                    logger.debug("Read error on pipe transport while closing",
+                                 exc_info=True)
+            except ConnectionResetError as exc:
+                self._force_close(exc)
+            except OSError as exc:
+                self._fatal_error(exc, 'Fatal read error on pipe transport')
+            except futures.CancelledError:
+                if not self._closing:
+                    raise
 
             if nbytes == 0:
                 # we got end-of-file so no need to reschedule a new read
+                self._loop_reading__on_eof()
+
+            else:
+                try:
+                    self._protocol.buffer_updated(nbytes)
+                except Exception as exc:
+                    self._fatal_error(
+                        exc,
+                        'Fatal error: protocol.buffer_updated() call failed.')
+                    return
+
+            if self._closing:
+                # since close() has been called we ignore any read data
                 return
 
-            try:
-                buf = self._protocol.get_buffer()
-            except Exception as exc:
-                nbytes = None
-                self._fatal_error(
-                    exc, 'Fatal error: protocol.get_buffer() call failed.')
-                return
+        try:
+            buf = self._protocol.get_buffer()
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.get_buffer() call failed.')
+            return
 
-            # reschedule a new read
+        try:
+            # schedule a new read
             self._read_fut = self._loop._proactor.recv_into(self._sock, buf)
+            self._read_fut.add_done_callback(self._loop_reading)
         except ConnectionAbortedError as exc:
             if not self._closing:
                 self._fatal_error(exc, 'Fatal read error on pipe transport')
@@ -296,19 +317,6 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         except futures.CancelledError:
             if not self._closing:
                 raise
-        else:
-            self._read_fut.add_done_callback(self._loop_reading)
-        finally:
-            if nbytes:
-                try:
-                    self._protocol.buffer_updated(nbytes)
-                except Exception as exc:
-                    self._fatal_error(
-                        exc,
-                        'Fatal error: protocol.buffer_updated() call failed.')
-
-            elif nbytes == 0:
-                self._loop_reading__on_eof()
 
 
 class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
