@@ -384,14 +384,14 @@ class AbstractTestsWithSourceFile:
 
     def test_per_file_compresslevel(self):
         """Check that files within a Zip archive can have different
-        compression options."""
+        compression levels."""
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             zipfp.write(TESTFN, 'compress_1', compress_level=1)
             zipfp.write(TESTFN, 'compress_9', compress_level=9)
             one_info = zipfp.getinfo('compress_1')
             nine_info = zipfp.getinfo('compress_9')
-            self.assertEqual(one_info.compress_level, 1)
-            self.assertEqual(nine_info.compress_level, 9)
+            self.assertEqual(one_info._compress_level, 1)
+            self.assertEqual(nine_info._compress_level, 9)
 
     def tearDown(self):
         unlink(TESTFN)
