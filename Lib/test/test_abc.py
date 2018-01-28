@@ -405,6 +405,18 @@ class TestABC(unittest.TestCase):
     def test_ABC_has___slots__(self):
         self.assertTrue(hasattr(abc.ABC, '__slots__'))
 
+    def test_tricky_new_works(self):
+        def with_metaclass(meta, *bases):
+            class metaclass(type):
+                def __new__(cls, name, this_bases, d):
+                    return meta(name, bases, d)
+            return type.__new__(metaclass, 'temporary_class', (), {})
+        class A: ...
+        class B: ...
+        class C(with_metaclass(abc.ABCMeta)):
+            pass
+        self.assertEqual(C.__class__, abc.ABCMeta)
+
 
 class TestABCWithInitSubclass(unittest.TestCase):
     def test_works_with_init_subclass(self):
