@@ -1,8 +1,7 @@
 /* ABCMeta implementation */
 
-/* TODO: Think (ask) about thread-safety. */
-/* TODO: Add checks only to those calls that can fail and use _GET_SIZE etc. */
-/* TODO: Think about inlining some calls (like __subclasses__) and/or using macros */
+/* TODO: Test this hard in multithreaded context. */
+/* TODO: Think about inlining some calls and/or using macros */
 /* TODO: Use separate branches with "fast paths" */
 
 #include "Python.h"
@@ -16,6 +15,8 @@ _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__bases__);
 _Py_IDENTIFIER(_abc_impl);
+_Py_IDENTIFIER(__subclasscheck__);
+_Py_IDENTIFIER(__subclasshook__);
 
 /* A global counter that is incremented each time a class is
    registered as a virtual subclass of anything.  It forces the
@@ -392,6 +393,12 @@ _get_dump(PyObject *m, PyObject *args)
     Py_INCREF(impl->_abc_negative_cache_version); /* PyTuple_Packdoesn't do this. */
     PyObject *res = PyTuple_Pack(4,
             registry, cache, negative_cache, impl->_abc_negative_cache_version);
+    if (res == NULL) {
+        Py_DECREF(registry);
+        Py_DECREF(cache);
+        Py_DECREF(negative_cache);
+        Py_DECREF(impl->_abc_negative_cache_version);
+    }
     Py_DECREF(impl);
     return res;
 }
@@ -402,7 +409,7 @@ compute_abstract_methods(PyObject *self)
 {
     int ret = -1;
     PyObject *abstracts = PyFrozenSet_New(NULL);
-    if (!abstracts) {
+    if (abstracts == NULL) {
         return -1;
     }
 
@@ -650,15 +657,18 @@ _abc_instancecheck(PyObject *m, PyObject *args)
             }
         }
         /* Fall back to the subclass check. */
-        result = PyObject_CallMethod(self, "__subclasscheck__", "O", subclass);
+        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
+                                               subclass, NULL);
         goto end;
     }
-    result = PyObject_CallMethod(self, "__subclasscheck__", "O", subclass);
+    result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
+                                           subclass, NULL);
     if (result == NULL || result == Py_True) {
         goto end;
     }
     Py_DECREF(result);
-    result = PyObject_CallMethod(self, "__subclasscheck__", "O", subtype);
+    result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
+                                           subtype, NULL);
 
 end:
     Py_XDECREF(impl);
@@ -719,7 +729,8 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
 
     /* 3. Check the subclass hook. */
-    ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
+    ok = _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId___subclasshook__,
+                                       subclass, NULL);
     if (ok == NULL) {
         goto end;
     }

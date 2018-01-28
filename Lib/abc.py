@@ -173,9 +173,6 @@ class ABCMeta(type):
 
         Returns the subclass, to allow usage as a class decorator.
         """
-        if _C_speedup:
-            _abc_register(cls, subclass)
-            return subclass
         if not isinstance(subclass, type):
             raise TypeError("Can only register classes")
         if issubclass(subclass, cls):
@@ -211,8 +208,6 @@ class ABCMeta(type):
 
     def __instancecheck__(cls, instance):
         """Override for isinstance(instance, cls)."""
-        if _C_speedup:
-            return _abc_instancecheck(cls, instance)
         # Inline the cache checking
         subclass = instance.__class__
         if subclass in cls._abc_cache:
@@ -229,8 +224,6 @@ class ABCMeta(type):
 
     def __subclasscheck__(cls, subclass):
         """Override for issubclass(subclass, cls)."""
-        if _C_speedup:
-            return _abc_subclasscheck(cls, subclass)
         # Check cache
         if subclass in cls._abc_cache:
             return True
@@ -267,6 +260,11 @@ class ABCMeta(type):
         # No dice; update negative cache
         cls._abc_negative_cache.add(subclass)
         return False
+
+if _C_speedup:
+    ABCMeta.register = _abc_register
+    ABCMeta.__instancecheck__ = _abc_instancecheck
+    ABCMeta.__subclasscheck__ = _abc_subclasscheck
 
 
 class ABC(metaclass=ABCMeta):
