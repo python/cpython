@@ -916,6 +916,13 @@ class BaseTest:
         self.checkequal(True, '\x00\x7f', 'isascii')
         self.checkequal(False, '\x80', 'isascii')
         self.checkequal(False, '\xe9', 'isascii')
+        # bytes.isascii() and bytearray.isascii() has optimization which
+        # check 4 or 8 bytes at once.  So check some alignments.
+        for p in range(8):
+            self.checkequal(True, ' '*p + '\x7f', 'isascii')
+            self.checkequal(False, ' '*p + '\x80', 'isascii')
+            self.checkequal(True, ' '*p + '\x7f' + ' '*8, 'isascii')
+            self.checkequal(False, ' '*p + '\x80' + ' '*8, 'isascii')
 
     def test_isdigit(self):
         self.checkequal(False, '', 'isdigit')
