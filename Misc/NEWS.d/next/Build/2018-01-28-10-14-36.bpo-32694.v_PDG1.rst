@@ -1,0 +1,1 @@
+macos/configure; discover OpenSSL when installed with MacPorts
