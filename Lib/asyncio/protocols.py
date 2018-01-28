@@ -109,6 +109,14 @@ class BufferedProtocol(BaseProtocol):
     def buffer_updated(self, nbytes):
         pass
 
+    def eof_received(self):
+        """Called when the other end calls write_eof() or equivalent.
+
+        If this returns a false value (including None), the transport
+        will close itself.  If it returns a true value, closing the
+        transport is up to the protocol.
+        """
+
 
 class DatagramProtocol(BaseProtocol):
     """Interface for datagram protocol."""
