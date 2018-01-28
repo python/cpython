@@ -176,7 +176,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 
     fail_pos = NULL;
 
-#if defined(__ANDROID_API__) and __ANDROID_API__ < 21
+#if defined(__ANDROID_API__) && __ANDROID_API__ < 21
     /* Before Android API 21, localeconv() is broken. */
     decimal_point = ".";
 #else
