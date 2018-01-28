@@ -1,0 +1,1 @@
+tarfile.open now properly passes on compression presets for LZMA modes.
