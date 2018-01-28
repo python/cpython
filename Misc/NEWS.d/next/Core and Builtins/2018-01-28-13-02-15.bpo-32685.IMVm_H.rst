@@ -1,0 +1,2 @@
+print suggestion produces correct syntax hint when multiple statements are
+used on the same line. Patch by Sanyam Khurana.

@@ -165,6 +165,27 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn('print("Hello World")', str(context.exception))
 
+    def test_multiple_statements_on_same_line_separated_by_semicolon(self):
+        # Ensure multiple statements on same line produces correct hint
+        python2_print_str = '''x = 1
+print x; pass
+        '''
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print(x)', str(context.exception))
+
+    def test_multiple_statements_on_same_line(self):
+        # Ensure multiple statements on same line like a loop or conditional
+        # statement produces correct hint
+        python2_print_str = '''import sys
+for p in sys.path: print p
+        '''
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print(p)', str(context.exception))
+
     def test_stream_redirection_hint_for_py2_migration(self):
         # Test correct hint produced for Py2 redirection syntax
         with self.assertRaises(TypeError) as context:
