@@ -443,6 +443,7 @@ LIBRARY_OBJS=	\
 # in-place by dtrace(1).
 DTRACE_DEPS = \
 	Python/ceval.o
+	Modules/gcmodule.o
 # XXX: should gcmodule, etc. be here, too?
 
 #########################################################################
