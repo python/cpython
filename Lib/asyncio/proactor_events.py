@@ -154,7 +154,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         super().__init__(loop, sock, protocol, waiter, extra, server)
         self._paused = False
 
-        if isinstance(protocol, protocols.BufferedProtocol):
+        if protocols._is_buffered_protocol(protocol):
             self._loop_reading = self._loop_reading__get_buffer
         else:
             self._loop_reading = self._loop_reading__data_received

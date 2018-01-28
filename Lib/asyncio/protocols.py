@@ -150,3 +150,7 @@ class SubprocessProtocol(BaseProtocol):
 
     def process_exited(self):
         """Called when subprocess has exited."""
+
+
+def _is_buffered_protocol(proto):
+    return hasattr(proto, 'get_buffer') and not hasattr(proto, 'data_received')

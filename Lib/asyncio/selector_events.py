@@ -715,7 +715,7 @@ class _SelectorSocketTransport(_SelectorTransport):
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
 
-        if isinstance(protocol, protocols.BufferedProtocol):
+        if protocols._is_buffered_protocol(protocol):
             self._read_ready = self._read_ready__get_buffer
         else:
             self._read_ready = self._read_ready__data_received
