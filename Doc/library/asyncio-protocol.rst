@@ -440,10 +440,10 @@ State machine:
 
 .. code-block:: none
 
-    start -> :meth:`~BaseProtocol.connection_made`
-        [-> :meth:`~Protocol.data_received`]*
-        [-> :meth:`~Protocol.eof_received`]?
-    -> :meth:`~BaseProtocol.connection_lost` -> end
+    start -> connection_made
+        [-> data_received]*
+        [-> eof_received]?
+    -> connection_lost -> end
 
 
 Streaming protocols with manual receive buffer control
@@ -493,12 +493,12 @@ State machine:
 
 .. code-block:: none
 
-    start -> :meth:`~BaseProtocol.connection_made`
-        [-> :meth:`~BufferedProtocol.get_buffer`
-            [-> :meth:`~BufferedProtocol.buffer_updated`]?
+    start -> connection_made
+        [-> get_buffer
+            [-> buffer_updated]?
         ]*
-        [-> :meth:`~Protocol.eof_received`]?
-    -> :meth:`~BaseProtocol.connection_lost` -> end
+        [-> eof_received]?
+    -> connection_lost -> end
 
 
 Datagram protocols
