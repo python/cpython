@@ -1,1 +1,1 @@
-Implement asyncio.BufferedProtocol.
+Implement asyncio.BufferedProtocol (provisional API).
