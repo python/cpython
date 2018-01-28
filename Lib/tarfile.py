@@ -1610,7 +1610,8 @@ class TarFile(object):
         raise ValueError("undiscernible mode")
 
     @classmethod
-    def taropen(cls, name, mode="r", fileobj=None, **kwargs):
+    def taropen(cls, name, mode="r", fileobj=None, compresslevel=None,
+                **kwargs):
         """Open uncompressed tar archive name for reading or writing.
         """
         if mode not in ("r", "a", "w", "x"):
@@ -1681,7 +1682,8 @@ class TarFile(object):
         return t
 
     @classmethod
-    def xzopen(cls, name, mode="r", fileobj=None, preset=None, **kwargs):
+    def xzopen(cls, name, mode="r", fileobj=None, compresslevel=None,
+               **kwargs):
         """Open lzma compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
@@ -1693,7 +1695,7 @@ class TarFile(object):
         except ImportError:
             raise CompressionError("lzma module is not available")
 
-        fileobj = lzma.LZMAFile(fileobj or name, mode, preset=preset)
+        fileobj = lzma.LZMAFile(fileobj or name, mode, preset=compresslevel)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
