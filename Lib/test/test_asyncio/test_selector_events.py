@@ -926,6 +926,34 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(tr.is_reading())
         self.loop.assert_no_reader(7)
 
+    def test_read_eof_received_error(self):
+        transport = self.socket_transport()
+        transport.close = mock.Mock()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.protocol.eof_received.side_effect = LookupError()
+
+        self.sock.recv.return_value = b''
+        transport._read_ready()
+
+        self.protocol.eof_received.assert_called_with()
+        self.assertTrue(transport._fatal_error.called)
+
+    def test_data_received_error(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.data_received.side_effect = LookupError()
+
+        self.sock.recv.return_value = b'data'
+        transport._read_ready()
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.data_received.called)
+
     def test_read_ready(self):
         transport = self.socket_transport()
 
@@ -1256,6 +1284,48 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         self.loop.assert_reader(7, tr._read_ready)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_made.assert_called_with(tr)
+
+    def test_get_buffer_error(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.get_buffer.side_effect = LookupError()
+
+        transport._read_ready()
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_buffer_updated_error(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.buffer_updated.side_effect = LookupError()
+
+        self.sock.recv_into.return_value = 10
+        transport._read_ready()
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertTrue(self.protocol.buffer_updated.called)
+
+    def test_read_eof_received_error(self):
+        transport = self.socket_transport()
+        transport.close = mock.Mock()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.protocol.eof_received.side_effect = LookupError()
+
+        self.sock.recv_into.return_value = 0
+        transport._read_ready()
+
+        self.protocol.eof_received.assert_called_with()
+        self.assertTrue(transport._fatal_error.called)
 
     def test_read_ready(self):
         transport = self.socket_transport()

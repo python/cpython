@@ -817,6 +817,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         except Exception as exc:
             self._fatal_error(
                 exc, 'Fatal error: protocol.eof_received() call failed.')
+            return
 
         if keep_open:
             # We're keeping the connection open so the

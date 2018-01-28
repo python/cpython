@@ -481,6 +481,51 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         self.assertFalse(self.protocol.buffer_updated.called)
         self.assertFalse(self.protocol.eof_received.called)
 
+    def test_get_buffer_error(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.get_buffer.side_effect = LookupError()
+
+        transport._loop_reading()
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_buffer_updated_error(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.buffer_updated.side_effect = LookupError()
+
+        res = asyncio.Future(loop=self.loop)
+        res.set_result(10)
+        transport._read_fut = res
+        transport._loop_reading(res)
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertTrue(self.protocol.buffer_updated.called)
+
+    def test_loop_eof_received_error(self):
+        res = asyncio.Future(loop=self.loop)
+        res.set_result(0)
+
+        self.protocol.eof_received.side_effect = LookupError()
+
+        tr = self.socket_transport()
+        tr._fatal_error = mock.Mock()
+
+        tr.close = mock.Mock()
+        tr._read_fut = res
+        tr._loop_reading(res)
+        self.assertFalse(self.loop._proactor.recv_into.called)
+        self.assertTrue(self.protocol.eof_received.called)
+        self.assertTrue(tr._fatal_error.called)
+
     def test_loop_reading_data(self):
         res = asyncio.Future(loop=self.loop)
         res.set_result(4)
