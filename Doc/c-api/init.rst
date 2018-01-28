@@ -1283,12 +1283,12 @@ Python-level trace functions in previous versions.
    +------------------------------+--------------------------------------+
    | Value of *what*              | Meaning of *arg*                     |
    +==============================+======================================+
-   | :const:`PyTrace_CALL`        | Always *NULL*.                       |
+   | :const:`PyTrace_CALL`        | Always :c:data:`Py_None`.            |
    +------------------------------+--------------------------------------+
    | :const:`PyTrace_EXCEPTION`   | Exception information as returned by |
    |                              | :func:`sys.exc_info`.                |
    +------------------------------+--------------------------------------+
-   | :const:`PyTrace_LINE`        | Always *NULL*.                       |
+   | :const:`PyTrace_LINE`        | Always :c:data:`Py_None`.            |
    +------------------------------+--------------------------------------+
    | :const:`PyTrace_RETURN`      | Value being returned to the caller,  |
    |                              | or *NULL* if caused by an exception. |
