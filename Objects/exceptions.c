@@ -2857,8 +2857,10 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
         return -1;
     }
     PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-    if (strip_sep_obj == NULL)
+    if (strip_sep_obj == NULL){
+        Py_DECREF(data);
         return -1;
+    }
 
     PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
     Py_DECREF(data);
