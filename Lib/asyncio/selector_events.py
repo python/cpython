@@ -716,9 +716,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                  extra=None, server=None):
 
         if isinstance(protocol, protocols.BufferedProtocol):
-            self._read_ready = self._read_ready_get_buffer
+            self._read_ready = self._read_ready__get_buffer
         else:
-            self._read_ready = self._read_ready_data_received
+            self._read_ready = self._read_ready__data_received
 
         super().__init__(loop, sock, protocol, extra, server)
         self._eof = False
@@ -758,42 +758,66 @@ class _SelectorSocketTransport(_SelectorTransport):
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
-    def _read_ready_get_buffer(self):
+    def _read_ready__get_buffer(self):
         if self._conn_lost:
             return
 
         try:
             buf = self._protocol.get_buffer()
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.get_buffer() call failed.')
+            return
+
+        try:
             nbytes = self._sock.recv_into(buf)
         except (BlockingIOError, InterruptedError):
-            pass
+            return
         except Exception as exc:
             self._fatal_error(exc, 'Fatal read error on socket transport')
-        else:
-            if nbytes:
-                self._protocol.buffer_updated(nbytes)
-            else:
-                self._read_ready_on_eof()
+            return
 
-    def _read_ready_data_received(self):
+        if not nbytes:
+            self._read_ready__on_eof()
+            return
+
+        try:
+            self._protocol.buffer_updated(nbytes)
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.buffer_updated() call failed.')
+
+    def _read_ready__data_received(self):
         if self._conn_lost:
             return
         try:
             data = self._sock.recv(self.max_size)
         except (BlockingIOError, InterruptedError):
-            pass
+            return
         except Exception as exc:
             self._fatal_error(exc, 'Fatal read error on socket transport')
-        else:
-            if data:
-                self._protocol.data_received(data)
-            else:
-                self._read_ready_on_eof()
+            return
 
-    def _read_ready_on_eof(self):
+        if not data:
+            self._read_ready__on_eof()
+            return
+
+        try:
+            self._protocol.data_received(data)
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.data_received() call failed.')
+
+    def _read_ready__on_eof(self):
         if self._loop.get_debug():
             logger.debug("%r received EOF", self)
-        keep_open = self._protocol.eof_received()
+
+        try:
+            keep_open = self._protocol.eof_received()
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.eof_received() call failed.')
+
         if keep_open:
             # We're keeping the connection open so the
             # protocol can write more, but we still can't
