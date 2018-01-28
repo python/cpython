@@ -140,6 +140,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
             for ref in abcs.get(obj, set()):
                 if ref() is not None:
                     obj.register(ref())
+            _reset_caches(obj)
 
     clear_caches()
 
