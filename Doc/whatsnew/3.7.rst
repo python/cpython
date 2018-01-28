@@ -323,6 +323,17 @@ Adds a new module ``dataclasses``.  It provides a class decorator
 ``typing.NamedTuple``, but also works on classes with mutable
 instances, among other features.
 
+For example::
+
+    @dataclass
+    class Point:
+        x: float
+        y: float
+        z: float = 0.0
+
+    p = Point(1.5, 2.5)
+    print(p)   # produces "Point(x=1.5, y=2.5, z=0.0)"
+
 .. seealso::
 
     :pep:`557` -- Data Classes

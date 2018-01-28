@@ -8,6 +8,7 @@ import threading
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
+import weakref
 
 
 class TestAbstractContextManager(unittest.TestCase):
@@ -218,6 +219,52 @@ def woohoo():
             yield (self, func, args, kwds)
         with woohoo(self=11, func=22, args=33, kwds=44) as target:
             self.assertEqual(target, (11, 22, 33, 44))
+
+    def test_nokeepref(self):
+        class A:
+            pass
+
+        @contextmanager
+        def woohoo(a, b):
+            a = weakref.ref(a)
+            b = weakref.ref(b)
+            self.assertIsNone(a())
+            self.assertIsNone(b())
+            yield
+
+        with woohoo(A(), b=A()):
+            pass
+
+    def test_param_errors(self):
+        @contextmanager
+        def woohoo(a, *, b):
+            yield
+
+        with self.assertRaises(TypeError):
+            woohoo()
+        with self.assertRaises(TypeError):
+            woohoo(3, 5)
+        with self.assertRaises(TypeError):
+            woohoo(b=3)
+
+    def test_recursive(self):
+        depth = 0
+        @contextmanager
+        def woohoo():
+            nonlocal depth
+            before = depth
+            depth += 1
+            yield
+            depth -= 1
+            self.assertEqual(depth, before)
+
+        @woohoo()
+        def recursive():
+            if depth < 10:
+                recursive()
+
+        recursive()
+        self.assertEqual(depth, 0)
 
 
 class ClosingTestCase(unittest.TestCase):
