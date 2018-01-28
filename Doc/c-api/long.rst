@@ -153,6 +153,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
+
 .. c:function:: long long PyLong_AsLongLong(PyObject *obj)
 
    .. index::
