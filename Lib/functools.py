@@ -13,10 +13,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
            'partialmethod', 'singledispatch']
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
+from _functools import reduce
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
