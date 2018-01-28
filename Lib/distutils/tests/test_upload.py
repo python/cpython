@@ -152,6 +152,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         headers = dict(self.last_open.req.headers)
         self.assertEqual(headers['Content-length'], '2170')
         self.assertIn(b'long description\r', self.last_open.req.data)
+        self.assertNotIn(b'long description\r\n', self.last_open.req.data)
 
     def test_upload_fails(self):
         self.next_msg = "Not Found"
