@@ -662,7 +662,6 @@ _abc_register(PyObject *m, PyObject *args)
     }
 
     /* Invalidate negative cache */
-    Py_DECREF(abc_invalidation_counter);
     PyObject *one = PyLong_FromLong(1);
     if (one == NULL) {
         return NULL;
