@@ -5214,9 +5214,21 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     }
 
                     long open_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
+                    if(PyErr_Occurred()) {
+                        goto fail;
+                    }
                     const char* open_path = PyUnicode_AsUTF8(PySequence_GetItem(file_actions_obj, 2));
+                    if(open_path == NULL){
+                        goto fail;
+                    }
                     long open_oflag = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 3));
+                    if(PyErr_Occurred()) {
+                        goto fail;
+                    }
                     long open_mode = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 4));
+                    if(PyErr_Occurred()) {
+                        goto fail;
+                    }
                     posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode);
                     break;
 
@@ -5227,6 +5239,9 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     }
 
                     long close_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
+                    if(PyErr_Occurred()) {
+                        goto fail;
+                    }
                     posix_spawn_file_actions_addclose(file_actionsp, close_fd);
                     break;
 
@@ -5237,7 +5252,13 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     }
 
                     long fd1 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
+                    if(PyErr_Occurred()) {
+                        goto fail;
+                    }
                     long fd2 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 2));
+                    if(PyErr_Occurred()) {
+                        goto fail;
+                    }
                     posix_spawn_file_actions_adddup2(file_actionsp, fd1, fd2);
                     break;
 
@@ -5249,22 +5270,25 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         Py_DECREF(seq);
 }
 
-_Py_BEGIN_SUPPRESS_IPH
-    posix_spawn(&pid, path->narrow, file_actionsp, NULL, argvlist, envlist);
-    return PyLong_FromPid(pid);
-_Py_END_SUPPRESS_IPH
+    _Py_BEGIN_SUPPRESS_IPH
+        posix_spawn(&pid, path->narrow, file_actionsp, NULL, argvlist, envlist);
+        return PyLong_FromPid(pid);
+    _Py_END_SUPPRESS_IPH
 
-path_error(path);
+    path_error(path);
 
-free_string_array(envlist, envc);
+    free_string_array(envlist, envc);
+
 fail:
-if (argvlist)
-    free_string_array(argvlist, argc);
-return NULL;
+
+    if (argvlist) {
+        free_string_array(argvlist, argc);
+    }
+    return NULL;
 
 
 }
-#endif
+#endif /* HAVE_POSIX_SPAWN */
 
 
 #if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
