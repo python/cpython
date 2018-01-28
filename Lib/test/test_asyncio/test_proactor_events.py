@@ -507,7 +507,7 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         transport._loop_reading(res)
 
         self.assertTrue(transport._fatal_error.called)
-        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertFalse(self.protocol.get_buffer.called)
         self.assertTrue(self.protocol.buffer_updated.called)
 
     def test_loop_eof_received_error(self):

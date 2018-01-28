@@ -264,7 +264,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                     fut.cancel()
             except ConnectionAbortedError as exc:
                 if not self._closing:
-                    self._fatal_error(exc, 'Fatal read error on pipe transport')
+                    self._fatal_error(
+                        exc, 'Fatal read error on pipe transport')
                 elif self._loop.get_debug():
                     logger.debug("Read error on pipe transport while closing",
                                  exc_info=True)
@@ -276,22 +277,23 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                 if not self._closing:
                     raise
 
-            if nbytes == 0:
-                # we got end-of-file so no need to reschedule a new read
-                self._loop_reading__on_eof()
+            if nbytes is not None:
+                if nbytes == 0:
+                    # we got end-of-file so no need to reschedule a new read
+                    self._loop_reading__on_eof()
+                else:
+                    try:
+                        self._protocol.buffer_updated(nbytes)
+                    except Exception as exc:
+                        self._fatal_error(
+                            exc,
+                            'Fatal error: '
+                            'protocol.buffer_updated() call failed.')
+                        return
 
-            else:
-                try:
-                    self._protocol.buffer_updated(nbytes)
-                except Exception as exc:
-                    self._fatal_error(
-                        exc,
-                        'Fatal error: protocol.buffer_updated() call failed.')
-                    return
-
-            if self._closing:
-                # since close() has been called we ignore any read data
-                return
+        if self._closing or nbytes == 0:
+            # since close() has been called we ignore any read data
+            return
 
         try:
             buf = self._protocol.get_buffer()
