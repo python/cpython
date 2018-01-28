@@ -27,8 +27,8 @@ static PyObject *abc_invalidation_counter;
 typedef struct {
     PyObject_HEAD
     unsigned long iterating;
-    PyObject *data;
-    PyObject *pending;
+    PyObject *data; /* The actual set of weak references. */
+    PyObject *pending; /* Pending removals collected during iteration. */
     PyObject *in_weakreflist;
 } _guarded_set;
 
@@ -103,11 +103,14 @@ static PyTypeObject _guarded_set_type = {
     gset_new                            /* tp_new */
     };
 
+/* This object stores internal state for ABCs.
+   Note that we can use normal sets for caches,
+   since they are never iterated over. */
 typedef struct {
     PyObject_HEAD
     _guarded_set *_abc_registry;
-    PyObject *_abc_cache;
-    PyObject *_abc_negative_cache;
+    PyObject *_abc_cache; /* Normal set of weak references. */
+    PyObject *_abc_negative_cache; /* Normal set of weak references. */
     PyObject *_abc_negative_cache_version;
 } _abc_data;
 
@@ -858,10 +861,6 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     if (!PyArg_UnpackTuple(args, "_abc_subclasscheck", 2, 2, &self, &subclass)) {
         return NULL;
     }
-    /* TODO: clear the registry from dead refs from time to time
-       on iteration here (have a counter for this) or maybe during a .register() call */
-    /* TODO: Reset caches every n-th succes/failure correspondingly
-       so that they don't grow too large */
 
     /* 1. Check cache. */
     incache = _in_cache(self, subclass);
