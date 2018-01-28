@@ -56,12 +56,15 @@ gset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     _guarded_set *self = (_guarded_set *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->iterating = 0;
-        self->data = data;
-        self->pending = pending;
-        self->in_weakreflist = NULL;
+    if (self == NULL) {
+        Py_DECREF(data);
+        Py_DECREF(pending);
+        return NULL;
     }
+    self->iterating = 0;
+    self->data = data;
+    self->pending = pending;
+    self->in_weakreflist = NULL;
     return (PyObject *) self;
 }
 
@@ -106,9 +109,18 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *registry = NULL, *cache = NULL, *negative_cache = NULL;
     registry = gset_new(&_guarded_set_type, NULL, NULL);
+    if (registry == NULL) {
+        return NULL;
+    }
     cache = PySet_New(NULL);
+    if (cache == NULL) {
+        Py_DECREF(registry);
+        return NULL;
+    }
     negative_cache = PySet_New(NULL);
-    if (!registry || !cache || !negative_cache) {
+    if (negative_cache == NULL) {
+        Py_DECREF(registry);
+        Py_DECREF(cache);
         goto error;
     }
 
@@ -125,9 +137,9 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *) self;
 
 error:
-    Py_XDECREF(registry);
-    Py_XDECREF(cache);
-    Py_XDECREF(negative_cache);
+    Py_DECREF(registry);
+    Py_DECREF(cache);
+    Py_DECREF(negative_cache);
     return NULL;
 }
 
@@ -164,7 +176,7 @@ static _abc_data *
 _get_impl(PyObject *self)
 {
     PyObject *impl = _PyObject_GetAttrId(self, &PyId__abc_impl);
-    if (!impl) {
+    if (impl == NULL) {
         return NULL;
     }
     if (Py_TYPE(impl) != &_abc_data_type) {
@@ -192,8 +204,9 @@ _destroy(PyObject *setweakref, PyObject *objweakref)
 {
     PyObject *set;
     set = PyWeakref_GET_OBJECT(setweakref);
-    if (set == Py_None)
+    if (set == Py_None) {
         Py_RETURN_NONE;
+    }
     Py_INCREF(set);
     if (PySet_Discard(set, objweakref) < 0) {
         Py_DECREF(set);
@@ -212,7 +225,6 @@ _destroy_guarded(PyObject *setweakref, PyObject *objweakref)
 {
     PyObject *set;
     _guarded_set *gset;
-    int res;
     set = PyWeakref_GET_OBJECT(setweakref);
     if (set == Py_None) {
         Py_RETURN_NONE;
@@ -220,8 +232,7 @@ _destroy_guarded(PyObject *setweakref, PyObject *objweakref)
     Py_INCREF(set);
     gset = (_guarded_set *)set;
     if (gset->iterating) {
-        res = PyList_Append(gset->pending, objweakref);
-        if (!res) {
+        if (PyList_Append(gset->pending, objweakref) < 0) {
             Py_DECREF(set);
             return NULL;
         }
@@ -262,26 +273,20 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
     if (guarded) {
         set = ((_guarded_set *) set)->data;
     }
-    if (PySet_Add(set, ref) < 0) {
-        Py_DECREF(wr);
-        Py_DECREF(ref);
-        return -1;
-    }
+    int ret = PySet_Add(set, ref);
     Py_DECREF(wr);
     Py_DECREF(ref);
-    return 0;
+    return ret;
 }
 
 static PyObject *
 _get_registry(PyObject *self)
 {
-    _abc_data *impl;
-    PyObject *res;
-    impl = _get_impl(self);
-    if (!impl) {
+    _abc_data *impl = _get_impl(self);
+    if (impl == NULL) {
         return NULL;
     }
-    res = impl->_abc_registry->data;
+    PyObject *res = impl->_abc_registry->data;
     Py_DECREF(impl);
     return res;
 }
@@ -325,12 +330,11 @@ static int
 _add_to_registry(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
-    int res;
     impl = _get_impl(self);
     if (!impl) {
         return -1;
     }
-    res = _add_to_weak_set((PyObject *)(impl->_abc_registry), cls, 1);
+    int res = _add_to_weak_set((PyObject *)(impl->_abc_registry), cls, 1);
     Py_DECREF(impl);
     return res;
 }
@@ -345,12 +349,11 @@ static int
 _add_to_negative_cache(PyObject *self, PyObject *cls)
 {
     _abc_data *impl;
-    int res;
     impl = _get_impl(self);
     if (!impl) {
         return -1;
     }
-    res = _add_to_weak_set(impl->_abc_negative_cache, cls, 0);
+    int res = _add_to_weak_set(impl->_abc_negative_cache, cls, 0);
     Py_DECREF(impl);
     return res;
 }
@@ -368,7 +371,7 @@ _reset_registry(PyObject *m, PyObject *args)
         return NULL;
     }
     registry = _get_registry(self);
-    if (!registry) {
+    if (registry == NULL) {
         return NULL;
     }
     if (PySet_Clear(registry) < 0) {
@@ -397,7 +400,7 @@ _reset_caches(PyObject *m, PyObject *args)
         return NULL;
     }
     impl = _get_impl(self);
-    if (!impl) {
+    if (impl == NULL) {
         return NULL;
     }
     if (PySet_Clear(impl->_abc_cache) < 0) {
@@ -442,30 +445,37 @@ _get_dump(PyObject *m, PyObject *args)
         return NULL;
     }
     registry = _get_registry(self);
-    if (!registry) {
+    if (registry == NULL) {
         return NULL;
     }
     registry = PyObject_CallMethod(registry, "copy", NULL);
-    if (!registry) {
+    if (registry == NULL) {
         return NULL;
     }
     impl = _get_impl(self);
-    if (!impl) {
+    if (impl == NULL) {
+        Py_DECREF(registry);
         return NULL;
     }
     cache = PyObject_CallMethod(impl->_abc_cache, "copy", NULL);
-    if (!cache) {
+    if (cache == NULL) {
+        Py_DECREF(registry);
         Py_DECREF(impl);
         return NULL;
     }
     negative_cache = PyObject_CallMethod(impl->_abc_negative_cache, "copy", NULL);
-    if (!negative_cache) {
+    if (negative_cache == NULL) {
+        Py_DECREF(registry);
         Py_DECREF(impl);
+        Py_DECREF(cache);
         return NULL;
     }
     cache_version = _get_negative_cache_version(impl);
-    if (!cache_version) {
+    if (cache_version == NULL) {
+        Py_DECREF(registry);
         Py_DECREF(impl);
+        Py_DECREF(cache);
+        Py_DECREF(negative_cache);
         return NULL;
     }
     PyObject *res = PyTuple_Pack(4,
@@ -484,7 +494,7 @@ compute_abstract_methods(PyObject *self)
         return -1;
     }
 
-    PyObject *ns=NULL, *items=NULL, *bases=NULL;  // Py_CLEAR()ed on error.
+    PyObject *ns = NULL, *items = NULL, *bases = NULL;  // Py_XDECREF()ed on error.
 
     /* Stage 1: direct abstract methods. */
     ns = _PyObject_GetAttrId(self, &PyId___dict__);
@@ -497,7 +507,7 @@ compute_abstract_methods(PyObject *self)
     if (!items) {
         goto error;
     }
-
+    assert(PyList_Check(items));
     for (Py_ssize_t pos = 0; pos < PyList_GET_SIZE(items); pos++) {
         PyObject *it = PySequence_Fast(
                 PyList_GET_ITEM(items, pos),
@@ -506,7 +516,7 @@ compute_abstract_methods(PyObject *self)
             goto error;
         }
         if (PySequence_Fast_GET_SIZE(it) != 2) {
-            PyErr_SetString(PyExc_TypeError, "items() returned not 2-tuple");
+            PyErr_SetString(PyExc_TypeError, "items() returned not 2-tuple item");
             Py_DECREF(it);
             goto error;
         }
@@ -612,7 +622,7 @@ _abc_init(PyObject *m, PyObject *args)
 
     /* Set up inheritance registry. */
     data = abc_data_new(&_abc_data_type, NULL, NULL);
-    if (!data) {
+    if (data == NULL) {
         return NULL;
     }
     if (_PyObject_SetAttrId(self, &PyId__abc_impl, data) < 0) {
@@ -630,7 +640,6 @@ static PyObject *
 _abc_register(PyObject *m, PyObject *args)
 {
     PyObject *self, *subclass = NULL;
-    int result;
     if (!PyArg_UnpackTuple(args, "_abc_register", 2, 2, &self, &subclass)) {
         return NULL;
     }
@@ -638,7 +647,7 @@ _abc_register(PyObject *m, PyObject *args)
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
         return NULL;
     }
-    result = PyObject_IsSubclass(subclass, self);
+    int result = PyObject_IsSubclass(subclass, self);
     if (result > 0) {
         Py_INCREF(subclass);
         return subclass;  /* Already a subclass. */
@@ -690,7 +699,7 @@ _abc_instancecheck(PyObject *m, PyObject *args)
     }
 
     _abc_data *impl = _get_impl(self);
-    if (!impl) {
+    if (impl == NULL) {
         return NULL;
     }
 
@@ -734,8 +743,8 @@ _abc_instancecheck(PyObject *m, PyObject *args)
     result = PyObject_CallMethod(self, "__subclasscheck__", "O", subtype);
 
 end:
-    Py_CLEAR(impl);
-    Py_CLEAR(subclass);
+    Py_XDECREF(impl);
+    Py_XDECREF(subclass);
     return result;
 }
 
@@ -755,7 +764,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
 
     _abc_data *impl = _get_impl(self);
-    if (!impl) {
+    if (impl == NULL) {
         return NULL;
     }
 
@@ -774,8 +783,10 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     if (incache < 0) {
         goto end;
     }
-    if (PyObject_RichCompareBool(_get_negative_cache_version(impl),
-                                 abc_invalidation_counter, Py_LT) > 0) {
+    int r = PyObject_RichCompareBool(_get_negative_cache_version(impl),
+                                     abc_invalidation_counter, Py_LT);
+    assert(r >= 0);  // Both should be PyLong
+    if (r > 0) {
         /* Invalidate the negative cache. */
         if (_reset_negative_cache(impl) < 0) {
             goto end;
@@ -819,7 +830,11 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     mro = ((PyTypeObject *)subclass)->tp_mro;
     assert(PyTuple_Check(mro));
     for (pos = 0; pos < PyTuple_Size(mro); pos++) {
-        if ((PyObject *)self == PyTuple_GetItem(mro, pos)) {
+        PyObject *mro_item = PyTuple_GetItem(mro, pos);
+        if (mro_item == NULL) {
+            goto end;
+        }
+        if ((PyObject *)self == mro_item) {
             if (_add_to_cache(impl, subclass) < 0) {
                 goto end;
             }
