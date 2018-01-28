@@ -181,7 +181,7 @@ class TestPy2MigrationHint(unittest.TestCase):
             exec(python2_print_str)
 
         self.assertIn('print(i)', str(context.exception))
-    
+
     def test_stream_redirection_hint_for_py2_migration(self):
         # Test correct hint produced for Py2 redirection syntax
         with self.assertRaises(TypeError) as context:
