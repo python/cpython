@@ -1,6 +1,9 @@
 # Copyright 2007 Google, Inc. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
 
+# Note: each test is run with _Py_ABCMeta and _C_ABCMeta, except for two tests, where we
+# need to "sync" with actual abc.ABCMeta, these tests check get_cache_token and ABC helper.
+
 """Unit tests for abc.py."""
 
 import unittest
