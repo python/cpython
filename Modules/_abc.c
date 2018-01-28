@@ -646,6 +646,7 @@ compute_abstract_methods(PyObject *self)
             goto error;
         }
         Py_DECREF(key);
+        Py_DECREF(it);
     }
 
     /* Stage 2: inherited abstract methods. */
@@ -673,7 +674,7 @@ compute_abstract_methods(PyObject *self)
             Py_DECREF(base_abstracts);
             goto error;
         }
-
+        Py_DECREF(base_abstracts);
         PyObject *key, *value;
         while ((key = PyIter_Next(iter))) {
             if (_PyObject_LookupAttr(self, key, &value) < 0) {
