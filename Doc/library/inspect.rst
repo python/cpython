@@ -605,10 +605,10 @@ function.
       :class:`Parameter` objects.  Parameters appear in strict definition
       order, including keyword-only parameters.
 
-      .. versionchanged:: 3.6
-         Preservation of declaration order was only explicitly guaranteed
-         as of Python 3.6, although it was preserved in all previous versions
-         of Python 3.
+      .. versionchanged:: 3.7
+         Python only explicitly guaranteed that it preserved the declaration
+         order of keyword-only parameters as of version 3.7, although in practice
+         this order had always been preserved in Python 3.
 
    .. attribute:: Signature.return_annotation
 
@@ -925,9 +925,12 @@ Classes and functions
       :func:`signature` in Python 3.5, but that decision has been reversed
       in order to restore a clearly supported standard interface for
       single-source Python 2/3 code migrating away from the legacy
-      :func:`getargspec` API.  Also, preservation of declaration order
-      was only explicitly guaranteed as of Python 3.6, although it was
-      preserved in all previous versions of Python 3.
+      :func:`getargspec` API.
+
+   .. versionchanged:: 3.7
+      Python only explicitly guaranteed that it preserved the declaration
+      order of keyword-only parameters as of version 3.7, although in practice
+      this order had always been preserved in Python 3.
 
 
 .. function:: getargvalues(frame)
