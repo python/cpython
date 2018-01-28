@@ -393,12 +393,10 @@ _get_dump(PyObject *m, PyObject *args)
     Py_INCREF(impl->_abc_negative_cache_version); /* PyTuple_Packdoesn't do this. */
     PyObject *res = PyTuple_Pack(4,
             registry, cache, negative_cache, impl->_abc_negative_cache_version);
-    if (res == NULL) {
-        Py_DECREF(registry);
-        Py_DECREF(cache);
-        Py_DECREF(negative_cache);
-        Py_DECREF(impl->_abc_negative_cache_version);
-    }
+    Py_DECREF(registry);
+    Py_DECREF(cache);
+    Py_DECREF(negative_cache);
+    Py_DECREF(impl->_abc_negative_cache_version);
     Py_DECREF(impl);
     return res;
 }
