@@ -3431,8 +3431,8 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise pread \
- pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
+ posix_fallocate posix_fadvise pread preadv preadv2 \
+ pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \

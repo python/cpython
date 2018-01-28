@@ -11038,7 +11038,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-    assert(_PyUnicode_HASH(right_uni) != 1);
+    assert(_PyUnicode_HASH(right_uni) != -1);
     hash = _PyUnicode_HASH(left);
     if (hash != -1 && hash != _PyUnicode_HASH(right_uni))
         return 0;
@@ -11609,6 +11609,25 @@ unicode_index(PyObject *self, PyObject *args)
     }
 
     return PyLong_FromSsize_t(result);
+}
+
+/*[clinic input]
+str.isascii as unicode_isascii
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+[clinic start generated code]*/
+
+static PyObject *
+unicode_isascii_impl(PyObject *self)
+/*[clinic end generated code: output=c5910d64b5a8003f input=5a43cbc6399621d5]*/
+{
+    if (PyUnicode_READY(self) == -1) {
+        return NULL;
+    }
+    return PyBool_FromLong(PyUnicode_IS_ASCII(self));
 }
 
 /*[clinic input]
@@ -13801,6 +13820,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_UPPER_METHODDEF
     {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
     {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    UNICODE_ISASCII_METHODDEF
     UNICODE_ISLOWER_METHODDEF
     UNICODE_ISUPPER_METHODDEF
     UNICODE_ISTITLE_METHODDEF
