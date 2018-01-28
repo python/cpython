@@ -63,45 +63,15 @@ PyDoc_STRVAR(guarded_set_doc,
 Used by ABC machinery.");
 
 static PyTypeObject _guarded_set_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_guarded_set",                     /*tp_name*/
     sizeof(_guarded_set),               /*tp_size*/
-    0,                                  /*tp_itemsize*/
-    (destructor)gset_dealloc,           /*tp_dealloc*/
-    0,                                  /*tp_print*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    0,                                  /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    0,                                  /*tp_doc*/
-    0,                                  /*tp_traverse*/
-    0,                                  /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    offsetof(_guarded_set, in_weakreflist), /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    0,                                  /*tp_methods*/
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
-    gset_new                            /* tp_new */
-    };
+    .tp_dealloc = (destructor)gset_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_weaklistoffset = offsetof(_guarded_set, in_weakreflist),
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = gset_new,
+};
 
 /* This object stores internal state for ABCs.
    Note that we can use normal sets for caches,
@@ -155,41 +125,10 @@ static PyTypeObject _abc_data_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_abc_data",                        /*tp_name*/
     sizeof(_abc_data),                  /*tp_size*/
-    0,                                  /*tp_itemsize*/
-    (destructor)abc_data_dealloc,       /*tp_dealloc*/
-    0,                                  /*tp_print*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    0,                                  /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    0,                                  /*tp_doc*/
-    0,                                  /*tp_traverse*/
-    0,                                  /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    0,                                  /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    0,                                  /*tp_methods*/
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
-    abc_data_new                        /* tp_new */
+    .tp_dealloc = (destructor)abc_data_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = abc_data_new,
 };
 
 static int
