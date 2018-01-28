@@ -143,7 +143,8 @@ class ABCMeta(type):
     # negative cache to be cleared before its next use.
     # Note: this counter is private. Use `abc.get_cache_token()` for
     #       external code.
-    _abc_invalidation_counter = 0
+    if not _C_speedup:
+        _abc_invalidation_counter = 0
 
     def __new__(mcls, name, bases, namespace, **kwargs):
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)

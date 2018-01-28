@@ -38,7 +38,6 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             continue
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = _get_dump(obj)[0]
-            _reset_caches(obj)
 
     # bpo-31217: Integer pool to get a single integer object for the same
     # value. The pool is used to prevent false alarm when checking for memory
@@ -141,7 +140,6 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
             for ref in abcs.get(obj, set()):
                 if ref() is not None:
                     obj.register(ref())
-            # _reset_caches(obj)
 
     clear_caches()
 
