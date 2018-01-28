@@ -121,7 +121,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (negative_cache == NULL) {
         Py_DECREF(registry);
         Py_DECREF(cache);
-        goto error;
+        return NULL;
     }
 
     _abc_data *self = (_abc_data *) type->tp_alloc(type, 0);
@@ -175,7 +175,7 @@ static int
 _in_weak_set(PyObject *set, PyObject *obj)
 {
     PyObject *ref = PyWeakref_NewRef(obj, NULL);
-    if (!ref) {
+    if (ref == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Clear();
             return 0;
@@ -244,7 +244,7 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
     PyObject *ref, *wr;
     PyObject *destroy_cb;
     wr = PyWeakref_NewRef(set, NULL);
-    if (!wr) {
+    if (wr == NULL) {
         return -1;
     }
     if (guarded) {
@@ -254,7 +254,7 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
     }
     ref = PyWeakref_NewRef(obj, destroy_cb);
     Py_DECREF(destroy_cb);
-    if (!ref) {
+    if (ref == NULL) {
         Py_DECREF(wr);
         return -1;
     }
@@ -297,9 +297,10 @@ _exit_iter(_guarded_set *gs)
             Py_DECREF(ref);
             return -1;
         }
+        Py_DECREF(ref);
     }
     return PyList_SetSlice(gs->pending,
-        0, PyList_GET_SIZE(gs->pending), NULL);
+                           0, PyList_GET_SIZE(gs->pending), NULL);
 }
 
 PyDoc_STRVAR(_reset_registry_doc,
@@ -647,7 +648,7 @@ _abc_instancecheck(PyObject *m, PyObject *args)
             if (incache < 0) {
                 goto end;
             }
-            if (incache) {
+            if (incache > 0) {
                 result = Py_False;
                 Py_INCREF(result);
                 goto end;
@@ -658,7 +659,7 @@ _abc_instancecheck(PyObject *m, PyObject *args)
         goto end;
     }
     result = PyObject_CallMethod(self, "__subclasscheck__", "O", subclass);
-    if (!result || result == Py_True) {
+    if (result == NULL || result == Py_True) {
         goto end;
     }
     Py_DECREF(result);
@@ -717,14 +718,14 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
            then carefully DECREF the old one. */
         Py_INCREF(abc_invalidation_counter);
         Py_SETREF(impl->_abc_negative_cache_version, abc_invalidation_counter);
-    } else if (incache) {
+    } else if (incache > 0) {
         result = Py_False;
         goto end;
     }
 
     /* 3. Check the subclass hook. */
     ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
-    if (!ok) {
+    if (ok == NULL) {
         goto end;
     }
     if (ok == Py_True) {
@@ -828,9 +829,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
 end:
     Py_XDECREF(impl);
     Py_XDECREF(subclasses);
-    if (result != NULL) {
-        Py_INCREF(result);
-    }
+    Py_XINCREF(result);
     return result;
 }
 
