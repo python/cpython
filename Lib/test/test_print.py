@@ -165,6 +165,9 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn('print("Hello World")', str(context.exception))
 
+    # bpo-32685: Suggestions for print statement should be proper when
+    # it is in the same line as the header of a compound statement
+    # and/or followed by a semicolon
     def test_string_with_semicolon(self):
         python2_print_str = 'print p;'
         with self.assertRaises(SyntaxError) as context:
