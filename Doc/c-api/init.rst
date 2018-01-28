@@ -1030,7 +1030,7 @@ in previous versions.
 .. c:var:: int PyTrace_RETURN
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a
-   call is returning without propagating an exception.
+   call is about to return.
 
 
 .. c:var:: int PyTrace_C_CALL
