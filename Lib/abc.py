@@ -11,18 +11,19 @@ def get_cache_token():
     current version of the ABC cache for virtual subclasses. The token changes
     with every call to ``register()`` on any ABC.
     """
-    return ABCMeta._abc_invalidation_counter
+    return _Py_ABCMeta._abc_invalidation_counter
+
+
+from _weakrefset import WeakSet  # Used by legacy _Py_ABCMeta
 
 
 _C_speedup = False
-
 try:
     from _abc import (get_cache_token, _abc_init, _abc_register,
                       _abc_instancecheck, _abc_subclasscheck, _get_dump,
                       _reset_registry, _reset_caches)
 except ImportError:
-    # We postpone this import to speed-up Python start-up time
-    from _weakrefset import WeakSet
+    pass
 else:
     _C_speedup = True
 
@@ -161,7 +162,7 @@ class _Py_ABCMeta(type):
         cls._abc_registry = WeakSet()
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
-        cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+        cls._abc_negative_cache_version = _Py_ABCMeta._abc_invalidation_counter
         return cls
 
     def register(cls, subclass):
@@ -179,7 +180,7 @@ class _Py_ABCMeta(type):
             # This would create a cycle, which is bad for the algorithm below
             raise RuntimeError("Refusing to create an inheritance cycle")
         cls._abc_registry.add(subclass)
-        ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
+        _Py_ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
         return subclass
 
     def _dump_registry(cls, file=None):
@@ -211,7 +212,7 @@ class _Py_ABCMeta(type):
         subtype = type(instance)
         if subtype is subclass:
             if (cls._abc_negative_cache_version ==
-                ABCMeta._abc_invalidation_counter and
+                _Py_ABCMeta._abc_invalidation_counter and
                 subclass in cls._abc_negative_cache):
                 return False
             # Fall back to the subclass check.
@@ -224,10 +225,10 @@ class _Py_ABCMeta(type):
         if subclass in cls._abc_cache:
             return True
         # Check negative cache; may have to invalidate
-        if cls._abc_negative_cache_version < ABCMeta._abc_invalidation_counter:
+        if cls._abc_negative_cache_version < _Py_ABCMeta._abc_invalidation_counter:
             # Invalidate the negative cache
             cls._abc_negative_cache = WeakSet()
-            cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+            cls._abc_negative_cache_version = _Py_ABCMeta._abc_invalidation_counter
         elif subclass in cls._abc_negative_cache:
             return False
         # Check the subclass hook
@@ -305,8 +306,10 @@ if _C_speedup:
 else:
     ABCMeta = _Py_ABCMeta
 
-ABCMeta.__doc__ = _Py_ABCMeta.__doc__
-ABCMeta.__name__ = ABCMeta.__qualname__ = 'ABCMeta'
+_C_ABCMeta.__doc__ = _Py_ABCMeta.__doc__
+
+_C_ABCMeta.__name__ = _C_ABCMeta.__qualname__ = 'ABCMeta'
+_Py_ABCMeta.__name__ = _Py_ABCMeta.__qualname__ = 'ABCMeta'
 
 
 class ABC(metaclass=ABCMeta):
