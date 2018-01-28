@@ -776,7 +776,7 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
     assert(PyTuple_Check(map));
     assert(PyDict_Check(dict));
     assert(PyTuple_Size(map) >= nmap);
-    for (j = nmap; --j >= 0; ) {
+    for (j=0; j < nmap; j++) {
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = values[j];
         assert(PyUnicode_Check(key));
@@ -829,7 +829,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
     assert(PyTuple_Check(map));
     assert(PyDict_Check(dict));
     assert(PyTuple_Size(map) >= nmap);
-    for (j = nmap; --j >= 0; ) {
+    for (j=0; j < nmap; j++) {
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = PyObject_GetItem(dict, key);
         assert(PyUnicode_Check(key));
