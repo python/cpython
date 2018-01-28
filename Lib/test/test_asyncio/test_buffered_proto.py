@@ -6,11 +6,11 @@ from test.test_asyncio import functional as func_tests
 
 class ReceiveStuffProto(asyncio.BufferedProtocol):
     def __init__(self, cb, con_lost_fut):
-        self.buffer = bytearray(100)
         self.cb = cb
         self.con_lost_fut = con_lost_fut
 
     def get_buffer(self):
+        self.buffer = bytearray(100)
         return self.buffer
 
     def buffer_updated(self, nbytes):
