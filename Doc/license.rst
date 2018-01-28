@@ -571,7 +571,7 @@ The :mod:`test_epoll` contains the following notice::
 Select kqueue
 -------------
 
-The :mod:`select` and contains the following notice for the kqueue interface::
+The :mod:`select` contains the following notice for the kqueue interface::
 
   Copyright (c) 2000 Doug White, 2006 James Knight, 2007 Christian Heimes
   All rights reserved.
