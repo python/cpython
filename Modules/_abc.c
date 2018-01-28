@@ -36,12 +36,8 @@ typedef struct {
 static void
 gset_dealloc(_guarded_set *self)
 {
-    if (self->data != NULL) {
-        PySet_Clear(self->data);
-    }
-    if (self->pending != NULL) {
-        PyList_Type.tp_dealloc(self->pending);
-    }
+    Py_DECREF(self->data);
+    Py_DECREF(self->pending);
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
     }
@@ -119,15 +115,10 @@ typedef struct {
 static void
 abc_data_dealloc(_abc_data *self)
 {
-    if (self->_abc_registry != NULL) {
-        gset_dealloc(self->_abc_registry);
-    }
-    if (self->_abc_cache != NULL) {
-        PySet_Clear(self->_abc_cache);
-    }
-    if (self->_abc_negative_cache != NULL) {
-        PySet_Clear(self->_abc_negative_cache);
-    }
+    Py_DECREF(self->_abc_registry);
+    Py_DECREF(self->_abc_cache);
+    Py_DECREF(self->_abc_negative_cache);
+    Py_DECREF(self->_abc_negative_cache_version);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -327,6 +318,7 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
         destroy_cb = PyCFunction_NewEx(&_destroy_def, wr, NULL);
     }
     ref = PyWeakref_NewRef(obj, destroy_cb);
+    Py_DECREF(destroy_cb);
     if (!ref) {
         Py_DECREF(wr);
         return 0;
@@ -741,6 +733,7 @@ _abc_init(PyObject *m, PyObject *args)
     if (_PyObject_SetAttrId(self, &PyId__abc_impl, data) < 0) {
         return NULL;
     }
+    Py_DECREF(data);
     Py_RETURN_NONE;
 }
 
