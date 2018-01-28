@@ -46,13 +46,20 @@ gset_dealloc(_guarded_set *self)
 static PyObject *
 gset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _guarded_set *self;
-
-    self = (_guarded_set *) type->tp_alloc(type, 0);
+    PyObject *data = PySet_New(NULL);
+    if (data == NULL) {
+        return NULL;
+    }
+    PyObject *pending = PyList_New(0);
+    if (pending == NULL) {
+        Py_DECREF(data);
+        return NULL;
+    }
+    _guarded_set *self = (_guarded_set *) type->tp_alloc(type, 0);
     if (self != NULL) {
         self->iterating = 0;
-        self->data = PySet_New(NULL);
-        self->pending = PyList_New(0);
+        self->data = data;
+        self->pending = pending;
         self->in_weakreflist = NULL;
     }
     return (PyObject *) self;
@@ -97,25 +104,31 @@ abc_data_dealloc(_abc_data *self)
 static PyObject *
 abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _abc_data *self;
-    PyObject *registry;
-
-    self = (_abc_data *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        registry = gset_new(&_guarded_set_type, NULL, NULL);
-        if (!registry) {
-            return NULL;
-        }
-        self->_abc_registry = (_guarded_set *)registry;
-        self->_abc_cache = PySet_New(NULL);
-        self->_abc_negative_cache = PySet_New(NULL);
-        if (!self->_abc_cache || !self->_abc_negative_cache) {
-            return NULL;
-        }
-        self->_abc_negative_cache_version = abc_invalidation_counter;
-        Py_INCREF(abc_invalidation_counter);
+    PyObject *registry = NULL, *cache = NULL, *negative_cache = NULL;
+    registry = gset_new(&_guarded_set_type, NULL, NULL);
+    cache = PySet_New(NULL);
+    negative_cache = PySet_New(NULL);
+    if (!registry || !cache || !negative_cache) {
+        goto error;
     }
+
+    _abc_data *self = (_abc_data *) type->tp_alloc(type, 0);
+    if (self == NULL) {
+        goto error;
+    }
+
+    self->_abc_registry = (_guarded_set *)registry;
+    self->_abc_cache = cache;
+    self->_abc_negative_cache = negative_cache;
+    self->_abc_negative_cache_version = abc_invalidation_counter;
+    Py_INCREF(abc_invalidation_counter);
     return (PyObject *) self;
+
+error:
+    Py_CLEAR(registry);
+    Py_CLEAR(cache);
+    Py_CLEAR(negative_cache);
+    return NULL;
 }
 
 PyDoc_STRVAR(abc_data_doc,
