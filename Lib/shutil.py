@@ -513,6 +513,13 @@ rmtree.avoids_symlink_attacks = _use_fd_functions
 def _basename(path):
     # A basename() variant which first strips the trailing slash, if present.
     # Thus we always get the last component of the path, even for directories.
+    # e.g.
+    # >>> os.path.basename('/bar/foo')
+    # 'foo'
+    # >>> os.path.basename('/bar/foo/')
+    # ''
+    # >>> _basename('/bar/foo/')
+    # 'foo'
     sep = os.path.sep + (os.path.altsep or '')
     return os.path.basename(path.rstrip(sep))
 
@@ -550,7 +557,12 @@ def move(src, dst, copy_function=copy2):
             os.rename(src, dst)
             return
 
-        real_dst = os.path.join(dst, _basename(src))
+        # Using _basename instead of os.path.basename is important, as we must
+        # ignore any trailing slash to avoid the basename returning ''
+        # Forcing src to a string allows flexibility of objects being passed in,
+        # including Path objects
+        real_dst = os.path.join(dst, _basename(str(src)))
+
         if os.path.exists(real_dst):
             raise Error("Destination path '%s' already exists" % real_dst)
     try:
