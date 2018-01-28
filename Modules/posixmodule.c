@@ -394,6 +394,10 @@ static int win32_can_symlink = 0;
 #define MODNAME "posix"
 #endif
 
+#if defined(__sun)
+/* Something to implement in autoconf, not present in autoconf 2.69 */
+#define HAVE_STRUCT_STAT_ST_FSTYPE 1
+#endif
 
 #ifdef HAVE_FORK
 static void
@@ -1789,6 +1793,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     {"st_file_attributes", "Windows file attribute bits"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_FSTYPE
+    {"st_fstype",  "Type of filesystem"},
+#endif
     {0}
 };
 
@@ -1832,6 +1839,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_FILE_ATTRIBUTES_IDX (ST_BIRTHTIME_IDX+1)
 #else
 #define ST_FILE_ATTRIBUTES_IDX ST_BIRTHTIME_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_FSTYPE
+#define ST_FSTYPE_IDX (ST_FILE_ATTRIBUTES_IDX+1)
+#else
+#define ST_FSTYPE_IDX ST_FILE_ATTRIBUTES_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2056,6 +2069,10 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
                               PyLong_FromUnsignedLong(st->st_file_attributes));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_FSTYPE
+   PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
+                              PyUnicode_FromString(st->st_fstype));
 #endif
 
     if (PyErr_Occurred()) {
