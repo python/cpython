@@ -90,7 +90,7 @@ def get_semaphore_tracker_args(argv):
     if len(argv) < 2 or argv[1] != '--multiprocessing-semaphore-tracker':
         return None
 
-    # command ends with main(fd) - extract fd
+    # command ends with main(fd) - extract the fd.
     r = int(argv[-1].rsplit('(')[1].split(')')[0])
 
     args = [r]
@@ -108,10 +108,8 @@ def get_forkserver_args(argv):
         return None
 
     # command ends with main(listener_fd, alive_r, preload, **kwds) - extract
-    # the args and kwarfs
-    # listener_fd and alive_r are integers
-    # preload is a list
-    # kwds map strings to lists
+    # the args and kwargs. listener_fd and alive_r are integers.
+    # preload is a list. The kwds map strings to lists.
     parsed = ast.parse(argv[-1])
     args = [ast.literal_eval(parsed.body[1].value.args[i]) for i in range(3)]
     kwds = ast.literal_eval(parsed.body[1].value.keywords[0].value)
