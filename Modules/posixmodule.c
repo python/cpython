@@ -5143,6 +5143,8 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     posix_spawn_file_actions_t *file_actionsp = NULL;
     Py_ssize_t argc, envc;
     PyObject* result = NULL;
+    PyObject* seq = NULL;
+ 
 
     /* posix_spawn has three arguments: (path, argv, env), where
    argv is a list or tuple of strings and env is a dictionary
@@ -5192,7 +5194,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         file_actionsp = &_file_actions;
 
 
-        PyObject* seq = PySequence_Fast(file_actions, "file_actions must be a sequence");
+        seq = PySequence_Fast(file_actions, "file_actions must be a sequence");
         if(seq == NULL){
             goto exit;
         }
@@ -5285,7 +5287,6 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     goto exit;
             }
         }
-        Py_DECREF(seq);
     }
 
     _Py_BEGIN_SUPPRESS_IPH
@@ -5297,6 +5298,8 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     result = PyLong_FromPid(pid);
 
 exit:
+
+    Py_XDECREF(seq);
 
     if(file_actionsp && posix_spawn_file_actions_destroy(file_actionsp)) {
         PyErr_SetString(PyExc_OSError,"Error cleaning file actions object");
