@@ -451,7 +451,7 @@ Streaming protocols with manual receive buffer control
 
 .. versionadded:: 3.7
    **Important:** :class:`BufferedProtocol` has been been added to
-   asyncio in Python 3.7 *on a provisional basis*!  Treat it as an
+   asyncio in Python 3.7 *on a provisional basis*!  Consider it as an
    experimental API that might be changed or removed in Python 3.8.
 
 
@@ -487,7 +487,8 @@ instances:
 
 :meth:`get_buffer` can be called an arbitrary number of times during
 a connection.  However, :meth:`eof_received` is called at most once
-and, if called, :meth:`data_received` won't be called after it.
+and, if called, :meth:`get_buffer` and :meth:`buffer_updated`
+won't be called after it.
 
 State machine:
 
