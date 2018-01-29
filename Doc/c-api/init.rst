@@ -818,7 +818,8 @@ code, or when embedding the Python interpreter:
    This is a no-op when called for a second time.
 
    .. versionchanged:: 3.7
-      The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
+      This function is now called by :c:func:`Py_Initialize()`, so you don't
+      have to call it yourself anymore.
 
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
