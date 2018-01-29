@@ -198,9 +198,6 @@ class EmbeddingTests(unittest.TestCase):
         self.assertEqual(out, '')
         self.assertEqual(err, '')
 
-    @unittest.skipIf(True,
-                     "FIXME: test fails randomly because of a race conditon, "
-                     "see bpo-20891")
     def test_bpo20891(self):
         """
         bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
