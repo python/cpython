@@ -5185,7 +5185,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     if (file_actions  != NULL && file_actions != Py_None){
         posix_spawn_file_actions_t _file_actions;
         if(posix_spawn_file_actions_init(&_file_actions) != 0){
-            PyErr_SetString(PyExc_TypeError,
+            PyErr_SetString(PyExc_OSError,
                             "Error initializing file actions");
             goto exit;
         }
