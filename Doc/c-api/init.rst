@@ -687,15 +687,14 @@ This is so common that a pair of macros exists to simplify it::
 
 The :c:macro:`Py_BEGIN_ALLOW_THREADS` macro opens a new block and declares a
 hidden local variable; the :c:macro:`Py_END_ALLOW_THREADS` macro closes the
-block.  These two macros are still available when Python is compiled without
-thread support (they simply have an empty expansion).
+block.
 
-When thread support is enabled, the block above expands to the following code::
+The block above expands to the following code::
 
    PyThreadState *_save;
 
    _save = PyEval_SaveThread();
-   ...Do some blocking I/O operation...
+   ... Do some blocking I/O operation ...
    PyEval_RestoreThread(_save);
 
 .. index::
@@ -818,36 +817,24 @@ code, or when embedding the Python interpreter:
 
    This is a no-op when called for a second time.
 
+   .. versionchanged:: 3.7
+      This function is now called by :c:func:`Py_Initialize()`, so you don't
+      have to call it yourself anymore.
+
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
 
    .. index:: module: _thread
-
-   .. note::
-
-      When only the main thread exists, no GIL operations are needed. This is a
-      common situation (most Python programs do not use threads), and the lock
-      operations slow the interpreter down a bit. Therefore, the lock is not
-      created initially.  This situation is equivalent to having acquired the lock:
-      when there is only a single thread, all object accesses are safe.  Therefore,
-      when this function initializes the global interpreter lock, it also acquires
-      it.  Before the Python :mod:`_thread` module creates a new thread, knowing
-      that either it has the lock or the lock hasn't been created yet, it calls
-      :c:func:`PyEval_InitThreads`.  When this call returns, it is guaranteed that
-      the lock has been created and that the calling thread has acquired it.
-
-      It is **not** safe to call this function when it is unknown which thread (if
-      any) currently has the global interpreter lock.
-
-      This function is not available when thread support is disabled at compile time.
 
 
 .. c:function:: int PyEval_ThreadsInitialized()
 
    Returns a non-zero value if :c:func:`PyEval_InitThreads` has been called.  This
    function can be called without holding the GIL, and therefore can be used to
-   avoid calls to the locking API when running single-threaded.  This function is
-   not available when thread support is disabled at compile time.
+   avoid calls to the locking API when running single-threaded.
+
+   .. versionchanged:: 3.7
+      The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
@@ -855,8 +842,7 @@ code, or when embedding the Python interpreter:
    Release the global interpreter lock (if it has been created and thread
    support is enabled) and reset the thread state to *NULL*, returning the
    previous thread state (which is not *NULL*).  If the lock has been created,
-   the current thread must have acquired it.  (This function is available even
-   when thread support is disabled at compile time.)
+   the current thread must have acquired it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
@@ -864,8 +850,7 @@ code, or when embedding the Python interpreter:
    Acquire the global interpreter lock (if it has been created and thread
    support is enabled) and set the thread state to *tstate*, which must not be
    *NULL*.  If the lock has been created, the current thread must not have
-   acquired it, otherwise deadlock ensues.  (This function is available even
-   when thread support is disabled at compile time.)
+   acquired it, otherwise deadlock ensues.
 
 
 .. c:function:: PyThreadState* PyThreadState_Get()
@@ -957,7 +942,7 @@ example usage in the Python source distribution.
    This macro expands to ``{ PyThreadState *_save; _save = PyEval_SaveThread();``.
    Note that it contains an opening brace; it must be matched with a following
    :c:macro:`Py_END_ALLOW_THREADS` macro.  See above for further discussion of this
-   macro.  It is a no-op when thread support is disabled at compile time.
+   macro.
 
 
 .. c:macro:: Py_END_ALLOW_THREADS
@@ -965,29 +950,29 @@ example usage in the Python source distribution.
    This macro expands to ``PyEval_RestoreThread(_save); }``. Note that it contains
    a closing brace; it must be matched with an earlier
    :c:macro:`Py_BEGIN_ALLOW_THREADS` macro.  See above for further discussion of
-   this macro.  It is a no-op when thread support is disabled at compile time.
+   this macro.
 
 
 .. c:macro:: Py_BLOCK_THREADS
 
    This macro expands to ``PyEval_RestoreThread(_save);``: it is equivalent to
-   :c:macro:`Py_END_ALLOW_THREADS` without the closing brace.  It is a no-op when
-   thread support is disabled at compile time.
+   :c:macro:`Py_END_ALLOW_THREADS` without the closing brace.
 
 
 .. c:macro:: Py_UNBLOCK_THREADS
 
    This macro expands to ``_save = PyEval_SaveThread();``: it is equivalent to
    :c:macro:`Py_BEGIN_ALLOW_THREADS` without the opening brace and variable
-   declaration.  It is a no-op when thread support is disabled at compile time.
+   declaration.
 
 
 Low-level API
 -------------
 
-All of the following functions are only available when thread support is enabled
-at compile time, and must be called only when the global interpreter lock has
-been created.
+All of the following functions must be called after :c:func:`Py_Initialize`.
+
+.. versionchanged:: 3.7
+   :c:func:`Py_Initialize()` now initializes the :term:`GIL`.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_New()
@@ -1068,8 +1053,7 @@ been created.
    If this thread already has the lock, deadlock ensues.
 
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
-   available (even when thread support isn't enabled or when threads have
-   not been initialized).
+   available (even when threads have not been initialized).
 
 
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
@@ -1081,8 +1065,7 @@ been created.
    reported.
 
    :c:func:`PyEval_SaveThread` is a higher-level function which is always
-   available (even when thread support isn't enabled or when threads have
-   not been initialized).
+   available (even when threads have not been initialized).
 
 
 .. c:function:: void PyEval_AcquireLock()
