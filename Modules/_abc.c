@@ -25,71 +25,12 @@ _Py_IDENTIFIER(__subclasshook__);
    external code. */
 static PyObject *abc_invalidation_counter;
 
-typedef struct {
-    PyObject_HEAD
-    Py_ssize_t iterating;
-    PyObject *data; /* The actual set of weak references. */
-    PyObject *pending; /* Pending removals collected during iteration. */
-    PyObject *in_weakreflist;
-} _guarded_set;
-
-static void
-gset_dealloc(_guarded_set *self)
-{
-    Py_DECREF(self->data);
-    Py_DECREF(self->pending);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
-    }
-    Py_TYPE(self)->tp_free(self);
-}
-
-static PyObject *
-gset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *data = PySet_New(NULL);
-    if (data == NULL) {
-        return NULL;
-    }
-    PyObject *pending = PyList_New(0);
-    if (pending == NULL) {
-        Py_DECREF(data);
-        return NULL;
-    }
-    _guarded_set *self = (_guarded_set *) type->tp_alloc(type, 0);
-    if (self == NULL) {
-        Py_DECREF(data);
-        Py_DECREF(pending);
-        return NULL;
-    }
-    self->iterating = 0;
-    self->data = data;
-    self->pending = pending;
-    self->in_weakreflist = NULL;
-    return (PyObject *) self;
-}
-
-PyDoc_STRVAR(guarded_set_doc,
-"Internal weak set guarded against deletion during iteration.\n\
-Used by ABC machinery.");
-
-static PyTypeObject _guarded_set_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_guarded_set",                     /*tp_name*/
-    sizeof(_guarded_set),               /*tp_size*/
-    .tp_dealloc = (destructor)gset_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_weaklistoffset = offsetof(_guarded_set, in_weakreflist),
-    .tp_alloc = PyType_GenericAlloc,
-    .tp_new = gset_new,
-};
-
 /* This object stores internal state for ABCs.
    Note that we can use normal sets for caches,
    since they are never iterated over. */
 typedef struct {
     PyObject_HEAD
-    _guarded_set *_abc_registry;
+    PyObject *_abc_registry;
     PyObject *_abc_cache; /* Normal set of weak references. */
     PyObject *_abc_negative_cache; /* Normal set of weak references. */
     PyObject *_abc_negative_cache_version;
@@ -109,7 +50,7 @@ static PyObject *
 abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *registry = NULL, *cache = NULL, *negative_cache = NULL;
-    registry = gset_new(&_guarded_set_type, NULL, NULL);
+    registry = PySet_New(NULL);
     if (registry == NULL) {
         return NULL;
     }
@@ -130,7 +71,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    self->_abc_registry = (_guarded_set *)registry;
+    self->_abc_registry = registry;
     self->_abc_cache = cache;
     self->_abc_negative_cache = negative_cache;
     self->_abc_negative_cache_version = abc_invalidation_counter;
@@ -209,38 +150,8 @@ static PyMethodDef _destroy_def = {
     "_destroy", (PyCFunction) _destroy, METH_O
 };
 
-static PyObject *
-_destroy_guarded(PyObject *setweakref, PyObject *objweakref)
-{
-    PyObject *set;
-    _guarded_set *gset;
-    set = PyWeakref_GET_OBJECT(setweakref);
-    if (set == Py_None) {
-        Py_RETURN_NONE;
-    }
-    Py_INCREF(set);
-    gset = (_guarded_set *)set;
-    if (gset->iterating) {
-        if (PyList_Append(gset->pending, objweakref) < 0) {
-            Py_DECREF(set);
-            return NULL;
-        }
-    } else {
-        if (PySet_Discard(gset->data, objweakref) < 0) {
-            Py_DECREF(set);
-            return NULL;
-        }
-    }
-    Py_DECREF(set);
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef _destroy_guarded_def = {
-    "_destroy_guarded", (PyCFunction) _destroy_guarded, METH_O
-};
-
 static int
-_add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
+_add_to_weak_set(PyObject *set, PyObject *obj)
 {
     PyObject *ref, *wr;
     PyObject *destroy_cb;
@@ -248,19 +159,12 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
     if (wr == NULL) {
         return -1;
     }
-    if (guarded) {
-        destroy_cb = PyCFunction_NewEx(&_destroy_guarded_def, wr, NULL);
-    } else {
-        destroy_cb = PyCFunction_NewEx(&_destroy_def, wr, NULL);
-    }
+    destroy_cb = PyCFunction_NewEx(&_destroy_def, wr, NULL);
     ref = PyWeakref_NewRef(obj, destroy_cb);
     Py_DECREF(destroy_cb);
     if (ref == NULL) {
         Py_DECREF(wr);
         return -1;
-    }
-    if (guarded) {
-        set = ((_guarded_set *) set)->data;
     }
     int ret = PySet_Add(set, ref);
     Py_DECREF(wr);
@@ -268,36 +172,6 @@ _add_to_weak_set(PyObject *set, PyObject *obj, int guarded)
     return ret;
 }
 
-static void
-_enter_iter(_guarded_set *gs)
-{
-    gs->iterating++;
-}
-
-static int
-_exit_iter(_guarded_set *gs)
-{
-    gs->iterating--;
-    if (gs->iterating) {
-        return 0;
-    }
-
-    assert(PyList_CheckExact(gs->pending));
-    Py_ssize_t pos = PyList_GET_SIZE(gs->pending);
-    while (pos > 0) {
-        pos--;
-        PyObject *ref = PyList_GET_ITEM(gs->pending, pos);
-        Py_INCREF(Py_None);
-        PyList_SET_ITEM(gs->pending, pos, Py_None);
-        if (PySet_Discard(gs->data, ref) < 0) {
-            Py_DECREF(ref);
-            return -1;
-        }
-        Py_DECREF(ref);
-    }
-    return PyList_SetSlice(gs->pending,
-                           0, PyList_GET_SIZE(gs->pending), NULL);
-}
 
 PyDoc_STRVAR(_reset_registry_doc,
 "Internal ABC helper to reset registry of a given class.\n\
@@ -315,7 +189,7 @@ _reset_registry(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    if (PySet_Clear(impl->_abc_registry->data) < 0) {
+    if (PySet_Clear(impl->_abc_registry) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -372,7 +246,7 @@ _get_dump(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    registry = PySet_New(impl->_abc_registry->data);
+    registry = PySet_New(impl->_abc_registry);
     if (registry == NULL) {
         Py_DECREF(impl);
         return NULL;
@@ -587,7 +461,7 @@ _abc_register(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    if (_add_to_weak_set((PyObject *)(impl->_abc_registry), subclass, 1) < 0) {
+    if (_add_to_weak_set(impl->_abc_registry, subclass) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -675,6 +549,12 @@ end:
 }
 
 
+// Return -1 when exception occured.
+// Return 1 when result is set.
+// Return 0 otherwise.
+static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
+                                        PyObject **result);
+
 PyDoc_STRVAR(_abc_subclasscheck_doc,
 "Internal ABC helper for subclasss checks. Should be never used outside abc module");
 
@@ -682,7 +562,7 @@ static PyObject *
 _abc_subclasscheck(PyObject *m, PyObject *args)
 {
     PyObject *self, *subclasses = NULL, *subclass = NULL, *result = NULL;
-    PyObject *ok, *mro, *key, *rkey;
+    PyObject *ok, *mro;
     Py_ssize_t pos;
     int incache;
     if (!PyArg_UnpackTuple(args, "_abc_subclasscheck", 2, 2, &self, &subclass)) {
@@ -734,7 +614,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
     if (ok == Py_True) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(impl->_abc_cache, subclass, 0) < 0) {
+        if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
             goto end;
         }
         result = Py_True;
@@ -742,7 +622,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
     if (ok == Py_False) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(impl->_abc_negative_cache, subclass, 0) < 0) {
+        if (_add_to_weak_set(impl->_abc_negative_cache, subclass) < 0) {
             goto end;
         }
         result = Py_False;
@@ -765,7 +645,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
             goto end;
         }
         if ((PyObject *)self == mro_item) {
-            if (_add_to_weak_set(impl->_abc_cache, subclass, 0) < 0) {
+            if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
             result = Py_True;
@@ -774,33 +654,8 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
 
     /* 5. Check if it's a subclass of a registered class (recursive). */
-    pos = 0;
-    Py_hash_t hash;
-    _enter_iter(impl->_abc_registry);
-
-    while (_PySet_NextEntry(impl->_abc_registry->data, &pos, &key, &hash)) {
-        rkey = PyWeakref_GetObject(key);
-        if (rkey == Py_None) {
-            continue;
-        }
-        int r = PyObject_IsSubclass(subclass, rkey);
-        if (r < 0) {
-            _exit_iter(impl->_abc_registry);
-            goto end;
-        }
-        if (r > 0) {
-            if (_add_to_weak_set(impl->_abc_cache, subclass, 0) < 0) {
-                _exit_iter(impl->_abc_registry);
-                goto end;
-            }
-            if (_exit_iter(impl->_abc_registry) < 0) {
-                goto end;
-            }
-            result = Py_True;
-            goto end;
-        }
-    }
-    if (_exit_iter(impl->_abc_registry) < 0) {
+    if (subclasscheck_check_registry(impl, subclass, &result)) {
+        // Exception occured or result is set.
         goto end;
     }
 
@@ -813,7 +668,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
         int r = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
         if (r > 0) {
-            if (_add_to_weak_set(impl->_abc_cache, subclass, 0) < 0) {
+            if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
             result = Py_True;
@@ -825,7 +680,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
 
     /* No dice; update negative cache. */
-    if (_add_to_weak_set(impl->_abc_negative_cache, subclass, 0) < 0) {
+    if (_add_to_weak_set(impl->_abc_negative_cache, subclass) < 0) {
         goto end;
     }
     result = Py_False;
@@ -835,6 +690,62 @@ end:
     Py_XDECREF(subclasses);
     Py_XINCREF(result);
     return result;
+}
+
+
+static int
+subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
+                             PyObject **result)
+{
+    Py_ssize_t registry_size = PySet_Size(impl->_abc_registry);
+    if (registry_size == 0) {
+        return 0;
+    }
+
+    int ret = 0;
+
+    // Weakref callback may remove entry from set.
+    // Se we take snapshot of registry first.
+    PyObject **copy = PyMem_Malloc(sizeof(PyObject*) * registry_size);
+    PyObject *key;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
+    Py_ssize_t i = 0;
+
+    while (_PySet_NextEntry(impl->_abc_registry, &pos, &key, &hash)) {
+        Py_INCREF(key);
+        copy[i++] = key;
+    }
+    assert(i == registry_size);
+
+    for (i = 0; i < registry_size; i++) {
+        PyObject *rkey = PyWeakref_GetObject(copy[i]);
+        if (rkey == Py_None) {
+            continue;
+        }
+        Py_INCREF(rkey);
+        int r = PyObject_IsSubclass(subclass, rkey);
+        Py_DECREF(rkey);
+        if (r < 0) {
+            ret = -1;
+            break;
+        }
+        if (r > 0) {
+            if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
+                ret = -1;
+                break;
+            }
+            *result = Py_True;
+            ret = 1;
+            break;
+        }
+    }
+
+    for (i = 0; i < registry_size; i++) {
+        Py_DECREF(copy[i]);
+    }
+    PyMem_Free(copy);
+    return ret;
 }
 
 
@@ -892,11 +803,6 @@ PyInit__abc(void)
         return NULL;
     }
     _abc_data_type.tp_doc = abc_data_doc;
-
-    if (PyType_Ready(&_guarded_set_type) < 0) {
-        return NULL;
-    }
-    _guarded_set_type.tp_doc = guarded_set_doc;
 
     abc_invalidation_counter = PyLong_FromLong(0);
     return PyModule_Create(&_abcmodule);
