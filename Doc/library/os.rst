@@ -1092,6 +1092,64 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
+.. function:: preadv(fd, buffers, offset, flags=0)
+
+   Read from a file descriptor *fd* from offset *offset* into mutable
+   :term:`bytes-like objects <bytes-like object>` *buffers*. Transfer data into
+   each buffer until it is full and then move on to the next buffer in the
+   sequence to hold the rest of the data.
+
+   Return the total number of bytes read which can be less than the total
+   capacity of all the objects.
+
+   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+   - :data:`RWF_HIPRI`
+   - :data:`RWF_NOWAIT`
+
+   Using non-zero flags requires Linux 4.6 or newer.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Availability: Linux 2.6.30 abd newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_NOWAIT
+
+   Do not wait for data which is not immediately available. If this flag is
+   specified, the system call will return instantly if it would have to read
+   data from the backing storage or wait for a lock.
+
+   If some data was successfully read, it will return the number of bytes read.
+   If no bytes were read, it will return ``-1`` and set errno to
+   :data:`errno.EAGAIN`.
+
+   Availability: Linux 4.14 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_HIPRI
+
+   High priority read/write. Allows block-based filesystems to use polling
+   of the device, which provides lower latency, but may use additional
+   resources.
+
+   Currently, on Linux, this feature is usable only on a file descriptor opened
+   using the O_DIRECT flag.
+
+   Availability: Linux 4.6 and newer.
+
+   .. versionadded:: 3.7
+
+
 .. function:: pwrite(fd, str, offset)
 
    Write *bytestring* to a file descriptor, *fd*, from *offset*,
@@ -1242,64 +1300,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Availability: Unix.
 
    .. versionadded:: 3.3
-
-
-.. function:: preadv(fd, buffers, offset, flags=0)
-
-   Read from a file descriptor *fd* from offset *offset* into mutable
-   :term:`bytes-like objects <bytes-like object>` *buffers*. Transfer data into
-   each buffer until it is full and then move on to the next buffer in the
-   sequence to hold the rest of the data.
-
-   Return the total number of bytes read which can be less than the total
-   capacity of all the objects.
-
-   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
-
-   The flags argument contains a bitwise OR of zero or more of the following
-   flags:
-
-   - :data:`RWF_HIPRI`
-   - :data:`RWF_NOWAIT`
-
-   Using non-zero flags requires Linux 4.6 or newer.
-
-   The operating system may set a limit (:func:`sysconf` value
-   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
-
-   Availability: Linux 2.6.30 abd newer, FreeBSD 6.0 and newer,
-   OpenBSD 2.7 and newer.
-
-   .. versionadded:: 3.7
-
-
-.. data:: RWF_NOWAIT
-
-   Do not wait for data which is not immediately available. If this flag is
-   specified, the system call will return instantly if it would have to read
-   data from the backing storage or wait for a lock.
-
-   If some data was successfully read, it will return the number of bytes read.
-   If no bytes were read, it will return ``-1`` and set errno to
-   :data:`errno.EAGAIN`.
-
-   Availability: Linux 4.14 and newer.
-
-   .. versionadded:: 3.7
-
-
-.. data:: RWF_HIPRI
-
-   High priority read/write. Allows block-based filesystems to use polling
-   of the device, which provides lower latency, but may use additional
-   resources.
-
-   Currently, on Linux, this feature is usable only on a file descriptor opened
-   using the O_DIRECT flag.
-
-   Availability: Linux 4.6 and newer.
-
-   .. versionadded:: 3.7
 
 
 .. function:: tcgetpgrp(fd)
