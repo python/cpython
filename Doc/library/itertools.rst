@@ -366,8 +366,7 @@ loops that truncate the stream.
    Make an iterator that returns consecutive keys and groups from the *iterable*.
    The *key* is a function computing a key value for each element.  If not
    specified or is ``None``, *key* defaults to an identity function and returns
-   the element unchanged.  Generally, the iterable needs to already be sorted on
-   the same key function.
+   the element unchanged.  The iterable must be sorted on the same key function.
 
    The operation of :func:`groupby` is similar to the ``uniq`` filter in Unix.  It
    generates a break or new group every time the value of the key function changes

@@ -1,0 +1,2 @@
+The iterable for the itertools.groupby function must be sorted. Patch by
+Stéphane Wirtel
