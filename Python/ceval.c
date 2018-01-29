@@ -3525,7 +3525,6 @@ fast_yield:
                                 tstate, f,
                                 PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
-                /* why = WHY_EXCEPTION; */
             }
         }
     }
