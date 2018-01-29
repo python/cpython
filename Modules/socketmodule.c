@@ -102,7 +102,8 @@ Local naming conventions:
 
 /* Socket object documentation */
 PyDoc_STRVAR(sock_doc,
-"socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None) -> socket object\n\
+"socket(family=AF_INET, type=SOCK_STREAM, proto=0) -> socket object\n\
+socket(family=-1, type=-1, proto=-1, fileno=None) -> socket object\n\
 \n\
 Open a socket of the given type.  The family argument specifies the\n\
 address family; it defaults to AF_INET.  The type argument specifies\n\
@@ -110,6 +111,9 @@ whether this is a stream (SOCK_STREAM, this is the default)\n\
 or datagram (SOCK_DGRAM) socket.  The protocol argument defaults to 0,\n\
 specifying the default protocol.  Keyword arguments are accepted.\n\
 The socket is created as non-inheritable.\n\
+\n\
+When a fileno is passed in, family, type and proto are auto-detected,\n\
+unless they are explicitly set.\n\
 \n\
 A socket object represents one endpoint of a network connection.\n\
 \n\
@@ -4792,7 +4796,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
     PySocketSockObject *s = (PySocketSockObject *)self;
     PyObject *fdobj = NULL;
     SOCKET_T fd = INVALID_SOCKET;
-    int family = AF_INET, type = SOCK_STREAM, proto = 0;
+    int family = -1, type = -1, proto = -1;
     static char *keywords[] = {"family", "type", "proto", "fileno", 0};
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
@@ -4842,9 +4846,72 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                                 "can't use invalid socket value");
                 return -1;
             }
+
+            if (family == -1) {
+                sock_addr_t addrbuf;
+                socklen_t addrlen = sizeof(sock_addr_t);
+
+                memset(&addrbuf, 0, addrlen);
+                if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
+                    family = SAS2SA(&addrbuf)->sa_family;
+                } else {
+#ifdef MS_WINDOWS
+                    PyErr_SetFromWindowsErrWithFilename(0, "family");
+#else
+                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "family");
+#endif
+                    return -1;
+                }
+            }
+#ifdef SO_TYPE
+            if (type == -1) {
+                int tmp;
+                socklen_t slen = sizeof(tmp);
+                if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &tmp, &slen) == 0) {
+                    type = tmp;
+                } else {
+#ifdef MS_WINDOWS
+                    PyErr_SetFromWindowsErrWithFilename(0, "type");
+#else
+                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "type");
+#endif
+                    return -1;
+                }
+            }
+#else
+            type = SOCK_STREAM;
+#endif
+#ifdef SO_PROTOCOL
+            if (proto == -1) {
+                int tmp;
+                socklen_t slen = sizeof(tmp);
+                if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &tmp, &slen) == 0) {
+                    proto = tmp;
+                } else {
+#ifdef MS_WINDOWS
+                    PyErr_SetFromWindowsErrWithFilename(0, "protocol");
+#else
+                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "protocol");
+#endif
+                    return -1;
+                }
+            }
+#else
+            proto = 0;
+#endif
         }
     }
     else {
+        /* No fd, default to AF_INET and SOCK_STREAM */
+        if (family == -1) {
+            family = AF_INET;
+        }
+        if (type == -1) {
+            type = SOCK_STREAM;
+        }
+        if (proto == -1) {
+            proto = 0;
+        }
 #ifdef MS_WINDOWS
         /* Windows implementation */
 #ifndef WSA_FLAG_NO_HANDLE_INHERIT
