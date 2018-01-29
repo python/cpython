@@ -295,7 +295,7 @@ class ZipInfo (object):
         'filename',
         'date_time',
         'compress_type',
-        '_compress_level',
+        '_compresslevel',
         'comment',
         'extra',
         'create_system',
@@ -335,7 +335,7 @@ class ZipInfo (object):
 
         # Standard values:
         self.compress_type = ZIP_STORED # Type of compression for the file
-        self._compress_level = None      # Level for the compressor
+        self._compresslevel = None      # Level for the compressor
         self.comment = b""              # Comment for each file
         self.extra = b""                # ZIP extra data
         if sys.platform == 'win32':
@@ -656,16 +656,16 @@ def _check_compression(compression):
         raise NotImplementedError("That compression method is not supported")
 
 
-def _get_compressor(compress_type, compress_level=None):
+def _get_compressor(compress_type, compresslevel=None):
     if compress_type == ZIP_DEFLATED:
-        if compress_level is not None:
-            return zlib.compressobj(compress_level, zlib.DEFLATED, -15)
+        if compresslevel is not None:
+            return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
         return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
     elif compress_type == ZIP_BZIP2:
-        if compress_level is not None:
-            return bz2.BZ2Compressor(compress_level)
+        if compresslevel is not None:
+            return bz2.BZ2Compressor(compresslevel)
         return bz2.BZ2Compressor()
-    # compress_level is ignored for ZIP_LZMA
+    # compresslevel is ignored for ZIP_LZMA
     elif compress_type == ZIP_LZMA:
         return LZMACompressor()
     else:
@@ -970,7 +970,7 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._zip64 = zip64
         self._zipfile = zf
         self._compressor = _get_compressor(zinfo.compress_type,
-                                           zinfo._compress_level)
+                                           zinfo._compresslevel)
         self._file_size = 0
         self._compress_size = 0
         self._crc = 0
@@ -1357,7 +1357,7 @@ class ZipFile:
         elif mode == 'w':
             zinfo = ZipInfo(name)
             zinfo.compress_type = self.compression
-            zinfo._compress_level = self.compresslevel
+            zinfo._compresslevel = self.compresslevel
         else:
             # Get info object for name
             zinfo = self.getinfo(name)
@@ -1592,7 +1592,7 @@ class ZipFile:
                                    " would require ZIP64 extensions")
 
     def write(self, filename, arcname=None,
-              compress_type=None, compress_level=None):
+              compress_type=None, compresslevel=None):
         """Put the bytes from filename into the archive under the name
         arcname."""
         if not self.fp:
@@ -1614,10 +1614,10 @@ class ZipFile:
             else:
                 zinfo.compress_type = self.compression
 
-            if compress_level is not None:
-                zinfo._compress_level = compress_level
+            if compresslevel is not None:
+                zinfo._compresslevel = compresslevel
             else:
-                zinfo._compress_level = self.compresslevel
+                zinfo._compresslevel = self.compresslevel
 
         if zinfo.is_dir():
             with self._lock:
@@ -1640,7 +1640,7 @@ class ZipFile:
                 shutil.copyfileobj(src, dest, 1024*8)
 
     def writestr(self, zinfo_or_arcname, data,
-                 compress_type=None, compress_level=None):
+                 compress_type=None, compresslevel=None):
         """Write a file into the archive.  The contents is 'data', which
         may be either a 'str' or a 'bytes' instance; if it is a 'str',
         it is encoded as UTF-8 first.
@@ -1652,7 +1652,7 @@ class ZipFile:
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
-            zinfo._compress_level = self.compresslevel
+            zinfo._compresslevel = self.compresslevel
             if zinfo.filename[-1] == '/':
                 zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
                 zinfo.external_attr |= 0x10           # MS-DOS directory flag
@@ -1672,8 +1672,8 @@ class ZipFile:
         if compress_type is not None:
             zinfo.compress_type = compress_type
 
-        if compress_level is not None:
-            zinfo._compress_level = compress_level
+        if compresslevel is not None:
+            zinfo._compresslevel = compresslevel
 
         zinfo.file_size = len(data)            # Uncompressed size
         with self._lock:

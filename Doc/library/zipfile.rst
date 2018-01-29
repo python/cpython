@@ -162,10 +162,12 @@ ZipFile Objects
    require ZIP64 extensions.
 
    The *compresslevel* parameter controls the compression level to use when
-   writing files to the archive. When using :const:`ZIP_STORED` or
-   :const:`ZIP_LZMA` it has no effect. When using :const:`ZIP_DEFLATED`
-   integers ``0`` through ``9`` are accepted. When using :const:`ZIP_BZIP2`
-   integers ``1`` through ``9`` are accepted.
+   writing files to the archive.
+   When using :const:`ZIP_STORED` or :const:`ZIP_LZMA` it has no effect.
+   When using :const:`ZIP_DEFLATED` integers ``0`` through ``9`` are accepted
+   (see :class:`gzip.GzipFile`).
+   When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
+   (see :class:`bz2.BZ2File`).
 
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
@@ -366,14 +368,14 @@ ZipFile Objects
 
 
 .. method:: ZipFile.write(filename, arcname=None, compress_type=None, \
-                          compress_level=None)
+                          compresslevel=None)
 
    Write the file named *filename* to the archive, giving it the archive name
    *arcname* (by default, this will be the same as *filename*, but without a drive
    letter and with leading path separators removed).  If given, *compress_type*
    overrides the value given for the *compression* parameter to the constructor for
-   the new entry. Similarly, if given, *compress_level* overrides the *compresslevel*
-   parameter.
+   the new entry. Similarly, *compresslevel* will override the constructor if
+   given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
 
    .. note::
@@ -400,7 +402,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.writestr(zinfo_or_arcname, data, compress_type=None, \
-                             compress_level=None)
+                             compresslevel=None)
 
    Write the string *data* to the archive; *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
@@ -410,8 +412,8 @@ ZipFile Objects
 
    If given, *compress_type* overrides the value given for the *compression*
    parameter to the constructor for the new entry, or in the *zinfo_or_arcname*
-   (if that is a :class:`ZipInfo` instance). Similarly, *compress_level* will
-   override the *compresslevel* parameter.
+   (if that is a :class:`ZipInfo` instance). Similarly, *compresslevel* will
+   override the constructor if given.
 
    .. note::
 

@@ -302,17 +302,17 @@ class AbstractTestsWithSourceFile:
         zipfp = zipfile.ZipFile(TESTFN2, "w", compresslevel=1)
         zipfp.writestr("a.txt", "hello world", compress_type=self.compression)
         zipfp.writestr("b.txt", "hello world", compress_type=self.compression,
-                       compress_level=2)
+                       compresslevel=2)
 
         # Compression level follows the constructor.
         a_info = zipfp.getinfo('a.txt')
         self.assertEqual(a_info.compress_type, self.compression)
-        self.assertEqual(a_info._compress_level, 1)
+        self.assertEqual(a_info._compresslevel, 1)
 
         # Compression level is overridden.
         b_info = zipfp.getinfo('b.txt')
         self.assertEqual(b_info.compress_type, self.compression)
-        self.assertEqual(b_info._compress_level, 2)
+        self.assertEqual(b_info._compresslevel, 2)
 
     def test_read_return_size(self):
         # Issue #9837: ZipExtFile.read() shouldn't return more bytes
@@ -396,11 +396,11 @@ class AbstractTestsWithSourceFile:
         compression levels."""
         with zipfile.ZipFile(TESTFN2, "w", compresslevel=1) as zipfp:
             zipfp.write(TESTFN, 'compress_1')
-            zipfp.write(TESTFN, 'compress_9', compress_level=9)
+            zipfp.write(TESTFN, 'compress_9', compresslevel=9)
             one_info = zipfp.getinfo('compress_1')
             nine_info = zipfp.getinfo('compress_9')
-            self.assertEqual(one_info._compress_level, 1)
-            self.assertEqual(nine_info._compress_level, 9)
+            self.assertEqual(one_info._compresslevel, 1)
+            self.assertEqual(nine_info._compresslevel, 9)
 
     def tearDown(self):
         unlink(TESTFN)
