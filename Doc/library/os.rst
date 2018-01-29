@@ -1082,10 +1082,13 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pread(fd, buffersize, offset)
+.. function:: pread(fd, n, offset)
 
-   Read from a file descriptor, *fd*, at a position of *offset*. It will read up
-   to *buffersize* number of bytes. The file offset remains unchanged.
+   Read at most *n* bytes from file descriptor *fd* at a position of *offset*,
+   leaving the file offset unchanged.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    Availability: Unix.
 
@@ -1094,15 +1097,10 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: preadv(fd, buffers, offset, flags=0)
 
-   Read from a file descriptor *fd* from offset *offset* into mutable
-   :term:`bytes-like objects <bytes-like object>` *buffers*. Transfer data into
-   each buffer until it is full and then move on to the next buffer in the
-   sequence to hold the rest of the data.
-
-   Return the total number of bytes read which can be less than the total
-   capacity of all the objects.
-
-   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
+   Read from a file descriptor *fd* at a position of *offset* into mutable
+   :term:`bytes-like objects <bytes-like object>` *buffers*, leaving the file
+   offset unchanged.  Transfer data into each buffer until it is full and then
+   move on to the next buffer in the sequence to hold the rest of the data.
 
    The flags argument contains a bitwise OR of zero or more of the following
    flags:
@@ -1110,13 +1108,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_HIPRI`
    - :data:`RWF_NOWAIT`
 
-   Using non-zero flags requires Linux 4.6 or newer.
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
 
    The operating system may set a limit (:func:`sysconf` value
    ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
-   Availability: Linux 2.6.30 abd newer, FreeBSD 6.0 and newer,
-   OpenBSD 2.7 and newer.
+   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
+
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer.
 
    .. versionadded:: 3.7
 
@@ -1152,8 +1153,10 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwrite(fd, str, offset)
 
-   Write *bytestring* to a file descriptor, *fd*, from *offset*,
-   leaving the file offset unchanged.
+   Write the bytestring in *str* to file descriptor *fd* at position of
+   *offset*, leaving the file offset unchanged.
+
+   Return the number of bytes actually written.
 
    Availability: Unix.
 
@@ -1162,14 +1165,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0)
 
-   Write the *buffers* contents to file descriptor *fd* at offset *offset*.
-   *buffers* must be a sequence of :term:`bytes-like objects <bytes-like
-   object>`. Buffers are processed in array order. Entire contents of the first
-   buffer is written before proceeding to the second, and so on.
-
-   Return the total number of bytes written.
-
-   Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
+   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   leaving the file offset unchanged.  *buffers* must be a sequence of
+   :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
+   array order. Entire contents of the first buffer is written before
+   proceeding to the second, and so on.
 
    The *flags* argument contains a bitwise OR of zero or more of the following
    flags:
@@ -1177,13 +1177,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
 
-   Using non-zero flags requires Linux 4.7 or newer.
+   Return the total number of bytes actually written.
 
    The operating system may set a limit (:func:`sysconf` value
    ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
+   Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
+
    Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-   OpenBSD 2.7 and newer.
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer.
 
    .. versionadded:: 3.7
 
@@ -1210,9 +1212,10 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: read(fd, n)
 
-   Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
-   bytes read.  If the end of the file referred to by *fd* has been reached, an
-   empty bytes object is returned.
+   Read at most *n* bytes from file descriptor *fd*.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    .. note::
 
@@ -1291,11 +1294,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. function:: readv(fd, buffers)
 
    Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
-   objects <bytes-like object>` *buffers*. :func:`~os.readv` will transfer data
-   into each buffer until it is full and then move on to the next buffer in the
-   sequence to hold the rest of the data. :func:`~os.readv` returns the total
-   number of bytes read (which may be less than the total capacity of all the
-   objects).
+   objects <bytes-like object>` *buffers*. Transfer data into each buffer until
+   it is full and then move on to the next buffer in the sequence to hold the
+   rest of the data.
+
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
@@ -1329,8 +1336,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: write(fd, str)
 
-   Write the bytestring in *str* to file descriptor *fd*. Return the number of
-   bytes actually written.
+   Write the bytestring in *str* to file descriptor *fd*.
+
+   Return the number of bytes actually written.
 
    .. note::
 
@@ -1348,15 +1356,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: writev(fd, buffers)
 
-   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be a
-   sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
+   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be
+   a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
    processed in array order. Entire contents of the first buffer is written
-   before proceeding to the second, and so on. The operating system may set a
-   limit (sysconf() value SC_IOV_MAX) on the number of buffers that can be
-   used.
+   before proceeding to the second, and so on.
 
-   :func:`~os.writev` writes the contents of each object to the file descriptor
-   and returns the total number of bytes written.
+   Returns the total number of bytes actually written.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
