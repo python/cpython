@@ -668,7 +668,7 @@ class TestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unpack'):
             x, y, z = Point3D(4, 5, 6)
 
-        # Maka sure another class with the same field names isn't
+        # Make sure another class with the same field names isn't
         #  equal.
         @dataclass
         class Point3Dv1:
