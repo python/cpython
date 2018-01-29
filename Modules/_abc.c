@@ -372,18 +372,18 @@ _get_dump(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    registry = PyObject_CallMethod(impl->_abc_registry->data, "copy", NULL);
+    registry = PySet_New(impl->_abc_registry->data);
     if (registry == NULL) {
         Py_DECREF(impl);
         return NULL;
     }
-    cache = PyObject_CallMethod(impl->_abc_cache, "copy", NULL);
+    cache = PySet_New(impl->_abc_cache);
     if (cache == NULL) {
         Py_DECREF(impl);
         Py_DECREF(registry);
         return NULL;
     }
-    negative_cache = PyObject_CallMethod(impl->_abc_negative_cache, "copy", NULL);
+    negative_cache = PySet_New(impl->_abc_negative_cache);
     if (negative_cache == NULL) {
         Py_DECREF(impl);
         Py_DECREF(registry);
