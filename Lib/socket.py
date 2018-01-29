@@ -136,11 +136,18 @@ class socket(_socket.socket):
 
     __slots__ = ["__weakref__", "_io_refs", "_closed"]
 
-    def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None):
+    def __init__(self, family=-1, type=-1, proto=-1, fileno=None):
         # For user code address family and type values are IntEnum members, but
         # for the underlying _socket.socket they're just integers. The
         # constructor of _socket.socket converts the given argument to an
         # integer automatically.
+        if fileno is None:
+            if family == -1:
+                family = AF_INET
+            if type == -1:
+                type = SOCK_STREAM
+            if proto == -1:
+                proto = 0
         _socket.socket.__init__(self, family, type, proto, fileno)
         self._io_refs = 0
         self._closed = False
