@@ -1,0 +1,2 @@
+Deprecate exposing the contents of collections.abc in the regular
+collections module.
