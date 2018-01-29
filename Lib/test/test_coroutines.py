@@ -1981,16 +1981,19 @@ class SysSetCoroWrapperTest(unittest.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             sys.set_coroutine_wrapper(wrap)
-        self.assertIs(sys.get_coroutine_wrapper(), wrap)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(sys.get_coroutine_wrapper(), wrap)
         try:
             f = foo()
             self.assertTrue(wrapped)
 
             self.assertEqual(run_async(f), ([], 'spam'))
         finally:
-            sys.set_coroutine_wrapper(None)
+            with self.assertWarns(DeprecationWarning):
+                sys.set_coroutine_wrapper(None)
 
-        self.assertIsNone(sys.get_coroutine_wrapper())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(sys.get_coroutine_wrapper())
 
         wrapped = None
         with silence_coro_gc():
@@ -1998,10 +2001,13 @@ class SysSetCoroWrapperTest(unittest.TestCase):
         self.assertFalse(wrapped)
 
     def test_set_wrapper_2(self):
-        self.assertIsNone(sys.get_coroutine_wrapper())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(sys.get_coroutine_wrapper())
         with self.assertRaisesRegex(TypeError, "callable expected, got int"):
-            sys.set_coroutine_wrapper(1)
-        self.assertIsNone(sys.get_coroutine_wrapper())
+            with self.assertWarns(DeprecationWarning):
+                sys.set_coroutine_wrapper(1)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(sys.get_coroutine_wrapper())
 
     def test_set_wrapper_3(self):
         async def foo():
@@ -2012,7 +2018,8 @@ class SysSetCoroWrapperTest(unittest.TestCase):
                 return await coro
             return wrap(coro)
 
-        sys.set_coroutine_wrapper(wrapper)
+        with self.assertWarns(DeprecationWarning):
+            sys.set_coroutine_wrapper(wrapper)
         try:
             with silence_coro_gc(), self.assertRaisesRegex(
                 RuntimeError,
@@ -2021,7 +2028,8 @@ class SysSetCoroWrapperTest(unittest.TestCase):
 
                 foo()
         finally:
-            sys.set_coroutine_wrapper(None)
+            with self.assertWarns(DeprecationWarning):
+                sys.set_coroutine_wrapper(None)
 
     def test_set_wrapper_4(self):
         @types.coroutine
@@ -2034,7 +2042,8 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             wrapped = gen
             return gen
 
-        sys.set_coroutine_wrapper(wrap)
+        with self.assertWarns(DeprecationWarning):
+            sys.set_coroutine_wrapper(wrap)
         try:
             foo()
             self.assertIs(
@@ -2042,7 +2051,8 @@ class SysSetCoroWrapperTest(unittest.TestCase):
                 "generator-based coroutine was wrapped via "
                 "sys.set_coroutine_wrapper")
         finally:
-            sys.set_coroutine_wrapper(None)
+            with self.assertWarns(DeprecationWarning):
+                sys.set_coroutine_wrapper(None)
 
 
 class OriginTrackingTest(unittest.TestCase):
