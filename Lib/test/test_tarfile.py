@@ -1580,26 +1580,31 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
 
-    # Test for issue #32695: compresslevel parameter raises TypeError when
-    # the mode involves xz.
+
+class GzipCreateTest(GzipTest, CreateTest):
     def test_create_with_compresslevel(self):
         with tarfile.open(tmpname, self.mode, compresslevel=1) as tobj:
             tobj.add(self.file_path)
 
-        with self.taropen(tmpname, 'w', compresslevel=1) as tobj:
-            tobj.add(self.file_path)
-
-
-class GzipCreateTest(GzipTest, CreateTest):
-    pass
+        with tarfile.open(tmpname, 'r:gz', compresslevel=1) as tobj:
+            pass
 
 
 class Bz2CreateTest(Bz2Test, CreateTest):
-    pass
+    def test_create_with_compresslevel(self):
+        with tarfile.open(tmpname, self.mode, compresslevel=1) as tobj:
+            tobj.add(self.file_path)
+
+        with tarfile.open(tmpname, 'r:bz2', compresslevel=1) as tobj:
+            pass
 
 
 class LzmaCreateTest(LzmaTest, CreateTest):
-    pass
+    # Unlike gz and bz2, xz uses the preset keyword instead of compresslevel.
+    # It does not allow for preset to be specified when reading.
+    def test_create_with_preset(self):
+        with tarfile.open(tmpname, self.mode, preset=1) as tobj:
+            tobj.add(self.file_path)
 
 
 class CreateWithXModeTest(CreateTest):
