@@ -103,6 +103,7 @@ Some facts and figures:
    *compresslevel* to specify the compression level of the file.
    The default levels are: ``9`` for gzip, ``9`` for bzip2, and
    :class:`PRESET_DEFAULT <lzma.LZMACompressor>` for lzma.
+   *compresslevel* is ignored for other modes.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
