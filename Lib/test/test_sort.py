@@ -275,7 +275,7 @@ def check_against_PyObject_RichCompareBool(self, L):
     ##                        1. L
     ##                        2. [(x,) for x in L]
     ##                        3. [((x,),) for x in L]
-    
+
     random.seed(0)
     random.shuffle(L)
     L_1 = L[:]
@@ -287,7 +287,7 @@ def check_against_PyObject_RichCompareBool(self, L):
         for (opt, ref) in zip(optimized, reference):
             self.assertIs(opt, ref)
             #note: not assertEqual! We want to ensure *identical* behavior.
-                         
+
 class TestOptimizedCompares(unittest.TestCase):
     def test_safe_object_compare(self):
         heterogeneous_lists = [[0, 'foo'],
@@ -304,9 +304,9 @@ class TestOptimizedCompares(unittest.TestCase):
                            [1.1,1<<70]]
         for L in float_int_lists:
             check_against_PyObject_RichCompareBool(self, L)
-      
+
     def test_unsafe_object_compare(self):
-        
+
         # This test is by ppperry. It ensures that unsafe_object_compare is
         # verifying ms->key_richcompare == tp->richcompare before comparing.
         class WackyComparator(int):
@@ -318,13 +318,13 @@ class TestOptimizedCompares(unittest.TestCase):
         class WackyList2(list):
             def __lt__(self, other):
                 raise ValueError
-                    
+
         L = [WackyList1([WackyComparator(i), i]) for i in range(10)]
         elem = L[-1]
         self.assertRaises(ValueError, L.sort)
         self.assertRaises(ValueError, [(x,) for x in L].sort)
 
-        # The following test is also by ppperry. It ensures that 
+        # The following test is also by ppperry. It ensures that
         # unsafe_object_compare handles Py_NotImplemented appropriately.
         class PointlessComparator:
             def __lt__(self, other):
@@ -332,7 +332,7 @@ class TestOptimizedCompares(unittest.TestCase):
         L = [PointlessComparator(), PointlessComparator()]
         self.assertRaises(TypeError, L.sort)
         self.assertRaises(TypeError, [(x,) for x in L].sort)
-        
+
         # The following tests go through various types that would trigger
         # ms->key_compare = unsafe_object_compare
         lists = [list(range(100)) + [(1<<70)],
@@ -341,7 +341,7 @@ class TestOptimizedCompares(unittest.TestCase):
                  [cmp_to_key(lambda x,y: x<y)(x) for x in range(100)]]
         for L in lists:
             check_against_PyObject_RichCompareBool(self, L)
-            
+
     def test_unsafe_latin_compare(self):
         check_against_PyObject_RichCompareBool(self, [str(x) for
                                                       x in range(100)])
@@ -361,7 +361,7 @@ class TestOptimizedCompares(unittest.TestCase):
         #
         # Note that we don't have to put anything in tuples here, because
         # the check function does a tuple test automatically.
-        
+
         check_against_PyObject_RichCompareBool(self, [float('nan')]*100)
         check_against_PyObject_RichCompareBool(self, [float('nan') for
                                                       _ in range(100)])

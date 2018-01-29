@@ -1081,7 +1081,7 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
         slice->values += n;
 }
 
-/* Comparison function: ms->key_compare, which is set at run-time in 
+/* Comparison function: ms->key_compare, which is set at run-time in
  * listsort_impl to optimize for various special cases.
  * Returns -1 on error, 1 if x < y, 0 if x >= y.
  */
@@ -1968,10 +1968,10 @@ reverse_sortslice(sortslice *s, Py_ssize_t n)
         reverse_slice(s->values, &s->values[n]);
 }
 
-/* Here we define custom comparison functions to optimize for the cases one commonly 
+/* Here we define custom comparison functions to optimize for the cases one commonly
  * encounters in practice: homogeneous lists, often of one of the basic types. */
 
-/* This struct holds the comparison function and helper functions 
+/* This struct holds the comparison function and helper functions
  * selected in the pre-sort check. */
 
 /* These are the special case compare functions.
@@ -2000,7 +2000,7 @@ unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     assert(ms->key_richcompare != NULL);
     res_obj = (*(ms->key_richcompare))(v, w, Py_LT);
-    
+
     if (res_obj == Py_NotImplemented) {
         Py_DECREF(res_obj);
         return PyObject_RichCompareBool(v, w, Py_LT);
@@ -2029,13 +2029,13 @@ static int
 unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
     int len, res;
-    
+
     /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
-    assert(v->ob_type == w->ob_type); 
+    assert(v->ob_type == w->ob_type);
     assert(v->ob_type == &PyUnicode_Type);
     assert(PyUnicode_KIND(v) == PyUnicode_KIND(w));
     assert(PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
-    
+
     len = Py_MIN(PyUnicode_GET_LENGTH(v), PyUnicode_GET_LENGTH(w));
     res = memcmp(PyUnicode_DATA(v), PyUnicode_DATA(w), len);
 
@@ -2054,11 +2054,11 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     PyLongObject *vl, *wl; sdigit v0, w0; int res;
 
     /* Modified from Objects/longobject.c:long_compare, assuming: */
-    assert(v->ob_type == w->ob_type); 
+    assert(v->ob_type == w->ob_type);
     assert(v->ob_type == &PyLong_Type);
     assert(Py_ABS(Py_SIZE(v)) <= 1);
     assert(Py_ABS(Py_SIZE(w)) <= 1);
-    
+
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
 
@@ -2082,23 +2082,23 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
     int res;
 
     /* Modified from Objects/floatobject.c:float_richcompare, assuming: */
-    assert(v->ob_type == w->ob_type); 
+    assert(v->ob_type == w->ob_type);
     assert(v->ob_type == &PyFloat_Type);
 
     res = PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
     assert(res == PyObject_RichCompareBool(v, w, Py_LT));
-    return res; 
+    return res;
 }
 
-/* Tuple compare: compare *any* two tuples, using 
- * ms->tuple_elem_compare to compare the first elements, which is set 
+/* Tuple compare: compare *any* two tuples, using
+ * ms->tuple_elem_compare to compare the first elements, which is set
  * using the same pre-sort check as we use for ms->key_compare,
  * but run on the list [x[0] for x in L]. This allows us to optimize compares
- * on two levels (as long as [x[0] for x in L] is type-homogeneous.) The idea is 
+ * on two levels (as long as [x[0] for x in L] is type-homogeneous.) The idea is
  * that most tuple compares don't involve x[1:]. */
 static int
 unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
-{   
+{
     PyTupleObject *vt, *wt;
     Py_ssize_t i, vlen, wlen;
     int k;
@@ -2111,7 +2111,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
-    
+
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
 
@@ -2126,10 +2126,10 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
     if (i >= vlen || i >= wlen)
         return vlen < wlen;
 
-    if (i == 0) 
+    if (i == 0)
         return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
     else
-	return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
+        return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
 }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
@@ -2214,8 +2214,8 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
 
 
     /* The pre-sort check: here's where we decide which compare function to use.
-     * How much optimization is safe? We test for homogeneity with respect to 
-     * several properties that are expensive to check at compare-time, and 
+     * How much optimization is safe? We test for homogeneity with respect to
+     * several properties that are expensive to check at compare-time, and
      * set ms appropriately. */
     if (saved_ob_size > 1) {
         /* Assume the first element is representative of the whole list. */
@@ -2242,7 +2242,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             }
 
             /* Note: for lists of tuples, key is the first element of the tuple
-             * lo.keys[i], not lo.keys[i] itself! We verify type-homogeneity 
+             * lo.keys[i], not lo.keys[i] itself! We verify type-homogeneity
              * for lists of tuples in the if-statement directly above. */
             PyObject *key = (keys_are_in_tuples ?
                              PyTuple_GET_ITEM(lo.keys[i], 0) :
