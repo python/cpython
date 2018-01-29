@@ -309,7 +309,7 @@ class AbstractTestsWithSourceFile:
         self.assertEqual(a_info.compress_type, self.compression)
         self.assertEqual(a_info._compress_level, 1)
 
-        # Compression level is overriden.
+        # Compression level is overridden.
         b_info = zipfp.getinfo('b.txt')
         self.assertEqual(b_info.compress_type, self.compression)
         self.assertEqual(b_info._compress_level, 2)
