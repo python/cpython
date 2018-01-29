@@ -18,6 +18,7 @@ import asyncore
 import weakref
 import platform
 import functools
+import sysconfig
 try:
     import ctypes
 except ImportError:
@@ -30,7 +31,7 @@ PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
 IS_LIBRESSL = ssl.OPENSSL_VERSION.startswith('LibreSSL')
 IS_OPENSSL_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
-
+PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 def data_file(*name):
     return os.path.join(os.path.dirname(__file__), *name)
@@ -935,6 +936,19 @@ class ContextTests(unittest.TestCase):
         ctx.set_ciphers("DEFAULT")
         with self.assertRaisesRegex(ssl.SSLError, "No cipher can be selected"):
             ctx.set_ciphers("^$:,;?*'dorothyx")
+
+    @unittest.skipUnless(PY_SSL_DEFAULT_CIPHERS == 1,
+                         "Test applies only to Python default ciphers")
+    def test_python_ciphers(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ciphers = ctx.get_ciphers()
+        for suite in ciphers:
+            name = suite['name']
+            self.assertNotIn("PSK", name)
+            self.assertNotIn("SRP", name)
+            self.assertNotIn("MD5", name)
+            self.assertNotIn("RC4", name)
+            self.assertNotIn("3DES", name)
 
     @unittest.skipIf(ssl.OPENSSL_VERSION_INFO < (1, 0, 2, 0, 0), 'OpenSSL too old')
     def test_get_ciphers(self):

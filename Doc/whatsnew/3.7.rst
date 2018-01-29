@@ -623,6 +623,12 @@ wildcard matching disabled by default.
 (Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
 :issue:`31399`.)
 
+The default cipher suite selection of the ssl module now uses a blacklist
+approach rather than a hard-coded whitelist. Python no longer re-enables
+ciphers that have been blocked by OpenSSL security update. Default cipher
+suite selection can be configured on compile time.
+(Contributed by Christian Heimes in :issue:`31429`.)
+
 string
 ------
 

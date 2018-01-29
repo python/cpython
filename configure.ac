@@ -5497,6 +5497,43 @@ if test "$have_openssl" = yes; then
     LIBS="$save_LIBS"
 fi
 
+# ssl module default cipher suite string
+AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
+  [Default cipher suites list for ssl module.
+   1: Python's preferred selection, 2: leave OpenSSL defaults untouched, 0: custom string])
+AH_TEMPLATE(PY_SSL_DEFAULT_CIPHER_STRING,
+  [Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0]
+)
+
+AC_MSG_CHECKING(for --with-ssl-default-suites)
+AC_ARG_WITH(ssl-default-suites,
+            AS_HELP_STRING([--with-ssl-default-suites=@<:@python|openssl|STRING@:>@],
+                           [Override default cipher suites string,
+                            python: use Python's preferred selection (default),
+                            openssl: leave OpenSSL's defaults untouched,
+                            STRING: use a custom string,
+                            PROTOCOL_SSLv2 ignores the setting]),
+[
+AC_MSG_RESULT($withval)
+case "$withval" in
+    python)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
+        ;;
+    openssl)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 2)
+        ;;
+    *)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 0)
+        AC_DEFINE_UNQUOTED(PY_SSL_DEFAULT_CIPHER_STRING, "$withval")
+        ;;
+esac
+],
+[
+AC_MSG_RESULT(python)
+AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
+])
+
+
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])

@@ -234,6 +234,31 @@ SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
 
 #endif /* OpenSSL < 1.1.0 or LibreSSL */
 
+/* Default cipher suites */
+#ifndef PY_SSL_DEFAULT_CIPHERS
+#define PY_SSL_DEFAULT_CIPHERS 1
+#endif
+
+#if PY_SSL_DEFAULT_CIPHERS == 0
+  #ifndef PY_SSL_DEFAULT_CIPHER_STRING
+     #error "Py_SSL_DEFAULT_CIPHERS 0 needs Py_SSL_DEFAULT_CIPHER_STRING"
+  #endif
+#elif PY_SSL_DEFAULT_CIPHERS == 1
+/* Python custom selection of sensible ciper suites
+ * DEFAULT: OpenSSL's default cipher list. Since 1.0.2 the list is in sensible order.
+ * !aNULL:!eNULL: really no NULL ciphers
+ * !MD5:!3DES:!DES:!RC4:!IDEA:!SEED: no weak or broken algorithms on old OpenSSL versions.
+ * !aDSS: no authentication with discrete logarithm DSA algorithm
+ * !SRP:!PSK: no secure remote password or pre-shared key authentication
+ */
+  #define PY_SSL_DEFAULT_CIPHER_STRING "DEFAULT:!aNULL:!eNULL:!MD5:!3DES:!DES:!RC4:!IDEA:!SEED:!aDSS:!SRP:!PSK"
+#elif PY_SSL_DEFAULT_CIPHERS == 2
+/* Ignored in SSLContext constructor, only used to as _ssl.DEFAULT_CIPHER_STRING */
+  #define PY_SSL_DEFAULT_CIPHER_STRING SSL_DEFAULT_CIPHER_LIST
+#else
+  #error "Unsupported PY_SSL_DEFAULT_CIPHERS"
+#endif
+
 
 enum py_ssl_error {
     /* these mirror ssl.h */
@@ -2873,7 +2898,12 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     /* A bare minimum cipher list without completely broken cipher suites.
      * It's far from perfect but gives users a better head start. */
     if (proto_version != PY_SSL_VERSION_SSL2) {
-        result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL:!MD5");
+#if PY_SSL_DEFAULT_CIPHERS == 2
+        /* stick to OpenSSL's default settings */
+        result = 1;
+#else
+        result = SSL_CTX_set_cipher_list(ctx, PY_SSL_DEFAULT_CIPHER_STRING);
+#endif
     } else {
         /* SSLv2 needs MD5 */
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
@@ -5429,6 +5459,9 @@ PyInit__ssl(void)
     if (PyDict_SetItemString(d, "SSLSession",
                              (PyObject *)&PySSLSession_Type) != 0)
         return NULL;
+
+    PyModule_AddStringConstant(m, "_DEFAULT_CIPHERS",
+                               PY_SSL_DEFAULT_CIPHER_STRING);
 
     PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
                             PY_SSL_ERROR_ZERO_RETURN);
