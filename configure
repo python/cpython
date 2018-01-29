@@ -840,6 +840,7 @@ enable_big_digits
 with_computed_gotos
 with_ensurepip
 with_openssl
+with_ssl_default_suites
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1538,6 +1539,11 @@ Optional Packages:
   --with(out)-ensurepip=[=upgrade]
                           "install" or "upgrade" using bundled pip
   --with-openssl=DIR      root of the OpenSSL directory
+  --with-ssl-default-suites=[python|openssl|STRING]
+                          Override default cipher suites string, python: use
+                          Python's preferred selection (default), openssl:
+                          leave OpenSSL's defaults untouched, STRING: use a
+                          custom string, PROTOCOL_SSLv2 ignores the setting
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -16930,6 +16936,48 @@ $as_echo "#define HAVE_X509_VERIFY_PARAM_SET1_HOST 1" >>confdefs.h
     LDFLAGS="$save_LDFLAGS"
     LIBS="$save_LIBS"
 fi
+
+# ssl module default cipher suite string
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-ssl-default-suites" >&5
+$as_echo_n "checking for --with-ssl-default-suites... " >&6; }
+
+# Check whether --with-ssl-default-suites was given.
+if test "${with_ssl_default_suites+set}" = set; then :
+  withval=$with_ssl_default_suites;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+case "$withval" in
+    python)
+        $as_echo "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
+
+        ;;
+    openssl)
+        $as_echo "#define PY_SSL_DEFAULT_CIPHERS 2" >>confdefs.h
+
+        ;;
+    *)
+        $as_echo "#define PY_SSL_DEFAULT_CIPHERS 0" >>confdefs.h
+
+        cat >>confdefs.h <<_ACEOF
+#define PY_SSL_DEFAULT_CIPHER_STRING "$withval"
+_ACEOF
+
+        ;;
+esac
+
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: python" >&5
+$as_echo "python" >&6; }
+$as_echo "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
+
+
+fi
+
+
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-config.sh"
