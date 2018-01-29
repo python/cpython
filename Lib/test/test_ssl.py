@@ -105,6 +105,7 @@ SIGNED_CERTFILE_ECC_HOSTNAME = 'localhost-ecc'
 SIGNING_CA = data_file("capath", "ceff1710.0")
 # cert with all kinds of subject alt names
 ALLSANFILE = data_file("allsans.pem")
+IDNSANSFILE = data_file("idnsans.pem")
 
 REMOTE_HOST = "self-signed.pythontest.net"
 
@@ -1612,7 +1613,6 @@ class MemoryBIOTests(unittest.TestCase):
 
 
 class SimpleBackgroundTests(unittest.TestCase):
-
     """Tests that connect to a simple server running in the background"""
 
     def setUp(self):
@@ -2629,6 +2629,70 @@ class ThreadedTests(unittest.TestCase):
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+
+    def test_check_hostname_idn(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        server_context.load_cert_chain(IDNSANSFILE)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = True
+        context.load_verify_locations(SIGNING_CA)
+
+        # correct hostname should verify, when specified in several
+        # different ways
+        idn_hostnames = [
+            ('könig.idn.pythontest.net',
+             'könig.idn.pythontest.net',),
+            ('xn--knig-5qa.idn.pythontest.net',
+             'xn--knig-5qa.idn.pythontest.net'),
+            (b'xn--knig-5qa.idn.pythontest.net',
+             b'xn--knig-5qa.idn.pythontest.net'),
+
+            ('königsgäßchen.idna2003.pythontest.net',
+             'königsgäßchen.idna2003.pythontest.net'),
+            ('xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
+             'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+            (b'xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
+             b'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+        ]
+        for server_hostname, expected_hostname in idn_hostnames:
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket(),
+                                         server_hostname=server_hostname) as s:
+                    self.assertEqual(s.server_hostname, expected_hostname)
+                    s.connect((HOST, server.port))
+                    cert = s.getpeercert()
+                    self.assertEqual(s.server_hostname, expected_hostname)
+                    self.assertTrue(cert, "Can't get peer certificate.")
+
+                with ssl.SSLSocket(socket.socket(),
+                                   server_hostname=server_hostname) as s:
+                    s.connect((HOST, server.port))
+                    s.getpeercert()
+                    self.assertEqual(s.server_hostname, expected_hostname)
+
+        # bug https://bugs.python.org/issue28414
+        # IDNA 2008 deviations are broken
+        idna2008 = 'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with self.assertRaises(UnicodeError):
+                with context.wrap_socket(socket.socket(),
+                                         server_hostname=idna2008) as s:
+                    s.connect((HOST, server.port))
+
+        # incorrect hostname should raise an exception
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with context.wrap_socket(socket.socket(),
+                                     server_hostname="python.example.org") as s:
+                with self.assertRaises(ssl.CertificateError):
+                    s.connect((HOST, server.port))
 
     def test_wrong_cert(self):
         """Connecting when the server rejects the client's certificate
