@@ -5238,9 +5238,9 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                         goto exit;
                     }
                     if(posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode)) {
-			PyErr_SetString(PyExc_OSError,"Failed to add open file action");
+                        PyErr_SetString(PyExc_OSError,"Failed to add open file action");
                         goto exit;
-		    }
+                    }
    
                     break;
 
@@ -5255,7 +5255,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                         goto exit;
                     }
                     if(posix_spawn_file_actions_addclose(file_actionsp, close_fd)) {
-			PyErr_SetString(PyExc_OSError,"Failed to add close file action");
+                        PyErr_SetString(PyExc_OSError,"Failed to add close file action");
                         goto exit;
                     }
                     break;
@@ -5275,9 +5275,9 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                         goto exit;
                     }
                     if(posix_spawn_file_actions_adddup2(file_actionsp, fd1, fd2)) {
-			PyErr_SetString(PyExc_OSError,"Failed to add dup2 file action");
+                        PyErr_SetString(PyExc_OSError,"Failed to add dup2 file action");
                         goto exit;
-		    }
+                    }
                     break;
 
                 default:
@@ -5298,8 +5298,8 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
 
 exit:
 
-    if(file_actionsp) {
-    	posix_spawn_file_actions_destroy(file_actionsp);
+    if(file_actionsp && posix_spawn_file_actions_destroy(file_actionsp)) {
+        PyErr_SetString(PyExc_OSError,"Error cleaning file actions object");
     }
     
     if (envlist) {
