@@ -360,6 +360,9 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     _PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
 
+    /* Create the GIL */
+    PyEval_InitThreads();
+
     _Py_ReadyTypes();
 
     if (!_PyFrame_Init())
