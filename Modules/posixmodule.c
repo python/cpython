@@ -5143,7 +5143,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
    argv is a list or tuple of strings and env is a dictionary
        like posix.environ. */
 
-    if (!PySequence_Check(argv)){
+    if (!PySequence_Check(argv)) {
         PyErr_SetString(PyExc_TypeError,
                         "posix_spawn: argv must be a tuple or list");
         goto exit;
@@ -5171,11 +5171,12 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     }
 
     envlist = parse_envlist(env, &envc);
-    if (envlist == NULL)
+    if (envlist == NULL) {
         goto exit;
+    }
 
     pid_t pid;
-    if (file_actions  != NULL && file_actions != Py_None){
+    if (file_actions != NULL && file_actions != Py_None) {
         if(posix_spawn_file_actions_init(&_file_actions) != 0){
             PyErr_SetString(PyExc_OSError,
                             "Error initializing file actions");
@@ -5185,7 +5186,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         file_actionsp = &_file_actions;
 
         seq = PySequence_Fast(file_actions, "file_actions must be a sequence");
-        if(seq == NULL){
+        if(seq == NULL) {
             goto exit;
         }
         PyObject* file_actions_obj;
@@ -5194,7 +5195,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
             file_actions_obj = PySequence_Fast_GET_ITEM(seq, i);
 
-            if(!PySequence_Check(file_actions_obj) | !PySequence_Size(file_actions_obj)){
+            if(!PySequence_Check(file_actions_obj) | !PySequence_Size(file_actions_obj)) {
                 PyErr_SetString(PyExc_TypeError,"Each file_action element must be a non empty sequence");
                 goto exit;
             }
@@ -5208,7 +5209,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
             switch(mode) {
 
                 case POSIX_SPAWN_OPEN:
-                    if(PySequence_Size(file_actions_obj) != 5){
+                    if(PySequence_Size(file_actions_obj) != 5) {
                         PyErr_SetString(PyExc_TypeError,"A open file_action object must have 5 elements");
                         goto exit;
                     }
@@ -5218,7 +5219,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                         goto exit;
                     }
                     const char* open_path = PyUnicode_AsUTF8(PySequence_GetItem(file_actions_obj, 2));
-                    if(open_path == NULL){
+                    if(open_path == NULL) {
                         goto exit;
                     }
                     long open_oflag = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 3));
@@ -5283,7 +5284,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     int err_code = posix_spawn(&pid, path->narrow, file_actionsp, NULL, argvlist, envlist);
     _Py_END_SUPPRESS_IPH
     if(err_code) {
-        PyErr_SetString(PyExc_OSError,"posix_spawn call exited");
+        PyErr_SetString(PyExc_OSError,"posix_spawn call failed");
         goto exit;
     }
     result = PyLong_FromPid(pid);
@@ -5292,8 +5293,8 @@ exit:
 
     Py_XDECREF(seq);
 
-    if(file_actionsp && posix_spawn_file_actions_destroy(file_actionsp)) {
-        PyErr_SetString(PyExc_OSError,"Error cleaning file actions object");
+    if(file_actionsp) {
+	posix_spawn_file_actions_destroy(file_actionsp);
     }
     
     if (envlist) {
