@@ -74,7 +74,7 @@ extern PyObject* PyInit__opcode(void);
 /* -- ADDMODULE MARKER 1 -- */
 
 extern PyObject* PyMarshal_Init(void);
-extern PyObject* PyInit_imp(void);
+extern PyObject* PyInit__imp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
@@ -147,7 +147,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"marshal", PyMarshal_Init},
 
     /* This lives it with import.c */
-    {"_imp", PyInit_imp},
+    {"_imp", PyInit__imp},
 
     /* These entries are here for sys.builtin_module_names */
     {"builtins", NULL},

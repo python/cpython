@@ -25,7 +25,7 @@ extern "C" {
 /* -- ADDMODULE MARKER 1 -- */
 
 extern PyObject* PyMarshal_Init(void);
-extern PyObject* PyInit_imp(void);
+extern PyObject* PyInit__imp(void);
 extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit__ast(void);
 extern PyObject* _PyWarnings_Init(void);
@@ -39,7 +39,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"marshal", PyMarshal_Init},
 
     /* This lives in import.c */
-    {"_imp", PyInit_imp},
+    {"_imp", PyInit__imp},
 
     /* This lives in Python/Python-ast.c */
     {"_ast", PyInit__ast},
