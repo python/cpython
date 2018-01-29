@@ -5294,6 +5294,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     _Py_END_SUPPRESS_IPH
     if(err_code) {
         PyErr_SetString(PyExc_OSError,"posix_spawn call exited");
+        goto exit;
     }
     result = PyLong_FromPid(pid);
 
