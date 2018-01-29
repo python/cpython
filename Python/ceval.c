@@ -254,8 +254,8 @@ PyEval_SaveThread(void)
     PyThreadState *tstate = PyThreadState_Swap(NULL);
     if (tstate == NULL)
         Py_FatalError("PyEval_SaveThread: NULL tstate");
-    if (gil_created())
-        drop_gil(tstate);
+    assert(gil_created());
+    drop_gil(tstate);
     return tstate;
 }
 
@@ -264,17 +264,18 @@ PyEval_RestoreThread(PyThreadState *tstate)
 {
     if (tstate == NULL)
         Py_FatalError("PyEval_RestoreThread: NULL tstate");
-    if (gil_created()) {
-        int err = errno;
-        take_gil(tstate);
-        /* _Py_Finalizing is protected by the GIL */
-        if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
-            drop_gil(tstate);
-            PyThread_exit_thread();
-            Py_UNREACHABLE();
-        }
-        errno = err;
+    assert(gil_created());
+
+    int err = errno;
+    take_gil(tstate);
+    /* _Py_Finalizing is protected by the GIL */
+    if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
+        drop_gil(tstate);
+        PyThread_exit_thread();
+        Py_UNREACHABLE();
     }
+    errno = err;
+
     PyThreadState_Swap(tstate);
 }
 
