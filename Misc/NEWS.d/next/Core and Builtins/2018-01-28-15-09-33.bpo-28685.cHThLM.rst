@@ -1,0 +1,2 @@
+Optimize list.sort() and sorted() by using type specialized comparisons when
+possible.
