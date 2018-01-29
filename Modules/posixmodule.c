@@ -5140,6 +5140,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
+    posix_spawn_file_actions_t _file_actions;
     posix_spawn_file_actions_t *file_actionsp = NULL;
     Py_ssize_t argc, envc;
     PyObject* result = NULL;
@@ -5183,16 +5184,13 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
 
     pid_t pid;
     if (file_actions  != NULL && file_actions != Py_None){
-        posix_spawn_file_actions_t _file_actions;
         if(posix_spawn_file_actions_init(&_file_actions) != 0){
             PyErr_SetString(PyExc_OSError,
                             "Error initializing file actions");
             goto exit;
         }
 
-
         file_actionsp = &_file_actions;
-
 
         seq = PySequence_Fast(file_actions, "file_actions must be a sequence");
         if(seq == NULL){
