@@ -880,6 +880,11 @@ Other CPython Implementation Changes
 Deprecated
 ==========
 
+* In Python 3.8, the abstract base classes in :mod:`collections.abc` will no
+  longer be exposed in the regular :mod:`collections` module.  This will help
+  create a clearer distinction between the concrete classes and the abstract
+  base classes.
+
 * Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
   in comprehensions and generator expressions (aside from the iterable expression
   in the leftmost :keyword:`for` clause). This ensures that comprehensions
