@@ -554,6 +554,9 @@ operation. (Contributed by Mark Dickinson in :issue:`29962`.)
 os
 --
 
+Added :func:`os.preadv` and :func:`os.pwritev` functions. (Contributed by Pablo
+Galindo in :issue:`31368`.)
+
 Added support for :class:`bytes` paths in :func:`~os.fwalk`. (Contributed by
 Serhiy Storchaka in :issue:`28682`.)
 

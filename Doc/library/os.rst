@@ -1104,39 +1104,48 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0)
 
-   Combines the functionality of :func:`os.writev` and :func:`os.pwrite`. It
-   writes the contents of *buffers* to file descriptor *fd* at offset *offset*.
-   *buffers* must be a sequence of :term:`bytes-like objects <bytes-like object>`.
-   Buffers are processed in array order. Entire contents of first buffer is written
-   before proceeding to second, and so on. The operating system may set a limit
-   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
-   :func:`~os.pwritev` writes the contents of each object to the file descriptor
-   and returns the total number of bytes written.
+   Write the *buffers* contents to file descriptor *fd* at offset *offset*.
+   *buffers* must be a sequence of :term:`bytes-like objects <bytes-like
+   object>`. Buffers are processed in array order. Entire contents of first
+   buffer is written before proceeding to second, and so on.
+
+   Return the total number of bytes written.
+
+   Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
    The *flags* argument contains a bitwise OR of zero or more of the following
    flags:
 
-   - RWF_DSYNC
-   - RWF_SYNC
+   - :data:`RWF_DSYNC`
+   - :data:`RWF_SYNC`
 
    Using non-zero flags requires Linux 4.7 or newer.
 
-   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
-   OpenBSD (version 2.7 and newer).
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer.
 
    .. versionadded:: 3.7
 
-.. data:: RWF_DSYNC (since Linux 4.7)
-   Provide a per-write equivalent of the O_DSYNC open(2) flag. This flag
-   is meaningful only for pwritev2(), and its effect applies only to the
-   data range written by the system call.
+
+.. data:: RWF_DSYNC
+
+   Provide a per-write equivalent of the :data:`O_DSYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
+
+   Availability: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
 
-.. data:: RWF_SYNC (since Linux 4.7)
-   Provide a per-write equivalent of the O_SYNC open(2) flag. This flag is
-   meaningful only for pwritev2(), and its effect applies only to the data
-   range written by the system call.
+
+.. data:: RWF_SYNC
+
+   Provide a per-write equivalent of the :data:`O_SYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
+
+   Availability: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
 
@@ -1237,45 +1246,58 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: preadv(fd, buffers, offset, flags=0)
 
-   Combines the functionality of :func:`os.readv` and :func:`os.pread`. It
-   reads from a file descriptor *fd* into a number of mutable :term:`bytes-like
-   objects <bytes-like object>` *buffers*. As :func:`os.readv`, it will transfer
-   data into each buffer until it is full and then move on to the next buffer in
-   the sequence to hold the rest of the data. Its fourth argument, *offset*,
-   specifies the file offset at which the input operation is to be performed.
-   :func:`~os.preadv` return the total number of bytes read (which can be less than
-   the total capacity of all the objects).
+   Read from a file descriptor *fd* from offset *offset* into mutable
+   :term:`bytes-like objects <bytes-like object>` *buffers*. Transfer data into
+   each buffer until it is full and then move on to the next buffer in the
+   sequence to hold the rest of the data.
+
+   Return the total number of bytes read which can be less than the total
+   capacity of all the objects.
+
+   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
    The flags argument contains a bitwise OR of zero or more of the following
    flags:
 
-   - RWF_HIPRI
-   - RWF_NOWAIT
+   - :data:`RWF_HIPRI`
+   - :data:`RWF_NOWAIT`
 
    Using non-zero flags requires Linux 4.6 or newer.
 
-   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
-   OpenBSD (version 2.7 and newer).
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Availability: Linux 2.6.30 abd newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer.
 
    .. versionadded:: 3.7
 
 
-.. data:: RWF_HIPRI (since Linux 4.6)
+.. data:: RWF_NOWAIT
+
+   Do not wait for data which is not immediately available. If this flag is
+   specified, the system call will return instantly if it would have to read
+   data from the backing storage or wait for a lock.
+
+   If some data was successfully read, it will return the number of bytes read.
+   If no bytes were read, it will return ``-1`` and set errno to
+   :data:`errno.EAGAIN`.
+
+   Availability: Linux 4.14 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_HIPRI
+
    High priority read/write. Allows block-based filesystems to use polling
    of the device, which provides lower latency, but may use additional
-   resources. (Currently, this feature is usable only on a file descriptor
-   opened using the O_DIRECT flag.)
+   resources.
 
-   .. versionadded:: 3.7
+   Currently, on Linux, this feature is usable only on a file descriptor opened
+   using the O_DIRECT flag.
 
-
-.. data:: RWF_NOWAIT (since Linux 4.14)
-   Do not wait for data which is not immediately available. If this flag
-   is  specified, the preadv2() system call will return instantly
-   if it would have to read data from the backing storage or wait for a lock.
-   If some data was successfully read, it will return the number of bytes
-   read. If no bytes were read, it will return -1 and set errno to EAGAIN.
-   Currently, this flag is meaningful only for preadv2().
+   Availability: Linux 4.6 and newer.
 
    .. versionadded:: 3.7
 
