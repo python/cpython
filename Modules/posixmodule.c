@@ -176,7 +176,14 @@ corresponding Unix manual entries for more information on calls.");
 #else
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
+/* bpo-32705: Current Android does not have posix_spawn
+ * Most likely posix_spawn will be available in next Android version (Android
+ * P, API 28). Need revisit then. See
+ * https://android-review.googlesource.com/c/platform/bionic/+/504842
+ **/
+#ifndef __ANDROID__
 #define HAVE_POSIX_SPAWN 1
+#endif
 #define HAVE_FORK       1
 #if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
 #define HAVE_FORK1      1
