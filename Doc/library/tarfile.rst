@@ -102,9 +102,9 @@ Some facts and figures:
    ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
 
-   For modes ``w:xz``, ``r:xz``,``x:xz``, :func:`tarfile.open` accepts the
-   keyword argument *preset* to specify the compression level of the file.
-   The default is :class:`PRESET_DEFAULT <lzma.LZMACompressor>`.
+   For modes ``'w:xz'``, ``'x:xz'``, :func:`tarfile.open` accepts the keyword
+   argument *preset* to specify the compression level of the file. The default
+   is :class:`PRESET_DEFAULT <lzma.LZMACompressor>`.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
