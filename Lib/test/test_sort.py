@@ -309,20 +309,28 @@ class TestOptimizedCompares(unittest.TestCase):
 
         # This test is by ppperry. It ensures that unsafe_object_compare is
         # verifying ms->key_richcompare == tp->richcompare before comparing.
+
         class WackyComparator(int):
             def __lt__(self, other):
                 elem.__class__ = WackyList2
                 return int.__lt__(self, other)
 
-        class WackyList1(list):pass
+        class WackyList1(list):
+            pass
+
         class WackyList2(list):
             def __lt__(self, other):
                 raise ValueError
 
         L = [WackyList1([WackyComparator(i), i]) for i in range(10)]
         elem = L[-1]
-        self.assertRaises(ValueError, L.sort)
-        self.assertRaises(ValueError, [(x,) for x in L].sort)
+        with self.assertRaises(ValueError):
+            L.sort()
+
+        L = [WackyList1([WackyComparator(i), i]) for i in range(10)]
+        elem = L[-1]
+        with self.assertRaises(ValueError):
+            [(x,) for x in L].sort()
 
         # The following test is also by ppperry. It ensures that
         # unsafe_object_compare handles Py_NotImplemented appropriately.
