@@ -312,7 +312,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_INCREF(interp->import_func);
 
     /* Import the _imp module */
-    impmod = PyInit_imp();
+    impmod = PyInit__imp();
     if (impmod == NULL) {
         return _Py_INIT_ERR("can't import _imp");
     }
