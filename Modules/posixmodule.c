@@ -5294,7 +5294,7 @@ exit:
     Py_XDECREF(seq);
 
     if(file_actionsp) {
-	posix_spawn_file_actions_destroy(file_actionsp);
+        posix_spawn_file_actions_destroy(file_actionsp);
     }
     
     if (envlist) {
