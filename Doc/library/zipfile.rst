@@ -165,9 +165,9 @@ ZipFile Objects
    writing files to the archive.
    When using :const:`ZIP_STORED` or :const:`ZIP_LZMA` it has no effect.
    When using :const:`ZIP_DEFLATED` integers ``0`` through ``9`` are accepted
-   (see :class:`gzip.GzipFile`).
+   (see :class:`zlib <zlib.compressobj>` for more information).
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
-   (see :class:`bz2.BZ2File`).
+   (see :class:`bz2 <bz2.BZ2File>` for more information).
 
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
