@@ -18,10 +18,14 @@ __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
             'UserString', 'Counter', 'OrderedDict', 'ChainMap']
 
 # For backwards compatibility, continue to make the collections ABCs
-# available through the collections module.
-from _collections_abc import *
+# through Python 3.6 available through the collections module.
+# Note, no new collections ABCs were added in Python 3.7
 import _collections_abc
-__all__ += _collections_abc.__all__
+from _collections_abc import (AsyncGenerator, AsyncIterable, AsyncIterator,
+    Awaitable, ByteString, Callable, Collection, Container, Coroutine,
+    Generator, Hashable, ItemsView, Iterable, Iterator, KeysView, Mapping,
+    MappingView, MutableMapping, MutableSequence, MutableSet, Reversible,
+    Sequence, Set, Sized, ValuesView)
 
 from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
