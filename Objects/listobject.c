@@ -2028,7 +2028,8 @@ unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 static int
 unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
-    int len, res;
+    Py_ssize_t len;
+    int res;
 
     /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
     assert(v->ob_type == w->ob_type);
