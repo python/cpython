@@ -430,7 +430,10 @@ class AngleAddr(TokenList):
     def addr_spec(self):
         for x in self:
             if x.token_type == 'addr-spec':
-                return x.addr_spec
+                if x.local_part:
+                    return x.addr_spec
+                else:
+                    return quote_string(x.local_part) + x.addr_spec
         else:
             return '<>'
 
@@ -1164,6 +1167,9 @@ def get_bare_quoted_string(value):
             "expected '\"' but found '{}'".format(value))
     bare_quoted_string = BareQuotedString()
     value = value[1:]
+    if value[0] == '"':
+        token, value = get_qcontent(value)
+        bare_quoted_string.append(token)
     while value and value[0] != '"':
         if value[0] in WSP:
             token, value = get_fws(value)
