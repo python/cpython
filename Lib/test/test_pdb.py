@@ -742,7 +742,7 @@ def test_pdb_next_command_for_coroutine():
     ...     await test_coro()
 
     >>> def test_function():
-    ...     loop = asyncio.get_event_loop()
+    ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
     ...     print("finished")
@@ -833,6 +833,47 @@ def test_pdb_return_command_for_generator():
     (Pdb) step
     > <doctest test.test_pdb.test_pdb_return_command_for_generator[1]>(9)test_function()
     -> if ex.value != 1:
+    (Pdb) continue
+    finished
+    """
+
+def test_pdb_return_command_for_coroutine():
+    """Testing no unwindng stack on yield for coroutines for "return" command
+
+    >>> import asyncio
+
+    >>> async def test_coro():
+    ...     await asyncio.sleep(0)
+    ...     await asyncio.sleep(0)
+    ...     await asyncio.sleep(0)
+
+    >>> async def test_main():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     await test_coro()
+
+    >>> def test_function():
+    ...     loop = asyncio.new_event_loop()
+    ...     loop.run_until_complete(test_main())
+    ...     loop.close()
+    ...     print("finished")
+
+    >>> with PdbTestInput(['step',
+    ...                    'step',
+    ...                    'next',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[2]>(3)test_main()
+    -> await test_coro()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(1)test_coro()
+    -> async def test_coro():
+    (Pdb) step
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(2)test_coro()
+    -> await asyncio.sleep(0)
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(3)test_coro()
+    -> await asyncio.sleep(0)
     (Pdb) continue
     finished
     """
