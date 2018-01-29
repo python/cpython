@@ -1,0 +1,2 @@
+Sockets now auto-detect family, type and protocol from file descriptor by
+default.
