@@ -620,7 +620,8 @@ hamt_node_bitmap_clone_without(PyHamtNode_Bitmap *o, uint32_t bit)
         new->b_array[i] = o->b_array[i];
     }
 
-    for (i = val_idx + 1; i < Py_SIZE(o); i++) {
+    assert(Py_SIZE(o) >= 0 && Py_SIZE(o) <= 32);
+    for (i = val_idx + 1; i < (uint32_t)Py_SIZE(o); i++) {
         Py_XINCREF(o->b_array[i]);
         new->b_array[i - 2] = o->b_array[i];
     }
@@ -920,7 +921,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             uint32_t key_idx = 2 * idx;
             uint32_t val_idx = key_idx + 1;
-            Py_ssize_t i;
+            uint32_t i;
 
             *added_leaf = 1;
 
@@ -947,7 +948,8 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             /* Copy all keys/values that will be after the new key/value
                we are adding. */
-            for (i = key_idx; i < Py_SIZE(self); i++) {
+            assert(Py_SIZE(self) >= 0 && Py_SIZE(self) <= 32);
+            for (i = key_idx; i < (uint32_t)Py_SIZE(self); i++) {
                 Py_XINCREF(self->b_array[i]);
                 new_node->b_array[i + 2] = self->b_array[i];
             }
