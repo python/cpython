@@ -176,6 +176,23 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fp)
 
+
+    @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
+    def test_posix_spawn(self):
+        pid = posix.posix_spawn(sys.executable, [sys.executable, "-c", "pass"], os.environ,[])
+        self.assertEqual(os.waitpid(pid,0),(pid,0))
+
+
+    @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
+    def test_posix_spawn_file_actions(self):
+        file_actions = []
+        file_actions.append((0,3,os.path.realpath(__file__),0,0))
+        file_actions.append((os.POSIX_SPAWN_CLOSE,2))
+        file_actions.append((os.POSIX_SPAWN_DUP2,1,4))
+        pid = posix.posix_spawn(sys.executable, [sys.executable, "-c", "pass"], os.environ, file_actions)
+        self.assertEqual(os.waitpid(pid,0),(pid,0))
+
+
     @unittest.skipUnless(hasattr(posix, 'waitid'), "test needs posix.waitid()")
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
     def test_waitid(self):
