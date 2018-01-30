@@ -1,0 +1,2 @@
+Added seek and tell to the ZipExtFile class. This only works if the file
+object used to open the zipfile is seekable.
