@@ -341,7 +341,7 @@ by the local file.
    the :pdbcmd:`continue` command, or :pdbcmd:`step`,
    or any other command that resumes execution.
 
-   Specifying any command resuming execution 
+   Specifying any command resuming execution
    (currently :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`,
    :pdbcmd:`return`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
    terminates the command :pdbcmd:`list` (as if
