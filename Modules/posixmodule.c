@@ -8012,7 +8012,7 @@ static int
 os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 /*[clinic end generated code: output=bc059d34a73404d1 input=c3cddda8922b038d]*/
 {
-    int res;
+    int res = 0;
 #if defined(HAVE_DUP3) && \
     !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
     /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
