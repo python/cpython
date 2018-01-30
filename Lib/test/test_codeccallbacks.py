@@ -1049,43 +1049,49 @@ class CodecCallbackTest(unittest.TestCase):
         # better generating one more character to fill the extra space slot
         # so in debug build it can steadily fail
         def forward_shorter_than_end(exc):
-            # size one character, 0 < forward < exc.end
-            return ('\ufffd', exc.start+1)
+            if isinstance(exc, UnicodeDecodeError):
+                # size one character, 0 < forward < exc.end
+                return ('\ufffd', exc.start+1)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
         codecs.register_error(
-            "forward_shorter_than_end", forward_shorter_than_end)
+            "test.forward_shorter_than_end", forward_shorter_than_end)
 
         self.assertEqual(
             b'\xd8\xd8\xd8\xd8\xd8\x00\x00\x00'.decode(
-                'utf-16-le', 'forward_shorter_than_end'),
+                'utf-16-le', 'test.forward_shorter_than_end'),
             '\ufffd\ufffd\ufffd\ufffd\xd8\x00'
         )
         self.assertEqual(
             b'\xd8\xd8\xd8\xd8\x00\xd8\x00\x00'.decode(
-                'utf-16-be', 'forward_shorter_than_end'),
+                'utf-16-be', 'test.forward_shorter_than_end'),
             '\ufffd\ufffd\ufffd\ufffd\xd8\x00'
         )
         self.assertEqual(
             b'\x11\x11\x11\x11\x11\x00\x00\x00\x00\x00\x00'.decode(
-                'utf-32-le', 'forward_shorter_than_end'),
+                'utf-32-le', 'test.forward_shorter_than_end'),
             '\ufffd\ufffd\ufffd\u1111\x00'
         )
         self.assertEqual(
             b'\x11\x11\x11\x00\x00\x11\x11\x00\x00\x00\x00'.decode(
-                'utf-32-be', 'forward_shorter_than_end'),
+                'utf-32-be', 'test.forward_shorter_than_end'),
             '\ufffd\ufffd\ufffd\u1111\x00'
         )
 
         def replace_with_long(exc):
-            exc.object = b"\x00" * 8
-            return ('\ufffd', exc.start)
-        codecs.register_error("replace_with_long", replace_with_long)
+            if isinstance(exc, UnicodeDecodeError):
+                exc.object = b"\x00" * 8
+                return ('\ufffd', exc.start)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.replace_with_long", replace_with_long)
 
         self.assertEqual(
-            b'\x00'.decode('utf-16', 'replace_with_long'),
+            b'\x00'.decode('utf-16', 'test.replace_with_long'),
             '\ufffd\x00\x00\x00\x00'
         )
         self.assertEqual(
-            b'\x00'.decode('utf-32', 'replace_with_long'),
+            b'\x00'.decode('utf-32', 'test.replace_with_long'),
             '\ufffd\x00\x00'
         )
 
