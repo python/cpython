@@ -1612,7 +1612,9 @@ interp_list_all(PyObject *self)
             return NULL;
         }
         // insert at front of list
-        if (PyList_Insert(ids, 0, id) < 0) {
+        int res = PyList_Insert(ids, 0, id);
+        Py_DECREF(id);
+        if (res < 0) {
             Py_DECREF(ids);
             return NULL;
         }
