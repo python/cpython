@@ -8,7 +8,7 @@ test_grammar.py files from both Python 2 and Python 3.
 
 # Testing imports
 from . import support
-from .support import driver
+from .support import driver, driver_no_print_statement
 from test.support import verbose
 
 # Python imports
@@ -413,8 +413,6 @@ class TestParserIdempotency(support.TestCase):
 
     """A cut-down version of pytree_idempotency.py."""
 
-    # Issue 13125
-    @unittest.expectedFailure
     def test_all_project_files(self):
         for filepath in support.all_project_files():
             with open(filepath, "rb") as fp:
@@ -425,12 +423,13 @@ class TestParserIdempotency(support.TestCase):
                 source = fp.read()
             try:
                 tree = driver.parse_string(source)
-            except ParseError as err:
-                if verbose > 0:
-                    warnings.warn('ParseError on file %s (%s)' % (filepath, err))
-                continue
+            except ParseError:
+                try:
+                    tree = driver_no_print_statement.parse_string(source)
+                except ParseError as err:
+                    self.fail('ParseError on file %s (%s)' % (filepath, err))
             new = str(tree)
-            x = diff(filepath, new)
+            x = diff(filepath, new, encoding=encoding)
             if x:
                 self.fail("Idempotency failed: %s" % filepath)
 
@@ -481,9 +480,9 @@ class TestGeneratorExpressions(GrammarTest):
         self.validate("set(x for x in [],)")
 
 
-def diff(fn, result):
+def diff(fn, result, encoding='utf-8'):
     try:
-        with open('@', 'w') as f:
+        with open('@', 'w', encoding=encoding, newline='\n') as f:
             f.write(str(result))
         fn = fn.replace('"', '\\"')
         return subprocess.call(['diff', '-u', fn, '@'], stdout=(subprocess.DEVNULL if verbose < 1 else None))
