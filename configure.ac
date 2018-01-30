@@ -1783,11 +1783,14 @@ yes)
                ;;
             esac
 
-            CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
-            LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
             if test "${UNIVERSALSDK}" != "/"
             then
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
                 CPPFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
+            else
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
         fi
 
