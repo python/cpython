@@ -15,7 +15,6 @@ NEW for 3.7.0:
 
 TODO:
 - support SDKROOT and DEVELOPER_DIR xcrun env variables
-- decouple /Library Tcl/Tk versions from /System/Library versions
 - test with 10.5 and 10.4 and determine support status
 
 Please ensure that this script keeps working with Python 2.5, to avoid
@@ -33,7 +32,8 @@ the Python built by this script will attempt to dynamically link first to
 Tcl and Tk frameworks in /Library/Frameworks if available otherwise fall
 back to the ones in /System/Library/Framework.  For the build, we recommend
 installing the most recent ActiveTcl 8.6. 8.5, or 8.4 version, depending
-on the deployment target.
+on the deployment target.  The actual version linked to depends on the
+path of /Library/Frameworks/{Tcl,Tk}.framework/Versions/Current.
 
 Usage: see USAGE variable in the script.
 """
@@ -548,32 +548,32 @@ def checkEnvironment():
 
     # Because we only support dynamic load of only one major/minor version of
     # Tcl/Tk, ensure:
-    # 1. there are no user-installed frameworks of Tcl/Tk with version
-    #       higher than the Apple-supplied system version in
-    #       SDKROOT/System/Library/Frameworks
-    # 2. there is a user-installed framework (usually ActiveTcl) in (or linked
-    #       in) SDKROOT/Library/Frameworks with the same version as the system
-    #       version. This allows users to choose to install a newer patch level.
+    # 1. there is a user-installed framework (usually ActiveTcl) in (or linked
+    #       in) SDKROOT/Library/Frameworks.  As of Python 3.7.0, we no longer
+    #       enforce that the version of the user-installed framework also
+    #       exists in the system-supplied Tcl/Tk frameworks.  Time to support
+    #       Tcl/Tk 8.6 even if Apple does not.
 
     frameworks = {}
     for framework in ['Tcl', 'Tk']:
         fwpth = 'Library/Frameworks/%s.framework/Versions/Current' % framework
-        sysfw = os.path.join('/', 'System', fwpth)
         libfw = os.path.join('/', fwpth)
         usrfw = os.path.join(os.getenv('HOME'), fwpth)
-        frameworks[framework] = os.readlink(sysfw)
+        frameworks[framework] = os.readlink(libfw)
         if not os.path.exists(libfw):
             fatal("Please install a link to a current %s %s as %s so "
                     "the user can override the system framework."
                     % (framework, frameworks[framework], libfw))
-        if os.readlink(libfw) != os.readlink(sysfw):
-            fatal("Version of %s must match %s" % (libfw, sysfw) )
         if os.path.exists(usrfw):
             fatal("Please rename %s to avoid possible dynamic load issues."
                     % usrfw)
 
     if frameworks['Tcl'] != frameworks['Tk']:
         fatal("The Tcl and Tk frameworks are not the same version.")
+
+    print(" -- Building with Tcl/Tk %s frameworks"
+                % frameworks['Tk']
+    print("")
 
     # add files to check after build
     EXPECTED_SHARED_LIBS['_tkinter.so'] = [
