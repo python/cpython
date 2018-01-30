@@ -1,2 +1,0 @@
-The locals() dictionary now displays in the lexical order that variables
-were defined.  Previously, the order was reversed.

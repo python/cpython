@@ -1,2 +1,0 @@
-Complete the C API documentation, profiling and tracing part with the newly
-added per-opcode events.

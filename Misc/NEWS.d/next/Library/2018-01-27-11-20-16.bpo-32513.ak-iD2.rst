@@ -1,2 +1,0 @@
-In dataclasses, allow easier overriding of dunder methods without specifying
-decorator parameters.
