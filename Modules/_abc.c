@@ -720,6 +720,11 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
 
     for (i = 0; i < registry_size; i++) {
         PyObject *rkey = PyWeakref_GetObject(copy[i]);
+        if (rkey == NULL) {
+            // Someone inject non-weakref type in the registry.
+            ret = -1;
+            break;
+        }
         if (rkey == Py_None) {
             continue;
         }
