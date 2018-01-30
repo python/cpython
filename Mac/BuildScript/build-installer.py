@@ -11,10 +11,12 @@ NEW for 3.7.0:
   The SDK stuff was primarily needed for building universal installers
   for 10.4; so as of 3.7.0, building installers for 10.4 is no longer
   supported with build-installer.
+- use generic "gcc" as compiler (CC env var) rather than "gcc-4.2"
 
 TODO:
 - support SDKROOT and DEVELOPER_DIR xcrun env variables
 - decouple /Library Tcl/Tk versions from /System/Library versions
+- test with 10.5 and 10.4 and determine support status
 
 Please ensure that this script keeps working with Python 2.5, to avoid
 bootstrap issues (/usr/bin/python is Python 2.5 on OSX 10.5).  Doc builds
@@ -156,10 +158,10 @@ def getDeptargetTuple():
 def getTargetCompilers():
     target_cc_map = {
         '10.4': ('gcc-4.0', 'g++-4.0'),
-        '10.5': ('gcc-4.2', 'g++-4.2'),
-        '10.6': ('gcc-4.2', 'g++-4.2'),
+        '10.5': ('gcc', 'g++'),
+        '10.6': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
+    return target_cc_map.get(DEPTARGET, ('gcc', 'gcc++') )
 
 CC, CXX = getTargetCompilers()
 
