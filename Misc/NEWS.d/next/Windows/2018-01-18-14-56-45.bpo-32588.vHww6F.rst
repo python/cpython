@@ -1,2 +1,0 @@
-Create standalone _distutils_findvs module and add missing _queue module to
-installer.

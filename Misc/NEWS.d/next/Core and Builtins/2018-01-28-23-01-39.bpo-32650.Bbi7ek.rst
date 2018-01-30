@@ -1,2 +1,0 @@
-Pdb and other debuggers dependent on bdb.py will correctly step over (next
-command) native coroutines. Patch by Pablo Galindo.

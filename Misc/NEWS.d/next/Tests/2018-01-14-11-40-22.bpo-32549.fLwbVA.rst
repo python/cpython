@@ -1,1 +1,0 @@
-On Travis CI, Python now Compiles and uses a local copy of OpenSSL 1.1.0g for testing.
