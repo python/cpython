@@ -702,7 +702,16 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
         return 0;
     }
 
-    int ret = 0;
+    // Fast path: check subclass is in weakref directly.
+    int ret = _in_weak_set(impl->_abc_registry, subclass);
+    if (ret < 0) {
+        *result = NULL;
+        return -1;
+    }
+    if (ret > 0) {
+        *result = Py_True;
+        return 1;
+    }
 
     // Weakref callback may remove entry from set.
     // Se we take snapshot of registry first.
