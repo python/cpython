@@ -1097,7 +1097,12 @@ class Popen(object):
             assert not pass_fds, "pass_fds not supported on Windows."
 
             if not isinstance(args, str):
-                args = list2cmdline(args)
+                try:
+                    args = os.fsdecode(args)  # os.PathLike -> str
+                except TypeError:  # not an os.PathLike, must be a sequence.
+                    args = list(args)
+                    args[0] = os.fsdecode(args[0])  # os.PathLike -> str
+                    args = list2cmdline(args)
 
             # Process startup details
             if startupinfo is None:
@@ -1369,7 +1374,10 @@ class Popen(object):
             if isinstance(args, (str, bytes)):
                 args = [args]
             else:
-                args = list(args)
+                try:
+                    args = list(args)
+                except TypeError:  # os.PathLike instead of a sequence?
+                    args = [os.fsencode(args)]  # os.PathLike -> [str]
 
             if shell:
                 # On Android the default shell is at '/system/bin/sh'.
