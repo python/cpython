@@ -2921,6 +2921,71 @@ class Win32ProcessTestCase(BaseTestCase):
         self._kill_dead_process('terminate')
 
 class MiscTests(unittest.TestCase):
+
+    class RecordingPopen(subprocess.Popen):
+        """A Popen that saves a reference to each instance for testing."""
+        instances_created = []
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.instances_created.append(self)
+
+    @mock.patch.object(subprocess.Popen, "_communicate")
+    def _test_keyboardinterrupt_no_kill(self, popener, mock__communicate,
+                                        **kwargs):
+        """Fake a SIGINT happening during Popen._communicate() and ._wait().
+
+        This avoids the need to actually try and get test environments to send
+        and receive signals reliably across platforms.  The net effect of a ^C
+        happening during a blocking subprocess execution which we want to clean
+        up from is a KeyboardInterrupt coming out of communicate() or wait().
+        """
+
+        mock__communicate.side_effect = KeyboardInterrupt
+        try:
+            with mock.patch.object(subprocess.Popen, "_wait") as mock__wait:
+                # We patch out _wait() as no signal was involved so the
+                # child process isn't actually going to exit rapidly.
+                mock__wait.side_effect = KeyboardInterrupt
+                with mock.patch.object(subprocess, "Popen",
+                                       self.RecordingPopen):
+                    with self.assertRaises(KeyboardInterrupt):
+                        popener([sys.executable, "-c",
+                                 "import time\ntime.sleep(9)\nimport sys\n"
+                                 "sys.stderr.write('\\n!runaway child!\\n')"],
+                                stdout=subprocess.DEVNULL, **kwargs)
+                for call in mock__wait.call_args_list[1:]:
+                    self.assertNotEqual(
+                            call, mock.call(timeout=None),
+                            "no open-ended wait() after the first allowed: "
+                            f"{mock__wait.call_args_list}")
+                sigint_calls = []
+                for call in mock__wait.call_args_list:
+                    if call == mock.call(timeout=0.25):  # from Popen.__init__
+                        sigint_calls.append(call)
+                self.assertLessEqual(mock__wait.call_count, 2,
+                                     msg=mock__wait.call_args_list)
+                self.assertEqual(len(sigint_calls), 1,
+                                 msg=mock__wait.call_args_list)
+        finally:
+            # cleanup the forgotten (due to our mocks) child process
+            process = self.RecordingPopen.instances_created.pop()
+            process.kill()
+            process.wait()
+            self.assertEqual([], self.RecordingPopen.instances_created)
+
+    def test_call_keyboardinterrupt_no_kill(self):
+        self._test_keyboardinterrupt_no_kill(subprocess.call, timeout=6.282)
+
+    def test_run_keyboardinterrupt_no_kill(self):
+        self._test_keyboardinterrupt_no_kill(subprocess.run, timeout=6.282)
+
+    def test_context_manager_keyboardinterrupt_no_kill(self):
+        def popen_via_context_manager(*args, **kwargs):
+            with subprocess.Popen(*args, **kwargs) as unused_process:
+                raise KeyboardInterrupt  # Test how __exit__ handles ^C.
+        self._test_keyboardinterrupt_no_kill(popen_via_context_manager)
+
     def test_getoutput(self):
         self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
         self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
