@@ -1475,6 +1475,38 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
+    def test_capture_output(self):
+        cp = self.run_python(("import sys;"
+                              "sys.stdout.write('BDFL'); "
+                              "sys.stderr.write('FLUFL')"),
+                             capture_output=True)
+        self.assertIn(b'BDFL', cp.stdout)
+        self.assertIn(b'FLUFL', cp.stderr)
+
+    def test_stdout_with_capture_output_arg(self):
+        # run() refuses to accept 'stdout' with 'capture_output'
+        tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
+        with self.assertRaises(ValueError,
+            msg=("Expected ValueError when stdout and capture_output "
+                 "args supplied.")) as c:
+            output = self.run_python("print('will not be run')",
+                                      capture_output=True, stdout=tf)
+        self.assertIn('stdout', c.exception.args[0])
+        self.assertIn('capture_output', c.exception.args[0])
+
+    def test_stderr_with_capture_output_arg(self):
+        # run() refuses to accept 'stderr' with 'capture_output'
+        tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
+        with self.assertRaises(ValueError,
+            msg=("Expected ValueError when stderr and capture_output "
+                 "args supplied.")) as c:
+            output = self.run_python("print('will not be run')",
+                                      capture_output=True, stderr=tf)
+        self.assertIn('stderr', c.exception.args[0])
+        self.assertIn('capture_output', c.exception.args[0])
+
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):
