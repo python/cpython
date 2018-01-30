@@ -193,7 +193,7 @@ class HashLibTestCase(unittest.TestCase):
         try:
             import _md5
         except ImportError:
-            pass
+            self.skipTest("_md5 module not available")
         # This forces an ImportError for "import _md5" statements
         sys.modules['_md5'] = None
         # clear the cache
