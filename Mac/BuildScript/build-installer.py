@@ -1072,10 +1072,6 @@ def buildPython():
     curdir = os.getcwd()
     os.chdir(buildDir)
 
-    # Not sure if this is still needed, the original build script
-    # claims that parts of the install assume python.exe exists.
-    os.symlink('python', os.path.join(buildDir, 'python.exe'))
-
     # Extract the version from the configure file, needed to calculate
     # several paths.
     version = getVersion()
