@@ -208,9 +208,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.0.2m",
-              url="https://www.openssl.org/source/openssl-1.0.2m.tar.gz",
-              checksum='10e9e37f492094b9ef296f68f24a7666',
+              name="OpenSSL 1.1.0g",
+              url="https://www.openssl.org/source/openssl-1.1.0g.tar.gz",
+              checksum='ba5f1b8b835b88cadbce9b35ed9531a6',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -802,17 +802,13 @@ def build_universal_openssl(basedir, archList):
             "ppc64": ["darwin64-ppc-cc"],
         }
         configure_opts = [
-            "no-krb5",
             "no-idea",
             "no-mdc2",
             "no-rc5",
             "no-zlib",
-            "enable-tlsext",
-            "no-ssl2",
             "no-ssl3",
             # "enable-unit-test",
             "shared",
-            "--install_prefix=%s"%shellQuote(archbase),
             "--prefix=%s"%os.path.join("/", *FW_VERSION_PREFIX),
             "--openssldir=%s"%os.path.join("/", *FW_SSL_DIRECTORY),
         ]
@@ -822,7 +818,7 @@ def build_universal_openssl(basedir, archList):
                         + arch_opts[arch] + configure_opts))
         runCommand("make depend")
         runCommand("make all")
-        runCommand("make install_sw")
+        runCommand("make install_sw DESTDIR=%s"%shellQuote(archbase))
         # runCommand("make test")
         return
 
