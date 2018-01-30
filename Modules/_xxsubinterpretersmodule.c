@@ -1916,7 +1916,7 @@ static PyObject *
 channel_drop_interpreter(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
-    static char *kwlist[] = {"id", "send", "recv"};
+    static char *kwlist[] = {"id", "send", "recv", NULL};
     PyObject *id;
     int send = -1;
     int recv = -1;
