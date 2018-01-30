@@ -1489,7 +1489,8 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-universal-archs=ARCH
                           select architectures for universal build ("32-bit",
-                          "64-bit", "3-way", "intel", "intel-32", or "all")
+                          "64-bit", "3-way", "intel", "intel-32", "intel-64",
+                          or "all")
   --with-framework-name=FRAMEWORK
                           specify an alternate name of the framework built
                           with --enable-framework
@@ -7224,6 +7225,11 @@ $as_echo "$CC" >&6; }
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
                ;;
+            intel-64)
+               UNIVERSAL_ARCH_FLAGS="-arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+               ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
@@ -7234,11 +7240,14 @@ $as_echo "$CC" >&6; }
                ;;
             esac
 
-            CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
-            LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
             if test "${UNIVERSALSDK}" != "/"
             then
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
                 CPPFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
+            else
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
         fi
 

@@ -1,0 +1,4 @@
+Provide an additional, more modern macOS installer variant that supports
+macOS 10.9+ systems in 64-bit mode only.  Upgrade the supplied third-party
+libraries to OpenSSL 1.1.0g and to SQLite 3.22.0.  The 10.9+ installer now
+links with Tcl/Tk 8.6.
