@@ -1,0 +1,4 @@
+The *args* argument of subprocess.Popen can now be a
+:term:`path-like object`. If *args* is given as a
+sequence, it's first element can now be a
+:term:`path-like object` as well.
