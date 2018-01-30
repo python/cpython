@@ -1618,7 +1618,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(s.type, socket.SOCK_STREAM)
 
     @unittest.skipIf(os.name == 'nt', 'Will not work on Windows')
-    def test_uknown_socket_family_repr(self):
+    def test_unknown_socket_family_repr(self):
         # Test that when created with a family that's not one of the known
         # AF_*/SOCK_* constants, socket.family just returns the number.
         #
@@ -1642,7 +1642,8 @@ class GeneralModuleTests(unittest.TestCase):
                 fileno=fd) as s:
             self.assertEqual(s.family, unknown_family)
             self.assertEqual(s.type, unknown_type)
-            self.assertEqual(s.proto, 23)
+            # some OS like macOS ignore proto
+            self.assertIn(s.proto, {0, 23})
 
     @unittest.skipUnless(hasattr(os, 'sendfile'), 'test needs os.sendfile()')
     def test__sendfile_use_sendfile(self):
