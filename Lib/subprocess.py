@@ -304,9 +304,9 @@ def call(*popenargs, timeout=None, **kwargs):
     with Popen(*popenargs, **kwargs) as p:
         try:
             return p.wait(timeout=timeout)
-        except:
+        except:  # Including KeyboardInterrupt, wait handled that.
             p.kill()
-            p.wait()
+            # We don't call p.wait() again as p.__exit__ does that for us.
             raise
 
 
@@ -450,9 +450,9 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             stdout, stderr = process.communicate()
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
-        except:
+        except:  # Including KeyboardInterrupt, communicate handled that.
             process.kill()
-            process.wait()
+            # We don't call process.wait() as .__exit__ does that for us.
             raise
         retcode = process.poll()
         if check and retcode:
@@ -714,6 +714,11 @@ class Popen(object):
 
         self.text_mode = encoding or errors or text or universal_newlines
 
+        # How long to resume waiting on a child after the first ^C.
+        # There is no right value for this.  The purpose is to be polite
+        # yet remain good for interactive users trying to exit a tool.
+        self._sigint_wait_secs = 0.25  # 1/xkcd221.getRandomNumber()
+
         self._closed_child_pipe_fds = False
 
         try:
@@ -787,7 +792,7 @@ class Popen(object):
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, value, traceback):
         if self.stdout:
             self.stdout.close()
         if self.stderr:
@@ -796,6 +801,22 @@ class Popen(object):
             if self.stdin:
                 self.stdin.close()
         finally:
+            if exc_type == KeyboardInterrupt:
+                # https://bugs.python.org/issue25942
+                # In the case of a KeyboardInterrupt we assume the SIGINT
+                # was also already sent to our child processes.  We can't
+                # block indefinitely as that is not user friendly.
+                # If we have not already waited a brief amount of time in
+                # an interrupted .wait() or .communicate() call, do so here
+                # for consistency.
+                if self._sigint_wait_secs > 0:
+                    try:
+                        self._wait(timeout=self._sigint_wait_secs)
+                    except TimeoutExpired:
+                        pass
+                self._sigint_wait_secs = 0  # Note that this has been done.
+                return  # resume the KeyboardInterrupt
+
             # Wait for the process to terminate, to avoid zombies.
             self.wait()
 
@@ -804,7 +825,7 @@ class Popen(object):
             # We didn't get to successfully create a child process.
             return
         if self.returncode is None:
-            # Not reading subprocess exit status creates a zombi process which
+            # Not reading subprocess exit status creates a zombie process which
             # is only destroyed at the parent python process exit
             _warn("subprocess %s is still running" % self.pid,
                   ResourceWarning, source=self)
@@ -889,6 +910,21 @@ class Popen(object):
 
             try:
                 stdout, stderr = self._communicate(input, endtime, timeout)
+            except KeyboardInterrupt:
+                # https://bugs.python.org/issue25942
+                # See the detailed comment in .wait().
+                if timeout is not None:
+                    sigint_timeout = min(self._sigint_wait_secs,
+                                         self._remaining_time(endtime))
+                else:
+                    sigint_timeout = self._sigint_wait_secs
+                self._sigint_wait_secs = 0  # nothing else should wait.
+                try:
+                    self._wait(timeout=sigint_timeout)
+                except TimeoutExpired:
+                    pass
+                raise  # resume the KeyboardInterrupt
+
             finally:
                 self._communication_started = True
 
@@ -917,6 +953,30 @@ class Popen(object):
             return
         if _time() > endtime:
             raise TimeoutExpired(self.args, orig_timeout)
+
+
+    def wait(self, timeout=None):
+        """Wait for child process to terminate; returns self.returncode."""
+        if timeout is not None:
+            endtime = _time() + timeout
+        try:
+            return self._wait(timeout=timeout)
+        except KeyboardInterrupt:
+            # https://bugs.python.org/issue25942
+            # The first keyboard interrupt waits briefly for the child to
+            # exit under the common assumption that it also received the ^C
+            # generated SIGINT and will exit rapidly.
+            if timeout is not None:
+                sigint_timeout = min(self._sigint_wait_secs,
+                                     self._remaining_time(endtime))
+            else:
+                sigint_timeout = self._sigint_wait_secs
+            self._sigint_wait_secs = 0  # nothing else should wait.
+            try:
+                self._wait(timeout=sigint_timeout)
+            except TimeoutExpired:
+                pass
+            raise  # resume the KeyboardInterrupt
 
 
     if _mswindows:
@@ -1127,16 +1187,16 @@ class Popen(object):
             return self.returncode
 
 
-        def wait(self, timeout=None):
-            """Wait for child process to terminate.  Returns returncode
-            attribute."""
+        def _wait(self, timeout):
+            """Internal implementation of wait() on Windows."""
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
+                # API note: Returns immediately if timeout_millis == 0.
                 result = _winapi.WaitForSingleObject(self._handle,
-                                                    timeout_millis)
+                                                     timeout_millis)
                 if result == _winapi.WAIT_TIMEOUT:
                     raise TimeoutExpired(self.args, timeout)
                 self.returncode = _winapi.GetExitCodeProcess(self._handle)
@@ -1498,9 +1558,8 @@ class Popen(object):
             return (pid, sts)
 
 
-        def wait(self, timeout=None):
-            """Wait for child process to terminate.  Returns returncode
-            attribute."""
+        def _wait(self, timeout):
+            """Internal implementation of wait() on POSIX."""
             if self.returncode is not None:
                 return self.returncode
 
