@@ -145,7 +145,6 @@ _testconsole
 _testimportmultiple
 _testmultiphase
 _tkinter
-_xxsubinterpreters
 pyexpat
 select
 unicodedata
