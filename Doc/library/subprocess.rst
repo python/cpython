@@ -100,7 +100,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    .. versionchanged:: 3.7
 
-      Added the *text*  and *capture_output* parameters
+      Added the *text* parameter, as a more understandable alias of *universal_newlines*.
+      Added the *capture_output* parameter.
 
 .. class:: CompletedProcess
 
