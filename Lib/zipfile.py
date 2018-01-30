@@ -3,6 +3,7 @@ Read and write ZIP files.
 
 XXX references to utf-8 need further investigation.
 """
+import collections
 import io
 import os
 import importlib.util
@@ -567,15 +568,53 @@ def _ZipDecrypter(pwd):
 
 
 class LZMACompressor:
+    # LZMA uses "filter chains" to control compression settings (e.g., how
+    # much memory and CPU to use) in details. liblzma defines certain filter
+    # chain configurations as "preset levels," akin to the compression levels
+    # in zlib or bzip2.
+    _PresetOptions = collections.namedtuple(
+        '_PresetOptions',
+        ('lc', 'lp', 'pb', 'dict_size', 'mode', 'mf', 'nice_len', 'depth')
+    )
+    _PRESET_OPTIONS_MAP = {
+        # Levels 0 through 9, without the "extreme" setting
+        0x00000000: _PresetOptions(3, 0, 2, 1 << 18, 1, 3, 128, 4),
+        0x00000001: _PresetOptions(3, 0, 2, 1 << 20, 1, 4, 128, 8),
+        0x00000002: _PresetOptions(3, 0, 2, 1 << 21, 1, 4, 273, 24),
+        0x00000003: _PresetOptions(3, 0, 2, 1 << 22, 1, 4, 273, 48),
+        0x00000004: _PresetOptions(3, 0, 2, 1 << 22, 2, 20, 16, 0),
+        0x00000005: _PresetOptions(3, 0, 2, 1 << 23, 2, 20, 32, 0),
+        0x00000006: _PresetOptions(3, 0, 2, 1 << 23, 2, 20, 64, 0),
+        0x00000007: _PresetOptions(3, 0, 2, 1 << 24, 2, 20, 64, 0),
+        0x00000008: _PresetOptions(3, 0, 2, 1 << 25, 2, 20, 64, 0),
+        0x00000009: _PresetOptions(3, 0, 2, 1 << 26, 2, 20, 64, 0),
+        # Levels 0 through 9, OR-ed with the "extreme" setting (PRESET_EXTREME)
+        0x80000000: _PresetOptions(3, 0, 2, 1 << 18, 2, 20, 273, 512),
+        0x80000001: _PresetOptions(3, 0, 2, 1 << 20, 2, 20, 273, 512),
+        0x80000002: _PresetOptions(3, 0, 2, 1 << 21, 2, 20, 273, 512),
+        0x80000003: _PresetOptions(3, 0, 2, 1 << 22, 2, 20, 192, 0),
+        0x80000004: _PresetOptions(3, 0, 2, 1 << 22, 2, 20, 273, 512),
+        0x80000005: _PresetOptions(3, 0, 2, 1 << 23, 2, 20, 192, 0),
+        0x80000006: _PresetOptions(3, 0, 2, 1 << 23, 2, 20, 273, 512),
+        0x80000007: _PresetOptions(3, 0, 2, 1 << 24, 2, 20, 273, 512),
+        0x80000008: _PresetOptions(3, 0, 2, 1 << 25, 2, 20, 273, 512),
+        0x80000009: _PresetOptions(3, 0, 2, 1 << 26, 2, 20, 273, 512),
+    }
 
-    def __init__(self):
+    def __init__(self, preset=None):
         self._comp = None
+        if (preset is not None) and (preset not in self._PRESET_OPTIONS_MAP):
+            raise ValueError(f'invalid preset {preset}')
+        self._preset = preset
 
     def _init(self):
-        props = lzma._encode_filter_properties({'id': lzma.FILTER_LZMA1})
-        self._comp = lzma.LZMACompressor(lzma.FORMAT_RAW, filters=[
-            lzma._decode_filter_properties(lzma.FILTER_LZMA1, props)
-        ])
+        # Translate the encoder settings into the value to be written to
+        # the LZMA Properties Header in the ZIP file.
+        opts = {'id': lzma.FILTER_LZMA1}
+        if self._preset is not None:
+            opts.update(self._PRESET_OPTIONS_MAP[self._preset]._asdict())
+        props = lzma._encode_filter_properties(opts)
+        self._comp = lzma.LZMACompressor(lzma.FORMAT_RAW, filters=[opts])
         return struct.pack('<BBH', 9, 4, len(props)) + props
 
     def compress(self, data):
@@ -665,9 +704,8 @@ def _get_compressor(compress_type, compresslevel=None):
         if compresslevel is not None:
             return bz2.BZ2Compressor(compresslevel)
         return bz2.BZ2Compressor()
-    # compresslevel is ignored for ZIP_LZMA
     elif compress_type == ZIP_LZMA:
-        return LZMACompressor()
+        return LZMACompressor(preset=compresslevel)
     else:
         return None
 

@@ -2,6 +2,7 @@ import contextlib
 import io
 import os
 import importlib.util
+import lzma
 import pathlib
 import posixpath
 import time
@@ -575,6 +576,20 @@ class Bzip2TestsWithSourceFile(AbstractTestsWithSourceFile,
 class LzmaTestsWithSourceFile(AbstractTestsWithSourceFile,
                               unittest.TestCase):
     compression = zipfile.ZIP_LZMA
+
+    def test_write_preset(self):
+        # Initialize an LZMA compressor with a preset and get the generated
+        # property header.
+        props_header = zipfile.LZMACompressor(preset=1).compress(b'')
+
+        # Write a ZIP archive with that LZMA compression preset and ensure
+        # that the property header above is written to that archive.
+        with io.BytesIO() as fp:
+            kwargs = {'compression': self.compression, 'compresslevel': 1}
+            with zipfile.ZipFile(fp, 'w', **kwargs) as zipfp:
+                zipfp.writestr('dummy_file', b'dummy_contents')
+            written_bytes = fp.getvalue()
+        self.assertIn(props_header, written_bytes)
 
 
 class AbstractTestZip64InSmallFiles:
