@@ -705,10 +705,6 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
 
     /* 2. Check negative cache; may have to invalidate. */
-    incache = _in_weak_set(impl->_abc_negative_cache, subclass);
-    if (incache < 0) {
-        goto end;
-    }
     int r = PyObject_RichCompareBool(impl->_abc_negative_cache_version,
                                      abc_invalidation_counter, Py_LT);
     assert(r >= 0);  // Both should be PyLong
@@ -721,9 +717,16 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
            then carefully DECREF the old one. */
         Py_INCREF(abc_invalidation_counter);
         Py_SETREF(impl->_abc_negative_cache_version, abc_invalidation_counter);
-    } else if (incache > 0) {
-        result = Py_False;
-        goto end;
+    }
+    else {
+        incache = _in_weak_set(impl->_abc_negative_cache, subclass);
+        if (incache < 0) {
+            goto end;
+        }
+        if (incache > 0) {
+            result = Py_False;
+            goto end;
+        }
     }
 
     /* 3. Check the subclass hook. */
