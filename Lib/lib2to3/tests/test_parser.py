@@ -424,7 +424,10 @@ class TestParserIdempotency(support.TestCase):
             try:
                 tree = driver.parse_string(source)
             except ParseError:
-                tree = driver_no_print_statement.parse_string(source)
+                try:
+                    tree = driver_no_print_statement.parse_string(source)
+                except ParseError as err:
+                    self.fail('ParseError on file %s (%s)' % (filepath, err))
             new = str(tree)
             x = diff(filepath, new, encoding=encoding)
             if x:
