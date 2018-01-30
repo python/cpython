@@ -1,0 +1,2 @@
+Fix uninitialized variable 'res' in the C implementation of os.dup2. Patch
+by Stéphane Wirtel
