@@ -213,7 +213,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__;
+static PyObject *__doc__, *__annotations__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -311,7 +311,11 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         if (!__doc__)
             return NULL;
     }
-
+    if (!__annotations__) {
+        __annotations__ = PyUnicode_InternFromString("__annotations__");
+        if (!__annotations__)
+            return NULL;
+    }
     if (!compiler_init(&c))
         return NULL;
     Py_INCREF(filename);
@@ -1056,8 +1060,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case DELETE_FAST:
             return 0;
-        case STORE_ANNOTATION:
-            return -1;
 
         case RAISE_VARARGS:
             return -oparg;
@@ -4711,8 +4713,10 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             else {
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
-            /* ADDOP_N decrefs its argument */
-            ADDOP_N(c, STORE_ANNOTATION, mangled, names);
+            ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
+            ADDOP_O(c, LOAD_CONST, mangled, consts);
+            Py_DECREF(mangled);
+            ADDOP(c, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:

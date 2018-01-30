@@ -1,0 +1,1 @@
+Remove the STORE_ANNOTATION bytecode.

@@ -993,13 +993,6 @@ All of the following opcodes use their arguments.
    Deletes local ``co_varnames[var_num]``.
 
 
-.. opcode:: STORE_ANNOTATION (namei)
-
-   Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
-
-   .. versionadded:: 3.6
-
-
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot *i* of the cell and free
