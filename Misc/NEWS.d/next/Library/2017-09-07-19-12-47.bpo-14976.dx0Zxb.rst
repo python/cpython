@@ -1,2 +1,0 @@
-Add a queue.SimpleQueue class, an unbounded FIFO queue with a reentrant C
-implementation of put().

@@ -1,4 +1,0 @@
-Add a new "_xxsubinterpreters" extension module that exposes the existing
-subinterpreter C-API and a new cross-interpreter data sharing mechanism. The
-module is primarily intended for more thorough testing of the existing
-subinterpreter support.

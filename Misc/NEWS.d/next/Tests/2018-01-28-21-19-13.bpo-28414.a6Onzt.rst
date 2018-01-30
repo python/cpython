@@ -1,3 +1,0 @@
-Add test cases for IDNA 2003 and 2008 host names. IDNA 2003
-internationalized host names are working since bpo-31399 has landed. IDNA
-2008 are still broken.
