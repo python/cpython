@@ -101,9 +101,7 @@ append_ast_binop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     case FloorDiv: op = " // "; break;
     case Pow: op = " ** "; break;
     default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unknown operator inside f-string");
-        return -1;
+        Py_UNREACHABLE();
     }
 
     if (-1 == append_charp(writer, op)) {
@@ -132,9 +130,7 @@ append_ast_unaryop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     case UAdd: op = "+"; break;
     case USub: op = "-"; break;
     default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unknown operator inside f-string");
-        return -1;
+        Py_UNREACHABLE();
     }
 
     if (-1 == append_charp(writer, op)) {
