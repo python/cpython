@@ -572,7 +572,7 @@ def checkEnvironment():
         fatal("The Tcl and Tk frameworks are not the same version.")
 
     print(" -- Building with Tcl/Tk %s frameworks"
-                % frameworks['Tk']
+                % frameworks['Tk'])
     print("")
 
     # add files to check after build
