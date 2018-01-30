@@ -1928,8 +1928,10 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
         return NULL;
 
     new_args = PyTuple_New(2);
-    if (new_args == NULL)
+    if (new_args == NULL) {
+        Py_DECREF(typecode_obj);
         return NULL;
+    }
     Py_INCREF(items);
     PyTuple_SET_ITEM(new_args, 0, typecode_obj);
     PyTuple_SET_ITEM(new_args, 1, items);
@@ -2201,11 +2203,10 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     if (protocol == -1 && PyErr_Occurred())
         return NULL;
 
-    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+        return NULL;
+    }
     if (dict == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-            return NULL;
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }

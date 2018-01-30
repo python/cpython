@@ -1,2 +1,0 @@
-:func:`inspect.getfile` no longer computes the repr of unknown objects to
-display in an error message, to protect against badly behaved custom reprs.

@@ -1955,7 +1955,7 @@ The RPM spec files, found in the :file:`Misc/RPM/` directory in the Python
 source distribution, were updated for 2.3.  (Contributed by Sean Reifschneider.)
 
 Other new platforms now supported by Python include AtheOS
-(http://atheos.cx/), GNU/Hurd, and OpenVMS.
+(http://www.atheos.cx/), GNU/Hurd, and OpenVMS.
 
 .. ======================================================================
 

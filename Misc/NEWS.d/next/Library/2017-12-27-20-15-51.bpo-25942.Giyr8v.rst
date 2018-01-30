@@ -1,0 +1,6 @@
+The subprocess module is now more graceful when handling a Ctrl-C
+KeyboardInterrupt during subprocess.call, subprocess.run, or a Popen context
+manager.  It now waits a short amount of time for the child (presumed to
+have also gotten the SIGINT) to exit, before continuing the
+KeyboardInterrupt exception handling.  This still includes a SIGKILL in the
+call() and run() APIs, but at least the child had a chance first.

@@ -200,6 +200,20 @@ The special characters are:
      place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
      ``[]()[{}]`` will both match a parenthesis.
 
+   * Support of nested sets and set operations as in `Unicode Technical
+     Standard #18`_ might be added in the future.  This would change the
+     syntax, so to facilitate this change a :exc:`FutureWarning` will be raised
+     in ambiguous cases for the time being.
+     That include sets starting with a literal ``'['`` or containing literal
+     character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+     avoid a warning escape them with a backslash.
+
+   .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+   .. versionchanged:: 3.7
+      :exc:`FutureWarning` is raised if a character set contains constructs
+      that will change semantically in the future.
+
 ``|``
    ``A|B``, where *A* and *B* can be arbitrary REs, creates a regular expression that
    will match either *A* or *B*.  An arbitrary number of REs can be separated by the
@@ -617,7 +631,8 @@ form.
    This flag allows you to write regular expressions that look nicer and are
    more readable by allowing you to visually separate logical sections of the
    pattern and add comments. Whitespace within the pattern is ignored, except
-   when in a character class or when preceded by an unescaped backslash.
+   when in a character class, or when preceded by an unescaped backslash,
+   or within tokens like ``*?``, ``(?:`` or ``(?P<...>``.
    When a line contains a ``#`` that is not in a character class and is not
    preceded by an unescaped backslash, all characters from the leftmost such
    ``#`` through the end of the line are ignored.
@@ -674,11 +689,11 @@ form.
    splits occur, and the remainder of the string is returned as the final element
    of the list. ::
 
-      >>> re.split('\W+', 'Words, words, words.')
+      >>> re.split(r'\W+', 'Words, words, words.')
       ['Words', 'words', 'words', '']
-      >>> re.split('(\W+)', 'Words, words, words.')
+      >>> re.split(r'(\W+)', 'Words, words, words.')
       ['Words', ', ', 'words', ', ', 'words', '.', '']
-      >>> re.split('\W+', 'Words, words, words.', 1)
+      >>> re.split(r'\W+', 'Words, words, words.', 1)
       ['Words', 'words, words.']
       >>> re.split('[a-f]+', '0a3B9', flags=re.IGNORECASE)
       ['0', '3', '9']
@@ -687,43 +702,28 @@ form.
    the string, the result will start with an empty string.  The same holds for
    the end of the string::
 
-      >>> re.split('(\W+)', '...words, words...')
+      >>> re.split(r'(\W+)', '...words, words...')
       ['', '...', 'words', ', ', 'words', '...', '']
 
    That way, separator components are always found at the same relative
    indices within the result list.
 
-   .. note::
+   Empty matches for the pattern split the string only when not adjacent
+   to a previous empty match.
 
-      :func:`split` doesn't currently split a string on an empty pattern match.
-      For example::
-
-         >>> re.split('x*', 'axbc')
-         ['a', 'bc']
-
-      Even though ``'x*'`` also matches 0 'x' before 'a', between 'b' and 'c',
-      and after 'c', currently these matches are ignored.  The correct behavior
-      (i.e. splitting on empty matches too and returning ``['', 'a', 'b', 'c',
-      '']``) will be implemented in future versions of Python, but since this
-      is a backward incompatible change, a :exc:`FutureWarning` will be raised
-      in the meanwhile.
-
-      Patterns that can only match empty strings currently never split the
-      string.  Since this doesn't match the expected behavior, a
-      :exc:`ValueError` will be raised starting from Python 3.5::
-
-         >>> re.split("^$", "foo\n\nbar\n", flags=re.M)
-         Traceback (most recent call last):
-           File "<stdin>", line 1, in <module>
-           ...
-         ValueError: split() requires a non-empty pattern match.
+      >>> re.split(r'\b', 'Words, words, words.')
+      ['', 'Words', ', ', 'words', ', ', 'words', '.']
+      >>> re.split(r'\W*', '...words...')
+      ['', '', 'w', 'o', 'r', 'd', 's', '', '']
+      >>> re.split(r'(\W*)', '...words...')
+      ['', '...', '', '', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '', '', '']
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
 
-   .. versionchanged:: 3.5
-      Splitting on a pattern that could match an empty string now raises
-      a warning.  Patterns that can only match empty strings are now rejected.
+   .. versionchanged:: 3.7
+      Added support of splitting on a pattern that could match an empty string.
+
 
 .. function:: findall(pattern, string, flags=0)
 
@@ -731,8 +731,10 @@ form.
    strings.  The *string* is scanned left-to-right, and matches are returned in
    the order found.  If one or more groups are present in the pattern, return a
    list of groups; this will be a list of tuples if the pattern has more than
-   one group.  Empty matches are included in the result unless they touch the
-   beginning of another match.
+   one group.  Empty matches are included in the result.
+
+   .. versionchanged:: 3.7
+      Non-empty matches can now start just after a previous empty match.
 
 
 .. function:: finditer(pattern, string, flags=0)
@@ -740,8 +742,10 @@ form.
    Return an :term:`iterator` yielding :ref:`match objects <match-objects>` over
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
    is scanned left-to-right, and matches are returned in the order found.  Empty
-   matches are included in the result unless they touch the beginning of another
-   match.
+   matches are included in the result.
+
+   .. versionchanged:: 3.7
+      Non-empty matches can now start just after a previous empty match.
 
 
 .. function:: sub(pattern, repl, string, count=0, flags=0)
@@ -777,8 +781,8 @@ form.
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
    occurrences will be replaced. Empty matches for the pattern are replaced only
-   when not adjacent to a previous match, so ``sub('x*', '-', 'abc')`` returns
-   ``'-a-b-c-'``.
+   when not adjacent to a previous empty match, so ``sub('x*', '-', 'abxd')`` returns
+   ``'-a-b--d-'``.
 
    In string-type *repl* arguments, in addition to the character escapes and
    backreferences described above,
@@ -804,6 +808,9 @@ form.
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
 
+      Empty matches for the pattern are replaced when adjacent to a previous
+      non-empty match.
+
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
 
@@ -828,7 +835,7 @@ form.
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
-      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%&'\*\+\-\.\^_`\|~:]+
+      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%\&'\*\+\-\.\^_`\|\~:]+
 
       >>> operators = ['+', '-', '*', '/', '**']
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))

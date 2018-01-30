@@ -92,6 +92,58 @@ _Py_bytes_isalnum(const char *cptr, Py_ssize_t len)
 }
 
 
+PyDoc_STRVAR_shared(_Py_isascii__doc__,
+"B.isascii() -> bool\n\
+\n\
+Return True if B is empty or all characters in B are ASCII,\n\
+False otherwise.");
+
+// Optimization is copied from ascii_decode in unicodeobject.c
+/* Mask to quickly check whether a C 'long' contains a
+   non-ASCII, UTF8-encoded char. */
+#if (SIZEOF_LONG == 8)
+# define ASCII_CHAR_MASK 0x8080808080808080UL
+#elif (SIZEOF_LONG == 4)
+# define ASCII_CHAR_MASK 0x80808080UL
+#else
+# error C 'long' size should be either 4 or 8!
+#endif
+
+PyObject*
+_Py_bytes_isascii(const char *cptr, Py_ssize_t len)
+{
+    const char *p = cptr;
+    const char *end = p + len;
+    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
+
+    while (p < end) {
+        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
+           for an explanation. */
+        if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
+            /* Help allocation */
+            const char *_p = p;
+            while (_p < aligned_end) {
+                unsigned long value = *(unsigned long *) _p;
+                if (value & ASCII_CHAR_MASK) {
+                    Py_RETURN_FALSE;
+                }
+                _p += SIZEOF_LONG;
+            }
+            p = _p;
+            if (_p == end)
+                break;
+        }
+        if ((unsigned char)*p & 0x80) {
+            Py_RETURN_FALSE;
+        }
+        p++;
+    }
+    Py_RETURN_TRUE;
+}
+
+#undef ASCII_CHAR_MASK
+
+
 PyDoc_STRVAR_shared(_Py_isdigit__doc__,
 "B.isdigit() -> bool\n\
 \n\

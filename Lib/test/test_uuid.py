@@ -311,6 +311,32 @@ class BaseTestUUID:
         node2 = self.uuid.getnode()
         self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
+    # bpo-32502: UUID1 requires a 48-bit identifier, but hardware identifiers
+    # need not necessarily be 48 bits (e.g., EUI-64).
+    def test_uuid1_eui64(self):
+        # Confirm that uuid.getnode ignores hardware addresses larger than 48
+        # bits. Mock out each platform's *_getnode helper functions to return
+        # something just larger than 48 bits to test. This will cause
+        # uuid.getnode to fall back on uuid._random_getnode, which will
+        # generate a valid value.
+        too_large_getter = lambda: 1 << 48
+        with unittest.mock.patch.multiple(
+            self.uuid,
+            _node=None,  # Ignore any cached node value.
+            _NODE_GETTERS_WIN32=[too_large_getter],
+            _NODE_GETTERS_UNIX=[too_large_getter],
+        ):
+            node = self.uuid.getnode()
+        self.assertTrue(0 < node < (1 << 48), '%012x' % node)
+
+        # Confirm that uuid1 can use the generated node, i.e., the that
+        # uuid.getnode fell back on uuid._random_getnode() rather than using
+        # the value from too_large_getter above.
+        try:
+            self.uuid.uuid1(node=node)
+        except ValueError as e:
+            self.fail('uuid1 was given an invalid node ID')
+
     def test_uuid1(self):
         equal = self.assertEqual
 
@@ -512,60 +538,61 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         self.assertEqual(mac, 0x1234567890ab)
 
-    def check_node(self, node, requires=None, network=False):
+    def check_node(self, node, requires=None):
         if requires and node is None:
             self.skipTest('requires ' + requires)
         hex = '%012x' % node
         if support.verbose >= 2:
             print(hex, end=' ')
-        if network:
-            # 47 bit will never be set in IEEE 802 addresses obtained
-            # from network cards.
-            self.assertFalse(node & 0x010000000000, hex)
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
-        self.check_node(node, 'ifconfig', True)
+        self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
-        self.check_node(node, 'ip', True)
+        self.check_node(node, 'ip')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
-        self.check_node(node, 'arp', True)
+        self.check_node(node, 'arp')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
-        self.check_node(node, 'lanscan', True)
+        self.check_node(node, 'lanscan')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_netstat_getnode(self):
         node = self.uuid._netstat_getnode()
-        self.check_node(node, 'netstat', True)
+        self.check_node(node, 'netstat')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_ipconfig_getnode(self):
         node = self.uuid._ipconfig_getnode()
-        self.check_node(node, 'ipconfig', True)
+        self.check_node(node, 'ipconfig')
 
     @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
     @unittest.skipUnless(importable('netbios'), 'requires netbios')
     def test_netbios_getnode(self):
         node = self.uuid._netbios_getnode()
-        self.check_node(node, network=True)
+        self.check_node(node)
 
     def test_random_getnode(self):
         node = self.uuid._random_getnode()
-        # Least significant bit of first octet must be set.
-        self.assertTrue(node & 0x010000000000, '%012x' % node)
+        # The multicast bit, i.e. the least significant bit of first octet,
+        # must be set for randomly generated MAC addresses.  See RFC 4122,
+        # $4.1.6.
+        self.assertTrue(node & (1 << 40), '%012x' % node)
         self.check_node(node)
+
+        node2 = self.uuid._random_getnode()
+        self.assertNotEqual(node2, node, '%012x' % node)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_unix_getnode(self):

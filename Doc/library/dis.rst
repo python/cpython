@@ -993,13 +993,6 @@ All of the following opcodes use their arguments.
    Deletes local ``co_varnames[var_num]``.
 
 
-.. opcode:: STORE_ANNOTATION (namei)
-
-   Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
-
-   .. versionadded:: 3.6
-
-
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot *i* of the cell and free
@@ -1077,7 +1070,7 @@ All of the following opcodes use their arguments.
    Pops all function arguments, and the function itself off the stack, and
    pushes the return value. Note that this opcode pops at most three items
    from the stack. Var-positional and var-keyword arguments are packed
-   by :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
+   by :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` and
    :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
 
    .. versionadded:: 3.6

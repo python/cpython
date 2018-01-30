@@ -21,6 +21,7 @@
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
+#include <openssl/hmac.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include "openssl/err.h"
@@ -528,8 +529,6 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     return ret_obj;
 }
 
-
-
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) \
      && !defined(OPENSSL_NO_SHA))
 
@@ -801,7 +800,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     }
 
     if (maxmem < 0 || maxmem > INT_MAX) {
-        /* OpenSSL 1.1.0 restricts maxmem to 32MB. It may change in the
+        /* OpenSSL 1.1.0 restricts maxmem to 32 MiB. It may change in the
            future. The maxmem constant is private to OpenSSL. */
         PyErr_Format(PyExc_ValueError,
                      "maxmem must be positive and smaller than %d",
@@ -848,6 +847,61 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     return key_obj;
 }
 #endif
+
+/* Fast HMAC for hmac.digest()
+ */
+
+/*[clinic input]
+_hashlib.hmac_digest
+
+    key: Py_buffer
+    msg: Py_buffer
+    digest: str
+
+Single-shot HMAC
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_hmac_digest_impl(PyObject *module, Py_buffer *key, Py_buffer *msg,
+                          const char *digest)
+/*[clinic end generated code: output=75630e684cdd8762 input=10e964917921e2f2]*/
+{
+    unsigned char md[EVP_MAX_MD_SIZE] = {0};
+    unsigned int md_len = 0;
+    unsigned char *result;
+    const EVP_MD *evp;
+
+    evp = EVP_get_digestbyname(digest);
+    if (evp == NULL) {
+        PyErr_SetString(PyExc_ValueError, "unsupported hash type");
+        return NULL;
+    }
+    if (key->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "key is too long.");
+        return NULL;
+    }
+    if (msg->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "msg is too long.");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    result = HMAC(
+        evp,
+        (const void*)key->buf, (int)key->len,
+        (const unsigned char*)msg->buf, (int)msg->len,
+        md, &md_len
+    );
+    Py_END_ALLOW_THREADS
+
+    if (result == NULL) {
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
+    return PyBytes_FromStringAndSize((const char*)md, md_len);
+}
 
 /* State for our callback function so that it can accumulate a result. */
 typedef struct _internal_name_mapper_state {
@@ -915,7 +969,7 @@ generate_hash_name_list(void)
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs) \
+    EVP_new_ ## NAME (PyObject *self, PyObject *const *args, Py_ssize_t nargs) \
     { \
         PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \
@@ -982,6 +1036,7 @@ static struct PyMethodDef EVP_functions[] = {
      pbkdf2_hmac__doc__},
 #endif
     _HASHLIB_SCRYPT_METHODDEF
+    _HASHLIB_HMAC_DIGEST_METHODDEF
     CONSTRUCTOR_METH_DEF(md5),
     CONSTRUCTOR_METH_DEF(sha1),
     CONSTRUCTOR_METH_DEF(sha224),

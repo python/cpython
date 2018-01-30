@@ -181,6 +181,11 @@ RUNSHARED=       @RUNSHARED@
 # ensurepip options
 ENSUREPIP=      @ENSUREPIP@
 
+# OpenSSL options for setup.py so sysconfig can pick up AC_SUBST() vars.
+OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
+OPENSSL_LIBS=@OPENSSL_LIBS@
+OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
+
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
 DIRMODE=	755
@@ -319,6 +324,8 @@ PYTHON_OBJS=	\
 		Python/Python-ast.o \
 		Python/asdl.o \
 		Python/ast.o \
+		Python/ast_opt.o \
+		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
 		Python/compile.o \
@@ -337,8 +344,9 @@ PYTHON_OBJS=	\
 		Python/importdl.o \
 		Python/marshal.o \
 		Python/modsupport.o \
-		Python/mystrtoul.o \
 		Python/mysnprintf.o \
+		Python/mystrtoul.o \
+		Python/pathconfig.o \
 		Python/peephole.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
@@ -347,6 +355,8 @@ PYTHON_OBJS=	\
 		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
+		Python/context.o \
+		Python/hamt.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
@@ -440,7 +450,17 @@ DTRACE_DEPS = \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
+build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
+		Programs/_testembed python-config
+
+# Check that the source is clean when building out of source.
+check-clean-src:
+	@if test -n "$(VPATH)" -a -f "$(srcdir)/Programs/python.o"; then \
+		echo "Error: The source directory ($(srcdir)) is not clean" ; \
+		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
+		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
+		exit 1; \
+	fi
 
 # Profile generation build must start from a clean tree.
 profile-clean-stamp:
@@ -542,7 +562,7 @@ coverage-report: regen-grammar regen-importlib
 # Run "Argument Clinic" over all source files
 # (depends on python having already been built)
 .PHONY=clinic
-clinic: $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2s_impl.c
+clinic: check-clean-src $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
 
 # Build the interpreter
@@ -821,7 +841,7 @@ regen-opcode:
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
-Python/compile.o Python/symtable.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
+Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -975,11 +995,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymath.h \
-		$(srcdir)/Include/pygetopt.h \
 		$(srcdir)/Include/pymacro.h \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
+		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/pystrcmp.h \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pystrhex.h \
@@ -1005,8 +1025,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/ceval.h \
 		$(srcdir)/Include/internal/gil.h \
 		$(srcdir)/Include/internal/mem.h \
-		$(srcdir)/Include/internal/pymalloc.h \
+		$(srcdir)/Include/internal/pygetopt.h \
 		$(srcdir)/Include/internal/pystate.h \
+		$(srcdir)/Include/internal/context.h \
 		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
 
@@ -1075,7 +1096,7 @@ quicktest:	@DEF_MAKE_RULE@ platform
 # SSL tests
 .PHONY: multisslcompile multissltest
 multisslcompile: build_all
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --compile-only
+	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --steps=modules
 
 multissltest: build_all
 	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py
@@ -1100,7 +1121,7 @@ altinstall: commoninstall
 			$$ensurepip --root=$(DESTDIR)/ ; \
 	fi
 
-commoninstall:  @FRAMEWORKALTINSTALLFIRST@ \
+commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
 		sharedinstall oldsharedinstall altmaninstall \
 		@FRAMEWORKALTINSTALLLAST@
@@ -1239,9 +1260,26 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/circular_imports/subpkg \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		importlib \
+		test/test_importlib \
+		test/test_importlib/builtin \
+		test/test_importlib/data01 \
+		test/test_importlib/data01/subdirectory \
+		test/test_importlib/data02 \
+		test/test_importlib/data02/one \
+		test/test_importlib/data02/two \
+		test/test_importlib/data03 \
+		test/test_importlib/data03/namespace \
+		test/test_importlib/data03/namespace/portion1 \
+		test/test_importlib/data03/namespace/portion2 \
+		test/test_importlib/extension \
+		test/test_importlib/frozen \
+		test/test_importlib/import_ \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
+		test/test_importlib/namespace_pkgs/module_and_namespace_package \
+		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg/foo \
 		test/test_importlib/namespace_pkgs/portion1 \
@@ -1257,8 +1295,9 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/namespace_pkgs/project3 \
 		test/test_importlib/namespace_pkgs/project3/parent \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
-                test/test_importlib/namespace_pkgs/module_and_namespace_package \
-                test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
+		test/test_importlib/source \
+		test/test_importlib/zipdata01 \
+		test/test_importlib/zipdata02 \
 		asyncio \
 		test/test_asyncio \
 		collections concurrent concurrent/futures encodings \
@@ -1273,9 +1312,6 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		ctypes ctypes/test ctypes/macholib \
 		idlelib idlelib/Icons idlelib/idle_test \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
-		importlib test/test_importlib test/test_importlib/builtin \
-		test/test_importlib/extension test/test_importlib/frozen \
-		test/test_importlib/import_ test/test_importlib/source \
 		test/test_tools test/test_warnings test/test_warnings/data \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
@@ -1596,10 +1632,9 @@ autoconf:
 
 # Create a tags file for vi
 tags::
-	cd $(srcdir); \
-	ctags -w Include/*.h Include/internal/*.h; \
-	for i in $(SRCDIRS); do ctags -f tags -w -a $$i/*.[ch]; \
-	done; \
+	ctags -w $(srcdir)/Include/*.h $(srcdir)/Include/internal/*.h
+	for i in $(SRCDIRS); do ctags -f tags -w -a $(srcdir)/$$i/*.[ch]; done
+	ctags -f tags -w -a $(srcdir)/Modules/_ctypes/*.[ch]
 	LC_ALL=C sort -o tags tags
 
 # Create a tags file for GNU Emacs
@@ -1722,7 +1757,7 @@ patchcheck: @DEF_MAKE_RULE@
 Python/thread.o: @THREADHEADERS@
 
 # Declare targets that aren't real files
-.PHONY: all build_all sharedmods oldsharedmods test quicktest
+.PHONY: all build_all sharedmods check-clean-src oldsharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure

@@ -197,7 +197,7 @@ bufferediobase_write(PyObject *self, PyObject *args)
 }
 
 
-typedef struct _buffered {
+typedef struct {
     PyObject_HEAD
 
     PyObject *raw;
@@ -239,17 +239,7 @@ typedef struct _buffered {
 
     PyObject *dict;
     PyObject *weakreflist;
-
-    /* a doubly-linked chained list of "buffered" objects that need to
-       be flushed when the process exits */
-    struct _buffered *next, *prev;
 } buffered;
-
-/* the actual list of buffered objects */
-static buffered buffer_list_end = {
-    .next = &buffer_list_end,
-    .prev = &buffer_list_end
-};
 
 /*
     Implementation notes:
@@ -347,9 +337,10 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
+    (!self->buffer || \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
-     : buffered_closed(self))
+     : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
     if (IS_CLOSED(self)) { \
@@ -389,20 +380,9 @@ _enter_buffered_busy(buffered *self)
 
 
 static void
-remove_from_linked_list(buffered *self)
-{
-    self->next->prev = self->prev;
-    self->prev->next = self->next;
-    self->prev = NULL;
-    self->next = NULL;
-}
-
-static void
 buffered_dealloc(buffered *self)
 {
     self->finalizing = 1;
-    if (self->next != NULL)
-        remove_from_linked_list(self);
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
@@ -1312,7 +1292,6 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
         if (res == NULL)
             goto end;
         Py_CLEAR(res);
-        _bufferedwriter_reset_buf(self);
     }
 
     /* TODO: align on block boundary and read buffer if needed? */
@@ -1541,7 +1520,7 @@ static PyObject *
 _bufferedreader_read_all(buffered *self)
 {
     Py_ssize_t current_size;
-    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL;
+    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL, *readall;
 
     /* First copy what we have in the current buffer. */
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
@@ -1561,32 +1540,27 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (PyObject_HasAttr(self->raw, _PyIO_str_readall)) {
-        tmp = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readall, NULL);
+    if (_PyObject_LookupAttr(self->raw, _PyIO_str_readall, &readall) < 0) {
+        goto cleanup;
+    }
+    if (readall) {
+        tmp = _PyObject_CallNoArg(readall);
+        Py_DECREF(readall);
         if (tmp == NULL)
             goto cleanup;
         if (tmp != Py_None && !PyBytes_Check(tmp)) {
             PyErr_SetString(PyExc_TypeError, "readall() should return bytes");
             goto cleanup;
         }
-        if (tmp == Py_None) {
-            if (current_size == 0) {
-                res = Py_None;
-                goto cleanup;
-            } else {
-                res = data;
-                goto cleanup;
-            }
-        }
-        else if (current_size) {
-            PyBytes_Concat(&data, tmp);
-            res = data;
-            goto cleanup;
-        }
-        else {
+        if (current_size == 0) {
             res = tmp;
-            goto cleanup;
+        } else {
+            if (tmp != Py_None) {
+                PyBytes_Concat(&data, tmp);
+            }
+            res = data;
         }
+        goto cleanup;
     }
 
     chunks = PyList_New(0);
@@ -1826,36 +1800,8 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedWriter_Type &&
                                 Py_TYPE(raw) == &PyFileIO_Type);
 
-    if (self->next == NULL) {
-        self->prev = &buffer_list_end;
-        self->next = buffer_list_end.next;
-        buffer_list_end.next->prev = self;
-        buffer_list_end.next = self;
-    }
-
     self->ok = 1;
     return 0;
-}
-
-/*
-* Ensure all buffered writers are flushed before proceeding with
-* normal shutdown.  Otherwise, if the underlying file objects get
-* finalized before the buffered writer wrapping it then any buffered
-* data will be lost.
-*/
-void _PyIO_atexit_flush(void)
-{
-    while (buffer_list_end.next != &buffer_list_end) {
-        buffered *buf = buffer_list_end.next;
-        remove_from_linked_list(buf);
-        if (buf->ok && !buf->finalizing) {
-            /* good state and not finalizing */
-            Py_INCREF(buf);
-            buffered_flush(buf, NULL);
-            Py_DECREF(buf);
-            PyErr_Clear();
-        }
-    }
 }
 
 static Py_ssize_t
@@ -1905,8 +1851,6 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     return n;
 }
 
-/* `restore_pos` is 1 if we need to restore the raw stream position at
-   the end, 0 otherwise. */
 static PyObject *
 _bufferedwriter_flush_unlocked(buffered *self)
 {
@@ -1947,9 +1891,18 @@ _bufferedwriter_flush_unlocked(buffered *self)
             goto error;
     }
 
-    _bufferedwriter_reset_buf(self);
 
 end:
+    /* This ensures that after return from this function,
+       VALID_WRITE_BUFFER(self) returns false.
+
+       This is a required condition because when a tell() is called
+       after flushing and if VALID_READ_BUFFER(self) is false, we need
+       VALID_WRITE_BUFFER(self) to be false to have
+       RAW_OFFSET(self) == 0.
+
+       Issue: https://bugs.python.org/issue32228 */
+    _bufferedwriter_reset_buf(self);
     Py_RETURN_NONE;
 
 error:
@@ -1971,13 +1924,16 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     Py_off_t offset;
 
     CHECK_INITIALIZED(self)
-    if (IS_CLOSED(self)) {
-        PyErr_SetString(PyExc_ValueError, "write to closed file");
-        return NULL;
-    }
 
     if (!ENTER_BUFFERED(self))
         return NULL;
+
+    /* Issue #31976: Check for closed file after acquiring the lock. Another
+       thread could be holding the lock while closing the file. */
+    if (IS_CLOSED(self)) {
+        PyErr_SetString(PyExc_ValueError, "write to closed file");
+        goto error;
+    }
 
     /* Fast path: the data to write can be fully buffered. */
     if (!VALID_READ_BUFFER(self) && !VALID_WRITE_BUFFER(self)) {

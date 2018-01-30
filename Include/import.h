@@ -8,9 +8,9 @@ extern "C" {
 #endif
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyImportZip_Init(void);
+PyAPI_FUNC(_PyInitError) _PyImportZip_Init(void);
 
-PyMODINIT_FUNC PyInit_imp(void);
+PyMODINIT_FUNC PyInit__imp(void);
 #endif /* !Py_LIMITED_API */
 PyAPI_FUNC(long) PyImport_GetMagicNumber(void);
 PyAPI_FUNC(const char *) PyImport_GetMagicTag(void);
