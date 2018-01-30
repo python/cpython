@@ -306,7 +306,7 @@ def call(*popenargs, timeout=None, **kwargs):
             return p.wait(timeout=timeout)
         except:  # Including KeyboardInterrupt, wait handled that.
             p.kill()
-            # We don't call p.wait() as p.__exit__ does that for us.
+            # We don't call p.wait() again as p.__exit__ does that for us.
             raise
 
 
@@ -965,9 +965,7 @@ class Popen(object):
             # https://bugs.python.org/issue25942
             # The first keyboard interrupt waits briefly for the child to
             # exit under the common assumption that it also received the ^C
-            # generated SIGINT and will exit rapidly.  A second ^C will
-            # abort this immediately.  Matching user patterns of hitting
-            # ^C more than once before resorting to ^\ (SIGKILL).
+            # generated SIGINT and will exit rapidly.
             if timeout is not None:
                 sigint_timeout = min(self._sigint_wait_secs,
                                      self._remaining_time(endtime))
