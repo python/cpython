@@ -1,1 +1,0 @@
-Add test certs and test for ECDSA cert and EC/RSA dual mode.

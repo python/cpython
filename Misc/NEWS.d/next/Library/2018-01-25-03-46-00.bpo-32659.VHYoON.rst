@@ -1,1 +1,0 @@
-Under Solaris and derivatives, :class:`os.stat_result` provides a st_fstype attribute.

@@ -1,1 +1,0 @@
-Drop support of FreeBSD 9 and older.
