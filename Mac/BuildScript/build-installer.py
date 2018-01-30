@@ -556,8 +556,8 @@ def checkEnvironment():
     frameworks = {}
     for framework in ['Tcl', 'Tk']:
         fwpth = 'Library/Frameworks/%s.framework/Versions/Current' % framework
-        sysfw = os.path.join(SDKPATH, 'System', fwpth)
-        libfw = os.path.join(SDKPATH, fwpth)
+        sysfw = os.path.join('/', 'System', fwpth)
+        libfw = os.path.join('/', fwpth)
         usrfw = os.path.join(os.getenv('HOME'), fwpth)
         frameworks[framework] = os.readlink(sysfw)
         if not os.path.exists(libfw):
