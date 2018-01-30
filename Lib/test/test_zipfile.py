@@ -1628,6 +1628,40 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zipf.read('baz'), msg3)
             self.assertEqual(zipf.namelist(), ['foo', 'bar', 'baz'])
 
+    def test_seek_tell(self):
+        # Test seek functionality
+        txt = b"Where's Bruce?"
+        bloc = txt.find(b"Bruce")
+        # Check seek on a file
+        with zipfile.ZipFile(TESTFN, "w") as zipf:
+            zipf.writestr("foo.txt", txt)
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            with zipf.open("foo.txt", "r") as fp:
+                fp.seek(bloc, os.SEEK_SET)
+                self.assertEqual(fp.tell(), bloc)
+                fp.seek(-bloc, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), 0)
+                fp.seek(bloc, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), bloc)
+                self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                fp.seek(0, os.SEEK_END)
+                self.assertEqual(fp.tell(), len(txt))
+        # Check seek on memory file
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, mode="w") as zipf:
+            zipf.writestr("foo.txt", txt)
+        with zipfile.ZipFile(data, mode="r") as zipf:
+            with zipf.open("foo.txt", "r") as fp:
+                fp.seek(bloc, os.SEEK_SET)
+                self.assertEqual(fp.tell(), bloc)
+                fp.seek(-bloc, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), 0)
+                fp.seek(bloc, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), bloc)
+                self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                fp.seek(0, os.SEEK_END)
+                self.assertEqual(fp.tell(), len(txt))
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)

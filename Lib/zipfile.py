@@ -696,6 +696,18 @@ class _SharedFile:
         self._close = close
         self._lock = lock
         self._writing = writing
+        self.seekable = file.seekable
+        self.tell = file.tell
+
+    def seek(self, offset, whence=0):
+        with self._lock:
+            if self.writing():
+                raise ValueError("Can't reposition in the ZIP file while "
+                        "there is an open writing handle on it. "
+                        "Close the writing handle before trying to read.")
+            self._file.seek(self._pos)
+            self._pos = self._file.tell()
+            return self._pos
 
     def read(self, n=-1):
         with self._lock:
@@ -746,6 +758,9 @@ class ZipExtFile(io.BufferedIOBase):
     # Read from compressed files in 4k blocks.
     MIN_READ_SIZE = 4096
 
+    # Chunk size to read during seek
+    MAX_SEEK_READ = 1 << 24
+
     def __init__(self, fileobj, mode, zipinfo, decrypter=None,
                  close_fileobj=False):
         self._fileobj = fileobj
@@ -777,6 +792,17 @@ class ZipExtFile(io.BufferedIOBase):
             self._running_crc = crc32(b'')
         else:
             self._expected_crc = None
+
+        self._seekable = False
+        try:
+            if fileobj.seekable():
+                self._orig_compress_start = fileobj.tell()
+                self._orig_compress_size = zipinfo.compress_size
+                self._orig_file_size = zipinfo.file_size
+                self._orig_start_crc = self._running_crc
+                self._seekable = True
+        except AttributeError:
+            pass
 
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
@@ -962,6 +988,62 @@ class ZipExtFile(io.BufferedIOBase):
                 self._fileobj.close()
         finally:
             super().close()
+
+    def seekable(self):
+        return self._seekable
+
+    def seek(self, offset, whence=0):
+        if not self._seekable:
+            raise io.UnsupportedOperation("underlying stream is not seekable")
+        curr_pos = self.tell()
+        if whence == 0: # Seek from start of file
+            new_pos = offset
+        elif whence == 1: # Seek from current position
+            new_pos = curr_pos + offset
+        elif whence == 2: # Seek from EOF
+            new_pos = self._orig_file_size + offset
+        else:
+            raise ValueError("whence must be os.SEEK_SET (0), "
+                             "os.SEEK_CUR (1), or os.SEEK_END (2)")
+
+        if new_pos > self._orig_file_size:
+            new_pos = self._orig_file_size
+
+        if new_pos < 0:
+            new_pos = 0
+
+        read_offset = new_pos - curr_pos
+        buff_offset = read_offset + self._offset
+
+        if buff_offset >= 0 and buff_offset < len(self._readbuffer):
+            # Just move the _offset index if the new position is in the _readbuffer
+            self._offset = buff_offset
+            read_offset = 0
+        elif read_offset < 0:
+            # Position is before the current position. Reset the ZipExtFile
+
+            self._fileobj.seek(self._orig_compress_start)
+            self._running_crc = self._orig_start_crc
+            self._compress_left = self._orig_compress_size
+            self._left = self._orig_file_size
+            self._readbuffer = b''
+            self._offset = 0
+            self._decompressor = zipfile._get_decompressor(self._compress_type)
+            self._eof = False
+            read_offset = new_pos
+
+        while read_offset > 0:
+            read_len = min(self.MAX_SEEK_READ, read_offset)
+            self.read(read_len)
+            read_offset -= read_len
+
+        return self.tell()
+
+    def tell(self):
+        if not self._seekable:
+            raise io.UnsupportedOperation("underlying stream is not seekable")
+        filepos = self._orig_file_size - self._left - len(self._readbuffer) + self._offset
+        return filepos
 
 
 class _ZipWriteFile(io.BufferedIOBase):
