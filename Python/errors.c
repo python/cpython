@@ -1100,23 +1100,19 @@ int
 PyErr_PrepareStaticException(PyTypeObject **err, const char *name,
                              const char *doc, PyObject *base)
 {
-    int base_slot;
+    PyObject *mybase = NULL;
 
     if (*err) {
         Py_INCREF(*err);
         return 0;
     }
 
-    if (base && PyTuple_Check(base)) {
-        base_slot = Py_tp_bases;
-    }
-    else {
-        base_slot = Py_tp_base;
+    if (!base) {
+        base = PyExc_Exception;
     }
 
     PyType_Slot slots[] = {
         {Py_tp_doc, doc ? doc : "Pseudostatic exception"},
-        {base_slot, base ? base : PyExc_Exception},
         {0, NULL}
     };
 
@@ -1128,13 +1124,18 @@ PyErr_PrepareStaticException(PyTypeObject **err, const char *name,
         slots
     };
 
-    *err = (PyTypeObject *)PyType_FromSpec(&spec);
+    if (!PyTuple_Check(base)) {
+        mybase = PyTuple_Pack(1, base);
+    }
+
+    *err = (PyTypeObject *)PyType_FromSpecWithBases(&spec, mybase ? mybase : base);
     if (*err == NULL) {
         return -1;
     }
 
     ((PyHeapTypeObject *)(*err))->ht_moduleptr = (PyObject **)err;
 
+    Py_XDECREF(mybase);
     return 0;
 }
 

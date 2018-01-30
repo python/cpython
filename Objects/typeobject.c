@@ -3092,6 +3092,28 @@ PyType_GetModule(PyTypeObject *type) {
 
 }
 
+PyTypeObject *
+PyType_DefiningTypeFromSlotFunc(PyTypeObject *type, int slot, void *func) {
+    void *base_func;
+
+    while(1) {
+        base_func = PyType_GetSlot(type->tp_base, slot);
+        if (base_func != func) {
+            /* PyType_GetSlot might set an exception in case of
+             * walking through bases got through to an
+             * extension/builtin type (i.e. object) */
+            PyErr_Clear();
+            return type;
+        }
+
+        type = type->tp_base;
+        if (type == NULL) {
+            PyErr_SetString(PyExc_Exception,
+                            "Defining type has not been found.");
+            return NULL;
+        }
+    }
+}
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
    This returns a borrowed reference, and might set an exception.

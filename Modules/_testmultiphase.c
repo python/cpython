@@ -4,14 +4,24 @@
 
 #include "Python.h"
 
+/* State for testing access from type slot methods */
+
+typedef struct {
+    unsigned int instance_counter;
+} meth_state;
+
 /*[clinic input]
 module _testmultiphase
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a11493b5ab5f8846]*/
 
 static PyObject *staterr = NULL;
-static const char *staterr_name = "_testmultiphase.StaticError";
-static const char *staterr_doc = "Pseudo-static exception on heap initialized during runtime.";
+static PyObject *staterr_multiple_inheritance = NULL;
+
+/*[clinic input]
+class _testmultiphase.Example "ExampleObject *" "&Example"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3fddc55ef4b8273]*/
 
 /* Example objects */
 typedef struct {
@@ -24,9 +34,14 @@ typedef struct {
 } testmultiphase_state;
 
 /*[clinic input]
-class _testmultiphase.Example "ExampleObject *" "&Example"
+class _testmultiphase.StateAccessType "StateAccessTypeObject *" "&StateAccessType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3fddc55ef4b8273]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=feb57884f17888af]*/
+
+typedef struct {
+    PyObject_HEAD
+    meth_state            *m_state;       /* custom attribute */
+} StateAccessTypeObject;
 
 /* Example methods */
 
@@ -57,32 +72,10 @@ Example_demo(ExampleObject *self, PyObject *args)
 }
 
 #include "clinic/_testmultiphase.c.h"
-/*[clinic input]
-_testmultiphase.Example.get_defining_module
-
-    cls: defining_class
-
-This method returns module of the defining class.
-[clinic start generated code]*/
-
-static PyObject *
-_testmultiphase_Example_get_defining_module_impl(ExampleObject *self,
-                                                 PyTypeObject *cls)
-/*[clinic end generated code: output=9f723f75c9370a28 input=3817c6c4d5d7aa97]*/
-{
-    PyObject *retval;
-    retval = PyType_GetModule(cls);
-    if (retval == NULL) {
-        return NULL;
-    }
-    Py_INCREF(retval);
-    return retval;
-}
 
 static PyMethodDef Example_methods[] = {
     {"demo",            (PyCFunction)Example_demo,  METH_VARARGS,
         PyDoc_STR("demo() -> None")},
-    _TESTMULTIPHASE_EXAMPLE_GET_DEFINING_MODULE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -121,6 +114,7 @@ Example_setattr(ExampleObject *self, const char *name, PyObject *v)
         return PyDict_SetItemString(self->x_attr, name, v);
 }
 
+
 static PyType_Slot Example_Type_slots[] = {
     {Py_tp_doc, "The Example type"},
     {Py_tp_finalize, Example_finalize},
@@ -135,8 +129,104 @@ static PyType_Spec Example_Type_spec = {
     "_testimportexec.Example",
     sizeof(ExampleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAP_IMMUTABLE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     Example_Type_slots
+};
+
+
+/*[clinic input]
+_testmultiphase.StateAccessType.__init__
+[clinic start generated code]*/
+
+static int
+_testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self)
+/*[clinic end generated code: output=284123c69bc4bf66 input=777765834358c48c]*/
+{
+    PyTypeObject *cls;
+    PyObject *m;
+
+    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(self),
+                                          Py_tp_init,
+                                          &_testmultiphase_StateAccessType___init__);
+    if (cls == NULL) {
+        return -1;
+    }
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return -1;
+    }
+
+    self->m_state = PyModule_GetState(m);
+    if (self->m_state == NULL) {
+        return -1;
+    }
+    self->m_state->instance_counter++;
+    return 0;
+}
+
+static int
+StateAccessType_finalize(StateAccessTypeObject *self) {
+    self->m_state->instance_counter--;
+    return 0;
+}
+
+/*[clinic input]
+_testmultiphase.StateAccessType.get_defining_module
+
+    cls: defining_class
+
+This method returns module of the defining class.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *self,
+                                                         PyTypeObject *cls)
+/*[clinic end generated code: output=ba2a14284a5d0921 input=32e9d85349eb4aa2]*/
+{
+    PyObject *retval;
+    retval = PyType_GetModule(cls);
+    if (retval == NULL) {
+        return NULL;
+    }
+    Py_INCREF(retval);
+    return retval;
+}
+
+/*[clinic input]
+_testmultiphase.StateAccessType.get_instance_count
+
+
+This method returns module of the defining class.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_get_instance_count_impl(StateAccessTypeObject *self)
+/*[clinic end generated code: output=fba44f9b60835530 input=4c13b544bf5c3e03]*/
+{
+    return PyLong_FromLong(self->m_state->instance_counter);
+}
+
+static PyMethodDef StateAccessType_methods[] = {
+    _TESTMULTIPHASE_STATEACCESSTYPE_GET_DEFINING_MODULE_METHODDEF
+    _TESTMULTIPHASE_STATEACCESSTYPE_GET_INSTANCE_COUNT_METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyType_Slot StateAccessType_Type_slots[] = {
+    {Py_tp_doc, "Type for testing per-module state access from methods."},
+    {Py_tp_init, _testmultiphase_StateAccessType___init__},
+    {Py_tp_finalize, StateAccessType_finalize},
+    {Py_tp_methods, StateAccessType_methods},
+    {0, NULL}
+};
+
+static PyType_Spec StateAccessType_spec = {
+    "_testimportexec.StateAccessType",
+    sizeof(StateAccessTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE | Py_TPFLAGS_BASETYPE,
+    StateAccessType_Type_slots
 };
 
 /* Function of two integers returning integer */
@@ -229,7 +319,7 @@ static int execfunc(PyObject *m)
     Str_Type_slots[0].pfunc = &PyUnicode_Type;
 
     /* Add a custom type */
-    temp = PyType_FromModuleAndSpec(m, &Example_Type_spec, NULL);
+    temp = PyType_FromSpec(&Example_Type_spec);
     if (temp == NULL) {
         goto fail;
     }
@@ -237,13 +327,6 @@ static int execfunc(PyObject *m)
         goto fail;
     }
 
-    if (PyErr_PrepareStaticException((PyTypeObject **)&staterr, staterr_name, staterr_doc, NULL)) {
-        goto fail;
-    }
-
-    if (PyModule_AddObject(m, "StaticError", staterr) != 0) {
-        goto fail;
-    }
 
     /* Add an exception type */
     temp = PyErr_NewException("_testimportexec.error", NULL, NULL);
@@ -725,17 +808,15 @@ PyDoc_STRVAR(check_staterr_doc,
 "Check that staterr is NULL");
 
 static PyObject *
-check_staterr_null_impl(PyObject *self) {
+check_staterr_null(PyObject *self) {
     if (staterr == NULL) {
-        Py_RETURN_NONE;
+        return Py_True;
     }
-    PyErr_SetString(PyExc_Exception,
-                    "Staterr is not NULL");
-    return NULL;
+    return Py_False;
 }
 
 static PyMethodDef check_staterr_methods[] = {
-    {"check_staterr_null", (PyCFunction) check_staterr_null_impl, METH_NOARGS, check_staterr_doc},
+    {"check_staterr_null", (PyCFunction) check_staterr_null, METH_NOARGS, check_staterr_doc},
     {NULL, NULL}           /* sentinel */
 };
 
@@ -745,6 +826,106 @@ static PyModuleDef check_staterr = TEST_MODULE_DEF(
 PyMODINIT_FUNC
 PyInit__testmultiphase_check_staterr(PyObject *spec) {
     return PyModuleDef_Init(&check_staterr);
+}
+
+static int
+meth_state_access_exec(PyObject *m) {
+    PyObject *temp;
+    meth_state *m_state;
+
+    m_state = PyModule_GetState(m);
+    if (m_state == NULL) {
+        return -1;
+    }
+
+    temp = PyType_FromModuleAndSpec(m, &StateAccessType_spec, NULL);
+    if (temp == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "StateAccessType", temp) != 0) {
+        return -1;
+    }
+
+    if (PyErr_PrepareStaticException((PyTypeObject **)&staterr,
+                                      "_testmultiphase.staterr",
+                                      "A pseudo-static exception",
+                                      NULL)) {
+        return -1;
+    }
+
+    if (PyModule_AddObject(m, "StaticError", staterr) != 0) {
+        return -1;
+    }
+
+
+    return 0;
+}
+
+static PyModuleDef_Slot meth_state_access_slots[] = {
+    {Py_mod_exec, meth_state_access_exec},
+    {0, NULL}
+};
+
+static PyModuleDef def_meth_state_access = {
+    PyModuleDef_HEAD_INIT,                      /* m_base */
+    "_testmultiphase_meth_state_access",        /* m_name */
+    PyDoc_STR("Module testing access"
+              " to state from methods."),
+    sizeof(meth_state),                         /* m_size */
+    NULL,                                       /* m_methods */
+    meth_state_access_slots,                    /* m_slots */
+    0,                                          /* m_traverse */
+    0,                                          /* m_clear */
+    0,                                          /* m_free */
+};
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_meth_state_access(PyObject *spec) {
+    return PyModuleDef_Init(&def_meth_state_access);
+}
+
+static int
+immutable_exc_multip_inheritance_exec(PyObject *m) {
+    int retval = 0;
+    PyObject *base_tuple;
+
+    base_tuple = PyTuple_Pack(2, PyExc_TypeError, PyExc_BufferError);
+    if (base_tuple == NULL) {
+        retval = -1;
+        goto exit;
+    }
+
+    if (PyErr_PrepareStaticException((PyTypeObject **)&staterr_multiple_inheritance,
+                                      "_testmultiphase.staterr_multiple_inheritance",
+                                      "Immutable exception for testing of multiple inheritance",
+                                      base_tuple)) {
+        retval = -1;
+        goto exit;
+    }
+
+    if (PyModule_AddObject(m, "Staterr", staterr_multiple_inheritance) != 0) {
+        retval = -1;
+        goto exit;
+    }
+
+exit:
+    Py_XDECREF(base_tuple);
+    return retval;
+}
+
+static PyModuleDef_Slot immutable_exc_multip_inheritance_slots[] = {
+    {Py_mod_exec, immutable_exc_multip_inheritance_exec},
+    {0, NULL}
+};
+
+static PyModuleDef def_immutable_exc_multip_inheritance = TEST_MODULE_DEF(
+                                                          "_testmultiphase_immutable_exc_multip_inheritance",
+                                                          immutable_exc_multip_inheritance_slots,
+                                                          NULL);
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_immutable_exc_multip_inheritance(PyObject *spec) {
+    return PyModuleDef_Init(&def_immutable_exc_multip_inheritance);
 }
 
 /*** Helper for imp test ***/

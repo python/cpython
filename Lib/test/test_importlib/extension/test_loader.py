@@ -292,8 +292,8 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                     pass"""
         assert_python_failure("-c", script)
 
-    def test_pseudostatic_exception(self):
-        mod_name = "_testmultiphase"
+    def test_immutable_exception(self):
+        mod_name = "_testmultiphase_meth_state_access"
 
         a = self.load_module_by_name(mod_name)
         b = self.load_module_by_name(mod_name)
@@ -304,41 +304,46 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
 
         # test the opposite instances' exceptions catching
-        expected_catch = 2
-        catch = 0
+        expected_catchcount = 2
+        catchcount = 0
         try:
             raise(a.StaticError)
         except b.StaticError:
-            catch += 1
+            catchcount += 1
 
         try:
             raise(b.StaticError)
         except a.StaticError:
-            catch += 1
+            catchcount += 1
 
-        self.assertEqual(catch, expected_catch)
+        self.assertEqual(catchcount, expected_catchcount)
 
-        # make sure the exception exists as long as there are
-        # any (even not from module) references to it
-        a_Example = a.Example
-        b_Example = b.Example
+        # make sure the exception gets deallocated
         del a
         del b
         gc.collect()
-        a_ex = a_Example()
-        b_ex = b_Example()
-        a_module = a_ex.get_defining_module()
-        b_module = a_ex.get_defining_module()
+        a = self.load_module_by_name("_testmultiphase_check_staterr")
 
-        self.assertIs(a_module, b_module)
+        self.assertTrue(a.check_staterr_null())
+
+    def test_immutable_exception_multiple_inheritance(self):
+        mod_name = "_testmultiphase_immutable_exc_multip_inheritance"
+
+        m = self.load_module_by_name(mod_name)
+
+        def raise_exc():
+            raise m.Staterr
+
+        self.assertRaises(TypeError, raise_exc)
+        self.assertRaises(BufferError, raise_exc)
 
     def test_subclass_get_module(self):
-        testmultiphase = self.load_module_by_name("_testmultiphase")
+        testmultiphase = self.load_module_by_name("_testmultiphase_meth_state_access")
 
-        class Example_Subclass(testmultiphase.Example):
+        class StateAccessType_Subclass(testmultiphase.StateAccessType):
             pass
 
-        ex = Example_Subclass()
+        ex = StateAccessType_Subclass()
 
         self.assertIs(ex.get_defining_module(), testmultiphase)
 
