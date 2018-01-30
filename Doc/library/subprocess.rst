@@ -76,6 +76,14 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
 
+   If the current process encounters an exception (e.g. :exc:`KeyboardInterrupt`)
+   while waiting for the child process and *cleanup_timeout* is non-zero,
+   the child process is given additional time to finish before it is killed,
+   to allow potential clean-up operations in the child to complete.
+   During this time, a second exception will kill the child immediately.
+   If *cleanup_timeout* is not specified, then any remaining time from the original
+   *timeout* is used, or 1 second if no original *timeout* was specified.
+
    Examples::
 
       >>> subprocess.run(["ls", "-l"])  # doesn't capture output
@@ -97,8 +105,10 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
       Added *encoding* and *errors* parameters
 
    .. versionchanged:: 3.7
-
       Added the *text* parameter, as a more understandable alias of *universal_newlines*
+
+   .. versionchanged:: 3.7
+      *cleanup_timeout* was added.
 
 .. class:: CompletedProcess
 
@@ -980,7 +990,7 @@ Prior to Python 3.5, these three functions comprised the high level API to
 subprocess. You can now use :func:`run` in many cases, but lots of existing code
 calls these functions.
 
-.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
+.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None, cleanup_timeout=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
@@ -1005,6 +1015,9 @@ calls these functions.
 
    .. versionchanged:: 3.3
       *timeout* was added.
+
+   .. versionchanged:: 3.7
+      *cleanup_timeout* was added.
 
 .. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
 
