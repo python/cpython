@@ -362,13 +362,15 @@ class DestroyTests(TestBase):
     def test_from_current(self):
         main, = interpreters.list_all()
         id = interpreters.create()
-        script = dedent("""
+        script = dedent(f"""
             import _xxsubinterpreters as _interpreters
-            _interpreters.destroy({})
-            """).format(id)
+            try:
+                _interpreters.destroy({id})
+            except RuntimeError:
+                pass
+            """)
 
-        with self.assertRaises(RuntimeError):
-            interpreters.run_string(id, script)
+        interpreters.run_string(id, script)
         self.assertEqual(set(interpreters.list_all()), {main, id})
 
     def test_from_sibling(self):
