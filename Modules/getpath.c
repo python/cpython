@@ -265,12 +265,13 @@ joinpath(wchar_t *buffer, wchar_t *stuff)
 #ifdef __VXWORKS__
 
 // Vxworks has abs paths that dont start with /
+// THIS IS A TEMPORARY HACK
 static int
 checkDev(wchar_t *p) {
 	int i = wcscspn(p,":");
 	int b = wcscspn(p,"/");
-	if( b < i )return 0;
-	return 1;
+	if(i < b) return 1;
+	return 0;
 }
 
 #endif
@@ -283,7 +284,7 @@ copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
 	printf("ASD %ls \n", p);
 
 #ifdef __VXWORKS__
-	if (checkDev(&p) || p[0] == SEP) {
+	if (checkDev(p) || p[0] == SEP) {
 #else
     if (p[0] == SEP) {
 #endif
@@ -571,6 +572,7 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
      * other way to find a directory to start the search from.  If
      * $PATH isn't exported, you lose.
      */
+    printf("ASDASD %ls \n", core_config->program_name);
     if (wcschr(core_config->program_name, SEP)) {
         wcsncpy(program_full_path, core_config->program_name, MAXPATHLEN);
     }

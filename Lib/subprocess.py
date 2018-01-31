@@ -1408,12 +1408,12 @@ class Popen(object):
 
                         if cwd:
                             os.chdir(cwd);
-
-                        print(executable_list)
-                        print(args );
-                        print(env_list );
                         if env_list is None:
-                            env_list = []
+                            env_list = [envKey + "=" + envVal for envKey,envVal in os.environ.copy().items()]
+                        else:
+                            env_list = [envKey + "=" + envVal for envKey,envVal in env.items()] #Sacrifice efficiency for readability
+
+                        print(env_list)
                         self.pid = _vxwapi.rtpSpawn(
                             executable_list[0].decode("UTF-8"),
                             args,env_list, 100,0,0,0)
@@ -1621,6 +1621,7 @@ class Popen(object):
 
 
         def _communicate(self, input, endtime, orig_timeout):
+            print("DDDD")
             if self.stdin and not self._communication_started:
                 # Flush stdio buffer.  This might block, if the user has
                 # been writing to .stdin in an uncontrolled fashion.
@@ -1636,7 +1637,7 @@ class Popen(object):
 
             stdout = None
             stderr = None
-
+            print("EEEEEE");
             # Only create this mapping if we haven't already.
             if not self._communication_started:
                 self._fileobj2output = {}
@@ -1654,32 +1655,39 @@ class Popen(object):
 
             if self._input:
                 input_view = memoryview(self._input)
-
+            print("FFFFFF");
             with _PopenSelector() as selector:
                 if self.stdin and input:
+                    print("STDIN");
                     selector.register(self.stdin, selectors.EVENT_WRITE)
                 if self.stdout:
+                    print("STDOUT")
                     selector.register(self.stdout, selectors.EVENT_READ)
                 if self.stderr:
+                    print("STDERR")
                     selector.register(self.stderr, selectors.EVENT_READ)
 
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
                     if timeout is not None and timeout < 0:
                         raise TimeoutExpired(self.args, orig_timeout)
-
+                    print("111111");
                     ready = selector.select(timeout)
+                    print("xxxx")
                     self._check_timeout(endtime, orig_timeout)
-
+                    print("2222")
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!
 
                     for key, events in ready:
+                        print('33');
                         if key.fileobj is self.stdin:
                             chunk = input_view[self._input_offset :
                                                self._input_offset + _PIPE_BUF]
                             try:
+                                print("PPPP")
                                 self._input_offset += os.write(key.fd, chunk)
+                                print("444")
                             except BrokenPipeError:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
@@ -1688,14 +1696,15 @@ class Popen(object):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
+                            print('555')
                             data = os.read(key.fd, 32768)
+                            print("66" + str(data))
                             if not data:
                                 selector.unregister(key.fileobj)
-                                key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
-
+            print("GGGGG");
             self.wait(timeout=self._remaining_time(endtime))
-
+            print("HHHHH")
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:
                 stdout = b''.join(stdout)
