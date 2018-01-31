@@ -1054,19 +1054,16 @@ class GCTogglingTests(unittest.TestCase):
 
         original_status = gc.isenabled()
 
-        with warnings.catch_warnings(record=True) as w, gc.ensure_disabled():
-            inside_status_before_thread = gc.isenabled()
-            thread = threading.Thread(target=disabling_thread)
-            thread.start()
-            inside_status_after_thread = gc.isenabled()
+        with self.assertWarnsRegex(RuntimeWarning, "enabled while another"):
+            with gc.ensure_disabled():
+                inside_status_before_thread = gc.isenabled()
+                thread = threading.Thread(target=disabling_thread)
+                thread.start()
+                inside_status_after_thread = gc.isenabled()
 
         after_status = gc.isenabled()
         thread.join()
 
-        self.assertEqual(len(w), 1)
-        self.assertTrue(issubclass(w[-1].category, RuntimeWarning))
-        self.assertEqual("Garbage collector enabled while another thread is "
-                         "inside gc.ensure_enabled", str(w[-1].message))
         self.assertEqual(original_status, True)
         self.assertEqual(inside_status_before_thread, False)
         self.assertEqual(thread_original_status, False)

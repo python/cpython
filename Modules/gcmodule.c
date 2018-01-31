@@ -1068,8 +1068,13 @@ gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
     if(_PyRuntime.gc.disabled_threads){
-        PyErr_WarnEx(PyExc_RuntimeWarning, "Garbage collector enabled while another "
-            "thread is inside gc.ensure_enabled",1);
+        if (PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "Garbage collector enabled while another "
+                "thread is inside gc.ensure_enabled", 1) < 0)
+        {
+            return NULL;
+        }
     }
     _PyRuntime.gc.enabled = 1;
     Py_RETURN_NONE;
@@ -1530,8 +1535,13 @@ ensure_disabled__enter__method(ensure_disabled_object *self, PyObject *args)
     PyGILState_STATE gstate = PyGILState_Ensure();
     ++_PyRuntime.gc.disabled_threads;
     self->previous_gc_state = _PyRuntime.gc.enabled;
-    gc_disable_impl(NULL);
+
+    PyObject *ret = gc_disable_impl(NULL);
     PyGILState_Release(gstate);
+    if (ret == NULL) {
+        return NULL;
+    }
+    Py_DECREF(ret);
     Py_RETURN_NONE;
 }
 
@@ -1540,12 +1550,19 @@ ensure_disabled__exit__method(ensure_disabled_object *self, PyObject *args)
 {
     PyGILState_STATE gstate = PyGILState_Ensure();
     --_PyRuntime.gc.disabled_threads;
-    if(self->previous_gc_state){
-        gc_enable_impl(NULL);
-    }else{
-        gc_disable_impl(NULL);
+
+    PyObject *ret;
+    if (self->previous_gc_state) {
+        ret = gc_enable_impl(NULL);
+    }
+    else {
+        ret = gc_disable_impl(NULL);
     }
     PyGILState_Release(gstate);
+    if (ret == NULL) {
+        return NULL;
+    }
+    Py_DECREF(ret);
     Py_RETURN_NONE;
 }
 
@@ -1650,8 +1667,11 @@ PyInit_gc(void)
 
     if (PyType_Ready(&gc_ensure_disabled_type) < 0)
         return NULL;
-    if (PyModule_AddObject(m, "ensure_disabled", (PyObject*) &gc_ensure_disabled_type) < 0)
+    if (PyModule_AddObject(m, "ensure_disabled",
+                           (PyObject*) &gc_ensure_disabled_type) < 0)
+    {
         return NULL;
+    }
 
 
 #define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return NULL
