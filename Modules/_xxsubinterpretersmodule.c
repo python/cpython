@@ -1224,7 +1224,7 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
             Py_RETURN_NOTIMPLEMENTED;
         }
         int64_t othercid = PyLong_AsLongLong(other);
-        // XXX decref other here?
+        Py_DECREF(other);
         if (othercid == -1 && PyErr_Occurred() != NULL) {
             return NULL;
         }
