@@ -32,6 +32,7 @@ _coerce_id(PyObject *id)
         return -1;
     }
     long long cid = PyLong_AsLongLong(id);
+    Py_DECREF(id);
     if (cid == -1 && PyErr_Occurred() != NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "'id' must be a non-negative int");
