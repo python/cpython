@@ -31,21 +31,18 @@ _coerce_id(PyObject *id)
         }
         return -1;
     }
-    long long cid = PyLong_AsLongLong(id);
+    int64_t cid = PyLong_AsLongLong(id);
     Py_DECREF(id);
     if (cid == -1 && PyErr_Occurred() != NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "'id' must be a non-negative int");
+        if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "'id' must be a non-negative int");
+        }
         return -1;
     }
     if (cid < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "'id' must be a non-negative int");
-        return -1;
-    }
-    if (cid > INT64_MAX) {
-        PyErr_SetString(PyExc_ValueError,
-                        "'id' too large (must be 64-bit int)");
         return -1;
     }
     return cid;
@@ -1231,7 +1228,7 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         if (othercid == -1 && PyErr_Occurred() != NULL) {
             return NULL;
         }
-        if (othercid < 0 || othercid > INT64_MAX) {
+        if (othercid < 0) {
             equal = 0;
         }
         else {

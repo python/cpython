@@ -763,12 +763,12 @@ class ChannelIDTests(TestBase):
         self.assertEqual(int(cid), 10)
 
     def test_bad_id(self):
-        ids = [-1, 2**64, "spam"]
-        for cid in ids:
+        for cid in [-1, 'spam']:
             with self.subTest(cid):
                 with self.assertRaises(ValueError):
                     interpreters._channel_id(cid)
-
+        with self.assertRaises(OverflowError):
+            interpreters._channel_id(2**64)
         with self.assertRaises(TypeError):
             interpreters._channel_id(object())
 
