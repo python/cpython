@@ -1068,8 +1068,10 @@ gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
     if(_PyRuntime.gc.disabled_threads){
-        PyErr_WarnEx(PyExc_RuntimeWarning, "Garbage collector enabled while another "
-            "thread is inside gc.ensure_enabled",1);
+        if(PyErr_WarnEx(PyExc_RuntimeWarning, "Garbage collector enabled while another "
+            "thread is inside gc.ensure_enabled",1) == -1) {
+              PyErr_WriteUnraisable(module);
+            }
     }
     _PyRuntime.gc.enabled = 1;
     Py_RETURN_NONE;
