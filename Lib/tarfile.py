@@ -1943,7 +1943,7 @@ class TarFile(object):
         elif tarinfo.isdir():
             self.addfile(tarinfo)
             if recursive:
-                for f in os.listdir(name):
+                for f in sorted(os.listdir(name)):
                     self.add(os.path.join(name, f), os.path.join(arcname, f),
                             recursive, filter=filter)
 
