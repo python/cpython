@@ -1840,11 +1840,11 @@ channel_list_all(PyObject *self)
     }
     PyObject *ids = PyList_New((Py_ssize_t)count);
     if (ids == NULL) {
-        // XXX free cids
-        return NULL;
+        goto finally;
     }
-    for (int64_t i=0; i < count; cids++, i++) {
-        PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cids, 0,
+    int64_t *cur = cids;
+    for (int64_t i=0; i < count; cur++, i++) {
+        PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cur, 0,
                                                 &_globals.channels, 0);
         if (id == NULL) {
             Py_DECREF(ids);
@@ -1853,7 +1853,9 @@ channel_list_all(PyObject *self)
         }
         PyList_SET_ITEM(ids, i, id);
     }
-    // XXX free cids
+
+finally:
+    PyMem_Free(cids);
     return ids;
 }
 
