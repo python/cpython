@@ -1,26 +1,28 @@
 # Android/external-libraries/Makefile.openssl
 
-OPENSSL := openssl-1.0.2g
+OPENSSL := openssl-1.1.0g
 
-# See https://wiki.openssl.org/index.php/Android for the definition of these
-# variables.
-export RELEASE := 2.6.37
-export ANDROID_SYSROOT := $(SYSROOT)
-export NDK_SYSROOT := $(SYSROOT)
-export ANDROID_NDK_SYSROOT := $(SYSROOT)
-export ANDROID_DEV := $(SYSROOT)/usr
-export SYSTEM := android
-export HOSTCC := gcc
+# See openssl INSTALL and Configurations/10-main.conf files.
+export ANDROID_NDK := $(ANDROID_NDK_ROOT)
+export CROSS_SYSROOT := $(SYSROOT)
 export CROSS_COMPILE := $(ANDROID_HOST)-
+
+# Append to the current PATH so that ccache remains first in PATH.
+export PATH := $(PATH):$(TOOLCHAIN)/bin
+
+ifeq ($(ANDROID_ARCH), x86)
+    export OPENSSL_TARGET := android-x86
+else ifeq ($(ANDROID_ARCH), x86_64)
+    export OPENSSL_TARGET := android64
+else ifeq ($(ANDROID_ARCH), armv7)
+    export OPENSSL_TARGET := android-armeabi
+else ifeq ($(ANDROID_ARCH), arm64)
+    export OPENSSL_TARGET := android64-aarch64
+endif
 
 BUILD_DIR := $(BUILD_DIR)/external-libraries
 py_install_dir := $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)
 BUILD_OPENSSL := $(py_install_dir)/lib/libcrypto.so
-ifeq ($(ANDROID_ARCH), x86)
-    export MACHINE := i686
-else
-    export MACHINE := $(ANDROID_ARCH)
-endif
 
 all: openssl_header $(BUILD_OPENSSL)
 openssl_header:
@@ -30,18 +32,14 @@ $(BUILD_DIR)/$(OPENSSL).tar.gz:
 	cd $(BUILD_DIR); \
 	    $(DOWNLOAD) https://www.openssl.org/source/$(OPENSSL).tar.gz
 
-$(BUILD_OPENSSL): export PATH := $(shell dirname $(subst ccache ,,$(GCC))):$(PATH)
 $(BUILD_OPENSSL): $(BUILD_DIR)/$(OPENSSL).tar.gz
 	rm -rf $(BUILD_DIR)/$(OPENSSL)-$(BUILD_TYPE)
 	tar xzf $<
 	mv $(OPENSSL) $(BUILD_DIR)/$(OPENSSL)-$(BUILD_TYPE)
 	cd $(BUILD_DIR)/$(OPENSSL)-$(BUILD_TYPE); \
-	    cat Makefile.org | sed 's/^install:.*$$/install: install_sw/' > Makefile.tmp; \
-	        mv Makefile.tmp Makefile.org; \
-	    ./config shared no-ssl2 no-ssl3 no-comp no-hw no-engine \
-	        --openssldir=$(py_install_dir); \
-	    $(MAKE) depend; \
-	    $(MAKE) all; \
-	    $(MAKE) install CC=$(GCC) RANLIB=$(RANLIB)
+	    ./Configure $(OPENSSL_TARGET) shared no-ssl3 no-engine \
+	        --prefix=$(py_install_dir) --openssldir=$(py_install_dir)/etc/ssl; \
+	    $(MAKE); \
+	    $(MAKE) install_sw install_ssldirs
 
 .PHONY: all openssl_header

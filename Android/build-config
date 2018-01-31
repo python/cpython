@@ -36,26 +36,26 @@ case "$ANDROID_ARCH" in
         ANDROID_HOST=arm-linux-androideabi
         APP_ABI=armeabi-v7a
         target=armv7-none-linux-androideabi
-        toolchain=$ANDROID_HOST-$gcc_version
+        TOOLCHAIN=$ANDROID_HOST-$gcc_version
         SYSROOT="$ANDROID_NDK_ROOT/platforms/android-$ANDROID_API/arch-arm"
         ;;
     arm64)
         ANDROID_HOST=aarch64-linux-android
         APP_ABI=arm64-v8a
         target=aarch64-none-linux-android
-        toolchain=$ANDROID_HOST-$gcc_version
+        TOOLCHAIN=$ANDROID_HOST-$gcc_version
         ;;
     x86)
         ANDROID_HOST=i686-linux-android
         APP_ABI=x86
         target=i686-none-linux-androideabi
-        toolchain=x86-$gcc_version
+        TOOLCHAIN=x86-$gcc_version
         ;;
     x86_64)
         ANDROID_HOST=x86_64-linux-android
         APP_ABI=x86_64
         target=x86_64-none-linux-androideabi
-        toolchain=x86_64-$gcc_version
+        TOOLCHAIN=x86_64-$gcc_version
         ;;
     *)
         build_config_error "ANDROID_ARCH must be set to armv7, arm64, x86 or x86_64."
@@ -72,17 +72,16 @@ tool_path ()
 {
     echo "$ANDROID_NDK_ROOT/toolchains/$1/prebuilt/${kernel}-${machine}"
 }
-toolchain=$(tool_path $toolchain)
+TOOLCHAIN=$(tool_path $TOOLCHAIN)
 
 # Build variables.
-CC="$(tool_path llvm)/bin/clang -target $target -gcc-toolchain $toolchain"
-GCC="$toolchain/bin/$ANDROID_HOST-gcc"
-AR="$toolchain/bin/$ANDROID_HOST-ar"
-LD="$toolchain/bin/$ANDROID_HOST-ld"
-RANLIB="$toolchain/bin/$ANDROID_HOST-ranlib"
-READELF="$toolchain/bin/$ANDROID_HOST-readelf"
-STRIP="$toolchain/bin/$ANDROID_HOST-strip --strip-debug --strip-unneeded"
-unset target toolchain machine kernel tool_path
+CC="$(tool_path llvm)/bin/clang -target $target -gcc-toolchain $TOOLCHAIN"
+AR="$TOOLCHAIN/bin/$ANDROID_HOST-ar"
+LD="$TOOLCHAIN/bin/$ANDROID_HOST-ld"
+RANLIB="$TOOLCHAIN/bin/$ANDROID_HOST-ranlib"
+READELF="$TOOLCHAIN/bin/$ANDROID_HOST-readelf"
+STRIP="$TOOLCHAIN/bin/$ANDROID_HOST-strip --strip-debug --strip-unneeded"
+unset target machine kernel tool_path
 
 # We need to set '--sysroot' both in CFLAGS and CPPFLAGS:
 #   * configure needs to have '--sysroot' set in CPPFLAGS when it runs CPP.
@@ -93,5 +92,4 @@ CFLAGS="$CFLAGS $ndk_flags"
 LDFLAGS="$LDFLAGS --sysroot=$SYSROOT"
 unset ndk_flags
 
-ccache -V >/dev/null 2>&1 && { CC="ccache $CC"; GCC="ccache $GCC"; \
-                               CFLAGS="$CFLAGS -Wno-parentheses-equality"; }
+ccache -V >/dev/null 2>&1 && { CC="ccache $CC"; CFLAGS="$CFLAGS -Wno-parentheses-equality"; }

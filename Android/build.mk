@@ -57,19 +57,15 @@ native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Set
 
 # Target-specific exported variables.
 build configure host python_dist: \
-                            export PATH := $(native_build_dir):$(PATH)
-external_libraries:         export CC := $(CC)
-external_libraries openssl: export AR := $(AR)
-external_libraries openssl: export LD := $(LD)
-external_libraries openssl: export RANLIB := $(RANLIB)
-external_libraries openssl: export READELF := $(READELF)
-external_libraries openssl: export CFLAGS := $(CFLAGS)
-external_libraries openssl: export LDFLAGS := $(LDFLAGS)
-external_libraries openssl: export ANDROID_ARCH := $(ANDROID_ARCH)
-openssl:                    export GCC := $(GCC)
-openssl:                    export SYSROOT := $(SYSROOT)
-openssl:                    export ANDROID_API := android-$(ANDROID_API)
-
+                    export PATH := $(native_build_dir):$(PATH)
+external_libraries: export CC := $(CC)
+external_libraries: export AR := $(AR)
+external_libraries: export LD := $(LD)
+external_libraries: export RANLIB := $(RANLIB)
+external_libraries: export READELF := $(READELF)
+external_libraries: export CFLAGS := $(CFLAGS)
+external_libraries: export LDFLAGS := $(LDFLAGS)
+external_libraries: export ANDROID_ARCH := $(ANDROID_ARCH)
 external_libraries:
 	mkdir -p $(BUILD_DIR)/external-libraries
 ifdef WITH_LIBFFI
@@ -87,12 +83,8 @@ endif
 
 openssl:
 ifdef WITH_OPENSSL
-    ifneq ($(ANDROID_ARCH), x86_64)
-      ifneq ($(ANDROID_ARCH), arm64)
-	    mkdir -p $(BUILD_DIR)/external-libraries
-	    $(MAKE) -C $(py_srcdir)/Android/external-libraries -f Makefile.openssl
-      endif
-    endif
+	mkdir -p $(BUILD_DIR)/external-libraries
+	$(MAKE) -C $(py_srcdir)/Android/external-libraries -f Makefile.openssl
 endif
 
 $(config_status): $(makefile) $(py_srcdir)/configure
@@ -157,6 +149,9 @@ python_dist: $(python)
 	chmod u+w $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so*
 	tdir=$(SYS_EXEC_PREFIX)/share/terminfo/l; mkdir -p $(PY_DESTDIR)/$$tdir && \
 	    cp $(PY_EXTDIR)/$$tdir/linux $(PY_DESTDIR)/$$tdir
+	if test -d "$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/etc"; then \
+	    cp -r $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/etc $(PY_DESTDIR)/$(SYS_EXEC_PREFIX); \
+	fi
 	# This won't be needed anymore when issue 31046 is fixed.
 	rm -rf $(PY_DESTDIR)/usr
 
@@ -183,7 +178,7 @@ $(PYTHON_ZIP): python_dist
 	        $$SYS_EXEC_PREFIX/include/$(py_fullname)/pyconfig.h \
 	        $$SYS_EXEC_PREFIX/$(STDLIB_DIR)/ \
 	        $$SYS_EXEC_PREFIX/share/terminfo/l/linux \
-	        $$SYS_EXEC_PREFIX/etc/inputrc \
+	        $$SYS_EXEC_PREFIX/etc/ \
 	        -x \*failed.so
 
 	# Zip the shared libraries excluding symlinks.

@@ -54,11 +54,11 @@ list_ext_libraries ()
 PY_SRCDIR="$(cd "$(dirname "$0")/.." && pwd)"
 . $PY_SRCDIR/Android/build-config
 
-defined_variables="APP_ABI CC GCC AR LD RANLIB READELF STRIP \
-                   SYSROOT CPPFLAGS LDFLAGS CFLAGS"
-exported_variables="ANDROID_NDK_ROOT ANDROID_SDK_ROOT \
+defined_variables="APP_ABI CC AR LD RANLIB READELF STRIP \
+                   CPPFLAGS LDFLAGS CFLAGS"
+exported_variables="ANDROID_NDK_ROOT ANDROID_SDK_ROOT TOOLCHAIN \
                     ANDROID_API ANDROID_ARCH \
-                    ANDROID_HOST ANDROID_BUILD"
+                    ANDROID_HOST ANDROID_BUILD SYSROOT"
 makefile=Makefile-android-$ANDROID_API-$ANDROID_ARCH
 if test -f Makefile; then
     test ! -h Makefile && build_config_error \
