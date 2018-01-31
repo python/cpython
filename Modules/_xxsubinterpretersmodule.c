@@ -140,6 +140,12 @@ typedef struct _sharedexception {
     char *msg;
 } _sharedexception;
 
+static void
+_sharedexception_free(_sharedexception *exc) {
+    PyMem_Free(exc->msg);
+    PyMem_Free(exc);
+}
+
 static _sharedexception *
 _get_shared_exception(void)
 {
@@ -162,7 +168,18 @@ _get_shared_exception(void)
         err->msg = "unable to format exception";
         return err;
     }
-    err->msg = (char *)PyUnicode_AsUTF8(msg);
+    const char *errmsg = PyUnicode_AsUTF8(msg);
+    if (errmsg == NULL) {
+        err->msg = "unable to encode exception";
+    }
+    err->msg = PyMem_Malloc(strlen(errmsg)+1);
+    if (err->msg == NULL) {
+        Py_DECREF(msg);
+        err->msg = "MemoryError: out of memory copying error message";
+        return err;
+    }
+    strcpy(err->msg, errmsg);
+    Py_DECREF(msg);
     if (err->msg == NULL) {
         err->msg = "unable to encode exception";
     }
@@ -1079,6 +1096,7 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
                         "'send' and 'recv' cannot both be False");
         return NULL;
     }
+
     int end = 0;
     if (send == 1) {
         if (recv == 0 || recv == -1) {
@@ -1471,7 +1489,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     // Propagate any exception out to the caller.
     if (exc != NULL) {
         _apply_shared_exception(exc);
-        PyMem_Free(exc);
+        _sharedexception_free(exc);
     }
     else if (result != 0) {
         // We were unable to allocate a shared exception.
