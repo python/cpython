@@ -1,0 +1,2 @@
+Fix possible crashing in builtin Unicode decoders caused by write
+out-of-bound errors when using customized decode error handlers.
