@@ -5,5 +5,5 @@ the ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale.  This
 temporary change affects other threads.
 
 Same change for the :meth:`str.format` method when formatting a number
-(:class:`int`, :class:`float`, :class:`float` and subclasses) with the ``n``
+(:class:`int`, :class:`float`, :class:`complex`, :class:`decimal.Decimal` and subclasses) with the ``n``
 type (ex: ``'{:n}'.format(1234)``).
