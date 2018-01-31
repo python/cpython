@@ -1,0 +1,1 @@
+Do not include name field in SMTP envelope from address. Patch by Stéphane Wirtel
