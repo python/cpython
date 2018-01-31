@@ -181,18 +181,22 @@ class Lock(_ContextManagerMixin):
             self._locked = True
             return True
 
+        _waiters = self._waiters
         fut = self._loop.create_future()
-        self._waiters.append(fut)
+        _waiters.append(fut)
         try:
-            await fut
-            self._locked = True
-            return True
+            try:
+                await fut
+            finally:
+                _waiters.remove(fut)
         except futures.CancelledError:
             if not self._locked:
                 self._wake_up_first()
             raise
-        finally:
-            self._waiters.remove(fut)
+
+        self._locked = True
+        return True
+        
 
     def release(self):
         """Release a lock.
@@ -212,11 +216,15 @@ class Lock(_ContextManagerMixin):
             raise RuntimeError('Lock is not acquired.')
 
     def _wake_up_first(self):
-        """Wake up the first waiter who isn't cancelled."""
-        for fut in self._waiters:
-            if not fut.done():
-                fut.set_result(True)
-                break
+        """Wake up the first waiter if it isn't done."""
+        try:
+            fut = next(iter(self._waiters))
+        except StopIteration:
+            return
+        
+        if not fut.done():
+            fut.set_result(True)
+
 
 
 class Event:

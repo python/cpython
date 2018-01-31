@@ -200,6 +200,42 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(tb.cancelled())
         self.assertTrue(tc.done())
 
+    def test_cancel_release_race(self):
+        # Issue 32734
+        # Acquire 4 locks, cancel second, release first
+        # and 2 locks are taken at once.
+        lock = asyncio.Lock(loop=self.loop)
+        lock_count = 0
+
+        async def lockit():
+            nonlocal lock_count
+            await lock.acquire()
+            lock_count += 1
+  
+        async def lockandtrigger():
+            await lock.acquire()
+            self.loop.call_soon(trigger)
+          
+        def trigger():
+            t1.cancel()
+            lock.release()
+
+        asyncio.Task(lockandtrigger(), loop=self.loop)
+        t1 = asyncio.Task(lockit(), loop=self.loop)
+        t2 = asyncio.Task(lockit(), loop=self.loop)
+        t3 = asyncio.Task(lockit(), loop=self.loop)
+
+        # First loop acquires all
+        test_utils.run_briefly(self.loop)
+        # Second loop calls trigger
+        test_utils.run_briefly(self.loop)
+        # Third loop calls cancellation
+        test_utils.run_briefly(self.loop)
+
+        # Make sure only one lock was taken
+        self.assertEqual(lock_count, 1)
+
+
     def test_finished_waiter_cancelled(self):
         lock = asyncio.Lock(loop=self.loop)
 
