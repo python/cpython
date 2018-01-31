@@ -933,6 +933,7 @@ class SMTP:
             from_addr = (msg[header_prefix + 'Sender']
                            if (header_prefix + 'Sender') in msg
                            else msg[header_prefix + 'From'])
+            from_addr = email.utils.getaddresses([from_addr])[0][1]
         if to_addrs is None:
             addr_fields = [f for f in (msg[header_prefix + 'To'],
                                        msg[header_prefix + 'Bcc'],
