@@ -331,7 +331,7 @@ The :mod:`functools` module defines the following functions:
      >>> fun_num is fun
      False
 
-   When called, the generic function dispatches on the type of the first
+   When called, the generic function by default dispatches on the type of the first
    argument::
 
      >>> fun("Hello, world.")
@@ -356,6 +356,23 @@ The :mod:`functools` module defines the following functions:
    The original function decorated with ``@singledispatch`` is registered
    for the base ``object`` type, which means it is used if no better
    implementation is found.
+
+   You can also tell ``@singeldispatch`` to dispatch on another argument index
+   with the ``arg`` keyword. This is especially useful for methods::
+
+    class Negater:
+        """neg(a) negates a for bools and ints"""
+        @singledispatch(arg=1)
+        def neg(self, a):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register(int)
+        def _(self, a):
+            return -a
+
+        @neg.register(bool)
+        def _(self, a):
+            return not a
 
    To check which implementation will the generic function choose for
    a given type, use the ``dispatch()`` attribute::

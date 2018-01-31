@@ -1,0 +1,2 @@
+``functools.singledispatch`` now supports decorating and registering with
+methods.
