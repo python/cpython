@@ -1940,7 +1940,7 @@ class PyZipFile(ZipFile):
                 if self.debug:
                     print("Adding", arcname)
                 self.write(fname, arcname)
-                dirlist = os.listdir(pathname)
+                dirlist = sorted(os.listdir(pathname))
                 dirlist.remove("__init__.py")
                 # Add all *.py files and package subdirectories
                 for filename in dirlist:
@@ -1965,7 +1965,7 @@ class PyZipFile(ZipFile):
                 # This is NOT a package directory, add its files at top level
                 if self.debug:
                     print("Adding files from directory", pathname)
-                for filename in os.listdir(pathname):
+                for filename in sorted(os.listdir(pathname)):
                     path = os.path.join(pathname, filename)
                     root, ext = os.path.splitext(filename)
                     if ext == ".py":
@@ -2116,7 +2116,7 @@ def main(args=None):
             elif os.path.isdir(path):
                 if zippath:
                     zf.write(path, zippath)
-                for nm in os.listdir(path):
+                for nm in sorted(os.listdir(path)):
                     addToZip(zf,
                              os.path.join(path, nm), os.path.join(zippath, nm))
             # else: ignore
