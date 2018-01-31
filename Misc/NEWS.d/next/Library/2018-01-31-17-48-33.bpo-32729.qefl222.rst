@@ -1,0 +1,1 @@
+add None type checking when socket error occurred.
