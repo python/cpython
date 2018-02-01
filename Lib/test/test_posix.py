@@ -235,6 +235,16 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
+    # issue31106 - posix_fallocate() does not set error in errno.
+    @unittest.skipUnless(hasattr(posix, 'posix_fallocate'),
+        "test needs posix.posix_fallocate()")
+    def test_posix_fallocate_errno(self):
+        try:
+            posix.posix_fallocate(-42, 0, 10)
+        except OSError as inst:
+            if inst.errno != errno.EBADF:
+                raise
+
     @unittest.skipUnless(hasattr(posix, 'posix_fadvise'),
         "test needs posix.posix_fadvise()")
     def test_posix_fadvise(self):
@@ -243,6 +253,15 @@ class PosixTester(unittest.TestCase):
             posix.posix_fadvise(fd, 0, 0, posix.POSIX_FADV_WILLNEED)
         finally:
             os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'posix_fadvise'),
+        "test needs posix.posix_fadvise()")
+    def test_posix_fadvise_errno(self):
+        try:
+            posix.posix_fadvise(-42, 0, 0, posix.POSIX_FADV_WILLNEED)
+        except OSError as inst:
+            if inst.errno != errno.EBADF:
+                raise
 
     @unittest.skipUnless(os.utime in os.supports_fd, "test needs fd support in os.utime")
     def test_utime_with_fd(self):
