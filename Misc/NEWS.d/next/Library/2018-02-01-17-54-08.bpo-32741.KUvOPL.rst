@@ -1,0 +1,1 @@
+Implement ``asyncio.TimerHandle.when()`` method.

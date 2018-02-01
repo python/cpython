@@ -2679,6 +2679,12 @@ class TimerTests(unittest.TestCase):
                                 mock.Mock())
         self.assertEqual(hash(h), hash(when))
 
+    def test_when(self):
+        when = time.monotonic()
+        h = asyncio.TimerHandle(when, lambda: False, (),
+                                mock.Mock())
+        self.assertEqual(when, h.when())
+
     def test_timer(self):
         def callback(*args):
             return args

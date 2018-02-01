@@ -171,7 +171,7 @@ a different clock than :func:`time.time`.
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
+   An instance of :class:`asyncio.TimerHandle` is returned, which can be
    used to cancel the callback.
 
    *callback* will be called exactly once per call to :meth:`call_later`.
@@ -193,7 +193,7 @@ a different clock than :func:`time.time`.
 
    This method's behavior is the same as :meth:`call_later`.
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
+   An instance of :class:`asyncio.TimerHandle` is returned, which can be
    used to cancel the callback.
 
    :ref:`Use functools.partial to pass keywords to the callback
@@ -1076,8 +1076,7 @@ Handle
 .. class:: Handle
 
    A callback wrapper object returned by :func:`AbstractEventLoop.call_soon`,
-   :func:`AbstractEventLoop.call_soon_threadsafe`, :func:`AbstractEventLoop.call_later`,
-   and :func:`AbstractEventLoop.call_at`.
+   :func:`AbstractEventLoop.call_soon_threadsafe`.
 
    .. method:: cancel()
 
@@ -1087,6 +1086,22 @@ Handle
    .. method:: cancelled()
 
       Return ``True`` if the call was cancelled.
+
+      .. versionadded:: 3.7
+
+.. class:: TimerHandle
+
+   A callback wrapper object returned by :func:`AbstractEventLoop.call_later`,
+   and :func:`AbstractEventLoop.call_at`.
+
+   The class is inherited from :class:`Handle`.
+
+   .. method:: when()
+
+      Return a scheduled callback time as :class:`float` seconds.
+
+      The time is an absolute timestamp, using the same time
+      reference as :meth:`AbstractEventLoop.time`.
 
       .. versionadded:: 3.7
 

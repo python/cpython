@@ -156,6 +156,14 @@ class TimerHandle(Handle):
             self._loop._timer_handle_cancelled(self)
         super().cancel()
 
+    def when(self):
+        """Return a scheduled callback time.
+
+        The time is an absolute timestamp, using the same time
+        reference as loop.time().
+        """
+        return self._when
+
 
 class AbstractServer:
     """Abstract server returned by create_server()."""
