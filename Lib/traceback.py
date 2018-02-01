@@ -211,12 +211,23 @@ def extract_stack(f=None, limit=None):
 
 def clear_frames(tb):
     "Clear all references to local variables in the frames of a traceback."
+    seen = set()
     while tb is not None:
-        try:
-            tb.tb_frame.clear()
-        except RuntimeError:
-            # Ignore the exception raised if the frame is still executing.
-            pass
+        frame = tb.tb_frame
+        while True:
+            key = id(frame)
+            if key in seen:
+                break
+            seen.add(key)
+
+            try:
+                frame.clear()
+            except RuntimeError:
+                # Ignore the exception raised if the frame is still executing.
+                pass
+            frame = frame.f_back
+            if frame is None:
+                break
         tb = tb.tb_next
 
 

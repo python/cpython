@@ -1,0 +1,2 @@
+traceback.clear_frames() now iterates on frames to clear all frames of each
+traceback object, not only the first frame.
