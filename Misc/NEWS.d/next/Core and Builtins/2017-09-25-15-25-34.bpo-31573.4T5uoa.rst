@@ -1,0 +1,2 @@
+PyStructSequence_New() now raises an exception instead of crashing if the
+argument is not a type.
