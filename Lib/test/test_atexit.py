@@ -2,7 +2,9 @@ import sys
 import unittest
 import io
 import atexit
+import os
 from test import support
+from test.support import script_helper
 
 ### helpers
 def h1():
@@ -152,6 +154,21 @@ class GeneralTest(unittest.TestCase):
         atexit._run_exitfuncs()
         self.assertEqual(l, [5])
 
+    def test_shutdown(self):
+        # Actually test the shutdown mechanism in a subprocess
+        code = """if 1:
+            import atexit
+
+            def f(msg):
+                print(msg)
+
+            atexit.register(f, "one")
+            atexit.register(f, "two")
+            """
+        res = script_helper.assert_python_ok("-c", code)
+        self.assertEqual(res.out.decode().splitlines(), ["two", "one"])
+        self.assertFalse(res.err)
+
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
@@ -186,6 +203,24 @@ class SubinterpreterTest(unittest.TestCase):
         ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
+
+    def test_callback_on_subinterpreter_teardown(self):
+        # This tests if a callback is called on
+        # subinterpreter teardown.
+        expected = b"The test has passed!"
+        r, w = os.pipe()
+
+        code = r"""if 1:
+            import os
+            import atexit
+            def callback():
+                os.write({:d}, b"The test has passed!")
+            atexit.register(callback)
+        """.format(w)
+        ret = support.run_in_subinterp(code)
+        os.close(w)
+        self.assertEqual(os.read(r, len(expected)), expected)
+        os.close(r)
 
 
 if __name__ == "__main__":

@@ -34,6 +34,29 @@ class IntTestCase(unittest.TestCase, HelperMixin):
                 self.helper(expected)
             n = n >> 1
 
+    def test_int64(self):
+        # Simulate int marshaling with TYPE_INT64.
+        maxint64 = (1 << 63) - 1
+        minint64 = -maxint64-1
+        for base in maxint64, minint64, -maxint64, -(minint64 >> 1):
+            while base:
+                s = b'I' + int.to_bytes(base, 8, 'little', signed=True)
+                got = marshal.loads(s)
+                self.assertEqual(base, got)
+                if base == -1:  # a fixed-point for shifting right 1
+                    base = 0
+                else:
+                    base >>= 1
+
+        got = marshal.loads(b'I\xfe\xdc\xba\x98\x76\x54\x32\x10')
+        self.assertEqual(got, 0x1032547698badcfe)
+        got = marshal.loads(b'I\x01\x23\x45\x67\x89\xab\xcd\xef')
+        self.assertEqual(got, -0x1032547698badcff)
+        got = marshal.loads(b'I\x08\x19\x2a\x3b\x4c\x5d\x6e\x7f')
+        self.assertEqual(got, 0x7f6e5d4c3b2a1908)
+        got = marshal.loads(b'I\xf7\xe6\xd5\xc4\xb3\xa2\x91\x80')
+        self.assertEqual(got, -0x7f6e5d4c3b2a1909)
+
     def test_bool(self):
         for b in (True, False):
             self.helper(b)

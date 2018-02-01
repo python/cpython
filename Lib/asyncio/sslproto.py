@@ -6,6 +6,7 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
+from . import constants
 from . import protocols
 from . import transports
 from .log import logger
@@ -18,23 +19,11 @@ def _create_transport_context(server_side, server_hostname):
     # Client side may pass ssl=True to use a default
     # context; in that case the sslcontext passed is None.
     # The default is secure for client connections.
-    if hasattr(ssl, 'create_default_context'):
-        # Python 3.4+: use up-to-date strong settings.
-        sslcontext = ssl.create_default_context()
-        if not server_hostname:
-            sslcontext.check_hostname = False
-    else:
-        # Fallback for Python 3.3.
-        sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        sslcontext.options |= ssl.OP_NO_SSLv2
-        sslcontext.options |= ssl.OP_NO_SSLv3
-        sslcontext.set_default_verify_paths()
-        sslcontext.verify_mode = ssl.CERT_REQUIRED
+    # Python 3.4+: use up-to-date strong settings.
+    sslcontext = ssl.create_default_context()
+    if not server_hostname:
+        sslcontext.check_hostname = False
     return sslcontext
-
-
-def _is_sslproto_available():
-    return hasattr(ssl, "MemoryBIO")
 
 
 # States of an _SSLPipe.
@@ -293,6 +282,8 @@ class _SSLPipe(object):
 class _SSLProtocolTransport(transports._FlowControlMixin,
                             transports.Transport):
 
+    _sendfile_compatible = constants._SendfileMode.FALLBACK
+
     def __init__(self, loop, ssl_protocol):
         self._loop = loop
         # SSLProtocol instance
@@ -325,9 +316,15 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
 
     def __del__(self):
         if not self._closed:
-            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
                           source=self)
             self.close()
+
+    def is_reading(self):
+        tr = self._ssl_protocol._transport
+        if tr is None:
+            raise RuntimeError('SSL transport has not been initialized yet')
+        return tr.is_reading()
 
     def pause_reading(self):
         """Pause the receiving end.
@@ -370,6 +367,11 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         """Return the current size of the write buffer."""
         return self._ssl_protocol._transport.get_write_buffer_size()
 
+    @property
+    def _protocol_paused(self):
+        # Required for sendfile fallback pause_writing/resume_writing logic
+        return self._ssl_protocol._transport._protocol_paused
+
     def write(self, data):
         """Write some data bytes to the transport.
 
@@ -377,8 +379,8 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         to be sent out asynchronously.
         """
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError("data: expecting a bytes-like instance, got {!r}"
-                                .format(type(data).__name__))
+            raise TypeError(f"data: expecting a bytes-like instance, "
+                            f"got {type(data).__name__}")
         if not data:
             return
         self._ssl_protocol._write_appdata(data)
@@ -406,12 +408,21 @@ class SSLProtocol(protocols.Protocol):
 
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
-                 call_connection_made=True):
+                 call_connection_made=True,
+                 ssl_handshake_timeout=None):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 
+        if ssl_handshake_timeout is None:
+            ssl_handshake_timeout = constants.SSL_HANDSHAKE_TIMEOUT
+        elif ssl_handshake_timeout <= 0:
+            raise ValueError(
+                f"ssl_handshake_timeout should be a positive number, "
+                f"got {ssl_handshake_timeout}")
+
         if not sslcontext:
-            sslcontext = _create_transport_context(server_side, server_hostname)
+            sslcontext = _create_transport_context(
+                server_side, server_hostname)
 
         self._server_side = server_side
         if server_hostname and not server_side:
@@ -439,6 +450,7 @@ class SSLProtocol(protocols.Protocol):
         # transport, ex: SelectorSocketTransport
         self._transport = None
         self._call_connection_made = call_connection_made
+        self._ssl_handshake_timeout = ssl_handshake_timeout
 
     def _wakeup_waiter(self, exc=None):
         if self._waiter is None:
@@ -566,9 +578,18 @@ class SSLProtocol(protocols.Protocol):
         # the SSL handshake
         self._write_backlog.append((b'', 1))
         self._loop.call_soon(self._process_write_backlog)
+        self._handshake_timeout_handle = \
+            self._loop.call_later(self._ssl_handshake_timeout,
+                                  self._check_handshake_timeout)
+
+    def _check_handshake_timeout(self):
+        if self._in_handshake is True:
+            logger.warning("%r stalled during handshake", self)
+            self._abort()
 
     def _on_handshake_complete(self, handshake_exc):
         self._in_handshake = False
+        self._handshake_timeout_handle.cancel()
 
         sslobj = self._sslpipe.ssl_object
         try:
@@ -576,12 +597,6 @@ class SSLProtocol(protocols.Protocol):
                 raise handshake_exc
 
             peercert = sslobj.getpeercert()
-            if not hasattr(self._sslcontext, 'check_hostname'):
-                # Verify hostname if requested, Python 3.4+ uses check_hostname
-                # and checks the hostname in do_handshake()
-                if (self._server_hostname
-                and self._sslcontext.verify_mode != ssl.CERT_NONE):
-                    ssl.match_hostname(peercert, self._server_hostname)
         except BaseException as exc:
             if self._loop.get_debug():
                 if isinstance(exc, ssl.CertificateError):

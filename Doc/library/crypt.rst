@@ -116,7 +116,7 @@ The :mod:`crypt` module defines the following functions:
       Accept ``crypt.METHOD_*`` values in addition to strings for *salt*.
 
 
-.. function:: mksalt(method=None, *, log_rounds=12)
+.. function:: mksalt(method=None, *, rounds=None)
 
    Return a randomly generated salt of the specified method.  If no
    *method* is given, the strongest method available as returned by
@@ -125,14 +125,18 @@ The :mod:`crypt` module defines the following functions:
    The return value is a string suitable for passing as the *salt* argument
    to :func:`crypt`.
 
-   *log_rounds* specifies the binary logarithm of the number of rounds
-   for ``crypt.METHOD_BLOWFISH``, and is ignored otherwise.  ``8`` specifies
-   ``256`` rounds.
+   *rounds* specifies the number of rounds for ``METHOD_SHA256``,
+   ``METHOD_SHA512`` and ``METHOD_BLOWFISH``.
+   For ``METHOD_SHA256`` and ``METHOD_SHA512`` it must be an integer between
+   ``1000`` and ``999_999_999``, the default is ``5000``.  For
+   ``METHOD_BLOWFISH`` it must be a power of two between ``16`` (2\ :sup:`4`)
+   and ``2_147_483_648`` (2\ :sup:`31`), the default is ``4096``
+   (2\ :sup:`12`).
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      Added the *log_rounds* parameter.
+      Added the *rounds* parameter.
 
 
 Examples

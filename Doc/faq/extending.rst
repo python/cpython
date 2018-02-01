@@ -53,7 +53,7 @@ with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
 <https://riverbankcomputing.com/software/sip/intro>`__, `CXX
 <http://cxx.sourceforge.net/>`_ `Boost
 <http://www.boost.org/libs/python/doc/index.html>`_, or `Weave
-<https://scipy.github.io/devdocs/tutorial/weave.html>`_ are also
+<https://github.com/scipy/weave>`_ are also
 alternatives for wrapping C++ libraries.
 
 

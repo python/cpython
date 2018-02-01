@@ -1238,7 +1238,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (PyErr_Occurred())
         return NULL;
 
-    if (self->num_fields > 0 && self->rec_size == 0) {
+    if (self->num_fields > 0 && self->rec_len == 0) {
         if (dialect->quoting == QUOTE_NONE) {
             PyErr_Format(_csvstate_global->error_obj,
                 "single empty field record must be quoted");

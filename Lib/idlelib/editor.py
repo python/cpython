@@ -668,7 +668,7 @@ class EditorWindow(object):
 
     def open_path_browser(self, event=None):
         from idlelib import pathbrowser
-        pathbrowser.PathBrowser(self.flist)
+        pathbrowser.PathBrowser(self.root)
         return "break"
 
     def open_turtle_demo(self, event = None):

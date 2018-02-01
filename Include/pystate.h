@@ -25,26 +25,85 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 
 typedef struct {
-    int ignore_environment;
-    int use_hash_seed;
+    int install_signal_handlers;  /* Install signal handlers? -1 means unset */
+
+    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag */
+    int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
+    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
+    int dev_mode;           /* PYTHONDEVMODE, -X dev */
+    int faulthandler;       /* PYTHONFAULTHANDLER, -X faulthandler */
+    int tracemalloc;        /* PYTHONTRACEMALLOC, -X tracemalloc=N */
+    int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
+    int show_ref_count;     /* -X showrefcount */
+    int show_alloc_count;   /* -X showalloccount */
+    int dump_refs;          /* PYTHONDUMPREFS */
+    int malloc_stats;       /* PYTHONMALLOCSTATS */
+    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+    int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
+
+    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
+    int argc;               /* Number of command line arguments,
+                               -1 means unset */
+    wchar_t **argv;         /* Command line arguments */
+    wchar_t *program;       /* argv[0] or "" */
+
+    int nxoption;           /* Number of -X options */
+    wchar_t **xoptions;     /* -X options */
+
+    int nwarnoption;        /* Number of warnings options */
+    wchar_t **warnoptions;  /* Warnings options */
+
+    /* Path configuration inputs */
+    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
+    wchar_t *home;          /* PYTHONHOME environment variable,
+                               see also Py_SetPythonHome(). */
+
+    /* Path configuration outputs */
+    int nmodule_search_path;        /* Number of sys.path paths,
+                                       -1 means unset */
+    wchar_t **module_search_paths;  /* sys.path paths */
+    wchar_t *executable;    /* sys.executable */
+    wchar_t *prefix;        /* sys.prefix */
+    wchar_t *base_prefix;   /* sys.base_prefix */
+    wchar_t *exec_prefix;   /* sys.exec_prefix */
+    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
+
+    /* Private fields */
     int _disable_importlib; /* Needed by freeze_importlib */
-    char *allocator;
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT {0, -1, 0, 0, NULL}
+#define _PyCoreConfig_INIT \
+    (_PyCoreConfig){ \
+        .install_signal_handlers = -1, \
+        .use_hash_seed = -1, \
+        .coerce_c_locale = -1, \
+        .utf8_mode = -1, \
+        .argc = -1, \
+        .nmodule_search_path = -1}
+/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
- *
- * For the moment, just handle the args to _Py_InitializeEx
  */
 typedef struct {
-    int install_signal_handlers;
+    int install_signal_handlers;   /* Install signal handlers? -1 means unset */
+    PyObject *argv;                /* sys.argv list, can be NULL */
+    PyObject *executable;          /* sys.executable str */
+    PyObject *prefix;              /* sys.prefix str */
+    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
+    PyObject *exec_prefix;         /* sys.exec_prefix str */
+    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
+    PyObject *module_search_path;  /* sys.path list */
 } _PyMainInterpreterConfig;
 
-#define _PyMainInterpreterConfig_INIT {-1}
+#define _PyMainInterpreterConfig_INIT \
+    (_PyMainInterpreterConfig){.install_signal_handlers = -1}
+/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
 typedef struct _is {
 
@@ -95,8 +154,13 @@ typedef struct _is {
     PyObject *after_forkers_parent;
     PyObject *after_forkers_child;
 #endif
+    /* AtExit module */
+    void (*pyexitfunc)(PyObject *);
+    PyObject *pyexitmodule;
+
+    uint64_t tstate_next_unique_id;
 } PyInterpreterState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* State unique per thread */
@@ -118,7 +182,7 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
-#endif
+#endif   /* Py_LIMITED_API */
 
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
@@ -214,16 +278,24 @@ typedef struct _ts {
     void (*on_delete)(void *);
     void *on_delete_data;
 
+    int coroutine_origin_tracking_depth;
+
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 
+    PyObject *context;
+    uint64_t context_ver;
+
+    /* Unique thread state id. */
+    uint64_t id;
+
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
@@ -348,7 +420,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
    is called. */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* The implementation of sys._current_frames()  Returns a dict mapping

@@ -141,7 +141,8 @@ the same library that the Python runtime is using.
    Read and execute statements from a file associated with an interactive device
    until EOF is reached.  The user will be prompted using ``sys.ps1`` and
    ``sys.ps2``.  *filename* is decoded from the filesystem encoding
-   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF.
+   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF or a negative
+   number upon failure.
 
 
 .. c:var:: int (*PyOS_InputHook)(void)
@@ -300,7 +301,7 @@ the same library that the Python runtime is using.
    set to *NULL*.
 
 
-.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject **args, int argcount, PyObject **kws, int kwcount, PyObject **defs, int defcount, PyObject *kwdefs, PyObject *closure)
+.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject *const *args, int argcount, PyObject *const *kws, int kwcount, PyObject *const *defs, int defcount, PyObject *kwdefs, PyObject *closure)
 
    Evaluate a precompiled code object, given a particular environment for its
    evaluation.  This environment consists of a dictionary of global variables,

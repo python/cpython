@@ -8,7 +8,7 @@ import sys
 import unittest
 import warnings
 from test import support
-android_not_root = support.android_not_root
+from test.support.script_helper import assert_python_ok
 
 
 def create_file(filename, data=b'foo'):
@@ -213,9 +213,11 @@ class GenericTest:
     def test_samefile_on_symlink(self):
         self._test_samefile_on_link_func(os.symlink)
 
-    @unittest.skipIf(android_not_root, "hard links not allowed, non root user")
     def test_samefile_on_link(self):
-        self._test_samefile_on_link_func(os.link)
+        try:
+            self._test_samefile_on_link_func(os.link)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
 
     def test_samestat(self):
         test_fn1 = support.TESTFN
@@ -253,9 +255,11 @@ class GenericTest:
     def test_samestat_on_symlink(self):
         self._test_samestat_on_link_func(os.symlink)
 
-    @unittest.skipIf(android_not_root, "hard links not allowed, non root user")
     def test_samestat_on_link(self):
-        self._test_samestat_on_link_func(os.link)
+        try:
+            self._test_samestat_on_link_func(os.link)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
 
     def test_sameopenfile(self):
         filename = support.TESTFN
@@ -482,6 +486,9 @@ class CommonTest(GenericTest):
                 self.pathmodule.relpath('str', 42)
             with self.assertRaisesRegex(TypeError, 'bytearray'):
                 self.pathmodule.relpath(bytearray(b'foo'), bytearray(b'bar'))
+
+    def test_import(self):
+        assert_python_ok('-S', '-c', 'import ' + self.pathmodule.__name__)
 
 
 class PathLikeTests(unittest.TestCase):

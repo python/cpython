@@ -345,20 +345,20 @@ and off individually.  They are described here in more detail.
 
    Converts calls to various functions in the :mod:`operator` module to other,
    but equivalent, function calls.  When needed, the appropriate ``import``
-   statements are added, e.g. ``import collections``.  The following mapping
+   statements are added, e.g. ``import collections.abc``.  The following mapping
    are made:
 
-   ==================================  ==========================================
+   ==================================  =============================================
    From                                To
-   ==================================  ==========================================
-   ``operator.isCallable(obj)``        ``hasattr(obj, '__call__')``
+   ==================================  =============================================
+   ``operator.isCallable(obj)``        ``callable(obj)``
    ``operator.sequenceIncludes(obj)``  ``operator.contains(obj)``
-   ``operator.isSequenceType(obj)``    ``isinstance(obj, collections.Sequence)``
-   ``operator.isMappingType(obj)``     ``isinstance(obj, collections.Mapping)``
+   ``operator.isSequenceType(obj)``    ``isinstance(obj, collections.abc.Sequence)``
+   ``operator.isMappingType(obj)``     ``isinstance(obj, collections.abc.Mapping)``
    ``operator.isNumberType(obj)``      ``isinstance(obj, numbers.Number)``
    ``operator.repeat(obj, n)``         ``operator.mul(obj, n)``
    ``operator.irepeat(obj, n)``        ``operator.imul(obj, n)``
-   ==================================  ==========================================
+   ==================================  =============================================
 
 .. 2to3fixer:: paren
 

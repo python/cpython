@@ -679,12 +679,19 @@ module_repr(PyModuleObject *m)
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
-    PyObject *attr, *mod_name;
+    PyObject *attr, *mod_name, *getattr;
     attr = PyObject_GenericGetAttr((PyObject *)m, name);
-    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError))
+    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return attr;
+    }
     PyErr_Clear();
     if (m->md_dict) {
+        _Py_IDENTIFIER(__getattr__);
+        getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
+        if (getattr) {
+            PyObject* stack[1] = {name};
+            return _PyObject_FastCall(getattr, stack, 1);
+        }
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
@@ -730,8 +737,15 @@ module_dir(PyObject *self, PyObject *args)
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
-        if (PyDict_Check(dict))
-            result = PyDict_Keys(dict);
+        if (PyDict_Check(dict)) {
+            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            if (dirfunc) {
+                result = _PyObject_CallNoArg(dirfunc);
+            }
+            else {
+                result = PyDict_Keys(dict);
+            }
+        }
         else {
             const char *name = PyModule_GetName(self);
             if (name)

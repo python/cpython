@@ -64,6 +64,16 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/rand.h"
 #include "openssl/bio.h"
 
+#ifndef HAVE_X509_VERIFY_PARAM_SET1_HOST
+#  ifdef LIBRESSL_VERSION_NUMBER
+#    error "LibreSSL is missing X509_VERIFY_PARAM_set1_host(), see https://github.com/libressl-portable/portable/issues/381"
+#  elif OPENSSL_VERSION_NUMBER > 0x1000200fL
+#    define HAVE_X509_VERIFY_PARAM_SET1_HOST
+#  else
+#    error "libssl is too old and does not support X509_VERIFY_PARAM_set1_host()"
+#  endif
+#endif
+
 /* SSL error object */
 static PyObject *PySSLErrorObject;
 static PyObject *PySSLCertVerificationErrorObject;
@@ -210,11 +220,6 @@ static STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(X509_STORE *store) {
     return store->objs;
 }
 
-static X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *store)
-{
-    return store->param;
-}
-
 static int
 SSL_SESSION_has_ticket(const SSL_SESSION *s)
 {
@@ -228,6 +233,31 @@ SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
 }
 
 #endif /* OpenSSL < 1.1.0 or LibreSSL */
+
+/* Default cipher suites */
+#ifndef PY_SSL_DEFAULT_CIPHERS
+#define PY_SSL_DEFAULT_CIPHERS 1
+#endif
+
+#if PY_SSL_DEFAULT_CIPHERS == 0
+  #ifndef PY_SSL_DEFAULT_CIPHER_STRING
+     #error "Py_SSL_DEFAULT_CIPHERS 0 needs Py_SSL_DEFAULT_CIPHER_STRING"
+  #endif
+#elif PY_SSL_DEFAULT_CIPHERS == 1
+/* Python custom selection of sensible ciper suites
+ * DEFAULT: OpenSSL's default cipher list. Since 1.0.2 the list is in sensible order.
+ * !aNULL:!eNULL: really no NULL ciphers
+ * !MD5:!3DES:!DES:!RC4:!IDEA:!SEED: no weak or broken algorithms on old OpenSSL versions.
+ * !aDSS: no authentication with discrete logarithm DSA algorithm
+ * !SRP:!PSK: no secure remote password or pre-shared key authentication
+ */
+  #define PY_SSL_DEFAULT_CIPHER_STRING "DEFAULT:!aNULL:!eNULL:!MD5:!3DES:!DES:!RC4:!IDEA:!SEED:!aDSS:!SRP:!PSK"
+#elif PY_SSL_DEFAULT_CIPHERS == 2
+/* Ignored in SSLContext constructor, only used to as _ssl.DEFAULT_CIPHER_STRING */
+  #define PY_SSL_DEFAULT_CIPHER_STRING SSL_DEFAULT_CIPHER_LIST
+#else
+  #error "Unsupported PY_SSL_DEFAULT_CIPHERS"
+#endif
 
 
 enum py_ssl_error {
@@ -310,6 +340,10 @@ typedef struct {
     PyObject *set_hostname;
 #endif
     int check_hostname;
+    /* OpenSSL has no API to get hostflags from X509_VERIFY_PARAM* struct.
+     * We have to maintain our own copy. OpenSSL's hostflags default to 0.
+     */
+    unsigned int hostflags;
 } PySSLContext;
 
 typedef struct {
@@ -694,6 +728,74 @@ _setSSLError (const char *errstr, int errcode, const char *filename, int lineno)
     return NULL;
 }
 
+/*
+ * SSL objects
+ */
+
+static int
+_ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
+{
+    int retval = -1;
+    ASN1_OCTET_STRING *ip;
+    PyObject *hostname;
+    size_t len;
+
+    assert(server_hostname);
+
+    /* Disable OpenSSL's special mode with leading dot in hostname:
+     * When name starts with a dot (e.g ".example.com"), it will be
+     * matched by a certificate valid for any sub-domain of name.
+     */
+    len = strlen(server_hostname);
+    if (len == 0 || *server_hostname == '.') {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "server_hostname cannot be an empty string or start with a "
+            "leading dot.");
+        return retval;
+    }
+
+    /* inet_pton is not available on all platforms. */
+    ip = a2i_IPADDRESS(server_hostname);
+    if (ip == NULL) {
+        ERR_clear_error();
+    }
+
+    hostname = PyUnicode_Decode(server_hostname, len, "idna", "strict");
+    if (hostname == NULL) {
+        goto error;
+    }
+    self->server_hostname = hostname;
+
+    /* Only send SNI extension for non-IP hostnames */
+    if (ip == NULL) {
+        if (!SSL_set_tlsext_host_name(self->ssl, server_hostname)) {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+        }
+    }
+    if (self->ctx->check_hostname) {
+        X509_VERIFY_PARAM *param = SSL_get0_param(self->ssl);
+        if (ip == NULL) {
+            if (!X509_VERIFY_PARAM_set1_host(param, server_hostname, 0)) {
+                _setSSLError(NULL, 0, __FILE__, __LINE__);
+                goto error;
+            }
+        } else {
+            if (!X509_VERIFY_PARAM_set1_ip(param, ASN1_STRING_data(ip),
+                                           ASN1_STRING_length(ip))) {
+                _setSSLError(NULL, 0, __FILE__, __LINE__);
+                goto error;
+            }
+        }
+    }
+    retval = 0;
+  error:
+    if (ip != NULL) {
+        ASN1_OCTET_STRING_free(ip);
+    }
+    return retval;
+}
+
 static PySSLSocket *
 newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
                enum py_ssl_server_or_client socket_type,
@@ -715,15 +817,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->shutdown_seen_zero = 0;
     self->owner = NULL;
     self->server_hostname = NULL;
-    if (server_hostname != NULL) {
-        PyObject *hostname = PyUnicode_Decode(server_hostname, strlen(server_hostname),
-                                              "idna", "strict");
-        if (hostname == NULL) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->server_hostname = hostname;
-    }
     self->ssl_errno = 0;
     self->c_errno = 0;
 #ifdef MS_WINDOWS
@@ -754,10 +847,12 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 #endif
     SSL_set_mode(self->ssl, mode);
 
-#if HAVE_SNI
-    if (server_hostname != NULL)
-        SSL_set_tlsext_host_name(self->ssl, server_hostname);
-#endif
+    if (server_hostname != NULL) {
+        if (_ssl_configure_hostname(self, server_hostname) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
     /* If the socket is in non-blocking mode or timeout mode, set the BIO
      * to non-blocking mode (blocking is the default)
      */
@@ -2704,6 +2799,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     PySSLContext *self;
     long options;
     SSL_CTX *ctx = NULL;
+    X509_VERIFY_PARAM *params;
     int result;
 #if defined(SSL_MODE_RELEASE_BUFFERS)
     unsigned long libver;
@@ -2753,6 +2849,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
     self->ctx = ctx;
+    self->hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
 #if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     self->npn_protocols = NULL;
 #endif
@@ -2801,7 +2898,12 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     /* A bare minimum cipher list without completely broken cipher suites.
      * It's far from perfect but gives users a better head start. */
     if (proto_version != PY_SSL_VERSION_SSL2) {
-        result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL:!MD5");
+#if PY_SSL_DEFAULT_CIPHERS == 2
+        /* stick to OpenSSL's default settings */
+        result = 1;
+#else
+        result = SSL_CTX_set_cipher_list(ctx, PY_SSL_DEFAULT_CIPHER_STRING);
+#endif
     } else {
         /* SSLv2 needs MD5 */
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
@@ -2851,14 +2953,13 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
                                    sizeof(SID_CTX));
 #undef SID_CTX
 
+    params = SSL_CTX_get0_param(self->ctx);
 #ifdef X509_V_FLAG_TRUSTED_FIRST
-    {
-        /* Improve trust chain building when cross-signed intermediate
-           certificates are present. See https://bugs.python.org/issue23476. */
-        X509_STORE *store = SSL_CTX_get_cert_store(self->ctx);
-        X509_STORE_set_flags(store, X509_V_FLAG_TRUSTED_FIRST);
-    }
+    /* Improve trust chain building when cross-signed intermediate
+       certificates are present. See https://bugs.python.org/issue23476. */
+    X509_VERIFY_PARAM_set_flags(params, X509_V_FLAG_TRUSTED_FIRST);
 #endif
+    X509_VERIFY_PARAM_set_hostflags(params, self->hostflags);
 
     return (PyObject *)self;
 }
@@ -3145,12 +3246,10 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
 static PyObject *
 get_verify_flags(PySSLContext *self, void *c)
 {
-    X509_STORE *store;
     X509_VERIFY_PARAM *param;
     unsigned long flags;
 
-    store = SSL_CTX_get_cert_store(self->ctx);
-    param = X509_STORE_get0_param(store);
+    param = SSL_CTX_get0_param(self->ctx);
     flags = X509_VERIFY_PARAM_get_flags(param);
     return PyLong_FromUnsignedLong(flags);
 }
@@ -3158,14 +3257,12 @@ get_verify_flags(PySSLContext *self, void *c)
 static int
 set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
 {
-    X509_STORE *store;
     X509_VERIFY_PARAM *param;
     unsigned long new_flags, flags, set, clear;
 
     if (!PyArg_Parse(arg, "k", &new_flags))
         return -1;
-    store = SSL_CTX_get_cert_store(self->ctx);
-    param = X509_STORE_get0_param(store);
+    param = SSL_CTX_get0_param(self->ctx);
     flags = X509_VERIFY_PARAM_get_flags(param);
     clear = flags & ~new_flags;
     set = ~flags & new_flags;
@@ -3210,6 +3307,27 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     }
     if (set)
         SSL_CTX_set_options(self->ctx, set);
+    return 0;
+}
+
+static PyObject *
+get_host_flags(PySSLContext *self, void *c)
+{
+    return PyLong_FromUnsignedLong(self->hostflags);
+}
+
+static int
+set_host_flags(PySSLContext *self, PyObject *arg, void *c)
+{
+    X509_VERIFY_PARAM *param;
+    unsigned int new_flags = 0;
+
+    if (!PyArg_Parse(arg, "I", &new_flags))
+        return -1;
+
+    param = SSL_CTX_get0_param(self->ctx);
+    self->hostflags = new_flags;
+    X509_VERIFY_PARAM_set_hostflags(param, new_flags);
     return 0;
 }
 
@@ -4097,6 +4215,8 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
 static PyGetSetDef context_getsetlist[] = {
     {"check_hostname", (getter) get_check_hostname,
                        (setter) set_check_hostname, NULL},
+    {"_host_flags", (getter) get_host_flags,
+                    (setter) set_host_flags, NULL},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
     {"verify_flags", (getter) get_verify_flags,
@@ -5340,6 +5460,9 @@ PyInit__ssl(void)
                              (PyObject *)&PySSLSession_Type) != 0)
         return NULL;
 
+    PyModule_AddStringConstant(m, "_DEFAULT_CIPHERS",
+                               PY_SSL_DEFAULT_CIPHER_STRING);
+
     PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
                             PY_SSL_ERROR_ZERO_RETURN);
     PyModule_AddIntConstant(m, "SSL_ERROR_WANT_READ",
@@ -5482,6 +5605,31 @@ PyInit__ssl(void)
 #ifdef SSL_OP_NO_COMPRESSION
     PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
                             SSL_OP_NO_COMPRESSION);
+#endif
+
+#ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
+    PyModule_AddIntConstant(m, "HOSTFLAG_ALWAYS_CHECK_SUBJECT",
+                            X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
+#endif
+#ifdef X509_CHECK_FLAG_NEVER_CHECK_SUBJECT
+    PyModule_AddIntConstant(m, "HOSTFLAG_NEVER_CHECK_SUBJECT",
+                            X509_CHECK_FLAG_NEVER_CHECK_SUBJECT);
+#endif
+#ifdef X509_CHECK_FLAG_NO_WILDCARDS
+    PyModule_AddIntConstant(m, "HOSTFLAG_NO_WILDCARDS",
+                            X509_CHECK_FLAG_NO_WILDCARDS);
+#endif
+#ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
+    PyModule_AddIntConstant(m, "HOSTFLAG_NO_PARTIAL_WILDCARDS",
+                            X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+#endif
+#ifdef X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS
+    PyModule_AddIntConstant(m, "HOSTFLAG_MULTI_LABEL_WILDCARDS",
+                            X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS);
+#endif
+#ifdef X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS
+    PyModule_AddIntConstant(m, "HOSTFLAG_SINGLE_LABEL_SUBDOMAINS",
+                            X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
 #endif
 
 #if HAVE_SNI
