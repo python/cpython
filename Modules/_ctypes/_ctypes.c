@@ -2342,12 +2342,10 @@ make_funcptrtype_dict(StgDictObject *stgdict)
         }
         Py_INCREF(ob);
         stgdict->restype = ob;
-        stgdict->checker = _PyObject_GetAttrId(ob, &PyId__check_retval_);
-        if (stgdict->checker == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                return -1;
-            }
-            PyErr_Clear();
+        if (_PyObject_LookupAttrId(ob, &PyId__check_retval_,
+                                   &stgdict->checker) < 0)
+        {
+            return -1;
         }
     }
     else if (PyErr_Occurred()) {
