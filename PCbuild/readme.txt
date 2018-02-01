@@ -14,7 +14,7 @@ Building Python using Microsoft Visual C++
 ------------------------------------------
 
 This directory is used to build CPython for Microsoft Windows NT version
-6.0 or higher (Windows Vista, Windows Server 2008, or later) on 32 and 64
+6.1 or higher (Windows 7 or later) on 32 and 64
 bit platforms.  Using this directory requires an installation of
 Microsoft Visual Studio 2017 (MSVC 14.1) with the *Python workload* and
 its optional *Python native development* component selected. (For
