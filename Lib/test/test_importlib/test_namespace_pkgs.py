@@ -326,6 +326,12 @@ class LoaderTests(NamespacePackageTest):
         self.assertEqual(foo.__loader__, foo.__spec__.loader)
         self.assertIsNotNone(foo.__loader__)
 
+    def test_namespace_origin_consistency(self):
+        # bpo-32305
+        import foo
+        self.assertIsNone(foo.__spec__.origin)
+        self.assertIsNone(foo.__file__)
+
 
 if __name__ == "__main__":
     unittest.main()
