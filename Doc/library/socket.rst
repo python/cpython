@@ -461,10 +461,15 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
    constants. The protocol number is usually zero and may be omitted or in the
    case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.  If *fileno* is specified, the other
-   arguments are ignored, causing the socket with the specified file descriptor
-   to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
-   socket and not a duplicate. This may help close a detached socket using
+   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`
+
+   If *fileno* is specified, the values for *family*, *type*, and *proto* are
+   auto-detected from the specified file descriptor.  Auto-detection can be
+   overruled by calling the function with explicit *family*, *type*, or *proto*
+   arguments.  This only affects how Python represents e.g. the return value
+   of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
+   :func:`socket.fromfd`, *fileno* will return the same socket and not a
+   duplicate. This may help close a detached socket using
    :meth:`socket.close()`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
@@ -577,6 +582,14 @@ Other functions
 
 The :mod:`socket` module also offers various network-related services:
 
+
+.. function:: close(fd)
+
+   Close a socket file descriptor. This is like :func:`os.close`, but for
+   sockets. On some platforms (most noticeable Windows) :func:`os.close`
+   does not work for socket file descriptors.
+
+   .. versionadded:: 3.7
 
 .. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
 
@@ -1077,6 +1090,16 @@ to sockets.
    this buffer is returned as a bytes object.  It is up to the caller to decode the
    contents of the buffer (see the optional built-in module :mod:`struct` for a way
    to decode C structures encoded as byte strings).
+
+
+.. method:: socket.getblocking()
+
+   Return ``True`` if socket is in blocking mode, ``False`` if in
+   non-blocking.
+
+   This is equivalent to checking ``socket.gettimeout() == 0``.
+
+   .. versionadded:: 3.7
 
 
 .. method:: socket.gettimeout()

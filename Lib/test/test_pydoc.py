@@ -827,7 +827,7 @@ class TestDescriptions(unittest.TestCase):
                          'f\x08fo\x08oo\x08o(data: List[Any], x: int)'
                          ' -> Iterator[Tuple[int, Any]]')
         self.assertEqual(pydoc.render_doc(C).splitlines()[2],
-                         'class C\x08C(typing.Mapping)')
+                         'class C\x08C(collections.abc.Mapping, typing.Generic)')
 
     def test_builtin(self):
         for name in ('str', 'str.translate', 'builtins.str',

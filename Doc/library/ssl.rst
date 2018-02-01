@@ -146,9 +146,10 @@ Functions, Constants, and Exceptions
 
 .. exception:: CertificateError
 
-   Raised to signal an error with a certificate (such as mismatching
-   hostname).  Certificate errors detected by OpenSSL, though, raise
-   an :exc:`SSLCertVerificationError`.
+   An alias for :exc:`SSLCertVerificationError`.
+
+   .. versionchanged:: 3.7
+      The exception is now an alias for :exc:`SSLCertVerificationError`.
 
 
 Socket creation
@@ -430,8 +431,14 @@ Certificate handling
       of the certificate, is now supported.
 
    .. versionchanged:: 3.7
+      The function is no longer used to TLS connections. Hostname matching
+      is now performed by OpenSSL.
+
       Allow wildcard when it is the leftmost and the only character
-      in that segment.
+      in that segment. Partial wildcards like ``www*.example.com`` are no
+      longer supported.
+
+   .. deprecated:: 3.7
 
 .. function:: cert_time_to_seconds(cert_time)
 
@@ -850,6 +857,14 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: HAS_NEVER_CHECK_COMMON_NAME
+
+   Whether the OpenSSL library has built-in support not checking subject
+   common name and :attr:`SSLContext.hostname_checks_common_name` is
+   writeable.
+
+   .. versionadded:: 3.7
+
 .. data:: HAS_ECDH
 
    Whether the OpenSSL library has built-in support for Elliptic Curve-based
@@ -868,9 +883,9 @@ Constants
 .. data:: HAS_NPN
 
    Whether the OpenSSL library has built-in support for *Next Protocol
-   Negotiation* as described in the `NPN draft specification
-   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. When true,
-   you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
+   Negotiation* as described in the `Application Layer Protocol
+   Negotiation <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation>`_.
+   When true, you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
    which protocols you want to support.
 
    .. versionadded:: 3.3
@@ -1074,6 +1089,12 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.5
       The socket timeout is no more reset each time bytes are received or sent.
       The socket timeout is now to maximum total duration of the handshake.
+
+   .. versionchanged:: 3.7
+      Hostname or IP address is matched by OpenSSL during handshake. The
+      function :func:`match_hostname` is no longer used. In case OpenSSL
+      refuses a hostname or IP address, the handshake is aborted early and
+      a TLS alert message is send to the peer.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
@@ -1374,7 +1395,7 @@ to speed up repeated connections from the same clients.
    The *capath* string, if present, is
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
-   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_load_verify_locations.html>`_.
+   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_load_verify_locations.html>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
    PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
@@ -1501,8 +1522,8 @@ to speed up repeated connections from the same clients.
    Specify which protocols the socket should advertise during the SSL/TLS
    handshake. It should be a list of strings, like ``['http/1.1', 'spdy/2']``,
    ordered by preference. The selection of a protocol will happen during the
-   handshake, and will play out according to the `NPN draft specification
-   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. After a
+   handshake, and will play out according to the `Application Layer Protocol Negotiation
+   <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation>`_. After a
    successful handshake, the :meth:`SSLSocket.selected_npn_protocol` method will
    return the agreed-upon protocol.
 
@@ -1663,8 +1684,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information
-   <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -1730,6 +1750,17 @@ to speed up repeated connections from the same clients.
 
    The protocol version chosen when constructing the context.  This attribute
    is read-only.
+
+.. attribute:: SSLContext.hostname_checks_common_name
+
+   Whether :attr:`~SSLContext.check_hostname` falls back to verify the cert's
+   subject common name in the absence of a subject alternative name
+   extension (default: true).
+
+   .. versionadded:: 3.7
+
+   .. note::
+      Only writeable with OpenSSL 1.1.0 or higher.
 
 .. attribute:: SSLContext.verify_flags
 
@@ -2325,6 +2356,10 @@ in this case, the :func:`match_hostname` function can be used.  This common
 check is automatically performed when :attr:`SSLContext.check_hostname` is
 enabled.
 
+.. versionchanged:: 3.7
+   Hostname matchings is now performed by OpenSSL. Python no longer uses
+   :func:`match_hostname`.
+
 In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
 to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
@@ -2365,7 +2400,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list, use
 :meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
 system.
@@ -2393,10 +2428,10 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
    `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
        Steve Kent
 
-   `RFC 4086: Randomness Requirements for Security <http://datatracker.ietf.org/doc/rfc4086/>`_
+   `RFC 4086: Randomness Requirements for Security <https://datatracker.ietf.org/doc/rfc4086/>`_
        Donald E., Jeffrey I. Schiller
 
-   `RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <http://datatracker.ietf.org/doc/rfc5280/>`_
+   `RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <https://datatracker.ietf.org/doc/rfc5280/>`_
        D. Cooper
 
    `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <https://tools.ietf.org/html/rfc5246>`_

@@ -397,7 +397,7 @@ fold_compare(expr_ty node, PyArena *arena, int optimize)
 {
     asdl_int_seq *ops;
     asdl_seq *args;
-    int i;
+    Py_ssize_t i;
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;

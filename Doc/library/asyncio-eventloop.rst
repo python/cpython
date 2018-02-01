@@ -424,7 +424,7 @@ Creating connections
 Creating listening connections
 ------------------------------
 
-.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None, ssl_handshake_timeout=None)
+.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None, ssl_handshake_timeout=None, start_serving=True)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
    *host* and *port*.
@@ -472,9 +472,15 @@ Creating listening connections
      for the SSL handshake to complete before aborting the connection.
      ``10.0`` seconds if ``None`` (default).
 
+   * *start_serving* set to ``True`` (the default) causes the created server
+     to start accepting connections immediately.  When set to ``False``,
+     the user should await on :meth:`Server.start_serving` or
+     :meth:`Server.serve_forever` to make the server to start accepting
+     connections.
+
    .. versionadded:: 3.7
 
-      The *ssl_handshake_timeout* parameter.
+      *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. versionchanged:: 3.5
 
@@ -490,7 +496,7 @@ Creating listening connections
       The *host* parameter can now be a sequence of strings.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None, ssl_handshake_timeout=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None, ssl_handshake_timeout=None, start_serving=True)
 
    Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
@@ -535,6 +541,37 @@ Creating listening connections
       The *ssl_handshake_timeout* parameter.
 
    .. versionadded:: 3.5.3
+
+
+File Transferring
+-----------------
+
+.. coroutinemethod:: AbstractEventLoop.sendfile(transport, file, \
+                                                offset=0, count=None, \
+                                                *, fallback=True)
+
+   Send a *file* to *transport*, return the total number of bytes
+   which were sent.
+
+   The method uses high-performance :meth:`os.sendfile` if available.
+
+   *file* must be a regular file object opened in binary mode.
+
+   *offset* tells from where to start reading the file. If specified,
+   *count* is the total number of bytes to transmit as opposed to
+   sending the file until EOF is reached. File position is updated on
+   return or also in case of error in which case :meth:`file.tell()
+   <io.IOBase.tell>` can be used to figure out the number of bytes
+   which were sent.
+
+   *fallback* set to ``True`` makes asyncio to manually read and send
+   the file when the platform does not support the sendfile syscall
+   (e.g. Windows or SSL socket on Unix).
+
+   Raise :exc:`SendfileNotAvailableError` if the system does not support
+   *sendfile* syscall and *fallback* is ``False``.
+
+   .. versionadded:: 3.7
 
 
 TLS Upgrade
@@ -701,6 +738,36 @@ Low-level socket operations
 
       :meth:`AbstractEventLoop.create_server` and :func:`start_server`.
 
+.. coroutinemethod:: AbstractEventLoop.sock_sendfile(sock, file, \
+                                                     offset=0, count=None, \
+                                                     *, fallback=True)
+
+   Send a file using high-performance :mod:`os.sendfile` if possible
+   and return the total number of bytes which were sent.
+
+   Asynchronous version of :meth:`socket.socket.sendfile`.
+
+   *sock* must be non-blocking :class:`~socket.socket` of
+   :const:`socket.SOCK_STREAM` type.
+
+   *file* must be a regular file object opened in binary mode.
+
+   *offset* tells from where to start reading the file. If specified,
+   *count* is the total number of bytes to transmit as opposed to
+   sending the file until EOF is reached. File position is updated on
+   return or also in case of error in which case :meth:`file.tell()
+   <io.IOBase.tell>` can be used to figure out the number of bytes
+   which were sent.
+
+   *fallback* set to ``True`` makes asyncio to manually read and send
+   the file when the platform does not support the sendfile syscall
+   (e.g. Windows or SSL socket on Unix).
+
+   Raise :exc:`SendfileNotAvailableError` if the system does not support
+   *sendfile* syscall and *fallback* is ``False``.
+
+   .. versionadded:: 3.7
+
 
 Resolve host name
 -----------------
@@ -714,6 +781,12 @@ Resolve host name
 
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getnameinfo` function but non-blocking.
+
+.. versionchanged:: 3.7
+   Both *getaddrinfo* and *getnameinfo* methods were always documented
+   to return a coroutine, but prior to Python 3.7 they were, in fact,
+   returning :class:`asyncio.Future` objects.  Starting with Python 3.7
+   both methods are coroutines.
 
 
 Connect pipes
@@ -785,7 +858,7 @@ Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
 pool of processes). By default, an event loop uses a thread pool executor
 (:class:`~concurrent.futures.ThreadPoolExecutor`).
 
-.. coroutinemethod:: AbstractEventLoop.run_in_executor(executor, func, \*args)
+.. method:: AbstractEventLoop.run_in_executor(executor, func, \*args)
 
    Arrange for a *func* to be called in the specified executor.
 
@@ -795,17 +868,14 @@ pool of processes). By default, an event loop uses a thread pool executor
    :ref:`Use functools.partial to pass keywords to the *func*
    <asyncio-pass-keywords>`.
 
+   This method returns a :class:`asyncio.Future` object.
+
    .. versionchanged:: 3.5.3
       :meth:`BaseEventLoop.run_in_executor` no longer configures the
       ``max_workers`` of the thread pool executor it creates, instead
       leaving it up to the thread pool executor
       (:class:`~concurrent.futures.ThreadPoolExecutor`) to set the
       default.
-
-   .. versionchanged:: 3.7
-      Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned a :class:`Future`.
-      Since Python 3.7, this is an ``async def`` method.
 
 .. method:: AbstractEventLoop.set_default_executor(executor)
 
@@ -899,8 +969,26 @@ Server
 
    Server listening on sockets.
 
-   Object created by the :meth:`AbstractEventLoop.create_server` method and the
-   :func:`start_server` function. Don't instantiate the class directly.
+   Object created by :meth:`AbstractEventLoop.create_server`,
+   :meth:`AbstractEventLoop.create_unix_server`, :func:`start_server`,
+   and :func:`start_unix_server` functions.  Don't instantiate the class
+   directly.
+
+   *Server* objects are asynchronous context managers.  When used in an
+   ``async with`` statement, it's guaranteed that the Server object is
+   closed and not accepting new connections when the ``async with``
+   statement is completed::
+
+      srv = await loop.create_server(...)
+
+      async with srv:
+          # some code
+
+      # At this point, srv is closed and no longer accepts new connections.
+
+
+   .. versionchanged:: 3.7
+      Server object is an asynchronous context manager since Python 3.7.
 
    .. method:: close()
 
@@ -919,6 +1007,54 @@ Server
 
       .. versionadded:: 3.7
 
+   .. coroutinemethod:: start_serving()
+
+      Start accepting connections.
+
+      This method is idempotent, so it can be called when
+      the server is already being serving.
+
+      The new *start_serving* keyword-only parameter to
+      :meth:`AbstractEventLoop.create_server` and
+      :meth:`asyncio.start_server` allows to create a Server object
+      that is not accepting connections right away.  In which case
+      this method, or :meth:`Server.serve_forever` can be used
+      to make the Server object to start accepting connections.
+
+      .. versionadded:: 3.7
+
+   .. coroutinemethod:: serve_forever()
+
+      Start accepting connections until the coroutine is cancelled.
+      Cancellation of ``serve_forever`` task causes the server
+      to be closed.
+
+      This method can be called if the server is already accepting
+      connections.  Only one ``serve_forever`` task can exist per
+      one *Server* object.
+
+      Example::
+
+          async def client_connected(reader, writer):
+              # Communicate with the client with
+              # reader/writer streams.  For example:
+              await reader.readline()
+
+          async def main(host, port):
+              srv = await asyncio.start_server(
+                  client_connected, host, port)
+              await loop.serve_forever()
+
+          asyncio.run(main('127.0.0.1', 0))
+
+      .. versionadded:: 3.7
+
+   .. method:: is_serving()
+
+      Return ``True`` if the server is accepting new connections.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
@@ -927,6 +1063,11 @@ Server
 
       List of :class:`socket.socket` objects the server is listening to, or
       ``None`` if the server is closed.
+
+      .. versionchanged:: 3.7
+         Prior to Python 3.7 ``Server.sockets`` used to return the
+         internal list of server's sockets directly.  In 3.7 a copy
+         of that list is returned.
 
 
 Handle
@@ -948,6 +1089,18 @@ Handle
       Return ``True`` if the call was cancelled.
 
       .. versionadded:: 3.7
+
+
+SendfileNotAvailableError
+-------------------------
+
+
+.. exception:: SendfileNotAvailableError
+
+   Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
+
+   Raised if the OS does not support senfile syscall for
+   given socket or file type.
 
 
 Event loop examples

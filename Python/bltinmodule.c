@@ -52,9 +52,9 @@ _Py_IDENTIFIER(stderr);
 #include "clinic/bltinmodule.c.h"
 
 static PyObject*
-update_bases(PyObject *bases, PyObject *const *args, int nargs)
+update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
 {
-    int i, j;
+    Py_ssize_t i, j;
     PyObject *base, *meth, *new_base, *result, *new_bases = NULL;
     PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
@@ -71,12 +71,10 @@ update_bases(PyObject *bases, PyObject *const *args, int nargs)
             }
             continue;
         }
-        meth = _PyObject_GetAttrId(base, &PyId___mro_entries__);
+        if (_PyObject_LookupAttrId(base, &PyId___mro_entries__, &meth) < 0) {
+            goto error;
+        }
         if (!meth) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                goto error;
-            }
-            PyErr_Clear();
             if (new_bases) {
                 if (PyList_Append(new_bases, base) < 0) {
                     goto error;
@@ -218,18 +216,11 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     /* else: meta is not a class, so we cannot do the metaclass
        calculation, so we will use the explicitly given object as it is */
-    prep = _PyObject_GetAttrId(meta, &PyId___prepare__);
-    if (prep == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            ns = PyDict_New();
-        }
-        else {
-            Py_DECREF(meta);
-            Py_XDECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
-        }
+    if (_PyObject_LookupAttrId(meta, &PyId___prepare__, &prep) < 0) {
+        ns = NULL;
+    }
+    else if (prep == NULL) {
+        ns = PyDict_New();
     }
     else {
         PyObject *pargs[2] = {name, bases};
@@ -1126,13 +1117,14 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
                         "getattr(): attribute name must be string");
         return NULL;
     }
-    result = PyObject_GetAttr(v, name);
-    if (result == NULL && dflt != NULL &&
-        PyErr_ExceptionMatches(PyExc_AttributeError))
-    {
-        PyErr_Clear();
-        Py_INCREF(dflt);
-        result = dflt;
+    if (dflt != NULL) {
+        if (_PyObject_LookupAttr(v, name, &result) == 0) {
+            Py_INCREF(dflt);
+            return dflt;
+        }
+    }
+    else {
+        result = PyObject_GetAttr(v, name);
     }
     return result;
 }
@@ -1189,13 +1181,11 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
                         "hasattr(): attribute name must be string");
         return NULL;
     }
-    v = PyObject_GetAttr(obj, name);
-    if (v == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
+    if (_PyObject_LookupAttr(obj, name, &v) < 0) {
         return NULL;
+    }
+    if (v == NULL) {
+        Py_RETURN_FALSE;
     }
     Py_DECREF(v);
     Py_RETURN_TRUE;

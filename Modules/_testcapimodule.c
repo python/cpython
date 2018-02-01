@@ -2220,10 +2220,92 @@ test_datetime_capi(PyObject *self, PyObject *args) {
     }
     test_run_counter++;
     PyDateTime_IMPORT;
+
     if (PyDateTimeAPI)
         Py_RETURN_NONE;
     else
         return NULL;
+}
+
+/* Functions exposing the C API type checking for testing */
+#define MAKE_DATETIME_CHECK_FUNC(check_method, exact_method)    \
+    PyObject *obj;                                              \
+    int exact = 0;                                              \
+    if (!PyArg_ParseTuple(args, "O|p", &obj, &exact)) {         \
+        return NULL;                                            \
+    }                                                           \
+    int rv = exact?exact_method(obj):check_method(obj);         \
+    if (rv) {                                                   \
+        Py_RETURN_TRUE;                                         \
+    } else {                                                    \
+        Py_RETURN_FALSE;                                        \
+    }
+
+static PyObject *
+datetime_check_date(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyDate_Check, PyDate_CheckExact)
+}
+
+static PyObject *
+datetime_check_time(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyTime_Check, PyTime_CheckExact)
+}
+
+static PyObject *
+datetime_check_datetime(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyDateTime_Check, PyDateTime_CheckExact)
+}
+
+static PyObject *
+datetime_check_delta(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyDelta_Check, PyDelta_CheckExact)
+}
+
+static PyObject *
+datetime_check_tzinfo(PyObject *self, PyObject *args) {
+    MAKE_DATETIME_CHECK_FUNC(PyTZInfo_Check, PyTZInfo_CheckExact)
+}
+
+
+/* Makes three variations on timezone representing UTC-5:
+   1. timezone with offset and name from PyDateTimeAPI
+   2. timezone with offset and name from PyTimeZone_FromOffsetAndName
+   3. timezone with offset (no name) from PyTimeZone_FromOffset
+*/
+static PyObject *
+make_timezones_capi(PyObject *self, PyObject *args) {
+    PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
+    PyObject *name = PyUnicode_FromString("EST");
+
+    PyObject *est_zone_capi = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
+    PyObject *est_zone_macro = PyTimeZone_FromOffsetAndName(offset, name);
+    PyObject *est_zone_macro_noname = PyTimeZone_FromOffset(offset);
+
+    Py_DecRef(offset);
+    Py_DecRef(name);
+
+    PyObject *rv = PyTuple_New(3);
+
+    PyTuple_SET_ITEM(rv, 0, est_zone_capi);
+    PyTuple_SET_ITEM(rv, 1, est_zone_macro);
+    PyTuple_SET_ITEM(rv, 2, est_zone_macro_noname);
+
+    return rv;
+}
+
+static PyObject *
+get_timezone_utc_capi(PyObject* self, PyObject *args) {
+    int macro = 0;
+    if (!PyArg_ParseTuple(args, "|p", &macro)) {
+        return NULL;
+    }
+    if (macro) {
+        Py_INCREF(PyDateTime_TimeZone_UTC);
+        return PyDateTime_TimeZone_UTC;
+    } else {
+        Py_INCREF(PyDateTimeAPI->TimeZone_UTC);
+        return PyDateTimeAPI->TimeZone_UTC;
+    }
 }
 
 
@@ -4438,6 +4520,13 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
 }
 
 
+static PyObject*
+new_hamt(PyObject *self, PyObject *args)
+{
+    return _PyContext_NewHamtForTests();
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4445,6 +4534,13 @@ static PyMethodDef TestMethods[] = {
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
     {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
+    {"datetime_check_date",     datetime_check_date,             METH_VARARGS},
+    {"datetime_check_time",     datetime_check_time,             METH_VARARGS},
+    {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
+    {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
+    {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
+    {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
+    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -4655,6 +4751,7 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_values", get_mapping_values, METH_O},
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
+    {"hamt", new_hamt, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -5064,6 +5161,7 @@ static void
 generic_alias_dealloc(PyGenericAliasObject *self)
 {
     Py_CLEAR(self->item);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *

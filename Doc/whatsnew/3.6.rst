@@ -1568,7 +1568,7 @@ mark class variables.  As introduced in :pep:`526`, a variable annotation
 wrapped in ClassVar indicates that a given attribute is intended to be used as
 a class variable and should not be set on instances of that class.
 (Contributed by Ivan Levkivskyi in `Github #280
-<https://github.com/python/typing/issues/280>`_.)
+<https://github.com/python/typing/pull/280>`_.)
 
 A new :const:`~typing.TYPE_CHECKING` constant that is assumed to be
 ``True`` by the static type chekers, but is ``False`` at runtime.

@@ -957,7 +957,7 @@ New and Improved Modules
      #   'title': 'html2fo 0.3 (Default)'}, ... ]
 
   The :mod:`SimpleXMLRPCServer` module makes it easy to create straightforward
-  XML-RPC servers.  See http://www.xmlrpc.com/ for more information about XML-RPC.
+  XML-RPC servers.  See http://xmlrpc.scripting.com/ for more information about XML-RPC.
 
 * The new :mod:`hmac` module implements the HMAC algorithm described by
   :rfc:`2104`. (Contributed by Gerhard Häring.)

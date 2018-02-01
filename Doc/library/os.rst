@@ -325,10 +325,11 @@ process and user.
 .. function:: getlogin()
 
    Return the name of the user logged in on the controlling terminal of the
-   process.  For most purposes, it is more useful to use the environment
-   variables :envvar:`LOGNAME` or :envvar:`USERNAME` to find out who the user
-   is, or ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the current
-   real user id.
+   process.  For most purposes, it is more useful to use
+   :func:`getpass.getuser` since the latter checks the environment variables
+   :envvar:`LOGNAME` or :envvar:`USERNAME` to find out who the user is, and
+   falls back to ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the
+   current real user id.
 
    Availability: Unix, Windows.
 
@@ -1101,6 +1102,45 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
+.. function:: pwritev(fd, buffers, offset, flags=0)
+
+   Combines the functionality of :func:`os.writev` and :func:`os.pwrite`. It
+   writes the contents of *buffers* to file descriptor *fd* at offset *offset*.
+   *buffers* must be a sequence of :term:`bytes-like objects <bytes-like object>`.
+   Buffers are processed in array order. Entire contents of first buffer is written
+   before proceeding to second, and so on. The operating system may set a limit
+   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
+   :func:`~os.pwritev` writes the contents of each object to the file descriptor
+   and returns the total number of bytes written.
+
+   The *flags* argument contains a bitwise OR of zero or more of the following
+   flags:
+
+   - RWF_DSYNC
+   - RWF_SYNC
+
+   Using non-zero flags requires Linux 4.7 or newer.
+
+   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
+   OpenBSD (version 2.7 and newer).
+
+   .. versionadded:: 3.7
+
+.. data:: RWF_DSYNC (since Linux 4.7)
+   Provide a per-write equivalent of the O_DSYNC open(2) flag. This flag
+   is meaningful only for pwritev2(), and its effect applies only to the
+   data range written by the system call.
+
+   .. versionadded:: 3.7
+
+.. data:: RWF_SYNC (since Linux 4.7)
+   Provide a per-write equivalent of the O_SYNC open(2) flag. This flag is
+   meaningful only for pwritev2(), and its effect applies only to the data
+   range written by the system call.
+
+   .. versionadded:: 3.7
+
+
 .. function:: read(fd, n)
 
    Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
@@ -1193,6 +1233,51 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: preadv(fd, buffers, offset, flags=0)
+
+   Combines the functionality of :func:`os.readv` and :func:`os.pread`. It
+   reads from a file descriptor *fd* into a number of mutable :term:`bytes-like
+   objects <bytes-like object>` *buffers*. As :func:`os.readv`, it will transfer
+   data into each buffer until it is full and then move on to the next buffer in
+   the sequence to hold the rest of the data. Its fourth argument, *offset*,
+   specifies the file offset at which the input operation is to be performed.
+   :func:`~os.preadv` return the total number of bytes read (which can be less than
+   the total capacity of all the objects).
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+   - RWF_HIPRI
+   - RWF_NOWAIT
+
+   Using non-zero flags requires Linux 4.6 or newer.
+
+   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
+   OpenBSD (version 2.7 and newer).
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_HIPRI (since Linux 4.6)
+   High priority read/write. Allows block-based filesystems to use polling
+   of the device, which provides lower latency, but may use additional
+   resources. (Currently, this feature is usable only on a file descriptor
+   opened using the O_DIRECT flag.)
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_NOWAIT (since Linux 4.14)
+   Do not wait for data which is not immediately available. If this flag
+   is  specified, the preadv2() system call will return instantly
+   if it would have to read data from the backing storage or wait for a lock.
+   If some data was successfully read, it will return the number of bytes
+   read. If no bytes were read, it will return -1 and set errno to EAGAIN.
+   Currently, this flag is meaningful only for preadv2().
+
+   .. versionadded:: 3.7
 
 
 .. function:: tcgetpgrp(fd)
@@ -2389,6 +2474,14 @@ features:
 
       Time of file creation.
 
+   On Solaris and derivatives, the following attributes may also be
+   available:
+
+   .. attribute:: st_fstype
+
+      String that uniquely identifies the type of the filesystem that
+      contains the file.
+
    On Mac OS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
@@ -2432,6 +2525,8 @@ features:
    .. versionadded:: 3.5
       Added the :attr:`st_file_attributes` member on Windows.
 
+   .. versionadded:: 3.7
+      Added the :attr:`st_fstype` member to Solaris/derivatives.
 
 .. function:: statvfs(path)
 

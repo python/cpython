@@ -340,18 +340,22 @@ The Python compiler currently generates the following bytecode instructions.
    Lifts second, third and forth stack items one position up, moves top down
    to position four.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 
 .. opcode:: DUP_TOP
 
    Duplicates the reference on top of the stack.
 
+   .. versionadded:: 3.2
+
 
 .. opcode:: DUP_TOP_TWO
 
    Duplicates the two references on top of the stack, leaving them in the
    same order.
+
+   .. versionadded:: 3.2
 
 
 **Unary operations**
@@ -563,11 +567,14 @@ the original TOS1.
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: GET_AITER
 
    Implements ``TOS = TOS.__aiter__()``.
 
+   .. versionadded:: 3.5
    .. versionchanged:: 3.7
       Returning awaitable objects from ``__aiter__`` is no longer
       supported.
@@ -578,16 +585,22 @@ the original TOS1.
    Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
    for details about ``get_awaitable``
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
    stack.  Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: SETUP_ASYNC_WITH
 
    Creates a new frame object.
+
+   .. versionadded:: 3.5
 
 
 
@@ -615,6 +628,8 @@ the original TOS1.
    Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
    comprehensions.
 
+   .. versionadded:: 3.1
+
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
 container object remains on the stack so that it is available for further
@@ -636,6 +651,7 @@ iterations of the loop.
    Pops TOS and delegates to it as a subiterator from a :term:`generator`.
 
    .. versionadded:: 3.3
+
 
 .. opcode:: SETUP_ANNOTATIONS
 
@@ -685,7 +701,7 @@ iterations of the loop.
    counter nor raise an exception.  Used for implementing :keyword:`break`
    and :keyword:`return` in the :keyword:`finally` block.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 
 .. opcode:: BEGIN_FINALLY
@@ -694,7 +710,7 @@ iterations of the loop.
    :opcode:`POP_FINALLY`, :opcode:`WITH_CLEANUP_START` and
    :opcode:`WITH_CLEANUP_FINISH`.  Starts the :keyword:`finally` block.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 
 .. opcode:: END_FINALLY
@@ -730,6 +746,8 @@ iterations of the loop.
    the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
    store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
    :opcode:`UNPACK_SEQUENCE`).
+
+   .. versionadded:: 3.2
 
 
 .. opcode:: WITH_CLEANUP_START
@@ -962,10 +980,14 @@ All of the following opcodes use their arguments.
 
    If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: POP_JUMP_IF_FALSE (target)
 
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -973,11 +995,15 @@ All of the following opcodes use their arguments.
    If TOS is true, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is false), TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: JUMP_IF_FALSE_OR_POP (target)
 
    If TOS is false, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is true), TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_ABSOLUTE (target)
@@ -1010,7 +1036,7 @@ All of the following opcodes use their arguments.
    bytecode counter by *delta*.  Used for calling the finally block as a
    "subroutine".
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 
 .. opcode:: LOAD_FAST (var_num)
@@ -1026,13 +1052,6 @@ All of the following opcodes use their arguments.
 .. opcode:: DELETE_FAST (var_num)
 
    Deletes local ``co_varnames[var_num]``.
-
-
-.. opcode:: STORE_ANNOTATION (namei)
-
-   Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
-
-   .. versionadded:: 3.6
 
 
 .. opcode:: LOAD_CLOSURE (i)
@@ -1055,6 +1074,8 @@ All of the following opcodes use their arguments.
    consulting the cell.  This is used for loading free variables in class
    bodies.
 
+   .. versionadded:: 3.4
+
 
 .. opcode:: STORE_DEREF (i)
 
@@ -1066,6 +1087,8 @@ All of the following opcodes use their arguments.
 
    Empties the cell contained in slot *i* of the cell and free variable storage.
    Used by the :keyword:`del` statement.
+
+   .. versionadded:: 3.2
 
 
 .. opcode:: RAISE_VARARGS (argc)

@@ -32,7 +32,6 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 import abc
-import ast
 import dis
 import collections.abc
 import enum
@@ -1940,6 +1939,9 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
+    # Lazy import ast because it's relatively heavy and
+    # it's not used for other than this function.
+    import ast
 
     Parameter = cls._parameter_cls
 
