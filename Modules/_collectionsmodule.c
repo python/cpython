@@ -1339,12 +1339,10 @@ deque_reduce(dequeobject *deque)
     PyObject *dict, *it;
     _Py_IDENTIFIER(__dict__);
 
-    dict = _PyObject_GetAttrId((PyObject *)deque, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)deque, &PyId___dict__, &dict) < 0) {
+        return NULL;
+    }
     if (dict == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return NULL;
-        }
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }

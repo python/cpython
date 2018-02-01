@@ -782,9 +782,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
         self.assertEqual(os.environ['bytes'], value_str)
 
-    # On FreeBSD < 7 and OS X < 10.6, unsetenv() doesn't return a value (issue
-    # #13415).
-    @support.requires_freebsd_version(7)
+    # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
     def test_unset_error(self):
         if sys.platform == "win32":

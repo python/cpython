@@ -75,16 +75,20 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
         }
     }
     else {
+        /* if we're so late into Python finalization that the module dict is
+           gone, then we can't even use PyImport_GetModule without triggering
+           an interpreter abort.
+        */
+        if (!PyThreadState_GET()->interp->modules) {
+            return NULL;
+        }
         warnings_module = PyImport_GetModule(warnings_str);
         if (warnings_module == NULL)
             return NULL;
     }
 
-    obj = _PyObject_GetAttrId(warnings_module, attr_id);
+    (void)_PyObject_LookupAttrId(warnings_module, attr_id, &obj);
     Py_DECREF(warnings_module);
-    if (obj == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
-    }
     return obj;
 }
 
@@ -893,13 +897,10 @@ get_source_line(PyObject *module_globals, int lineno)
     Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
-    get_source = _PyObject_GetAttrId(loader, &PyId_get_source);
+    (void)_PyObject_LookupAttrId(loader, &PyId_get_source, &get_source);
     Py_DECREF(loader);
     if (!get_source) {
         Py_DECREF(module_name);
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
         return NULL;
     }
     /* Call get_source() to get the source code. */
@@ -1153,6 +1154,52 @@ exit:
     return ret;
 }
 
+void
+_PyErr_WarnUnawaitedCoroutine(PyObject *coro)
+{
+    /* First, we attempt to funnel the warning through
+       warnings._warn_unawaited_coroutine.
+
+       This could raise an exception, due to:
+       - a bug
+       - some kind of shutdown-related brokenness
+       - succeeding, but with an "error" warning filter installed, so the
+         warning is converted into a RuntimeWarning exception
+
+       In the first two cases, we want to print the error (so we know what it
+       is!), and then print a warning directly as a fallback. In the last
+       case, we want to print the error (since it's the warning!), but *not*
+       do a fallback. And after we print the error we can't check for what
+       type of error it was (because PyErr_WriteUnraisable clears it), so we
+       need a flag to keep track.
+
+       Since this is called from __del__ context, it's careful to never raise
+       an exception.
+    */
+    _Py_IDENTIFIER(_warn_unawaited_coroutine);
+    int warned = 0;
+    PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
+    if (fn) {
+        PyObject *res = PyObject_CallFunctionObjArgs(fn, coro, NULL);
+        Py_DECREF(fn);
+        if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
+            warned = 1;
+        }
+        Py_XDECREF(res);
+    }
+
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(coro);
+    }
+    if (!warned) {
+        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+                             "coroutine '%.50S' was never awaited",
+                             ((PyCoroObject *)coro)->cr_qualname) < 0)
+        {
+            PyErr_WriteUnraisable(coro);
+        }
+    }
+}
 
 PyDoc_STRVAR(warn_explicit_doc,
 "Low-level inferface to warnings functionality.");

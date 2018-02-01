@@ -69,13 +69,12 @@ extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
 extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
-extern PyObject* PyInit__findvs(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
 
 extern PyObject* PyMarshal_Init(void);
-extern PyObject* PyInit_imp(void);
+extern PyObject* PyInit__imp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
@@ -148,7 +147,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"marshal", PyMarshal_Init},
 
     /* This lives it with import.c */
-    {"_imp", PyInit_imp},
+    {"_imp", PyInit__imp},
 
     /* These entries are here for sys.builtin_module_names */
     {"builtins", NULL},
@@ -161,8 +160,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"atexit", PyInit_atexit},
     {"_stat", PyInit__stat},
     {"_opcode", PyInit__opcode},
-
-    {"_findvs", PyInit__findvs},
 
     /* Sentinel */
     {0, 0}

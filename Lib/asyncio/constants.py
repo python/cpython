@@ -1,3 +1,5 @@
+import enum
+
 # After the connection is lost, log warnings after this many write()s.
 LOG_THRESHOLD_FOR_CONNLOST_WRITES = 5
 
@@ -11,3 +13,10 @@ DEBUG_STACK_DEPTH = 10
 
 # Number of seconds to wait for SSL handshake to complete
 SSL_HANDSHAKE_TIMEOUT = 10.0
+
+# The enum should be here to break circular dependencies between
+# base_events and sslproto
+class _SendfileMode(enum.Enum):
+    UNSUPPORTED = enum.auto()
+    TRY_NATIVE = enum.auto()
+    FALLBACK = enum.auto()
