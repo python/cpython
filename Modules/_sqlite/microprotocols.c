@@ -101,7 +101,9 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     }
 
     /* try to have the protocol adapt this object */
-    adapter = _PyObject_GetAttrId(proto, &PyId___adapt__);
+    if (_PyObject_LookupAttrId(proto, &PyId___adapt__, &adapter) < 0) {
+        return NULL;
+    }
     if (adapter) {
         adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
         Py_DECREF(adapter);
@@ -119,15 +121,11 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
             PyErr_Clear();
         }
     }
-    else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        return NULL;
-    }
-    else {
-        PyErr_Clear();
-    }
 
     /* and finally try to have the object adapt itself */
-    adapter = _PyObject_GetAttrId(obj, &PyId___conform__);
+    if (_PyObject_LookupAttrId(obj, &PyId___conform__, &adapter) < 0) {
+        return NULL;
+    }
     if (adapter) {
         adapted = PyObject_CallFunctionObjArgs(adapter, proto, NULL);
         Py_DECREF(adapter);
@@ -144,12 +142,6 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         else {
             PyErr_Clear();
         }
-    }
-    else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        return NULL;
-    }
-    else {
-        PyErr_Clear();
     }
 
     if (alt) {
