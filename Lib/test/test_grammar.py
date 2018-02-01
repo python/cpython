@@ -922,7 +922,7 @@ class GrammarTests(unittest.TestCase):
         def g(): [x for x in [(yield 1)]]
         def g(): [x for x in [(yield from ())]]
 
-        check = check_syntax_error
+        check = self.check_syntax_error
         check("def g(): [(yield x) for x in ()]",
               "'yield' inside list comprehension")
         check("def g(): [x for x in () if not (yield x)]",
