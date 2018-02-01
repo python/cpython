@@ -122,10 +122,6 @@ disabled_modules:
 	echo "_uuid" >> $(setup_tmp)
 	echo "grp" >> $(setup_tmp)
 	echo "_crypt" >> $(setup_tmp)
-ifneq ($(filter x86_64 arm64,$(ANDROID_ARCH)), )
-	@# Disable _ctypes on x86_64 and arm64 platforms.
-	echo "_ctypes" >> $(setup_tmp)
-endif
 	@if test -f $(setup_file); then \
 	    if test $$(md5sum $(setup_tmp) | awk '{print $$1}') != \
 	            $$(md5sum $(setup_file) | awk '{print $$1}'); then \
