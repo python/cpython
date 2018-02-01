@@ -147,6 +147,16 @@ The :mod:`locale` module defines the following exception and functions:
    | ``CHAR_MAX`` | Nothing is specified in this locale.    |
    +--------------+-----------------------------------------+
 
+   The function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+   locale to decode ``decimal_point`` and ``thousands_sep`` byte strings if
+   they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+   different than the ``LC_CTYPE`` locale. This temporary change affects other
+   threads.
+
+   .. versionchanged:: 3.7
+      The function now sets temporarily the ``LC_CTYPE`` locale to the
+      ``LC_NUMERIC`` locale in some cases.
+
 
 .. function:: nl_langinfo(option)
 
@@ -315,6 +325,13 @@ The :mod:`locale` module defines the following exception and functions:
    On some systems, it is necessary to invoke :func:`setlocale` to obtain the user
    preferences, so this function is not thread-safe. If invoking setlocale is not
    necessary or desired, *do_setlocale* should be set to ``False``.
+
+   On Android or in the UTF-8 mode (:option:`-X` ``utf8`` option), always
+   return ``'UTF-8'``, the locale and the *do_setlocale* argument are ignored.
+
+   .. versionchanged:: 3.7
+      The function now always returns ``UTF-8`` on Android or if the UTF-8 mode
+      is enabled.
 
 
 .. function:: normalize(localename)

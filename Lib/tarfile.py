@@ -1058,7 +1058,7 @@ class TarInfo(object):
 
         # The old GNU sparse format occupies some of the unused
         # space in the buffer for up to 4 sparse structures.
-        # Save the them for later processing in _proc_sparse().
+        # Save them for later processing in _proc_sparse().
         if obj.type == GNUTYPE_SPARSE:
             pos = 386
             structs = []
@@ -1943,7 +1943,7 @@ class TarFile(object):
         elif tarinfo.isdir():
             self.addfile(tarinfo)
             if recursive:
-                for f in os.listdir(name):
+                for f in sorted(os.listdir(name)):
                     self.add(os.path.join(name, f), os.path.join(arcname, f),
                             recursive, filter=filter)
 

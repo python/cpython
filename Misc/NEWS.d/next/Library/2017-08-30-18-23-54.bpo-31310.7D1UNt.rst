@@ -1,1 +1,0 @@
-multiprocessing's semaphore tracker should be launched again if crashed.

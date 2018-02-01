@@ -1,4 +1,4 @@
-version: 3.7.0a0.{build}
+version: 3.7build{build}
 clone_depth: 5
 branches:
   only:
@@ -16,20 +16,3 @@ environment:
   HOST_PYTHON: C:\Python36\python.exe
 image:
 - Visual Studio 2017
-
-# Only trigger AppVeyor if actual code or its configuration changes
-only_commits:
-  files:
-    - .github/appveyor.yml
-    - .gitattributes
-    - Grammar/
-    - Include/
-    - Lib/
-    - Modules/
-    - Objects/
-    - PC/
-    - PCbuild/
-    - Parser/
-    - Programs/
-    - Python/
-    - Tools/

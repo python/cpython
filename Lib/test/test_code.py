@@ -102,6 +102,7 @@ consts: ('None',)
 
 """
 
+import inspect
 import sys
 import threading
 import unittest
@@ -130,6 +131,10 @@ def dump(co):
         print("%s: %s" % (attr, getattr(co, "co_" + attr)))
     print("consts:", tuple(consts(co.co_consts)))
 
+# Needed for test_closure_injection below
+# Defined at global scope to avoid implicitly closing over __class__
+def external_getitem(self, i):
+    return f"Foreign getitem: {super().__getitem__(i)}"
 
 class CodeTest(unittest.TestCase):
 
@@ -141,6 +146,46 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_name, "funcname")
         self.assertEqual(co.co_firstlineno, 15)
 
+    @cpython_only
+    def test_closure_injection(self):
+        # From https://bugs.python.org/issue32176
+        from types import FunctionType, CodeType
+
+        def create_closure(__class__):
+            return (lambda: __class__).__closure__
+
+        def new_code(c):
+            '''A new code object with a __class__ cell added to freevars'''
+            return CodeType(
+                c.co_argcount, c.co_kwonlyargcount, c.co_nlocals,
+                c.co_stacksize, c.co_flags, c.co_code, c.co_consts, c.co_names,
+                c.co_varnames, c.co_filename, c.co_name, c.co_firstlineno,
+                c.co_lnotab, c.co_freevars + ('__class__',), c.co_cellvars)
+
+        def add_foreign_method(cls, name, f):
+            code = new_code(f.__code__)
+            assert not f.__closure__
+            closure = create_closure(cls)
+            defaults = f.__defaults__
+            setattr(cls, name, FunctionType(code, globals(), name, defaults, closure))
+
+        class List(list):
+            pass
+
+        add_foreign_method(List, "__getitem__", external_getitem)
+
+        # Ensure the closure injection actually worked
+        function = List.__getitem__
+        class_ref = function.__closure__[0].cell_contents
+        self.assertIs(class_ref, List)
+
+        # Ensure the code correctly indicates it accesses a free variable
+        self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE,
+                         hex(function.__code__.co_flags))
+
+        # Ensure the zero-arg super() call in the injected method works
+        obj = List([1, 2, 3])
+        self.assertEqual(obj[0], "Foreign getitem: 1")
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])

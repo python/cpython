@@ -173,7 +173,7 @@ def body_encode(body, maxlinelen=76, eol=NL):
     if not body:
         return body
 
-    # quote speacial characters
+    # quote special characters
     body = body.translate(_QUOPRI_BODY_ENCODE_MAP)
 
     soft_break = '=' + eol

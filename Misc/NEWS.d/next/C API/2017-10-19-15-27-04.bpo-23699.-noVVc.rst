@@ -1,2 +1,0 @@
-Add Py_RETURN_RICHCOMPARE macro to reduce boilerplate code in rich
-comparison functions.

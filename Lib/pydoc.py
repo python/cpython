@@ -1952,7 +1952,7 @@ has the same effect as typing a particular string at the help> prompt.
 Welcome to Python {0}'s help utility!
 
 If this is your first time using Python, you should definitely check out
-the tutorial on the Internet at http://docs.python.org/{0}/tutorial/.
+the tutorial on the Internet at https://docs.python.org/{0}/tutorial/.
 
 Enter the name of any module, keyword, or topic to get help on writing
 Python programs and using Python modules.  To quit this help utility and

@@ -527,13 +527,15 @@ class SysModuleTest(unittest.TestCase):
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
                  "no_user_site", "no_site", "ignore_environment", "verbose",
                  "bytes_warning", "quiet", "hash_randomization", "isolated",
-                 "dev_mode")
+                 "dev_mode", "utf8_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
             attr_type = bool if attr == "dev_mode" else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
+
+        self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -710,8 +712,8 @@ class SysModuleTest(unittest.TestCase):
         # have no any effect
         out = self.c_locale_get_error_handler(encoding=':')
         self.assertEqual(out,
-                         'stdin: surrogateescape\n'
-                         'stdout: surrogateescape\n'
+                         'stdin: strict\n'
+                         'stdout: strict\n'
                          'stderr: backslashreplace\n')
         out = self.c_locale_get_error_handler(encoding='')
         self.assertEqual(out,

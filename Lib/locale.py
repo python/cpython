@@ -617,6 +617,8 @@ if sys.platform.startswith("win"):
     # On Win32, this will return the ANSI code page
     def getpreferredencoding(do_setlocale = True):
         """Return the charset that the user is likely using."""
+        if sys.flags.utf8_mode:
+            return 'UTF-8'
         import _bootlocale
         return _bootlocale.getpreferredencoding(False)
 else:
@@ -634,6 +636,8 @@ else:
             def getpreferredencoding(do_setlocale = True):
                 """Return the charset that the user is likely using,
                 by looking at environment variables."""
+                if sys.flags.utf8_mode:
+                    return 'UTF-8'
                 res = getdefaultlocale()[1]
                 if res is None:
                     # LANG not set, default conservatively to ASCII
@@ -643,6 +647,8 @@ else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,
             according to the system configuration."""
+            if sys.flags.utf8_mode:
+                return 'UTF-8'
             import _bootlocale
             if do_setlocale:
                 oldloc = setlocale(LC_CTYPE)

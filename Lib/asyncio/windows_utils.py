@@ -1,6 +1,4 @@
-"""
-Various Windows specific bits and pieces
-"""
+"""Various Windows specific bits and pieces."""
 
 import sys
 
@@ -11,13 +9,12 @@ import _winapi
 import itertools
 import msvcrt
 import os
-import socket
 import subprocess
 import tempfile
 import warnings
 
 
-__all__ = ['pipe', 'Popen', 'PIPE', 'PipeHandle']
+__all__ = 'pipe', 'Popen', 'PIPE', 'PipeHandle'
 
 
 # Constants/globals
@@ -34,8 +31,9 @@ _mmap_counter = itertools.count()
 
 def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     """Like os.pipe() but with overlapped support and using handles not fds."""
-    address = tempfile.mktemp(prefix=r'\\.\pipe\python-pipe-%d-%d-' %
-                              (os.getpid(), next(_mmap_counter)))
+    address = tempfile.mktemp(
+        prefix=r'\\.\pipe\python-pipe-{:d}-{:d}-'.format(
+            os.getpid(), next(_mmap_counter)))
 
     if duplex:
         openmode = _winapi.PIPE_ACCESS_DUPLEX
@@ -90,10 +88,10 @@ class PipeHandle:
 
     def __repr__(self):
         if self._handle is not None:
-            handle = 'handle=%r' % self._handle
+            handle = f'handle={self._handle!r}'
         else:
             handle = 'closed'
-        return '<%s %s>' % (self.__class__.__name__, handle)
+        return f'<{self.__class__.__name__} {handle}>'
 
     @property
     def handle(self):
@@ -111,7 +109,7 @@ class PipeHandle:
 
     def __del__(self):
         if self._handle is not None:
-            warnings.warn("unclosed %r" % self, ResourceWarning,
+            warnings.warn(f"unclosed {self!r}", ResourceWarning,
                           source=self)
             self.close()
 

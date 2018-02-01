@@ -109,7 +109,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 /* Macros */
 #ifdef WITH_PYMALLOC
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyObject_DebugMallocStats(FILE *out);
+PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif /* #ifndef Py_LIMITED_API */
 #endif
 

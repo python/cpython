@@ -1,2 +1,0 @@
-Revert the previous changes, the if_nameindex structure is defined by
-Unified Headers.

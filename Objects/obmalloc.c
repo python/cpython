@@ -379,7 +379,7 @@ _PyMem_DebugEnabled(void)
     return (_PyObject.malloc == _PyMem_DebugMalloc);
 }
 
-int
+static int
 _PyMem_PymallocEnabled(void)
 {
     if (_PyMem_DebugEnabled()) {
@@ -564,6 +564,8 @@ PyMem_Free(void *ptr)
 wchar_t*
 _PyMem_RawWcsdup(const wchar_t *str)
 {
+    assert(str != NULL);
+
     size_t len = wcslen(str);
     if (len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
         return NULL;
@@ -582,13 +584,12 @@ _PyMem_RawWcsdup(const wchar_t *str)
 char *
 _PyMem_RawStrdup(const char *str)
 {
-    size_t size;
-    char *copy;
-
-    size = strlen(str) + 1;
-    copy = PyMem_RawMalloc(size);
-    if (copy == NULL)
+    assert(str != NULL);
+    size_t size = strlen(str) + 1;
+    char *copy = PyMem_RawMalloc(size);
+    if (copy == NULL) {
         return NULL;
+    }
     memcpy(copy, str, size);
     return copy;
 }
@@ -596,13 +597,12 @@ _PyMem_RawStrdup(const char *str)
 char *
 _PyMem_Strdup(const char *str)
 {
-    size_t size;
-    char *copy;
-
-    size = strlen(str) + 1;
-    copy = PyMem_Malloc(size);
-    if (copy == NULL)
+    assert(str != NULL);
+    size_t size = strlen(str) + 1;
+    char *copy = PyMem_Malloc(size);
+    if (copy == NULL) {
         return NULL;
+    }
     memcpy(copy, str, size);
     return copy;
 }
@@ -1167,7 +1167,7 @@ new_arena(void)
     static int debug_stats = -1;
 
     if (debug_stats == -1) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
+        const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
     if (debug_stats)
@@ -2467,10 +2467,17 @@ pool_is_in_list(const poolp target, poolp list)
 /* Print summary info to "out" about the state of pymalloc's structures.
  * In Py_DEBUG mode, also perform some expensive internal consistency
  * checks.
+ *
+ * Return 0 if the memory debug hooks are not installed or no statistics was
+ * writen into out, return 1 otherwise.
  */
-void
+int
 _PyObject_DebugMallocStats(FILE *out)
 {
+    if (!_PyMem_PymallocEnabled()) {
+        return 0;
+    }
+
     uint i;
     const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
     /* # of pools, allocated blocks, and free blocks per class index */
@@ -2603,6 +2610,7 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
     (void)printone(out, "Total", total);
+    return 1;
 }
 
 #endif /* #ifdef WITH_PYMALLOC */
