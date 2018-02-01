@@ -2075,7 +2075,10 @@ dict_repr(PyDictObject *mp)
         }
         first = 0;
 
+        if (Py_EnterRecursiveCall(" while getting the repr of a dict"))
+            goto error;
         s = PyObject_Repr(key);
+        Py_LeaveRecursiveCall();
         if (s == NULL)
             goto error;
         res = _PyUnicodeWriter_WriteStr(&writer, s);
@@ -2086,7 +2089,10 @@ dict_repr(PyDictObject *mp)
         if (_PyUnicodeWriter_WriteASCIIString(&writer, ": ", 2) < 0)
             goto error;
 
+        if (Py_EnterRecursiveCall(" while getting the repr of a dict"))
+            goto error;
         s = PyObject_Repr(value);
+        Py_LeaveRecursiveCall();
         if (s == NULL)
             goto error;
         res = _PyUnicodeWriter_WriteStr(&writer, s);
