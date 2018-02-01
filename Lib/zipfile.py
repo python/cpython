@@ -1583,7 +1583,7 @@ class ZipFile:
            by namelist().
         """
         if members is None:
-            members = self.namelist()
+            members = self.infolist()
 
         if path is None:
             path = os.getcwd()

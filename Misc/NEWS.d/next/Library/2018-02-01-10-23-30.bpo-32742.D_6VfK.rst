@@ -1,0 +1,2 @@
+zipfile.ZipFile.extractall uses infolist to avoid unnecessary re-wraps for
+each file name.
