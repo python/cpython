@@ -1417,7 +1417,7 @@ class PdbTestCase(unittest.TestCase):
     def test_relative_imports(self):
         self.module_name = 't_main'
         support.rmtree(self.module_name)
-        main_file = self.module_name + '/__main__.py'
+        main_file = self.module_name + '/runme.py'
         init_file = self.module_name + '/__init__.py'
         module_file = self.module_name + '/module.py'
         self.addCleanup(support.rmtree, self.module_name)
@@ -1446,8 +1446,8 @@ class PdbTestCase(unittest.TestCase):
             p module.var2
             quit
         """
-        stdout, _ = self._run_pdb(['-m', self.module_name], commands)
-        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()))
+        stdout, _ = self._run_pdb(['-m', self.module_name + '.runme'], commands)
+        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()), stdout)
         self.assertTrue(any("VAR from top" in l for l in stdout.splitlines()))
         self.assertTrue(any("second var" in l for l in stdout.splitlines()))
 
