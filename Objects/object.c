@@ -482,7 +482,12 @@ PyObject_Repr(PyObject *v)
     assert(!PyErr_Occurred());
 #endif
 
+    /* It is possible for a type to have a tp_repr representation that loops
+       infinitely. */
+    if (Py_EnterRecursiveCall(" while getting the repr of an object"))
+        return NULL;
     res = (*v->ob_type->tp_repr)(v);
+    Py_LeaveRecursiveCall();
     if (res == NULL)
         return NULL;
     if (!PyUnicode_Check(res)) {
