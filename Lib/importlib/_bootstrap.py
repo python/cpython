@@ -522,6 +522,7 @@ def _init_module_attrs(spec, module, *, override=False):
 
                 loader = _NamespaceLoader.__new__(_NamespaceLoader)
                 loader._path = spec.submodule_search_locations
+                spec.loader = loader
         try:
             module.__loader__ = loader
         except AttributeError:

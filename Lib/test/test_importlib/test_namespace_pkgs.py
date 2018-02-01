@@ -317,5 +317,15 @@ class ReloadTests(NamespacePackageTest):
         self.assertEqual(foo.two.attr, 'portion2 foo two')
 
 
+class LoaderTests(NamespacePackageTest):
+    paths = ['portion1']
+
+    def test_namespace_loader_consistency(self):
+        # bpo-32303
+        import foo
+        self.assertEqual(foo.__loader__, foo.__spec__.loader)
+        self.assertIsNotNone(foo.__loader__)
+
+
 if __name__ == "__main__":
     unittest.main()
