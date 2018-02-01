@@ -113,3 +113,11 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in the Python API
+-------------------------
+
+* The :meth:`~tkinter.ttk.Treeview.selection` method of the
+  :class:`tkinter.ttk.Treeview` class no longer takes arguments.  Using it with
+  arguments for changing the selection was deprecated in Python 3.6.  Use
+  specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
+  changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
