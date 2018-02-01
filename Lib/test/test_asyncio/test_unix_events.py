@@ -466,10 +466,13 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.addCleanup(self.file.close)
         super().setUp()
 
-    def make_socket(self, blocking=False):
+    def make_socket(self, cleanup=True):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setblocking(blocking)
-        self.addCleanup(sock.close)
+        sock.setblocking(False)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
+        if cleanup:
+            self.addCleanup(sock.close)
         return sock
 
     def run_loop(self, coro):
@@ -479,8 +482,10 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
         port = support.find_unused_port()
+        srv_sock = self.make_socket(cleanup=False)
+        srv_sock.bind((support.HOST, port))
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, port))
+            lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 
         def cleanup():
