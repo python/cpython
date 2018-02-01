@@ -1,0 +1,2 @@
+Detect mutated list in list_slice(): check if the list size changed
+before/after allocating a new list object to prevent a crash.
