@@ -69,7 +69,7 @@ Scheduler Objects
    Schedule a new event. The *time* argument should be a numeric type compatible
    with the return value of the *timefunc* function passed  to the constructor.
    Events scheduled for the same *time* will be executed in the order of their
-   *priority*.
+   *priority*. A lower number represents a higher priority.
 
    Executing the event means executing ``action(*argument, **kwargs)``.
    *argument* is a sequence holding the positional arguments for *action*.

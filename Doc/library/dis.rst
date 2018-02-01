@@ -339,11 +339,15 @@ The Python compiler currently generates the following bytecode instructions.
 
    Duplicates the reference on top of the stack.
 
+   .. versionadded:: 3.2
+
 
 .. opcode:: DUP_TOP_TWO
 
    Duplicates the two references on top of the stack, leaving them in the
    same order.
+
+   .. versionadded:: 3.2
 
 
 **Unary operations**
@@ -555,11 +559,17 @@ the original TOS1.
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: GET_AITER
 
-   Implements ``TOS = get_awaitable(TOS.__aiter__())``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Implements ``TOS = TOS.__aiter__()``.
+
+   .. versionadded:: 3.5
+   .. versionchanged:: 3.7
+      Returning awaitable objects from ``__aiter__`` is no longer
+      supported.
 
 
 .. opcode:: GET_ANEXT
@@ -567,16 +577,22 @@ the original TOS1.
    Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
    for details about ``get_awaitable``
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
    stack.  Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: SETUP_ASYNC_WITH
 
    Creates a new frame object.
+
+   .. versionadded:: 3.5
 
 
 
@@ -615,6 +631,8 @@ the original TOS1.
    Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
    comprehensions.
 
+   .. versionadded:: 3.1
+
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
 container object remains on the stack so that it is available for further
@@ -637,6 +655,7 @@ iterations of the loop.
 
    .. versionadded:: 3.3
 
+
 .. opcode:: SETUP_ANNOTATIONS
 
    Checks whether ``__annotations__`` is defined in ``locals()``, if not it is
@@ -645,6 +664,7 @@ iterations of the loop.
    statically.
 
    .. versionadded:: 3.6
+
 
 .. opcode:: IMPORT_STAR
 
@@ -690,6 +710,8 @@ iterations of the loop.
    the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
    store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
    :opcode:`UNPACK_SEQUENCE`).
+
+   .. versionadded:: 3.2
 
 
 .. opcode:: WITH_CLEANUP_START
@@ -921,10 +943,14 @@ All of the following opcodes use their arguments.
 
    If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: POP_JUMP_IF_FALSE (target)
 
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -932,11 +958,15 @@ All of the following opcodes use their arguments.
    If TOS is true, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is false), TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: JUMP_IF_FALSE_OR_POP (target)
 
    If TOS is false, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is true), TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_ABSOLUTE (target)
@@ -990,13 +1020,6 @@ All of the following opcodes use their arguments.
    Deletes local ``co_varnames[var_num]``.
 
 
-.. opcode:: STORE_ANNOTATION (namei)
-
-   Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
-
-   .. versionadded:: 3.6
-
-
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot *i* of the cell and free
@@ -1017,6 +1040,8 @@ All of the following opcodes use their arguments.
    consulting the cell.  This is used for loading free variables in class
    bodies.
 
+   .. versionadded:: 3.4
+
 
 .. opcode:: STORE_DEREF (i)
 
@@ -1028,6 +1053,8 @@ All of the following opcodes use their arguments.
 
    Empties the cell contained in slot *i* of the cell and free variable storage.
    Used by the :keyword:`del` statement.
+
+   .. versionadded:: 3.2
 
 
 .. opcode:: RAISE_VARARGS (argc)
@@ -1074,7 +1101,7 @@ All of the following opcodes use their arguments.
    Pops all function arguments, and the function itself off the stack, and
    pushes the return value. Note that this opcode pops at most three items
    from the stack. Var-positional and var-keyword arguments are packed
-   by :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
+   by :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` and
    :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
 
    .. versionadded:: 3.6

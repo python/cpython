@@ -17,7 +17,7 @@ static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id);
 
 static PyObject *
-grp_getgrgid(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"id", NULL};
@@ -49,7 +49,7 @@ static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-grp_getgrnam(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
@@ -86,4 +86,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=e7ef2cbc437eedcb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ccba09e8ec14c81 input=a9049054013a1b77]*/

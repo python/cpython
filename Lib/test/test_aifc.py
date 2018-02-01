@@ -7,6 +7,7 @@ import io
 import sys
 import struct
 import aifc
+import warnings
 
 
 class AifcTest(audiotests.AudioWriteTests,
@@ -144,7 +145,9 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
         frames = byteswap(frames, 2)
 
 
-class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
+class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
+    module = aifc
+
     def test_skipunknown(self):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.

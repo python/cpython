@@ -81,12 +81,6 @@ else:
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 
-@contextlib.contextmanager
-def ignore_deprecation_warnings(msg_regex, quiet=False):
-    with support.check_warnings((msg_regex, DeprecationWarning), quiet=quiet):
-        yield
-
-
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
@@ -177,7 +171,7 @@ class FileTests(unittest.TestCase):
         with open(support.TESTFN, "rb") as fp:
             data = os.read(fp.fileno(), size)
 
-        # The test does not try to read more than 2 GB at once because the
+        # The test does not try to read more than 2 GiB at once because the
         # operating system is free to return less bytes than requested.
         self.assertEqual(data, b'test')
 
@@ -347,12 +341,7 @@ class StatAttributeTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
-        try:
-            result = os.statvfs(self.fname)
-        except OSError as e:
-            # On AtheOS, glibc always returns ENOSYS
-            if e.errno == errno.ENOSYS:
-                self.skipTest('os.statvfs() failed with ENOSYS')
+        result = os.statvfs(self.fname)
 
         # Make sure direct access works
         self.assertEqual(result.f_bfree, result[3])
@@ -362,6 +351,11 @@ class StatAttributeTests(unittest.TestCase):
                     'ffree', 'favail', 'flag', 'namemax')
         for value, member in enumerate(members):
             self.assertEqual(getattr(result, 'f_' + member), result[value])
+
+        self.assertTrue(isinstance(result.f_fsid, int))
+
+        # Test that the size of the tuple doesn't change
+        self.assertEqual(len(result), 10)
 
         # Make sure that assignment really fails
         try:
@@ -392,12 +386,7 @@ class StatAttributeTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'statvfs'),
                          "need os.statvfs()")
     def test_statvfs_result_pickle(self):
-        try:
-            result = os.statvfs(self.fname)
-        except OSError as e:
-            # On AtheOS, glibc always returns ENOSYS
-            if e.errno == errno.ENOSYS:
-                self.skipTest('os.statvfs() failed with ENOSYS')
+        result = os.statvfs(self.fname)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             p = pickle.dumps(result, proto)
@@ -487,17 +476,6 @@ class UtimeTests(unittest.TestCase):
         self.addCleanup(support.rmtree, self.dirname)
         os.mkdir(self.dirname)
         create_file(self.fname)
-
-        def restore_float_times(state):
-            with ignore_deprecation_warnings('stat_float_times'):
-                os.stat_float_times(state)
-
-        # ensure that st_atime and st_mtime are float
-        with ignore_deprecation_warnings('stat_float_times'):
-            old_float_times = os.stat_float_times(-1)
-            self.addCleanup(restore_float_times, old_float_times)
-
-            os.stat_float_times(True)
 
     def support_subsecond(self, filename):
         # Heuristic to check if the filesystem supports timestamp with
@@ -804,9 +782,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
         self.assertEqual(os.environ['bytes'], value_str)
 
-    # On FreeBSD < 7 and OS X < 10.6, unsetenv() doesn't return a value (issue
-    # #13415).
-    @support.requires_freebsd_version(7)
+    # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
     def test_unset_error(self):
         if sys.platform == "win32":
@@ -1348,7 +1324,7 @@ class URandomTests(unittest.TestCase):
             'sys.stdout.buffer.flush()'))
         out = assert_python_ok('-c', code)
         stdout = out[1]
-        self.assertEqual(len(stdout), 16)
+        self.assertEqual(len(stdout), count)
         return stdout
 
     def test_urandom_subprocess(self):
@@ -1763,7 +1739,10 @@ class LinkTests(unittest.TestCase):
     def _test_link(self, file1, file2):
         create_file(file1)
 
-        os.link(file1, file2)
+        try:
+            os.link(file1, file2)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
         with open(file1, "r") as f1, open(file2, "r") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
 
@@ -2600,7 +2579,7 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
 class TestSendfile(unittest.TestCase):
 
-    DATA = b"12345abcde" * 16 * 1024  # 160 KB
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
     SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
                                not sys.platform.startswith("solaris") and \
                                not sys.platform.startswith("sunos")
@@ -2915,7 +2894,8 @@ class TermsizeTests(unittest.TestCase):
         """
         try:
             size = subprocess.check_output(['stty', 'size']).decode().split()
-        except (FileNotFoundError, subprocess.CalledProcessError):
+        except (FileNotFoundError, subprocess.CalledProcessError,
+                PermissionError):
             self.skipTest("stty invocation failed")
         expected = (int(size[1]), int(size[0])) # reversed order
 
@@ -3097,19 +3077,15 @@ class FDInheritanceTests(unittest.TestCase):
 
         # inheritable by default
         fd2 = os.open(__file__, os.O_RDONLY)
-        try:
-            os.dup2(fd, fd2)
-            self.assertEqual(os.get_inheritable(fd2), True)
-        finally:
-            os.close(fd2)
+        self.addCleanup(os.close, fd2)
+        self.assertEqual(os.dup2(fd, fd2), fd2)
+        self.assertTrue(os.get_inheritable(fd2))
 
         # force non-inheritable
         fd3 = os.open(__file__, os.O_RDONLY)
-        try:
-            os.dup2(fd, fd3, inheritable=False)
-            self.assertEqual(os.get_inheritable(fd3), False)
-        finally:
-            os.close(fd3)
+        self.addCleanup(os.close, fd3)
+        self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
+        self.assertFalse(os.get_inheritable(fd3))
 
     @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
     def test_openpty(self):
@@ -3269,7 +3245,10 @@ class TestScandir(unittest.TestCase):
         os.mkdir(dirname)
         filename = self.create_file("file.txt")
         if link:
-            os.link(filename, os.path.join(self.path, "link_file.txt"))
+            try:
+                os.link(filename, os.path.join(self.path, "link_file.txt"))
+            except PermissionError as e:
+                self.skipTest('os.link(): %s' % e)
         if symlink:
             os.symlink(dirname, os.path.join(self.path, "symlink_dir"),
                        target_is_directory=True)
@@ -3575,6 +3554,23 @@ class TestPEP519(unittest.TestCase):
         # __fspath__ raises an exception.
         self.assertRaises(ZeroDivisionError, self.fspath,
                           _PathLike(ZeroDivisionError()))
+
+
+class TimesTests(unittest.TestCase):
+    def test_times(self):
+        times = os.times()
+        self.assertIsInstance(times, os.times_result)
+
+        for field in ('user', 'system', 'children_user', 'children_system',
+                      'elapsed'):
+            value = getattr(times, field)
+            self.assertIsInstance(value, float)
+
+        if os.name == 'nt':
+            self.assertEqual(times.children_user, 0)
+            self.assertEqual(times.children_system, 0)
+            self.assertEqual(times.elapsed, 0)
+
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.

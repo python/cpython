@@ -278,7 +278,7 @@ The :mod:`abc` module also provides the following decorators:
        :func:`abstractmethod`, making this decorator redundant.
 
 
-.. decorator:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
+.. decorator:: abstractproperty
 
    A subclass of the built-in :func:`property`, indicating an abstract
    property.

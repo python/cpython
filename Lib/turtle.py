@@ -2194,7 +2194,7 @@ class TPen(object):
 
         If turtleshape is a polygon, outline and interior of that polygon
         is drawn with the newly set colors.
-        For mor info see: pencolor, fillcolor
+        For more info see: pencolor, fillcolor
 
         Example (for a Turtle instance named turtle):
         >>> turtle.color('red', 'green')

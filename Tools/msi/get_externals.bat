@@ -55,7 +55,7 @@ set binaries=%binaries%     binutils
 set binaries=%binaries%     gpg
 set binaries=%binaries%     htmlhelp
 set binaries=%binaries%     nuget
-set binaries=%binaries%     redist
+set binaries=%binaries%     redist-1
 set binaries=%binaries%     wix
 
 for %%b in (%binaries%) do (

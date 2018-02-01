@@ -32,7 +32,7 @@ operator can be mapped across two vectors to form an efficient dot-product:
 ``sum(map(operator.mul, vector1, vector2))``.
 
 
-**Infinite Iterators:**
+**Infinite iterators:**
 
 ==================  =================       =================================================               =========================================
 Iterator            Arguments               Results                                                         Example
@@ -53,7 +53,7 @@ Iterator                        Arguments                       Results         
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
 :func:`dropwhile`               pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
 :func:`filterfalse`             pred, seq                       elements of seq where pred(elem) is false           ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
-:func:`groupby`                 iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
+:func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
 :func:`takewhile`               pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
@@ -61,7 +61,7 @@ Iterator                        Arguments                       Results         
 :func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
 ============================    ============================    =================================================   =============================================================
 
-**Combinatoric generators:**
+**Combinatoric iterators:**
 
 ==============================================   ====================       =============================================================
 Iterator                                         Arguments                  Results
@@ -753,15 +753,16 @@ which incur interpreter overhead.
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
        # Recipe credited to George Sakkis
-       pending = len(iterables)
+       num_active = len(iterables)
        nexts = cycle(iter(it).__next__ for it in iterables)
-       while pending:
+       while num_active:
            try:
                for next in nexts:
                    yield next()
            except StopIteration:
-               pending -= 1
-               nexts = cycle(islice(nexts, pending))
+               # Remove the iterator we just exhausted from the cycle.
+               num_active -= 1
+               nexts = cycle(islice(nexts, num_active))
 
    def partition(pred, iterable):
        'Use a predicate to partition entries into false entries and true entries'
@@ -857,6 +858,29 @@ which incur interpreter overhead.
        n = len(pool)
        indices = sorted(random.randrange(n) for i in range(r))
        return tuple(pool[i] for i in indices)
+
+   def nth_combination(iterable, r, index):
+       'Equivalent to list(combinations(iterable, r))[index]'
+       pool = tuple(iterable)
+       n = len(pool)
+       if r < 0 or r > n:
+           raise ValueError
+       c = 1
+       k = min(r, n-r)
+       for i in range(1, k+1):
+           c = c * (n - k + i) // i
+       if index < 0:
+           index += c
+       if index < 0 or index >= c:
+           raise IndexError
+       result = []
+       while r:
+           c, n, r = c*r//n, n-1, r-1
+           while index >= c:
+               index -= c
+               c, n = c*(n-r)//n, n-1
+           result.append(pool[-1-n])
+       return tuple(result)
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the

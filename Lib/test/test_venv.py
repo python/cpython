@@ -13,7 +13,7 @@ import struct
 import subprocess
 import sys
 import tempfile
-from test.support import (captured_stdout, captured_stderr,
+from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           can_symlink, EnvironmentVarGuard, rmtree)
 import threading
 import unittest
@@ -369,7 +369,9 @@ class EnsurePipTest(BaseTest):
                     self.fail(msg.format(exc, details))
         # Ensure pip is available in the virtual environment
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        cmd = [envpy, '-Im', 'pip', '--version']
+        # Ignore DeprecationWarning since pip code is not part of Python
+        cmd = [envpy, '-W', 'ignore::DeprecationWarning', '-I',
+               '-m', 'pip', '--version']
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
         out, err = p.communicate()
@@ -386,7 +388,8 @@ class EnsurePipTest(BaseTest):
         # http://bugs.python.org/issue19728
         # Check the private uninstall command provided for the Windows
         # installers works (at least in a virtual environment)
-        cmd = [envpy, '-Im', 'ensurepip._uninstall']
+        cmd = [envpy, '-W', 'ignore::DeprecationWarning', '-I',
+               '-m', 'ensurepip._uninstall']
         with EnvironmentVarGuard() as envvars:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
@@ -417,6 +420,7 @@ class EnsurePipTest(BaseTest):
 
     # Issue #26610: pip/pep425tags.py requires ctypes
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
+    @requires_zlib
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

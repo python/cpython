@@ -10,6 +10,7 @@ import sys
 import select
 import signal
 import socket
+import io # readline
 import unittest
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -22,6 +23,16 @@ else:
     def debug(msg):
         pass
 
+
+# Note that os.read() is nondeterministic so we need to be very careful
+# to make the test suite deterministic.  A normal call to os.read() may
+# give us less than expected.
+#
+# Beware, on my Linux system, if I put 'foo\n' into a terminal fd, I get
+# back 'foo\r\n' at the other end.  The behavior depends on the termios
+# setting.  The newline translation may be OS-specific.  To make the
+# test suite deterministic and OS-independent, the functions _readline
+# and normalize_output can be used.
 
 def normalize_output(data):
     # Some operating systems do conversions on newline.  We could possibly fix
@@ -42,6 +53,12 @@ def normalize_output(data):
         return data.replace(b'\r\n', b'\n')
 
     return data
+
+def _readline(fd):
+    """Read one line.  May block forever if no newline is read."""
+    reader = io.FileIO(fd, mode='rb', closefd=False)
+    return reader.readline()
+
 
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
@@ -94,14 +111,14 @@ class PtyTest(unittest.TestCase):
 
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
-        s1 = os.read(master_fd, 1024)
+        s1 = _readline(master_fd)
         self.assertEqual(b'I wish to buy a fish license.\n',
                          normalize_output(s1))
 
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
-        s2 = os.read(master_fd, 1024)
+        s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
         os.close(slave_fd)

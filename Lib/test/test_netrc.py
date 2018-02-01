@@ -1,7 +1,7 @@
-import netrc, os, unittest, sys, textwrap
+import netrc, os, unittest, sys, tempfile, textwrap
+from unittest import mock
 from test import support
 
-temp_filename = support.TESTFN
 
 class NetrcTestCase(unittest.TestCase):
 
@@ -10,7 +10,8 @@ class NetrcTestCase(unittest.TestCase):
         mode = 'w'
         if sys.platform != 'cygwin':
             mode += 't'
-        with open(temp_filename, mode) as fp:
+        temp_fd, temp_filename = tempfile.mkstemp()
+        with os.fdopen(temp_fd, mode=mode) as fp:
             fp.write(test_data)
         self.addCleanup(os.unlink, temp_filename)
         return netrc.netrc(temp_filename)
@@ -23,6 +24,9 @@ class NetrcTestCase(unittest.TestCase):
         self.assertEqual(nrc.hosts['host1.domain.com'],
                          ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', None, 'pass2'))
+
+        nrc2 = self.make_nrc(nrc.__repr__())
+        self.assertEqual(nrc.hosts, nrc2.hosts)
 
     def test_macros(self):
         nrc = self.make_nrc("""\
@@ -123,8 +127,44 @@ class NetrcTestCase(unittest.TestCase):
             os.chmod(fn, 0o622)
             self.assertRaises(netrc.NetrcParseError, netrc.netrc)
 
-def test_main():
-    support.run_unittest(NetrcTestCase)
+    def test_file_not_found_in_home(self):
+        d = support.TESTFN
+        os.mkdir(d)
+        self.addCleanup(support.rmtree, d)
+        with support.EnvironmentVarGuard() as environ:
+            environ.set('HOME', d)
+            self.assertRaises(FileNotFoundError, netrc.netrc)
+
+    def test_file_not_found_explicit(self):
+        self.assertRaises(FileNotFoundError, netrc.netrc,
+                          file='unlikely_netrc')
+
+    def test_home_not_set(self):
+        fake_home = support.TESTFN
+        os.mkdir(fake_home)
+        self.addCleanup(support.rmtree, fake_home)
+        fake_netrc_path = os.path.join(fake_home, '.netrc')
+        with open(fake_netrc_path, 'w') as f:
+            f.write('machine foo.domain.com login bar password pass')
+        os.chmod(fake_netrc_path, 0o600)
+
+        orig_expanduser = os.path.expanduser
+        called = []
+
+        def fake_expanduser(s):
+            called.append(s)
+            with support.EnvironmentVarGuard() as environ:
+                environ.set('HOME', fake_home)
+                result = orig_expanduser(s)
+                return result
+
+        with support.swap_attr(os.path, 'expanduser', fake_expanduser):
+            nrc = netrc.netrc()
+            login, account, password = nrc.authenticators('foo.domain.com')
+            self.assertEqual(login, 'bar')
+
+        self.assertTrue(called)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

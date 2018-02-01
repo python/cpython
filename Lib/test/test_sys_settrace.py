@@ -5,6 +5,19 @@ import unittest
 import sys
 import difflib
 import gc
+from functools import wraps
+
+class tracecontext:
+    """Context manager that traces its enter and exit."""
+    def __init__(self, output, value):
+        self.output = output
+        self.value = value
+
+    def __enter__(self):
+        self.output.append(self.value)
+
+    def __exit__(self, *exc_info):
+        self.output.append(-self.value)
 
 # A very basic example.  If this fails, we're in deep trouble.
 def basic():
@@ -16,7 +29,7 @@ basic.events = [(0, 'call'),
 
 # Many of the tests below are tricky because they involve pass statements.
 # If there is implicit control flow around a pass statement (in an except
-# clause or else caluse) under what conditions do you set a line number
+# clause or else clause) under what conditions do you set a line number
 # following that clause?
 
 
@@ -541,14 +554,12 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
 # command (aka. "Set next statement").
 
 class JumpTracer:
-    """Defines a trace function that jumps from one place to another,
-    with the source and destination lines of the jump being defined by
-    the 'jump' property of the function under test."""
+    """Defines a trace function that jumps from one place to another."""
 
-    def __init__(self, function):
+    def __init__(self, function, jumpFrom, jumpTo):
         self.function = function
-        self.jumpFrom = function.jump[0]
-        self.jumpTo = function.jump[1]
+        self.jumpFrom = jumpFrom
+        self.jumpTo = jumpTo
         self.done = False
 
     def trace(self, frame, event, arg):
@@ -564,211 +575,12 @@ class JumpTracer:
                 self.done = True
         return self.trace
 
-# The first set of 'jump' tests are for things that are allowed:
-
-def jump_simple_forwards(output):
-    output.append(1)
-    output.append(2)
-    output.append(3)
-
-jump_simple_forwards.jump = (1, 3)
-jump_simple_forwards.output = [3]
-
-def jump_simple_backwards(output):
-    output.append(1)
-    output.append(2)
-
-jump_simple_backwards.jump = (2, 1)
-jump_simple_backwards.output = [1, 1, 2]
-
-def jump_out_of_block_forwards(output):
-    for i in 1, 2:
-        output.append(2)
-        for j in [3]:  # Also tests jumping over a block
-            output.append(4)
-    output.append(5)
-
-jump_out_of_block_forwards.jump = (3, 5)
-jump_out_of_block_forwards.output = [2, 5]
-
-def jump_out_of_block_backwards(output):
-    output.append(1)
-    for i in [1]:
-        output.append(3)
-        for j in [2]:  # Also tests jumping over a block
-            output.append(5)
-        output.append(6)
-    output.append(7)
-
-jump_out_of_block_backwards.jump = (6, 1)
-jump_out_of_block_backwards.output = [1, 3, 5, 1, 3, 5, 6, 7]
-
-def jump_to_codeless_line(output):
-    output.append(1)
-    # Jumping to this line should skip to the next one.
-    output.append(3)
-
-jump_to_codeless_line.jump = (1, 2)
-jump_to_codeless_line.output = [3]
-
-def jump_to_same_line(output):
-    output.append(1)
-    output.append(2)
-    output.append(3)
-
-jump_to_same_line.jump = (2, 2)
-jump_to_same_line.output = [1, 2, 3]
-
-# Tests jumping within a finally block, and over one.
-def jump_in_nested_finally(output):
-    try:
-        output.append(2)
-    finally:
-        output.append(4)
-        try:
-            output.append(6)
-        finally:
-            output.append(8)
-        output.append(9)
-
-jump_in_nested_finally.jump = (4, 9)
-jump_in_nested_finally.output = [2, 9]
-
-def jump_infinite_while_loop(output):
-    output.append(1)
-    while 1:
-        output.append(2)
-    output.append(3)
-
-jump_infinite_while_loop.jump = (3, 4)
-jump_infinite_while_loop.output = [1, 3]
-
-# The second set of 'jump' tests are for things that are not allowed:
-
-def no_jump_too_far_forwards(output):
-    try:
-        output.append(2)
-        output.append(3)
-    except ValueError as e:
-        output.append('after' in str(e))
-
-no_jump_too_far_forwards.jump = (3, 6)
-no_jump_too_far_forwards.output = [2, True]
-
-def no_jump_too_far_backwards(output):
-    try:
-        output.append(2)
-        output.append(3)
-    except ValueError as e:
-        output.append('before' in str(e))
-
-no_jump_too_far_backwards.jump = (3, -1)
-no_jump_too_far_backwards.output = [2, True]
-
-# Test each kind of 'except' line.
-def no_jump_to_except_1(output):
-    try:
-        output.append(2)
-    except:
-        e = sys.exc_info()[1]
-        output.append('except' in str(e))
-
-no_jump_to_except_1.jump = (2, 3)
-no_jump_to_except_1.output = [True]
-
-def no_jump_to_except_2(output):
-    try:
-        output.append(2)
-    except ValueError:
-        e = sys.exc_info()[1]
-        output.append('except' in str(e))
-
-no_jump_to_except_2.jump = (2, 3)
-no_jump_to_except_2.output = [True]
-
-def no_jump_to_except_3(output):
-    try:
-        output.append(2)
-    except ValueError as e:
-        output.append('except' in str(e))
-
-no_jump_to_except_3.jump = (2, 3)
-no_jump_to_except_3.output = [True]
-
-def no_jump_to_except_4(output):
-    try:
-        output.append(2)
-    except (ValueError, RuntimeError) as e:
-        output.append('except' in str(e))
-
-no_jump_to_except_4.jump = (2, 3)
-no_jump_to_except_4.output = [True]
-
-def no_jump_forwards_into_block(output):
-    try:
-        output.append(2)
-        for i in 1, 2:
-            output.append(4)
-    except ValueError as e:
-        output.append('into' in str(e))
-
-no_jump_forwards_into_block.jump = (2, 4)
-no_jump_forwards_into_block.output = [True]
-
-def no_jump_backwards_into_block(output):
-    try:
-        for i in 1, 2:
-            output.append(3)
-        output.append(4)
-    except ValueError as e:
-        output.append('into' in str(e))
-
-no_jump_backwards_into_block.jump = (4, 3)
-no_jump_backwards_into_block.output = [3, 3, True]
-
-def no_jump_into_finally_block(output):
-    try:
-        try:
-            output.append(3)
-            x = 1
-        finally:
-            output.append(6)
-    except ValueError as e:
-        output.append('finally' in str(e))
-
-no_jump_into_finally_block.jump = (4, 6)
-no_jump_into_finally_block.output = [3, 6, True]  # The 'finally' still runs
-
-def no_jump_out_of_finally_block(output):
-    try:
-        try:
-            output.append(3)
-        finally:
-            output.append(5)
-            output.append(6)
-    except ValueError as e:
-        output.append('finally' in str(e))
-
-no_jump_out_of_finally_block.jump = (5, 1)
-no_jump_out_of_finally_block.output = [3, True]
-
 # This verifies the line-numbers-must-be-integers rule.
 def no_jump_to_non_integers(output):
     try:
         output.append(2)
     except ValueError as e:
         output.append('integer' in str(e))
-
-no_jump_to_non_integers.jump = (2, "Spam")
-no_jump_to_non_integers.output = [True]
-
-def jump_across_with(output):
-    with open(support.TESTFN, "wb") as fp:
-        pass
-    with open(support.TESTFN, "wb") as fp:
-        pass
-jump_across_with.jump = (1, 3)
-jump_across_with.output = []
 
 # This verifies that you can't set f_lineno via _getframe or similar
 # trickery.
@@ -783,7 +595,7 @@ def no_jump_without_trace_function():
             raise
     else:
         # Something's wrong - the expected exception wasn't raised.
-        raise RuntimeError("Trace-function-less jump failed to fail")
+        raise AssertionError("Trace-function-less jump failed to fail")
 
 
 class JumpTestCase(unittest.TestCase):
@@ -797,61 +609,441 @@ class JumpTestCase(unittest.TestCase):
                        "Expected: " + repr(expected) + "\n" +
                        "Received: " + repr(received))
 
-    def run_test(self, func):
-        tracer = JumpTracer(func)
+    def run_test(self, func, jumpFrom, jumpTo, expected, error=None):
+        tracer = JumpTracer(func, jumpFrom, jumpTo)
         sys.settrace(tracer.trace)
         output = []
-        func(output)
+        if error is None:
+            func(output)
+        else:
+            with self.assertRaisesRegex(*error):
+                func(output)
         sys.settrace(None)
-        self.compare_jump_output(func.output, output)
+        self.compare_jump_output(expected, output)
 
-    def test_01_jump_simple_forwards(self):
-        self.run_test(jump_simple_forwards)
-    def test_02_jump_simple_backwards(self):
-        self.run_test(jump_simple_backwards)
-    def test_03_jump_out_of_block_forwards(self):
-        self.run_test(jump_out_of_block_forwards)
-    def test_04_jump_out_of_block_backwards(self):
-        self.run_test(jump_out_of_block_backwards)
-    def test_05_jump_to_codeless_line(self):
-        self.run_test(jump_to_codeless_line)
-    def test_06_jump_to_same_line(self):
-        self.run_test(jump_to_same_line)
-    def test_07_jump_in_nested_finally(self):
-        self.run_test(jump_in_nested_finally)
-    def test_jump_infinite_while_loop(self):
-        self.run_test(jump_infinite_while_loop)
-    def test_08_no_jump_too_far_forwards(self):
-        self.run_test(no_jump_too_far_forwards)
-    def test_09_no_jump_too_far_backwards(self):
-        self.run_test(no_jump_too_far_backwards)
-    def test_10_no_jump_to_except_1(self):
-        self.run_test(no_jump_to_except_1)
-    def test_11_no_jump_to_except_2(self):
-        self.run_test(no_jump_to_except_2)
-    def test_12_no_jump_to_except_3(self):
-        self.run_test(no_jump_to_except_3)
-    def test_13_no_jump_to_except_4(self):
-        self.run_test(no_jump_to_except_4)
-    def test_14_no_jump_forwards_into_block(self):
-        self.run_test(no_jump_forwards_into_block)
-    def test_15_no_jump_backwards_into_block(self):
-        self.run_test(no_jump_backwards_into_block)
-    def test_16_no_jump_into_finally_block(self):
-        self.run_test(no_jump_into_finally_block)
-    def test_17_no_jump_out_of_finally_block(self):
-        self.run_test(no_jump_out_of_finally_block)
-    def test_18_no_jump_to_non_integers(self):
-        self.run_test(no_jump_to_non_integers)
-    def test_19_no_jump_without_trace_function(self):
+    def jump_test(jumpFrom, jumpTo, expected, error=None):
+        """Decorator that creates a test that makes a jump
+        from one place to another in the following code.
+        """
+        def decorator(func):
+            @wraps(func)
+            def test(self):
+                # +1 to compensate a decorator line
+                self.run_test(func, jumpFrom+1, jumpTo+1, expected, error)
+            return test
+        return decorator
+
+    ## The first set of 'jump' tests are for things that are allowed:
+
+    @jump_test(1, 3, [3])
+    def test_jump_simple_forwards(output):
+        output.append(1)
+        output.append(2)
+        output.append(3)
+
+    @jump_test(2, 1, [1, 1, 2])
+    def test_jump_simple_backwards(output):
+        output.append(1)
+        output.append(2)
+
+    @jump_test(3, 5, [2, 5])
+    def test_jump_out_of_block_forwards(output):
+        for i in 1, 2:
+            output.append(2)
+            for j in [3]:  # Also tests jumping over a block
+                output.append(4)
+        output.append(5)
+
+    @jump_test(6, 1, [1, 3, 5, 1, 3, 5, 6, 7])
+    def test_jump_out_of_block_backwards(output):
+        output.append(1)
+        for i in [1]:
+            output.append(3)
+            for j in [2]:  # Also tests jumping over a block
+                output.append(5)
+            output.append(6)
+        output.append(7)
+
+    @jump_test(1, 2, [3])
+    def test_jump_to_codeless_line(output):
+        output.append(1)
+        # Jumping to this line should skip to the next one.
+        output.append(3)
+
+    @jump_test(2, 2, [1, 2, 3])
+    def test_jump_to_same_line(output):
+        output.append(1)
+        output.append(2)
+        output.append(3)
+
+    # Tests jumping within a finally block, and over one.
+    @jump_test(4, 9, [2, 9])
+    def test_jump_in_nested_finally(output):
+        try:
+            output.append(2)
+        finally:
+            output.append(4)
+            try:
+                output.append(6)
+            finally:
+                output.append(8)
+            output.append(9)
+
+    @jump_test(6, 7, [2, 7], (ZeroDivisionError, ''))
+    def test_jump_in_nested_finally_2(output):
+        try:
+            output.append(2)
+            1/0
+            return
+        finally:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
+    @jump_test(6, 11, [2, 11], (ZeroDivisionError, ''))
+    def test_jump_in_nested_finally_3(output):
+        try:
+            output.append(2)
+            1/0
+            return
+        finally:
+            output.append(6)
+            try:
+                output.append(8)
+            finally:
+                output.append(10)
+            output.append(11)
+        output.append(12)
+
+    @jump_test(3, 4, [1, 4])
+    def test_jump_infinite_while_loop(output):
+        output.append(1)
+        while True:
+            output.append(3)
+        output.append(4)
+
+    @jump_test(2, 3, [1, 3])
+    def test_jump_forwards_out_of_with_block(output):
+        with tracecontext(output, 1):
+            output.append(2)
+        output.append(3)
+
+    @jump_test(3, 1, [1, 2, 1, 2, 3, -2])
+    def test_jump_backwards_out_of_with_block(output):
+        output.append(1)
+        with tracecontext(output, 2):
+            output.append(3)
+
+    @jump_test(2, 5, [5])
+    def test_jump_forwards_out_of_try_finally_block(output):
+        try:
+            output.append(2)
+        finally:
+            output.append(4)
+        output.append(5)
+
+    @jump_test(3, 1, [1, 1, 3, 5])
+    def test_jump_backwards_out_of_try_finally_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        finally:
+            output.append(5)
+
+    @jump_test(2, 6, [6])
+    def test_jump_forwards_out_of_try_except_block(output):
+        try:
+            output.append(2)
+        except:
+            output.append(4)
+            raise
+        output.append(6)
+
+    @jump_test(3, 1, [1, 1, 3])
+    def test_jump_backwards_out_of_try_except_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        except:
+            output.append(5)
+            raise
+
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_between_except_blocks(output):
+        try:
+            1/0
+        except ZeroDivisionError:
+            output.append(4)
+            output.append(5)
+        except FloatingPointError:
+            output.append(7)
+        output.append(8)
+
+    @jump_test(5, 6, [4, 6, 7])
+    def test_jump_within_except_block(output):
+        try:
+            1/0
+        except:
+            output.append(4)
+            output.append(5)
+            output.append(6)
+        output.append(7)
+
+    @jump_test(2, 4, [1, 4, 5, -4])
+    def test_jump_across_with(output):
+        output.append(1)
+        with tracecontext(output, 2):
+            output.append(3)
+        with tracecontext(output, 4):
+            output.append(5)
+
+    @jump_test(8, 11, [1, 3, 5, 11, 12])
+    def test_jump_out_of_complex_nested_blocks(output):
+        output.append(1)
+        for i in [1]:
+            output.append(3)
+            for j in [1, 2]:
+                output.append(5)
+                try:
+                    for k in [1, 2]:
+                        output.append(8)
+                finally:
+                    output.append(10)
+            output.append(11)
+        output.append(12)
+
+    @jump_test(3, 5, [1, 2, 5])
+    def test_jump_out_of_with_assignment(output):
+        output.append(1)
+        with tracecontext(output, 2) \
+                as x:
+            output.append(4)
+        output.append(5)
+
+    @jump_test(3, 6, [1, 6, 8, 9])
+    def test_jump_over_return_in_try_finally_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+            if not output: # always false
+                return
+            output.append(6)
+        finally:
+            output.append(8)
+        output.append(9)
+
+    @jump_test(5, 8, [1, 3, 8, 10, 11, 13])
+    def test_jump_over_break_in_try_finally_block(output):
+        output.append(1)
+        while True:
+            output.append(3)
+            try:
+                output.append(5)
+                if not output: # always false
+                    break
+                output.append(8)
+            finally:
+                output.append(10)
+            output.append(11)
+            break
+        output.append(13)
+
+    @jump_test(1, 7, [7, 8])
+    def test_jump_over_for_block_before_else(output):
+        output.append(1)
+        if not output:  # always false
+            for i in [3]:
+                output.append(4)
+        else:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
+    # The second set of 'jump' tests are for things that are not allowed:
+
+    @jump_test(2, 3, [1], (ValueError, 'after'))
+    def test_no_jump_too_far_forwards(output):
+        output.append(1)
+        output.append(2)
+
+    @jump_test(2, -2, [1], (ValueError, 'before'))
+    def test_no_jump_too_far_backwards(output):
+        output.append(1)
+        output.append(2)
+
+    # Test each kind of 'except' line.
+    @jump_test(2, 3, [4], (ValueError, 'except'))
+    def test_no_jump_to_except_1(output):
+        try:
+            output.append(2)
+        except:
+            output.append(4)
+            raise
+
+    @jump_test(2, 3, [4], (ValueError, 'except'))
+    def test_no_jump_to_except_2(output):
+        try:
+            output.append(2)
+        except ValueError:
+            output.append(4)
+            raise
+
+    @jump_test(2, 3, [4], (ValueError, 'except'))
+    def test_no_jump_to_except_3(output):
+        try:
+            output.append(2)
+        except ValueError as e:
+            output.append(4)
+            raise e
+
+    @jump_test(2, 3, [4], (ValueError, 'except'))
+    def test_no_jump_to_except_4(output):
+        try:
+            output.append(2)
+        except (ValueError, RuntimeError) as e:
+            output.append(4)
+            raise e
+
+    @jump_test(1, 3, [], (ValueError, 'into'))
+    def test_no_jump_forwards_into_for_block(output):
+        output.append(1)
+        for i in 1, 2:
+            output.append(3)
+
+    @jump_test(3, 2, [2, 2], (ValueError, 'into'))
+    def test_no_jump_backwards_into_for_block(output):
+        for i in 1, 2:
+            output.append(2)
+        output.append(3)
+
+    @jump_test(2, 4, [], (ValueError, 'into'))
+    def test_no_jump_forwards_into_while_block(output):
+        i = 1
+        output.append(2)
+        while i <= 2:
+            output.append(4)
+            i += 1
+
+    @jump_test(5, 3, [3, 3], (ValueError, 'into'))
+    def test_no_jump_backwards_into_while_block(output):
+        i = 1
+        while i <= 2:
+            output.append(3)
+            i += 1
+        output.append(5)
+
+    @jump_test(1, 3, [], (ValueError, 'into'))
+    def test_no_jump_forwards_into_with_block(output):
+        output.append(1)
+        with tracecontext(output, 2):
+            output.append(3)
+
+    @jump_test(3, 2, [1, 2, -1], (ValueError, 'into'))
+    def test_no_jump_backwards_into_with_block(output):
+        with tracecontext(output, 1):
+            output.append(2)
+        output.append(3)
+
+    @jump_test(1, 3, [], (ValueError, 'into'))
+    def test_no_jump_forwards_into_try_finally_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        finally:
+            output.append(5)
+
+    @jump_test(5, 2, [2, 4], (ValueError, 'into'))
+    def test_no_jump_backwards_into_try_finally_block(output):
+        try:
+            output.append(2)
+        finally:
+            output.append(4)
+        output.append(5)
+
+    @jump_test(1, 3, [], (ValueError, 'into'))
+    def test_no_jump_forwards_into_try_except_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        except:
+            output.append(5)
+            raise
+
+    @jump_test(6, 2, [2], (ValueError, 'into'))
+    def test_no_jump_backwards_into_try_except_block(output):
+        try:
+            output.append(2)
+        except:
+            output.append(4)
+            raise
+        output.append(6)
+
+    # 'except' with a variable creates an implicit finally block
+    @jump_test(5, 7, [4], (ValueError, 'into'))
+    def test_no_jump_between_except_blocks_2(output):
+        try:
+            1/0
+        except ZeroDivisionError:
+            output.append(4)
+            output.append(5)
+        except FloatingPointError as e:
+            output.append(7)
+        output.append(8)
+
+    @jump_test(3, 6, [2, 5, 6], (ValueError, 'finally'))
+    def test_no_jump_into_finally_block(output):
+        try:
+            output.append(2)
+            output.append(3)
+        finally:  # still executed if the jump is failed
+            output.append(5)
+            output.append(6)
+        output.append(7)
+
+    @jump_test(1, 5, [], (ValueError, 'finally'))
+    def test_no_jump_into_finally_block_2(output):
+        output.append(1)
+        try:
+            output.append(3)
+        finally:
+            output.append(5)
+
+    @jump_test(5, 1, [1, 3], (ValueError, 'finally'))
+    def test_no_jump_out_of_finally_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        finally:
+            output.append(5)
+
+    @jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
+    def test_no_jump_between_with_blocks(output):
+        output.append(1)
+        with tracecontext(output, 2):
+            output.append(3)
+        with tracecontext(output, 4):
+            output.append(5)
+
+    @jump_test(7, 4, [1, 6], (ValueError, 'into'))
+    def test_no_jump_into_for_block_before_else(output):
+        output.append(1)
+        if not output:  # always false
+            for i in [3]:
+                output.append(4)
+        else:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
+    def test_no_jump_to_non_integers(self):
+        self.run_test(no_jump_to_non_integers, 2, "Spam", [True])
+
+    def test_no_jump_without_trace_function(self):
         # Must set sys.settrace(None) in setUp(), else condition is not
         # triggered.
         no_jump_without_trace_function()
-    def test_jump_across_with(self):
-        self.addCleanup(support.unlink, support.TESTFN)
-        self.run_test(jump_across_with)
 
-    def test_20_large_function(self):
+    def test_large_function(self):
         d = {}
         exec("""def f(output):        # line 0
             x = 0                     # line 1
@@ -863,10 +1055,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(x)          # line 1007
             return""" % ('\n' * 1000,), d)
         f = d['f']
-
-        f.jump = (2, 1007)
-        f.output = [0]
-        self.run_test(f)
+        self.run_test(f, 2, 1007, [0])
 
     def test_jump_to_firstlineno(self):
         # This tests that PDB can jump back to the first line in a
@@ -880,8 +1069,7 @@ output.append(4)
 """, "<fake module>", "exec")
         class fake_function:
             __code__ = code
-            jump = (2, 0)
-        tracer = JumpTracer(fake_function)
+        tracer = JumpTracer(fake_function, 2, 0)
         sys.settrace(tracer.trace)
         namespace = {"output": []}
         exec(code, namespace)
@@ -889,14 +1077,5 @@ output.append(4)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
 
 
-def test_main():
-    support.run_unittest(
-        TraceTestCase,
-        SkipLineEventsTraceTestCase,
-        TraceOpcodesTestCase,
-        RaisingTraceFuncTestCase,
-        JumpTestCase
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

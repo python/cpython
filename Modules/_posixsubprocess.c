@@ -220,7 +220,7 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
     Py_ssize_t keep_seq_idx;
     int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
-     * fds inbetween any in the keep list falling within our range. */
+     * fds in between any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
         PyObject* py_keep_fd = PyTuple_GET_ITEM(py_fds_to_keep, keep_seq_idx);
         int keep_fd = PyLong_AsLong(py_keep_fd);
@@ -775,11 +775,11 @@ static PyMethodDef module_methods[] = {
 
 
 static struct PyModuleDef _posixsubprocessmodule = {
-	PyModuleDef_HEAD_INIT,
-	"_posixsubprocess",
-	module_doc,
-	-1,  /* No memory is needed. */
-	module_methods,
+        PyModuleDef_HEAD_INIT,
+        "_posixsubprocess",
+        module_doc,
+        -1,  /* No memory is needed. */
+        module_methods,
 };
 
 PyMODINIT_FUNC

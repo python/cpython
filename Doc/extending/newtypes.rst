@@ -659,7 +659,7 @@ Fortunately, Python's cyclic-garbage collector will eventually figure out that
 the list is garbage and free it.
 
 In the second version of the :class:`Noddy` example, we allowed any kind of
-object to be stored in the :attr:`first` or :attr:`last` attributes. [#]_ This
+object to be stored in the :attr:`first` or :attr:`last` attributes [#]_. This
 means that :class:`Noddy` objects can participate in cycles::
 
    >>> import noddy2

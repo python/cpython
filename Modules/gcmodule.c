@@ -24,6 +24,7 @@
 */
 
 #include "Python.h"
+#include "internal/context.h"
 #include "internal/mem.h"
 #include "internal/pystate.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
@@ -71,6 +72,10 @@ _PyGC_Initialize(struct _gc_runtime_state *state)
         state->generations[i] = generations[i];
     };
     state->generation0 = GEN_HEAD(0);
+    struct gc_generation permanent_generation = {
+          {{&state->permanent_generation.head, &state->permanent_generation.head, 0}}, 0, 0
+    };
+    state->permanent_generation = permanent_generation;
 }
 
 /*--------------------------------------------------------------------------
@@ -786,6 +791,7 @@ clear_freelists(void)
     (void)PyDict_ClearFreeList();
     (void)PySet_ClearFreeList();
     (void)PyAsyncGen_ClearFreeLists();
+    (void)PyContext_ClearFreeList();
 }
 
 /* This is the main function.  Read this to understand how the
@@ -813,6 +819,8 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
         for (i = 0; i < NUM_GENERATIONS; i++)
             PySys_FormatStderr(" %zd",
                               gc_list_size(GEN_HEAD(i)));
+        PySys_WriteStderr("\ngc: objects in permanent generation: %zd",
+                         gc_list_size(&_PyRuntime.gc.permanent_generation.head));
         t1 = _PyTime_GetMonotonicClock();
 
         PySys_WriteStderr("\n");
@@ -1059,6 +1067,10 @@ static PyObject *
 gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
+    if(_PyRuntime.gc.disabled_threads){
+        PyErr_WarnEx(PyExc_RuntimeWarning, "Garbage collector enabled while another "
+            "thread is inside gc.ensure_enabled",1);
+    }
     _PyRuntime.gc.enabled = 1;
     Py_RETURN_NONE;
 }
@@ -1405,6 +1417,56 @@ gc_is_tracked(PyObject *module, PyObject *obj)
     return result;
 }
 
+/*[clinic input]
+gc.freeze
+
+Freeze all current tracked objects and ignore them for future collections.
+
+This can be used before a POSIX fork() call to make the gc copy-on-write friendly.
+Note: collection before a POSIX fork() call may free pages for future allocation
+which can cause copy-on-write.
+[clinic start generated code]*/
+
+static PyObject *
+gc_freeze_impl(PyObject *module)
+/*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
+{
+    for (int i = 0; i < NUM_GENERATIONS; ++i) {
+        gc_list_merge(GEN_HEAD(i), &_PyRuntime.gc.permanent_generation.head);
+        _PyRuntime.gc.generations[i].count = 0;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+gc.unfreeze
+
+Unfreeze all objects in the permanent generation.
+
+Put all objects in the permanent generation back into oldest generation.
+[clinic start generated code]*/
+
+static PyObject *
+gc_unfreeze_impl(PyObject *module)
+/*[clinic end generated code: output=1c15f2043b25e169 input=2dd52b170f4cef6c]*/
+{
+    gc_list_merge(&_PyRuntime.gc.permanent_generation.head, GEN_HEAD(NUM_GENERATIONS-1));
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+gc.get_freeze_count -> Py_ssize_t
+
+Return the number of objects in the permanent generation.
+[clinic start generated code]*/
+
+static Py_ssize_t
+gc_get_freeze_count_impl(PyObject *module)
+/*[clinic end generated code: output=61cbd9f43aa032e1 input=45ffbc65cfe2a6ed]*/
+{
+    return gc_list_size(&_PyRuntime.gc.permanent_generation.head);
+}
+
 
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
@@ -1422,7 +1484,10 @@ PyDoc_STRVAR(gc__doc__,
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
-"get_referents() -- Return the list of objects that an object refers to.\n");
+"get_referents() -- Return the list of objects that an object refers to.\n"
+"freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
+"unfreeze() -- Unfreeze all objects in the permanent generation.\n"
+"get_freeze_count() -- Return the number of objects in the permanent generation.\n");
 
 static PyMethodDef GcMethods[] = {
     GC_ENABLE_METHODDEF
@@ -1441,8 +1506,107 @@ static PyMethodDef GcMethods[] = {
         gc_get_referrers__doc__},
     {"get_referents",  gc_get_referents, METH_VARARGS,
         gc_get_referents__doc__},
+    GC_FREEZE_METHODDEF
+    GC_UNFREEZE_METHODDEF
+    GC_GET_FREEZE_COUNT_METHODDEF
     {NULL,      NULL}           /* Sentinel */
 };
+
+typedef struct {
+    PyObject_HEAD
+    int previous_gc_state;
+} ensure_disabled_object;
+
+
+static void
+ensure_disabled_object_dealloc(ensure_disabled_object *m_obj)
+{
+    Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
+}
+
+static PyObject *
+ensure_disabled__enter__method(ensure_disabled_object *self, PyObject *args)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    ++_PyRuntime.gc.disabled_threads;
+    self->previous_gc_state = _PyRuntime.gc.enabled;
+    gc_disable_impl(NULL);
+    PyGILState_Release(gstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+ensure_disabled__exit__method(ensure_disabled_object *self, PyObject *args)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    --_PyRuntime.gc.disabled_threads;
+    if(self->previous_gc_state){
+        gc_enable_impl(NULL);
+    }else{
+        gc_disable_impl(NULL);
+    }
+    PyGILState_Release(gstate);
+    Py_RETURN_NONE;
+}
+
+
+
+static struct PyMethodDef ensure_disabled_object_methods[] = {
+    {"__enter__",       (PyCFunction) ensure_disabled__enter__method,      METH_NOARGS},
+    {"__exit__",        (PyCFunction) ensure_disabled__exit__method,       METH_VARARGS},
+    {NULL,         NULL}       /* sentinel */
+};
+
+static PyObject *
+new_disabled_obj(PyTypeObject *type, PyObject *args, PyObject *kwdict){
+    ensure_disabled_object *self;
+    self = (ensure_disabled_object *)type->tp_alloc(type, 0);
+    return (PyObject *) self;
+};
+
+static PyTypeObject gc_ensure_disabled_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "gc.ensure_disabled",                       /* tp_name */
+    sizeof(ensure_disabled_object),             /* tp_size */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor) ensure_disabled_object_dealloc,/* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /*tp_as_sequence*/
+    0,                                          /*tp_as_mapping*/
+    0,                                          /*tp_hash*/
+    0,                                          /*tp_call*/
+    0,                                          /*tp_str*/
+    PyObject_GenericGetAttr,                    /*tp_getattro*/
+    0,                                          /*tp_setattro*/
+    0,                                          /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /*tp_flags*/
+    0,                                          /*tp_doc*/
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    ensure_disabled_object_methods,             /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    PyType_GenericAlloc,                        /* tp_alloc */
+    new_disabled_obj,                           /* tp_new */
+    PyObject_Del,                               /* tp_free */
+};
+
 
 static struct PyModuleDef gcmodule = {
     PyModuleDef_HEAD_INIT,
@@ -1483,6 +1647,12 @@ PyInit_gc(void)
     Py_INCREF(_PyRuntime.gc.callbacks);
     if (PyModule_AddObject(m, "callbacks", _PyRuntime.gc.callbacks) < 0)
         return NULL;
+
+    if (PyType_Ready(&gc_ensure_disabled_type) < 0)
+        return NULL;
+    if (PyModule_AddObject(m, "ensure_disabled", (PyObject*) &gc_ensure_disabled_type) < 0)
+        return NULL;
+
 
 #define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return NULL
     ADD_INT(DEBUG_STATS);
@@ -1546,7 +1716,7 @@ _PyGC_DumpShutdownStats(void)
 {
     if (!(_PyRuntime.gc.debug & DEBUG_SAVEALL)
         && _PyRuntime.gc.garbage != NULL && PyList_GET_SIZE(_PyRuntime.gc.garbage) > 0) {
-        char *message;
+        const char *message;
         if (_PyRuntime.gc.debug & DEBUG_UNCOLLECTABLE)
             message = "gc: %zd uncollectable objects at " \
                 "shutdown";

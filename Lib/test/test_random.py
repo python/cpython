@@ -24,7 +24,7 @@ class TestBasicOps:
         self.gen.seed()
         state1 = self.gen.getstate()
         time.sleep(0.1)
-        self.gen.seed()      # diffent seeds at different times
+        self.gen.seed()      # different seeds at different times
         state2 = self.gen.getstate()
         self.assertNotEqual(state1, state2)
 
@@ -429,6 +429,17 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual([self.gen.random().hex() for i in range(4)],
             ['0x1.b0580f98a7dbep-1', '0x1.84129978f9c1ap-1',
              '0x1.aeaa51052e978p-2', '0x1.092178fb945a6p-2'])
+
+    def test_bug_31478(self):
+        # There shouldn't be an assertion failure in _random.Random.seed() in
+        # case the argument has a bad __abs__() method.
+        class BadInt(int):
+            def __abs__(self):
+                return None
+        try:
+            self.gen.seed(BadInt())
+        except TypeError:
+            pass
 
     def test_bug_31482(self):
         # Verify that version 1 seeds are unaffected by hash randomization

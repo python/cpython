@@ -116,10 +116,10 @@ bytes(cdata)
 #endif
 #include "ctypes.h"
 
-PyObject *PyExc_ArgError;
+PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */
-PyObject *_ctypes_ptrtype_cache;
+PyObject *_ctypes_ptrtype_cache = NULL;
 
 static PyTypeObject Simple_Type;
 
@@ -2674,6 +2674,16 @@ PyCData_setstate(PyObject *myself, PyObject *args)
         len = self->b_size;
     memmove(self->b_ptr, data, len);
     mydict = PyObject_GetAttrString(myself, "__dict__");
+    if (mydict == NULL) {
+        return NULL;
+    }
+    if (!PyDict_Check(mydict)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s.__dict__ must be a dictionary, not %.200s",
+                     Py_TYPE(myself)->tp_name, Py_TYPE(mydict)->tp_name);
+        Py_DECREF(mydict);
+        return NULL;
+    }
     res = PyDict_Update(mydict, dict);
     Py_DECREF(mydict);
     if (res == -1)
@@ -3735,7 +3745,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
-               the array instance itself. Then, we cannot retrive
+               the array instance itself. Then, we cannot retrieve
                the result from the PyCArgObject.
             */
             if (ob == NULL)

@@ -44,15 +44,10 @@ static Py_ssize_t count_tracked = 0;
 static void
 show_track(void)
 {
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showalloccount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (!inter->core_config.show_alloc_count) {
         return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
-    if (value != Py_True)
-        return;
+    }
 
     fprintf(stderr, "Tuples created: %" PY_FORMAT_SIZE_T "d\n",
         count_tracked + count_untracked);
@@ -308,10 +303,7 @@ tuplerepr(PyTupleObject *v)
                 goto error;
         }
 
-        if (Py_EnterRecursiveCall(" while getting the repr of a tuple"))
-            goto error;
         s = PyObject_Repr(v->ob_item[i]);
-        Py_LeaveRecursiveCall();
         if (s == NULL)
             goto error;
 
@@ -647,23 +639,7 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
 
     if (i >= vlen || i >= wlen) {
         /* No more items to compare -- compare sizes */
-        int cmp;
-        PyObject *res;
-        switch (op) {
-        case Py_LT: cmp = vlen <  wlen; break;
-        case Py_LE: cmp = vlen <= wlen; break;
-        case Py_EQ: cmp = vlen == wlen; break;
-        case Py_NE: cmp = vlen != wlen; break;
-        case Py_GT: cmp = vlen >  wlen; break;
-        case Py_GE: cmp = vlen >= wlen; break;
-        default: return NULL; /* cannot happen */
-        }
-        if (cmp)
-            res = Py_True;
-        else
-            res = Py_False;
-        Py_INCREF(res);
-        return res;
+        Py_RETURN_RICHCOMPARE(vlen, wlen, op);
     }
 
     /* We have an item that differs -- shortcuts for EQ/NE */

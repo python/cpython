@@ -431,6 +431,16 @@ class AST_Tests(unittest.TestCase):
             compile(empty_yield_from, "<test>", "exec")
         self.assertIn("field value is required", str(cm.exception))
 
+    @support.cpython_only
+    def test_issue31592(self):
+        # There shouldn't be an assertion failure in case of a bad
+        # unicodedata.normalize().
+        import unicodedata
+        def bad_normalize(*args):
+            return None
+        with support.swap_attr(unicodedata, 'normalize', bad_normalize):
+            self.assertRaises(TypeError, ast.parse, '\u03D5')
+
 
 class ASTHelpers_Test(unittest.TestCase):
 
@@ -541,14 +551,37 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('{1, 2, 3}'), {1, 2, 3})
         self.assertEqual(ast.literal_eval('b"hi"'), b"hi")
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
+        self.assertEqual(ast.literal_eval('6'), 6)
+        self.assertEqual(ast.literal_eval('+6'), 6)
         self.assertEqual(ast.literal_eval('-6'), -6)
-        self.assertEqual(ast.literal_eval('-6j+3'), 3-6j)
         self.assertEqual(ast.literal_eval('3.25'), 3.25)
+        self.assertEqual(ast.literal_eval('+3.25'), 3.25)
+        self.assertEqual(ast.literal_eval('-3.25'), -3.25)
+        self.assertEqual(repr(ast.literal_eval('-0.0')), '-0.0')
+        self.assertRaises(ValueError, ast.literal_eval, '++6')
+        self.assertRaises(ValueError, ast.literal_eval, '+True')
+        self.assertRaises(ValueError, ast.literal_eval, '2+3')
 
-    def test_literal_eval_issue4907(self):
-        self.assertEqual(ast.literal_eval('2j'), 2j)
-        self.assertEqual(ast.literal_eval('10 + 2j'), 10 + 2j)
-        self.assertEqual(ast.literal_eval('1.5 - 2j'), 1.5 - 2j)
+    def test_literal_eval_complex(self):
+        # Issue #4907
+        self.assertEqual(ast.literal_eval('6j'), 6j)
+        self.assertEqual(ast.literal_eval('-6j'), -6j)
+        self.assertEqual(ast.literal_eval('6.75j'), 6.75j)
+        self.assertEqual(ast.literal_eval('-6.75j'), -6.75j)
+        self.assertEqual(ast.literal_eval('3+6j'), 3+6j)
+        self.assertEqual(ast.literal_eval('-3+6j'), -3+6j)
+        self.assertEqual(ast.literal_eval('3-6j'), 3-6j)
+        self.assertEqual(ast.literal_eval('-3-6j'), -3-6j)
+        self.assertEqual(ast.literal_eval('3.25+6.75j'), 3.25+6.75j)
+        self.assertEqual(ast.literal_eval('-3.25+6.75j'), -3.25+6.75j)
+        self.assertEqual(ast.literal_eval('3.25-6.75j'), 3.25-6.75j)
+        self.assertEqual(ast.literal_eval('-3.25-6.75j'), -3.25-6.75j)
+        self.assertEqual(ast.literal_eval('(3+6j)'), 3+6j)
+        self.assertRaises(ValueError, ast.literal_eval, '-6j+3')
+        self.assertRaises(ValueError, ast.literal_eval, '-6j+3j')
+        self.assertRaises(ValueError, ast.literal_eval, '3+-6j')
+        self.assertRaises(ValueError, ast.literal_eval, '3+(0+6j)')
+        self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
 
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
@@ -1067,11 +1100,11 @@ class ConstantTests(unittest.TestCase):
         ast.copy_location(new_left, binop.left)
         binop.left = new_left
 
-        new_right = ast.Constant(value=20)
+        new_right = ast.Constant(value=20j)
         ast.copy_location(new_right, binop.right)
         binop.right = new_right
 
-        self.assertEqual(ast.literal_eval(binop), 30)
+        self.assertEqual(ast.literal_eval(binop), 10+20j)
 
 
 def main():

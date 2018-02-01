@@ -160,6 +160,17 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
 
+    def CheckOpenWithPathLikeObject(self):
+        """ Checks that we can succesfully connect to a database using an object that
+            is PathLike, i.e. has __fspath__(). """
+        self.addCleanup(unlink, TESTFN)
+        class Path:
+            def __fspath__(self):
+                return TESTFN
+        path = Path()
+        with sqlite.connect(path) as cx:
+            cx.execute('create table test(id integer)')
+
     def CheckOpenUri(self):
         if sqlite.sqlite_version_info < (3, 7, 7):
             with self.assertRaises(sqlite.NotSupportedError):
