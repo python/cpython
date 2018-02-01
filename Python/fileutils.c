@@ -449,7 +449,12 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
                    int current_locale, int surrogateescape)
 {
     if (current_locale) {
+#ifdef __ANDROID__
+        return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
+                                surrogateescape);
+#else
         return decode_current_locale(arg, wstr, wlen, reason, surrogateescape);
+#endif
     }
 
 #if defined(__APPLE__) || defined(__ANDROID__)
@@ -605,8 +610,13 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
                  int raw_malloc, int current_locale, int surrogateescape)
 {
     if (current_locale) {
+#ifdef __ANDROID__
+        return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
+                                raw_malloc, surrogateescape);
+#else
         return encode_current_locale(text, str, error_pos, reason,
                                      raw_malloc, surrogateescape);
+#endif
     }
 
 #if defined(__APPLE__) || defined(__ANDROID__)

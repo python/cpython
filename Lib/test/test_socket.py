@@ -20,6 +20,7 @@ import math
 import pickle
 import struct
 import random
+import shutil
 import string
 import _thread as thread
 import threading
@@ -97,6 +98,12 @@ def _have_socket_vsock():
     """Check whether AF_VSOCK sockets are supported on this host."""
     ret = get_cid() is not None
     return ret
+
+
+def _is_fd_in_blocking_mode(sock):
+    return not bool(
+        fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+
 
 HAVE_SOCKET_CAN = _have_socket_can()
 
@@ -1278,6 +1285,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testCloseException(self):
         sock = socket.socket()
+        sock.bind((socket._LOCALHOST, 0))
         socket.socket(fileno=sock.fileno()).close()
         try:
             sock.close()
@@ -1519,6 +1527,22 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertRaises(ValueError, fp.writable)
             self.assertRaises(ValueError, fp.seekable)
 
+    def test_socket_close(self):
+        sock = socket.socket()
+        try:
+            sock.bind((HOST, 0))
+            socket.close(sock.fileno())
+            with self.assertRaises(OSError):
+                sock.listen(1)
+        finally:
+            with self.assertRaises(OSError):
+                # sock.close() fails with EBADF
+                sock.close()
+        with self.assertRaises(TypeError):
+            socket.close(None)
+        with self.assertRaises(OSError):
+            socket.close(-1)
+
     def test_makefile_mode(self):
         for mode in 'r', 'rb', 'rw', 'w', 'wb':
             with self.subTest(mode=mode):
@@ -1594,7 +1618,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(s.type, socket.SOCK_STREAM)
 
     @unittest.skipIf(os.name == 'nt', 'Will not work on Windows')
-    def test_uknown_socket_family_repr(self):
+    def test_unknown_socket_family_repr(self):
         # Test that when created with a family that's not one of the known
         # AF_*/SOCK_* constants, socket.family just returns the number.
         #
@@ -1614,9 +1638,12 @@ class GeneralModuleTests(unittest.TestCase):
         ) + 1
 
         with socket.socket(
-                family=unknown_family, type=unknown_type, fileno=fd) as s:
+                family=unknown_family, type=unknown_type, proto=23,
+                fileno=fd) as s:
             self.assertEqual(s.family, unknown_family)
             self.assertEqual(s.type, unknown_type)
+            # some OS like macOS ignore proto
+            self.assertIn(s.proto, {0, 23})
 
     @unittest.skipUnless(hasattr(os, 'sendfile'), 'test needs os.sendfile()')
     def test__sendfile_use_sendfile(self):
@@ -1635,6 +1662,45 @@ class GeneralModuleTests(unittest.TestCase):
                 sock._sendfile_use_sendfile(File(2**1000))
             with self.assertRaises(TypeError):
                 sock._sendfile_use_sendfile(File(None))
+
+    def _test_socket_fileno(self, s, family, stype):
+        self.assertEqual(s.family, family)
+        self.assertEqual(s.type, stype)
+
+        fd = s.fileno()
+        s2 = socket.socket(fileno=fd)
+        self.addCleanup(s2.close)
+        # detach old fd to avoid double close
+        s.detach()
+        self.assertEqual(s2.family, family)
+        self.assertEqual(s2.type, stype)
+        self.assertEqual(s2.fileno(), fd)
+
+    def test_socket_fileno(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(s.close)
+        s.bind((support.HOST, 0))
+        self._test_socket_fileno(s, socket.AF_INET, socket.SOCK_STREAM)
+
+        if hasattr(socket, "SOCK_DGRAM"):
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.addCleanup(s.close)
+            s.bind((support.HOST, 0))
+            self._test_socket_fileno(s, socket.AF_INET, socket.SOCK_DGRAM)
+
+        if support.IPV6_ENABLED:
+            s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            self.addCleanup(s.close)
+            s.bind((support.HOSTv6, 0, 0, 0))
+            self._test_socket_fileno(s, socket.AF_INET6, socket.SOCK_STREAM)
+
+        if hasattr(socket, "AF_UNIX"):
+            tmpdir = tempfile.mkdtemp()
+            self.addCleanup(shutil.rmtree, tmpdir)
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.addCleanup(s.close)
+            s.bind(os.path.join(tmpdir, 'socket'))
+            self._test_socket_fileno(s, socket.AF_UNIX, socket.SOCK_STREAM)
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
@@ -2598,9 +2664,6 @@ class RecvmsgGenericTests(SendrecvmsgBase):
     def _testRecvmsgShorter(self):
         self.sendToServer(MSG)
 
-    # FreeBSD < 8 doesn't always set the MSG_TRUNC flag when a truncated
-    # datagram is received (issue #13001).
-    @support.requires_freebsd_version(8)
     def testRecvmsgTrunc(self):
         # Receive part of message, check for truncation indicators.
         msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
@@ -2610,7 +2673,6 @@ class RecvmsgGenericTests(SendrecvmsgBase):
         self.assertEqual(ancdata, [])
         self.checkFlags(flags, eor=False)
 
-    @support.requires_freebsd_version(8)
     def _testRecvmsgTrunc(self):
         self.sendToServer(MSG)
 
@@ -4067,8 +4129,44 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # Testing whether set blocking works
         self.serv.setblocking(True)
         self.assertIsNone(self.serv.gettimeout())
+        self.assertTrue(self.serv.getblocking())
+        if fcntl:
+            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+
         self.serv.setblocking(False)
         self.assertEqual(self.serv.gettimeout(), 0.0)
+        self.assertFalse(self.serv.getblocking())
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(None)
+        self.assertTrue(self.serv.getblocking())
+        if fcntl:
+            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(0)
+        self.assertFalse(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 0)
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(10)
+        self.assertTrue(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 10)
+        if fcntl:
+            # When a Python socket has a non-zero timeout, it's
+            # switched internally to a non-blocking mode.
+            # Later, sock.sendall(), sock.recv(), and other socket
+            # operations use a `select()` call and handle EWOULDBLOCK/EGAIN
+            # on all socket operations.  That's how timeouts are
+            # enforced.
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(0)
+        self.assertFalse(self.serv.getblocking())
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
         start = time.time()
         try:
             self.serv.accept()
@@ -4101,6 +4199,8 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         self.serv.close()
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
                                                   socket.SOCK_NONBLOCK)
+        self.assertFalse(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 0)
         self.port = support.bind_port(self.serv)
         self.serv.listen()
         # actual testing
@@ -5178,11 +5278,24 @@ class NonblockConstantTest(unittest.TestCase):
             self.assertEqual(s.gettimeout(), timeout)
             self.assertTrue(
                 fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            if timeout == 0:
+                # timeout == 0: means that getblocking() must be False.
+                self.assertFalse(s.getblocking())
+            else:
+                # If timeout > 0, the socket will be in a "blocking" mode
+                # from the standpoint of the Python API.  For Python socket
+                # object, "blocking" means that operations like 'sock.recv()'
+                # will block.  Internally, file descriptors for
+                # "blocking" Python sockets *with timeouts* are in a
+                # *non-blocking* mode, and 'sock.recv()' uses 'select()'
+                # and handles EWOULDBLOCK/EAGAIN to enforce the timeout.
+                self.assertTrue(s.getblocking())
         else:
             self.assertEqual(s.type, socket.SOCK_STREAM)
             self.assertEqual(s.gettimeout(), None)
             self.assertFalse(
                 fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            self.assertTrue(s.getblocking())
 
     @support.requires_linux_version(2, 6, 28)
     def test_SOCK_NONBLOCK(self):
@@ -5192,15 +5305,15 @@ class NonblockConstantTest(unittest.TestCase):
                            socket.SOCK_STREAM | socket.SOCK_NONBLOCK) as s:
             self.checkNonblock(s)
             s.setblocking(1)
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False)
             s.setblocking(0)
             self.checkNonblock(s)
             s.settimeout(None)
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False)
             s.settimeout(2.0)
             self.checkNonblock(s, timeout=2.0)
             s.setblocking(1)
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False)
         # defaulttimeout
         t = socket.getdefaulttimeout()
         socket.setdefaulttimeout(0.0)

@@ -46,6 +46,8 @@ else:
     SETBINARY = ''
 
 NONEXISTING_CMD = ('nonexisting_i_hope',)
+# Ignore errors that indicate the command was not found
+NONEXISTING_ERRORS = (FileNotFoundError, NotADirectoryError, PermissionError)
 
 
 class BaseTestCase(unittest.TestCase):
@@ -306,9 +308,9 @@ class ProcessTestCase(BaseTestCase):
         # Verify first that the call succeeds without the executable arg.
         pre_args = [sys.executable, "-c"]
         self._assert_python(pre_args)
-        self.assertRaises((FileNotFoundError, PermissionError),
+        self.assertRaises(NONEXISTING_ERRORS,
                           self._assert_python, pre_args,
-                          executable="doesnotexist")
+                          executable=NONEXISTING_CMD[0])
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
     def test_executable_replaces_shell(self):
@@ -1146,13 +1148,10 @@ class ProcessTestCase(BaseTestCase):
         # value for that limit, but Windows has 2048, so we loop
         # 1024 times (each call leaked two fds).
         for i in range(1024):
-            with self.assertRaises(OSError) as c:
+            with self.assertRaises(NONEXISTING_ERRORS):
                 subprocess.Popen(NONEXISTING_CMD,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-            # ignore errors that indicate the command was not found
-            if c.exception.errno not in (errno.ENOENT, errno.EACCES):
-                raise c.exception
 
     def test_nonexisting_with_pipes(self):
         # bpo-30121: Popen with pipes must close properly pipes on error.
@@ -1475,6 +1474,69 @@ class RunFuncTestCase(BaseTestCase):
                       'sys.exit(33 if os.getenv("FRUIT")=="banana" else 31)'),
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
+
+    def test_run_with_pathlike_path(self):
+        # bpo-31961: test run(pathlike_object)
+        class Path:
+            def __fspath__(self):
+                # the name of a command that can be run without
+                # any argumenets that exit fast
+                return 'dir' if mswindows else 'ls'
+
+        path = Path()
+        if mswindows:
+            res = subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
+        else:
+            res = subprocess.run(path, stdout=subprocess.DEVNULL)
+
+        self.assertEqual(res.returncode, 0)
+
+    def test_run_with_pathlike_path_and_arguments(self):
+        # bpo-31961: test run([pathlike_object, 'additional arguments'])
+        class Path:
+            def __fspath__(self):
+                # the name of a command that can be run without
+                # any argumenets that exits fast
+                return sys.executable
+
+        path = Path()
+
+        args = [path, '-c', 'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+
+        self.assertEqual(res.returncode, 57)
+
+    def test_capture_output(self):
+        cp = self.run_python(("import sys;"
+                              "sys.stdout.write('BDFL'); "
+                              "sys.stderr.write('FLUFL')"),
+                             capture_output=True)
+        self.assertIn(b'BDFL', cp.stdout)
+        self.assertIn(b'FLUFL', cp.stderr)
+
+    def test_stdout_with_capture_output_arg(self):
+        # run() refuses to accept 'stdout' with 'capture_output'
+        tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
+        with self.assertRaises(ValueError,
+            msg=("Expected ValueError when stdout and capture_output "
+                 "args supplied.")) as c:
+            output = self.run_python("print('will not be run')",
+                                      capture_output=True, stdout=tf)
+        self.assertIn('stdout', c.exception.args[0])
+        self.assertIn('capture_output', c.exception.args[0])
+
+    def test_stderr_with_capture_output_arg(self):
+        # run() refuses to accept 'stderr' with 'capture_output'
+        tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
+        with self.assertRaises(ValueError,
+            msg=("Expected ValueError when stderr and capture_output "
+                 "args supplied.")) as c:
+            output = self.run_python("print('will not be run')",
+                                      capture_output=True, stderr=tf)
+        self.assertIn('stderr', c.exception.args[0])
+        self.assertIn('capture_output', c.exception.args[0])
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
@@ -2533,7 +2595,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # let some time for the process to exit, and create a new Popen: this
         # should trigger the wait() of p
         time.sleep(0.2)
-        with self.assertRaises(OSError) as c:
+        with self.assertRaises(OSError):
             with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
@@ -2922,6 +2984,71 @@ class Win32ProcessTestCase(BaseTestCase):
         self._kill_dead_process('terminate')
 
 class MiscTests(unittest.TestCase):
+
+    class RecordingPopen(subprocess.Popen):
+        """A Popen that saves a reference to each instance for testing."""
+        instances_created = []
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.instances_created.append(self)
+
+    @mock.patch.object(subprocess.Popen, "_communicate")
+    def _test_keyboardinterrupt_no_kill(self, popener, mock__communicate,
+                                        **kwargs):
+        """Fake a SIGINT happening during Popen._communicate() and ._wait().
+
+        This avoids the need to actually try and get test environments to send
+        and receive signals reliably across platforms.  The net effect of a ^C
+        happening during a blocking subprocess execution which we want to clean
+        up from is a KeyboardInterrupt coming out of communicate() or wait().
+        """
+
+        mock__communicate.side_effect = KeyboardInterrupt
+        try:
+            with mock.patch.object(subprocess.Popen, "_wait") as mock__wait:
+                # We patch out _wait() as no signal was involved so the
+                # child process isn't actually going to exit rapidly.
+                mock__wait.side_effect = KeyboardInterrupt
+                with mock.patch.object(subprocess, "Popen",
+                                       self.RecordingPopen):
+                    with self.assertRaises(KeyboardInterrupt):
+                        popener([sys.executable, "-c",
+                                 "import time\ntime.sleep(9)\nimport sys\n"
+                                 "sys.stderr.write('\\n!runaway child!\\n')"],
+                                stdout=subprocess.DEVNULL, **kwargs)
+                for call in mock__wait.call_args_list[1:]:
+                    self.assertNotEqual(
+                            call, mock.call(timeout=None),
+                            "no open-ended wait() after the first allowed: "
+                            f"{mock__wait.call_args_list}")
+                sigint_calls = []
+                for call in mock__wait.call_args_list:
+                    if call == mock.call(timeout=0.25):  # from Popen.__init__
+                        sigint_calls.append(call)
+                self.assertLessEqual(mock__wait.call_count, 2,
+                                     msg=mock__wait.call_args_list)
+                self.assertEqual(len(sigint_calls), 1,
+                                 msg=mock__wait.call_args_list)
+        finally:
+            # cleanup the forgotten (due to our mocks) child process
+            process = self.RecordingPopen.instances_created.pop()
+            process.kill()
+            process.wait()
+            self.assertEqual([], self.RecordingPopen.instances_created)
+
+    def test_call_keyboardinterrupt_no_kill(self):
+        self._test_keyboardinterrupt_no_kill(subprocess.call, timeout=6.282)
+
+    def test_run_keyboardinterrupt_no_kill(self):
+        self._test_keyboardinterrupt_no_kill(subprocess.run, timeout=6.282)
+
+    def test_context_manager_keyboardinterrupt_no_kill(self):
+        def popen_via_context_manager(*args, **kwargs):
+            with subprocess.Popen(*args, **kwargs) as unused_process:
+                raise KeyboardInterrupt  # Test how __exit__ handles ^C.
+        self._test_keyboardinterrupt_no_kill(popen_via_context_manager)
+
     def test_getoutput(self):
         self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
         self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
@@ -3044,7 +3171,7 @@ class ContextManagerTests(BaseTestCase):
             self.assertEqual(proc.returncode, 1)
 
     def test_invalid_args(self):
-        with self.assertRaises((FileNotFoundError, PermissionError)) as c:
+        with self.assertRaises(NONEXISTING_ERRORS):
             with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:

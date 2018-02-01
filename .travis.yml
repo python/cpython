@@ -7,6 +7,19 @@ group: beta
 cache:
     - pip
     - ccache
+    - directories:
+        - $HOME/multissl
+
+env:
+  global:
+    - OPENSSL=1.1.0g
+    - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
+    - PATH="${OPENSSL_DIR}/bin:$PATH"
+    - CFLAGS="-I${OPENSSL_DIR}/include"
+    - LDFLAGS="-L${OPENSSL_DIR}/lib"
+    # Set rpath with env var instead of -Wl,-rpath linker flag
+    # OpenSSL ignores LDFLAGS when linking bin/openssl
+    - LD_RUN_PATH="${OPENSSL_DIR}/lib"
 
 branches:
   only:
@@ -48,6 +61,10 @@ matrix:
               echo "Only docs were updated, stopping build process."
               exit
             fi
+            python3 Tools/ssl/multissltests.py  --steps=library \
+                --base-directory ${HOME}/multissl \
+                --openssl ${OPENSSL} >/dev/null
+            openssl version
             ./configure
             make -s -j4
             # Need a venv that can parse covered code.
@@ -66,11 +83,32 @@ matrix:
 before_script:
   - |
       set -e
-      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
+      if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        files_changed=$(git diff --name-only $TRAVIS_COMMIT_RANGE)
+      else
+        # Pull requests are slightly complicated because merging the PR commit without
+        # rebasing causes it to retain its old commit date. Meaning in history if any
+        # commits have been made on master that post-date it, they will be accidentally
+        # included in the diff if we use the TRAVIS_COMMIT_RANGE variable.
+        files_changed=$(git diff --name-only HEAD $(git merge-base HEAD $TRAVIS_BRANCH))
+      fi
+
+      # Prints changed files in this commit to help debug doc-only build issues.
+      echo "Files changed: "
+      echo $files_changed
+
+      if ! echo $files_changed | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
       then
         echo "Only docs were updated, stopping build process."
         exit
       fi
+      if [ "${TESTING}" != "docs" ]; then
+        # clang complains about unused-parameter a lot, redirect stderr
+        python3 Tools/ssl/multissltests.py --steps=library \
+            --base-directory ${HOME}/multissl \
+            --openssl ${OPENSSL} >/dev/null 2>&1
+      fi
+      openssl version
       ./configure --with-pydebug
       make -j4
       make -j4 regen-all clinic

@@ -176,6 +176,23 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fp)
 
+
+    @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
+    def test_posix_spawn(self):
+        pid = posix.posix_spawn(sys.executable, [sys.executable, "-c", "pass"], os.environ,[])
+        self.assertEqual(os.waitpid(pid,0),(pid,0))
+
+
+    @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
+    def test_posix_spawn_file_actions(self):
+        file_actions = []
+        file_actions.append((0,3,os.path.realpath(__file__),0,0))
+        file_actions.append((os.POSIX_SPAWN_CLOSE,2))
+        file_actions.append((os.POSIX_SPAWN_DUP2,1,4))
+        pid = posix.posix_spawn(sys.executable, [sys.executable, "-c", "pass"], os.environ, file_actions)
+        self.assertEqual(os.waitpid(pid,0),(pid,0))
+
+
     @unittest.skipUnless(hasattr(posix, 'waitid'), "test needs posix.waitid()")
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
     def test_waitid(self):
@@ -272,6 +289,28 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
+    @unittest.skipUnless(hasattr(posix, 'preadv'), "test needs posix.preadv()")
+    def test_preadv(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd, b'test1tt2t3t5t6t6t8')
+            buf = [bytearray(i) for i in [5, 3, 2]]
+            self.assertEqual(posix.preadv(fd, buf, 3), 10)
+            self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'RWF_HIPRI'), "test needs posix.RWF_HIPRI")
+    def test_preadv_flags(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd, b'test1tt2t3t5t6t6t8')
+            buf = [bytearray(i) for i in [5, 3, 2]]
+            self.assertEqual(posix.preadv(fd, buf, 3, os.RWF_HIPRI), 10)
+            self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
+        finally:
+            os.close(fd)
+
     @unittest.skipUnless(hasattr(posix, 'pwrite'), "test needs posix.pwrite()")
     def test_pwrite(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
@@ -280,6 +319,34 @@ class PosixTester(unittest.TestCase):
             os.lseek(fd, 0, os.SEEK_SET)
             posix.pwrite(fd, b'xx', 1)
             self.assertEqual(b'txxt', posix.read(fd, 4))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'pwritev'), "test needs posix.pwritev()")
+    def test_pwritev(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd, b"xx")
+            os.lseek(fd, 0, os.SEEK_SET)
+            n = os.pwritev(fd, [b'test1', b'tt2', b't3'], 2)
+            self.assertEqual(n, 10)
+
+            os.lseek(fd, 0, os.SEEK_SET)
+            self.assertEqual(b'xxtest1tt2t3', posix.read(fd, 100))
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'os.RWF_SYNC'), "test needs os.RWF_SYNC")
+    def test_pwritev_flags(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            os.write(fd,b"xx")
+            os.lseek(fd, 0, os.SEEK_SET)
+            n = os.pwritev(fd, [b'test1', b'tt2', b't3'], 2, os.RWF_SYNC)
+            self.assertEqual(n, 10)
+
+            os.lseek(fd, 0, os.SEEK_SET)
+            self.assertEqual(b'xxtest1tt2', posix.read(fd, 100))
         finally:
             os.close(fd)
 
@@ -559,6 +626,7 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.minor)
         self.assertRaises((ValueError, OverflowError), posix.minor, -1)
 
+        # FIXME: reenable these tests on FreeBSD with the kernel fix
         if sys.platform.startswith('freebsd') and dev >= 0x1_0000_0000:
             self.skipTest("bpo-31044: on FreeBSD CURRENT, minor() truncates "
                           "64-bit dev to 32-bit")

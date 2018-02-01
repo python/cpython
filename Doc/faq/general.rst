@@ -272,7 +272,7 @@ The Python project's infrastructure is located all over the world.
 `www.python.org <https://www.python.org>`_ is graciously hosted by `Rackspace
 <https://www.rackspace.com>`_, with CDN caching provided by `Fastly
 <https://www.fastly.com>`_.  `Upfront Systems
-<http://www.upfrontsystems.co.za/>`_ hosts `bugs.python.org
+<http://www.upfrontsoftware.co.za>`_ hosts `bugs.python.org
 <https://bugs.python.org>`_.  Many other Python services like `the Wiki
 <https://wiki.python.org>`_ are hosted by `Oregon State
 University Open Source Lab <https://osuosl.org>`_.
