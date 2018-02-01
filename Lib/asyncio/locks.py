@@ -175,7 +175,7 @@ class Lock(_ContextManagerMixin):
         _waiters.append(fut)
         try:
             try:
-                await fut
+                yield from fut
             finally:
                 _waiters.remove(fut)
         except futures.CancelledError:
