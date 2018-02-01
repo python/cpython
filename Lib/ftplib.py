@@ -104,7 +104,7 @@ class FTP:
     welcome = None
     passiveserver = 1
     encoding = "latin-1"
-    externalip = ''
+    externalip = False
 
     # Initialization method (called by class instantiation).
     # Initialize host to localhost, port to standard ftp port
@@ -331,9 +331,8 @@ class FTP:
         sock.listen(1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
-        if(self.externalip!=''): # Override IP address
-            if(socket.inet_aton(self.externalip)):
-                host = self.externalip
+        if self.externalip and socket.inet_aton(self.externalip):
+            host = self.externalip
         if self.af == socket.AF_INET:
             resp = self.sendport(host, port)
         else:

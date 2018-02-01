@@ -89,6 +89,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.dtp = None
         self.last_received_cmd = None
         self.last_received_data = ''
+        self.last_received_arg = None
         self.next_response = ''
         self.next_data = None
         self.rest = None
@@ -109,6 +110,7 @@ class DummyFTPHandler(asynchat.async_chat):
         space = line.find(' ')
         if space != -1:
             arg = line[space + 1:]
+            self.last_received_arg = arg
         else:
             arg = ""
         if hasattr(self, 'cmd_' + cmd):
@@ -686,6 +688,18 @@ class TestFTPClass(TestCase):
             # IPv4 is in use, just make sure send_eprt has not been used
             self.assertEqual(self.server.handler_instance.last_received_cmd,
                                 'port')
+        self.client.set_externalip('127.0.0.127')
+        with self.client.makeport():
+            self.assertRegex(self.server.handler_instance.last_received_arg,
+                                '^127,0,0,127,')
+        self.client.set_externalip(False)
+
+    def test_set_externalip(self):
+        self.assertFalse(self.client.externalip)
+        self.client.set_externalip('127.0.0.1')
+        self.assertEqual(self.client.externalip, '127.0.0.1')
+        self.client.set_externalip(False)
+        self.assertFalse(self.client.externalip)
 
     def test_makepasv(self):
         host, port = self.client.makepasv()
