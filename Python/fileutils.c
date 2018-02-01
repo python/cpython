@@ -1762,6 +1762,26 @@ int
 _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
                          const char **grouping)
 {
+#if defined(__ANDROID_API__) && __ANDROID_API__ < 20
+    /* On Android, before API 20, localeconv() was broken. */
+    if (decimal_point != NULL) {
+        *decimal_point = PyUnicode_FromString(".");
+        if (*decimal_point == NULL) {
+            return -1;
+        }
+    }
+    if (thousands_sep != NULL) {
+        *thousands_sep = PyUnicode_FromString("");
+        if (*thousands_sep == NULL) {
+            return -1;
+        }
+    }
+
+    if (grouping != NULL) {
+        *grouping = "";
+    }
+    return 0;
+#else
     int res = -1;
 
     struct lconv *lc = localeconv();
@@ -1783,7 +1803,7 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
     if (change_locale) {
         oldloc = setlocale(LC_CTYPE, NULL);
         if (!oldloc) {
-            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            PyErr_SetString(PyExc_RuntimeWarning, "failed to get LC_CTYPE locale");
             return -1;
         }
 
@@ -1832,4 +1852,5 @@ error:
     }
     PyMem_Free(oldloc);
     return res;
+#endif
 }

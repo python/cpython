@@ -1432,14 +1432,21 @@ PyInit__signal(void)
     if (PyModule_AddIntMacro(m, SIGXFSZ))
          goto finally;
 #endif
-#ifdef SIGRTMIN
+
+/* Before Android API 20, SIGRTMIN and SIGRTMAX are defined, but using
+   them lead to compilation error on the linker. Example:
+   "implicit declaration of function __libc_current_sigrtmin". */
+#if !defined(__ANDROID_API__) || __ANDROID_API__ >= 20
+#  ifdef SIGRTMIN
     if (PyModule_AddIntMacro(m, SIGRTMIN))
          goto finally;
-#endif
-#ifdef SIGRTMAX
+#  endif
+#  ifdef SIGRTMAX
     if (PyModule_AddIntMacro(m, SIGRTMAX))
          goto finally;
-#endif
+#  endif
+#endif  /* !defined(__ANDROID_API__) || __ANDROID_API__ >= 20 */
+
 #ifdef SIGINFO
     if (PyModule_AddIntMacro(m, SIGINFO))
          goto finally;

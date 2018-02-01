@@ -38,6 +38,13 @@ This software comes with no warranty. Use at your own risk.
 #include <windows.h>
 #endif
 
+#if defined(__ANDROID_API__) && __ANDROID_API__ < 20
+  /* Before Android API 20, localeconv() is defined but not implemented,
+     leading to linker error. */
+#  define MISSING_LOCALECONV
+#endif
+
+
 PyDoc_STRVAR(locale__doc__, "Support for POSIX locales.");
 
 static PyObject *Error;
@@ -128,6 +135,8 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     return result_object;
 }
 
+
+#ifndef MISSING_LOCALECONV
 PyDoc_STRVAR(localeconv__doc__,
 "() -> dict. Returns numeric and monetary locale-specific parameters.");
 
@@ -222,6 +231,8 @@ PyLocale_localeconv(PyObject* self)
     Py_DECREF(result);
     return NULL;
 }
+#endif
+
 
 #if defined(HAVE_WCSCOLL)
 PyDoc_STRVAR(strcoll__doc__,
@@ -605,8 +616,10 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
 static struct PyMethodDef PyLocale_Methods[] = {
   {"setlocale", (PyCFunction) PyLocale_setlocale,
    METH_VARARGS, setlocale__doc__},
+#ifndef MISSING_LOCALECONV
   {"localeconv", (PyCFunction) PyLocale_localeconv,
    METH_NOARGS, localeconv__doc__},
+#endif
 #ifdef HAVE_WCSCOLL
   {"strcoll", (PyCFunction) PyLocale_strcoll,
    METH_VARARGS, strcoll__doc__},

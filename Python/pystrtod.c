@@ -165,7 +165,6 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
     char *fail_pos;
     double val;
-    struct lconv *locale_data;
     const char *decimal_point;
     size_t decimal_point_len;
     const char *p, *decimal_point_pos;
@@ -177,8 +176,13 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 
     fail_pos = NULL;
 
-    locale_data = localeconv();
+#if defined(__ANDROID_API__) && __ANDROID_API__ < 21
+    /* Before Android API 21, localeconv() is broken. */
+    decimal_point = ".";
+#else
+    struct lconv *locale_data = localeconv();
     decimal_point = locale_data->decimal_point;
+#endif
     decimal_point_len = strlen(decimal_point);
 
     assert(decimal_point_len != 0);
