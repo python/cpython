@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 
 from Cocoa import NSMutableDictionary, NSMutableArray, NSString, NSDate, NSNumber
-from Cocoa import NSPropertyListSerialization, NSPropertyListOpenStepFormat
+from Cocoa import NSPropertyListSerialization
 from Cocoa import NSPropertyListXMLFormat_v1_0, NSPropertyListBinaryFormat_v1_0
-from Cocoa import CFUUIDCreateFromString, NSNull, NSUUID, CFPropertyListCreateData
-from Cocoa import NSURL
 
 import datetime
 from collections import OrderedDict
 import binascii
 
 FORMATS=[
-#    ('openstep', NSPropertyListOpenStepFormat),
     ('plistlib.FMT_XML', NSPropertyListXMLFormat_v1_0),
     ('plistlib.FMT_BINARY', NSPropertyListBinaryFormat_v1_0),
 ]
