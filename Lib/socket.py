@@ -591,7 +591,6 @@ class SocketIO(io.RawIOBase):
                 self._timeout_occurred = True
                 raise
             except error as e:
-                
                 if e.args and e.args[0] in _blocking_errnos:
                     return None
                 raise
