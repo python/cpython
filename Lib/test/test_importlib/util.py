@@ -441,7 +441,7 @@ def create_package(file, path, is_package=True, contents=()):
         origin='does-not-exist',
         is_package=is_package)
     module.__spec__ = spec
-    module.__loader__ = loader
+    module.__loader__ = module.__loader__ = loader
     return module
 
 
