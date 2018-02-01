@@ -999,7 +999,12 @@ always available.
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    Mac OS X         ``'darwin'``
+   Android          ``'android'``
    ================ ===========================
+
+   .. versionchanged:: 3.7
+      On Android, :attr:`sys.platform` is now equal to ``"android"`` rather
+      than ``'linux'``.
 
    .. versionchanged:: 3.3
       On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
