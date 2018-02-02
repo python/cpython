@@ -463,7 +463,7 @@ The string in this example has the number 57 written in both Thai and
 Arabic numerals::
 
    import re
-   p = re.compile('\d+')
+   p = re.compile(r'\d+')
 
    s = "Over \u0e55\u0e57 57 flavours"
    m = p.search(s)
