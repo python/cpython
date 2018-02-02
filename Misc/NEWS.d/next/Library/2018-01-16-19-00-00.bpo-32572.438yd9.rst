@@ -1,0 +1,2 @@
+Add ``ftplib.set_externalip()`` : Set ftplib.externalip
+Mod ``ftplib.makeport()`` : When ftplib.externalip is set valid IP address, the PORT command uses that address.

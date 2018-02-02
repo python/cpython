@@ -261,6 +261,13 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    Passive mode is on by default.
 
 
+.. method:: FTP.set_externalip(val)
+
+   Overrides the IP address sending with "PORT" command if *val* is valid IPv4 
+   address, if *val* is false, this feature disabled.
+   This feature is disable by default.
+
+
 .. method:: FTP.storbinary(cmd, fp, blocksize=8192, callback=None, rest=None)
 
    Store a file in binary transfer mode.  *cmd* should be an appropriate
