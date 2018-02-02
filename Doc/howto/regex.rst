@@ -329,10 +329,11 @@ backslashes are not handled in any special way in a string literal prefixed with
 while ``"\n"`` is a one-character string containing a newline. Regular
 expressions will often be written in Python code using this raw string notation.
 
-In addition, special escape sequences that are valid in ``re``, but not valid
-as Python string literals, now result in a :exc:`DeprecationWarning` and will
-eventually become a :exc:`SyntaxError`, which means the sequences will be
-invalid if raw string notation or escaping the backslashes isn't used.
+In addition, special escape sequences that are valid in regular expressions,
+but not valid as Python string literals, now result in a
+:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`,
+which means the sequences will be invalid if raw string notation or escaping
+the backslashes isn't used.
 
 
 +-------------------+------------------+
@@ -469,9 +470,9 @@ Two pattern methods return all of the matches for a pattern.
    >>> p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
    ['12', '11', '10']
 
-The `r` prefix, making the literal a raw string literal, is needed in this
+The ``r`` prefix, making the literal a raw string literal, is needed in this
 example because escape sequences in a normal "cooked" string literal that are
-not recognized by Python, as opposed to ``re``, now result in a
+not recognized by Python, as opposed to regular expressions, now result in a
 :exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`.  See
 :ref:`the-backslash-plague`.
 
