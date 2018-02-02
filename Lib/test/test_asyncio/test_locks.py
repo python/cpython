@@ -200,6 +200,56 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(tb.cancelled())
         self.assertTrue(tc.done())
 
+    def test_cancel_release_race(self):
+        # Issue 32734
+        # Acquire 4 locks, cancel second, release first
+        # and 2 locks are taken at once.
+        lock = asyncio.Lock(loop=self.loop)
+        lock_count = 0
+        call_count = 0
+
+        async def lockit():
+            nonlocal lock_count
+            nonlocal call_count
+            call_count += 1
+            await lock.acquire()
+            lock_count += 1
+  
+        async def lockandtrigger():
+            await lock.acquire()
+            self.loop.call_soon(trigger)
+          
+        def trigger():
+            t1.cancel()
+            lock.release()
+
+        t0 = self.loop.create_task(lockandtrigger())
+        t1 = self.loop.create_task(lockit())
+        t2 = self.loop.create_task(lockit())
+        t3 = self.loop.create_task(lockit())
+
+        # First loop acquires all
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(t0.done())
+
+        # Second loop calls trigger
+        test_utils.run_briefly(self.loop)
+        # Third loop calls cancellation
+        test_utils.run_briefly(self.loop)
+
+        # Make sure only one lock was taken
+        self.assertEqual(lock_count, 1)
+        # While 3 calls were made to lockit()
+        self.assertEqual(call_count, 3)
+        self.assertTrue(t1.cancelled() and t2.done())
+
+        # Cleanup the task that is stuck on acquire.
+        t3.cancel()
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(t3.cancelled())
+
+
+
     def test_finished_waiter_cancelled(self):
         lock = asyncio.Lock(loop=self.loop)
 
