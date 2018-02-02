@@ -2,6 +2,7 @@ __all__ = 'run',
 
 from . import coroutines
 from . import events
+from . import tasks
 
 
 def run(main, *, debug=False):
@@ -42,7 +43,31 @@ def run(main, *, debug=False):
         return loop.run_until_complete(main)
     finally:
         try:
+            _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
         finally:
             events.set_event_loop(None)
             loop.close()
+
+
+def _cancel_all_tasks(loop):
+    to_cancel = [task for task in tasks.all_tasks(loop)
+                 if not task.done()]
+    if not to_cancel:
+        return
+
+    for task in to_cancel:
+        task.cancel()
+
+    loop.run_until_complete(
+        tasks.gather(*to_cancel, loop=loop, return_exceptions=True))
+
+    for task in to_cancel:
+        if task.cancelled():
+            continue
+        if task.exception() is not None:
+            loop.call_exception_handler({
+                'message': 'unhandled exception during asyncio.run() shutdown',
+                'exception': task.exception(),
+                'task': task,
+            })

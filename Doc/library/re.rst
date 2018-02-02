@@ -708,12 +708,15 @@ form.
    That way, separator components are always found at the same relative
    indices within the result list.
 
-   The pattern can match empty strings. ::
+   Empty matches for the pattern split the string only when not adjacent
+   to a previous empty match.
 
       >>> re.split(r'\b', 'Words, words, words.')
       ['', 'Words', ', ', 'words', ', ', 'words', '.']
+      >>> re.split(r'\W*', '...words...')
+      ['', '', 'w', 'o', 'r', 'd', 's', '', '']
       >>> re.split(r'(\W*)', '...words...')
-      ['', '...', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '']
+      ['', '...', '', '', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '', '', '']
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
@@ -778,8 +781,8 @@ form.
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
    occurrences will be replaced. Empty matches for the pattern are replaced only
-   when not adjacent to a previous match, so ``sub('x*', '-', 'abc')`` returns
-   ``'-a-b-c-'``.
+   when not adjacent to a previous empty match, so ``sub('x*', '-', 'abxd')`` returns
+   ``'-a-b--d-'``.
 
    In string-type *repl* arguments, in addition to the character escapes and
    backreferences described above,
@@ -804,6 +807,9 @@ form.
    .. versionchanged:: 3.7
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
+
+      Empty matches for the pattern are replaced when adjacent to a previous
+      non-empty match.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)

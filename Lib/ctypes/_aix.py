@@ -105,7 +105,7 @@ def get_ld_headers(file):
     # 2. If "INDEX" in occurs in a following line - return ld_header
     # 3. get info (lines starting with [0-9])
     ldr_headers = []
-    p = Popen(["/usr/bin/dump", "-X%s" % AIX_ABI, "-H", file],
+    p = Popen(["/usr/bin/dump", f"-X{AIX_ABI}", "-H", file],
         universal_newlines=True, stdout=PIPE, stderr=DEVNULL)
     # be sure to read to the end-of-file - getting all entries
     while True:
@@ -140,7 +140,7 @@ def get_one_match(expr, lines):
     When there is a match, strip leading "[" and trailing "]"
     """
     # member names in the ld_headers output are between square brackets
-    expr = r'\[(%s)\]' % expr
+    expr = rf'\[({expr})\]'
     matches = list(filter(None, (re.search(expr, line) for line in lines)))
     if len(matches) == 1:
         return matches[0].group(1)
@@ -197,8 +197,8 @@ def get_version(name, members):
     # any combination of additional 'dot' digits pairs are accepted
     # anything more than libFOO.so.digits.digits.digits
     # should be seen as a member name outside normal expectations
-    exprs = [r'lib%s\.so\.[0-9]+[0-9.]*' % name,
-        r'lib%s_?64\.so\.[0-9]+[0-9.]*' % name]
+    exprs = [rf'lib{name}\.so\.[0-9]+[0-9.]*',
+        rf'lib{name}_?64\.so\.[0-9]+[0-9.]*']
     for expr in exprs:
         versions = []
         for line in members:
@@ -219,12 +219,12 @@ def get_member(name, members):
     and finally, legacy AIX naming scheme.
     """
     # look first for a generic match - prepend lib and append .so
-    expr = r'lib%s\.so' % name
+    expr = rf'lib{name}\.so'
     member = get_one_match(expr, members)
     if member:
         return member
     elif AIX_ABI == 64:
-        expr = r'lib%s64\.so' % name
+        expr = rf'lib{name}64\.so'
         member = get_one_match(expr, members)
     if member:
         return member
@@ -277,7 +277,7 @@ def find_shared(paths, name):
             continue
         # "lib" is prefixed to emulate compiler name resolution,
         # e.g., -lc to libc
-        base = 'lib%s.a' % name
+        base = f'lib{name}.a'
         archive = path.join(dir, base)
         if path.exists(archive):
             members = get_shared(get_ld_headers(archive))
@@ -308,7 +308,7 @@ def find_library(name):
     libpaths = get_libpaths()
     (base, member) = find_shared(libpaths, name)
     if base != None:
-        return "%s(%s)" % (base, member)
+        return f"{base}({member})"
 
     # To get here, a member in an archive has not been found
     # In other words, either:
@@ -319,7 +319,7 @@ def find_library(name):
     # Note, the installation must prepare a link from a .so
     # to a versioned file
     # This is common practice by GNU libtool on other platforms
-    soname = "lib%s.so" % name
+    soname = f"lib{name}.so"
     for dir in libpaths:
         # /lib is a symbolic link to /usr/lib, skip it
         if dir == "/lib":

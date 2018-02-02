@@ -39,7 +39,7 @@ if "%DO_FETCH%"=="false" goto end
 :fetch
 
 if "%ORG%"=="" (set ORG=python)
-call "%PCBUILD%find_python.bat" "%PYTHON%"
+call "%PCBUILD%\find_python.bat" "%PYTHON%"
 
 if "%PYTHON%"=="" (
     where /Q git || echo Python 3.6 could not be found or installed, and git.exe is not on your PATH && exit /B 1
@@ -65,7 +65,7 @@ for %%e in (%libraries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
         echo.Fetching %%e...
-        %PYTHON% "%PCBUILD%get_external.py" -O %ORG% %%e
+        %PYTHON% "%PCBUILD%\get_external.py" -O %ORG% %%e
     )
 )
 
@@ -84,7 +84,7 @@ for %%b in (%binaries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        %PYTHON% "%PCBUILD%get_external.py" -b -O %ORG% %%b
+        %PYTHON% "%PCBUILD%\get_external.py" -b -O %ORG% %%b
     )
 )
 
