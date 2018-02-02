@@ -2152,15 +2152,10 @@ class OriginTrackingTest(unittest.TestCase):
 
         def check(depth, msg):
             sys.set_coroutine_origin_tracking_depth(depth)
-            with warnings.catch_warnings(record=True) as wlist:
+            with self.assertWarns(RuntimeWarning) as cm:
                 a2()
                 support.gc_collect()
-            # This might be fragile if other warnings somehow get triggered
-            # inside our 'with' block... let's worry about that if/when it
-            # happens.
-            self.assertTrue(len(wlist) == 1)
-            self.assertIs(wlist[0].category, RuntimeWarning)
-            self.assertEqual(msg, str(wlist[0].message))
+            self.assertEqual(msg, str(cm.warning))
 
         orig_depth = sys.get_coroutine_origin_tracking_depth()
         try:
