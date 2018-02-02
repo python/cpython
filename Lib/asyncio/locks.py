@@ -213,6 +213,9 @@ class Lock(_ContextManagerMixin):
         except StopIteration:
             return
 
+        # .done() necessarily means that a waiter will wake up later on and
+        # either take the lock, or, if it was cancelled and lock wasn't
+        # taken already, will hit this again and wake up a new waiter.
         if not fut.done():
             fut.set_result(True)
 
