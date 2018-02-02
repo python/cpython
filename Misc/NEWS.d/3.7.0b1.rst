@@ -196,17 +196,6 @@ by Sanyam Khurana.
 
 ..
 
-.. bpo: 31356
-.. date: 2017-11-02-00-34-42
-.. nonce: 54Lb8U
-.. section: Core and Builtins
-
-Add a new contextmanager to the gc module that temporarily disables the GC
-and restores the previous state. The implementation is done in C to assure
-atomicity and speed.
-
-..
-
 .. bpo: 31179
 .. date: 2017-08-10-17-32-48
 .. nonce: XcgLYI
