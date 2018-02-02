@@ -1,6 +1,7 @@
 """Tests for unix_events.py."""
 
 import collections
+import contextlib
 import errno
 import io
 import os
@@ -21,6 +22,8 @@ if sys.platform == 'win32':
 
 import asyncio
 from asyncio import log
+from asyncio import base_events
+from asyncio import events
 from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
@@ -416,6 +419,258 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                 'ssl_handshake_timeout is only meaningful with ssl'):
             self.loop.run_until_complete(coro)
 
+
+@unittest.skipUnless(hasattr(os, 'sendfile'),
+                     'sendfile is not supported')
+class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
+
+    class MyProto(asyncio.Protocol):
+
+        def __init__(self, loop):
+            self.started = False
+            self.closed = False
+            self.data = bytearray()
+            self.fut = loop.create_future()
+            self.transport = None
+
+        def connection_made(self, transport):
+            self.started = True
+            self.transport = transport
+
+        def data_received(self, data):
+            self.data.extend(data)
+
+        def connection_lost(self, exc):
+            self.closed = True
+            self.fut.set_result(None)
+
+        async def wait_closed(self):
+            await self.fut
+
+    @classmethod
+    def setUpClass(cls):
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(cls.DATA)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(support.TESTFN)
+        super().tearDownClass()
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+        self.file = open(support.TESTFN, 'rb')
+        self.addCleanup(self.file.close)
+        super().setUp()
+
+    def make_socket(self, blocking=False):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(blocking)
+        self.addCleanup(sock.close)
+        return sock
+
+    def run_loop(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def prepare(self):
+        sock = self.make_socket()
+        proto = self.MyProto(self.loop)
+        port = support.find_unused_port()
+        server = self.run_loop(self.loop.create_server(
+            lambda: proto, support.HOST, port))
+        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+
+        def cleanup():
+            if proto.transport is not None:
+                # can be None if the task was cancelled before
+                # connection_made callback
+                proto.transport.close()
+                self.run_loop(proto.wait_closed())
+
+            server.close()
+            self.run_loop(server.wait_closed())
+
+        self.addCleanup(cleanup)
+
+        return sock, proto
+
+    def test_sock_sendfile_success(self):
+        sock, proto = self.prepare()
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sock_sendfile_with_offset_and_count(self):
+        sock, proto = self.prepare()
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                    1000, 2000))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(proto.data, self.DATA[1000:3000])
+        self.assertEqual(self.file.tell(), 3000)
+        self.assertEqual(ret, 2000)
+
+    def test_sock_sendfile_not_available(self):
+        sock, proto = self.prepare()
+        with mock.patch('asyncio.unix_events.os', spec=[]):
+            with self.assertRaisesRegex(events.SendfileNotAvailableError,
+                                        "os[.]sendfile[(][)] is not available"):
+                self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
+                                                              0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_not_a_file(self):
+        sock, proto = self.prepare()
+        f = object()
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+                                    "not a regular file"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                          0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_iobuffer(self):
+        sock, proto = self.prepare()
+        f = io.BytesIO()
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+                                    "not a regular file"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                          0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_not_regular_file(self):
+        sock, proto = self.prepare()
+        f = mock.Mock()
+        f.fileno.return_value = -1
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+                                    "not a regular file"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                          0, None))
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_zero_size(self):
+        sock, proto = self.prepare()
+        fname = support.TESTFN + '.suffix'
+        with open(fname, 'wb') as f:
+            pass  # make zero sized file
+        f = open(fname, 'rb')
+        self.addCleanup(f.close)
+        self.addCleanup(support.unlink, fname)
+        ret = self.run_loop(self.loop._sock_sendfile_native(sock, f,
+                                                            0, None))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, 0)
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_mix_with_regular_send(self):
+        buf = b'1234567890' * 1024 * 1024  # 10 MB
+        sock, proto = self.prepare()
+        self.run_loop(self.loop.sock_sendall(sock, buf))
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        self.run_loop(self.loop.sock_sendall(sock, buf))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        expected = buf + self.DATA + buf
+        self.assertEqual(proto.data, expected)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sock_sendfile_cancel1(self):
+        sock, proto = self.prepare()
+
+        fut = self.loop.create_future()
+        fileno = self.file.fileno()
+        self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                             0, None, len(self.DATA), 0)
+        fut.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            self.run_loop(fut)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+
+    def test_sock_sendfile_cancel2(self):
+        sock, proto = self.prepare()
+
+        fut = self.loop.create_future()
+        fileno = self.file.fileno()
+        self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                             0, None, len(self.DATA), 0)
+        fut.cancel()
+        self.loop._sock_sendfile_native_impl(fut, sock.fileno(), sock, fileno,
+                                             0, None, len(self.DATA), 0)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+
+    def test_sock_sendfile_blocking_error(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = mock.Mock()
+        fut.cancelled.return_value = False
+        with mock.patch('os.sendfile', side_effect=BlockingIOError()):
+            self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                                 0, None, len(self.DATA), 0)
+        key = self.loop._selector.get_key(sock)
+        self.assertIsNotNone(key)
+        fut.add_done_callback.assert_called_once_with(mock.ANY)
+
+    def test_sock_sendfile_os_error_first_call(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = self.loop.create_future()
+        with mock.patch('os.sendfile', side_effect=OSError()):
+            self.loop._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                                 0, None, len(self.DATA), 0)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+        exc = fut.exception()
+        self.assertIsInstance(exc, events.SendfileNotAvailableError)
+        self.assertEqual(0, self.file.tell())
+
+    def test_sock_sendfile_os_error_next_call(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = self.loop.create_future()
+        err = OSError()
+        with mock.patch('os.sendfile', side_effect=err):
+            self.loop._sock_sendfile_native_impl(fut, sock.fileno(),
+                                                 sock, fileno,
+                                                 1000, None, len(self.DATA),
+                                                 1000)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+        exc = fut.exception()
+        self.assertIs(exc, err)
+        self.assertEqual(1000, self.file.tell())
+
+    def test_sock_sendfile_exception(self):
+        sock, proto = self.prepare()
+
+        fileno = self.file.fileno()
+        fut = self.loop.create_future()
+        err = events.SendfileNotAvailableError()
+        with mock.patch('os.sendfile', side_effect=err):
+            self.loop._sock_sendfile_native_impl(fut, sock.fileno(),
+                                                 sock, fileno,
+                                                 1000, None, len(self.DATA),
+                                                 1000)
+        with self.assertRaises(KeyError):
+            self.loop._selector.get_key(sock)
+        exc = fut.exception()
+        self.assertIs(exc, err)
+        self.assertEqual(1000, self.file.tell())
 
 
 class UnixReadPipeTransportTests(test_utils.TestCase):

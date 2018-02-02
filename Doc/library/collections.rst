@@ -35,8 +35,8 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 
 .. versionchanged:: 3.3
     Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
-    For backwards compatibility, they continue to be visible in this module
-    as well.
+    For backwards compatibility, they continue to be visible in this module through
+    Python 3.7.  Subsequently, they will be removed entirely.
 
 
 :class:`ChainMap` objects
@@ -782,7 +782,7 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, field_names, *, rename=False, module=None)
+.. function:: namedtuple(typename, field_names, *, rename=False, defaults=None, module=None)
 
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
@@ -805,6 +805,13 @@ they add the ability to access fields by name instead of position index.
     converted to ``['abc', '_1', 'ghi', '_3']``, eliminating the keyword
     ``def`` and the duplicate fieldname ``abc``.
 
+    *defaults* can be ``None`` or an :term:`iterable` of default values.
+    Since fields with a default value must come after any fields without a
+    default, the *defaults* are applied to the rightmost parameters.  For
+    example, if the fieldnames are ``['x', 'y', 'z']`` and the defaults are
+    ``(1, 2)``, then ``x`` will be a required argument, ``y`` will default to
+    ``1``, and ``z`` will default to ``2``.
+
     If *module* is defined, the ``__module__`` attribute of the named tuple is
     set to that value.
 
@@ -823,6 +830,10 @@ they add the ability to access fields by name instead of position index.
 
     .. versionchanged:: 3.7
        Remove the *verbose* parameter and the :attr:`_source` attribute.
+
+    .. versionchanged:: 3.7
+       Added the *defaults* parameter and the :attr:`_field_defaults`
+       attribute.
 
 .. doctest::
     :options: +NORMALIZE_WHITESPACE
@@ -910,6 +921,18 @@ field names, the method and attribute names start with an underscore.
         >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
         >>> Pixel(11, 22, 128, 255, 0)
         Pixel(x=11, y=22, red=128, green=255, blue=0)
+
+.. attribute:: somenamedtuple._fields_defaults
+
+   Dictionary mapping field names to default values.
+
+   .. doctest::
+
+        >>> Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
+        >>> Account._fields_defaults
+        {'balance': 0}
+        >>> Account('premium')
+        Account(type='premium', balance=0)
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
 function:

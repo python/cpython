@@ -2037,6 +2037,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     # Exercise framing (proto >= 4) for significant workloads
 
+    FRAME_SIZE_MIN = 4
     FRAME_SIZE_TARGET = 64 * 1024
 
     def check_frame_opcodes(self, pickled):
@@ -2047,36 +2048,43 @@ class AbstractPickleTests(unittest.TestCase):
         framed by default and are therefore considered a frame by themselves in
         the following consistency check.
         """
-        last_arg = last_pos = last_frame_opcode_size = None
-        frameless_opcode_sizes = {
-            'BINBYTES': 5,
-            'BINUNICODE': 5,
-            'BINBYTES8': 9,
-            'BINUNICODE8': 9,
-        }
+        frame_end = frameless_start = None
+        frameless_opcodes = {'BINBYTES', 'BINUNICODE', 'BINBYTES8', 'BINUNICODE8'}
         for op, arg, pos in pickletools.genops(pickled):
-            if op.name in frameless_opcode_sizes:
-                if len(arg) > self.FRAME_SIZE_TARGET:
-                    frame_opcode_size = frameless_opcode_sizes[op.name]
-                    arg = len(arg)
-                else:
-                    continue
-            elif op.name == 'FRAME':
-                frame_opcode_size = 9
-            else:
-                continue
+            if frame_end is not None:
+                self.assertLessEqual(pos, frame_end)
+                if pos == frame_end:
+                    frame_end = None
 
-            if last_pos is not None:
-                # The previous frame's size should be equal to the number
-                # of bytes up to the current frame.
-                frame_size = pos - last_pos - last_frame_opcode_size
-                self.assertEqual(frame_size, last_arg)
-            last_arg, last_pos = arg, pos
-            last_frame_opcode_size = frame_opcode_size
-        # The last frame's size should be equal to the number of bytes up
-        # to the pickle's end.
-        frame_size = len(pickled) - last_pos - last_frame_opcode_size
-        self.assertEqual(frame_size, last_arg)
+            if frame_end is not None:  # framed
+                self.assertNotEqual(op.name, 'FRAME')
+                if op.name in frameless_opcodes:
+                    # Only short bytes and str objects should be written
+                    # in a frame
+                    self.assertLessEqual(len(arg), self.FRAME_SIZE_TARGET)
+
+            else:  # not framed
+                if (op.name == 'FRAME' or
+                    (op.name in frameless_opcodes and
+                     len(arg) > self.FRAME_SIZE_TARGET)):
+                    # Frame or large bytes or str object
+                    if frameless_start is not None:
+                        # Only short data should be written outside of a frame
+                        self.assertLess(pos - frameless_start,
+                                        self.FRAME_SIZE_MIN)
+                        frameless_start = None
+                elif frameless_start is None and op.name != 'PROTO':
+                    frameless_start = pos
+
+            if op.name == 'FRAME':
+                self.assertGreaterEqual(arg, self.FRAME_SIZE_MIN)
+                frame_end = pos + 9 + arg
+
+        pos = len(pickled)
+        if frame_end is not None:
+            self.assertEqual(frame_end, pos)
+        elif frameless_start is not None:
+            self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
     def test_framing_many_objects(self):
         obj = list(range(10**5))
@@ -2095,22 +2103,24 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_framing_large_objects(self):
         N = 1024 * 1024
-        obj = [b'x' * N, b'y' * N, 'z' * N]
+        small_items = [[i] for i in range(10)]
+        obj = [b'x' * N, *small_items, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
-            for fast in [True, False]:
+            for fast in [False, True]:
                 with self.subTest(proto=proto, fast=fast):
-                    if hasattr(self, 'pickler'):
+                    if not fast:
+                        # fast=False by default.
+                        # This covers in-memory pickling with pickle.dumps().
+                        pickled = self.dumps(obj, proto)
+                    else:
+                        # Pickler is required when fast=True.
+                        if not hasattr(self, 'pickler'):
+                            continue
                         buf = io.BytesIO()
                         pickler = self.pickler(buf, protocol=proto)
                         pickler.fast = fast
                         pickler.dump(obj)
                         pickled = buf.getvalue()
-                    elif fast:
-                        continue
-                    else:
-                        # Fallback to self.dumps when fast=False and
-                        # self.pickler is not available.
-                        pickled = self.dumps(obj, proto)
                     unpickled = self.loads(pickled)
                     # More informative error message in case of failure.
                     self.assertEqual([len(x) for x in obj],
@@ -2118,12 +2128,9 @@ class AbstractPickleTests(unittest.TestCase):
                     # Perform full equality check if the lengths match.
                     self.assertEqual(obj, unpickled)
                     n_frames = count_opcode(pickle.FRAME, pickled)
-                    if not fast:
-                        # One frame per memoize for each large object.
-                        self.assertGreaterEqual(n_frames, len(obj))
-                    else:
-                        # One frame at the beginning and one at the end.
-                        self.assertGreaterEqual(n_frames, 2)
+                    # A single frame for small objects between
+                    # first two large objects.
+                    self.assertEqual(n_frames, 1)
                     self.check_frame_opcodes(pickled)
 
     def test_optional_frames(self):
@@ -2151,7 +2158,9 @@ class AbstractPickleTests(unittest.TestCase):
 
         frame_size = self.FRAME_SIZE_TARGET
         num_frames = 20
-        obj = [bytes([i]) * frame_size for i in range(num_frames)]
+        # Large byte objects (dict values) intermitted with small objects
+        # (dict keys)
+        obj = {i: bytes([i]) * frame_size for i in range(num_frames)}
 
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             pickled = self.dumps(obj, proto)
@@ -2168,67 +2177,67 @@ class AbstractPickleTests(unittest.TestCase):
     def test_framed_write_sizes_with_delayed_writer(self):
         class ChunkAccumulator:
             """Accumulate pickler output in a list of raw chunks."""
-
             def __init__(self):
                 self.chunks = []
-
             def write(self, chunk):
                 self.chunks.append(chunk)
-
             def concatenate_chunks(self):
-                # Some chunks can be memoryview instances, we need to convert
-                # them to bytes to be able to call join
-                return b"".join([c.tobytes() if hasattr(c, 'tobytes') else c
-                                 for c in self.chunks])
-
-        small_objects = [(str(i).encode('ascii'), i % 42, {'i': str(i)})
-                         for i in range(int(1e4))]
+                return b"".join(self.chunks)
 
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+            objects = [(str(i).encode('ascii'), i % 42, {'i': str(i)})
+                       for i in range(int(1e4))]
+            # Add a large unique ASCII string
+            objects.append('0123456789abcdef' *
+                           (self.FRAME_SIZE_TARGET // 16 + 1))
+
             # Protocol 4 packs groups of small objects into frames and issues
             # calls to write only once or twice per frame:
             # The C pickler issues one call to write per-frame (header and
             # contents) while Python pickler issues two calls to write: one for
             # the frame header and one for the frame binary contents.
             writer = ChunkAccumulator()
-            self.pickler(writer, proto).dump(small_objects)
+            self.pickler(writer, proto).dump(objects)
 
             # Actually read the binary content of the chunks after the end
-            # of the call to dump: ant memoryview passed to write should not
+            # of the call to dump: any memoryview passed to write should not
             # be released otherwise this delayed access would not be possible.
             pickled = writer.concatenate_chunks()
             reconstructed = self.loads(pickled)
-            self.assertEqual(reconstructed, small_objects)
+            self.assertEqual(reconstructed, objects)
             self.assertGreater(len(writer.chunks), 1)
 
-            n_frames, remainder = divmod(len(pickled), self.FRAME_SIZE_TARGET)
-            if remainder > 0:
-                n_frames += 1
+            # memoryviews should own the memory.
+            del objects
+            support.gc_collect()
+            self.assertEqual(writer.concatenate_chunks(), pickled)
 
+            n_frames = (len(pickled) - 1) // self.FRAME_SIZE_TARGET + 1
             # There should be at least one call to write per frame
             self.assertGreaterEqual(len(writer.chunks), n_frames)
 
             # but not too many either: there can be one for the proto,
-            # one per-frame header and one per frame for the actual contents.
-            self.assertGreaterEqual(2 * n_frames + 1, len(writer.chunks))
+            # one per-frame header, one per frame for the actual contents,
+            # and two for the header.
+            self.assertLessEqual(len(writer.chunks), 2 * n_frames + 3)
 
-            chunk_sizes = [len(c) for c in writer.chunks[:-1]]
+            chunk_sizes = [len(c) for c in writer.chunks]
             large_sizes = [s for s in chunk_sizes
                            if s >= self.FRAME_SIZE_TARGET]
-            small_sizes = [s for s in chunk_sizes
-                           if s < self.FRAME_SIZE_TARGET]
+            medium_sizes = [s for s in chunk_sizes
+                           if 9 < s < self.FRAME_SIZE_TARGET]
+            small_sizes = [s for s in chunk_sizes if s <= 9]
 
             # Large chunks should not be too large:
             for chunk_size in large_sizes:
-                self.assertGreater(2 * self.FRAME_SIZE_TARGET, chunk_size)
-
-            last_chunk_size = len(writer.chunks[-1])
-            self.assertGreater(2 * self.FRAME_SIZE_TARGET, last_chunk_size)
-
-            # Small chunks (if any) should be very small
-            # (only proto and frame headers)
-            for chunk_size in small_sizes:
-                self.assertGreaterEqual(9, chunk_size)
+                self.assertLess(chunk_size, 2 * self.FRAME_SIZE_TARGET,
+                                chunk_sizes)
+            # There shouldn't bee too many small chunks: the protocol header,
+            # the frame headers and the large string headers are written
+            # in small chunks.
+            self.assertLessEqual(len(small_sizes),
+                                 len(large_sizes) + len(medium_sizes) + 3,
+                                 chunk_sizes)
 
     def test_nested_names(self):
         global Nested

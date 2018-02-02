@@ -213,7 +213,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__;
+static PyObject *__doc__, *__annotations__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -311,7 +311,11 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         if (!__doc__)
             return NULL;
     }
-
+    if (!__annotations__) {
+        __annotations__ = PyUnicode_InternFromString("__annotations__");
+        if (!__annotations__)
+            return NULL;
+    }
     if (!compiler_init(&c))
         return NULL;
     Py_INCREF(filename);
@@ -1056,8 +1060,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case DELETE_FAST:
             return 0;
-        case STORE_ANNOTATION:
-            return -1;
 
         case RAISE_VARARGS:
             return -oparg;
@@ -1700,12 +1702,29 @@ error:
 }
 
 static int
+compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
+{
+    PyObject *ann_as_str;
+    ann_as_str = _PyAST_ExprAsUnicode(annotation, 1);
+    if (!ann_as_str) {
+        return 0;
+    }
+    ADDOP_N(c, LOAD_CONST, ann_as_str, consts);
+    return 1;
+}
+
+static int
 compiler_visit_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, PyObject *names)
 {
     if (annotation) {
         PyObject *mangled;
-        VISIT(c, expr, annotation);
+        if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+            VISIT(c, annexpr, annotation)
+        }
+        else {
+            VISIT(c, expr, annotation);
+        }
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
@@ -4688,9 +4707,16 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             if (!mangled) {
                 return 0;
             }
-            VISIT(c, expr, s->v.AnnAssign.annotation);
-            /* ADDOP_N decrefs its argument */
-            ADDOP_N(c, STORE_ANNOTATION, mangled, names);
+            if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+                VISIT(c, annexpr, s->v.AnnAssign.annotation)
+            }
+            else {
+                VISIT(c, expr, s->v.AnnAssign.annotation);
+            }
+            ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
+            ADDOP_O(c, LOAD_CONST, mangled, consts);
+            Py_DECREF(mangled);
+            ADDOP(c, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:
@@ -4920,83 +4946,42 @@ struct assembler {
 };
 
 static void
-dfs(struct compiler *c, basicblock *b, struct assembler *a)
+dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
 {
-    int i;
-    struct instr *instr = NULL;
+    int i, j;
 
-    if (b->b_seen)
-        return;
-    b->b_seen = 1;
-    if (b->b_next != NULL)
-        dfs(c, b->b_next, a);
-    for (i = 0; i < b->b_iused; i++) {
-        instr = &b->b_instr[i];
-        if (instr->i_jrel || instr->i_jabs)
-            dfs(c, instr->i_target, a);
+    /* Get rid of recursion for normal control flow.
+       Since the number of blocks is limited, unused space in a_postorder
+       (from a_nblocks to end) can be used as a stack for still not ordered
+       blocks. */
+    for (j = end; b && !b->b_seen; b = b->b_next) {
+        b->b_seen = 1;
+        assert(a->a_nblocks < j);
+        a->a_postorder[--j] = b;
     }
-    a->a_postorder[a->a_nblocks++] = b;
+    while (j < end) {
+        b = a->a_postorder[j++];
+        for (i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (instr->i_jrel || instr->i_jabs)
+                dfs(c, instr->i_target, a, j);
+        }
+        assert(a->a_nblocks < j);
+        a->a_postorder[a->a_nblocks++] = b;
+    }
 }
 
-static int
-stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
+Py_LOCAL_INLINE(void)
+stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
-    int i, new_depth, target_depth, effect;
-    struct instr *instr;
-    assert(!b->b_seen || b->b_startdepth == depth);
-    if (b->b_seen || b->b_startdepth >= depth) {
-        return maxdepth;
+    /* XXX b->b_startdepth > depth only for the target of SETUP_FINALLY,
+     * SETUP_WITH and SETUP_ASYNC_WITH. */
+    assert(b->b_startdepth < 0 || b->b_startdepth >= depth);
+    if (b->b_startdepth < depth) {
+        assert(b->b_startdepth < 0);
+        b->b_startdepth = depth;
+        *(*sp)++ = b;
     }
-    /* Guard against infinite recursion */
-    b->b_seen = 1;
-    b->b_startdepth = depth;
-    for (i = 0; i < b->b_iused; i++) {
-        instr = &b->b_instr[i];
-        effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
-        if (effect == PY_INVALID_STACK_EFFECT) {
-            fprintf(stderr, "opcode = %d\n", instr->i_opcode);
-            Py_FatalError("PyCompile_OpcodeStackEffect()");
-        }
-        new_depth = depth + effect;
-        if (new_depth > maxdepth) {
-            maxdepth = new_depth;
-        }
-        assert(new_depth >= 0); /* invalid code or bug in stackdepth() */
-        if (instr->i_jrel || instr->i_jabs) {
-            /* Recursively inspect jump target */
-            effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
-            assert(effect != PY_INVALID_STACK_EFFECT);
-            target_depth = depth + effect;
-            if (target_depth > maxdepth) {
-                maxdepth = target_depth;
-            }
-            assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
-            if (instr->i_opcode == CONTINUE_LOOP) {
-                /* Pops a variable number of values from the stack,
-                 * but the target should be already proceeding.
-                 */
-                assert(instr->i_target->b_seen);
-                assert(instr->i_target->b_startdepth <= depth);
-                goto out; /* remaining code is dead */
-            }
-            maxdepth = stackdepth_walk(c, instr->i_target,
-                                       target_depth, maxdepth);
-        }
-        depth = new_depth;
-        if (instr->i_opcode == JUMP_ABSOLUTE ||
-            instr->i_opcode == JUMP_FORWARD ||
-            instr->i_opcode == RETURN_VALUE ||
-            instr->i_opcode == RAISE_VARARGS ||
-            instr->i_opcode == BREAK_LOOP)
-        {
-            goto out; /* remaining code is dead */
-        }
-    }
-    if (b->b_next)
-        maxdepth = stackdepth_walk(c, b->b_next, depth, maxdepth);
-out:
-    b->b_seen = 0;
-    return maxdepth;
 }
 
 /* Find the flow path that needs the largest stack.  We assume that
@@ -5005,16 +4990,79 @@ out:
 static int
 stackdepth(struct compiler *c)
 {
-    basicblock *b, *entryblock;
-    entryblock = NULL;
+    basicblock *b, *entryblock = NULL;
+    basicblock **stack, **sp;
+    int nblocks = 0, maxdepth = 0;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        b->b_seen = 0;
         b->b_startdepth = INT_MIN;
         entryblock = b;
+        nblocks++;
     }
     if (!entryblock)
         return 0;
-    return stackdepth_walk(c, entryblock, 0, 0);
+    stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
+    if (!stack) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    sp = stack;
+    stackdepth_push(&sp, entryblock, 0);
+    while (sp != stack) {
+        b = *--sp;
+        int depth = b->b_startdepth;
+        assert(depth >= 0);
+        basicblock *next = b->b_next;
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
+            if (effect == PY_INVALID_STACK_EFFECT) {
+                fprintf(stderr, "opcode = %d\n", instr->i_opcode);
+                Py_FatalError("PyCompile_OpcodeStackEffect()");
+            }
+            int new_depth = depth + effect;
+            if (new_depth > maxdepth) {
+                maxdepth = new_depth;
+            }
+            assert(depth >= 0); /* invalid code or bug in stackdepth() */
+            if (instr->i_jrel || instr->i_jabs) {
+                effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
+                assert(effect != PY_INVALID_STACK_EFFECT);
+                int target_depth = depth + effect;
+                if (target_depth > maxdepth) {
+                    maxdepth = target_depth;
+                }
+                assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
+                if (instr->i_opcode == CONTINUE_LOOP) {
+                    /* Pops a variable number of values from the stack,
+                     * but the target should be already proceeding.
+                     */
+                    assert(instr->i_target->b_startdepth >= 0);
+                    assert(instr->i_target->b_startdepth <= depth);
+                    /* remaining code is dead */
+                    next = NULL;
+                    break;
+                }
+                stackdepth_push(&sp, instr->i_target, target_depth);
+            }
+            depth = new_depth;
+            if (instr->i_opcode == JUMP_ABSOLUTE ||
+                instr->i_opcode == JUMP_FORWARD ||
+                instr->i_opcode == RETURN_VALUE ||
+                instr->i_opcode == RAISE_VARARGS ||
+                instr->i_opcode == BREAK_LOOP)
+            {
+                /* remaining code is dead */
+                next = NULL;
+                break;
+            }
+        }
+        if (next != NULL) {
+            stackdepth_push(&sp, next, depth);
+        }
+    }
+    PyObject_Free(stack);
+    return maxdepth;
 }
 
 static int
@@ -5320,7 +5368,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
-    int argcount, kwonlyargcount;
+    int argcount, kwonlyargcount, maxdepth;
 
     tmp = dict_keys_inorder(c->u->u_consts, 0);
     if (!tmp)
@@ -5360,8 +5408,12 @@ makecode(struct compiler *c, struct assembler *a)
 
     argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
+    maxdepth = stackdepth(c);
+    if (maxdepth < 0) {
+        goto error;
+    }
     co = PyCode_New(argcount, kwonlyargcount,
-                    nlocals_int, stackdepth(c), flags,
+                    nlocals_int, maxdepth, flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
                     c->c_filename, c->u->u_name,
@@ -5448,7 +5500,7 @@ assemble(struct compiler *c, int addNone)
     }
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
-    dfs(c, entryblock, &a);
+    dfs(c, entryblock, &a, nblocks);
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);

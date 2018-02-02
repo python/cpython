@@ -179,6 +179,57 @@ a normal ``__getattr__`` method, except that it will be defined on module
        PEP written and implemented by Ivan Levkivskyi
 
 
+PEP 563: Postponed evaluation of annotations
+--------------------------------------------
+
+The advent of type hints in Python uncovered two glaring usability issues
+with the functionality of annotations added in :pep:`3107` and refined
+further in :pep:`526`:
+
+* annotations could only use names which were already available in the
+  current scope, in other words they didn't support forward references
+  of any kind; and
+
+* annotating source code had adverse effects on startup time of Python
+  programs.
+
+Both of these issues are fixed by postponing the evaluation of
+annotations.  Instead of compiling code which executes expressions in
+annotations at their definition time, the compiler stores the annotation
+in a string form equivalent to the AST of the expression in question.
+If needed, annotations can be resolved at runtime using
+``typing.get_type_hints()``.  In the common case where this is not
+required, the annotations are cheaper to store (since short strings
+are interned by the interpreter) and make startup time faster.
+
+Usability-wise, annotations now support forward references, making the
+following syntax valid::
+
+    class C:
+        @classmethod
+        def from_string(cls, source: str) -> C:
+            ...
+
+        def validate_b(self, obj: B) -> bool:
+            ...
+
+    class B:
+        ...
+
+Since this change breaks compatibility, the new behavior can be enabled
+on a per-module basis in Python 3.7 using a ``__future__`` import, like
+this::
+
+    from __future__ import annotations
+
+It will become the default in Python 4.0.
+
+.. seealso::
+
+    :pep:`563` -- Postponed evaluation of annotations
+       PEP written and implemented by Łukasz Langa.
+
+
 PEP 564: Add new time functions with nanosecond resolution
 ----------------------------------------------------------
 
@@ -260,6 +311,35 @@ environment variable are added to control the UTF-8 mode.
        PEP written and implemented by Victor Stinner
 
 
+.. _whatsnew37-pep557:
+
+PEP 557: Data Classes
+---------------------
+
+Adds a new module ``dataclasses``.  It provides a class decorator
+``dataclass`` which inspects the class's variable annotations (see
+:pep:`526`) and using them, adds methods such as ``__init__``,
+``__repr__``, and ``__eq__`` to the class.  It is similar to
+``typing.NamedTuple``, but also works on classes with mutable
+instances, among other features.
+
+For example::
+
+    @dataclass
+    class Point:
+        x: float
+        y: float
+        z: float = 0.0
+
+    p = Point(1.5, 2.5)
+    print(p)   # produces "Point(x=1.5, y=2.5, z=0.0)"
+
+.. seealso::
+
+    :pep:`557` -- Data Classes
+       PEP written and implemented by Eric V. Smith
+
+
 New Development Mode: -X dev
 ----------------------------
 
@@ -328,8 +408,12 @@ importlib.resources
 This module provides several new APIs and one new ABC for access to, opening,
 and reading *resources* inside packages.  Resources are roughly akin to files
 inside of packages, but they needn't be actual files on the physical file
-system.  Module loaders can implement the
-:class:`importlib.abc.ResourceReader` ABC to support this new module's API.
+system.  Module loaders can provide a :meth:`get_resource_reader()` function
+which returns a :class:`importlib.abc.ResourceReader` instance to support this
+new API.  Built-in file path loaders and zip file loaders both support this.
+(see the PyPI package
+`importlib_resources <http://importlib-resources.readthedocs.io/en/latest/>`_
+as a compatible back port for older Python versions).
 
 
 Improved Modules
@@ -375,6 +459,9 @@ contextlib
 :class:`~contextlib.AbstractAsyncContextManager` have been added. (Contributed
 by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
 
+:class:`contextlib.AsyncExitStack` has been added. (Contributed by
+Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
+
 cProfile
 --------
 
@@ -409,6 +496,11 @@ therefore included in source distributions.
 and ``platforms`` fields are not specified as a list or a string.
 (Contributed by Berker Peksag in :issue:`19610`.)
 
+The ``upload`` command now longer tries to change CR end-of-line characters
+to CRLF.  This fixes a corruption issue with sdists that ended with a byte
+equivalent to CR.
+(Contributed by Bo Bayles in :issue:`32304`.)
+
 http.client
 -----------
 
@@ -428,6 +520,19 @@ Add the parameter ``directory`` to the :class:`~http.server.SimpleHTTPRequestHan
 and the ``--directory`` to the command line of the module :mod:`~http.server`.
 With this parameter, the server serves the specified directory, by default it uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
+
+hmac
+----
+
+The hmac module now has an optimized one-shot :func:`~hmac.digest` function,
+which is up to three times faster than :func:`~hmac.HMAC`.
+(Contributed by Christian Heimes in :issue:`32433`.)
+
+importlib
+---------
+
+The :class:`importlib.abc.ResourceReader` ABC was introduced to
+support the loading of resource from packages.
 
 locale
 ------
@@ -469,6 +574,17 @@ begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 pdb command line now accepts `-m module_name` as an alternative to
 script file. (Contributed by Mario Corchero in :issue:`32206`.)
 
+py_compile
+----------
+
+:func:`py_compile.compile` -- and by extension, :mod:`compileall` -- now
+respects the :envvar:`SOURCE_DATE_EPOCH` environment variable by
+unconditionally creating ``.pyc`` files for hash-based validation.
+This allows for guaranteeing
+`reproducible builds <https://reproducible-builds.org/>`_ of ``.pyc``
+files when they are created eagerly. (Contributed by Bernhard M. Wiedemann
+in :issue:`29708`.)
+
 
 re
 --
@@ -480,6 +596,38 @@ can be set within the scope of a group.
 :func:`re.split` now supports splitting on a pattern like ``r'\b'``,
 ``'^$'`` or ``(?=-)`` that matches an empty string.
 (Contributed by Serhiy Storchaka in :issue:`25054`.)
+
+ssl
+---
+
+The ssl module now uses OpenSSL's builtin API instead of
+:func:`~ssl.match_hostname` to check host name or IP address. Values
+are validated during TLS handshake. Any cert validation error including
+a failing host name match now raises :exc:`~ssl.SSLCertVerificationError` and
+aborts the handshake with a proper TLS Alert message. The new exception
+contains additional information. Host name validation can be customized
+with :attr:`~ssl.SSLContext.host_flags`.
+(Contributed by Christian Heimes in :issue:`31399`.)
+
+.. note::
+   The improved host name check requires an OpenSSL 1.0.2 or 1.1 compatible
+   libssl. OpenSSL 0.9.8 and 1.0.1 are no longer supported. LibreSSL is
+   temporarily not supported until it gains the necessary OpenSSL 1.0.2 APIs.
+
+The ssl module no longer sends IP addresses in SNI TLS extension.
+(Contributed by Christian Heimes in :issue:`32185`.)
+
+:func:`~ssl.match_hostname` no longer supports partial wildcards like
+``www*.example.org``. :attr:`~ssl.SSLContext.host_flags` has partial
+wildcard matching disabled by default.
+(Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
+:issue:`31399`.)
+
+The default cipher suite selection of the ssl module now uses a blacklist
+approach rather than a hard-coded whitelist. Python no longer re-enables
+ciphers that have been blocked by OpenSSL security update. Default cipher
+suite selection can be configured on compile time.
+(Contributed by Christian Heimes in :issue:`31429`.)
 
 string
 ------
@@ -503,6 +651,9 @@ sys
 ---
 
 Added :attr:`sys.flags.dev_mode` flag for the new development mode.
+
+Deprecated :func:`sys.set_coroutine_wrapper` and
+:func:`sys.get_coroutine_wrapper`.
 
 time
 ----
@@ -531,6 +682,12 @@ Added functions :func:`time.thread_time` and :func:`time.thread_time_ns`
 to get per-thread CPU time measurements.
 (Contributed by Antoine Pitrou in :issue:`32025`.)
 
+unicodedata
+-----------
+
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
+<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+Peterson.)
 
 unittest
 --------
@@ -551,20 +708,6 @@ New function :const:`~unittest.mock.seal` will disable the creation of mock
 children by preventing to get or set any new attribute on the sealed mock.
 The sealing process is performed recursively. (Contributed by Mario Corchero
 in :issue:`30541`.)
-
-xmlrpc.server
--------------
-
-:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
-its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
-:issue:`7769`.)
-
-unicodedata
------------
-
-The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
-<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
-Peterson.)
 
 urllib.parse
 ------------
@@ -610,6 +753,13 @@ xml.etree
 methods can now compare text of the current node with ``[. = "text"]``,
 not only text in children.  Predicates also allow adding spaces for
 better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
+
+xmlrpc.server
+-------------
+
+:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
+its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
+:issue:`7769`.)
 
 zipapp
 ------
@@ -667,10 +817,16 @@ Optimizations
 Build and C API Changes
 =======================
 
+* :mod:`py_compile` and :mod:`compileall` now support the
+  :envvar:`SOURCE_DATE_EPOCH` environment variable by unconditionally
+  building ``.pyc`` files for hash verification instead of potentially
+  timestamp-based ``.pyc`` files. See the notes for the `py_compile`_
+  improvement notes for more details.
+
 * A full copy of libffi is no longer bundled for use when building the
   :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
   of libffi is now required when building ``_ctypes`` on such platforms.
-  Contributed by Zachary Ware in :issue:`27979`.
+  (Contributed by Zachary Ware in :issue:`27979`.)
 
 * The fields :c:member:`name` and :c:member:`doc` of structures
   :c:type:`PyMemberDef`, :c:type:`PyGetSetDef`,
@@ -724,6 +880,11 @@ Other CPython Implementation Changes
 Deprecated
 ==========
 
+* In Python 3.8, the abstract base classes in :mod:`collections.abc` will no
+  longer be exposed in the regular :mod:`collections` module.  This will help
+  create a clearer distinction between the concrete classes and the abstract
+  base classes.
+
 * Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
   in comprehensions and generator expressions (aside from the iterable expression
   in the leftmost :keyword:`for` clause). This ensures that comprehensions
@@ -761,6 +922,9 @@ Deprecated
 
 - The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
 
+- The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
+  favour of :class:`importlib.abc.ResourceReader`.
+
 
 Changes in the C API
 --------------------
@@ -785,14 +949,19 @@ Windows Only
   been used. If the specified version is not available py.exe will error exit.
   (Contributed by Steve Barnes in :issue:`30291`.)
 
-- The launcher can be run as "py -0" to produce a list of the installed pythons,
-  *with default marked with an asterix*. Running "py -0p" will include the paths.
+- The launcher can be run as ``py -0`` to produce a list of the installed pythons,
+  *with default marked with an asterisk*. Running ``py -0p`` will include the paths.
   If py is run with a version specifier that cannot be matched it will also print
   the *short form* list of available specifiers.
   (Contributed by Steve Barnes in :issue:`30362`.)
 
 Removed
 =======
+
+Platform Support Removals
+-------------------------
+
+* FreeBSD 9 and older are no longer supported.
 
 API and Feature Removals
 ------------------------
@@ -839,6 +1008,12 @@ that may require changes to your code.
 Changes in Python behavior
 --------------------------
 
+* :pep:`479` is enabled for all code in Python 3.7, meaning that
+  :exc:`StopIteration` exceptions raised directly or indirectly in
+  coroutines and generators are transformed into :exc:`RuntimeError`
+  exceptions.
+  (Contributed by Yury Selivanov in :issue:`32670`.)
+
 * Due to an oversight, earlier Python versions erroneously accepted the
   following syntax::
 
@@ -856,6 +1031,17 @@ Changes in Python behavior
 
 Changes in the Python API
 -------------------------
+
+* :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
+  non-daemon threads complete. Use daemonic threads by setting
+  :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
+  complete. (Contributed by Victor Stinner in :issue:`31233`.)
+
+* :meth:`socketserver.ForkingMixIn.server_close` now waits until all
+  child processes complete. (Contributed by Victor Stinner in :issue:`31151`.)
+
+* The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+  locale to the ``LC_NUMERIC`` locale in some cases.
 
 * The ``asyncio.windows_utils.socketpair()`` function has been
   removed: use directly :func:`socket.socketpair` which is available on all
@@ -987,6 +1173,8 @@ CPython bytecode changes
 * Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
+* Removed the STORE_ANNOTATION opcode.
+
 
 Other CPython implementation changes
 ------------------------------------
@@ -1007,6 +1195,12 @@ Other CPython implementation changes
   to exceptions. Instead, the flag must be set (to cause the warnings to be
   emitted in the first place), and an explicit ``error::BytesWarning``
   warnings filter added to convert them to exceptions.
+
+* CPython' :mod:`ssl` module requires OpenSSL 1.0.2 or 1.1 compatible libssl.
+  OpenSSL 1.0.1 has reached end of lifetime on 2016-12-31 and is no longer
+  supported. LibreSSL is temporarily not supported as well. LibreSSL releases
+  up to version 2.6.4 are missing required OpenSSL 1.0.2 APIs.
+
 
 Documentation
 =============

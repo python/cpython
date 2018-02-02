@@ -32,14 +32,6 @@ def _is_debug_mode():
 _DEBUG = _is_debug_mode()
 
 
-def debug_wrapper(gen):
-    # This function is called from 'sys.set_coroutine_wrapper'.
-    # We only wrap here coroutines defined via 'async def' syntax.
-    # Generator-based coroutines are wrapped in @coroutine
-    # decorator.
-    return CoroWrapper(gen, None)
-
-
 class CoroWrapper:
     # Wrapper for coroutine object in _DEBUG mode.
 
@@ -87,39 +79,16 @@ class CoroWrapper:
         return self.gen.gi_code
 
     def __await__(self):
-        cr_await = getattr(self.gen, 'cr_await', None)
-        if cr_await is not None:
-            raise RuntimeError(
-                f"Cannot await on coroutine {self.gen!r} while it's "
-                f"awaiting for {cr_await!r}")
         return self
 
     @property
     def gi_yieldfrom(self):
         return self.gen.gi_yieldfrom
 
-    @property
-    def cr_await(self):
-        return self.gen.cr_await
-
-    @property
-    def cr_running(self):
-        return self.gen.cr_running
-
-    @property
-    def cr_code(self):
-        return self.gen.cr_code
-
-    @property
-    def cr_frame(self):
-        return self.gen.cr_frame
-
     def __del__(self):
         # Be careful accessing self.gen.frame -- self.gen might not exist.
         gen = getattr(self, 'gen', None)
         frame = getattr(gen, 'gi_frame', None)
-        if frame is None:
-            frame = getattr(gen, 'cr_frame', None)
         if frame is not None and frame.f_lasti == -1:
             msg = f'{self!r} was never yielded from'
             tb = getattr(self, '_source_traceback', ())
@@ -141,8 +110,6 @@ def coroutine(func):
     if inspect.iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defined with "async def".
-        # Wrapping in CoroWrapper will happen via
-        # 'sys.set_coroutine_wrapper' function.
         return func
 
     if inspect.isgeneratorfunction(func):
@@ -165,8 +132,9 @@ def coroutine(func):
                         res = yield from await_meth()
             return res
 
+    coro = types.coroutine(coro)
     if not _DEBUG:
-        wrapper = types.coroutine(coro)
+        wrapper = coro
     else:
         @functools.wraps(func)
         def wrapper(*args, **kwds):

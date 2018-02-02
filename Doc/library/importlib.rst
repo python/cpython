@@ -233,7 +233,6 @@ ABC hierarchy::
      |    +-- MetaPathFinder
      |    +-- PathEntryFinder
      +-- Loader
-          +-- ResourceReader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
                +-- ExecutionLoader --+
@@ -370,6 +369,13 @@ ABC hierarchy::
     An abstract base class for a :term:`loader`.
     See :pep:`302` for the exact definition for a loader.
 
+    For loaders that wish to support resource reading, they should
+    implement a ``get_resource_reader(fullname)`` method as specified
+    by :class:`importlib.abc.ResourceReader`.
+
+    .. versionchanged:: 3.7
+       Introduced the optional ``get_resource_reader()`` method.
+
     .. method:: create_module(spec)
 
        A method that returns the module object to use when
@@ -471,8 +477,7 @@ ABC hierarchy::
 
 .. class:: ResourceReader
 
-    An :term:`abstract base class` for :term:`package`
-    :term:`loaders <loader>` to provide the ability to read
+    An :term:`abstract base class` to provide the ability to read
     *resources*.
 
     From the perspective of this ABC, a *resource* is a binary
@@ -487,12 +492,19 @@ ABC hierarchy::
     expected to be a :term:`path-like object` which represents
     conceptually just a file name. This means that no subdirectory
     paths should be included in the *resource* argument. This is
-    because the location of the package that the loader is for acts
-    as the "directory". Hence the metaphor for directories and file
+    because the location of the package the reader is for, acts as the
+    "directory". Hence the metaphor for directories and file
     names is packages and resources, respectively. This is also why
     instances of this class are expected to directly correlate to
     a specific package (instead of potentially representing multiple
     packages or a module).
+
+    Loaders that wish to support resource reading are expected to
+    provide a method called ``get_resource_loader(fullname)`` which
+    returns an object implementing this ABC's interface. If the module
+    specified by fullname is not a package, this method should return
+    :const:`None`. An object compatible with this ABC should only be
+    returned when the specified module is a package.
 
     .. versionadded:: 3.7
 
@@ -529,9 +541,10 @@ ABC hierarchy::
         are known a priori and the non-resource names would be useful.
         For instance, returning subdirectory names is allowed so that
         when it is known that the package and resources are stored on
-        the file system then those subdirectory names can be used.
+        the file system then those subdirectory names can be used
+        directly.
 
-        The abstract method returns an empty iterator.
+        The abstract method returns an iterator of no items.
 
 
 .. class:: ResourceLoader
@@ -539,6 +552,10 @@ ABC hierarchy::
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
+
+    .. deprecated:: 3.7
+       This ABC is deprecated in favour of supporting resource loading
+       through :class:`importlib.abc.ResourceReader`.
 
     .. abstractmethod:: get_data(path)
 

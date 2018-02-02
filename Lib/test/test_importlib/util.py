@@ -397,6 +397,9 @@ class CASEOKTestBase:
 
 def create_package(file, path, is_package=True, contents=()):
     class Reader(ResourceReader):
+        def get_resource_reader(self, package):
+            return self
+
         def open_resource(self, path):
             self._path = path
             if isinstance(file, Exception):

@@ -35,7 +35,7 @@ this should open a window demonstrating a simple Tk interface.
    `Tcl/Tk manual <https://www.tcl.tk/man/tcl8.5/>`_
       Official manual for the latest tcl/tk version.
 
-   `Programming Python <http://learning-python.com/books/about-pp4e.html>`_
+   `Programming Python <http://learning-python.com/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
    `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_

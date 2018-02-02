@@ -81,6 +81,9 @@
     <ClInclude Include="..\Include\complexobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\context.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -135,7 +138,13 @@
     <ClInclude Include="..\Include\internal\condvar.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\context.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\gil.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\hamt.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mem.h">
@@ -506,6 +515,9 @@
     <ClCompile Include="..\Modules\_pickle.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_queuemodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_randommodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -827,6 +839,9 @@
     <ClCompile Include="..\Python\ast_opt.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\ast_unparse.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -837,6 +852,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\context.h">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\dynamic_annotations.c">
@@ -879,6 +897,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\graminit.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\hamt.h">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\import.c">
@@ -993,6 +1014,9 @@
       <Filter>PC</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_asynciomodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_contextvarsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="$(zlibDir)\adler32.c">

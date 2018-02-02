@@ -1,5 +1,6 @@
 """Tests support for new syntax introduced by PEP 492."""
 
+import sys
 import types
 import unittest
 
@@ -148,35 +149,14 @@ class CoroutineTests(BaseTest):
         data = self.loop.run_until_complete(foo())
         self.assertEqual(data, 'spam')
 
-    @mock.patch('asyncio.coroutines.logger')
-    def test_async_def_wrapped(self, m_log):
-        async def foo():
-            pass
+    def test_debug_mode_manages_coroutine_origin_tracking(self):
         async def start():
-            foo_coro = foo()
-            self.assertRegex(
-                repr(foo_coro),
-                r'<CoroWrapper .*\.foo\(\) running at .*pep492.*>')
+            self.assertTrue(sys.get_coroutine_origin_tracking_depth() > 0)
 
-            with support.check_warnings((r'.*foo.*was never',
-                                         RuntimeWarning)):
-                foo_coro = None
-                support.gc_collect()
-                self.assertTrue(m_log.error.called)
-                message = m_log.error.call_args[0][0]
-                self.assertRegex(message,
-                                 r'CoroWrapper.*foo.*was never')
-
+        self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
         self.loop.set_debug(True)
         self.loop.run_until_complete(start())
-
-        async def start():
-            foo_coro = foo()
-            task = asyncio.ensure_future(foo_coro, loop=self.loop)
-            self.assertRegex(repr(task), r'Task.*foo.*running')
-
-        self.loop.run_until_complete(start())
-
+        self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
 
     def test_types_coroutine(self):
         def gen():
@@ -226,9 +206,9 @@ class CoroutineTests(BaseTest):
                 t.cancel()
 
         self.loop.set_debug(True)
-        with self.assertRaisesRegex(
-            RuntimeError,
-            r'Cannot await.*test_double_await.*\bafunc\b.*while.*\bsleep\b'):
+        with self.assertRaises(
+                RuntimeError,
+                msg='coroutine is being awaited already'):
 
             self.loop.run_until_complete(runner())
 
