@@ -158,3 +158,4 @@ absx527 abs -sNaN33  -> -NaN33 Invalid_operation
 
 -- Null tests
 absx900 abs  # -> NaN Invalid_operation
+
