@@ -509,7 +509,7 @@ or subtracting from an empty counter.
         .. versionadded:: 3.2
 
 
-    .. method:: rotate(n)
+    .. method:: rotate(n=1)
 
         Rotate the deque *n* steps to the right.  If *n* is negative, rotate to
         the left.  Rotating one step to the right is equivalent to:
