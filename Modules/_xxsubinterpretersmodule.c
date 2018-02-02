@@ -538,6 +538,9 @@ _channel_add(_PyChannelState *chan, int64_t interp,
     if (chan->first == NULL) {
         chan->first = item;
     }
+    else {
+        chan->last->next = item;
+    }
     chan->last = item;
 
     res = 0;
@@ -551,6 +554,7 @@ _channel_next(_PyChannelState *chan, int64_t interp)
 {
     _PyCrossInterpreterData *data = NULL;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+
     if (_channel_associate_end(chan, interp, 0) == NULL) {
         goto done;
     }
