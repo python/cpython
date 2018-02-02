@@ -430,7 +430,7 @@ static PyMethodDef fcntl_methods[] = {
 
 
 PyDoc_STRVAR(module_doc,
-"This module performs file control and I/O control on file \n\
+"This module performs file control and I/O control on file\n\
 descriptors.  It is an interface to the fcntl() and ioctl() Unix\n\
 routines.  File descriptors can be obtained with the fileno() method of\n\
 a file or socket object.");

@@ -11472,7 +11472,7 @@ PyDoc_STRVAR(termsize__doc__,
     "This function will only be defined if an implementation is\n"         \
     "available for this system.\n"                                         \
     "\n"                                                                   \
-    "shutil.get_terminal_size is the high-level function which should \n"  \
+    "shutil.get_terminal_size is the high-level function which should\n"  \
     "normally be used, os.get_terminal_size is the low-level implementation.");
 
 static PyObject*

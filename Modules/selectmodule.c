@@ -516,7 +516,7 @@ poll_unregister(pollObject *self, PyObject *o)
 
 PyDoc_STRVAR(poll_poll_doc,
 "poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
-Polls the set of registered file descriptors, returning a list containing \n\
+Polls the set of registered file descriptors, returning a list containing\n\
 any descriptors that have events or errors to report.");
 
 static PyObject *
@@ -877,7 +877,7 @@ devpoll_unregister(devpollObject *self, PyObject *o)
 
 PyDoc_STRVAR(devpoll_poll_doc,
 "poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
-Polls the set of registered file descriptors, returning a list containing \n\
+Polls the set of registered file descriptors, returning a list containing\n\
 any descriptors that have events or errors to report.");
 
 static PyObject *

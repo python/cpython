@@ -866,7 +866,7 @@ PyDoc_STRVAR(odict_delitem__doc__, "od.__delitem__(y) <==> del od[y]");
 /* __eq__() */
 
 PyDoc_STRVAR(odict_eq__doc__,
-"od.__eq__(y) <==> od==y.  Comparison to another OD is order-sensitive \n\
+"od.__eq__(y) <==> od==y.  Comparison to another OD is order-sensitive\n\
         while comparison to a regular mapping is order-insensitive.\n\
         ");
 
