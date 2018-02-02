@@ -58,7 +58,23 @@ all: dist is_emulator_listening _emulator
 	@echo "---> Install Python on the avd and start the emulator."
 	$(python_cmd) $(py_srcdir)/Android/tools/install.py
 
-install: all
+ensurepip:
+	@echo "---> Install pip."
+	@$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py \
+	    -W ignore::DeprecationWarning -m ensurepip --upgrade --default-pip
+
+# Hack to fix a pip bug looping infinitely on SELinux platforms that restrict
+# access to hard links.
+pip_hack:
+	@echo "---> Install pip hack."
+	@pip_lockfile_py=$(SYS_EXEC_PREFIX)/lib/$(py_name)/site-packages/pip/_vendor/lockfile/__init__.py; \
+	    $(ADB) -s emulator-$(CONSOLE_PORT) pull $$pip_lockfile_py $(DIST_DIR)/pip_lockfile_py; \
+	    echo "from . import mkdirlockfile" >> $(DIST_DIR)/pip_lockfile_py; \
+	    echo "LockFile = mkdirlockfile.MkdirLockFile" >> $(DIST_DIR)/pip_lockfile_py; \
+	    $(ADB) -s emulator-$(CONSOLE_PORT) push $(DIST_DIR)/pip_lockfile_py $$pip_lockfile_py; \
+	    rm $(DIST_DIR)/pip_lockfile_py
+
+install: all ensurepip pip_hack
 	@echo "---> Run an adb shell."
 	$(python_cmd) $(py_srcdir)/Android/tools/python_shell.py
 	@$(ADB) -s emulator-$(CONSOLE_PORT) shell
@@ -131,4 +147,5 @@ avdclean:
 	-rmdir $(avd_dir)
 
 .PHONY: exists_python_cmd adb_shell all install python pythoninfo buildbottest gdb \
-        kill_emulator is_emulator_listening _emulator avdclean required
+        kill_emulator is_emulator_listening _emulator avdclean required \
+	ensurepip pip_hack

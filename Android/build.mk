@@ -98,6 +98,7 @@ $(config_status): $(makefile) $(py_srcdir)/configure
 	    LDFLAGS=-L$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib \
 	    $(py_srcdir)/configure-android \
 	    --prefix=$(SYS_PREFIX) --exec-prefix=$(SYS_EXEC_PREFIX) \
+	    --without-ensurepip \
 	    $(config_args)
 
 $(python): native_python prefixes external_libraries openssl $(config_status)
@@ -148,8 +149,6 @@ python_dist: $(python)
 	if test -d "$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/etc"; then \
 	    cp -r $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/etc $(PY_DESTDIR)/$(SYS_EXEC_PREFIX); \
 	fi
-	# This won't be needed anymore when issue 31046 is fixed.
-	rm -rf $(PY_DESTDIR)/usr
 
 $(PYTHON_ZIP): python_dist
 	@echo "---> Zip the machine-specific Python library."
