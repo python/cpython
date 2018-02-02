@@ -1160,9 +1160,9 @@ class PathFinder:
         elif spec.loader is None:
             namespace_path = spec.submodule_search_locations
             if namespace_path:
-                # We found at least one namespace path.  Return a
-                #  spec which can create the namespace package.
-                spec.origin = 'namespace'
+                # We found at least one namespace path.  Return a spec which
+                # can create the namespace package.
+                spec.origin = None
                 spec.submodule_search_locations = _NamespacePath(fullname, namespace_path, cls._get_spec)
                 return spec
             else:

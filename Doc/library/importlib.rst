@@ -1077,7 +1077,7 @@ find and load modules.
    Name of the place from which the module is loaded, e.g. "builtin" for
    built-in modules and the filename for modules loaded from source.
    Normally "origin" should be set, but it may be ``None`` (the default)
-   which indicates it is unspecified.
+   which indicates it is unspecified (e.g. for namespace packages).
 
    .. attribute:: submodule_search_locations
 
