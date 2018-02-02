@@ -2358,6 +2358,8 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
             Py_INCREF(o);
             return o;
         case W_NEWNODE: {
+            assert(new_root != NULL);
+
             PyHamtObject *new_o = hamt_alloc();
             if (new_o == NULL) {
                 Py_DECREF(new_root);
