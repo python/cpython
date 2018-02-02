@@ -193,48 +193,91 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
 // of the exception in the calling interpreter.
 
 typedef struct _sharedexception {
+    char *name;
     char *msg;
 } _sharedexception;
+
+static _sharedexception *
+_sharedexception_new(void)
+{
+    _sharedexception *err = PyMem_NEW(_sharedexception, 1);
+    if (err == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    err->name = NULL;
+    err->msg = NULL;
+    return err;
+}
+
+static void
+_sharedexception_clear(_sharedexception *exc)
+{
+    if (exc->name != NULL) {
+        PyMem_Free(exc->name);
+    }
+    if (exc->msg != NULL) {
+        PyMem_Free(exc->msg);
+    }
+}
 
 static void
 _sharedexception_free(_sharedexception *exc)
 {
-    if (exc->msg != NULL) {
-        PyMem_Free(exc->msg);
-    }
+    _sharedexception_clear(exc);
     PyMem_Free(exc);
 }
 
 static _sharedexception *
-_get_shared_exception(void)
+_sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
 {
-    _sharedexception *err = PyMem_NEW(_sharedexception, 1);
+    assert(exctype != NULL);
+    char *failure = NULL;
+
+    _sharedexception *err = _sharedexception_new();
     if (err == NULL) {
-        return NULL;
-    }
-    PyObject *exc;
-    PyObject *value;
-    PyObject *tb;
-    PyErr_Fetch(&exc, &value, &tb);
-    PyObject *msg;
-    if (value == NULL) {
-        msg = PyUnicode_FromFormat("%S", exc);
-    }
-    else {
-        msg = PyUnicode_FromFormat("%S: %S", exc, value);
-    }
-    if (msg == NULL) {
-        err->msg = "unable to format exception";
-        return err;
+        goto finally;
     }
 
-    err->msg = _copy_raw_string(msg);
-    Py_DECREF(msg);
-    if (err->msg == NULL) {
+    PyObject *name = PyUnicode_FromFormat("%S", exctype);
+    if (name == NULL) {
+        failure = "unable to format exception type name";
+        goto finally;
+    }
+    err->name = _copy_raw_string(name);
+    if (err->name == NULL) {
         if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-            err->msg = "MemoryError: out of memory copying error message";
+            failure = "out of memory copying exception type name";
         }
-        err->msg = "unable to encode and copy exception message";
+        failure = "unable to encode and copy exception type name";
+        goto finally;
+    }
+
+    if (exc != NULL) {
+        PyObject *msg = PyUnicode_FromFormat("%S", exc);
+        if (msg == NULL) {
+            failure = "unable to format exception message";
+            goto finally;
+        }
+        err->msg = _copy_raw_string(msg);
+        Py_DECREF(msg);
+        if (err->msg == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                failure = "out of memory copying exception message";
+            }
+            failure = "unable to encode and copy exception message";
+            goto finally;
+        }
+    }
+
+finally:
+    if (failure != NULL) {
+        PyErr_Clear();
+        if (err->name != NULL) {
+            PyMem_Free(err->name);
+            err->name = NULL;
+        }
+        err->msg = failure;
     }
     return err;
 }
@@ -260,9 +303,22 @@ interp_exceptions_init(PyObject *ns)
 }
 
 static void
-_apply_shared_exception(_sharedexception *exc)
+_sharedexception_apply(_sharedexception *exc)
 {
-    PyErr_SetString(RunFailedError, exc->msg);
+    if (exc->name != NULL) {
+        if (exc->msg != NULL) {
+            PyErr_Format(RunFailedError, "%s: %s",  exc->name, exc->msg);
+        }
+        else {
+            PyErr_SetString(RunFailedError, exc->name);
+        }
+    }
+    else if (exc->msg != NULL) {
+        PyErr_SetString(RunFailedError, exc->msg);
+    }
+    else {
+        PyErr_SetNone(RunFailedError);
+    }
 }
 
 /* channel-specific code */
@@ -1475,6 +1531,10 @@ static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception **exc)
 {
+    PyObject *exctype = NULL;
+    PyObject *excval = NULL;
+    PyObject *tb = NULL;
+
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
     if (main_mod == NULL) {
         goto error;
@@ -1504,10 +1564,27 @@ _run_script(PyInterpreterState *interp, const char *codestr,
         Py_DECREF(result);  // We throw away the result.
     }
 
+    *exc = NULL;
     return 0;
 error:
-    *exc = _get_shared_exception();
+    PyErr_Fetch(&exctype, &excval, &tb);
+    Py_INCREF(exctype);
+    Py_XINCREF(excval);
+    Py_XINCREF(tb);
     PyErr_Clear();
+
+    _sharedexception *sharedexc = _sharedexception_bind(exctype, excval, tb);
+    Py_DECREF(exctype);
+    Py_XDECREF(excval);
+    Py_XDECREF(tb);
+    if (sharedexc == NULL) {
+        fprintf(stderr, "RunFailedError: script raised an uncaught exception");
+        PyErr_Clear();
+    }
+    else {
+        assert(!PyErr_Occurred());
+        *exc = sharedexc;
+    }
     return -1;
 }
 
@@ -1539,7 +1616,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Propagate any exception out to the caller.
     if (exc != NULL) {
-        _apply_shared_exception(exc);
+        _sharedexception_apply(exc);
         _sharedexception_free(exc);
     }
     else if (result != 0) {
