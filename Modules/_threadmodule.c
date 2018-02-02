@@ -1162,7 +1162,7 @@ PyDoc_STRVAR(_count_doc,
 "_count() -> integer\n\
 \n\
 \
-Return the number of currently running Python threads, excluding \n\
+Return the number of currently running Python threads, excluding\n\
 the main thread. The returned number comprises all threads created\n\
 through `start_new_thread()` as well as `threading.Thread`, and not\n\
 yet finished.\n\
