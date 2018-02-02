@@ -1,1 +1,0 @@
-The nis module is now compatible with new libnsl and headers location.

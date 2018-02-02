@@ -44,9 +44,10 @@ _PyGen_Finalize(PyObject *self)
     PyObject *res = NULL;
     PyObject *error_type, *error_value, *error_traceback;
 
-    if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL)
+    if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL) {
         /* Generator isn't paused, so no need to close */
         return;
+    }
 
     if (PyAsyncGen_CheckExact(self)) {
         PyAsyncGenObject *agen = (PyAsyncGenObject*)self;
@@ -75,18 +76,18 @@ _PyGen_Finalize(PyObject *self)
        issue a RuntimeWarning. */
     if (gen->gi_code != NULL &&
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
-        gen->gi_frame->f_lasti == -1) {
-        if (!error_value) {
-            _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
-        }
+        gen->gi_frame->f_lasti == -1)
+    {
+        _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
     else {
         res = gen_close(gen, NULL);
     }
 
     if (res == NULL) {
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
             PyErr_WriteUnraisable(self);
+        }
     }
     else {
         Py_DECREF(res);

@@ -623,6 +623,12 @@ wildcard matching disabled by default.
 (Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
 :issue:`31399`.)
 
+The default cipher suite selection of the ssl module now uses a blacklist
+approach rather than a hard-coded whitelist. Python no longer re-enables
+ciphers that have been blocked by OpenSSL security update. Default cipher
+suite selection can be configured on compile time.
+(Contributed by Christian Heimes in :issue:`31429`.)
+
 string
 ------
 
@@ -874,6 +880,11 @@ Other CPython Implementation Changes
 Deprecated
 ==========
 
+* In Python 3.8, the abstract base classes in :mod:`collections.abc` will no
+  longer be exposed in the regular :mod:`collections` module.  This will help
+  create a clearer distinction between the concrete classes and the abstract
+  base classes.
+
 * Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
   in comprehensions and generator expressions (aside from the iterable expression
   in the leftmost :keyword:`for` clause). This ensures that comprehensions
@@ -1021,6 +1032,14 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
+  non-daemon threads complete. Use daemonic threads by setting
+  :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
+  complete. (Contributed by Victor Stinner in :issue:`31233`.)
+
+* :meth:`socketserver.ForkingMixIn.server_close` now waits until all
+  child processes complete. (Contributed by Victor Stinner in :issue:`31151`.)
+
 * The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
   locale to the ``LC_NUMERIC`` locale in some cases.
 
@@ -1153,6 +1172,8 @@ CPython bytecode changes
 
 * Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+
+* Removed the STORE_ANNOTATION opcode.
 
 
 Other CPython implementation changes

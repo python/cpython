@@ -365,7 +365,7 @@ sys_getdefaultencoding(PyObject *self)
 PyDoc_STRVAR(getdefaultencoding_doc,
 "getdefaultencoding() -> string\n\
 \n\
-Return the current default string encoding used by the Unicode \n\
+Return the current default string encoding used by the Unicode\n\
 implementation."
 );
 
@@ -1122,7 +1122,7 @@ PyDoc_STRVAR(enablelegacywindowsfsencoding_doc,
 Changes the default filesystem encoding to mbcs:replace for consistency\n\
 with earlier versions of Python. See PEP 529 for more information.\n\
 \n\
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING \n\
+This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING\n\
 environment variable before launching Python."
 );
 
@@ -1812,7 +1812,7 @@ winver -- [Windows only] version number of the Python DLL\n\
 #ifdef MS_WINDOWS
 /* concatenating string here */
 PyDoc_STR(
-"_enablelegacywindowsfsencoding -- [Windows only] \n\
+"_enablelegacywindowsfsencoding -- [Windows only]\n\
 "
 )
 #endif
