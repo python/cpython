@@ -522,6 +522,18 @@ def _init_module_attrs(spec, module, *, override=False):
 
                 loader = _NamespaceLoader.__new__(_NamespaceLoader)
                 loader._path = spec.submodule_search_locations
+                spec.loader = loader
+                # While the docs say that module.__file__ is not set for
+                # built-in modules, and the code below will avoid setting it if
+                # spec.has_location is false, this is incorrect for namespace
+                # packages.  Namespace packages have no location, but their
+                # __spec__.origin is None, and thus their module.__file__
+                # should also be None for consistency.  While a bit of a hack,
+                # this is the best place to ensure this consistency.
+                #
+                # See # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module
+                # and bpo-32305
+                module.__file__ = None
         try:
             module.__loader__ = loader
         except AttributeError:
