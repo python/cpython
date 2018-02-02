@@ -7,6 +7,22 @@
 #include "internal/pystate.h"
 
 
+static char *
+_copy_raw_string(PyObject *strobj)
+{
+    const char *str = PyUnicode_AsUTF8(strobj);
+    if (str == NULL) {
+        return NULL;
+    }
+    char *copied = PyMem_Malloc(strlen(str)+1);
+    if (str == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    strcpy(copied, str);
+    return copied;
+}
+
 static PyInterpreterState *
 _get_current(void)
 {
@@ -50,39 +66,98 @@ _coerce_id(PyObject *id)
 
 /* data-sharing-specific code ***********************************************/
 
-typedef struct _shareditem {
-    Py_UNICODE *name;
-    Py_ssize_t namelen;
+struct _sharednsitem {
+    char *name;
     _PyCrossInterpreterData data;
-} _shareditem;
+};
 
-void
-_sharedns_clear(_shareditem *shared)
+static int
+_sharednsitem_init(struct _sharednsitem *item, PyObject *key, PyObject *value)
 {
-    for (_shareditem *item=shared; item->name != NULL; item += 1) {
-        _PyCrossInterpreterData_Release(&item->data);
+    item->name = _copy_raw_string(key);
+    if (item->name == NULL) {
+        return -1;
     }
+    if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
+        return -1;
+    }
+    return 0;
 }
 
-static _shareditem *
-_get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
+static void
+_sharednsitem_clear(struct _sharednsitem *item)
+{
+    if (item->name != NULL) {
+        PyMem_Free(item->name);
+    }
+    _PyCrossInterpreterData_Release(&item->data);
+}
+
+static int
+_sharednsitem_apply(struct _sharednsitem *item, PyObject *ns)
+{
+    PyObject *name = PyUnicode_FromString(item->name);
+    if (name == NULL) {
+        return -1;
+    }
+    PyObject *value = _PyCrossInterpreterData_NewObject(&item->data);
+    if (value == NULL) {
+        Py_DECREF(name);
+        return -1;
+    }
+    int res = PyDict_SetItem(ns, name, value);
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return res;
+}
+
+typedef struct _sharedns {
+    Py_ssize_t len;
+    struct _sharednsitem* items;
+} _sharedns;
+
+static _sharedns *
+_sharedns_new(Py_ssize_t len)
+{
+    _sharedns *shared = PyMem_NEW(_sharedns, 1);
+    if (shared == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    shared->len = len;
+    shared->items = PyMem_NEW(struct _sharednsitem, len);
+    if (shared->items == NULL) {
+        PyErr_NoMemory();
+        PyMem_Free(shared);
+        return NULL;
+    }
+    return shared;
+}
+
+static void
+_sharedns_free(_sharedns *shared)
+{
+    for (Py_ssize_t i=0; i < shared->len; i++) {
+        _sharednsitem_clear(&shared->items[i]);
+    }
+    PyMem_Free(shared->items);
+    PyMem_Free(shared);
+}
+
+static _sharedns *
+_get_shared_ns(PyObject *shareable)
 {
     if (shareable == NULL || shareable == Py_None) {
-        *lenp = 0;
         return NULL;
     }
     Py_ssize_t len = PyDict_Size(shareable);
-    *lenp = len;
     if (len == 0) {
         return NULL;
     }
 
-    _shareditem *shared = PyMem_NEW(_shareditem, len+1);
+    _sharedns *shared = _sharedns_new(len);
     if (shared == NULL) {
         return NULL;
-    }
-    for (Py_ssize_t i=0; i < len; i++) {
-        *(shared + i) = (_shareditem){0};
     }
     Py_ssize_t pos = 0;
     for (Py_ssize_t i=0; i < len; i++) {
@@ -90,42 +165,26 @@ _get_shared_ns(PyObject *shareable, Py_ssize_t *lenp)
         if (PyDict_Next(shareable, &pos, &key, &value) == 0) {
             break;
         }
-        _shareditem *item = shared + i;
-
-        if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
+        if (_sharednsitem_init(&shared->items[i], key, value) != 0) {
             break;
         }
-        item->name = PyUnicode_AsUnicodeAndSize(key, &item->namelen);
-        if (item->name == NULL) {
-            _PyCrossInterpreterData_Release(&item->data);
-            break;
-        }
-        (item + 1)->name = NULL;  // Mark the next one as the last.
     }
     if (PyErr_Occurred()) {
-        _sharedns_clear(shared);
-        PyMem_Free(shared);
+        _sharedns_free(shared);
         return NULL;
     }
     return shared;
 }
 
 static int
-_shareditem_apply(_shareditem *item, PyObject *ns)
+_sharedns_apply(_sharedns *shared, PyObject *ns)
 {
-    PyObject *name = PyUnicode_FromUnicode(item->name, item->namelen);
-    if (name == NULL) {
-        return 1;
+    for (Py_ssize_t i=0; i < shared->len; i++) {
+        if (_sharednsitem_apply(&shared->items[i], ns) != 0) {
+            return -1;
+        }
     }
-    PyObject *value = _PyCrossInterpreterData_NewObject(&item->data);
-    if (value == NULL) {
-        Py_DECREF(name);
-        return 1;
-    }
-    int res = PyDict_SetItem(ns, name, value);
-    Py_DECREF(name);
-    Py_DECREF(value);
-    return res;
+    return 0;
 }
 
 // Ultimately we'd like to preserve enough information about the
@@ -138,8 +197,11 @@ typedef struct _sharedexception {
 } _sharedexception;
 
 static void
-_sharedexception_free(_sharedexception *exc) {
-    PyMem_Free(exc->msg);
+_sharedexception_free(_sharedexception *exc)
+{
+    if (exc->msg != NULL) {
+        PyMem_Free(exc->msg);
+    }
     PyMem_Free(exc);
 }
 
@@ -165,20 +227,14 @@ _get_shared_exception(void)
         err->msg = "unable to format exception";
         return err;
     }
-    const char *errmsg = PyUnicode_AsUTF8(msg);
-    if (errmsg == NULL) {
-        err->msg = "unable to encode exception";
-    }
-    err->msg = PyMem_Malloc(strlen(errmsg)+1);
-    if (err->msg == NULL) {
-        Py_DECREF(msg);
-        err->msg = "MemoryError: out of memory copying error message";
-        return err;
-    }
-    strcpy(err->msg, errmsg);
+
+    err->msg = _copy_raw_string(msg);
     Py_DECREF(msg);
     if (err->msg == NULL) {
-        err->msg = "unable to encode exception";
+        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            err->msg = "MemoryError: out of memory copying error message";
+        }
+        err->msg = "unable to encode and copy exception message";
     }
     return err;
 }
@@ -289,7 +345,8 @@ _channelend_new(int64_t interp)
 }
 
 static void
-_channelend_free_all(_channelend *end) {
+_channelend_free_all(_channelend *end)
+{
     while (end != NULL) {
         _channelend *last = end;
         end = end->next;
@@ -1416,10 +1473,8 @@ _ensure_not_running(PyInterpreterState *interp)
 
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
-            _shareditem *shared, Py_ssize_t num_shared,
-            _sharedexception **exc)
+            _sharedns *shared, _sharedexception **exc)
 {
-    assert(num_shared >= 0);
     PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
     if (main_mod == NULL) {
         goto error;
@@ -1433,12 +1488,9 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 
     // Apply the cross-interpreter data.
     if (shared != NULL) {
-        for (Py_ssize_t i=0; i < num_shared; i++) {
-            _shareditem *item = &shared[i];
-            if (_shareditem_apply(item, ns) != 0) {
-                Py_DECREF(ns);
-                goto error;
-            }
+        if (_sharedns_apply(shared, ns) != 0) {
+            Py_DECREF(ns);
+            goto error;
         }
     }
 
@@ -1453,7 +1505,6 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     }
 
     return 0;
-
 error:
     *exc = _get_shared_exception();
     PyErr_Clear();
@@ -1468,8 +1519,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
         return -1;
     }
 
-    Py_ssize_t num_shared = -1;
-    _shareditem *shared = _get_shared_ns(shareables, &num_shared);
+    _sharedns *shared = _get_shared_ns(shareables);
     if (shared == NULL && PyErr_Occurred()) {
         return -1;
     }
@@ -1480,7 +1530,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Run the script.
     _sharedexception *exc = NULL;
-    int result = _run_script(interp, codestr, shared, num_shared, &exc);
+    int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
     if (save_tstate != NULL) {
@@ -1498,8 +1548,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     }
 
     if (shared != NULL) {
-        _sharedns_clear(shared);
-        PyMem_Free(shared);
+        _sharedns_free(shared);
     }
 
     return result;
