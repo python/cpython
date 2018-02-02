@@ -653,6 +653,47 @@ class _TestProcess(BaseTestCase):
             self.check_forkserver_death(signal.SIGKILL)
 
 
+class TestStdOutAndErr(unittest.TestCase):
+    @staticmethod
+    def closeIO(stream_name):
+        getattr(sys, stream_name).close()
+
+    @staticmethod
+    def removeIO(stream_name):
+        setattr(sys, stream_name, None)
+
+    def test_closed_stdio(self):
+        """
+        bpo-28326: multiprocessing.Process depends on sys.stdout being open
+        """
+        self.run_process(self.closeIO)
+
+    def test_no_stdio(self):
+        """
+        bpo-31804: If you start Python by pythonw then sys.stdout and
+        sys.stderr are set to None. If you also use multiprocessing
+        then when the child process finishes BaseProcess._bootstrap
+        calls sys.stdout.flush() and sys.stderr.flush() finally.
+        This causes the process return code to be not zero (it is 1).
+
+        This unit test sets sys.stdio and sys.stderr to None, instead of
+        changing the Python interpreter to use when starting a child process
+        to pythonw.exe because that is Windows specific. This method
+        cannot test if there is an error (because of stdout or stderr is None)
+        before the target function is called. However the errors have occurred
+        in the multiprocessing outro so this can test the previously mentioned
+        bug. Also this way the feature can be tested on other operating
+        systems too.
+        """
+        self.run_process(self.removeIO)
+
+    def run_process(self, target):
+        for stream_name in ('stdout', 'stderr'):
+            proc = multiprocessing.Process(target=target, args=(stream_name,))
+            proc.start()
+            proc.join()
+            self.assertEqual(proc.exitcode, 0)
+
 #
 #
 #

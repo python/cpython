@@ -314,8 +314,10 @@ class BaseProcess(object):
         finally:
             threading._shutdown()
             util.info('process exiting with exitcode %d' % exitcode)
-            sys.stdout.flush()
-            sys.stderr.flush()
+            if sys.stdout is not None and not sys.stdout.closed:
+                sys.stdout.flush()
+            if sys.stderr is not None and not sys.stderr.closed:
+                sys.stderr.flush()
 
         return exitcode
 
