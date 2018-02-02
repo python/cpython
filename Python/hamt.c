@@ -1476,7 +1476,7 @@ hamt_node_collision_without(PyHamtNode_Collision *self,
             if (new_count == 1) {
                 /* The node has two keys, and after deletion the
                    new Collision node would have one.  Collision nodes
-                   with one key shouldn't exist, co convert it to a
+                   with one key shouldn't exist, so convert it to a
                    Bitmap node.
                 */
                 PyHamtNode_Bitmap *node = (PyHamtNode_Bitmap *)
