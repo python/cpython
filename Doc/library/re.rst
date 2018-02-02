@@ -315,7 +315,7 @@ The special characters are:
 
    This example looks for a word following a hyphen:
 
-      >>> m = re.search('(?<=-)\w+', 'spam-egg')
+      >>> m = re.search(r'(?<=-)\w+', 'spam-egg')
       >>> m.group(0)
       'egg'
 
