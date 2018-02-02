@@ -181,14 +181,17 @@ class Lock(_ContextManagerMixin):
             self._locked = True
             return True
 
-        _waiters = self._waiters
         fut = self._loop.create_future()
-        _waiters.append(fut)
+        self._waiters.append(fut)
+
+        # Finally block should be called before the CancelledError
+        # handling as we don't want CancelledError to call
+        # _wake_up_first() and attempt to wake up itself.
         try:
             try:
                 await fut
             finally:
-                _waiters.remove(fut)
+                self._waiters.remove(fut)
         except futures.CancelledError:
             if not self._locked:
                 self._wake_up_first()
@@ -196,7 +199,6 @@ class Lock(_ContextManagerMixin):
 
         self._locked = True
         return True
-        
 
     def release(self):
         """Release a lock.
@@ -221,10 +223,9 @@ class Lock(_ContextManagerMixin):
             fut = next(iter(self._waiters))
         except StopIteration:
             return
-        
+
         if not fut.done():
             fut.set_result(True)
-
 
 
 class Event:
