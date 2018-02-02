@@ -3,6 +3,7 @@ from test import test_support
 
 import UserDict, random, string
 import gc, weakref
+import sys
 
 
 class DictTest(unittest.TestCase):
@@ -421,6 +422,12 @@ class DictTest(unittest.TestCase):
 
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
+
+    def test_repr_deep(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {1: d}
+        self.assertRaises(RuntimeError, repr, d)
 
     def test_le(self):
         self.assertFalse({} < {})
