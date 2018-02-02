@@ -11595,7 +11595,7 @@ unicode_hash(PyObject *self)
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
 \n\
-Return the lowest index in S where substring sub is found, \n\
+Return the lowest index in S where substring sub is found,\n\
 such that sub is contained within S[start:end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\

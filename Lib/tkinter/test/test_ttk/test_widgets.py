@@ -1556,27 +1556,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.selection_toggle((c1, c3))
         self.assertEqual(self.tv.selection(), (c3, item2))
 
-        if sys.version_info >= (3, 8):
-            import warnings
-            warnings.warn(
-                'Deprecated API of Treeview.selection() should be removed')
-        self.tv.selection_set()
-        self.assertEqual(self.tv.selection(), ())
-        with self.assertWarns(DeprecationWarning):
-            self.tv.selection('set', (c1, item2))
-        self.assertEqual(self.tv.selection(), (c1, item2))
-        with self.assertWarns(DeprecationWarning):
-            self.tv.selection('add', (c1, item1))
-        self.assertEqual(self.tv.selection(), (item1, c1, item2))
-        with self.assertWarns(DeprecationWarning):
-            self.tv.selection('remove', (item1, c3))
-        self.assertEqual(self.tv.selection(), (c1, item2))
-        with self.assertWarns(DeprecationWarning):
-            self.tv.selection('toggle', (c1, c3))
-        self.assertEqual(self.tv.selection(), (c3, item2))
-        with self.assertWarns(DeprecationWarning):
-            selection = self.tv.selection(None)
-        self.assertEqual(selection, (c3, item2))
 
     def test_set(self):
         self.tv['columns'] = ['A', 'B']
