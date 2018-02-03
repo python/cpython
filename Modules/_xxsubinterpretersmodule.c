@@ -1739,15 +1739,12 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 
     *exc = NULL;
     return 0;
+
 error:
     PyErr_Fetch(&exctype, &excval, &tb);
-    Py_INCREF(exctype);
-    Py_XINCREF(excval);
-    Py_XINCREF(tb);
-    PyErr_Clear();
 
     _sharedexception *sharedexc = _sharedexception_bind(exctype, excval, tb);
-    Py_DECREF(exctype);
+    Py_XDECREF(exctype);
     Py_XDECREF(excval);
     Py_XDECREF(tb);
     if (sharedexc == NULL) {
