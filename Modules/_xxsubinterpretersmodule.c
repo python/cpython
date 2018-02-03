@@ -1464,7 +1464,9 @@ channelid_hash(PyObject *self)
     if (id == NULL) {
         return -1;
     }
-    return PyObject_Hash(id);
+    Py_hash_t hash = PyObject_Hash(id);
+    Py_DECREF(id);
+    return hash;
 }
 
 static PyObject *
