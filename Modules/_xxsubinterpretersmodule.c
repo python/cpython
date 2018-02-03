@@ -64,6 +64,7 @@ _coerce_id(PyObject *id)
     return cid;
 }
 
+
 /* data-sharing-specific code ***********************************************/
 
 struct _sharednsitem {
@@ -282,44 +283,25 @@ finally:
     return err;
 }
 
-static PyObject * RunFailedError;
-
-static int
-interp_exceptions_init(PyObject *ns)
-{
-    // XXX Move the exceptions into per-module memory?
-
-    // An uncaught exception came out of interp_run_string().
-    RunFailedError = PyErr_NewException("_xxsubinterpreters.RunFailedError",
-                                        PyExc_RuntimeError, NULL);
-    if (RunFailedError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "RunFailedError", RunFailedError) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
 static void
-_sharedexception_apply(_sharedexception *exc)
+_sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 {
     if (exc->name != NULL) {
         if (exc->msg != NULL) {
-            PyErr_Format(RunFailedError, "%s: %s",  exc->name, exc->msg);
+            PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
         }
         else {
-            PyErr_SetString(RunFailedError, exc->name);
+            PyErr_SetString(wrapperclass, exc->name);
         }
     }
     else if (exc->msg != NULL) {
-        PyErr_SetString(RunFailedError, exc->msg);
+        PyErr_SetString(wrapperclass, exc->msg);
     }
     else {
-        PyErr_SetNone(RunFailedError);
+        PyErr_SetNone(wrapperclass);
     }
 }
+
 
 /* channel-specific code ****************************************************/
 
@@ -1639,7 +1621,30 @@ static PyTypeObject ChannelIDtype = {
     NULL,                           /* tp_new */
 };
 
-/* interpreter-specific functions *******************************************/
+
+/* interpreter-specific code ************************************************/
+
+static PyObject * RunFailedError = NULL;
+
+static int
+interp_exceptions_init(PyObject *ns)
+{
+    // XXX Move the exceptions into per-module memory?
+
+    if (RunFailedError == NULL) {
+        // An uncaught exception came out of interp_run_string().
+        RunFailedError = PyErr_NewException("_xxsubinterpreters.RunFailedError",
+                                            PyExc_RuntimeError, NULL);
+        if (RunFailedError == NULL) {
+            return -1;
+        }
+        if (PyDict_SetItemString(ns, "RunFailedError", RunFailedError) != 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
 
 static PyInterpreterState *
 _look_up(PyObject *requested_id)
@@ -1748,11 +1753,12 @@ error:
     if (sharedexc == NULL) {
         fprintf(stderr, "RunFailedError: script raised an uncaught exception");
         PyErr_Clear();
+        sharedexc = NULL;
     }
     else {
         assert(!PyErr_Occurred());
-        *exc = sharedexc;
     }
+    *exc = sharedexc;
     return -1;
 }
 
@@ -1784,7 +1790,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Propagate any exception out to the caller.
     if (exc != NULL) {
-        _sharedexception_apply(exc);
+        _sharedexception_apply(exc, RunFailedError);
         _sharedexception_free(exc);
     }
     else if (result != 0) {
