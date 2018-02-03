@@ -1,1 +1,1 @@
-add None type checking when socket error occurred.
+add Built-in TimeoutError Exception and None type checking when socket error occurred.
