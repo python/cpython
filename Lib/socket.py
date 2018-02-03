@@ -587,11 +587,11 @@ class SocketIO(io.RawIOBase):
         while True:
             try:
                 return self._sock.recv_into(b)
-            except timeout:
+            except (timeout, TimeoutError):
                 self._timeout_occurred = True
                 raise
             except error as e:
-                if e.args[0] in _blocking_errnos:
+                if e.args and e.args[0] in _blocking_errnos:
                     return None
                 raise
 
