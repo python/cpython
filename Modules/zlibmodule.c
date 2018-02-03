@@ -1366,6 +1366,7 @@ PyInit_zlib(void)
     PyModule_AddIntMacro(m, Z_DEFAULT_COMPRESSION);
     PyModule_AddIntMacro(m, Z_FILTERED);
     PyModule_AddIntMacro(m, Z_HUFFMAN_ONLY);
+    PyModule_AddIntMacro(m, Z_RLE);
     PyModule_AddIntMacro(m, Z_DEFAULT_STRATEGY);
 
     PyModule_AddIntMacro(m, Z_FINISH);
