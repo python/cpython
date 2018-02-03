@@ -1,7 +1,12 @@
-What's New in IDLE 3.6.3
-Released on 2017-09-25?
+What's New in IDLE 3.6.5
+Released on 2017-03-26?
 ========================
 
+
+
+What's New in IDLE 3.6.4
+Released on 2017-12-19
+========================
 
 bpo-32207: Improve tk event exception tracebacks in IDLE.
 When tk event handling is driven by IDLE's run loop, a confusing
@@ -39,6 +44,11 @@ a better idea of what they might see in the shell and editors.
 To make room for the expanded sample, frames on the Font tab are
 re-arranged.  The Font/Tabs help explains a bit about the additions.
 Patch by Terry Jan Reedy
+
+
+What's New in IDLE 3.6.3
+Released on 2017-10-03
+========================
 
 bpo-31460: Simplify the API of IDLE's Module Browser.
 Passing a widget instead of an flist with a root widget opens the
@@ -268,7 +278,7 @@ bpo-24813: Add icon to help_about and make other changes.
 
 
 What's New in IDLE 3.6.2
-Released on 2017-07-11
+Released on 2017-07-17
 ========================
 
 bpo-15786: Fix several problems with IDLE's autocompletion box.
