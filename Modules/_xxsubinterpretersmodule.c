@@ -1035,6 +1035,9 @@ _channels_close(_channels *channels, int64_t cid, _PyChannelState **pchan)
         if (pchan != NULL) {
             *pchan = ref->chan;
         }
+        else {
+            _channel_free(ref->chan);
+        }
         ref->chan = NULL;
     }
 
