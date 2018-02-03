@@ -1260,6 +1260,7 @@ _channel_recv(_channels *channels, int64_t id)
         return NULL;
     }
     _PyCrossInterpreterData_Release(data);
+    PyMem_Free(data);
 
     return obj;
 }
@@ -1281,7 +1282,7 @@ _channel_drop(_channels *channels, int64_t id, int send, int recv)
     // Past this point we are responsible for releasing the mutex.
 
     // Close one or both of the two ends.
-    int res =_channel_close_interpreter(chan, interp->id, send-recv);
+    int res = _channel_close_interpreter(chan, interp->id, send-recv);
     PyThread_release_lock(mutex);
     return res;
 }
