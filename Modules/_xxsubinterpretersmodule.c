@@ -246,6 +246,7 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
         goto finally;
     }
     err->name = _copy_raw_string(name);
+    Py_DECREF(name);
     if (err->name == NULL) {
         if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
             failure = "out of memory copying exception type name";
