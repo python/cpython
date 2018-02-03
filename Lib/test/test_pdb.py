@@ -1447,9 +1447,40 @@ class PdbTestCase(unittest.TestCase):
             quit
         """
         stdout, _ = self._run_pdb(['-m', self.module_name], commands)
-        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()))
+        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()), stdout)
         self.assertTrue(any("VAR from top" in l for l in stdout.splitlines()))
         self.assertTrue(any("second var" in l for l in stdout.splitlines()))
+
+    def test_relative_imports_on_plain_module(self):
+        # Validates running a plain module. See bpo32691
+        self.module_name = 't_main'
+        support.rmtree(self.module_name)
+        main_file = self.module_name + '/runme.py'
+        init_file = self.module_name + '/__init__.py'
+        module_file = self.module_name + '/module.py'
+        self.addCleanup(support.rmtree, self.module_name)
+        os.mkdir(self.module_name)
+        with open(init_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                top_var = "VAR from top"
+            """))
+        with open(main_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                from . import module
+                pass # We'll stop here and print the vars
+            """))
+        with open(module_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                var = "VAR from module"
+            """))
+        commands = """
+            b 3
+            c
+            p module.var
+            quit
+        """
+        stdout, _ = self._run_pdb(['-m', self.module_name + '.runme'], commands)
+        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()), stdout)
 
 
 def load_tests(*args):
