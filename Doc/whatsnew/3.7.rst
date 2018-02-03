@@ -340,6 +340,25 @@ For example::
        PEP written and implemented by Eric V. Smith
 
 
+PEP 567: Context Variables
+--------------------------
+
+Adds a new module :mod:`contextvars`, that provides APIs to manage,
+store, and access non-local state.
+
+Context variables are natively supported in :mod:`asyncio` and are
+ready to be used without any extra configuration.
+
+The :mod:`decimal` module was updated to use *contextvars* to store
+the current decimal context.  This allows decimal operations to work
+with the correct context in async/await code.
+
+.. seealso::
+
+    :pep:`567` -- Context Variables
+       PEP written and implemented by Yury Selivanov
+
+
 New Development Mode: -X dev
 ----------------------------
 
