@@ -1,1 +1,0 @@
-New argument ``capture_output`` for subprocess.run
