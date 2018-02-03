@@ -894,6 +894,22 @@ _channelref_new(int64_t id, _PyChannelState *chan)
     return ref;
 }
 
+//static void
+//_channelref_clear(_channelref *ref)
+//{
+//    ref->id = -1;
+//    ref->chan = NULL;
+//    ref->next = NULL;
+//    ref->objcount = 0;
+//}
+
+static void
+_channelref_free(_channelref *ref)
+{
+    //_channelref_clear(ref);
+    PyMem_Free(ref);
+}
+
 static _channelref *
 _channelref_find(_channelref *first, int64_t id, _channelref **pprev)
 {
@@ -925,7 +941,6 @@ _channels_init(_channels *channels)
     if (channels->mutex == NULL) {
         channels->mutex = PyThread_allocate_lock();
         if (channels->mutex == NULL) {
-            PyMem_Free(channels);
             PyErr_SetString(ChannelError,
                             "can't initialize mutex for channel management");
             return -1;
@@ -1061,7 +1076,7 @@ _channels_remove_ref(_channels *channels, _channelref *ref, _channelref *prev,
     if (pchan != NULL) {
         *pchan = ref->chan;
     }
-    PyMem_Free(ref);
+    _channelref_free(ref);
 }
 
 static int
