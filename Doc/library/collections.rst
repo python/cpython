@@ -311,11 +311,14 @@ counts, but the output will exclude results with counts of zero or less.
 
       .. versionadded:: 2.7
 
-   .. method:: rotate(n)
+   .. method:: rotate(n=1)
 
       Rotate the deque *n* steps to the right.  If *n* is negative, rotate to
-      the left.  Rotating one step to the right is equivalent to:
-      ``d.appendleft(d.pop())``.
+      the left.
+
+      When the deque is empty, rotating one step to the right is equivalent to
+      ``d.appendleft(d.pop())``, and rotating one step to the left is
+      equivalent to ``d.append(d.popleft())``.
 
 
    Deque objects also provide one read-only attribute:
