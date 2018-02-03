@@ -1,7 +1,12 @@
-What's New in IDLE 3.6.3
-Released on 2017-09-25?
+What's New in IDLE 3.6.5
+Released on 2017-03-26?
 ========================
 
+
+
+What's New in IDLE 3.6.4
+Released on 2017-12-19
+========================
 
 bpo-32207: Improve tk event exception tracebacks in IDLE.
 When tk event handling is driven by IDLE's run loop, a confusing
@@ -9,6 +14,11 @@ and distracting queue.EMPTY traceback context is no longer added
 to tk event exception tracebacks.  The traceback is now the same
 as when event handling is driven by user code.  Patch based on
 a suggestion by Serhiy Storchaka.
+
+
+What's New in IDLE 3.6.3
+Released on 2017-10-03
+========================
 
 bpo-32164: Delete unused file idlelib/tabbedpages.py.
 Use of TabbedPageSet in configdialog was replaced by ttk.Notebook.
@@ -268,7 +278,7 @@ bpo-24813: Add icon to help_about and make other changes.
 
 
 What's New in IDLE 3.6.2
-Released on 2017-07-11
+Released on 2017-07-17
 ========================
 
 bpo-15786: Fix several problems with IDLE's autocompletion box.
