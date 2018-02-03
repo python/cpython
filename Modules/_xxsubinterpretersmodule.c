@@ -321,7 +321,7 @@ _sharedexception_apply(_sharedexception *exc)
     }
 }
 
-/* channel-specific code */
+/* channel-specific code ****************************************************/
 
 static PyObject *ChannelError;
 static PyObject *ChannelNotFoundError;
@@ -376,6 +376,139 @@ channel_exceptions_init(PyObject *ns)
     return 0;
 }
 
+/* the channel queue */
+
+struct _channelitem;
+
+typedef struct _channelitem {
+    _PyCrossInterpreterData *data;
+    struct _channelitem *next;
+} _channelitem;
+
+static _channelitem *
+_channelitem_new(void)
+{
+    _channelitem *item = PyMem_NEW(_channelitem, 1);
+    if (item == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    item->data = NULL;
+    item->next = NULL;
+    return item;
+}
+
+static void
+_channelitem_clear(_channelitem *item)
+{
+    if (item->data != NULL) {
+        _PyCrossInterpreterData_Release(item->data);
+        PyMem_Free(item->data);
+        item->data = NULL;
+    }
+    item->next = NULL;
+}
+
+static void
+_channelitem_free(_channelitem *item)
+{
+    _channelitem_clear(item);
+    PyMem_Free(item);
+}
+
+static void
+_channelitem_free_all(_channelitem *item)
+{
+    while (item != NULL) {
+        _channelitem *last = item;
+        item = item->next;
+        _channelitem_free(last);
+    }
+}
+
+static _PyCrossInterpreterData *
+_channelitem_popped(_channelitem *item)
+{
+    _PyCrossInterpreterData *data = item->data;
+    item->data = NULL;
+    _channelitem_free(item);
+    return data;
+}
+
+typedef struct _channelqueue {
+    int64_t count;
+    _channelitem *first;
+    _channelitem *last;
+} _channelqueue;
+
+static _channelqueue *
+_channelqueue_new(void)
+{
+    _channelqueue *queue = PyMem_NEW(_channelqueue, 1);
+    if (queue == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    queue->count = 0;
+    queue->first = NULL;
+    queue->last = NULL;
+    return queue;
+}
+
+static void
+_channelqueue_clear(_channelqueue *queue)
+{
+    _channelitem_free_all(queue->first);
+    queue->count = 0;
+    queue->first = NULL;
+    queue->last = NULL;
+}
+
+static void
+_channelqueue_free(_channelqueue *queue)
+{
+    _channelqueue_clear(queue);
+    PyMem_Free(queue);
+}
+
+static int
+_channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data)
+{
+    _channelitem *item = _channelitem_new();
+    if (item == NULL) {
+        return -1;
+    }
+    item->data = data;
+
+    queue->count += 1;
+    if (queue->first == NULL) {
+        queue->first = item;
+    }
+    else {
+        queue->last->next = item;
+    }
+    queue->last = item;
+    return 0;
+}
+
+static _PyCrossInterpreterData *
+_channelqueue_get(_channelqueue *queue)
+{
+    _channelitem *item = queue->first;
+    if (item == NULL) {
+        return NULL;
+    }
+    queue->first = item->next;
+    if (queue->last == item) {
+        queue->last = NULL;
+    }
+    queue->count -= 1;
+
+    return _channelitem_popped(item);
+}
+
+/* channel-interpreter associations */
+
 struct _channelend;
 
 typedef struct _channelend {
@@ -389,15 +522,19 @@ _channelend_new(int64_t interp)
 {
     _channelend *end = PyMem_NEW(_channelend, 1);
     if (end == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
-
     end->next = NULL;
     end->interp = interp;
-
     end->open = 1;
-
     return end;
+}
+
+static void
+_channelend_free(_channelend *end)
+{
+    PyMem_Free(end);
 }
 
 static void
@@ -406,7 +543,7 @@ _channelend_free_all(_channelend *end)
     while (end != NULL) {
         _channelend *last = end;
         end = end->next;
-        PyMem_Free(last);
+        _channelend_free(last);
     }
 }
 
@@ -428,24 +565,7 @@ _channelend_find(_channelend *first, int64_t interp, _channelend **pprev)
     return end;
 }
 
-struct _channelitem;
-
-typedef struct _channelitem {
-    _PyCrossInterpreterData *data;
-    struct _channelitem *next;
-} _channelitem;
-
-struct _channel;
-
-typedef struct _channel {
-    PyThread_type_lock mutex;
-
-    int open;
-
-    int64_t count;
-    _channelitem *first;
-    _channelitem *last;
-
+typedef struct _channelassociations {
     // Note that the list entries are never removed for interpreter
     // for which the channel is closed.  This should be a problem in
     // practice.  Also, a channel isn't automatically closed when an
@@ -454,6 +574,168 @@ typedef struct _channel {
     int64_t numrecvopen;
     _channelend *send;
     _channelend *recv;
+} _channelends;
+
+static _channelends *
+_channelends_new(void)
+{
+    _channelends *ends = PyMem_NEW(_channelends, 1);
+    if (ends== NULL) {
+        return NULL;
+    }
+    ends->numsendopen = 0;
+    ends->numrecvopen = 0;
+    ends->send = NULL;
+    ends->recv = NULL;
+    return ends;
+}
+
+static void
+_channelends_clear(_channelends *ends)
+{
+    _channelend_free_all(ends->send);
+    ends->send = NULL;
+    ends->numsendopen = 0;
+
+    _channelend_free_all(ends->recv);
+    ends->recv = NULL;
+    ends->numrecvopen = 0;
+}
+
+static void
+_channelends_free(_channelends *ends)
+{
+    _channelends_clear(ends);
+    PyMem_Free(ends);
+}
+
+static _channelend *
+_channelends_add(_channelends *ends, _channelend *prev, int64_t interp,
+                 int send)
+{
+    _channelend *end = _channelend_new(interp);
+    if (end == NULL) {
+        return NULL;
+    }
+
+    if (prev == NULL) {
+        if (send) {
+            ends->send = end;
+        }
+        else {
+            ends->recv = end;
+        }
+    }
+    else {
+        prev->next = end;
+    }
+    if (send) {
+        ends->numsendopen += 1;
+    }
+    else {
+        ends->numrecvopen += 1;
+    }
+    return end;
+}
+
+static int
+_channelends_associate(_channelends *ends, int64_t interp, int send)
+{
+    _channelend *prev;
+    _channelend *end = _channelend_find(send ? ends->send : ends->recv,
+                                        interp, &prev);
+    if (end != NULL) {
+        if (!end->open) {
+            PyErr_SetString(ChannelClosedError, "channel already closed");
+            return -1;
+        }
+        // already associated
+        return 0;
+    }
+    if (_channelends_add(ends, prev, interp, send) == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+_channelends_is_open(_channelends *ends)
+{
+    if (ends->numsendopen != 0 || ends->numrecvopen != 0) {
+        return 1;
+    }
+    if (ends->send == NULL && ends->recv == NULL) {
+        return 1;
+    }
+    return 0;
+}
+
+static void
+_channelends_close_end(_channelends *ends, _channelend *end, int send)
+{
+    end->open = 0;
+    if (send) {
+        ends->numsendopen -= 1;
+    }
+    else {
+        ends->numrecvopen -= 1;
+    }
+}
+
+static int
+_channelends_close_interpreter(_channelends *ends, int64_t interp, int which)
+{
+    _channelend *prev;
+    _channelend *end;
+    if (which >= 0) {  // send/both
+        end = _channelend_find(ends->send, interp, &prev);
+        if (end == NULL) {
+            // never associated so add it
+            end = _channelends_add(ends, prev, interp, 1);
+            if (end == NULL) {
+                return -1;
+            }
+        }
+        _channelends_close_end(ends, end, 1);
+    }
+    if (which <= 0) {  // recv/both
+        end = _channelend_find(ends->recv, interp, &prev);
+        if (end == NULL) {
+            // never associated so add it
+            end = _channelends_add(ends, prev, interp, 0);
+            if (end == NULL) {
+                return -1;
+            }
+        }
+        _channelends_close_end(ends, end, 0);
+    }
+    return 0;
+}
+
+static void
+_channelends_close_all(_channelends *ends)
+{
+    // Ensure all the "send"-associated interpreters are closed.
+    _channelend *end;
+    for (end = ends->send; end != NULL; end = end->next) {
+        _channelends_close_end(ends, end, 1);
+    }
+
+    // Ensure all the "recv"-associated interpreters are closed.
+    for (end = ends->recv; end != NULL; end = end->next) {
+        _channelends_close_end(ends, end, 0);
+    }
+}
+
+/* channels */
+
+struct _channel;
+
+typedef struct _channel {
+    PyThread_type_lock mutex;
+    _channelqueue *queue;
+    _channelends *ends;
+    int open;
 } _PyChannelState;
 
 static _PyChannelState *
@@ -470,82 +752,76 @@ _channel_new(void)
                         "can't initialize mutex for new channel");
         return NULL;
     }
-
+    chan->queue = _channelqueue_new();
+    if (chan->queue == NULL) {
+        PyMem_Free(chan);
+        return NULL;
+    }
+    chan->ends = _channelends_new();
+    if (chan->ends == NULL) {
+        _channelqueue_free(chan->queue);
+        PyMem_Free(chan);
+        return NULL;
+    }
     chan->open = 1;
-
-    chan->count = 0;
-    chan->first = NULL;
-    chan->last = NULL;
-
-    chan->numsendopen = 0;
-    chan->numrecvopen = 0;
-    chan->send = NULL;
-    chan->recv = NULL;
-
     return chan;
 }
 
-static _channelend *
-_channel_add_end(_PyChannelState *chan, _channelend *prev, int64_t interp,
-                 int send)
+static void
+_channel_free(_PyChannelState *chan)
 {
-    _channelend *end = _channelend_new(interp);
-    if (end == NULL) {
-        return NULL;
-    }
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+    _channelqueue_free(chan->queue);
+    _channelends_free(chan->ends);
+    PyThread_release_lock(chan->mutex);
 
-    if (prev == NULL) {
-        if (send) {
-            chan->send = end;
-        }
-        else {
-            chan->recv = end;
-        }
-    }
-    else {
-        prev->next = end;
-    }
-    if (send) {
-        chan->numsendopen += 1;
-    }
-    else {
-        chan->numrecvopen += 1;
-    }
-    return end;
+    PyThread_free_lock(chan->mutex);
+    PyMem_Free(chan);
 }
 
-static _channelend *
-_channel_associate_end(_PyChannelState *chan, int64_t interp, int send)
+static int
+_channel_add(_PyChannelState *chan, int64_t interp,
+             _PyCrossInterpreterData *data)
 {
+    int res = -1;
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+
     if (!chan->open) {
         PyErr_SetString(ChannelClosedError, "channel closed");
-        return NULL;
+        goto done;
+    }
+    if (_channelends_associate(chan->ends, interp, 1) != 0) {
+        goto done;
     }
 
-    _channelend *prev;
-    _channelend *end = _channelend_find(send ? chan->send : chan->recv,
-                                        interp, &prev);
-    if (end != NULL) {
-        if (!end->open) {
-            PyErr_SetString(ChannelClosedError, "channel already closed");
-            return NULL;
-        }
-        // already associated
-        return end;
+    if (_channelqueue_put(chan->queue, data) != 0) {
+        goto done;
     }
-    return _channel_add_end(chan, prev, interp, send);
+
+    res = 0;
+done:
+    PyThread_release_lock(chan->mutex);
+    return res;
 }
 
-static void
-_channel_close_channelend(_PyChannelState *chan, _channelend *end, int send)
+static _PyCrossInterpreterData *
+_channel_next(_PyChannelState *chan, int64_t interp)
 {
-    end->open = 0;
-    if (send) {
-        chan->numsendopen -= 1;
+    _PyCrossInterpreterData *data = NULL;
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+
+    if (!chan->open) {
+        PyErr_SetString(ChannelClosedError, "channel closed");
+        goto done;
     }
-    else {
-        chan->numrecvopen -= 1;
+    if (_channelends_associate(chan->ends, interp, 0) != 0) {
+        goto done;
     }
+
+    data = _channelqueue_get(chan->queue);
+done:
+    PyThread_release_lock(chan->mutex);
+    return data;
 }
 
 static int
@@ -559,36 +835,10 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interp, int which)
         goto done;
     }
 
-    _channelend *prev;
-    _channelend *end;
-    if (which >= 0) {  // send/both
-        end = _channelend_find(chan->send, interp, &prev);
-        if (end == NULL) {
-            // never associated so add it
-            end = _channel_add_end(chan, prev, interp, 1);
-            if (end == NULL) {
-                goto done;
-            }
-        }
-        _channel_close_channelend(chan, end, 1);
+    if (_channelends_close_interpreter(chan->ends, interp, which) != 0) {
+        goto done;
     }
-    if (which <= 0) {  // recv/both
-        end = _channelend_find(chan->recv, interp, &prev);
-        if (end == NULL) {
-            // never associated so add it
-            end = _channel_add_end(chan, prev, interp, 0);
-            if (end == NULL) {
-                goto done;
-            }
-        }
-        _channel_close_channelend(chan, end, 0);
-    }
-
-    if (chan->numsendopen == 0 && chan->numrecvopen == 0) {
-        if (chan->send != NULL || chan->recv != NULL) {
-            chan->open = 0;
-        }
-    }
+    chan->open = _channelends_is_open(chan->ends);
 
     res = 0;
 done:
@@ -611,17 +861,7 @@ _channel_close_all(_PyChannelState *chan)
 
     // We *could* also just leave these in place, since we've marked
     // the channel as closed already.
-
-    // Ensure all the "send"-associated interpreters are closed.
-    _channelend *end;
-    for (end = chan->send; end != NULL; end = end->next) {
-        _channel_close_channelend(chan, end, 1);
-    }
-
-    // Ensure all the "recv"-associated interpreters are closed.
-    for (end = chan->recv; end != NULL; end = end->next) {
-        _channel_close_channelend(chan, end, 0);
-    }
+    _channelends_close_all(chan->ends);
 
     res = 0;
 done:
@@ -629,94 +869,7 @@ done:
     return res;
 }
 
-static int
-_channel_add(_PyChannelState *chan, int64_t interp,
-             _PyCrossInterpreterData *data)
-{
-    int res = -1;
-
-    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
-    if (_channel_associate_end(chan, interp, 1) == NULL) {
-        goto done;
-    }
-
-    _channelitem *item = PyMem_NEW(_channelitem, 1);
-    if (item == NULL) {
-        goto done;
-    }
-    item->data = data;
-    item->next = NULL;
-
-    chan->count += 1;
-    if (chan->first == NULL) {
-        chan->first = item;
-    }
-    else {
-        chan->last->next = item;
-    }
-    chan->last = item;
-
-    res = 0;
-done:
-    PyThread_release_lock(chan->mutex);
-    return res;
-}
-
-static _PyCrossInterpreterData *
-_channel_next(_PyChannelState *chan, int64_t interp)
-{
-    _PyCrossInterpreterData *data = NULL;
-    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
-
-    if (_channel_associate_end(chan, interp, 0) == NULL) {
-        goto done;
-    }
-
-    _channelitem *item = chan->first;
-    if (item == NULL) {
-        goto done;
-    }
-    chan->first = item->next;
-    if (chan->last == item) {
-        chan->last = NULL;
-    }
-    chan->count -= 1;
-
-    data = item->data;
-    PyMem_Free(item);
-
-done:
-    PyThread_release_lock(chan->mutex);
-    return data;
-}
-
-static void
-_channel_clear(_PyChannelState *chan)
-{
-    _channelitem *item = chan->first;
-    while (item != NULL) {
-        _PyCrossInterpreterData_Release(item->data);
-        PyMem_Free(item->data);
-        _channelitem *last = item;
-        item = item->next;
-        PyMem_Free(last);
-    }
-    chan->first = NULL;
-    chan->last = NULL;
-}
-
-static void
-_channel_free(_PyChannelState *chan)
-{
-    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
-    _channel_clear(chan);
-    _channelend_free_all(chan->send);
-    _channelend_free_all(chan->recv);
-    PyThread_release_lock(chan->mutex);
-
-    PyThread_free_lock(chan->mutex);
-    PyMem_Free(chan);
-}
+/* the set of channels */
 
 struct _channelref;
 
