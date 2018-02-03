@@ -820,7 +820,8 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     if (!retval) {
         /* sorry, can't do much better */
         PyErr_SetString(PyExc_ValueError,
-                        "Invalid paramemter combination for n, r, p, maxmem.");
+                        "Invalid parameter combination for n, r, p, maxmem. "
+                        "Make sure maxmem is high enough.");
         return NULL;
    }
 
