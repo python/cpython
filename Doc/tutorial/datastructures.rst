@@ -510,9 +510,8 @@ value associated with that key is forgotten.  It is an error to extract a value
 using a non-existent key.
 
 Performing ``list(d)`` on a dictionary returns a list of all the keys
-used in the dictionary, in insertion order (if you want it sorted, just use
-``sorted(d)`` instead). [2]_  To check whether a single key is in the
-dictionary, use the :keyword:`in` keyword.
+used in the dictionary, in insertion order. [2]_  To check whether a single
+key is in the dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
 
@@ -528,8 +527,6 @@ Here is a small example using a dictionary::
    {'jack': 4098, 'guido': 4127, 'irv': 4127}
    >>> list(tel)
    ['jack', 'guido', 'irv']
-   >>> sorted(tel)
-   ['guido', 'irv', 'jack']
    >>> 'guido' in tel
    True
    >>> 'jack' not in tel
