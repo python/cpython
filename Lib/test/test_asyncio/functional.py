@@ -5,7 +5,6 @@ import os
 import pprint
 import select
 import socket
-import ssl
 import tempfile
 import threading
 
@@ -145,8 +144,6 @@ class TestSocketWrapper:
     def start_tls(self, ssl_context, *,
                   server_side=False,
                   server_hostname=None):
-
-        assert isinstance(ssl_context, ssl.SSLContext)
 
         ssl_sock = ssl_context.wrap_socket(
             self.__sock, server_side=server_side,

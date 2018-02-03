@@ -34,6 +34,13 @@ extern void *PyWin_DLLhModule;
 extern const char *PyWin_DLLVersionString;
 #endif
 
+/*[clinic input]
+module sys
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3726b388feee8cea]*/
+
+#include "clinic/sysmodule.c.h"
+
 _Py_IDENTIFIER(_);
 _Py_IDENTIFIER(__sizeof__);
 _Py_IDENTIFIER(_xoptions);
@@ -358,7 +365,7 @@ sys_getdefaultencoding(PyObject *self)
 PyDoc_STRVAR(getdefaultencoding_doc,
 "getdefaultencoding() -> string\n\
 \n\
-Return the current default string encoding used by the Unicode \n\
+Return the current default string encoding used by the Unicode\n\
 implementation."
 );
 
@@ -710,9 +717,51 @@ sys_setrecursionlimit(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+sys.set_coroutine_origin_tracking_depth
+
+  depth: int
+
+Enable or disable origin tracking for coroutine objects in this thread.
+
+Coroutine objects will track 'depth' frames of traceback information about
+where they came from, available in their cr_origin attribute. Set depth of 0
+to disable.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=0a2123c1cc6759c5 input=9083112cccc1bdcb]*/
+{
+    if (depth < 0) {
+        PyErr_SetString(PyExc_ValueError, "depth must be >= 0");
+        return NULL;
+    }
+    _PyEval_SetCoroutineOriginTrackingDepth(depth);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_coroutine_origin_tracking_depth -> int
+
+Check status of origin tracking for coroutine objects in this thread.
+[clinic start generated code]*/
+
+static int
+sys_get_coroutine_origin_tracking_depth_impl(PyObject *module)
+/*[clinic end generated code: output=3699f7be95a3afb8 input=335266a71205b61a]*/
+{
+    return _PyEval_GetCoroutineOriginTrackingDepth();
+}
+
 static PyObject *
 sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "set_coroutine_wrapper is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     if (wrapper != Py_None) {
         if (!PyCallable_Check(wrapper)) {
             PyErr_Format(PyExc_TypeError,
@@ -737,6 +786,10 @@ Set a wrapper for coroutine objects."
 static PyObject *
 sys_get_coroutine_wrapper(PyObject *self, PyObject *args)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "get_coroutine_wrapper is deprecated", 1) < 0) {
+        return NULL;
+    }
     PyObject *wrapper = _PyEval_GetCoroutineWrapper();
     if (wrapper == NULL) {
         wrapper = Py_None;
@@ -1069,7 +1122,7 @@ PyDoc_STRVAR(enablelegacywindowsfsencoding_doc,
 Changes the default filesystem encoding to mbcs:replace for consistency\n\
 with earlier versions of Python. See PEP 529 for more information.\n\
 \n\
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING \n\
+This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING\n\
 environment variable before launching Python."
 );
 
@@ -1512,6 +1565,8 @@ static PyMethodDef sys_methods[] = {
     {"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
     {"_debugmallocstats", sys_debugmallocstats, METH_NOARGS,
      debugmallocstats_doc},
+    SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
+    SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     {"set_coroutine_wrapper", sys_set_coroutine_wrapper, METH_O,
      set_coroutine_wrapper_doc},
     {"get_coroutine_wrapper", sys_get_coroutine_wrapper, METH_NOARGS,
@@ -1757,7 +1812,7 @@ winver -- [Windows only] version number of the Python DLL\n\
 #ifdef MS_WINDOWS
 /* concatenating string here */
 PyDoc_STR(
-"_enablelegacywindowsfsencoding -- [Windows only] \n\
+"_enablelegacywindowsfsencoding -- [Windows only]\n\
 "
 )
 #endif

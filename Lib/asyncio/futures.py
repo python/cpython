@@ -6,6 +6,7 @@ __all__ = (
 )
 
 import concurrent.futures
+import contextvars
 import logging
 import sys
 
@@ -130,10 +131,10 @@ class Future:
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
         return True
 
-    def _schedule_callbacks(self):
+    def __schedule_callbacks(self):
         """Internal: Ask the event loop to call all callbacks.
 
         The callbacks are scheduled to be called as soon as possible. Also
@@ -144,8 +145,8 @@ class Future:
             return
 
         self._callbacks[:] = []
-        for callback in callbacks:
-            self._loop.call_soon(callback, self)
+        for callback, ctx in callbacks:
+            self._loop.call_soon(callback, self, context=ctx)
 
     def cancelled(self):
         """Return True if the future was cancelled."""
@@ -192,7 +193,7 @@ class Future:
         self.__log_traceback = False
         return self._exception
 
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn, *, context=None):
         """Add a callback to be run when the future becomes done.
 
         The callback is called with a single argument - the future object. If
@@ -200,9 +201,11 @@ class Future:
         scheduled with call_soon.
         """
         if self._state != _PENDING:
-            self._loop.call_soon(fn, self)
+            self._loop.call_soon(fn, self, context=context)
         else:
-            self._callbacks.append(fn)
+            if context is None:
+                context = contextvars.copy_context()
+            self._callbacks.append((fn, context))
 
     # New method not in PEP 3148.
 
@@ -211,7 +214,9 @@ class Future:
 
         Returns the number of callbacks removed.
         """
-        filtered_callbacks = [f for f in self._callbacks if f != fn]
+        filtered_callbacks = [(f, ctx)
+                              for (f, ctx) in self._callbacks
+                              if f != fn]
         removed_count = len(self._callbacks) - len(filtered_callbacks)
         if removed_count:
             self._callbacks[:] = filtered_callbacks
@@ -229,7 +234,7 @@ class Future:
             raise InvalidStateError('{}: {!r}'.format(self._state, self))
         self._result = result
         self._state = _FINISHED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
 
     def set_exception(self, exception):
         """Mark the future done and set an exception.
@@ -246,7 +251,7 @@ class Future:
                             "and cannot be raised into a Future")
         self._exception = exception
         self._state = _FINISHED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
         self.__log_traceback = True
 
     def __await__(self):

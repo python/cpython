@@ -75,8 +75,6 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(PySourcePath)PC\external\$(PlatformToolset)\$(ArchName)</AdditionalLibraryDirectories>
-      <BaseAddress>0x1e000000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -96,6 +94,7 @@
     <ClInclude Include="..\Include\codecs.h" />
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
+    <ClInclude Include="..\Include\context.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
@@ -114,7 +113,9 @@
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\ceval.h" />
     <ClInclude Include="..\Include\internal\condvar.h" />
+    <ClInclude Include="..\Include\internal\context.h" />
     <ClInclude Include="..\Include\internal\gil.h" />
+    <ClInclude Include="..\Include\internal\hamt.h" />
     <ClInclude Include="..\Include\internal\mem.h" />
     <ClInclude Include="..\Include\internal\pystate.h" />
     <ClInclude Include="..\Include\internal\warnings.h" />
@@ -234,6 +235,7 @@
     <ClCompile Include="..\Modules\_blake2\blake2s_impl.c" />
     <ClCompile Include="..\Modules\_codecsmodule.c" />
     <ClCompile Include="..\Modules\_collectionsmodule.c" />
+    <ClCompile Include="..\Modules\_contextvarsmodule.c" />
     <ClCompile Include="..\Modules\_csv.c" />
     <ClCompile Include="..\Modules\_functoolsmodule.c" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
@@ -351,17 +353,18 @@
     <ClCompile Include="..\PC\config.c" />
     <ClCompile Include="..\PC\getpathp.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
-    <ClCompile Include="..\PC\_findvs.cpp" />
     <ClCompile Include="..\Python\pyhash.c" />
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\ast.c" />
     <ClCompile Include="..\Python\ast_opt.c" />
+    <ClCompile Include="..\Python\ast_unparse.c" />
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\bootstrap_hash.c" />
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
+    <ClCompile Include="..\Python\context.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
@@ -376,6 +379,7 @@
     <ClCompile Include="..\Python\getplatform.c" />
     <ClCompile Include="..\Python\getversion.c" />
     <ClCompile Include="..\Python\graminit.c" />
+    <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\marshal.c" />

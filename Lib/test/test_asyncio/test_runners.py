@@ -2,6 +2,7 @@ import asyncio
 import unittest
 
 from unittest import mock
+from . import utils as test_utils
 
 
 class TestPolicy(asyncio.AbstractEventLoopPolicy):
@@ -98,3 +99,81 @@ class RunTests(BaseTest):
         with self.assertRaisesRegex(RuntimeError,
                                     'cannot be called from a running'):
             asyncio.run(main())
+
+    def test_asyncio_run_cancels_hanging_tasks(self):
+        lo_task = None
+
+        async def leftover():
+            await asyncio.sleep(0.1)
+
+        async def main():
+            nonlocal lo_task
+            lo_task = asyncio.create_task(leftover())
+            return 123
+
+        self.assertEqual(asyncio.run(main()), 123)
+        self.assertTrue(lo_task.done())
+
+    def test_asyncio_run_reports_hanging_tasks_errors(self):
+        lo_task = None
+        call_exc_handler_mock = mock.Mock()
+
+        async def leftover():
+            try:
+                await asyncio.sleep(0.1)
+            except asyncio.CancelledError:
+                1 / 0
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.call_exception_handler = call_exc_handler_mock
+
+            nonlocal lo_task
+            lo_task = asyncio.create_task(leftover())
+            return 123
+
+        self.assertEqual(asyncio.run(main()), 123)
+        self.assertTrue(lo_task.done())
+
+        call_exc_handler_mock.assert_called_with({
+            'message': test_utils.MockPattern(r'asyncio.run.*shutdown'),
+            'task': lo_task,
+            'exception': test_utils.MockInstanceOf(ZeroDivisionError)
+        })
+
+    def test_asyncio_run_closes_gens_after_hanging_tasks_errors(self):
+        spinner = None
+        lazyboy = None
+
+        class FancyExit(Exception):
+            pass
+
+        async def fidget():
+            while True:
+                yield 1
+                await asyncio.sleep(1)
+
+        async def spin():
+            nonlocal spinner
+            spinner = fidget()
+            try:
+                async for the_meaning_of_life in spinner:  # NoQA
+                    pass
+            except asyncio.CancelledError:
+                1 / 0
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.call_exception_handler = mock.Mock()
+
+            nonlocal lazyboy
+            lazyboy = asyncio.create_task(spin())
+            raise FancyExit
+
+        with self.assertRaises(FancyExit):
+            asyncio.run(main())
+
+        self.assertTrue(lazyboy.done())
+
+        self.assertIsNone(spinner.ag_frame)
+        self.assertFalse(spinner.ag_running)

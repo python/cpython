@@ -29,7 +29,6 @@ _Py_IDENTIFIER(mode);
 _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(raw);
 _Py_IDENTIFIER(read);
-_Py_IDENTIFIER(read1);
 _Py_IDENTIFIER(readable);
 _Py_IDENTIFIER(replace);
 _Py_IDENTIFIER(reset);
@@ -925,14 +924,10 @@ _textiowrapper_set_encoder(textio *self, PyObject *codec_info,
         return -1;
 
     /* Get the normalized named of the codec */
-    res = _PyObject_GetAttrId(codec_info, &PyId_name);
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return -1;
+    if (_PyObject_LookupAttrId(codec_info, &PyId_name, &res) < 0) {
+        return -1;
     }
-    else if (PyUnicode_Check(res)) {
+    if (res != NULL && PyUnicode_Check(res)) {
         const encodefuncentry *e = encodefuncs;
         while (e->name != NULL) {
             if (_PyUnicode_EqualToASCIIString(res, e->name)) {
@@ -1178,19 +1173,17 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (Py_TYPE(buffer) == &PyBufferedReader_Type ||
         Py_TYPE(buffer) == &PyBufferedWriter_Type ||
-        Py_TYPE(buffer) == &PyBufferedRandom_Type) {
-        raw = _PyObject_GetAttrId(buffer, &PyId_raw);
+        Py_TYPE(buffer) == &PyBufferedRandom_Type)
+    {
+        if (_PyObject_LookupAttrId(buffer, &PyId_raw, &raw) < 0)
+            goto error;
         /* Cache the raw FileIO object to speed up 'closed' checks */
-        if (raw == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError))
-                PyErr_Clear();
+        if (raw != NULL) {
+            if (Py_TYPE(raw) == &PyFileIO_Type)
+                self->raw = raw;
             else
-                goto error;
+                Py_DECREF(raw);
         }
-        else if (Py_TYPE(raw) == &PyFileIO_Type)
-            self->raw = raw;
-        else
-            Py_DECREF(raw);
     }
 
     res = _PyObject_CallMethodId(buffer, &PyId_seekable, NULL);
@@ -1202,7 +1195,12 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     self->seekable = self->telling = r;
 
-    self->has_read1 = _PyObject_HasAttrId(buffer, &PyId_read1);
+    r = _PyObject_LookupAttr(buffer, _PyIO_str_read1, &res);
+    if (r < 0) {
+        goto error;
+    }
+    Py_XDECREF(res);
+    self->has_read1 = r;
 
     self->encoding_start_of_stream = 0;
     if (_textiowrapper_fix_encoder_state(self) < 0) {
@@ -3011,17 +3009,10 @@ textiowrapper_newlines_get(textio *self, void *context)
 {
     PyObject *res;
     CHECK_ATTACHED(self);
-    if (self->decoder == NULL)
+    if (self->decoder == NULL ||
+        _PyObject_LookupAttr(self->decoder, _PyIO_str_newlines, &res) == 0)
+    {
         Py_RETURN_NONE;
-    res = PyObject_GetAttr(self->decoder, _PyIO_str_newlines);
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            Py_RETURN_NONE;
-        }
-        else {
-            return NULL;
-        }
     }
     return res;
 }

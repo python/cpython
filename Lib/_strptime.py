@@ -470,7 +470,10 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 minutes = int(z[3:5])
                 seconds = int(z[5:7] or 0)
                 gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
-                gmtoff_fraction = int(z[8:] or 0)
+                gmtoff_remainder = z[8:]
+                # Pad to always return microseconds.
+                gmtoff_remainder_padding = "0" * (6 - len(gmtoff_remainder))
+                gmtoff_fraction = int(gmtoff_remainder + gmtoff_remainder_padding)
                 if z.startswith("-"):
                     gmtoff = -gmtoff
                     gmtoff_fraction = -gmtoff_fraction

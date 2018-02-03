@@ -571,7 +571,7 @@ that a single backslash followed by a newline is interpreted as those two
 characters as part of the literal, *not* as a line continuation.
 
 
-.. _string-catenation:
+.. _string-concatenation:
 
 String literal concatenation
 ----------------------------
@@ -676,7 +676,7 @@ Some examples of formatted string literals::
    >>> f"result: {value:{width}.{precision}}"  # nested fields
    'result:      12.35'
    >>> today = datetime(year=2017, month=1, day=27)
-   >>> f"{today:%b %d, %Y}"  # using date format specifier
+   >>> f"{today:%B %d, %Y}"  # using date format specifier
    'January 27, 2017'
    >>> number = 1024
    >>> f"{number:#0x}"  # using integer format specifier
