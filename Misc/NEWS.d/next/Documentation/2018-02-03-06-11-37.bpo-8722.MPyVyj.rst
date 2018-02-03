@@ -1,0 +1,2 @@
+Document :meth:`__getattr__` behavior with :exc:`AttributeError` in property
+:meth:`get`.
