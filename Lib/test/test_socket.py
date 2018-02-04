@@ -5888,9 +5888,10 @@ class TestMSWindowsTCPOptions(unittest.TestCase):
         for s in provided:
             if s not in self.knownTCPOptions:
                 msg = ("New TCP option %s was added to MS-Windows, "
-                       "we need remove it on old version MS-Windows "
-                       "via hard code patch, see issue32394."
-                        ) % s
+                       "we need to remove it on old version MS-Windows "
+                       "via hard code patch, see issue32394.\n"
+                       "Full options in this machine: %s"
+                        ) % (s, provided)
                 raise Exception(msg)
 
 def test_main():
