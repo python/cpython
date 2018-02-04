@@ -163,11 +163,14 @@ ZipFile Objects
 
    The *compresslevel* parameter controls the compression level to use when
    writing files to the archive.
-   When using :const:`ZIP_STORED` or :const:`ZIP_LZMA` it has no effect.
+   When using :const:`ZIP_STORED` it has no effect.
    When using :const:`ZIP_DEFLATED` integers ``0`` through ``9`` are accepted
    (see :class:`zlib <zlib.compressobj>` for more information).
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
    (see :class:`bz2 <bz2.BZ2File>` for more information).
+   When using :const:`ZIP_LZMA` integers ``0`` through ``9`` are accepted,
+   as are the values ``0 | lzma.PRESET_EXTREME`` through ``9 | lzma.PRESET_EXTREME``.
+   (see :class:`lzma <lzma.LZMACompressor>` for more information)
 
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
@@ -202,6 +205,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
+
+   .. versionchanged:: 3.8
+      Add support for using LZMA presets with the  *compresslevel* parameter.
 
 
 .. method:: ZipFile.close()
