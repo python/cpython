@@ -4256,11 +4256,8 @@ support membership tests:
    Return an iterator over the keys, values or items (represented as tuples of
    ``(key, value)``) in the dictionary.
 
-   Keys and values are iterated over in an arbitrary order which is non-random,
-   varies across Python implementations, and depends on the dictionary's history
-   of insertions and deletions. If keys, values and items views are iterated
-   over with no intervening modifications to the dictionary, the order of items
-   will directly correspond.  This allows the creation of ``(value, key)`` pairs
+   Keys and values are iterated over in insertion order.
+   This allows the creation of ``(value, key)`` pairs
    using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
    create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
 
@@ -4293,9 +4290,9 @@ An example of dictionary view usage::
    >>> print(n)
    504
 
-   >>> # keys and values are iterated over in the same order
+   >>> # keys and values are iterated over in the same(insertion) order
    >>> list(keys)
-   ['eggs', 'bacon', 'sausage', 'spam']
+   ['eggs', 'sausage', 'bacon', 'spam']
    >>> list(values)
    [2, 1, 1, 500]
 
@@ -4303,7 +4300,7 @@ An example of dictionary view usage::
    >>> del dishes['eggs']
    >>> del dishes['sausage']
    >>> list(keys)
-   ['spam', 'bacon']
+   ['bacon', 'spam']
 
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
