@@ -514,7 +514,7 @@ or subtracting from an empty counter.
         Rotate the deque *n* steps to the right.  If *n* is negative, rotate
         to the left.
 
-        When the deque is empty, rotating one step to the right is equivalent
+        When the deque is not empty, rotating one step to the right is equivalent
         to ``d.appendleft(d.pop())``, and rotating one step to the left is
         equivalent to ``d.append(d.popleft())``.
 
