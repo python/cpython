@@ -187,7 +187,7 @@ is_coroutine(PyObject *coro)
         return _is_coroutine(coro);
     }
 
-    /* either an error has occured or
+    /* either an error has occurred or
        type(coro) is in iscoroutine_typecache
     */
     return has_it;

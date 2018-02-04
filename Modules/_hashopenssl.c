@@ -962,7 +962,7 @@ generate_hash_name_list(void)
  *  This macro generates constructor function definitions for specific
  *  hash algorithms.  These constructors are much faster than calling
  *  the generic one passing it a python string and are noticeably
- *  faster than calling a python new() wrapper.  Thats important for
+ *  faster than calling a python new() wrapper.  That is important for
  *  code that wants to make hashes of a bunch of small strings.
  *  The first call will lazy-initialize, which reports an exception
  *  if initialization fails.

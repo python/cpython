@@ -5112,7 +5112,7 @@ PyType_Ready(PyTypeObject *type)
     /* PyType_Ready is the closest thing we have to a choke point
      * for type objects, so is the best place I can think of to try
      * to get type objects into the doubly-linked list of all objects.
-     * Still, not all type objects go thru PyType_Ready.
+     * Still, not all type objects go through PyType_Ready.
      */
     _Py_AddToAllObjects((PyObject *)type, 0);
 #endif

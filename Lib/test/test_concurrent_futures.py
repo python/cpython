@@ -398,7 +398,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         queue_management_thread = executor._queue_management_thread
         del executor
 
-        # Make sure that all the executor ressources were properly cleaned by
+        # Make sure that all the executor resources were properly cleaned by
         # the shutdown process
         queue_management_thread.join()
         for p in processes.values():
@@ -886,24 +886,24 @@ class ExecutorDeadlockTest:
         # extensive testing for deadlock caused by crashes in a pool.
         self.executor.shutdown(wait=True)
         crash_cases = [
-            # Check problem occuring while pickling a task in
+            # Check problem occurring while pickling a task in
             # the task_handler thread
             (id, (ErrorAtPickle(),), PicklingError, "error at task pickle"),
-            # Check problem occuring while unpickling a task on workers
+            # Check problem occurring while unpickling a task on workers
             (id, (ExitAtUnpickle(),), BrokenProcessPool,
              "exit at task unpickle"),
             (id, (ErrorAtUnpickle(),), BrokenProcessPool,
              "error at task unpickle"),
             (id, (CrashAtUnpickle(),), BrokenProcessPool,
              "crash at task unpickle"),
-            # Check problem occuring during func execution on workers
+            # Check problem occurring during func execution on workers
             (_crash, (), BrokenProcessPool,
              "crash during func execution on worker"),
             (_exit, (), SystemExit,
              "exit during func execution on worker"),
             (_raise_error, (RuntimeError, ), RuntimeError,
              "error during func execution on worker"),
-            # Check problem occuring while pickling a task result
+            # Check problem occurring while pickling a task result
             # on workers
             (_return_instance, (CrashAtPickle,), BrokenProcessPool,
              "crash during result pickle on worker"),
@@ -911,7 +911,7 @@ class ExecutorDeadlockTest:
              "exit during result pickle on worker"),
             (_return_instance, (ErrorAtPickle,), PicklingError,
              "error during result pickle on worker"),
-            # Check problem occuring while unpickling a task in
+            # Check problem occurring while unpickling a task in
             # the result_handler thread
             (_return_instance, (ErrorAtUnpickle,), BrokenProcessPool,
              "error during result unpickle in result_handler"),
