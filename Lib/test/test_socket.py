@@ -5882,7 +5882,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
 @unittest.skipUnless(os.name == "nt", "Windows specific")
 class TestMSWindowsTCPOptions(unittest.TestCase):
     knownTCPOptions = {'TCP_FASTOPEN', 'TCP_KEEPCNT', 'TCP_MAXSEG', 'TCP_NODELAY'}
-    
+
     def testNewTCPOption(self):
         provided = [s for s in dir(socket) if s.startswith('TCP')]
         for s in provided:
