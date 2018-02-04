@@ -1709,7 +1709,7 @@ class TestDateTime(TestDate):
 
         # Make sure comparison doesn't forget microseconds, and isn't done
         # via comparing a float timestamp (an IEEE double doesn't have enough
-        # precision to span microsecond resolution across years 1 thru 9999,
+        # precision to span microsecond resolution across years 1 through 9999,
         # so comparing via timestamp necessarily calls some distinct values
         # equal).
         dt1 = self.theclass(MAXYEAR, 12, 31, 23, 59, 59, 999998)

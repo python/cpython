@@ -5977,7 +5977,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     }
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)
     if ((flags & AI_NUMERICSERV) && (pptr == NULL || (pptr[0] == '0' && pptr[1] == 0))) {
-        /* On OSX upto at least OSX 10.8 getaddrinfo crashes
+        /* On OSX up to at least OSX 10.8 getaddrinfo crashes
          * if AI_NUMERICSERV is set and the servname is NULL or "0".
          * This workaround avoids a segfault in libsystem.
          */
