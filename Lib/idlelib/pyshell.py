@@ -1382,6 +1382,7 @@ def main():
     debug = False
     cmd = None
     script = None
+    config_startup_code = None
     startup = False
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
@@ -1445,11 +1446,16 @@ def main():
         dir = os.getcwd()
         if dir not in sys.path:
             sys.path.insert(0, dir)
-    # check the IDLE settings configuration (but command line overrides)
+    # Check the IDLE settings configuration (but command line overrides).
     edit_start = idleConf.GetOption('main', 'General',
                                     'editor-on-startup', type='bool')
     enable_edit = enable_edit or edit_start
     enable_shell = enable_shell or not enable_edit
+    if idleConf.GetOption('main', 'ShellWindow',
+                          'startup-code-on', type='bool'):
+        config_startup_code = idleConf.GetOption(
+                'main', 'ShellWindow', 'shell-startup-code')
+        sys.argv = ['-c'] + [config_startup_code]
 
     # Setup root.  Don't break user code run in IDLE process.
     # Don't change environment when testing.
@@ -1510,7 +1516,7 @@ def main():
                    os.environ.get("PYTHONSTARTUP")
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
-    if cmd or script:
+    if cmd or script or config_startup_code:
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = %r
@@ -1521,6 +1527,8 @@ def main():
         elif script:
             shell.interp.prepend_syspath(script)
             shell.interp.execfile(script)
+        elif config_startup_code:
+            shell.interp.execsource(config_startup_code)
     elif shell:
         # If there is a shell window and no cmd or script in progress,
         # check for problematic OS X Tk versions and print a warning
