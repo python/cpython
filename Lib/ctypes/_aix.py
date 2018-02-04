@@ -32,7 +32,7 @@ as multiple shared libraries can be in the archive - even sharing the same name.
 In documentation the archive is also referred to as the "base" and the shared
 library object is referred to as the "member".
 
-For dlopen() on AIX (read initAndLoad()) the calls are similiar.
+For dlopen() on AIX (read initAndLoad()) the calls are similar.
 Default activity occurs when no path information is provided. When path
 information is provided dlopen() does not search any other directories.
 
@@ -90,7 +90,7 @@ def get_ld_header_info(p):
         if re.match("[0-9]", line):
             info.append(line)
         else:
-            # blank line (seperator), consume line and end for loop
+            # blank line (separator), consume line and end for loop
             break
     return info
 
