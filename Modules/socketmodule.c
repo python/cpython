@@ -304,6 +304,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 
 /* Provides the GetVersionEx function */
 #include <windows.h>
+/* Provides the IsWindows7SP1OrGreater() function */
+#include <VersionHelpers.h>
 
 #endif
 
@@ -6689,7 +6691,6 @@ PyInit__socket(void)
 #ifdef MS_WINDOWS
     OSVERSIONINFOEX ver;
     DWORD winMajor, winMinor, winBuild;
-    BOOL isWindows7SP1OrGreater = TRUE;
     
     BOOL addTCP_KEEPCNT = TRUE;
     BOOL addTCP_FASTOPEN = TRUE;
@@ -6725,15 +6726,11 @@ PyInit__socket(void)
         else if (winMajor < 10) {
             addTCP_KEEPCNT = FALSE;
             addTCP_FASTOPEN = FALSE;
-            
-            if (winMajor < 7 || (winMajor == 7 && winMinor < 1)) {
-                isWindows7SP1OrGreater = FALSE;
-            }
         }
     }
 
     if (support_wsa_no_inherit == -1) {
-        support_wsa_no_inherit = isWindows7SP1OrGreater;
+        support_wsa_no_inherit = IsWindows7SP1OrGreater();
     }
 #endif
 
