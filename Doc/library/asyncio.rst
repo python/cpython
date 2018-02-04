@@ -54,6 +54,7 @@ Table of contents:
    asyncio-task.rst
    asyncio-protocol.rst
    asyncio-stream.rst
+   asyncio-controller.rst
    asyncio-subprocess.rst
    asyncio-sync.rst
    asyncio-queue.rst
