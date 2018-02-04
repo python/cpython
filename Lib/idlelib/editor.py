@@ -332,8 +332,15 @@ class EditorWindow(object):
         return re.sub('[\U00010000-\U0010FFFF]', '\ufffd', filename)
 
     def new_callback(self, event):
+        """Create a new editor window.
+
+        A new editor is created with default template text.
+        """
         dirname, basename = self.io.defaultfilename()
-        self.flist.new(dirname)
+        editor = self.flist.new(dirname)
+        template = idleConf.GetOption('main', 'EditorWindow',
+                                      'editor-template-code')
+        editor.text.insert('end', template or '')
         return "break"
 
     def home_callback(self, event):
