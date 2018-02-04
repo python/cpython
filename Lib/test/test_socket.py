@@ -5879,7 +5879,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
-@unittest.skipUnless(os.name == "nt", "Windows specific")
+@unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
 class TestMSWindowsTCPOptions(unittest.TestCase):
     knownTCPOptions = {'TCP_FASTOPEN', 'TCP_KEEPCNT', 'TCP_MAXSEG', 'TCP_NODELAY'}
 
