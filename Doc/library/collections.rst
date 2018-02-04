@@ -316,7 +316,7 @@ counts, but the output will exclude results with counts of zero or less.
       Rotate the deque *n* steps to the right.  If *n* is negative, rotate to
       the left.
 
-      When the deque is empty, rotating one step to the right is equivalent to
+      When the deque is not empty, rotating one step to the right is equivalent to
       ``d.appendleft(d.pop())``, and rotating one step to the left is
       equivalent to ``d.append(d.popleft())``.
 
