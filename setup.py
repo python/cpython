@@ -28,17 +28,17 @@ DISABLED_MODULE_LIST = []
 
 
 def get_platform():
-    # Cross compiling
-    if "_PYTHON_HOST_PLATFORM" in os.environ:
-        return os.environ["_PYTHON_HOST_PLATFORM"]
-
+    # cross build
+    host_platform = sysconfig.get_host_platform()
+    if host_platform:
+        return host_platform
     # Get value of sys.platform
     if sys.platform.startswith('osf1'):
         return 'osf1'
     return sys.platform
 
 
-CROSS_COMPILING = ("_PYTHON_HOST_PLATFORM" in os.environ)
+CROSS_COMPILING = bool(sysconfig.get_host_platform())
 HOST_PLATFORM = get_platform()
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
 CYGWIN = (HOST_PLATFORM == 'cygwin')

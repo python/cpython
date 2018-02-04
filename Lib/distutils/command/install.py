@@ -8,7 +8,7 @@ import os
 from distutils import log
 from distutils.core import Command
 from distutils.debug import DEBUG
-from distutils.sysconfig import get_config_vars
+from distutils.sysconfig import (get_config_vars, cross_compiling)
 from distutils.errors import DistutilsPlatformError
 from distutils.file_util import write_file
 from distutils.util import convert_path, subst_vars, change_root
@@ -281,12 +281,10 @@ class install(Command):
         # about needing recursive variable expansion (shudder).
 
         py_version = sys.version.split()[0]
-        (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
-        try:
-            abiflags = sys.abiflags
-        except AttributeError:
-            # sys.abiflags may not be defined on all platforms.
-            abiflags = ''
+        prefix, exec_prefix, abiflags = get_config_vars('prefix',
+                                                'exec_prefix', 'ABIFLAGS')
+        # sys.abiflags may not be defined on all platforms.
+        abiflags = '' if abiflags is None else abiflags
         self.config_vars = {'dist_name': self.distribution.get_name(),
                             'dist_version': self.distribution.get_version(),
                             'dist_fullname': self.distribution.get_fullname(),
@@ -418,8 +416,13 @@ class install(Command):
                     raise DistutilsOptionError(
                           "must not supply exec-prefix without prefix")
 
-                self.prefix = os.path.normpath(sys.prefix)
-                self.exec_prefix = os.path.normpath(sys.exec_prefix)
+                if cross_compiling:
+                    prefix, exec_prefix = get_config_vars('prefix',
+                                                          'exec_prefix')
+                else:
+                    prefix, exec_prefix = sys.prefix, sys.exec_prefix
+                self.prefix = os.path.normpath(prefix)
+                self.exec_prefix = os.path.normpath(exec_prefix)
 
             else:
                 if self.exec_prefix is None:
@@ -442,7 +445,9 @@ class install(Command):
             self.select_scheme("unix_home")
         else:
             if self.prefix is None:
-                self.prefix = os.path.normpath(sys.prefix)
+                prefix = (get_config_vars().get('prefix') if
+                          cross_compiling else sys.prefix)
+                self.prefix = os.path.normpath(prefix)
 
             self.install_base = self.install_platbase = self.prefix
             try:

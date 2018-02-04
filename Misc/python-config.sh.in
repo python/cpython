@@ -4,7 +4,9 @@
 
 exit_with_usage ()
 {
-    echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
+    echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|\
+        --ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed|\
+        --host_platform|--version|--machdep|--multiarch"
     exit $1
 }
 
@@ -66,7 +68,9 @@ do
         --embed)
             PY_EMBED=1
         ;;
-        --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--abiflags|--configdir)
+        --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|\
+        --extension-suffix|--abiflags|--configdir|\
+        --host_platform|--version|--machdep|--multiarch)
         ;;
         *)
             exit_with_usage 1
@@ -111,6 +115,18 @@ do
         ;;
         --configdir)
             echo "$LIBPL"
+        ;;
+        --host_platform)
+            echo "@_PYTHON_HOST_PLATFORM@"
+        ;;
+        --version)
+            echo "$VERSION"
+        ;;
+        --machdep)
+            echo "@MACHDEP@"
+        ;;
+        --multiarch)
+            echo "@MULTIARCH@"
         ;;
 esac
 done

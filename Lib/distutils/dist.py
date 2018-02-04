@@ -19,6 +19,7 @@ from distutils.fancy_getopt import FancyGetopt, translate_longopt
 from distutils.util import check_environ, strtobool, rfc822_escape
 from distutils import log
 from distutils.debug import DEBUG
+from distutils.sysconfig import cross_compiling
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
 # the same as a Python NAME -- I don't allow leading underscores.  The fact
@@ -382,7 +383,7 @@ Common commands: (see '--help-commands' for more)
         from configparser import ConfigParser
 
         # Ignore install directory options if we have a venv
-        if sys.prefix != sys.base_prefix:
+        if not cross_compiling and sys.prefix != sys.base_prefix:
             ignore_options = [
                 'install-base', 'install-platbase', 'install-lib',
                 'install-platlib', 'install-purelib', 'install-headers',
