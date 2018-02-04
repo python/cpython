@@ -2469,7 +2469,7 @@ pool_is_in_list(const poolp target, poolp list)
  * checks.
  *
  * Return 0 if the memory debug hooks are not installed or no statistics was
- * writen into out, return 1 otherwise.
+ * written into out, return 1 otherwise.
  */
 int
 _PyObject_DebugMallocStats(FILE *out)
