@@ -47,10 +47,27 @@ the setsockopt() and getsockopt() methods.
 """
 
 import _socket
-from _socket import *
 
 import os, sys, io, selectors
 from enum import IntEnum, IntFlag
+
+# Remove some options on old version Windows.
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx
+if hasattr(sys, 'getwindowsversion'):
+    _WIN_MAJOR, _, _WIN_BUILD, *_ = sys.getwindowsversion()
+    if _WIN_MAJOR == 10:
+        if _WIN_BUILD >= 15063:    # Windows 10 1703
+            pass
+        elif _WIN_BUILD >= 14393:  # Windows 10 1607
+            del _socket.TCP_KEEPCNT
+        else:
+            del _socket.TCP_KEEPCNT
+            del _socket.TCP_FASTOPEN
+    elif _WIN_MAJOR < 10:
+        del _socket.TCP_KEEPCNT
+        del _socket.TCP_FASTOPEN
+        
+from _socket import *
 
 try:
     import errno
