@@ -302,8 +302,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #  include <fcntl.h>
 # endif
 
-/* Provides the IsWindows7SP1OrGreater() function */
-#include <VersionHelpers.h>
+/* Provides the GetVersionEx function */
+#include <windows.h>
 
 #endif
 
@@ -6685,13 +6685,55 @@ PyMODINIT_FUNC
 PyInit__socket(void)
 {
     PyObject *m, *has_ipv6;
+    
+#ifdef MS_WINDOWS
+    OSVERSIONINFOEX ver;
+    DWORD winMajor, winMinor, winBuild;
+    BOOL isWindows7SP1OrGreater = TRUE;
+    
+    BOOL addTCP_KEEPCNT = TRUE;
+    BOOL addTCP_FASTOPEN = TRUE;
+#endif
 
     if (!os_init())
         return NULL;
 
 #ifdef MS_WINDOWS
+    ver.dwOSVersionInfoSize = sizeof(ver);
+    if (GetVersionEx((OSVERSIONINFO*) &ver)) {
+        winMajor = ver.dwMajorVersion;
+        winMinor = ver.dwMinorVersion;
+        winBuild = ver.dwBuildNumber;
+        
+        /* Remove some options on old version Windows.
+           https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx
+        */
+        if (winMajor == 10 && winMinor == 0) {
+            /* Windows 10 1703 */
+            if (winBuild >= 15063) {
+                ;
+            }
+            /* Windows 10 1607 */
+            else if (winBuild >= 14393) {
+                addTCP_KEEPCNT = FALSE;
+            }
+            else {
+                addTCP_KEEPCNT = FALSE;
+                addTCP_FASTOPEN = FALSE;
+            }
+        }
+        else if (winMajor < 10) {
+            addTCP_KEEPCNT = FALSE;
+            addTCP_FASTOPEN = FALSE;
+            
+            if (winMajor < 7 || (winMajor == 7 && winMinor < 1)) {
+                isWindows7SP1OrGreater = FALSE;
+            }
+        }
+    }
+
     if (support_wsa_no_inherit == -1) {
-        support_wsa_no_inherit = IsWindows7SP1OrGreater();
+        support_wsa_no_inherit = isWindows7SP1OrGreater;
     }
 #endif
 
@@ -7650,7 +7692,13 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, TCP_KEEPINTVL);
 #endif
 #ifdef  TCP_KEEPCNT
-    PyModule_AddIntMacro(m, TCP_KEEPCNT);
+    #ifdef MS_WINDOWS
+        if (addTCP_KEEPCNT) {
+            PyModule_AddIntMacro(m, TCP_KEEPCNT);
+        }
+    #else
+        PyModule_AddIntMacro(m, TCP_KEEPCNT);
+    #endif
 #endif
 #ifdef  TCP_SYNCNT
     PyModule_AddIntMacro(m, TCP_SYNCNT);
@@ -7671,7 +7719,13 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, TCP_QUICKACK);
 #endif
 #ifdef  TCP_FASTOPEN
-    PyModule_AddIntMacro(m, TCP_FASTOPEN);
+    #ifdef MS_WINDOWS
+        if (addTCP_FASTOPEN) {
+            PyModule_AddIntMacro(m, TCP_FASTOPEN);
+        }
+    #else
+        PyModule_AddIntMacro(m, TCP_FASTOPEN);
+    #endif
 #endif
 #ifdef  TCP_CONGESTION
     PyModule_AddIntMacro(m, TCP_CONGESTION);

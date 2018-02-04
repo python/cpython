@@ -5879,6 +5879,19 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
+@unittest.skipUnless(os.name == "nt", "Windows specific")
+class TestMSWindowsTCPOptions(unittest.TestCase):
+    knownTCPOptions = {'TCP_FASTOPEN', 'TCP_KEEPCNT', 'TCP_MAXSEG', 'TCP_NODELAY'}
+    
+    def testNewTCPOption(self):
+        provided = [s for s in dir(socket) if s.startswith('TCP')]
+        for s in provided:
+            if s not in self.knownTCPOptions:
+                msg = ("New TCP option %s was added to MS-Windows, "
+                       "we need remove it on old version MS-Windows "
+                       "via hard code patch, see issue32394."
+                        ) % s
+                raise Exception(msg)
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
@@ -5939,6 +5952,7 @@ def test_main():
         SendfileUsingSendTest,
         SendfileUsingSendfileTest,
     ])
+    tests.append(TestMSWindowsTCPOptions)
 
     thread_info = support.threading_setup()
     support.run_unittest(*tests)
