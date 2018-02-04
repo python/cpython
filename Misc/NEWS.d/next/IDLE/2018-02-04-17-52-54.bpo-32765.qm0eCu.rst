@@ -1,0 +1,1 @@
+Update configdialog docstrings to add new widgets to the widget list.
