@@ -567,7 +567,7 @@ An option group is obtained using the class :class:`OptionGroup`:
 
    where
 
-   * parser is the :class:`OptionParser` instance the group will be insterted in
+   * parser is the :class:`OptionParser` instance the group will be inserted in
      to
    * title is the group title
    * description, optional, is a long description of the group
