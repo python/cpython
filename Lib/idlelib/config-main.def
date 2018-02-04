@@ -65,6 +65,12 @@ font= TkFixedFont
 font-size= 10
 font-bold= 0
 encoding= none
+editor-template-code=
+
+[ShellWindow]
+startup-code-on= False
+restart-code-on= False
+shell-startup-code=
 
 [Indent]
 use-spaces= 1

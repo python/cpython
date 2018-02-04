@@ -357,11 +357,11 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.GetSectionList('default', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'ShellWindow', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
         self.assertCountEqual(
             conf.GetSectionList('user', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'ShellWindow', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
 
         with self.assertRaises(config.InvalidConfigSet):
