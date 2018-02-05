@@ -759,7 +759,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             v[-1] = '0'
 
         v = tuple(map(int, v))
-        supports_wbits_0 = v >= (1, 2, 3, 5)        
+        supports_wbits_0 = v >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
