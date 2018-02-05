@@ -263,10 +263,10 @@ Options menu (Shell and Editor)
 Configure IDLE
    Open a configuration dialog and change preferences for the following:
    fonts, indentation, keybindings, text color themes, startup windows and
-   size, additional help sources, and extensions (see below).  On OS X,
-   open the configuration dialog by selecting Preferences in the application
-   menu.  To use a new built-in color theme (IDLE Dark) with older IDLEs,
-   save it as a new custom theme.
+   size, shell startup code, editor template code, additional help sources,
+   and extensions (see below).  On OS X, open the configuration dialog by
+   selecting Preferences in the application menu.  To use a new built-in color
+   theme (IDLE Dark) with older IDLEs, save it as a new custom theme.
 
    Non-default user settings are saved in a .idlerc directory in the user's
    home directory.  Problems caused by bad user configuration files are solved
@@ -552,6 +552,22 @@ If there are arguments:
 
 * Otherwise, arguments are files opened for editing and
   ``sys.argv`` reflects the arguments passed to IDLE itself.
+
+
+Optional Startup Code Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In addition to the ``-``, ``-s``, ``-c``, and ``-r`` command line options for
+executing Python code upon startup, code can be entered using the IDLE
+Configuration Dialog under the ``Startup`` tab.  The code entered here will
+be executed if the appropriate check box is selected for running on
+startup and if command line options ``-``, ``-c``, and ``-r`` were not used.
+Those options take precedence and preclude the configuration code from running.
+However, the configuration-level code will be executed before the ``-s``
+option file is run.
+
+Note that the configuration code isn't checked for errors.  If it can't be
+executed, then the shell may show errors upon starting.
 
 
 Startup failure

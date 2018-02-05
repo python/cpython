@@ -1,0 +1,4 @@
+Add new Startup tab to configuration and move the current startup-related
+items from the General tab to this tab.  On the Startup tab, add a new
+widget for code that should be run at shell startup/restart and a second new
+widget for template code to copy to new, blank editors.
