@@ -128,8 +128,8 @@ def get_cross_build_var(name):
              'prefix', 'exec-prefix', 'sysconfigdata_name', 'project_base')
     if _cross_build_vars is None:
         _cross_build_vars = dict((n, None) for n in names)
-        if 'XBUILD_PYTHON_DIR' in os.environ:
-            # XBUILD_PYTHON_DIR must not be set when building a native
+        if 'CROSS_BUILD_PYTHON_DIR' in os.environ:
+            # CROSS_BUILD_PYTHON_DIR must not be set when building a native
             # interpreter since, at the time generate-posix-vars is run, the
             # _posixsubprocess module has not been built yet and the import
             # will fail. This does not happen when generate-posix-vars is run
@@ -138,11 +138,11 @@ def get_cross_build_var(name):
             try:
                 import subprocess
             except ImportError:
-                print('Error: XBUILD_PYTHON_DIR is set in the environment.',
+                print('Error: CROSS_BUILD_PYTHON_DIR is set in the environment.',
                       file=sys.stderr)
                 raise
 
-            pyconfig_dir = _safe_realpath(os.environ['XBUILD_PYTHON_DIR'])
+            pyconfig_dir = _safe_realpath(os.environ['CROSS_BUILD_PYTHON_DIR'])
             if _is_python_source_dir(pyconfig_dir):
                 python_build = True
                 python_config = os.path.join(pyconfig_dir, 'python-config')
@@ -184,9 +184,9 @@ def get_cross_build_var(name):
     return _cross_build_vars[name]
 
 # set for cross builds
-_xbuild_project_base = get_cross_build_var('project_base')
-if _xbuild_project_base is not None:
-    _PROJECT_BASE = _xbuild_project_base
+_cross_build_project_base = get_cross_build_var('project_base')
+if _cross_build_project_base is not None:
+    _PROJECT_BASE = _cross_build_project_base
 
 _sys_home = getattr(sys, '_home', None)
 
@@ -408,9 +408,9 @@ def get_makefile_filename():
 
 
 def _get_sysconfigdata_name():
-    xbuild_sysconfigdata_name = get_cross_build_var('sysconfigdata_name')
-    if xbuild_sysconfigdata_name is not None:
-        return xbuild_sysconfigdata_name
+    cross_build_sysconfigdata_name = get_cross_build_var('sysconfigdata_name')
+    if cross_build_sysconfigdata_name is not None:
+        return cross_build_sysconfigdata_name
     sysconf = '_sysconfigdata_%s_%s' % (sys.abiflags, sys.platform)
     if hasattr(sys.implementation, '_multiarch'):
         sysconf = '%s_%s' % (sysconf, sys.implementation._multiarch)
@@ -486,13 +486,13 @@ def import_sysconfigdata():
     try:
         # Temporarily update sys.path to import the sysconfigdata module when
         # cross compiling.
-        xbuild_project_base = get_cross_build_var('project_base')
-        if xbuild_project_base is not None:
-            if _is_python_source_dir(xbuild_project_base):
-                bdir_text = os.path.join(xbuild_project_base, 'pybuilddir.txt')
+        cross_build_project_base = get_cross_build_var('project_base')
+        if cross_build_project_base is not None:
+            if _is_python_source_dir(cross_build_project_base):
+                bdir_text = os.path.join(cross_build_project_base, 'pybuilddir.txt')
                 with open(bdir_text) as f:
                     pybuilddir = f.read().strip()
-                    pybuilddir = os.path.join(xbuild_project_base, pybuilddir)
+                    pybuilddir = os.path.join(cross_build_project_base, pybuilddir)
                     sys.path.insert(0, pybuilddir)
                     pop_first_path = True
             else:
@@ -725,9 +725,9 @@ def get_platform():
         return sys.platform
 
     # Set for cross builds explicitly
-    xbuild_host_platform = get_cross_build_var('host_platform')
-    if xbuild_host_platform is not None:
-        return xbuild_host_platform
+    cross_build_host_platform = get_cross_build_var('host_platform')
+    if cross_build_host_platform is not None:
+        return cross_build_host_platform
 
     # Try to distinguish various flavours of Unix
     osname, host, release, version, machine = os.uname()

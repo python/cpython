@@ -28,10 +28,10 @@ cross_compiling = False
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCbuild/win32 or project/PCbuild/amd64.
 # set for cross builds
-_xbuild_project_base = get_cross_build_var('project_base')
-if _xbuild_project_base is not None:
+_cross_build_project_base = get_cross_build_var('project_base')
+if _cross_build_project_base is not None:
     cross_compiling = True
-    project_base = _xbuild_project_base
+    project_base = _cross_build_project_base
     PREFIX = get_cross_build_var('prefix')
     EXEC_PREFIX = get_cross_build_var('exec-prefix')
     BASE_PREFIX = PREFIX
@@ -79,9 +79,9 @@ python_build = _python_build()
 build_flags = ''
 try:
     if not python_build:
-        _xbuild_abiflags = get_cross_build_var('abiflags')
-        build_flags = (sys.abiflags if _xbuild_abiflags is None else
-                       _xbuild_abiflags)
+        _cross_build_abiflags = get_cross_build_var('abiflags')
+        build_flags = (sys.abiflags if _cross_build_abiflags is None else
+                       _cross_build_abiflags)
 except AttributeError:
     # It's not a configure-based build, so the sys module doesn't have
     # this attribute, which is fine.

@@ -46,9 +46,9 @@ def get_host_platform():
         return sys.platform
 
     # Set for cross builds explicitly
-    xbuild_host_platform = get_cross_build_var('host_platform')
-    if xbuild_host_platform is not None:
-        return xbuild_host_platform
+    cross_build_host_platform = get_cross_build_var('host_platform')
+    if cross_build_host_platform is not None:
+        return cross_build_host_platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
         # XXX what about the architecture? NT is Intel or Alpha,
