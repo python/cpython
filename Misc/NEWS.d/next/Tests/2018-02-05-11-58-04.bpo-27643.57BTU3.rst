@@ -1,0 +1,1 @@
+Fix Lib/ctypes/test/test_bitfields.py following a suggestion by martin.panter
