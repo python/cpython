@@ -241,7 +241,7 @@ class DumbDBMTestCase(unittest.TestCase):
                     pass
             self.assertEqual(stdout.getvalue(), '')
 
-    def test_warn_on_ignored_flags(self):
+    def test_missing_data(self):
         for value in ('r', 'w'):
             _delete_files()
             with self.assertRaises(FileNotFoundError):
