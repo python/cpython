@@ -363,9 +363,9 @@ def _is_universal(mac):
 def _find_mac(command, args, hw_identifiers, get_index):
     # issue28009: AIX uses character '.' rather than ':'
     if sys.platform.startswith("aix"):
-        old = b'.'
+        c_field = b'.'
     else:
-        old = b':'
+        c_field = b':'
     first_local_mac = None
     try:
         proc = _popen(command, *args.split())
@@ -378,7 +378,7 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     if words[i] in hw_identifiers:
                         try:
                             word = words[get_index(i)]
-                            mac = int(word.replace(old, b''), 16)
+                            mac = int(word.replace(c_field, b''), 16)
                             if _is_universal(mac):
                                 return mac
                             first_local_mac = first_local_mac or mac
@@ -396,8 +396,6 @@ def _find_mac(command, args, hw_identifiers, get_index):
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
-    if sys.platform.startswith("aix"):
-        return None
     keywords = (b'hwaddr', b'ether', b'address:', b'lladdr')
     for args in ('', '-a', '-av'):
         mac = _find_mac('ifconfig', args, keywords, lambda i: i+1)
@@ -408,8 +406,6 @@ def _ifconfig_getnode():
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    if sys.platform.startswith("aix"):
-        return None
     mac = _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
@@ -417,8 +413,6 @@ def _ip_getnode():
 
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
-    if sys.platform.startswith("aix"):
-        return None
     import os, socket
     try:
         ip_addr = socket.gethostbyname(socket.gethostname())
@@ -445,8 +439,6 @@ def _arp_getnode():
 
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
-    if sys.platform.startswith("aix"):
-        return None
     # This might work on HP-UX.
     return _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
 
@@ -455,6 +447,8 @@ def _netstat_getmac_posix(words,i):
     word = words[i]
     if len(word) == 17 and word.count(b':') == 5:
         return(int(word.replace(b':', b''), 16))
+    else:
+        return None
 
 def _netstat_getmac_aix(words,i):
     """Extract the MAC address from netstat -ia specific for AIX netstat."""
@@ -462,6 +456,8 @@ def _netstat_getmac_aix(words,i):
     wlen = len(word)
     if wlen >= 11 and wlen <=17 and word.count(b'.') == 5:
         return int(word.replace(b'.', b''), 16)
+    else:
+        return None
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
@@ -482,10 +478,10 @@ def _netstat_getnode():
                     words = line.rstrip().split()
                     if sys.platform.startswith("aix"):
                         mac = _netstat_getmac_aix(words,i)
-                        if not mac:
-                            continue
                     else:
                         mac = _netstat_getmac_posix(words,i)
+                    if not mac:
+                        continue
                     if _is_universal(mac):
                         return mac
                     first_local_mac = first_local_mac or mac
@@ -557,6 +553,7 @@ def _netbios_getnode():
         first_local_mac = first_local_mac or mac
     return first_local_mac or None
 
+
 _generate_time_safe = _UuidCreate = None
 _has_uuid_generate_time_safe = None
 
@@ -601,14 +598,11 @@ def _load_system_functions():
 
         # The uuid_generate_* routines are provided by libuuid on at least
         # Linux and FreeBSD, and provided by libc on Mac OS X.
-        # uuid_generate() is provided by libc on AIX
-        # (and FreeBSD issue 32493)
+        # uuid_create() is used by other POSIX platforms (e.g., AIX, FreeBSD)
         _libnames = ['uuid']
         if not sys.platform.startswith('win'):
             _libnames.append('c')
-        # attach to a lib and look for uuid_generate* family functions
-        # rather than open 'None' several times
-        # only try to dlopen when something has been found
+        # also need to look for uuid_create() but only look if something was located
         lib = None
         for libname in _libnames:
             libnm = ctypes.util.find_library(libname)
@@ -638,18 +632,14 @@ def _load_system_functions():
                     _uuid_generate_time(_buffer)
                     return bytes(_buffer.raw), None
                 break
-        # when find_library("c") returns None AND _uuid is not present
-        # try to attach to libc using ctypes.CDLL(None)
-        # on AIX (at least) ctypes.CDLL(None) returns
-        # the equivalent of libc because libc is already dynamically linked
-        # to the python executable (see also #26439, #32399, #32493)
+        # if _uuid_generate_time has not been found (Linux) then we try libc
+        # as libc is already dynamically linked (or found above) verify a valid
+        # lib value, then look for uuid_generate()
         if not lib:
             try:
                 lib = ctypes.CDLL(None)
             except:
                 lib = None
-        # look for uuid_generate() as a way to define both
-        # _uuid_generate_time and _generate_time_safe
         if lib:
             if hasattr(lib, 'uuid_create'):    # pragma: nocover
                 _uuid_generate_time = lib.uuid_create
@@ -718,7 +708,7 @@ _NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
 _NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
                       _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
-_NODE_GETTERS_AIX = [_unix_getnode, _netstat_getnode]
+_NODE_GETTERS_AIX  = [_unix_getnode, _netstat_getnode]
 
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
@@ -744,9 +734,9 @@ def getnode(*, getters=None):
             _node = getter()
         except:
             continue
-        if _node is not None:
+        if (_node is not None) and (0 <= _node < (1 << 48)):
             return _node
-    assert False, '_random_getnode() returned None'
+    assert False, '_random_getnode() returned invalid value: {}'.format(_node)
 
 
 _last_timestamp = None
