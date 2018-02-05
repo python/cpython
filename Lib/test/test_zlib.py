@@ -758,12 +758,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         elif not v[-1].isnumeric():
             v[-1] = '0'
 
-        v = tuple( map( int, v ) )
-        supports_wbits_0 = ( v[0] > 1 ) or ( v[0] == 1 ) \
-                and ( v[1] > 2 ) or ( v[1] == 2 ) \
-                and ( v[2] > 3 ) or ( v[2] == 3 ) \
-                and ( v[3] >= 5 )
-        del v
+        v = tuple(map(int, v))
+        supports_wbits_0 = v >= (1, 2, 3, 5)        
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
