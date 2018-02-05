@@ -495,6 +495,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
         self.compile.compiler.flags = self.original_compiler_flags
+        if idleConf.GetOption('main', 'ShellWindow',
+                              'restart-code-on', type='bool'):
+            config_startup_code = idleConf.GetOption(
+                    'main', 'ShellWindow', 'shell-startup-code')
+            self.execsource(config_startup_code)
         self.restarting = False
         return self.rpcclt
 
