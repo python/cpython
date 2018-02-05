@@ -77,7 +77,7 @@ When building for the emulator, the following environment variables are used by
     bundled with the emulator system. Use it if the emulator does not start.
   * ``-no-window``, run the emulator on a server that has no display.
 
-- ``PYTHON_DEVPT_VERSION``, the current Python development version (e.g. 3.7).
+- ``PYTHON_DEVPT_VERSION``, the current Python development version (e.g. 3.8).
   This variable is used by the buildbots to allow for running simultaneous
   emulator instances with both the current development version and the
   maintenance version. It is not useful otherwise and when not set or

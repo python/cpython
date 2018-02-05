@@ -1,6 +1,8 @@
 # Android/build.mk
 
 # Directory names.
+py_version := $(shell cat $(py_srcdir)/configure | \
+                sed -e "s/^PACKAGE_VERSION=['\"]*\([0-9]*\.[0-9]*\)['\"]*$$\|^.*$$/\1/" -e "/^$$/d")
 export BUILD_DIR := $(CURDIR)/build
 export DIST_DIR := $(CURDIR)/dist
 avd_dir := $(CURDIR)/avd
@@ -56,7 +58,7 @@ native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Set
 	$(MAKE) -C $(native_build_dir)
 
 # Target-specific exported variables.
-build configure host python_dist: \
+build configure host python_dist hostclean: \
                     export PATH := $(native_build_dir):$(PATH)
 external_libraries: export CC := $(CC)
 external_libraries: export AR := $(AR)
@@ -98,7 +100,6 @@ $(config_status): $(makefile) $(py_srcdir)/configure
 	    LDFLAGS=-L$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib \
 	    $(py_srcdir)/configure-android \
 	    --prefix=$(SYS_PREFIX) --exec-prefix=$(SYS_EXEC_PREFIX) \
-	    --without-ensurepip \
 	    $(config_args)
 
 $(python): native_python prefixes external_libraries openssl $(config_status)
@@ -129,6 +130,7 @@ disabled_modules:
 	        cp $(setup_tmp) $(setup_file); \
 	    fi \
 	fi
+	rm $(setup_tmp)
 
 host: disabled_modules
 	@echo "---> Build Python for $(BUILD_TYPE)."

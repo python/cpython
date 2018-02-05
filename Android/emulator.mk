@@ -6,7 +6,7 @@ python_cmd := $(native_python_exe) -B
 
 # This variable is used to differentiate the emulators when a buildbot is
 # running both the 3.x and the maintenance versions.
-python_devpt_version := 3.7
+python_devpt_version := 3.8
 ifdef PYTHON_DEVPT_VERSION
    python_devpt_version := $(PYTHON_DEVPT_VERSION)
 endif
