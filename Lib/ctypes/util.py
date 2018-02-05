@@ -83,6 +83,15 @@ if os.name == "posix" and sys.platform == "darwin":
                 continue
         return None
 
+elif sys.platform.startswith("aix"):
+    # AIX has two styles of storing shared libraries
+    # GNU auto_tools refer to these as svr4 and aix
+    # svr4 (System V Release 4) is a regular file, often with .so as suffix
+    # AIX style uses an archive (suffix .a) with members (e.g., shr.o, libssl.so)
+    # see issue#26439 and _aix.py for more details
+
+    from ctypes._aix import find_library
+
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
     import re, tempfile, errno
@@ -295,14 +304,30 @@ def test():
 
         # load
         if sys.platform == "darwin":
-            print cdll.LoadLibrary("libm.dylib")
-            print cdll.LoadLibrary("libcrypto.dylib")
-            print cdll.LoadLibrary("libSystem.dylib")
-            print cdll.LoadLibrary("System.framework/System")
+            print(cdll.LoadLibrary("libm.dylib"))
+            print(cdll.LoadLibrary("libcrypto.dylib"))
+            print(cdll.LoadLibrary("libSystem.dylib"))
+            print(cdll.LoadLibrary("System.framework/System"))
+        # issue-26439 - fix broken test call for AIX
+        elif sys.platform.startswith("aix"):
+            from ctypes import CDLL
+            from _ctypes import RTLD_MEMBER
+            if sys.maxsize < 2**32:
+                print("Using CDLL(name, RTLD_MEMBER): %s" % CDLL('libc.a(shr.o)', RTLD_MEMBER))
+                print("Using cdll.LoadLibrary(): %s" % cdll.LoadLibrary('libc.a(shr.o)'))
+                # librpm.so is only available as 32-bit shared library
+                print("rpm: %s %s" % (find_library("rpm"), cdll.LoadLibrary("librpm.so")))
+            else:
+                print("Using CDLL(name, RTLD_MEMBER): %s", CDLL('libc.a(shr_64.o)', RTLD_MEMBER))
+                print("Using cdll.LoadLibrary(): %s", cdll.LoadLibrary('libc.a(shr_64.o)'))
+            print("crypt :: %s" % find_library('crypt'))
+            print("crypt :: %s" % cdll.LoadLibrary(find_library('crypt')))
+            print("crypto:: %s" % find_library('crypto'))
+            print("crypto:: %s" % cdll.LoadLibrary(find_library('crypto')))
         else:
-            print cdll.LoadLibrary("libm.so")
-            print cdll.LoadLibrary("libcrypt.so")
-            print find_library("crypt")
+            print(cdll.LoadLibrary("libm.so"))
+            print(cdll.LoadLibrary("libcrypt.so"))
+            print(find_library("crypt"))
 
 if __name__ == "__main__":
     test()

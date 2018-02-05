@@ -284,4 +284,7 @@ initdl(void)
 #ifdef RTLD_NODELETE
     INSINT(RTLD_NODELETE);
 #endif
+#ifdef RTLD_MEMBER
+    INSINT(RTLD_MEMBER);
+#endif
 }

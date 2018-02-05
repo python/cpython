@@ -1,7 +1,10 @@
 # Two-trick pony for OSX and other case insensitive file systems:
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
+.gitignore
 /python
 !/Python/
+.buildaix/
+buildaix/
 *.cover
 *.o
 *.orig
@@ -22,6 +25,7 @@ Doc/tools/pygments/
 Doc/tools/sphinx/
 Lib/lib2to3/*.pickle
 Lib/test/data/*
+Lib/plat-aix?/
 Makefile
 Makefile.pre
 Misc/python.pc
@@ -30,6 +34,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix
+Modules/python.exp
 PC/python_nt*.h
 PC/pythonnt_rc*.h
 PC/*/*.exe
