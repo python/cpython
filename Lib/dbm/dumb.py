@@ -82,10 +82,7 @@ class _Database(collections.abc.MutableMapping):
             f = _io.open(self._datfile, 'r', encoding="Latin-1")
         except OSError:
             if flag not in ('c', 'n'):
-                import warnings
-                warnings.warn("The database file is missing, the "
-                              "semantics of the 'c' flag will be used.",
-                              DeprecationWarning, stacklevel=4)
+                raise
             with _io.open(self._datfile, 'w', encoding="Latin-1") as f:
                 self._chmod(self._datfile)
         else:
@@ -93,18 +90,15 @@ class _Database(collections.abc.MutableMapping):
 
     # Read directory file into the in-memory index dict.
     def _update(self, flag):
+        self._modified = False
         self._index = {}
         try:
             f = _io.open(self._dirfile, 'r', encoding="Latin-1")
         except OSError:
-            self._modified = not self._readonly
             if flag not in ('c', 'n'):
-                import warnings
-                warnings.warn("The index file is missing, the "
-                              "semantics of the 'c' flag will be used.",
-                              DeprecationWarning, stacklevel=4)
+                raise
+            self._modified = True
         else:
-            self._modified = False
             with f:
                 for line in f:
                     line = line.rstrip()
@@ -191,9 +185,7 @@ class _Database(collections.abc.MutableMapping):
 
     def __setitem__(self, key, val):
         if self._readonly:
-            import warnings
-            warnings.warn('The database is opened for reading only',
-                          DeprecationWarning, stacklevel=2)
+            raise ValueError('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
         elif not isinstance(key, (bytes, bytearray)):
@@ -230,9 +222,7 @@ class _Database(collections.abc.MutableMapping):
 
     def __delitem__(self, key):
         if self._readonly:
-            import warnings
-            warnings.warn('The database is opened for reading only',
-                          DeprecationWarning, stacklevel=2)
+            raise ValueError('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
         self._verify_open()
@@ -323,7 +313,5 @@ def open(file, flag='c', mode=0o666):
         # Turn off any bits that are set in the umask
         mode = mode & (~um)
     if flag not in ('r', 'w', 'c', 'n'):
-        import warnings
-        warnings.warn("Flag must be one of 'r', 'w', 'c', or 'n'",
-                      DeprecationWarning, stacklevel=2)
+        raise ValueError("Flag must be one of 'r', 'w', 'c', or 'n'")
     return _Database(file, mode, flag=flag)
