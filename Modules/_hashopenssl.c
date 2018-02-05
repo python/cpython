@@ -20,6 +20,7 @@
 
 
 /* EVP is the preferred interface to hashing in OpenSSL */
+#include <openssl/ssl.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
@@ -60,10 +61,19 @@ typedef struct {
 
 static PyTypeObject EVPtype;
 
+/* Struct to hold all the cached information we need on a specific algorithm.
+   We have one of these per algorithm */
+typedef struct {
+    PyObject *name_obj;
+    EVP_MD_CTX ctxs[2];
+    /* ctx_ptrs will point to ctxs unless an error occurred, when it will
+       be NULL: */
+    EVP_MD_CTX *ctx_ptrs[2];
+    PyObject *error_msgs[2];
+} EVPCachedInfo;
 
-#define DEFINE_CONSTS_FOR_NEW(Name)  \
-    static PyObject *CONST_ ## Name ## _name_obj = NULL; \
-    static EVP_MD_CTX *CONST_new_ ## Name ## _ctx_p = NULL;
+#define DEFINE_CONSTS_FOR_NEW(Name) \
+    static EVPCachedInfo cached_info_ ##Name;
 
 DEFINE_CONSTS_FOR_NEW(md5)
 DEFINE_CONSTS_FOR_NEW(sha1)
@@ -136,14 +146,53 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
             process = MUNCH_SIZE;
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
-        if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            _setException(PyExc_ValueError);
-            break;
-        }
+        EVP_DigestUpdate(self->ctx, (const void*)cp, process);
         len -= process;
         cp += process;
     }
 }
+
+static void
+mc_ctx_init(EVP_MD_CTX *ctx, int usedforsecurity)
+{
+    EVP_MD_CTX_init(ctx);
+
+    /*
+      If the user has declared that this digest is being used in a
+      non-security role (e.g. indexing into a data structure), set
+      the exception flag for openssl to allow it
+    */
+    if (!usedforsecurity) {
+#ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
+        EVP_MD_CTX_set_flags(ctx,
+                             EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
+#endif
+    }
+}
+
+/* Get an error msg for the last error as a PyObject */
+static PyObject *
+error_msg_for_last_error(void)
+{
+    char *errstr;
+
+    errstr = ERR_error_string(ERR_peek_last_error(), NULL);
+    ERR_clear_error();
+
+    return PyUnicode_FromString(errstr); /* Can be NULL */
+}
+
+static void
+set_evp_exception(void)
+{
+    char *errstr;
+
+    errstr = ERR_error_string(ERR_peek_last_error(), NULL);
+    ERR_clear_error();
+
+    PyErr_SetString(PyExc_ValueError, errstr);
+}
+
 
 /* Internal methods for a hash object */
 
@@ -207,10 +256,7 @@ EVP_digest(EVPobject *self, PyObject *unused)
         return _setException(PyExc_ValueError);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
-    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
-        _setException(PyExc_ValueError);
-        return NULL;
-    }
+    EVP_DigestFinal(temp_ctx, digest, NULL);
 
     retval = PyBytes_FromStringAndSize((const char *)digest, digest_size);
     EVP_MD_CTX_free(temp_ctx);
@@ -238,10 +284,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
         return _setException(PyExc_ValueError);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
-    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
-        _setException(PyExc_ValueError);
-        return NULL;
-    }
+    EVP_DigestFinal(temp_ctx, digest, NULL);
 
     EVP_MD_CTX_free(temp_ctx);
 
@@ -333,15 +376,16 @@ EVP_repr(EVPobject *self)
 static int
 EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", "string", NULL};
+    static char *kwlist[] = {"name", "string", "usedforsecurity", NULL};
     PyObject *name_obj = NULL;
     PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
     Py_buffer view;
     char *nameStr;
     const EVP_MD *digest;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:HASH", kwlist,
-                                     &name_obj, &data_obj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:HASH", kwlist,
+                                     &name_obj, &data_obj, &usedforsecurity)) {
         return -1;
     }
 
@@ -362,11 +406,11 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
             PyBuffer_Release(&view);
         return -1;
     }
-    if (!EVP_DigestInit(self->ctx, digest)) {
-        _setException(PyExc_ValueError);
-        if (data_obj)
-            PyBuffer_Release(&view);
-        return -1;
+    mc_ctx_init(self->ctx, usedforsecurity);
+    if (!EVP_DigestInit_ex(self->ctx, digest, NULL)) {
+        set_evp_exception();
+        PyBuffer_Release(&view);
+        Py_RETURN_NONE;
     }
 
     self->name = name_obj;
@@ -451,7 +495,8 @@ static PyTypeObject EVPtype = {
 static PyObject *
 EVPnew(PyObject *name_obj,
        const EVP_MD *digest, const EVP_MD_CTX *initial_ctx,
-       const unsigned char *cp, Py_ssize_t len)
+       const unsigned char *cp, Py_ssize_t len,
+       int usedforsecurity)
 {
     EVPobject *self;
 
@@ -466,8 +511,9 @@ EVPnew(PyObject *name_obj,
     if (initial_ctx) {
         EVP_MD_CTX_copy(self->ctx, initial_ctx);
     } else {
-        if (!EVP_DigestInit(self->ctx, digest)) {
-            _setException(PyExc_ValueError);
+        mc_ctx_init(self->ctx, usedforsecurity);
+        if (!EVP_DigestInit_ex(self->ctx, digest, NULL)) {
+            set_evp_exception();
             Py_DECREF(self);
             return NULL;
         }
@@ -494,21 +540,29 @@ PyDoc_STRVAR(EVP_new__doc__,
 An optional string argument may be provided and will be\n\
 automatically hashed.\n\
 \n\
-The MD5 and SHA1 algorithms are always supported.\n");
+The MD5 and SHA1 algorithms are always supported.\n\
+\n\
+An optional \"usedforsecurity=True\" keyword argument is provided for use in\n\
+environments that enforce FIPS-based restrictions.  Some implementations of\n\
+OpenSSL can be configured to prevent the usage of non-secure algorithms (such\n\
+as MD5).  If you have a non-security use for these algorithms (e.g. a hash\n\
+table), you can override this argument by marking the callsite as\n\
+\"usedforsecurity=False\".");
 
 static PyObject *
 EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
-    static char *kwlist[] = {"name", "string", NULL};
+    static char *kwlist[] = {"name", "string", "usedforsecurity", NULL};
     PyObject *name_obj = NULL;
     PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
     Py_buffer view = { 0 };
     PyObject *ret_obj;
     char *name;
     const EVP_MD *digest;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "O|O:new", kwlist,
-                                     &name_obj, &data_obj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "O|Oi:new", kwlist,
+                                     &name_obj, &data_obj, &usedforsecurity)) {
         return NULL;
     }
 
@@ -522,7 +576,8 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
     digest = EVP_get_digestbyname(name);
 
-    ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf, view.len);
+    ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf, view.len,
+                     usedforsecurity);
 
     if (data_obj)
         PyBuffer_Release(&view);
@@ -959,66 +1014,117 @@ generate_hash_name_list(void)
 
 
 /*
- *  This macro generates constructor function definitions for specific
- *  hash algorithms.  These constructors are much faster than calling
- *  the generic one passing it a python string and are noticeably
- *  faster than calling a python new() wrapper.  That is important for
+ *  This macro and function generates a family of constructor function
+ *  definitions for specific hash algorithms.  These constructors are much
+ *  faster than calling the generic one passing it a python string and are
+ *  noticably faster than calling a python new() wrapper.  That's important for
  *  code that wants to make hashes of a bunch of small strings.
  *  The first call will lazy-initialize, which reports an exception
  *  if initialization fails.
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject *const *args, Py_ssize_t nargs) \
+    EVP_new_ ## NAME (PyObject *self, PyObject *args, PyObject *kwdict) \
     { \
-        PyObject *data_obj = NULL; \
-        Py_buffer view = { 0 }; \
-        PyObject *ret_obj; \
-     \
-        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
-            return NULL; \
-        } \
-     \
-        if (CONST_new_ ## NAME ## _ctx_p == NULL) { \
-            EVP_MD_CTX *ctx_p = EVP_MD_CTX_new(); \
-            if (!EVP_get_digestbyname(#NAME) || \
-                !EVP_DigestInit(ctx_p, EVP_get_digestbyname(#NAME))) { \
-                _setException(PyExc_ValueError); \
-                EVP_MD_CTX_free(ctx_p); \
-                return NULL; \
-            } \
-            CONST_new_ ## NAME ## _ctx_p = ctx_p; \
-        } \
-     \
-        if (data_obj) \
-            GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view); \
-     \
-        ret_obj = EVPnew( \
-                    CONST_ ## NAME ## _name_obj, \
-                    NULL, \
-                    CONST_new_ ## NAME ## _ctx_p, \
-                    (unsigned char*)view.buf, \
-                    view.len); \
-     \
-        if (data_obj) \
-            PyBuffer_Release(&view); \
-        return ret_obj; \
+        return implement_specific_EVP_new(self, args, kwdict,      \
+                                         "|Oi:" #NAME,            \
+                                         &cached_info_ ## NAME ); \
     }
+
+static PyObject *
+implement_specific_EVP_new(PyObject *self, PyObject *args, PyObject *kwdict,
+                           const char *format,
+                           EVPCachedInfo *cached_info)
+{
+    static char *kwlist[] = {"string", "usedforsecurity", NULL};
+    PyObject *data_obj = NULL;
+    Py_buffer view = { 0 };
+    int usedforsecurity = 1;
+    int idx;
+    PyObject *ret_obj = NULL;
+
+    assert(cached_info);
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, format, kwlist,
+                                     &data_obj, &usedforsecurity)) {
+        return NULL;
+     }
+ 
+    if (data_obj)
+       GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
+
+    idx = usedforsecurity ? 1 : 0;
+
+    /*
+     * If an error occurred during creation of the global content, the ctx_ptr
+     * will be NULL, and the error_msg will hopefully be non-NULL:
+     */
+    if (cached_info->ctx_ptrs[idx]) {
+        /* We successfully initialized this context; copy it: */
+        ret_obj = EVPnew(cached_info->name_obj,
+                         NULL,
+                         cached_info->ctx_ptrs[idx],
+                         (unsigned char*)view.buf, view.len,
+                         usedforsecurity);
+    } else {
+        /* Some kind of error happened initializing the global context for
+           this (digest, usedforsecurity) pair.
+           Raise an exception with the saved error message: */
+        if (cached_info->error_msgs[idx]) {
+            PyErr_SetObject(PyExc_ValueError, cached_info->error_msgs[idx]);
+        } else {
+            PyErr_SetString(PyExc_ValueError, "Error initializing hash");
+        }
+     }
+
+    if (data_obj)
+        PyBuffer_Release(&view);
+
+    return ret_obj;
+}
 
 /* a PyMethodDef structure for the constructor */
 #define CONSTRUCTOR_METH_DEF(NAME)  \
-    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_FASTCALL, \
+    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, \
+        METH_VARARGS|METH_KEYWORDS, \
         PyDoc_STR("Returns a " #NAME \
                   " hash object; optionally initialized with a string") \
     }
 
-/* used in the init function to setup a constructor: initialize OpenSSL
-   constructor constants if they haven't been initialized already.  */
-#define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
-    if (CONST_ ## NAME ## _name_obj == NULL) { \
-        CONST_ ## NAME ## _name_obj = PyUnicode_FromString(#NAME); \
-    } \
+/*
+  Macro/function pair to set up the constructors.
+
+  Try to initialize a context for each hash twice, once with
+  EVP_MD_CTX_FLAG_NON_FIPS_ALLOW and once without.
+
+  Any that have errors during initialization will end up with a NULL ctx_ptrs
+  entry, and err_msgs will be set (unless we're very low on memory)
+*/
+#define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do {    \
+    init_constructor_constant(&cached_info_ ## NAME, #NAME); \
 } while (0);
+
+static void
+init_constructor_constant(EVPCachedInfo *cached_info, const char *name)
+{
+    assert(cached_info);
+    cached_info->name_obj = PyUnicode_FromString(name);
+    if (EVP_get_digestbyname(name)) {
+        int i;
+        for (i=0; i<2; i++) {
+            mc_ctx_init(&cached_info->ctxs[i], i);
+            if (EVP_DigestInit_ex(&cached_info->ctxs[i],
+                                  EVP_get_digestbyname(name), NULL)) {
+                /* Success: */
+                cached_info->ctx_ptrs[i] = &cached_info->ctxs[i];
+            } else {
+                /* Failure: */
+              cached_info->ctx_ptrs[i] = NULL;
+              cached_info->error_msgs[i] = error_msg_for_last_error();
+            }
+        }
+    }
+}
 
 GEN_CONSTRUCTOR(md5)
 GEN_CONSTRUCTOR(sha1)
@@ -1067,16 +1173,10 @@ PyInit__hashlib(void)
 {
     PyObject *m, *openssl_md_meth_names;
 
-#ifndef OPENSSL_VERSION_1_1
-    /* Load all digest algorithms and initialize cpuid */
-    OPENSSL_add_all_algorithms_noconf();
-    ERR_load_crypto_strings();
-#endif
+    SSL_load_error_strings();
+    SSL_library_init();
 
-    /* TODO build EVP_functions openssl_* entries dynamically based
-     * on what hashes are supported rather than listing many
-     * but having some be unsupported.  Only init appropriate
-     * constants. */
+    OpenSSL_add_all_digests();
 
     Py_TYPE(&EVPtype) = &PyType_Type;
     if (PyType_Ready(&EVPtype) < 0)

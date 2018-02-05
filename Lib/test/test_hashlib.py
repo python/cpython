@@ -24,7 +24,22 @@ from http.client import HTTPException
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
 c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
-py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
+# skipped on Fedora, since we always use OpenSSL implementation
+# py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
+
+def openssl_enforces_fips():
+    # Use the "openssl" command (if present) to try to determine if the local
+    # OpenSSL is configured to enforce FIPS
+    from subprocess import Popen, PIPE
+    try:
+        p = Popen(['openssl', 'md5'],
+                  stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    except OSError:
+        # "openssl" command not found
+        return False
+    stdout, stderr = p.communicate(input=b'abc')
+    return b'unknown cipher' in stderr
+OPENSSL_ENFORCES_FIPS = openssl_enforces_fips()
 
 try:
     import _blake2
@@ -68,6 +83,17 @@ def read_vectors(hash_name):
             yield parts
 
 
+# hashlib and _hashlib-based functions support a "usedforsecurity" keyword
+# argument, and FIPS mode requires that it be used overridden with a False
+# value for these selftests to work.  Other cryptographic code within Python
+# doesn't support this keyword.
+# Modify a function to one in which "usedforsecurity=False" is added to the
+# keyword arguments:
+def suppress_fips(f):
+    def g(*args, **kwargs):
+        return f(*args, usedforsecurity=False, **kwargs)
+    return g
+
 class HashLibTestCase(unittest.TestCase):
     supported_hash_names = ( 'md5', 'MD5', 'sha1', 'SHA1',
                              'sha224', 'SHA224', 'sha256', 'SHA256',
@@ -106,11 +132,11 @@ class HashLibTestCase(unittest.TestCase):
         # For each algorithm, test the direct constructor and the use
         # of hashlib.new given the algorithm name.
         for algorithm, constructors in self.constructors_to_test.items():
-            constructors.add(getattr(hashlib, algorithm))
-            def _test_algorithm_via_hashlib_new(data=None, _alg=algorithm, **kwargs):
+            constructors.add(suppress_fips(getattr(hashlib, algorithm)))
+            def _test_algorithm_via_hashlib_new(data=None, _alg=algorithm, usedforsecurity=True, **kwargs):
                 if data is None:
-                    return hashlib.new(_alg, **kwargs)
-                return hashlib.new(_alg, data, **kwargs)
+                    return suppress_fips(hashlib.new)(_alg)
+                return suppress_fips(hashlib.new)(_alg, data)
             constructors.add(_test_algorithm_via_hashlib_new)
 
         _hashlib = self._conditional_import_module('_hashlib')
@@ -122,26 +148,12 @@ class HashLibTestCase(unittest.TestCase):
             for algorithm, constructors in self.constructors_to_test.items():
                 constructor = getattr(_hashlib, 'openssl_'+algorithm, None)
                 if constructor:
-                    constructors.add(constructor)
+                    constructors.add(suppress_fips(constructor))
 
         def add_builtin_constructor(name):
             constructor = getattr(hashlib, "__get_builtin_constructor")(name)
             self.constructors_to_test[name].add(constructor)
 
-        _md5 = self._conditional_import_module('_md5')
-        if _md5:
-            add_builtin_constructor('md5')
-        _sha1 = self._conditional_import_module('_sha1')
-        if _sha1:
-            add_builtin_constructor('sha1')
-        _sha256 = self._conditional_import_module('_sha256')
-        if _sha256:
-            add_builtin_constructor('sha224')
-            add_builtin_constructor('sha256')
-        _sha512 = self._conditional_import_module('_sha512')
-        if _sha512:
-            add_builtin_constructor('sha384')
-            add_builtin_constructor('sha512')
         if _blake2:
             add_builtin_constructor('blake2s')
             add_builtin_constructor('blake2b')
@@ -206,9 +218,6 @@ class HashLibTestCase(unittest.TestCase):
             else:
                 del sys.modules['_md5']
         self.assertRaises(TypeError, get_builtin_constructor, 3)
-        constructor = get_builtin_constructor('md5')
-        self.assertIs(constructor, _md5.md5)
-        self.assertEqual(sorted(builtin_constructor_cache), ['MD5', 'md5'])
 
     def test_hexdigest(self):
         for cons in self.hash_constructors:
@@ -808,6 +817,65 @@ class HashLibTestCase(unittest.TestCase):
 
         self.assertEqual(expected_hash, hasher.hexdigest())
 
+    def test_issue9146(self):
+        # Ensure that various ways to use "MD5" from "hashlib" don't segfault:
+        m = hashlib.md5(usedforsecurity=False)
+        m.update(b'abc\n')
+        self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
+        m = hashlib.new('md5', usedforsecurity=False)
+        m.update(b'abc\n')
+        self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
+        m = hashlib.md5(b'abc\n', usedforsecurity=False)
+        self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
+        m = hashlib.new('md5', b'abc\n', usedforsecurity=False)
+        self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
+    @unittest.skipUnless(OPENSSL_ENFORCES_FIPS,
+                         'FIPS enforcement required for this test.')
+    def test_hashlib_fips_mode(self):
+        # Ensure that we raise a ValueError on vanilla attempts to use MD5
+        # in hashlib in a FIPS-enforced setting:
+        with self.assertRaisesRegexp(ValueError, '.*unknown cipher'):
+            m = hashlib.md5()
+
+        if not self._conditional_import_module('_md5'):
+            with self.assertRaisesRegexp(ValueError, '.*unknown cipher'):
+                m = hashlib.new('md5')
+
+    @unittest.skipUnless(OPENSSL_ENFORCES_FIPS,
+                         'FIPS enforcement required for this test.')
+    def test_hashopenssl_fips_mode(self):
+        # Verify the _hashlib module's handling of md5:
+        _hashlib = self._conditional_import_module('_hashlib')
+        if _hashlib:
+            assert hasattr(_hashlib, 'openssl_md5')
+
+            # Ensure that _hashlib raises a ValueError on vanilla attempts to
+            # use MD5 in a FIPS-enforced setting:
+            with self.assertRaisesRegexp(ValueError, '.*unknown cipher'):
+                m = _hashlib.openssl_md5()
+            with self.assertRaisesRegexp(ValueError, '.*unknown cipher'):
+                m = _hashlib.new('md5')
+
+            # Ensure that in such a setting we can whitelist a callsite with
+            # usedforsecurity=False and have it succeed:
+            m = _hashlib.openssl_md5(usedforsecurity=False)
+            m.update(b'abc\n')
+            self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
+            m = _hashlib.new('md5', usedforsecurity=False)
+            m.update(b'abc\n')
+            self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
+            m = _hashlib.openssl_md5(b'abc\n', usedforsecurity=False)
+            self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
+            m = _hashlib.new('md5', b'abc\n', usedforsecurity=False)
+            self.assertEquals(m.hexdigest(), "0bee89b07a248e27c83fc3d5951213c1")
+
 
 class KDFTests(unittest.TestCase):
 
@@ -898,6 +966,7 @@ class KDFTests(unittest.TestCase):
             iterations=1, dklen=None)
         self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
 
+    @unittest.skip('skipped on Fedora, as we always use OpenSSL pbkdf2_hmac')
     def test_pbkdf2_hmac_py(self):
         self._test_pbkdf2_hmac(py_hashlib.pbkdf2_hmac)
 

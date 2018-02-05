@@ -24,6 +24,16 @@ the zlib module.
 Choose your hash function wisely.  Some have known collision weaknesses.
 sha384 and sha512 will be slow on 32 bit platforms.
 
+If the underlying implementation supports "FIPS mode", and this is enabled, it
+may restrict the available hashes to only those that are compliant with FIPS
+regulations.  For example, it may deny the use of MD5, on the grounds that this
+is not secure for uses such as authentication, system integrity checking, or
+digital signatures.   If you need to use such a hash for non-security purposes
+(such as indexing into a data structure for speed), you can override the keyword
+argument "usedforsecurity" from True to False to signify that your code is not
+relying on the hash for security purposes, and this will allow the hash to be
+usable even in FIPS mode.
+
 Hash objects have these methods:
  - update(arg): Update the hash object with the bytes in arg. Repeated calls
                 are equivalent to a single call with the concatenation of all
@@ -66,6 +76,19 @@ algorithms_available = set(__always_supported)
 
 __all__ = __always_supported + ('new', 'algorithms_guaranteed',
                                 'algorithms_available', 'pbkdf2_hmac')
+
+import functools
+def __ignore_usedforsecurity(func):
+    """Used for sha3_* functions. Until OpenSSL implements them, we want
+    to use them from Python _sha3 module, but we want them to accept
+    usedforsecurity argument too."""
+    # TODO: remove this function when OpenSSL implements sha3
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        if 'usedforsecurity' in kwargs:
+            kwargs.pop('usedforsecurity')
+        return func(*args, **kwargs)
+    return inner
 
 
 __builtin_constructor_cache = {}
@@ -121,23 +144,33 @@ def __get_openssl_constructor(name):
         f = getattr(_hashlib, 'openssl_' + name)
         # Allow the C module to raise ValueError.  The function will be
         # defined but the hash not actually available thanks to OpenSSL.
-        f()
+        # We pass "usedforsecurity=False" to disable FIPS-based restrictions:
+        # at this stage we're merely seeing if the function is callable,
+        # rather than using it for actual work.
+        f(usedforsecurity=False)
         # Use the C function directly (very fast)
         return f
     except (AttributeError, ValueError):
+        # TODO: We want to just raise here when OpenSSL implements sha3
+        # because we want to make sure that Fedora uses everything from OpenSSL
         return __get_builtin_constructor(name)
 
 
-def __py_new(name, data=b'', **kwargs):
-    """new(name, data=b'', **kwargs) - Return a new hashing object using the
-    named algorithm; optionally initialized with data (which must be bytes).
+def __py_new(name, data=b'', *, usedforsecurity=True, **kwargs):
+    """new(name, data=b'', usedforsecurity=True) - Return a new hashing object using
+    the named algorithm; optionally initialized with data (which must be bytes).
+    The 'usedforsecurity' keyword argument does nothing, and is for compatibilty
+    with the OpenSSL implementation
     """
     return __get_builtin_constructor(name)(data, **kwargs)
 
 
-def __hash_new(name, data=b'', **kwargs):
-    """new(name, data=b'') - Return a new hashing object using the named algorithm;
-    optionally initialized with data (which must be bytes).
+def __hash_new(name, data=b'', *, usedforsecurity=True, **kwargs):
+    """new(name, data=b'', usedforsecurity=True) - Return a new hashing object using
+    the named algorithm; optionally initialized with data (which must be bytes).
+
+    Override 'usedforsecurity' to False when using for non-security purposes in
+    a FIPS environment
     """
     if name in {'blake2b', 'blake2s'}:
         # Prefer our blake2 implementation.
@@ -146,12 +179,10 @@ def __hash_new(name, data=b'', **kwargs):
         # salt, personal, tree hashing or SSE.
         return __get_builtin_constructor(name)(data, **kwargs)
     try:
-        return _hashlib.new(name, data)
+        return _hashlib.new(name, data, usedforsecurity)
     except ValueError:
-        # If the _hashlib module (OpenSSL) doesn't support the named
-        # hash, try using our builtin implementations.
-        # This allows for SHA224/256 and SHA384/512 support even though
-        # the OpenSSL library prior to 0.9.8 doesn't provide them.
+        # TODO: We want to just raise here when OpenSSL implements sha3
+        # because we want to make sure that Fedora uses everything from OpenSSL
         return __get_builtin_constructor(name)(data)
 
 
@@ -162,8 +193,8 @@ try:
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
 except ImportError:
-    new = __py_new
-    __get_hash = __get_builtin_constructor
+    # We don't build the legacy modules
+    raise
 
 try:
     # OpenSSL's PKCS5_PBKDF2_HMAC requires OpenSSL 1.0+ with HMAC and SHA
@@ -240,7 +271,10 @@ for __func_name in __always_supported:
     # try them all, some may not work due to the OpenSSL
     # version not supporting that algorithm.
     try:
-        globals()[__func_name] = __get_hash(__func_name)
+        func = __get_hash(__func_name)
+        if __func_name.startswith(('sha3_', 'blake2', 'shake_')):
+            func = __ignore_usedforsecurity(func)
+        globals()[__func_name] = func
     except ValueError:
         import logging
         logging.exception('code for hash %s was not found.', __func_name)
@@ -248,4 +282,5 @@ for __func_name in __always_supported:
 
 # Cleanup locals()
 del __always_supported, __func_name, __get_hash
-del __py_new, __hash_new, __get_openssl_constructor
+del __hash_new, __get_openssl_constructor
+del __ignore_usedforsecurity
