@@ -9,7 +9,7 @@
 
 --------------
 
-The :mod:`distutils` package provides support for building and installing
+The ``distutils`` package provides support for building and installing
 additional modules into a Python installation.  The new modules may be either
 100%-pure Python, or may be extension modules written in C, or may be
 collections of Python packages which include modules coded in both Python and C.
@@ -18,7 +18,7 @@ Most Python users will *not* want to use this module directly, but instead
 use the cross-version tools maintained by the Python Packaging Authority. In
 particular,
 `setuptools <https://setuptools.readthedocs.io/en/latest/>`__ is an
-enhanced alternative to :mod:`distutils` that provides:
+enhanced alternative to ``distutils`` that provides:
 
 * support for declaring project dependencies
 * additional mechanisms for configuring which files to include in source
@@ -37,7 +37,7 @@ information.
 
 For the benefits of packaging tool authors and users seeking a deeper
 understanding of the details of the current packaging and distribution
-system, the legacy :mod:`distutils` based user documentation and API
+system, the legacy ``distutils`` based user documentation and API
 reference remain available:
 
 * :ref:`install-index`
