@@ -1,7 +1,10 @@
-What's New in IDLE 3.7.0
+What's New in IDLE 3.7.0 (since 3.6.0)
 Released on 2018-06-18?
-========================
+======================================
 
+
+bpo-32765: Update configdialog General tab create page docstring.
+Add new widgets to the widget list.
 
 bpo-32207: Improve tk event exception tracebacks in IDLE.
 When tk event handling is driven by IDLE's run loop, a confusing
@@ -294,9 +297,9 @@ Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
 Update and augment description of the configuration system.
 
 
-What's New in IDLE 3.6.0
+What's New in IDLE 3.6.0 (since 3.5.0)
 Released on 2016-12-23
-========================
+======================================
 
 - Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
   Patch by Roger Serwy, updated by Bayard Randel.
