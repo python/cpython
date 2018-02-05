@@ -26,8 +26,7 @@ obvious; otherwise, you might need a little more guidance.
 Unless you use some sort of integrated development environment, you will end up
 *typing* Windows commands into what is variously referred to as a "DOS window"
 or "Command prompt window".  Usually you can create such a window from your
-Start menu; under Windows 7 the menu selection is :menuselection:`Start -->
-Programs --> Accessories --> Command Prompt`.  You should be able to recognize
+search bar by searching for ``cmd``.  You should be able to recognize
 when you have started such a window because you will see a Windows "command
 prompt", which usually looks like this:
 
@@ -52,19 +51,19 @@ compiles it into bytecodes, and then executes the bytecodes to run your
 program. So, how do you arrange for the interpreter to handle your Python?
 
 First, you need to make sure that your command window recognises the word
-"python" as an instruction to start the interpreter.  If you have opened a
-command window, you should try entering the command ``python`` and hitting
+"py" as an instruction to start the interpreter.  If you have opened a
+command window, you should try entering the command ``py`` and hitting
 return:
 
 .. code-block:: doscon
 
-   C:\Users\YourName> python
+   C:\Users\YourName> py
 
 You should then see something like:
 
 .. code-block:: pycon
 
-   Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32
+   Python 3.6.4 (v3.6.4:d48eceb, Dec 19 2017, 06:04:45) [MSC v.1900 32 bit (Intel)] on win32
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
@@ -81,20 +80,26 @@ by entering a few expressions of your choice and seeing the results:
     'HelloHelloHello'
 
 Many people use the interactive mode as a convenient yet highly programmable
-calculator.  When you want to end your interactive Python session, hold the :kbd:`Ctrl`
-key down while you enter a :kbd:`Z`, then hit the ":kbd:`Enter`" key to get back to your
-Windows command prompt.
+calculator.  When you want to end your interactive Python session,
+call the ``exit()`` function or hold the :kbd:`Ctrl` key down
+while you enter a :kbd:`Z`, then hit the ":kbd:`Enter`" key to get
+back to your Windows command prompt.
 
 You may also find that you have a Start-menu entry such as :menuselection:`Start
---> Programs --> Python 3.3 --> Python (command line)` that results in you
+--> Programs --> Python 3.6 --> Python (command line)` that results in you
 seeing the ``>>>`` prompt in a new window.  If so, the window will disappear
-after you enter the :kbd:`Ctrl-Z` character; Windows is running a single "python"
+after you call the ``exit()`` function or enter the :kbd:`Ctrl-Z`
+character; Windows is running a single "python"
 command in the window, and closes it when you terminate the interpreter.
 
-If the ``python`` command, instead of displaying the interpreter prompt ``>>>``,
-gives you a message like::
+Now that we know the ``py`` command is recognized, you can give your
+Python script to it. You'll have to give either an absolute or a
+relative path to the Python script. Let's say your Python script is
+located in your desktop and is named ``hello.py``, and your command
+prompt is nicely opened in your home directory so you're seeing something
+similar to::
 
-   'python' is not recognized as an internal or external command, operable program or batch file.
+   C:\Users\YourName>
 
 or::
 
@@ -332,4 +337,3 @@ This is a mistake; the extension should be .TGZ.
 Simply rename the downloaded file to have the .TGZ extension, and WinZip will be
 able to handle it.  (If your copy of WinZip doesn't, get a newer one from
 https://www.winzip.com.)
-
