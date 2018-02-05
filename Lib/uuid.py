@@ -713,6 +713,13 @@ def _random_getnode():
 
 _node = None
 
+_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+
+_NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
+                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
+
+_NODE_GETTERS_AIX = [_unix_getnode, _netstat_getnode]
+
 def getnode():
     """Get the hardware address as a 48-bit positive integer.
 
@@ -726,12 +733,11 @@ def getnode():
         return _node
 
     if sys.platform == 'win32':
-        getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+        getters = _NODE_GETTERS_WIN32
     elif sys.platform.startswith("aix"):
-        getters = [_unix_getnode, _netstat_getnode]
+        getters = _NODE_GETTERS_AIX
     else:
-        getters = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                   _arp_getnode, _lanscan_getnode, _netstat_getnode]
+        getters = _NODE_GETTERS_UNIX
 
     for getter in getters + [_random_getnode]:
         try:
