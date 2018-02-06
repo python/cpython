@@ -4264,6 +4264,9 @@ support membership tests:
    Iterating views while adding or deleting entries in the dictionary may raise
    a :exc:`RuntimeError` or fail to iterate over all entries.
 
+   .. versionchanged:: 3.7
+      Dict order is guaranteed to be insertion order.
+
 .. describe:: x in dictview
 
    Return ``True`` if *x* is in the underlying dictionary's keys, values or
