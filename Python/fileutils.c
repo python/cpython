@@ -1086,8 +1086,7 @@ make_non_inheritable(int fd)
 }
 
 /* Set the inheritable flag of the specified file descriptor.
-   On success: return 0, on error: raise an exception if raise is nonzero
-   and return -1.
+   On success: return 0, on error: raise an exception and return -1.
 
    If atomic_flag_works is not NULL:
 
@@ -1106,6 +1105,15 @@ int
 _Py_set_inheritable(int fd, int inheritable, int *atomic_flag_works)
 {
     return set_inheritable(fd, inheritable, 1, atomic_flag_works);
+}
+
+/* Same as _Py_set_inheritable() but on error, set errno and
+   don't raise an exception.
+   This function is async-signal-safe. */
+int
+_Py_set_inheritable_noraise(int fd, int inheritable, int *atomic_flag_works)
+{
+    return set_inheritable(fd, inheritable, 0, atomic_flag_works);
 }
 
 static int
