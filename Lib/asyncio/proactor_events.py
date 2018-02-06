@@ -6,11 +6,14 @@ proactor is only implemented on Windows with IOCP.
 
 __all__ = 'BaseProactorEventLoop',
 
+import io
+import os
 import socket
 import warnings
 
 from . import base_events
 from . import constants
+from . import events
 from . import futures
 from . import protocols
 from . import sslproto
@@ -447,7 +450,7 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
                                transports.Transport):
     """Transport for connected sockets."""
 
-    _sendfile_compatible = constants._SendfileMode.FALLBACK
+    _sendfile_compatible = constants._SendfileMode.TRY_NATIVE
 
     def _set_extra(self, sock):
         self._extra['socket'] = sock
@@ -555,6 +558,35 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     async def sock_accept(self, sock):
         return await self._proactor.accept(sock)
+
+    async def _sock_sendfile_native(self, sock, file, offset, count):
+        try:
+            fileno = file.fileno()
+        except (AttributeError, io.UnsupportedOperation) as err:
+            raise events.SendfileNotAvailableError("not a regular file")
+        try:
+            fsize = os.fstat(fileno).st_size
+        except OSError as err:
+            raise events.SendfileNotAvailableError("not a regular file")
+        blocksize = count if count else fsize
+        if not blocksize:
+            return 0  # empty file
+
+        blocksize = min(blocksize, 0xffff_ffff)
+        end_pos = min(offset + count, fsize) if count else fsize
+        offset = min(offset, fsize)
+        total_sent = 0
+        try:
+            while True:
+                blocksize = min(end_pos - offset, blocksize)
+                if blocksize <= 0:
+                    return total_sent
+                await self._proactor.sendfile(sock, file, offset, blocksize)
+                offset += blocksize
+                total_sent += blocksize
+        finally:
+            if total_sent > 0:
+                file.seek(offset)
 
     def _close_self_pipe(self):
         if self._self_reading_future is not None:
