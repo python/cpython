@@ -1131,17 +1131,17 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     # mock the following:
     #  os.listdir: so we know that files are in the wrong order
-    @unittest.mock.patch('os.listdir')
-    def test_ordered_recursion(self, mock_listdir):
+    def test_ordered_recursion(self):
         path = os.path.join(TEMPDIR, "directory")
         os.mkdir(path)
         open(os.path.join(path, "1"), "a").close()
         open(os.path.join(path, "2"), "a").close()
-        mock_listdir.return_value = ["2", "1"]
         try:
             tar = tarfile.open(tmpname, self.mode)
             try:
-                tar.add(path)
+                with unittest.mock.patch('os.listdir') as mock_listdir:
+                    mock_listdir.return_value = ["2", "1"]
+                    tar.add(path)
                 paths = []
                 for m in tar.getmembers():
                     paths.append(os.path.split(m.name)[-1])
