@@ -1116,7 +1116,7 @@ _Py_set_inheritable(int fd, int inheritable, int *atomic_flag_works)
    don't raise an exception.
    This function is async-signal-safe. */
 int
-_Py_set_inheritable_noraise(int fd, int inheritable, int *atomic_flag_works)
+_Py_set_inheritable_async_safe(int fd, int inheritable, int *atomic_flag_works)
 {
     return set_inheritable(fd, inheritable, 0, atomic_flag_works);
 }
