@@ -329,6 +329,48 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
+  Compute ceil(log10(x)), for the purpose of determining string lengths.
+*/
+static Py_ssize_t
+clog10(Py_ssize_t n)
+{
+    Py_ssize_t log_n = 0;
+    while (n > 0) {
+        log_n++;
+        n /= 10;
+    }
+    return log_n;
+}
+
+/*
+  Append {padding}x to the PEP3118 format string.
+*/
+char *
+_ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
+{
+    char *result;
+    char *buf;
+
+    assert(padding > 0);
+
+    if (padding == 1) {
+        /* Use x instead of 1x, for brevity */
+        return _ctypes_alloc_format_string(prefix, "x");
+    }
+
+    /* decimal characters + x + null */
+    buf = PyMem_Malloc(clog10(padding) + 2);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    sprintf(buf, "%zdx", padding);
+    result = _ctypes_alloc_format_string(prefix, buf);
+    PyMem_Free(buf);
+    return result;
+}
+
+/*
   Retrieve the (optional) _pack_ attribute from a type, the _fields_ attribute,
   and create an StgDictObject.  Used for Structure and Union subclasses.
 */
@@ -337,7 +379,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 {
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
-    Py_ssize_t union_size, total_align;
+    Py_ssize_t union_size, total_align, aligned_size;
     Py_ssize_t field_size = 0;
     int bitofs;
     PyObject *isPacked;
@@ -443,12 +485,10 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
 
     assert(stgdict->format == NULL);
-    if (isStruct && !isPacked) {
+    if (isStruct) {
         stgdict->format = _ctypes_alloc_format_string(NULL, "T{");
     } else {
-        /* PEP3118 doesn't support union, or packed structures (well,
-           only standard packing, but we don't support the pep for
-           that). Use 'B' for bytes. */
+        /* PEP3118 doesn't support union. Use 'B' for bytes. */
         stgdict->format = _ctypes_alloc_format_string(NULL, "B");
     }
     if (stgdict->format == NULL)
@@ -515,12 +555,14 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         } else
             bitsize = 0;
 
-        if (isStruct && !isPacked) {
+        if (isStruct) {
             const char *fieldfmt = dict->format ? dict->format : "B";
             const char *fieldname = PyUnicode_AsUTF8(name);
             char *ptr;
             Py_ssize_t len;
             char *buf;
+            Py_ssize_t last_size = size;
+            Py_ssize_t padding;
 
             if (fieldname == NULL)
             {
@@ -528,11 +570,36 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
 
+            prop = PyCField_FromDesc(desc, i,
+                                   &field_size, bitsize, &bitofs,
+                                   &size, &offset, &align,
+                                   pack, big_endian);
+            if (prop == NULL) {
+                Py_DECREF(pair);
+                return -1;
+            }
+
+            /* number of bytes between the end of the last field and the start
+               of this one */
+            padding = ((CFieldObject *)prop)->offset - last_size;
+
+            if (padding > 0) {
+                ptr = stgdict->format;
+                stgdict->format = _ctypes_alloc_format_padding(ptr, padding);
+                PyMem_Free(ptr);
+                if (stgdict->format == NULL) {
+                    Py_DECREF(pair);
+                    Py_DECREF(prop);
+                    return -1;
+                }
+            }
+
             len = strlen(fieldname) + strlen(fieldfmt);
 
             buf = PyMem_Malloc(len + 2 + 1);
             if (buf == NULL) {
                 Py_DECREF(pair);
+                Py_DECREF(prop);
                 PyErr_NoMemory();
                 return -1;
             }
@@ -550,15 +617,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
             if (stgdict->format == NULL) {
                 Py_DECREF(pair);
+                Py_DECREF(prop);
                 return -1;
             }
-        }
-
-        if (isStruct) {
-            prop = PyCField_FromDesc(desc, i,
-                                   &field_size, bitsize, &bitofs,
-                                   &size, &offset, &align,
-                                   pack, big_endian);
         } else /* union */ {
             size = 0;
             offset = 0;
@@ -567,14 +628,14 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian);
+            if (prop == NULL) {
+                Py_DECREF(pair);
+                return -1;
+            }
             union_size = max(size, union_size);
         }
         total_align = max(align, total_align);
 
-        if (!prop) {
-            Py_DECREF(pair);
-            return -1;
-        }
         if (-1 == PyObject_SetAttr(type, name, prop)) {
             Py_DECREF(prop);
             Py_DECREF(pair);
@@ -585,28 +646,44 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
 #undef realdict
 
-    if (isStruct && !isPacked) {
-        char *ptr = stgdict->format;
+    if (!isStruct) {
+        size = union_size;
+    }
+
+    /* Adjust the size according to the alignment requirements */
+    aligned_size = ((size + total_align - 1) / total_align) * total_align;
+
+    if (isStruct) {
+        char *ptr;
+        Py_ssize_t padding;
+
+        /* Pad up to the full size of the struct */
+        padding = aligned_size - size;
+        if (padding > 0) {
+            ptr = stgdict->format;
+            stgdict->format = _ctypes_alloc_format_padding(ptr, padding);
+            PyMem_Free(ptr);
+            if (stgdict->format == NULL) {
+                return -1;
+            }
+        }
+
+        ptr = stgdict->format;
         stgdict->format = _ctypes_alloc_format_string(stgdict->format, "}");
         PyMem_Free(ptr);
         if (stgdict->format == NULL)
             return -1;
     }
 
-    if (!isStruct)
-        size = union_size;
-
-    /* Adjust the size according to the alignment requirements */
-    size = ((size + total_align - 1) / total_align) * total_align;
-
     stgdict->ffi_type_pointer.alignment = Py_SAFE_DOWNCAST(total_align,
                                                            Py_ssize_t,
                                                            unsigned short);
-    stgdict->ffi_type_pointer.size = size;
+    stgdict->ffi_type_pointer.size = aligned_size;
 
-    stgdict->size = size;
+    stgdict->size = aligned_size;
     stgdict->align = total_align;
     stgdict->length = len;      /* ADD ffi_ofs? */
+
 
     /* We did check that this flag was NOT set above, it must not
        have been set until now. */
