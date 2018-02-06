@@ -152,6 +152,9 @@ PyAPI_FUNC(int) _Py_get_inheritable(int fd);
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
 
+PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
+                                               int *atomic_flag_works);
+
 PyAPI_FUNC(int) _Py_dup(int fd);
 
 #ifndef MS_WINDOWS
