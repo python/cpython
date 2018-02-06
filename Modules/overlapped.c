@@ -1218,11 +1218,11 @@ Overlapped_TransmitFile(OverlappedObject *self, PyObject *args)
     DWORD err;
 
     if (!PyArg_ParseTuple(args,
-			  F_HANDLE F_HANDLE F_DWORD F_DWORD
-			  F_DWORD F_DWORD F_DWORD,
-			  &Socket, &File, &offset, &offset_high,
-			  &count_to_write, &count_per_send,
-			  &flags))
+                          F_HANDLE F_HANDLE F_DWORD F_DWORD
+                          F_DWORD F_DWORD F_DWORD,
+                          &Socket, &File, &offset, &offset_high,
+                          &count_to_write, &count_per_send,
+                          &flags))
         return NULL;
 
     if (self->type != TYPE_NONE) {
@@ -1237,8 +1237,8 @@ Overlapped_TransmitFile(OverlappedObject *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS
     ret = Py_TransmitFile(Socket, File, count_to_write, count_per_send,
-			  &self->overlapped,
-			  NULL, flags);
+                          &self->overlapped,
+                          NULL, flags);
     Py_END_ALLOW_THREADS
 
     self->error = err = ret ? ERROR_SUCCESS : WSAGetLastError();
