@@ -110,6 +110,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._force_close(exc)
 
     def _force_close(self, exc):
+        if self._empty_waiter is not None:
+            self._empty_waiter.set_exception(exc)
         if self._closing:
             return
         self._closing = True
@@ -330,6 +332,10 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     _start_tls_compatible = True
 
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self._empty_waiter = None
+
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(
@@ -337,6 +343,8 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                 f"not {type(data).__name__}")
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
+        if self._empty_waiter is not None:
+            raise RuntimeError('unable to write; sendfile is in progress')
 
         if not data:
             return
@@ -396,6 +404,8 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                     self._maybe_pause_protocol()
                 else:
                     self._write_fut.add_done_callback(self._loop_writing)
+            if self._empty_waiter is not None and self._write_fut is None:
+                self._empty_waiter.set_result(None)
         except ConnectionResetError as exc:
             self._force_close(exc)
         except OSError as exc:
@@ -409,6 +419,17 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def abort(self):
         self._force_close(None)
+
+    def _make_empty_waiter(self):
+        if self._empty_waiter is not None:
+            raise RuntimeError("Empty waiter is already set")
+        self._empty_waiter = self._loop.create_future()
+        if self._write_fut is None:
+            self._empty_waiter.set_result(None)
+        return self._empty_waiter
+
+    def _reset_empty_waiter(self):
+        self._empty_waiter = None
 
 
 class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
@@ -587,6 +608,18 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         finally:
             if total_sent > 0:
                 file.seek(offset)
+
+    async def _sendfile_native(self, transp, file, offset, count):
+        resume_reading = transp.is_reading()
+        transp.pause_reading()
+        await transp._make_empty_waiter()
+        try:
+            return await self.sock_sendfile(transp._sock, file, offset, count,
+                                            fallback=False)
+        finally:
+            transp._reset_empty_waiter()
+            if resume_reading:
+                transp.resume_reading()
 
     def _close_self_pipe(self):
         if self._self_reading_future is not None:
