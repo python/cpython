@@ -20,7 +20,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
 static int
 append_charp(_PyUnicodeWriter *writer, const char *charp)
 {
-        return _PyUnicodeWriter_WriteASCIIString(writer, charp, -1);
+    return _PyUnicodeWriter_WriteASCIIString(writer, charp, -1);
 }
 
 static int
@@ -100,6 +100,8 @@ append_ast_binop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     case BitAnd: op = " & "; break;
     case FloorDiv: op = " // "; break;
     case Pow: op = " ** "; break;
+    default:
+        Py_UNREACHABLE();
     }
 
     if (-1 == append_charp(writer, op)) {
@@ -127,6 +129,8 @@ append_ast_unaryop(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
     case Not: op = "not "; break;
     case UAdd: op = "+"; break;
     case USub: op = "-"; break;
+    default:
+        Py_UNREACHABLE();
     }
 
     if (-1 == append_charp(writer, op)) {
@@ -856,7 +860,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
             return -1;
         }
     }
-    if (e->v.FormattedValue.format_spec > 0) {
+    if (e->v.FormattedValue.format_spec) {
         if (-1 == _PyUnicodeWriter_WriteASCIIString(writer, ":", 1) ||
             -1 == append_fstring_element(writer,
                                          e->v.FormattedValue.format_spec,
@@ -1119,7 +1123,7 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, bool omit_parens)
 }
 
 static int
-maybe_init_static_strings()
+maybe_init_static_strings(void)
 {
     if (!_str_open_br &&
         !(_str_open_br = PyUnicode_InternFromString("{"))) {

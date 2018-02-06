@@ -5521,6 +5521,7 @@ PyInit__decimal(void)
     PyObject *numbers = NULL;
     PyObject *Number = NULL;
     PyObject *collections = NULL;
+    PyObject *collections_abc = NULL;
     PyObject *MutableMapping = NULL;
     PyObject *obj = NULL;
     DecCondMap *cm;
@@ -5595,7 +5596,8 @@ PyInit__decimal(void)
     Py_CLEAR(obj);
 
     /* MutableMapping */
-    ASSIGN_PTR(MutableMapping, PyObject_GetAttrString(collections,
+    ASSIGN_PTR(collections_abc, PyImport_ImportModule("collections.abc"));
+    ASSIGN_PTR(MutableMapping, PyObject_GetAttrString(collections_abc,
                                                       "MutableMapping"));
     /* Create SignalDict type */
     ASSIGN_PTR(PyDecSignalDict_Type,
@@ -5606,6 +5608,7 @@ PyInit__decimal(void)
 
     /* Done with collections, MutableMapping */
     Py_CLEAR(collections);
+    Py_CLEAR(collections_abc);
     Py_CLEAR(MutableMapping);
 
 
@@ -5765,6 +5768,7 @@ error:
     Py_CLEAR(Number); /* GCOV_NOT_REACHED */
     Py_CLEAR(Rational); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections); /* GCOV_NOT_REACHED */
+    Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(DecimalTuple); /* GCOV_NOT_REACHED */

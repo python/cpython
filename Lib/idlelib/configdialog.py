@@ -495,7 +495,7 @@ class FontPage(Frame):
         Changing any of the font vars invokes var_changed_font, which
         adds all 3 font options to changes and calls set_samples.
         Set_samples applies a new font constructed from the font vars to
-        font_sample and to highlight_sample on the hightlight page.
+        font_sample and to highlight_sample on the highlight page.
 
         Tabs: Enable users to change spaces entered for indent tabs.
         Changing indent_scale value with the mouse sets Var space_num,
@@ -646,7 +646,7 @@ class FontPage(Frame):
 
         Called on font initialization and change events.
         Accesses font_name, font_size, and font_bold Variables.
-        Updates font_sample and hightlight page highlight_sample.
+        Updates font_sample and highlight page highlight_sample.
         """
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
@@ -1792,11 +1792,27 @@ class GenPage(Frame):
                     (*)win_width_int: Entry - win_width
                     win_height_title: Label
                     (*)win_height_int: Entry - win_height
+                frame_autocomplete: Frame
+                    auto_wait_title: Label
+                    (*)auto_wait_int: Entry - autocomplete_wait
+                frame_paren1: Frame
+                    paren_style_title: Label
+                    (*)paren_style_type: OptionMenu - paren_style
+                frame_paren2: Frame
+                    paren_time_title: Label
+                    (*)paren_flash_time: Entry - flash_delay
+                    (*)bell_on: Checkbutton - paren_bell
             frame_editor: LabelFrame
                 frame_save: Frame
                     run_save_title: Label
                     (*)save_ask_on: Radiobutton - autosave
                     (*)save_auto_on: Radiobutton - autosave
+                frame_format: Frame
+                    format_width_title: Label
+                    (*)format_width_int: Entry - format_width
+                frame_context: Frame
+                    context_title: Label
+                    (*)context_int: Entry - context_lines
             frame_help: LabelFrame
                 frame_helplist: Frame
                     frame_helplist_buttons: Frame

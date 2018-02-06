@@ -66,6 +66,11 @@ def _get_resource_reader(
     return None
 
 
+def _check_location(package):
+    if package.__spec__.origin is None or not package.__spec__.has_location:
+        raise FileNotFoundError(f'Package has no location {package!r}')
+
+
 def open_binary(package: Package, resource: Resource) -> BinaryIO:
     """Return a file-like object opened for binary reading of the resource."""
     resource = _normalize_path(resource)
@@ -73,6 +78,7 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     reader = _get_resource_reader(package)
     if reader is not None:
         return reader.open_resource(resource)
+    _check_location(package)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
@@ -106,6 +112,7 @@ def open_text(package: Package,
     reader = _get_resource_reader(package)
     if reader is not None:
         return TextIOWrapper(reader.open_resource(resource), encoding, errors)
+    _check_location(package)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
@@ -172,6 +179,8 @@ def path(package: Package, resource: Resource) -> Iterator[Path]:
             return
         except FileNotFoundError:
             pass
+    else:
+        _check_location(package)
     # Fall-through for both the lack of resource_path() *and* if
     # resource_path() raises FileNotFoundError.
     package_directory = Path(package.__spec__.origin).parent
@@ -232,9 +241,9 @@ def contents(package: Package) -> Iterator[str]:
         yield from reader.contents()
         return
     # Is the package a namespace package?  By definition, namespace packages
-    # cannot have resources.
-    if (package.__spec__.origin == 'namespace' and
-            not package.__spec__.has_location):
+    # cannot have resources.  We could use _check_location() and catch the
+    # exception, but that's extra work, so just inline the check.
+    if package.__spec__.origin is None or not package.__spec__.has_location:
         return []
     package_directory = Path(package.__spec__.origin).parent
     yield from os.listdir(str(package_directory))

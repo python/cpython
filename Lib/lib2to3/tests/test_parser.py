@@ -12,6 +12,7 @@ from .support import driver, driver_no_print_statement
 from test.support import verbose
 
 # Python imports
+import difflib
 import importlib
 import operator
 import os
@@ -429,8 +430,8 @@ class TestParserIdempotency(support.TestCase):
                 except ParseError as err:
                     self.fail('ParseError on file %s (%s)' % (filepath, err))
             new = str(tree)
-            x = diff(filepath, new, encoding=encoding)
-            if x:
+            if new != source:
+                print(diff_texts(source, new, filepath))
                 self.fail("Idempotency failed: %s" % filepath)
 
     def test_extended_unpacking(self):
@@ -480,17 +481,12 @@ class TestGeneratorExpressions(GrammarTest):
         self.validate("set(x for x in [],)")
 
 
-def diff(fn, result, encoding='utf-8'):
-    try:
-        with open('@', 'w', encoding=encoding, newline='\n') as f:
-            f.write(str(result))
-        fn = fn.replace('"', '\\"')
-        return subprocess.call(['diff', '-u', fn, '@'], stdout=(subprocess.DEVNULL if verbose < 1 else None))
-    finally:
-        try:
-            os.remove("@")
-        except OSError:
-            pass
+def diff_texts(a, b, filename):
+    a = a.splitlines()
+    b = b.splitlines()
+    return difflib.unified_diff(a, b, filename, filename,
+                                "(original)", "(reserialized)",
+                                lineterm="")
 
 
 if __name__ == '__main__':

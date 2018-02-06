@@ -1242,6 +1242,7 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
             break;
         }
     }
+    Py_DECREF(cls);
     PyThread_release_lock(_PyRuntime.xidregistry.mutex);
     return getdata;
 }

@@ -1,2 +1,0 @@
-Fix coroutine's ResourceWarning when there's an active error set when it's
-being finalized.

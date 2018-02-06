@@ -1,2 +1,0 @@
-:mod:`termios` makes available ``FIONREAD``, ``FIONCLEX``, ``FIOCLEX``,
-``FIOASYNC`` and ``FIONBIO`` also under Solaris/derivatives.
