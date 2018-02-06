@@ -477,6 +477,14 @@ Added support for the Blowfish method.
 The :func:`~crypt.mksalt` function now allows to specify the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
+datetime
+--------
+
+Added the :func:`datetime.datetime.fromisoformat` method, which constructs a
+:class:`datetime.datetime` object from a string in one of the formats output
+by :func:`datetime.datetime.isoformat`. (Contributed by Paul Ganssle in
+:issue:`15873`.)
+
 dis
 ---
 
