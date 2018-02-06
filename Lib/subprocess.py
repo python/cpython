@@ -908,7 +908,11 @@ class Popen(object):
             if timeout is not None:
                 endtime = _time() + timeout
             else:
-                endtime = None
+                #TODO timeout for V7COR-5635
+                if(_vxworks):
+                    endtime = _time() + 1
+                else:
+                    endtime = None
 
             try:
                 stdout, stderr = self._communicate(input, endtime, timeout)
@@ -1655,39 +1659,29 @@ class Popen(object):
 
             if self._input:
                 input_view = memoryview(self._input)
-            print("FFFFFF");
             with _PopenSelector() as selector:
                 if self.stdin and input:
-                    print("STDIN");
                     selector.register(self.stdin, selectors.EVENT_WRITE)
                 if self.stdout:
-                    print("STDOUT")
                     selector.register(self.stdout, selectors.EVENT_READ)
                 if self.stderr:
-                    print("STDERR")
                     selector.register(self.stderr, selectors.EVENT_READ)
 
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
                     if timeout is not None and timeout < 0:
                         raise TimeoutExpired(self.args, orig_timeout)
-                    print("111111");
                     ready = selector.select(timeout)
-                    print("xxxx")
                     self._check_timeout(endtime, orig_timeout)
-                    print("2222")
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!
 
                     for key, events in ready:
-                        print('33');
                         if key.fileobj is self.stdin:
                             chunk = input_view[self._input_offset :
                                                self._input_offset + _PIPE_BUF]
                             try:
-                                print("PPPP")
                                 self._input_offset += os.write(key.fd, chunk)
-                                print("444")
                             except BrokenPipeError:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
@@ -1696,15 +1690,11 @@ class Popen(object):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
-                            print('555')
                             data = os.read(key.fd, 32768)
-                            print("66" + str(data))
                             if not data:
                                 selector.unregister(key.fileobj)
                             self._fileobj2output[key.fileobj].append(data)
-            print("GGGGG");
             self.wait(timeout=self._remaining_time(endtime))
-            print("HHHHH")
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:
                 stdout = b''.join(stdout)
