@@ -913,6 +913,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 }
 
 
+/* This function MUST be kept async-signal-safe on POSIX when raise=0. */
 static int
 get_inheritable(int fd, int raise)
 {
@@ -958,6 +959,8 @@ _Py_get_inheritable(int fd)
     return get_inheritable(fd, 1);
 }
 
+
+/* This function MUST be kept async-signal-safe on POSIX when raise=0. */
 static int
 set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 {
@@ -1014,8 +1017,10 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 #else
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    if (ioctl_works != 0) {
+    if (ioctl_works != 0 && raise != 0) {
         /* fast-path: ioctl() only requires one syscall */
+        /* caveat: raise=0 is an indicator that we must be async-signal-safe
+         * thus avoid using ioctl() so we skip the fast-path. */
         if (inheritable)
             request = FIONCLEX;
         else
