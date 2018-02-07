@@ -1125,14 +1125,20 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
     def _click_increment_arrow(self):
         width = self.spin.winfo_width()
-        self.spin.event_generate('<ButtonPress-1>', x=width - 5, y=5)
-        self.spin.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
+        height = self.spin.winfo_height()
+        x = width - 5
+        y = height//2 - 5
+        self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
+        self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
 
     def _click_decrement_arrow(self):
         width = self.spin.winfo_width()
-        self.spin.event_generate('<ButtonPress-1>', x=width - 5, y=15)
-        self.spin.event_generate('<ButtonRelease-1>', x=width - 5, y=15)
+        height = self.spin.winfo_height()
+        x = width - 5
+        y = height//2 + 4
+        self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
+        self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
 
     def test_command(self):
