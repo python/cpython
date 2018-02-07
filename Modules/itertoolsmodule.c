@@ -1358,7 +1358,7 @@ static PyMethodDef takewhile_reduce_methods[] = {
 PyDoc_STRVAR(takewhile_doc,
 "takewhile(predicate, iterable) --> takewhile object\n\
 \n\
-Return successive entries from an iterable as long as the \n\
+Return successive entries from an iterable as long as the\n\
 predicate evaluates to true for each entry.");
 
 static PyTypeObject takewhile_type = {
@@ -1616,7 +1616,7 @@ islice(iterable, start, stop[, step]) --> islice object\n\
 Return an iterator whose next() method returns selected values from an\n\
 iterable.  If start is specified, will skip all preceding elements;\n\
 otherwise, start defaults to zero.  Step defaults to one.  If\n\
-specified as another value, step determines how many values are \n\
+specified as another value, step determines how many values are\n\
 skipped between successive calls.  Works like a slice() on a list\n\
 but returns an iterator.");
 
@@ -4613,8 +4613,8 @@ repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
 accumulate(p[, func]) --> p0, p0+p1, p0+p1+p2\n\
-chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
-chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ... \n\
+chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ...\n\
+chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ...\n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
 groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
@@ -4624,7 +4624,7 @@ islice(seq, [start,] stop [, step]) --> elements from\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
-zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
+zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ...\n\
 \n\
 Combinatoric generators:\n\
 product(p, q, ... [repeat=1]) --> cartesian product\n\
