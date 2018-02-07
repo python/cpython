@@ -956,7 +956,7 @@ calls these functions.
       Support for the *input* keyword argument was added.
 
    .. versionchanged:: 3.6
-      *encoding*, *errors* added
+      *encoding* and *errors* were added.  See :func:`run` for details.
 
 .. _subprocess-replacements:
 
