@@ -4293,7 +4293,7 @@ An example of dictionary view usage::
    >>> print(n)
    504
 
-   >>> # keys and values are iterated over in the same(insertion) order
+   >>> # keys and values are iterated over in the same order (insertion order)
    >>> list(keys)
    ['eggs', 'sausage', 'bacon', 'spam']
    >>> list(values)

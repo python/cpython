@@ -1,1 +1,1 @@
-Update tutorial and document related with ``dict`` order.
+Update tutorial and documentation related with ``dict`` order.
