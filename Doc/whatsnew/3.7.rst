@@ -477,6 +477,14 @@ Added support for the Blowfish method.
 The :func:`~crypt.mksalt` function now allows to specify the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
+datetime
+--------
+
+Added the :func:`datetime.datetime.fromisoformat` method, which constructs a
+:class:`datetime.datetime` object from a string in one of the formats output
+by :func:`datetime.datetime.isoformat`. (Contributed by Paul Ganssle in
+:issue:`15873`.)
+
 dis
 ---
 
@@ -496,7 +504,7 @@ therefore included in source distributions.
 and ``platforms`` fields are not specified as a list or a string.
 (Contributed by Berker Peksag in :issue:`19610`.)
 
-The ``upload`` command now longer tries to change CR end-of-line characters
+The ``upload`` command no longer tries to change CR end-of-line characters
 to CRLF.  This fixes a corruption issue with sdists that ended with a byte
 equivalent to CR.
 (Contributed by Bo Bayles in :issue:`32304`.)

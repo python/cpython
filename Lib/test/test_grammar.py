@@ -251,6 +251,8 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
+    check_syntax_error = check_syntax_error
+
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
 
@@ -920,15 +922,7 @@ class GrammarTests(unittest.TestCase):
         def g(): [x for x in [(yield 1)]]
         def g(): [x for x in [(yield from ())]]
 
-        def check(code, warntext):
-            with self.assertWarnsRegex(DeprecationWarning, warntext):
-                compile(code, '<test string>', 'exec')
-            import warnings
-            with warnings.catch_warnings():
-                warnings.filterwarnings('error', category=DeprecationWarning)
-                with self.assertRaisesRegex(SyntaxError, warntext):
-                    compile(code, '<test string>', 'exec')
-
+        check = self.check_syntax_error
         check("def g(): [(yield x) for x in ()]",
               "'yield' inside list comprehension")
         check("def g(): [x for x in () if not (yield x)]",
