@@ -4775,6 +4775,7 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
+
     static PyObject *module = NULL;
     PyObject *string, *format;
     _Py_IDENTIFIER(_strptime_datetime);
