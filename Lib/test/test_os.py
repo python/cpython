@@ -2165,6 +2165,14 @@ class Win32SymlinkTests(unittest.TestCase):
         finally:
             os.chdir(orig_dir)
 
+    @unittest.skipUnless(os.path.lexists(r'C:\Users\All Users')
+                            and os.path.exists(r'C:\ProgramData'),
+                            'Test directories not found')
+    def test_29248(self):
+        target = os.readlink(r'C:\Users\All Users')
+
+        self.assertTrue(os.path.samefile(target, r'C:\ProgramData'))
+
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32JunctionTests(unittest.TestCase):

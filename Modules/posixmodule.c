@@ -7440,7 +7440,7 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     print_name = rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
+                 (rdb->SymbolicLinkReparseBuffer.PrintNameOffset / 2);
 
     result = PyUnicode_FromWideChar(print_name,
                     rdb->SymbolicLinkReparseBuffer.PrintNameLength/2);
