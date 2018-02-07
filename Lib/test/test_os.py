@@ -2169,6 +2169,10 @@ class Win32SymlinkTests(unittest.TestCase):
                             and os.path.exists(r'C:\ProgramData'),
                             'Test directories not found')
     def test_29248(self):
+        # os.symlink calls CreateSymbolicLink, which creates the reparse data buffer with the print name stored first,
+        # so the offset is always 0. CreateSymbolicLink stores the "PrintName" DOS path (e.g. "C:\") first,
+        # with an offset of 0, followed by the "SubstituteName" NT path (e.g. "\??\C:\").
+        # The "All Users" link, on the other hand, seems to have been created manually with an inverted order.
         target = os.readlink(r'C:\Users\All Users')
 
         self.assertTrue(os.path.samefile(target, r'C:\ProgramData'))
