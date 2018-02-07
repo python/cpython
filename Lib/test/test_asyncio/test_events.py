@@ -2235,7 +2235,7 @@ class SendfileMixin:
                                     "not supported"):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file,
-                                   fallback=False))
+                                  fallback=False))
 
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
@@ -2345,6 +2345,7 @@ class SendfileMixin:
                         srv_proto.nbytes)
         self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
                         self.file.tell())
+        self.assertTrue(cli_proto.transport.is_closing())
 
     def test_sendfile_fallback_close_peer_in_middle_of_receiving(self):
 
