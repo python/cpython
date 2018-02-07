@@ -956,6 +956,9 @@ calls these functions.
    .. versionchanged:: 3.4
       Support for the *input* keyword argument was added.
 
+   .. versionchanged:: 3.6
+      *encoding* and *errors* were added.  See :func:`run` for details.
+
 .. _subprocess-replacements:
 
 Replacing Older Functions with the :mod:`subprocess` Module
