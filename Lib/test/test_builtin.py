@@ -1784,7 +1784,7 @@ class TestSorted(unittest.TestCase):
 
 
 class ShutdownTest(unittest.TestCase):
-
+    @unittest.skipIf(sys.platform == "vxworks", "VxWorks: V7COR-5635 Needs to be fixed before this runs")
     def test_cleanup(self):
         # Issue #19255: builtins are still available at shutdown
         code = """if 1:

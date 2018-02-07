@@ -594,12 +594,15 @@ internal_setblocking(PySocketSockObject *s, int block)
     if (ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block) == -1)
         goto done;
 #else
+    printf("POINTER: %p", s);
+    printf("sock %i", s->sock_fd);
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
+    printf("error %i", errno);
     if (delay_flag == -1)
         goto done;
     if (block)
         new_delay_flag = delay_flag & (~O_NONBLOCK);
-    else
+    elsehttp://vxgit.wrs.com/projects/VX7/repos/vxworks/browse/vxworks-7/pkgs/app/xml
         new_delay_flag = delay_flag | O_NONBLOCK;
     if (new_delay_flag != delay_flag)
         if (fcntl(s->sock_fd, F_SETFL, new_delay_flag) == -1)
@@ -1109,9 +1112,10 @@ makeipaddr(struct sockaddr *addr, int addrlen)
 {
     char buf[NI_MAXHOST];
     int error;
-
+    printf("makeipaddr");
     error = getnameinfo(addr, addrlen, buf, sizeof(buf), NULL, 0,
         NI_NUMERICHOST);
+    printf("getnameinfo succ");
     if (error) {
         set_gaierror(error);
         return NULL;
@@ -1174,21 +1178,29 @@ makebdaddr(bdaddr_t *bdaddr)
 static PyObject *
 makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 {
+    printf("ASCDD");
     if (addrlen == 0) {
         /* No address -- may be recvfrom() from known socket */
         Py_RETURN_NONE;
     }
 
+    printf("ASDAOKOQW%i\n", addr->sa_family);
     switch (addr->sa_family) {
 
     case AF_INET:
     {
         struct sockaddr_in *a;
+        printf("AFINET");
         PyObject *addrobj = makeipaddr(addr, sizeof(*a));
+        printf("makeipaddrsucceded");
         PyObject *ret = NULL;
+        
         if (addrobj) {
+            printf("ADDROBJ");
             a = (struct sockaddr_in *)addr;
+            printf("DDEDD:%i\n", a->sin_port);
             ret = Py_BuildValue("Oi", addrobj, ntohs(a->sin_port));
+            printf("DONE");
             Py_DECREF(addrobj);
         }
         return ret;
@@ -2517,7 +2529,9 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
     if (block == -1 && PyErr_Occurred())
         return NULL;
 
+    printf("POINTERPRE: %p", s);
     s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);
+    printf("SETBLOCKINGPRE");
     if (internal_setblocking(s, block) == -1) {
         return NULL;
     }
@@ -3028,7 +3042,9 @@ sock_getsockname(PySocketSockObject *s)
         return NULL;
     memset(&addrbuf, 0, addrlen);
     Py_BEGIN_ALLOW_THREADS
+    printf("CANCERRRR : %i\n",s->sock_fd );
     res = getsockname(s->sock_fd, SAS2SA(&addrbuf), &addrlen);
+    printf("TEST, %i\n", s->sock_proto);
     Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();

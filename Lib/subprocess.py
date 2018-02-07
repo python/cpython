@@ -910,7 +910,7 @@ class Popen(object):
             else:
                 #TODO timeout for V7COR-5635
                 if(_vxworks):
-                    endtime = _time() + 1
+                    endtime = _time() + 5 #hard coded 5s timeout on subprocess
                 else:
                     endtime = None
 
@@ -1625,7 +1625,6 @@ class Popen(object):
 
 
         def _communicate(self, input, endtime, orig_timeout):
-            print("DDDD")
             if self.stdin and not self._communication_started:
                 # Flush stdio buffer.  This might block, if the user has
                 # been writing to .stdin in an uncontrolled fashion.
@@ -1641,7 +1640,6 @@ class Popen(object):
 
             stdout = None
             stderr = None
-            print("EEEEEE");
             # Only create this mapping if we haven't already.
             if not self._communication_started:
                 self._fileobj2output = {}
@@ -1672,7 +1670,11 @@ class Popen(object):
                     if timeout is not None and timeout < 0:
                         raise TimeoutExpired(self.args, orig_timeout)
                     ready = selector.select(timeout)
-                    self._check_timeout(endtime, orig_timeout)
+                    #TODO Also a temporary workaround for V7COR-5635
+                    if not _vxworks:
+                        self._check_timeout(endtime, orig_timeout)
+                    else:
+                        self._check_timeout(int(endtime or 0) + 1, int(orig_timeout or 0) + 1)
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!
 
