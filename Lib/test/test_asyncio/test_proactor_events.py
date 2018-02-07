@@ -3,6 +3,7 @@
 import io
 import socket
 import unittest
+import sys
 from unittest import mock
 
 import asyncio
