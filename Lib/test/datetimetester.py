@@ -1017,6 +1017,23 @@ class TestDateOnly(unittest.TestCase):
         dt2 = dt - delta
         self.assertEqual(dt2, dt - days)
 
+    def test_strptime_valid_format(self):
+        tests = [(('2004-12-01', '%Y-%m-%d'),
+                  date(2004, 12, 1)),
+                 (('2004', '%Y'), date(2004, 1, 1)),]
+        for (date_string, date_format), expected in tests:
+            self.assertEqual(expected, date.strptime(date_string, date_format))
+
+    def test_strptime_invalid_format(self):
+        tests = [('2004-12-01 13:02:47.197',
+                  '%Y-%m-%d %H:%M:%S.%f'),
+                 ('01', '%M'),
+                 ('02', '%H'),]
+        for test in tests:
+            with self.assertRaises(ValueError):
+                date.strptime(test[0], test[1])
+
+
 class SubclassDate(date):
     sub_var = 1
 
@@ -3104,6 +3121,22 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             t.strftime('%H\ud800%M')
         except UnicodeEncodeError:
             pass
+
+    def test_strptime_invalid(self):
+        tests = [('2004-12-01 13:02:47.197',
+                  '%Y-%m-%d %H:%M:%S.%f'),
+                 ('2004-12-01', '%Y-%m-%d'),]
+        for date_string, date_format in tests:
+            with self.assertRaises(ValueError):
+                time.strptime(date_string, date_format)
+
+    def test_strptime_valid(self):
+        string = '13:02:47.197'
+        format = '%H:%M:%S.%f'
+        result, frac, gmtoff = _strptime._strptime(string, format)
+        expected = self.theclass(*(result[3:6] + (frac, )))
+        got = time.strptime(string, format)
+        self.assertEqual(expected, got)
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)

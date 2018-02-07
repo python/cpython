@@ -1,0 +1,1 @@
+Add datetime.date.strptime and datetime.time.strptime class methods.

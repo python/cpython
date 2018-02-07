@@ -443,6 +443,14 @@ Other constructors, all class methods:
    date.max.toordinal()``. For any date *d*, ``date.fromordinal(d.toordinal()) ==
    d``.
 
+.. classmethod:: date.strptime(date_string, format)
+
+   Return a :class:`date` corresponding to *date_string*, parsed according to
+   *format*. :exc:`ValueError` is raised if the date string and format can't be
+   parsed by `time.strptime`, or if it returns a value where the time part is
+   nonzero.
+
+   .. versionadded:: 3.8
 
 .. classmethod:: date.fromisoformat(date_string)
 
@@ -1426,6 +1434,19 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    If an argument outside those ranges is given, :exc:`ValueError` is raised.  All
    default to ``0`` except *tzinfo*, which defaults to :const:`None`.
 
+
+Other constructors, all class methods:
+
+.. classmethod:: time.strptime(date_string, format)
+
+   Return a :class:`time` corresponding to *date_string, parsed according to
+   *format*. :exc:`ValueError` is raised if the date string and format can't be
+   parsed by `time.strptime`, if it returns a value which isn't a time tuple,
+   or if the date part is nonzero.
+
+   .. versionadded:: 3.8
+
+
 Class attributes:
 
 
@@ -2023,13 +2044,13 @@ equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``, except
 when the format includes sub-second components or timezone offset information,
 which are supported in ``datetime.strptime`` but are discarded by ``time.strptime``.
 
-For :class:`.time` objects, the format codes for year, month, and day should not
-be used, as time objects have no such values.  If they're used anyway, ``1900``
-is substituted for the year, and ``1`` for the month and day.
+The :meth:`date.strptime` class method creates a :class:`date` object from a
+string representing a date and a corresponding format string. :exc:`ValueError`
+raised if the format codes for hours, minutes, seconds, and microseconds are used.
 
-For :class:`date` objects, the format codes for hours, minutes, seconds, and
-microseconds should not be used, as :class:`date` objects have no such
-values.  If they're used anyway, ``0`` is substituted for them.
+The :meth:`.time.strptime` class method creates a :class:`.time` object from a
+string representing a time and a corresponding format string. :exc:`ValueError`
+raised if the format codes for year, month, and day are used.
 
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform

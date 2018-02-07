@@ -795,6 +795,7 @@ class date:
     fromtimestamp()
     today()
     fromordinal()
+    strptime()
 
     Operators:
 
@@ -884,6 +885,16 @@ class date:
         except Exception:
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
+
+    @classmethod
+    def strptime(cls, date_string, format):
+        """string, format -> new date instance parsed from a string.
+
+        >>> datetime.date.strptime('2012/07/20', '%Y/%m/%d')
+        datetime.date(2012, 7, 20)
+        """
+        import _strptime
+        return _strptime._strptime_datetime_date(date_string, format)
 
     # Conversions to string
 
@@ -1180,6 +1191,7 @@ class time:
     Constructors:
 
     __new__()
+    strptime()
 
     Operators:
 
@@ -1237,6 +1249,16 @@ class time:
         self._hashcode = -1
         self._fold = fold
         return self
+
+    @staticmethod
+    def strptime(time_string, format):
+        """string, format -> new time instance parsed from a string.
+
+        >>> datetime.time.strptime('10:40am', '%H:%M%p')
+        datetime.time(10, 40)
+        """
+        import _strptime
+        return _strptime._strptime_datetime_time(time_string, format)
 
     # Read-only field accessors
     @property
@@ -1906,7 +1928,11 @@ class datetime(date):
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new datetime parsed from a string (like time.strptime()).'
+        """string, format -> new datetime parsed from a string.
+
+        >>> datetime.datetime.strptime('2012/07/20 10:40am', '%Y/%m/%d %H:%M%p')
+        datetime.datetime(2012, 7, 20, 10, 40)
+        """
         import _strptime
         return _strptime._strptime_datetime(cls, date_string, format)
 
