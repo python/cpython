@@ -1108,11 +1108,11 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class SpinboxTest(EntryTest, unittest.TestCase):
     OPTIONS = (
-        'background', 'class', 'command', 'cursor', 'format',
-        'from',  'increment', 'invalidcommand', 'justify',
-        'show', 'state', 'style', 'takefocus', 'textvariable',
-        'to', 'validate', 'validatecommand', 'values',
-        'width', 'wrap', 'xscrollcommand',
+        'background', 'class', 'command', 'cursor', 'exportselection',
+        'font', 'foreground', 'format', 'from',  'increment',
+        'invalidcommand', 'justify', 'show', 'state', 'style',
+        'takefocus', 'textvariable', 'to', 'validate', 'validatecommand',
+        'values', 'width', 'wrap', 'xscrollcommand',
     )
 
     def setUp(self):
@@ -1139,8 +1139,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         success = []
 
         self.spin['command'] = lambda: success.append(True)
-        self.spin.pack()
-        self.spin.wait_visibility()
+        self.spin.update_idletasks()
         self._click_increment_arrow()
         self.assertTrue(success)
 
@@ -1149,6 +1148,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
         # testing postcommand removal
         self.spin['command'] = ''
+        self.spin.update_idletasks()
         self._click_increment_arrow()
         self._click_decrement_arrow()
         self.assertEqual(len(success), 2)
