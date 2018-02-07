@@ -689,11 +689,19 @@ PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
 #ifdef DYNAMIC_EXECUTION_PROFILE
-  #undef USE_COMPUTED_GOTOS
+    #undef USE_COMPUTED_GOTOS
 #endif
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
-    #define USE_COMPUTED_GOTOS 1
+        #if defined(__clang__) && (__clang_major__ < 5)
+            /* Computed gotos caused significant performance regression
+             * with clang < 5.0.
+             * https://bugs.python.org/issue32616
+             */
+            #define USE_COMPUTED_GOTOS 0
+        #else
+            #define USE_COMPUTED_GOTOS 1
+        #endif
     #endif
 #else
     #if defined(USE_COMPUTED_GOTOS) && USE_COMPUTED_GOTOS
