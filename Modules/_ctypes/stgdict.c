@@ -281,13 +281,15 @@ MakeFields(PyObject *type, CFieldObject *descr,
 static int
 MakeAnonFields(PyObject *type)
 {
+    _Py_IDENTIFIER(_anonymous_);
     PyObject *anon;
     PyObject *anon_names;
     Py_ssize_t i;
 
-    anon = PyObject_GetAttrString(type, "_anonymous_");
+    if (_PyObject_LookupAttrId(type, &PyId__anonymous_, &anon) < 0) {
+        return -1;
+    }
     if (anon == NULL) {
-        PyErr_Clear();
         return 0;
     }
     anon_names = PySequence_Fast(anon, "_anonymous_ must be a sequence");
@@ -335,6 +337,9 @@ MakeAnonFields(PyObject *type)
 int
 PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 {
+    _Py_IDENTIFIER(_swappedbytes_);
+    _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
+    _Py_IDENTIFIER(_pack_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
@@ -357,33 +362,33 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (fields == NULL)
         return 0;
 
-    tmp = PyObject_GetAttrString(type, "_swappedbytes_");
+    if (_PyObject_LookupAttrId(type, &PyId__swappedbytes_, &tmp) < 0) {
+        return -1;
+    }
     if (tmp) {
         Py_DECREF(tmp);
         big_endian = !PY_BIG_ENDIAN;
     }
-    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+    else {
         big_endian = PY_BIG_ENDIAN;
     }
-    else {
+
+    if (_PyObject_LookupAttrId(type,
+                &PyId__use_broken_old_ctypes_structure_semantics_, &tmp) < 0)
+    {
         return -1;
     }
-
-    tmp = PyObject_GetAttrString(type, "_use_broken_old_ctypes_structure_semantics_");
     if (tmp) {
         Py_DECREF(tmp);
         use_broken_old_ctypes_semantics = 1;
     }
-    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+    else {
         use_broken_old_ctypes_semantics = 0;
     }
-    else {
+
+    if (_PyObject_LookupAttrId(type, &PyId__pack_, &tmp) < 0) {
         return -1;
     }
-
-    tmp = PyObject_GetAttrString(type, "_pack_");
     if (tmp) {
         isPacked = 1;
         pack = _PyLong_AsInt(tmp);
@@ -399,13 +404,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             return -1;
         }
     }
-    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+    else {
         isPacked = 0;
         pack = 0;
-    }
-    else {
-        return -1;
     }
 
     len = PySequence_Size(fields);

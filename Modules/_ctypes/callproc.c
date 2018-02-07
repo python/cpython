@@ -684,8 +684,11 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #endif
 
     {
+        _Py_IDENTIFIER(_as_parameter_);
         PyObject *arg;
-        arg = PyObject_GetAttrString(obj, "_as_parameter_");
+        if (_PyObject_LookupAttrId(obj, &PyId__as_parameter_, &arg) < 0) {
+            return -1;
+        }
         /* Which types should we exactly allow here?
            integers are required for using Python classes
            as parameters (they have to expose the '_as_parameter_'

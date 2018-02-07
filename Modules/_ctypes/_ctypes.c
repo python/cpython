@@ -466,9 +466,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 
     fields = _PyDict_GetItemIdWithError((PyObject *)dict, &PyId__fields_);
     if (fields) {
-        if (-1 == PyObject_SetAttr((PyObject *)result,
-                                   _PyUnicode_FromId(&PyId__fields_), fields))
-        {
+        if (_PyObject_SetAttrId((PyObject *)result, &PyId__fields_, fields) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -706,6 +704,7 @@ static const char from_param_doc[] =
 static PyObject *
 CDataType_from_param(PyObject *type, PyObject *value)
 {
+    _Py_IDENTIFIER(_as_parameter_);
     PyObject *as_parameter;
     int res = PyObject_IsInstance(value, type);
     if (res == -1)
@@ -739,7 +738,9 @@ CDataType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
 
-    as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+    if (_PyObject_LookupAttrId(value, &PyId__as_parameter_, &as_parameter) < 0) {
+        return NULL;
+    }
     if (as_parameter) {
         value = CDataType_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
@@ -1405,6 +1406,8 @@ PyCArrayType_paramfunc(CDataObject *self)
 static PyObject *
 PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    _Py_IDENTIFIER(_length_);
+    _Py_IDENTIFIER(_type_);
     PyTypeObject *result;
     StgDictObject *stgdict;
     StgDictObject *itemdict;
@@ -1424,12 +1427,18 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict = NULL;
     type_attr = NULL;
 
-    length_attr = PyObject_GetAttrString((PyObject *)result, "_length_");
-    if (!length_attr || !PyLong_Check(length_attr)) {
+    if (_PyObject_LookupAttrId((PyObject *)result, &PyId__length_, &length_attr) < 0) {
+        goto error;
+    }
+    if (!length_attr) {
         PyErr_SetString(PyExc_AttributeError,
-                        "class must define a '_length_' attribute, "
-                        "which must be a positive integer");
-        Py_XDECREF(length_attr);
+                        "class must define a '_length_' attribute");
+        goto error;
+    }
+    if (!PyLong_Check(length_attr)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "The '_length_' attribute must be a positive integer");
+        Py_DECREF(length_attr);
         goto error;
     }
     length = PyLong_AsLongAndOverflow(length_attr, &overflow);
@@ -1441,7 +1450,9 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(length_attr);
 
-    type_attr = PyObject_GetAttrString((PyObject *)result, "_type_");
+    if (_PyObject_LookupAttrId((PyObject *)result, &PyId__type_, &type_attr) < 0) {
+        goto error;
+    }
     if (!type_attr) {
         PyErr_SetString(PyExc_AttributeError,
                         "class must define a '_type_' attribute");
@@ -1584,6 +1595,7 @@ static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
 static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
 {
+    _Py_IDENTIFIER(_as_parameter_);
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
@@ -1633,7 +1645,9 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         }
     }
 
-    as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+    if (_PyObject_LookupAttrId(value, &PyId__as_parameter_, &as_parameter) < 0) {
+        return NULL;
+    }
     if (as_parameter) {
         value = c_wchar_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
@@ -1648,6 +1662,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 static PyObject *
 c_char_p_from_param(PyObject *type, PyObject *value)
 {
+    _Py_IDENTIFIER(_as_parameter_);
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
@@ -1697,7 +1712,9 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         }
     }
 
-    as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+    if (_PyObject_LookupAttrId(value, &PyId__as_parameter_, &as_parameter) < 0) {
+        return NULL;
+    }
     if (as_parameter) {
         value = c_char_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
@@ -1712,6 +1729,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 static PyObject *
 c_void_p_from_param(PyObject *type, PyObject *value)
 {
+    _Py_IDENTIFIER(_as_parameter_);
     StgDictObject *stgd;
     PyObject *as_parameter;
     int res;
@@ -1833,7 +1851,9 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         }
     }
 
-    as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+    if (_PyObject_LookupAttrId(value, &PyId__as_parameter_, &as_parameter) < 0) {
+        return NULL;
+    }
     if (as_parameter) {
         value = c_void_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
@@ -1950,6 +1970,7 @@ PyCSimpleType_paramfunc(CDataObject *self)
 static PyObject *
 PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    _Py_IDENTIFIER(_type_);
     PyTypeObject *result;
     StgDictObject *stgdict;
     PyObject *proto;
@@ -1964,13 +1985,15 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (result == NULL)
         return NULL;
 
-    proto = PyObject_GetAttrString((PyObject *)result, "_type_"); /* new ref */
+    if (_PyObject_LookupAttrId((PyObject *)result, &PyId__type_, &proto) < 0) {
+        return NULL;
+    }
     if (!proto) {
         PyErr_SetString(PyExc_AttributeError,
                         "class must define a '_type_' attribute");
   error:
         Py_XDECREF(proto);
-        Py_XDECREF(result);
+        Py_DECREF(result);
         return NULL;
     }
     if (PyUnicode_Check(proto)) {
@@ -2132,6 +2155,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 PyCSimpleType_from_param(PyObject *type, PyObject *value)
 {
+    _Py_IDENTIFIER(_as_parameter_);
     StgDictObject *dict;
     const char *fmt;
     PyCArgObject *parg;
@@ -2175,7 +2199,9 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     PyErr_Clear();
     Py_DECREF(parg);
 
-    as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+    if (_PyObject_LookupAttrId(value, &PyId__as_parameter_, &as_parameter) < 0) {
+        return NULL;
+    }
     if (as_parameter) {
         if (Py_EnterRecursiveCall("while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
@@ -2250,6 +2276,7 @@ PyTypeObject PyCSimpleType_Type = {
 static PyObject *
 converters_from_argtypes(PyObject *ob)
 {
+    _Py_IDENTIFIER(from_param);
     PyObject *converters;
     Py_ssize_t i;
     Py_ssize_t nArgs;
@@ -2274,22 +2301,22 @@ converters_from_argtypes(PyObject *ob)
     */
 
     for (i = 0; i < nArgs; ++i) {
+        PyObject *cnv;
         PyObject *tp = PyTuple_GET_ITEM(ob, i);
-        PyObject *cnv = PyObject_GetAttrString(tp, "from_param");
-        if (!cnv)
-            goto argtypes_error_1;
+        if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
+            Py_DECREF(converters);
+            Py_DECREF(ob);
+            if (!PyErr_Occurred()) {
+                PyErr_Format(PyExc_TypeError,
+                             "item %zd in _argtypes_ has no from_param method",
+                             i+1);
+            }
+            return NULL;
+        }
         PyTuple_SET_ITEM(converters, i, cnv);
     }
     Py_DECREF(ob);
     return converters;
-
-  argtypes_error_1:
-    Py_XDECREF(converters);
-    Py_DECREF(ob);
-    PyErr_Format(PyExc_TypeError,
-                 "item %zd in _argtypes_ has no from_param method",
-                 i+1);
-    return NULL;
 }
 
 static int
@@ -3101,9 +3128,13 @@ PyCFuncPtr_get_errcheck(PyCFuncPtrObject *self)
 static int
 PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob)
 {
+    _Py_IDENTIFIER(_check_retval_);
+    PyObject *checker, *oldchecker;
     if (ob == NULL) {
+        oldchecker = self->checker;
+        self->checker = NULL;
         Py_CLEAR(self->restype);
-        Py_CLEAR(self->checker);
+        Py_XDECREF(oldchecker);
         return 0;
     }
     if (ob != Py_None && !PyType_stgdict(ob) && !PyCallable_Check(ob)) {
@@ -3111,11 +3142,14 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob)
                         "restype must be a type, a callable, or None");
         return -1;
     }
+    if (_PyObject_LookupAttrId(ob, &PyId__check_retval_, &checker) < 0) {
+        return -1;
+    }
+    oldchecker = self->checker;
+    self->checker = checker;
     Py_INCREF(ob);
     Py_XSETREF(self->restype, ob);
-    Py_XSETREF(self->checker, PyObject_GetAttrString(ob, "_check_retval_"));
-    if (self->checker == NULL)
-        PyErr_Clear();
+    Py_XDECREF(oldchecker);
     return 0;
 }
 
