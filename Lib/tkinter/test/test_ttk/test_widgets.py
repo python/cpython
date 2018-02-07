@@ -1869,7 +1869,7 @@ tests_gui = (
         FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
         NotebookTest, PanedWindowTest, ProgressbarTest,
         RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
-        SizegripTest, TreeviewTest, WidgetTest,
+        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest,
         )
 
 if __name__ == "__main__":
