@@ -488,7 +488,7 @@ three digits in length.
 .. versionchanged:: 3.6
    Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
 
-.. versionchanged:: 3.7
+.. versionchanged:: 3.8
    The ``'\N{name}'`` escape sequence has been added. As in string literals,
    it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
 

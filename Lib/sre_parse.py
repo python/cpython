@@ -26,7 +26,6 @@ ASCIILETTERS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 WHITESPACE = frozenset(" \t\n\r\v\f")
 
-
 _REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT})
 _UNITCODES = frozenset({ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY})
 
