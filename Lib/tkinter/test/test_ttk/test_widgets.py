@@ -1145,7 +1145,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         success = []
 
         self.spin['command'] = lambda: success.append(True)
-        self.spin.update_idletasks()
+        self.spin.update()
         self._click_increment_arrow()
         self.spin.update()
         self.assertTrue(success)
