@@ -536,6 +536,9 @@ def get_config_vars(*args):
             import _osx_support
             _osx_support.customize_config_vars(_config_vars)
 
+        if cross_compiling:
+            _config_vars['LIBDIR'] = get_cross_build_var('libdir')
+
     if args:
         vals = []
         for name in args:

@@ -145,41 +145,33 @@ def get_cross_build_var(name):
                 python_config = os.path.join(pyconf_dir, 'bin',
                                              'python3-config')
 
-            output = subprocess.check_output(['sh', python_config,
-                '--host_platform', '--version', '--abiflags', '--machdep',
-                '--multiarch', '--prefix', '--exec-prefix'],
-                universal_newlines=True).split('\n')
-            if output[0]:
-                d = _cross_build_vars
-                d['host_platform'] = output[0]
-                d['version'] = output[1]
-                d['abiflags'] = output[2]
-                d['machdep'] = output[3]
-                d['multiarch'] = output[4]
-                d['prefix'] = output[5]
-                d['exec-prefix'] = output[6]
-                sysconf_name = ('_sysconfigdata_%s_%s' %
-                                           (d['abiflags'], d['machdep']))
-                if d['multiarch']:
-                    sysconf_name = '%s_%s' % (sysconf_name, d['multiarch'])
-                d['sysconfigdata_name'] = sysconf_name
-                d['project_base'] = (pyconf_dir if
-                                     python_build else d['prefix'])
+            vars_ = ['host_platform', 'version', 'abiflags', 'machdep',
+                     'multiarch', 'prefix', 'exec-prefix', 'libdir']
+            args = ['sh', python_config]
+            args.extend('--' + v for v in vars_)
+            output = subprocess.check_output(args, universal_newlines=True)
+            _cross_build_vars = dict(zip(vars_, output.split('\n')))
+            assert len(_cross_build_vars) == len(vars_)
+            d = _cross_build_vars
+            d['project_base'] = (pyconf_dir if
+                                 python_build else d['prefix'])
 
-                # The specification of the sysconfigdata file name may differ
-                # across versions, forbid Python versions mismatch.
-                sys_version = '%d.%d' % sys.version_info[:2]
-                if d['version'] != sys_version:
-                    raise RuntimeError('the running python version (%s) does '
-                    'not match the cross-compiled version (%s)' %
-                    (sys_version, d['version']))
+            # The specification of the sysconfigdata file name may differ
+            # across versions, forbid Python versions mismatch.
+            sys_version = '%d.%d' % sys.version_info[:2]
+            if d['version'] != sys_version:
+                raise RuntimeError('the running python version (%s) does '
+                'not match the cross-compiled version (%s)' %
+                (sys_version, d['version']))
 
     return _cross_build_vars.get(name)
 
+cross_compiling = False
 # set for cross builds
 _cross_build_project_base = get_cross_build_var('project_base')
 if _cross_build_project_base is not None:
     _PROJECT_BASE = _cross_build_project_base
+    cross_compiling = True
 
 _sys_home = getattr(sys, '_home', None)
 
@@ -401,12 +393,18 @@ def get_makefile_filename():
 
 
 def _get_sysconfigdata_name():
-    cross_build_sysconfigdata_name = get_cross_build_var('sysconfigdata_name')
-    if cross_build_sysconfigdata_name is not None:
-        return cross_build_sysconfigdata_name
-    sysconf_name = '_sysconfigdata_%s_%s' % (sys.abiflags, sys.platform)
-    if hasattr(sys.implementation, '_multiarch'):
-        sysconf_name = '%s_%s' % (sysconf_name, sys.implementation._multiarch)
+    if cross_compiling:
+        abiflags = get_cross_build_var('abiflags')
+        platform = get_cross_build_var('machdep')
+        multiarch = get_cross_build_var('multiarch')
+    else:
+        abiflags = sys.abiflags
+        platform = sys.platform
+        multiarch = getattr(sys.implementation, '_multiarch', '')
+
+    sysconf_name = '_sysconfigdata_%s_%s' % (abiflags, platform)
+    if multiarch:
+        sysconf_name = '%s_%s' % (sysconf_name, multiarch)
     return sysconf_name
 
 def _generate_posix_vars():
@@ -479,13 +477,12 @@ def import_sysconfigdata():
     try:
         # Temporarily update sys.path to import the sysconfigdata module when
         # cross compiling.
-        xbuild_project_base = get_cross_build_var('project_base')
-        if xbuild_project_base is not None:
-            if _is_python_source_dir(xbuild_project_base):
-                bdir = os.path.join(xbuild_project_base, 'pybuilddir.txt')
+        if cross_compiling:
+            if _is_python_source_dir(_PROJECT_BASE):
+                bdir = os.path.join(_PROJECT_BASE, 'pybuilddir.txt')
                 with open(bdir) as f:
                     pybuilddir = f.read().strip()
-                    pybuilddir = os.path.join(xbuild_project_base, pybuilddir)
+                    pybuilddir = os.path.join(_PROJECT_BASE, pybuilddir)
                     sys.path.insert(0, pybuilddir)
                     pop_first_path = True
             else:
@@ -718,9 +715,8 @@ def get_platform():
         return sys.platform
 
     # Set for cross builds explicitly
-    cross_build_host_platform = get_cross_build_var('host_platform')
-    if cross_build_host_platform is not None:
-        return cross_build_host_platform
+    if cross_compiling:
+        return get_cross_build_var('host_platform')
 
     # Try to distinguish various flavours of Unix
     osname, host, release, version, machine = os.uname()

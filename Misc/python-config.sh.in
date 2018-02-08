@@ -5,8 +5,13 @@
 exit_with_usage ()
 {
     echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|\
+<<<<<<< HEAD
         --ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed|\
         --host_platform|--version|--machdep|--multiarch"
+=======
+        --ldflags|--extension-suffix|--help|--abiflags|--configdir|\
+        --host_platform|--version|--machdep|--multiarch|--libdir"
+>>>>>>> Use 'libdir' to build extension modules from an installed python build
     exit $1
 }
 
@@ -70,7 +75,7 @@ do
         ;;
         --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|\
         --extension-suffix|--abiflags|--configdir|\
-        --host_platform|--version|--machdep|--multiarch)
+        --host_platform|--version|--machdep|--multiarch|--libdir)
         ;;
         *)
             exit_with_usage 1
@@ -127,6 +132,9 @@ do
         ;;
         --multiarch)
             echo "@MULTIARCH@"
+        ;;
+        --libdir)
+            echo "$libdir"
         ;;
 esac
 done
