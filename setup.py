@@ -616,6 +616,9 @@ class PyBuildExt(build_ext):
         if not cross_compiling:
             lib_dirs = self.compiler.library_dirs + system_lib_dirs
             inc_dirs = self.compiler.include_dirs + system_include_dirs
+        elif host_platform == 'vxworks':
+            lib_dirs = self.compiler.library_dirs[:]
+            inc_dirs = self.compiler.include_dirs[:]
         else:
             # Add the sysroot paths. 'sysroot' is a compiler option used to
             # set the logical path of the standard system headers and
