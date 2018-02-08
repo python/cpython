@@ -146,6 +146,9 @@ class TestChainMap(unittest.TestCase):
         d = ChainMap(OD(a=1, b=2), OD(b=3, c=4), OD(c=5, d=6),
                      OD(d=7, e=8), OD(e=9, f=10, g=11, h=12))
         self.assertEqual(list(d), ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
+        self.assertEqual(list(d.items()), [('a', 1), ('b', 2), ('c', 4),
+                                           ('d', 6), ('e', 8), ('f', 10),
+                                           ('g', 11), ('h', 12)])
 
     def test_dict_coercion(self):
         d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
