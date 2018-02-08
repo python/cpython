@@ -268,8 +268,8 @@ joinpath(wchar_t *buffer, wchar_t *stuff)
 // THIS IS A TEMPORARY HACK
 static int
 checkDev(wchar_t *p) {
-	int i = wcscspn(p,":");
-	int b = wcscspn(p,"/");
+	int i = wcscspn(p,L":");
+	int b = wcscspn(p,L"/");
 	if(i < b) return 1;
 	return 0;
 }
