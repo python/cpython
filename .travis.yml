@@ -97,7 +97,7 @@ before_script:
       echo "Files changed: "
       echo $files_changed
 
-      if ! echo $files_changed | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
+      if ! echo "$files_changed" | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
       then
         echo "Only docs were updated, stopping build process."
         exit
