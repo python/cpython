@@ -516,7 +516,7 @@ poll_unregister(pollObject *self, PyObject *o)
 
 PyDoc_STRVAR(poll_poll_doc,
 "poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
-Polls the set of registered file descriptors, returning a list containing \n\
+Polls the set of registered file descriptors, returning a list containing\n\
 any descriptors that have events or errors to report.");
 
 static PyObject *
@@ -877,7 +877,7 @@ devpoll_unregister(devpollObject *self, PyObject *o)
 
 PyDoc_STRVAR(devpoll_poll_doc,
 "poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
-Polls the set of registered file descriptors, returning a list containing \n\
+Polls the set of registered file descriptors, returning a list containing\n\
 any descriptors that have events or errors to report.");
 
 static PyObject *
@@ -1307,10 +1307,13 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyErr_SetString(PyExc_ValueError, "negative sizehint");
         return NULL;
     }
+
+#ifdef HAVE_EPOLL_CREATE1
     if (flags && flags != EPOLL_CLOEXEC) {
         PyErr_SetString(PyExc_OSError, "invalid flags");
         return NULL;
     }
+#endif
 
     return newPyEpoll_Object(type, sizehint, -1);
 }

@@ -9,16 +9,17 @@ import sys
 import threading
 import unittest
 from unittest import mock
+from test import support
 try:
     import ssl
 except ImportError:
     ssl = None
 
 import asyncio
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
 
 
-class StreamReaderTests(test_utils.TestCase):
+class StreamTests(test_utils.TestCase):
 
     DATA = b'line1\nline2\nline3\n'
 
@@ -57,7 +58,7 @@ class StreamReaderTests(test_utils.TestCase):
                                                loop=self.loop)
             self._basetest_open_connection(conn_fut)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_open_unix_connection(self):
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = asyncio.open_unix_connection(httpd.address,
@@ -86,8 +87,8 @@ class StreamReaderTests(test_utils.TestCase):
 
             self._basetest_open_connection_no_loop_ssl(conn_fut)
 
+    @support.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_open_unix_connection_no_loop_ssl(self):
         with test_utils.run_test_unix_server(use_ssl=True) as httpd:
             conn_fut = asyncio.open_unix_connection(
@@ -113,7 +114,7 @@ class StreamReaderTests(test_utils.TestCase):
                                                loop=self.loop)
             self._basetest_open_connection_error(conn_fut)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_open_unix_connection_error(self):
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = asyncio.open_unix_connection(httpd.address,
@@ -570,11 +571,10 @@ class StreamReaderTests(test_utils.TestCase):
                 self.server = None
                 self.loop = loop
 
-            @asyncio.coroutine
-            def handle_client(self, client_reader, client_writer):
-                data = yield from client_reader.readline()
+            async def handle_client(self, client_reader, client_writer):
+                data = await client_reader.readline()
                 client_writer.write(data)
-                yield from client_writer.drain()
+                await client_writer.drain()
                 client_writer.close()
 
             def start(self):
@@ -607,14 +607,13 @@ class StreamReaderTests(test_utils.TestCase):
                     self.loop.run_until_complete(self.server.wait_closed())
                     self.server = None
 
-        @asyncio.coroutine
-        def client(addr):
-            reader, writer = yield from asyncio.open_connection(
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(
                 *addr, loop=self.loop)
             # send a line
             writer.write(b"hello world!\n")
             # read it back
-            msgback = yield from reader.readline()
+            msgback = await reader.readline()
             writer.close()
             return msgback
 
@@ -634,7 +633,7 @@ class StreamReaderTests(test_utils.TestCase):
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_start_unix_server(self):
 
         class MyServer:
@@ -644,11 +643,10 @@ class StreamReaderTests(test_utils.TestCase):
                 self.loop = loop
                 self.path = path
 
-            @asyncio.coroutine
-            def handle_client(self, client_reader, client_writer):
-                data = yield from client_reader.readline()
+            async def handle_client(self, client_reader, client_writer):
+                data = await client_reader.readline()
                 client_writer.write(data)
-                yield from client_writer.drain()
+                await client_writer.drain()
                 client_writer.close()
 
             def start(self):
@@ -673,14 +671,13 @@ class StreamReaderTests(test_utils.TestCase):
                     self.loop.run_until_complete(self.server.wait_closed())
                     self.server = None
 
-        @asyncio.coroutine
-        def client(path):
-            reader, writer = yield from asyncio.open_unix_connection(
+        async def client(path):
+            reader, writer = await asyncio.open_unix_connection(
                 path, loop=self.loop)
             # send a line
             writer.write(b"hello world!\n")
             # read it back
-            msgback = yield from reader.readline()
+            msgback = await reader.readline()
             writer.close()
             return msgback
 
@@ -781,14 +778,13 @@ os.close(fd)
                 clt, _ = sock.accept()
                 clt.close()
 
-        @asyncio.coroutine
-        def client(host, port):
-            reader, writer = yield from asyncio.open_connection(
+        async def client(host, port):
+            reader, writer = await asyncio.open_connection(
                 host, port, loop=self.loop)
 
             while True:
                 writer.write(b"foo\n")
-                yield from writer.drain()
+                await writer.drain()
 
         # Start the server thread and wait for it to be listening.
         thread = threading.Thread(target=server)
@@ -810,7 +806,7 @@ os.close(fd)
 
     def test___repr__nondefault_limit(self):
         stream = asyncio.StreamReader(loop=self.loop, limit=123)
-        self.assertEqual("<StreamReader l=123>", repr(stream))
+        self.assertEqual("<StreamReader limit=123>", repr(stream))
 
     def test___repr__eof(self):
         stream = asyncio.StreamReader(loop=self.loop)
@@ -826,14 +822,15 @@ os.close(fd)
         stream = asyncio.StreamReader(loop=self.loop)
         exc = RuntimeError()
         stream.set_exception(exc)
-        self.assertEqual("<StreamReader e=RuntimeError()>", repr(stream))
+        self.assertEqual("<StreamReader exception=RuntimeError()>",
+                         repr(stream))
 
     def test___repr__waiter(self):
         stream = asyncio.StreamReader(loop=self.loop)
         stream._waiter = asyncio.Future(loop=self.loop)
         self.assertRegex(
             repr(stream),
-            r"<StreamReader w=<Future pending[\S ]*>>")
+            r"<StreamReader waiter=<Future pending[\S ]*>>")
         stream._waiter.set_result(None)
         self.loop.run_until_complete(stream._waiter)
         stream._waiter = None
@@ -844,7 +841,7 @@ os.close(fd)
         stream._transport = mock.Mock()
         stream._transport.__repr__ = mock.Mock()
         stream._transport.__repr__.return_value = "<Transport>"
-        self.assertEqual("<StreamReader t=<Transport>>", repr(stream))
+        self.assertEqual("<StreamReader transport=<Transport>>", repr(stream))
 
     def test_IncompleteReadError_pickleable(self):
         e = asyncio.IncompleteReadError(b'abc', 10)
@@ -862,6 +859,35 @@ os.close(fd)
                 e2 = pickle.loads(pickle.dumps(e, protocol=proto))
                 self.assertEqual(str(e), str(e2))
                 self.assertEqual(e.consumed, e2.consumed)
+
+    def test_wait_closed_on_close(self):
+        with test_utils.run_test_server() as httpd:
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address, loop=self.loop))
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            f = rd.readline()
+            data = self.loop.run_until_complete(f)
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            f = rd.read()
+            data = self.loop.run_until_complete(f)
+            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertFalse(wr.is_closing())
+            wr.close()
+            self.assertTrue(wr.is_closing())
+            self.loop.run_until_complete(wr.wait_closed())
+
+    def test_wait_closed_on_close_with_unread_data(self):
+        with test_utils.run_test_server() as httpd:
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address, loop=self.loop))
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            f = rd.readline()
+            data = self.loop.run_until_complete(f)
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            wr.close()
+            self.loop.run_until_complete(wr.wait_closed())
 
 
 if __name__ == '__main__':

@@ -171,6 +171,9 @@ class TestTracemallocEnabled(unittest.TestCase):
 
         traces = tracemalloc._get_traces()
 
+        obj1_traceback._frames = tuple(reversed(obj1_traceback._frames))
+        obj2_traceback._frames = tuple(reversed(obj2_traceback._frames))
+
         trace1 = self.find_trace(traces, obj1_traceback)
         trace2 = self.find_trace(traces, obj2_traceback)
         domain1, size1, traceback1 = trace1
@@ -537,11 +540,11 @@ class TestSnapshot(unittest.TestCase):
     def test_trace_format(self):
         snapshot, snapshot2 = create_snapshots()
         trace = snapshot.traces[0]
-        self.assertEqual(str(trace), 'a.py:2: 10 B')
+        self.assertEqual(str(trace), 'b.py:4: 10 B')
         traceback = trace.traceback
-        self.assertEqual(str(traceback), 'a.py:2')
+        self.assertEqual(str(traceback), 'b.py:4')
         frame = traceback[0]
-        self.assertEqual(str(frame), 'a.py:2')
+        self.assertEqual(str(frame), 'b.py:4')
 
     def test_statistic_format(self):
         snapshot, snapshot2 = create_snapshots()
@@ -574,17 +577,32 @@ class TestSnapshot(unittest.TestCase):
                                  side_effect=getline):
             tb = snapshot.traces[0].traceback
             self.assertEqual(tb.format(),
-                             ['  File "a.py", line 2',
-                              '    <a.py, 2>',
-                              '  File "b.py", line 4',
-                              '    <b.py, 4>'])
+                             ['  File "b.py", line 4',
+                              '    <b.py, 4>',
+                              '  File "a.py", line 2',
+                              '    <a.py, 2>'])
 
             self.assertEqual(tb.format(limit=1),
                              ['  File "a.py", line 2',
                               '    <a.py, 2>'])
 
             self.assertEqual(tb.format(limit=-1),
-                             [])
+                             ['  File "b.py", line 4',
+                              '    <b.py, 4>'])
+
+            self.assertEqual(tb.format(most_recent_first=True),
+                             ['  File "a.py", line 2',
+                              '    <a.py, 2>',
+                              '  File "b.py", line 4',
+                              '    <b.py, 4>'])
+
+            self.assertEqual(tb.format(limit=1, most_recent_first=True),
+                             ['  File "a.py", line 2',
+                              '    <a.py, 2>'])
+
+            self.assertEqual(tb.format(limit=-1, most_recent_first=True),
+                             ['  File "b.py", line 4',
+                              '    <b.py, 4>'])
 
 
 class TestFilters(unittest.TestCase):

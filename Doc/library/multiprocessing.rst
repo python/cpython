@@ -1837,8 +1837,8 @@ Running the following commands creates a server for a single shared queue which
 remote clients can access::
 
    >>> from multiprocessing.managers import BaseManager
-   >>> import queue
-   >>> queue = queue.Queue()
+   >>> from queue import Queue
+   >>> queue = Queue()
    >>> class QueueManager(BaseManager): pass
    >>> QueueManager.register('get_queue', callable=lambda:queue)
    >>> m = QueueManager(address=('', 50000), authkey=b'abracadabra')

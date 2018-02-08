@@ -941,7 +941,7 @@ Using file rotation
 -------------------
 
 .. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
-.. (see <http://blog.doughellmann.com/2007/05/pymotw-logging.html>)
+.. (see <https://pymotw.com/3/logging/>)
 
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and

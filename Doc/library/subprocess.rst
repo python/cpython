@@ -47,12 +47,14 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    The arguments shown above are merely the most common ones, described below
    in :ref:`frequently-used-arguments` (hence the use of keyword-only notation
    in the abbreviated signature). The full function signature is largely the
-   same as that of the :class:`Popen` constructor - apart from *timeout*,
-   *input* and *check*, all the arguments to this function are passed through to
-   that interface.
+   same as that of the :class:`Popen` constructor - most of the arguments to
+   this function are passed through to that interface. (*timeout*,  *input*,
+   *check*, and *capture_output* are not.)
 
-   This does not capture stdout or stderr by default. To do so, pass
-   :data:`PIPE` for the *stdout* and/or *stderr* arguments.
+   If *capture_output* is true, stdout and stderr will be captured.
+   When used, the internal :class:`Popen` object is automatically created with
+   ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
+   not be used as well.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
@@ -86,9 +88,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
         ...
       subprocess.CalledProcessError: Command 'exit 1' returned non-zero exit status 1
 
-      >>> subprocess.run(["ls", "-l", "/dev/null"], stdout=subprocess.PIPE)
+      >>> subprocess.run(["ls", "-l", "/dev/null"], capture_output=True)
       CompletedProcess(args=['ls', '-l', '/dev/null'], returncode=0,
-      stdout=b'crw-rw-rw- 1 root root 1, 3 Jan 23 16:23 /dev/null\n')
+      stdout=b'crw-rw-rw- 1 root root 1, 3 Jan 23 16:23 /dev/null\n', stderr=b'')
 
    .. versionadded:: 3.5
 
@@ -98,7 +100,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    .. versionchanged:: 3.7
 
-      Added the *text* parameter, as a more understandable alias of *universal_newlines*
+      Added the *text* parameter, as a more understandable alias of *universal_newlines*.
+      Added the *capture_output* parameter.
 
 .. class:: CompletedProcess
 
@@ -332,12 +335,12 @@ functions.
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string.
-   By default, the program to execute is the first item in *args* if *args* is
-   a sequence.  If *args* is a string, the interpretation is
-   platform-dependent and described below.  See the *shell* and *executable*
-   arguments for additional differences from the default behavior.  Unless
-   otherwise stated, it is recommended to pass *args* as a sequence.
+   *args* should be a sequence of program arguments or else a single string or
+   :term:`path-like object`. By default, the program to execute is the first
+   item in *args* if *args* is a sequence. If *args* is a string, the
+   interpretation is platform-dependent and described below.  See the *shell*
+   and *executable* arguments for additional differences from the default
+   behavior.  Unless otherwise stated, it is recommended to pass *args* as a sequence.
 
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
@@ -452,16 +455,19 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed. (POSIX only).
-   The default varies by platform:  Always true on POSIX.  On Windows it is
-   true when *stdin*/*stdout*/*stderr* are :const:`None`, false otherwise.
+   :const:`2` will be closed before the child process is executed.
    On Windows, if *close_fds* is true then no handles will be inherited by the
-   child process.  Note that on Windows, you cannot set *close_fds* to true and
-   also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
+   child process unless explicitly passed in the ``handle_list`` element of
+   :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
 
    .. versionchanged:: 3.2
       The default for *close_fds* was changed from :const:`False` to
       what is described above.
+
+   .. versionchanged:: 3.7
+      On Windows the default for *close_fds* was changed from :const:`False` to
+      :const:`True` when redirecting the standard handles. It's now possible to
+      set *close_fds* to :const:`True` when redirecting the standard handles.
 
    *pass_fds* is an optional sequence of file descriptors to keep open
    between the parent and child.  Providing any *pass_fds* forces
@@ -544,6 +550,10 @@ functions.
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
+
+   .. versionchanged:: 3.7
+      *args*, or the first element of *args* if *args* is a sequence, can now
+      be a :term:`path-like object`.
 
 
 Exceptions
@@ -764,7 +774,7 @@ The :class:`STARTUPINFO` class and following constants are only available
 on Windows.
 
 .. class:: STARTUPINFO(*, dwFlags=0, hStdInput=None, hStdOutput=None, \
-                       hStdError=None, wShowWindow=0)
+                       hStdError=None, wShowWindow=0, lpAttributeList=None)
 
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
@@ -814,6 +824,33 @@ on Windows.
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
+   .. attribute:: lpAttributeList
+
+      A dictionary of additional attributes for process creation as given in
+      ``STARTUPINFOEX``, see
+      `UpdateProcThreadAttribute <https://msdn.microsoft.com/en-us/library/windows/desktop/ms686880(v=vs.85).aspx>`__.
+
+      Supported attributes:
+
+      **handle_list**
+         Sequence of handles that will be inherited. *close_fds* must be true if
+         non-empty.
+
+         The handles must be temporarily made inheritable by
+         :func:`os.set_handle_inheritable` when passed to the :class:`Popen`
+         constructor, else :class:`OSError` will be raised with Windows error
+         ``ERROR_INVALID_PARAMETER`` (87).
+
+         .. warning::
+
+            In a multithreaded process, use caution to avoid leaking handles
+            that are marked inheritable when combining this feature with
+            concurrent calls to other process creation functions that inherit
+            all handles such as :func:`os.system`.  This also applies to
+            standard handle redirection, which temporarily creates inheritable
+            handles.
+
+      .. versionadded:: 3.7
 
 Windows Constants
 ^^^^^^^^^^^^^^^^^
@@ -1049,6 +1086,9 @@ calls these functions.
 
    .. versionchanged:: 3.4
       Support for the *input* keyword argument was added.
+
+   .. versionchanged:: 3.6
+      *encoding* and *errors* were added.  See :func:`run` for details.
 
 .. _subprocess-replacements:
 

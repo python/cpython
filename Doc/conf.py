@@ -90,11 +90,10 @@ html_split_index = True
 # Options for LaTeX output
 # ------------------------
 
+latex_engine = 'xelatex'
+
 # Get LaTeX to handle Unicode correctly
 latex_elements = {
-    'inputenc': r'\usepackage[utf8x]{inputenc}',
-    'utf8extra': '',
-    'fontenc': r'\usepackage[T1,T2A]{fontenc}',
 }
 
 # Additional stuff for the LaTeX preamble.

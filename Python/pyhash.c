@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-_Py_HashSecret_t _Py_HashSecret;
+_Py_HashSecret_t _Py_HashSecret = {0};
 
 #if Py_HASH_ALGORITHM == Py_HASH_EXTERNAL
 extern PyHash_FuncDef PyHash_Func;
@@ -284,7 +284,6 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
 #endif /* Py_HASH_ALGORITHM == Py_HASH_FNV */
 
 
-#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH24
 /* **************************************************************************
  <MIT License>
  Copyright (c) 2013  Marek Majkowski <marek@popcount.org>
@@ -364,10 +363,8 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
     HALF_ROUND(v2,v1,v0,v3,17,21);
 
 
-static Py_hash_t
-siphash24(const void *src, Py_ssize_t src_sz) {
-    uint64_t k0 = _le64toh(_Py_HashSecret.siphash.k0);
-    uint64_t k1 = _le64toh(_Py_HashSecret.siphash.k1);
+static uint64_t
+siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     uint64_t b = (uint64_t)src_sz << 56;
     const uint64_t *in = (uint64_t*)src;
 
@@ -412,12 +409,26 @@ siphash24(const void *src, Py_ssize_t src_sz) {
 
     /* modified */
     t = (v0 ^ v1) ^ (v2 ^ v3);
-    return (Py_hash_t)t;
+    return t;
 }
 
-static PyHash_FuncDef PyHash_Func = {siphash24, "siphash24", 64, 128};
+static Py_hash_t
+pysiphash(const void *src, Py_ssize_t src_sz) {
+    return (Py_hash_t)siphash24(
+        _le64toh(_Py_HashSecret.siphash.k0), _le64toh(_Py_HashSecret.siphash.k1),
+        src, src_sz);
+}
 
-#endif /* Py_HASH_ALGORITHM == Py_HASH_SIPHASH24 */
+uint64_t
+_Py_KeyedHash(uint64_t key, const void *src, Py_ssize_t src_sz)
+{
+    return siphash24(key, 0, src, src_sz);
+}
+
+
+#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH24
+static PyHash_FuncDef PyHash_Func = {pysiphash, "siphash24", 64, 128};
+#endif
 
 #ifdef __cplusplus
 }
