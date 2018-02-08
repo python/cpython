@@ -141,6 +141,11 @@ class TestChainMap(unittest.TestCase):
         with self.assertRaises(KeyError):
             d.popitem()
 
+    def test_order_preservation(self):
+        d = ChainMap(dict(a=1, b=2), dict(b=3, c=4), dict(c=5, d=6),
+                     dict(d=7, e=8), dict(e=9, f=10, g=11))
+        self.assertEqual(list(d), ['a', 'b', 'c', 'd', 'e', 'f', 'g'])
+
     def test_dict_coercion(self):
         d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
         self.assertEqual(dict(d), dict(a=1, b=2, c=30))

@@ -920,7 +920,13 @@ class ChainMap(_collections_abc.MutableMapping):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
 
     def __iter__(self):
-        return iter(set().union(*self.maps))
+        seen = set()
+        seen_add = seen.add
+        for mapping in self.maps:
+            for k in mapping:
+                if k not in seen:
+                    seen_add(k)
+                    yield k
 
     def __contains__(self, key):
         return any(key in m for m in self.maps)
