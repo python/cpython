@@ -7439,8 +7439,8 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                 "not a symbolic link");
         return NULL;
     }
-    print_name = rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 (rdb->SymbolicLinkReparseBuffer.PrintNameOffset / 2);
+    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
 
     result = PyUnicode_FromWideChar(print_name,
                     rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
