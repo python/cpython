@@ -696,36 +696,39 @@ class ReTests(unittest.TestCase):
 
     def test_named_unicode_escapes(self):
         # test individual Unicode named escapes
-        suites = [
-            [   # basic matches
-                ['\u2014', r'\u2014', '\N{EM DASH}',
-                 r'\N{EM DASH}'],                               # pattern
-                ['\u2014', '\N{EM DASH}', '—', '—and more'],    # matches
-                ['\u2015', '\N{EN DASH}']                       # no match
-            ],
-            [   # character set matches
-                ['[\u2014-\u2020]', r'[\u2014-\u2020]',
-                 '[\N{EM DASH}-\N{DAGGER}]', r'[\N{EM DASH}-\N{DAGGER}]',
-                 '[\u2014-\N{DAGGER}]', '[\N{EM DASH}-\u2020]',],                               # pattern
-                ['\u2014', '\N{EM DASH}', '—', '—and more', '\u2020',
-                 '\N{DAGGER}', '†', '\u2017', '\N{DOUBLE LOW LINE}'],
-                ['\u2011', '\N{EN DASH}', '\u2013', 'xyz', '\u2021']
-            ],
-        ]
-
-        for patterns, match_yes, match_no in suites:
-            for pat in patterns:
-                for target in match_yes:
-                    self.assertTrue(re.match(pat, target))
-                for target in match_no:
-                    self.assertIsNone(re.match(pat, target))
+        self.assertTrue(re.match(r'\N{LESS-THAN SIGN}', '<'))
+        self.assertTrue(re.match(r'\N{less-than sign}', '<'))
+        self.assertIsNone(re.match(r'\N{LESS-THAN SIGN}', '>'))
+        self.assertTrue(re.match(r'\N{SNAKE}', '\U0001f40d'))
+        self.assertTrue(re.match(r'\N{ARABIC LIGATURE UIGHUR KIRGHIZ YEH WITH '
+                                 r'HAMZA ABOVE WITH ALEF MAKSURA ISOLATED FORM}',
+                                 '\ufbf9'))
+        self.assertTrue(re.match(r'[\N{LESS-THAN SIGN}-\N{GREATER-THAN SIGN}]',
+                                 '='))
+        self.assertIsNone(re.match(r'[\N{LESS-THAN SIGN}-\N{GREATER-THAN SIGN}]',
+                                   ';'))
 
         # test errors in \N{name} handling - only valid names should pass
-        badly_formed = [r'\N{BUBBA DASH}', r'\N{EM DASH',
-                        r'\NEM DASH}', r'\NOGGIN']
-        for bad in badly_formed:
-            with self.assertRaises(re.error):
-                re.compile(bad)
+        self.checkPatternError(r'\N', 'missing {', 2)
+        self.checkPatternError(r'[\N]', 'missing {', 3)
+        self.checkPatternError(r'\N{', 'missing character name', 3)
+        self.checkPatternError(r'[\N{', 'missing character name', 4)
+        self.checkPatternError(r'\N{}', 'missing character name', 3)
+        self.checkPatternError(r'[\N{}]', 'missing character name', 4)
+        self.checkPatternError(r'\NSNAKE}', 'missing {', 2)
+        self.checkPatternError(r'[\NSNAKE}]', 'missing {', 3)
+        self.checkPatternError(r'\N{SNAKE',
+                               'missing }, unterminated name', 3)
+        self.checkPatternError(r'[\N{SNAKE]',
+                               'missing }, unterminated name', 4)
+        self.checkPatternError(r'[\N{SNAKE]}',
+                               "undefined character name 'SNAKE]'", 1)
+        self.checkPatternError(r'\N{SPAM}',
+                               "undefined character name 'SPAM'", 0)
+        self.checkPatternError(r'[\N{SPAM}]',
+                               "undefined character name 'SPAM'", 1)
+        self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
+        self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
