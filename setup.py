@@ -886,8 +886,11 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_csv', ['_csv.c']) )
 
         # POSIX subprocess module helper.
-        if host_platform != 'vxworks':
+        if host_platform == 'vxworks':
+            exts.append( Extension('_vxwapi', ['_vxwapi.c']) )
+        else:
             exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
+
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
