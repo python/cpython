@@ -1,1 +1,2 @@
-Fix csv.Sniffer.sniff() regex pattern typo.
+Fixed guessing qoute and delimiter in csv.Sniffer.sniff() when only the last
+field is quoted.  Patch by Jake Davis.
