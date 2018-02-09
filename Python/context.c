@@ -8,7 +8,7 @@
 
 #define CONTEXT_FREELIST_MAXLEN 255
 static PyContext *ctx_freelist = NULL;
-static Py_ssize_t ctx_freelist_len = 0;
+static int ctx_freelist_len = 0;
 
 
 #include "clinic/context.c.h"
@@ -1177,7 +1177,7 @@ get_token_missing(void)
 int
 PyContext_ClearFreeList(void)
 {
-    Py_ssize_t size = ctx_freelist_len;
+    int size = ctx_freelist_len;
     while (ctx_freelist_len) {
         PyContext *ctx = ctx_freelist;
         ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
