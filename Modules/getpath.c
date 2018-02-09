@@ -94,7 +94,7 @@
  * process to find the installed Python tree.
  *
  * An embedding application can use Py_SetPath() to override all of
- * these authomatic path computations.
+ * these automatic path computations.
  *
  * NOTE: Windows MSVC builds use PC/getpathp.c instead!
  */
@@ -488,7 +488,11 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
     copy_absolute(exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
     do {
         n = wcslen(exec_prefix);
+#ifdef __VXWORKS__
+        joinpath(exec_prefix, L"lib/common/python" VERSION);
+#else
         joinpath(exec_prefix, calculate->lib_python);
+#endif
         joinpath(exec_prefix, L"lib-dynload");
         if (isdir(exec_prefix)) {
             return 1;
@@ -525,7 +529,8 @@ calculate_exec_prefix(const _PyCoreConfig *core_config,
         }
         wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
 #ifdef __VXWORKS__
-        joinpath(exec_prefix, L"lib/common/lib-dynload");
+        joinpath(exec_prefix, L"lib/common/" VERSION);
+        joinpath(exec_prefix, L"lib-dynload");
 #else
         joinpath(exec_prefix, L"lib/lib-dynload");
 #endif
@@ -541,6 +546,9 @@ calculate_reduce_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
         reduce(exec_prefix);
         reduce(exec_prefix);
         reduce(exec_prefix);
+#ifdef __VXWORKS__ //vxworks has an added /common/ to path
+        reduce(exec_prefix);
+#endif
         if (!exec_prefix[0]) {
             wcscpy(exec_prefix, separator);
         }
@@ -964,7 +972,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     }
 
     calculate_reduce_exec_prefix(calculate, exec_prefix);
-
+    printf("final: %ls\n", exec_prefix);
     config->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
     if (config->exec_prefix == NULL) {
         return _Py_INIT_NO_MEMORY();

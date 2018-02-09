@@ -39,6 +39,8 @@ def get_platform():
     return sys.platform
 host_platform = get_platform()
 
+_vxworks = 'vxworks' in host_platform;
+
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_ARGS"))
 
@@ -147,7 +149,7 @@ def find_file(filename, std_dirs, paths):
 
 def mathlib():
     # VxWorks has no libm
-    if host_platform == 'vxworks':
+    if _vxworks:
         return []
     else:
         return ['m']
@@ -307,14 +309,17 @@ class PyBuildExt(build_ext):
         if compiler is not None:
             (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
-
+            print("ASDSADJSADIAJDAIDJSAIDASDA")
+            print(host_platform);
             #VxWorks uses '@filepath' extension to add include paths without overflowing windows cmd line buffer
-            if host_platform == 'vxworks':
+            if _vxworks:
+                print("VXWORKSSSS")
                 cppflags = sysconfig.get_config_var('CPPFLAGS').split()
                 for item in cppflags:
                     self.announce('ITEM: "%s"' % item )
                     if item.startswith('@'):
                         args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags + ' ' + item
+        print(args);
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
@@ -549,7 +554,7 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
         # only change this for cross builds for 3.3, issues on Mageia
-        if cross_compiling and not host_platform == 'vxworks':
+        if cross_compiling and not _vxworks:
             self.add_gcc_paths()
         self.add_multiarch_paths()
 
@@ -590,7 +595,7 @@ class PyBuildExt(build_ext):
         if ((not cross_compiling and
                 os.path.normpath(sys.base_prefix) != '/usr' and
                 not sysconfig.get_config_var('PYTHONFRAMEWORK')) or
-                host_platform == 'vxworks'):
+                _vxworks):
             # OSX note: Don't add LIBDIR and INCLUDEDIR to building a framework
             # (PYTHONFRAMEWORK is set) to avoid # linking problems when
             # building a framework with different architectures than
@@ -601,7 +606,7 @@ class PyBuildExt(build_ext):
                             sysconfig.get_config_var("INCLUDEDIR"))
 
         #VxWorks requires some macros from CPPFLAGS to select the correct CPU headers
-        if host_platform == 'vxworks':
+        if _vxworks:
             cppflags = sysconfig.get_config_var('CPPFLAGS').split()
             for item in cppflags:
                 self.announce('ITEM: "%s"' % item)
@@ -616,9 +621,6 @@ class PyBuildExt(build_ext):
         if not cross_compiling:
             lib_dirs = self.compiler.library_dirs + system_lib_dirs
             inc_dirs = self.compiler.include_dirs + system_include_dirs
-        elif host_platform == 'vxworks':
-            lib_dirs = self.compiler.library_dirs[:]
-            inc_dirs = self.compiler.include_dirs[:]
         else:
             # Add the sysroot paths. 'sysroot' is a compiler option used to
             # set the logical path of the standard system headers and
@@ -745,7 +747,7 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        if host_platform != 'vxworks':
+        if _vxworks:
             exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
@@ -784,7 +786,7 @@ class PyBuildExt(build_ext):
         #
         # Operations on audio samples
         # According to #993173, this one should actually work fine on
-        # 64-bit platforms.
+        # 64-bit platforms.i
         #
         # audioop needs libm for floor() in multiple functions.
         exts.append( Extension('audioop', ['audioop.c'],
@@ -879,14 +881,14 @@ class PyBuildExt(build_ext):
             libs = ['crypt']
         else:
             libs = []
-        if host_platform != 'vxworks':
+        if _vxworks:
             exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
 
         # POSIX subprocess module helper.
-        if host_platform == 'vxworks':
+        if _vxworks:
             exts.append( Extension('_vxwapi', ['_vxwapi.c']) )
         else:
             exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
@@ -1343,7 +1345,7 @@ class PyBuildExt(build_ext):
             missing.append('_gdbm')
 
         # Unix-only modules
-        if host_platform != 'win32' and host_platform != 'vxworks':
+        if host_platform != 'win32' and _vxworks:
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface

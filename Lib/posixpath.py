@@ -28,6 +28,8 @@ import stat
 import genericpath
 from genericpath import *
 
+_vxworks = 'vxworks' in sys.platform
+
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime","islink","exists","lexists","isdir","isfile",
@@ -65,6 +67,13 @@ def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
     sep = _get_sep(s)
+    if _vxworks: #VxWorks paths dont always start with / and there is no good
+                 # way to find if a path is absolute. V7COR-3074, F7233
+        try:
+            if s.index(":") < s.index(sep):
+                return True;
+        except ValueError:
+            pass
     return s.startswith(sep)
 
 
