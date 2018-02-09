@@ -109,13 +109,13 @@ class ConfigDialog(Toplevel):
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
         self.genpage = GenPage(note)
-        self.startuppage = StartupPage(note)
+        self.startpage = StartPage(note)
         self.extpage = self.create_page_extensions()
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
         note.add(self.genpage, text=' General ')
-        note.add(self.startuppage, text=' Startup ')
+        note.add(self.startpage, text=' Startup ')
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
@@ -2037,7 +2037,7 @@ class GenPage(Frame):
                     ';'.join(self.user_helplist[num-1][:2]))
 
 
-class StartupPage(Frame):
+class StartPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)

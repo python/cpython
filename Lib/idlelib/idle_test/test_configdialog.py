@@ -3,6 +3,7 @@
 Half the class creates dialog, half works with user customizations.
 Coverage: 95%.
 """
+import os
 from idlelib import configdialog
 from test.support import requires
 requires('gui')
@@ -1281,7 +1282,7 @@ class GenPageTest(unittest.TestCase):
         d.update_help_changes = Func()
 
 
-class StartupPageTest(unittest.TestCase):
+class StartPageTest(unittest.TestCase):
     """Test that startup tab widgets enable users to make changes.
 
     Test that widget actions set vars and that var changes add
@@ -1289,7 +1290,7 @@ class StartupPageTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        page = cls.page = dialog.startuppage
+        page = cls.page = dialog.startpage
         dialog.note.select(page)
 
     @classmethod
@@ -1362,8 +1363,7 @@ class StartupPageTest(unittest.TestCase):
     def test_shell_startup_text(self):
         d = self.page
         d.shell_startup_text.delete('1.0', 'end')
-        text = '''import os\n
-                  import re'''
+        text = f'import os{os.linesep}import re'
         d.shell_startup_text.insert('end', text)
         self.assertEqual(mainpage,
                          {'ShellWindow': {'shell-startup-code': text}})
@@ -1375,8 +1375,7 @@ class StartupPageTest(unittest.TestCase):
     def test_editor_template_text(self):
         d = self.page
         d.editor_template_text.delete('1.0', 'end')
-        text = '''# This is a comment.\n
-                  # Second line'''
+        text = f'# This is a comment.{os.linesep}# Second line'
         d.editor_template_text.insert('end', text)
         self.assertEqual(
                 mainpage,
