@@ -2381,7 +2381,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
             pass
         # Overwrite call_soon() to prevent increasing refcounts that are
         # irrelevant to the test.
-        with support.swap_attr(self.loop, 'call_soon', lambda _step: None):
+        with support.swap_attr(self.loop, 'call_soon', lambda _step, context=None: None):
             task = self.new_task(self.loop, coro())
             refs_before = gettotalrefcount()
             for i in range(100):
