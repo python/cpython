@@ -37,17 +37,28 @@ class BuildExtTestCase(TempdirManager,
         from distutils.command import build_ext
         build_ext.USER_BASE = site.USER_BASE
 
+        # bpo-30132: On Windows, a .pdb file may be created in the current
+        # working directory. Create a temporary working directory to cleanup
+        # everything at the end of the test.
+        self.temp_cwd = support.temp_cwd()
+        self.temp_cwd.__enter__()
+        self.addCleanup(self.temp_cwd.__exit__, None, None, None)
+
+    def tearDown(self):
+        # Get everything back to normal
+        support.unload('xx')
+        sys.path = self.sys_path[0]
+        sys.path[:] = self.sys_path[1]
+        import site
+        site.USER_BASE = self.old_user_base
+        from distutils.command import build_ext
+        build_ext.USER_BASE = self.old_user_base
+        super(BuildExtTestCase, self).tearDown()
+
     def build_ext(self, *args, **kwargs):
         return build_ext(*args, **kwargs)
 
     def test_build_ext(self):
-        # bpo-30132: On Windows, a .pdb file may be created in the current
-        # working directory. Create a temporary working directory to cleanup
-        # everything at the end of the test.
-        with support.temp_cwd():
-            self._test_build_ext()
-
-    def _test_build_ext(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
             self.skipTest('The %r command is not found' % cmd)
@@ -90,17 +101,6 @@ class BuildExtTestCase(TempdirManager,
             self.assertEqual(xx.__doc__, doc)
         self.assertIsInstance(xx.Null(), xx.Null)
         self.assertIsInstance(xx.Str(), xx.Str)
-
-    def tearDown(self):
-        # Get everything back to normal
-        support.unload('xx')
-        sys.path = self.sys_path[0]
-        sys.path[:] = self.sys_path[1]
-        import site
-        site.USER_BASE = self.old_user_base
-        from distutils.command import build_ext
-        build_ext.USER_BASE = self.old_user_base
-        super(BuildExtTestCase, self).tearDown()
 
     def test_solaris_enable_shared(self):
         dist = Distribution({'name': 'xx'})

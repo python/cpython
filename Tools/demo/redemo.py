@@ -75,7 +75,6 @@ class ReDemo:
         self.boxes = []
         self.vars = []
         for name in ('IGNORECASE',
-                     'LOCALE',
                      'MULTILINE',
                      'DOTALL',
                      'VERBOSE'):
@@ -83,7 +82,7 @@ class ReDemo:
                 frame = Frame(self.master)
                 frame.pack(fill=X)
                 self.frames.append(frame)
-            val = getattr(re, name)
+            val = getattr(re, name).value
             var = IntVar()
             box = Checkbutton(frame,
                     variable=var, text=name,

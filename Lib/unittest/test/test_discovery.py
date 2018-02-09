@@ -199,8 +199,8 @@ class TestDiscovery(unittest.TestCase):
                          ['a_directory', 'test_directory', 'test_directory2'])
 
         # load_tests should have been called once with loader, tests and pattern
-        # (but there are no tests in our stub module itself, so thats [] at the
-        # time of call.
+        # (but there are no tests in our stub module itself, so that is [] at
+        # the time of call).
         self.assertEqual(Module.load_tests_args,
                          [(loader, [], 'test*')])
 
@@ -528,6 +528,9 @@ class TestDiscovery(unittest.TestCase):
             pickle.loads(pickle.dumps(test, proto))
 
     def test_discover_with_module_that_raises_SkipTest_on_import(self):
+        if not unittest.BaseTestSuite._cleanup:
+            raise unittest.SkipTest("Suite cleanup is disabled")
+
         loader = unittest.TestLoader()
 
         def _get_module_from_name(name):
@@ -548,6 +551,9 @@ class TestDiscovery(unittest.TestCase):
             pickle.loads(pickle.dumps(suite, proto))
 
     def test_discover_with_init_module_that_raises_SkipTest_on_import(self):
+        if not unittest.BaseTestSuite._cleanup:
+            raise unittest.SkipTest("Suite cleanup is disabled")
+
         vfs = {abspath('/foo'): ['my_package'],
                abspath('/foo/my_package'): ['__init__.py', 'test_module.py']}
         self.setup_import_issue_package_tests(vfs)

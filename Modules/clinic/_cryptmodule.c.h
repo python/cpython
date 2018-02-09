@@ -20,7 +20,7 @@ static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt);
 
 static PyObject *
-crypt_crypt(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *word;
@@ -30,13 +30,9 @@ crypt_crypt(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
         &word, &salt)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("crypt", kwnames)) {
-        goto exit;
-    }
     return_value = crypt_crypt_impl(module, word, salt);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3fd5d3625a6f32fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d803e53466b1cd3 input=a9049054013a1b77]*/

@@ -599,14 +599,32 @@ class StructTest(unittest.TestCase):
                 'offset -11 out of range for 10-byte buffer'):
             struct.pack_into('<B', byte_list, -11, 123)
 
+    def test_boundary_error_message_with_large_offset(self):
+        # Test overflows cause by large offset and value size (issue 30245)
+        regex = (
+            r'pack_into requires a buffer of at least ' + str(sys.maxsize + 4) +
+            r' bytes for packing 4 bytes at offset ' + str(sys.maxsize) +
+            r' \(actual buffer size is 10\)'
+        )
+        with self.assertRaisesRegex(struct.error, regex):
+            struct.pack_into('<I', bytearray(10), sys.maxsize, 1)
+
     def test_issue29802(self):
         # When the second argument of struct.unpack() was of wrong type
         # the Struct object was decrefed twice and the reference to
         # deallocated object was left in a cache.
         with self.assertRaises(TypeError):
-            struct.unpack(b'b', 0)
+            struct.unpack('b', 0)
         # Shouldn't crash.
-        self.assertEqual(struct.unpack(b'b', b'a'), (b'a'[0],))
+        self.assertEqual(struct.unpack('b', b'a'), (b'a'[0],))
+
+    def test_format_attr(self):
+        s = struct.Struct('=i2H')
+        self.assertEqual(s.format, '=i2H')
+
+        # use a bytes string
+        s2 = struct.Struct(s.format.encode())
+        self.assertEqual(s2.format, s.format)
 
 
 class UnpackIteratorTest(unittest.TestCase):

@@ -19,11 +19,13 @@ the week to Sunday (6) or to any other weekday.  Parameters that specify dates
 are given as integers. For related
 functionality, see also the :mod:`datetime` and :mod:`time` modules.
 
-Most of these functions and classes rely on the :mod:`datetime` module which
-uses an idealized calendar, the current Gregorian calendar extended
+The functions and classes defined in this module
+use an idealized calendar, the current Gregorian calendar extended indefinitely
 in both directions.  This matches the definition of the "proleptic Gregorian"
 calendar in Dershowitz and Reingold's book "Calendrical Calculations", where
-it's the base calendar for all computations.
+it's the base calendar for all computations.  Zero and negative years are
+interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
+2 BC, and so on.
 
 
 .. class:: Calendar(firstweekday=0)
@@ -53,17 +55,40 @@ it's the base calendar for all computations.
       month that are required to get a complete week.
 
 
-   .. method:: itermonthdays2(year, month)
-
-      Return an iterator for the month *month* in the year *year* similar to
-      :meth:`itermonthdates`. Days returned will be tuples consisting of a day
-      number and a week day number.
-
-
    .. method:: itermonthdays(year, month)
 
       Return an iterator for the month *month* in the year *year* similar to
-      :meth:`itermonthdates`. Days returned will simply be day numbers.
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will simply be day of the month numbers.  For the
+      days outside of the specified month, the day number is ``0``.
+
+
+   .. method:: itermonthdays2(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a day of the month
+      number and a week day number.
+
+
+   .. method:: itermonthdays3(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a year, a month and a day
+      of the month numbers.
+
+      .. versionadded:: 3.7
+
+
+   .. method:: itermonthdays4(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a year, a month, a day
+      of the month, and a day of the week numbers.
+
+      .. versionadded:: 3.7
 
 
    .. method:: monthdatescalendar(year, month)
@@ -147,7 +172,7 @@ it's the base calendar for all computations.
    This class can be used to generate HTML calendars.
 
 
-   :class:`HTMLCalendar` instances have the following methods:
+   :class:`!HTMLCalendar` instances have the following methods:
 
    .. method:: formatmonth(theyear, themonth, withyear=True)
 
@@ -169,6 +194,85 @@ it's the base calendar for all computations.
       cascading style sheet to be used. :const:`None` can be passed if no style
       sheet should be used. *encoding* specifies the encoding to be used for the
       output (defaulting to the system default encoding).
+
+
+   :class:`!HTMLCalendar` has the following attributes you can override to
+   customize the CSS classes used by the calendar:
+
+   .. attribute:: cssclasses
+
+      A list of CSS classes used for each weekday. The default class list is::
+
+         cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+      more styles can be added for each day::
+
+         cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
+
+      Note that the length of this list must be seven items.
+
+
+   .. attribute:: cssclass_noday
+
+      The CSS class for a weekday occurring in the previous or coming month.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclasses_weekday_head
+
+      A list of CSS classes used for weekday names in the header row.
+      The default is the same as :attr:`cssclasses`.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_month_head
+
+      The month's head CSS class (used by :meth:`formatmonthname`).
+      The default value is ``"month"``.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_month
+
+      The CSS class for the whole month's table (used by :meth:`formatmonth`).
+      The default value is ``"month"``.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_year
+
+      The CSS class for the whole year's table of tables (used by
+      :meth:`formatyear`). The default value is ``"year"``.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_year_head
+
+      The CSS class for the table head for the whole year (used by
+      :meth:`formatyear`). The default value is ``"year"``.
+
+      .. versionadded:: 3.7
+
+
+   Note that although the naming for the above described class attributes is
+   singular (e.g. ``cssclass_month`` ``cssclass_noday``), one can replace the
+   single CSS class with a space separated list of CSS classes, for example::
+
+         "text-bold text-red"
+
+   Here is an example how :class:`!HTMLCalendar` can be customized::
+
+       class CustomHTMLCal(calendar.HTMLCalendar):
+           cssclasses = [style + " text-nowrap" for style in
+                         calendar.HTMLCalendar.cssclasses]
+           cssclass_month_head = "text-center month-head"
+           cssclass_month = "text-center month"
+           cssclass_year = "text-italic lead"
 
 
 .. class:: LocaleTextCalendar(firstweekday=0, locale=None)

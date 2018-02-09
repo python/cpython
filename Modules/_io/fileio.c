@@ -41,7 +41,7 @@
 #if BUFSIZ < (8*1024)
 #define SMALLCHUNK (8*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64MB defined"
+#error "unreasonable BUFSIZ > 64 MiB defined"
 #else
 #define SMALLCHUNK BUFSIZ
 #endif
@@ -73,6 +73,9 @@ _Py_IDENTIFIER(name);
 
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
+/* Forward declarations */
+static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence);
+
 int
 _PyFileIO_closed(PyObject *self)
 {
@@ -97,11 +100,6 @@ fileio_dealloc_warn(fileio *self, PyObject *source)
     }
     Py_RETURN_NONE;
 }
-
-static PyObject *
-portable_lseek(int fd, PyObject *posobj, int whence);
-
-static PyObject *portable_lseek(int fd, PyObject *posobj, int whence);
 
 /* Returns 0 on success, -1 with exception set on failure. */
 static int
@@ -273,11 +271,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
     if (fd < 0) {
 #ifdef MS_WINDOWS
-        Py_ssize_t length;
         if (!PyUnicode_FSDecoder(nameobj, &stringobj)) {
             return -1;
         }
-        widename = PyUnicode_AsUnicodeAndSize(stringobj, &length);
+        widename = PyUnicode_AsUnicode(stringobj);
         if (widename == NULL)
             return -1;
 #else
@@ -478,7 +475,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         /* For consistent behaviour, we explicitly seek to the
            end of file (otherwise, it might be done only on the
            first write()). */
-        PyObject *pos = portable_lseek(self->fd, NULL, 2);
+        PyObject *pos = portable_lseek(self, NULL, 2);
         if (pos == NULL)
             goto error;
         Py_DECREF(pos);
@@ -600,13 +597,14 @@ _io_FileIO_seekable_impl(fileio *self)
     if (self->fd < 0)
         return err_closed();
     if (self->seekable < 0) {
-        PyObject *pos = portable_lseek(self->fd, NULL, SEEK_CUR);
+        /* portable_lseek() sets the seekable attribute */
+        PyObject *pos = portable_lseek(self, NULL, SEEK_CUR);
+        assert(self->seekable >= 0);
         if (pos == NULL) {
             PyErr_Clear();
-            self->seekable = 0;
-        } else {
+        }
+        else {
             Py_DECREF(pos);
-            self->seekable = 1;
         }
     }
     return PyBool_FromLong((long) self->seekable);
@@ -685,10 +683,12 @@ _io_FileIO_readall_impl(fileio *self)
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
+    int fstat_result;
 
     if (self->fd < 0)
         return err_closed();
 
+    Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
     pos = _lseeki64(self->fd, 0L, SEEK_CUR);
@@ -696,8 +696,10 @@ _io_FileIO_readall_impl(fileio *self)
     pos = lseek(self->fd, 0L, SEEK_CUR);
 #endif
     _Py_END_SUPPRESS_IPH
+    fstat_result = _Py_fstat_noraise(self->fd, &status);
+    Py_END_ALLOW_THREADS
 
-    if (_Py_fstat_noraise(self->fd, &status) == 0)
+    if (fstat_result == 0)
         end = status.st_size;
     else
         end = (Py_off_t)-1;
@@ -865,9 +867,10 @@ _io_FileIO_write_impl(fileio *self, Py_buffer *b)
 
 /* Cribbed from posix_lseek() */
 static PyObject *
-portable_lseek(int fd, PyObject *posobj, int whence)
+portable_lseek(fileio *self, PyObject *posobj, int whence)
 {
     Py_off_t pos, res;
+    int fd = self->fd;
 
 #ifdef SEEK_SET
     /* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
@@ -884,8 +887,9 @@ portable_lseek(int fd, PyObject *posobj, int whence)
     }
 #endif /* SEEK_SET */
 
-    if (posobj == NULL)
+    if (posobj == NULL) {
         pos = 0;
+    }
     else {
         if(PyFloat_Check(posobj)) {
             PyErr_SetString(PyExc_TypeError, "an integer is required");
@@ -909,6 +913,11 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 #endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
+
+    if (self->seekable < 0) {
+        self->seekable = (res >= 0);
+    }
+
     if (res < 0)
         return PyErr_SetFromErrno(PyExc_OSError);
 
@@ -943,7 +952,7 @@ _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence)
     if (self->fd < 0)
         return err_closed();
 
-    return portable_lseek(self->fd, pos, whence);
+    return portable_lseek(self, pos, whence);
 }
 
 /*[clinic input]
@@ -961,7 +970,7 @@ _io_FileIO_tell_impl(fileio *self)
     if (self->fd < 0)
         return err_closed();
 
-    return portable_lseek(self->fd, NULL, 1);
+    return portable_lseek(self, NULL, 1);
 }
 
 #ifdef HAVE_FTRUNCATE
@@ -992,7 +1001,7 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
 
     if (posobj == Py_None || posobj == NULL) {
         /* Get the current position. */
-        posobj = portable_lseek(fd, NULL, 1);
+        posobj = portable_lseek(self, NULL, 1);
         if (posobj == NULL)
             return NULL;
     }
@@ -1064,12 +1073,10 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
+    if (_PyObject_LookupAttrId((PyObject *) self, &PyId_name, &nameobj) < 0) {
+        return NULL;
+    }
     if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return NULL;
         res = PyUnicode_FromFormat(
             "<_io.FileIO fd=%d mode='%s' closefd=%s>",
             self->fd, mode_string(self), self->closefd ? "True" : "False");

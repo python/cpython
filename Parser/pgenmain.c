@@ -16,6 +16,8 @@
 #define PGEN
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "pgenheaders.h"
 #include "grammar.h"
 #include "node.h"
@@ -25,11 +27,10 @@
 int Py_DebugFlag;
 int Py_VerboseFlag;
 int Py_IgnoreEnvironmentFlag;
+_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
 /* Forward */
 grammar *getgrammar(const char *filename);
-
-void Py_Exit(int) _Py_NO_RETURN;
 
 void
 Py_Exit(int sts)
@@ -37,11 +38,9 @@ Py_Exit(int sts)
     exit(sts);
 }
 
-#ifdef WITH_THREAD
 /* Needed by obmalloc.c */
 int PyGILState_Check(void)
 { return 1; }
-#endif
 
 void _PyMem_DumpTraceback(int fd, const void *ptr)
 {}

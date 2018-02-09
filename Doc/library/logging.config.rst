@@ -715,7 +715,12 @@ a corresponding section in the configuration file.
 The ``args`` entry, when :func:`eval`\ uated in the context of the ``logging``
 package's namespace, is the list of arguments to the constructor for the handler
 class. Refer to the constructors for the relevant handlers, or to the examples
-below, to see how typical entries are constructed.
+below, to see how typical entries are constructed. If not provided, it defaults
+to ``()``.
+
+The optional ``kwargs`` entry, when :func:`eval`\ uated in the context of the
+``logging`` package's namespace, is the keyword argument dict to the constructor
+for the handler class. If not provided, it defaults to ``{}``.
 
 .. code-block:: ini
 
@@ -754,6 +759,7 @@ below, to see how typical entries are constructed.
    level=WARN
    formatter=form07
    args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
+   kwargs={'timeout': 10.0}
 
    [handler_hand08]
    class=handlers.MemoryHandler
@@ -767,6 +773,7 @@ below, to see how typical entries are constructed.
    level=NOTSET
    formatter=form09
    args=('localhost:9022', '/log', 'GET')
+   kwargs={'secure': True}
 
 Sections which specify formatter configuration are typified by the following.
 

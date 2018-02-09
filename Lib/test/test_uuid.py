@@ -1,11 +1,15 @@
 import unittest.mock
 from test import support
 import builtins
+import contextlib
 import io
 import os
 import shutil
 import subprocess
-import uuid
+
+py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+
 
 def importable(name):
     try:
@@ -14,7 +18,10 @@ def importable(name):
     except:
         return False
 
-class TestUUID(unittest.TestCase):
+
+class BaseTestUUID:
+    uuid = None
+
     def test_UUID(self):
         equal = self.assertEqual
         ascending = []
@@ -28,7 +35,7 @@ class TestUUID(unittest.TestCase):
              (0, 0, 0, 0, 0, 0),
              0,
              'urn:uuid:00000000-0000-0000-0000-000000000000',
-             0, 0, uuid.RESERVED_NCS, None),
+             0, 0, self.uuid.RESERVED_NCS, None),
             ('00010203-0405-0607-0809-0a0b0c0d0e0f',
              '{00010203-0405-0607-0809-0a0b0c0d0e0f}',
              '000102030405060708090a0b0c0d0e0f',
@@ -37,7 +44,7 @@ class TestUUID(unittest.TestCase):
              (0x00010203, 0x0405, 0x0607, 8, 9, 0x0a0b0c0d0e0f),
              0x000102030405060708090a0b0c0d0e0f,
              'urn:uuid:00010203-0405-0607-0809-0a0b0c0d0e0f',
-             0x607040500010203, 0x809, uuid.RESERVED_NCS, None),
+             0x607040500010203, 0x809, self.uuid.RESERVED_NCS, None),
             ('02d9e6d5-9467-382e-8f9b-9300a64ac3cd',
              '{02d9e6d5-9467-382e-8f9b-9300a64ac3cd}',
              '02d9e6d59467382e8f9b9300a64ac3cd',
@@ -46,7 +53,7 @@ class TestUUID(unittest.TestCase):
              (0x02d9e6d5, 0x9467, 0x382e, 0x8f, 0x9b, 0x9300a64ac3cd),
              0x02d9e6d59467382e8f9b9300a64ac3cd,
              'urn:uuid:02d9e6d5-9467-382e-8f9b-9300a64ac3cd',
-             0x82e946702d9e6d5, 0xf9b, uuid.RFC_4122, 3),
+             0x82e946702d9e6d5, 0xf9b, self.uuid.RFC_4122, 3),
             ('12345678-1234-5678-1234-567812345678',
              '{12345678-1234-5678-1234-567812345678}',
              '12345678123456781234567812345678',
@@ -55,7 +62,7 @@ class TestUUID(unittest.TestCase):
              (0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678),
              0x12345678123456781234567812345678,
              'urn:uuid:12345678-1234-5678-1234-567812345678',
-             0x678123412345678, 0x1234, uuid.RESERVED_NCS, None),
+             0x678123412345678, 0x1234, self.uuid.RESERVED_NCS, None),
             ('6ba7b810-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b810-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8109dad11d180b400c04fd430c8',
@@ -64,7 +71,7 @@ class TestUUID(unittest.TestCase):
              (0x6ba7b810, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
              0x6ba7b8109dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b810, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b810, 0xb4, self.uuid.RFC_4122, 1),
             ('6ba7b811-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b811-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8119dad11d180b400c04fd430c8',
@@ -73,7 +80,7 @@ class TestUUID(unittest.TestCase):
              (0x6ba7b811, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
              0x6ba7b8119dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b811-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b811, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b811, 0xb4, self.uuid.RFC_4122, 1),
             ('6ba7b812-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b812-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8129dad11d180b400c04fd430c8',
@@ -82,7 +89,7 @@ class TestUUID(unittest.TestCase):
              (0x6ba7b812, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
              0x6ba7b8129dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b812-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b812, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b812, 0xb4, self.uuid.RFC_4122, 1),
             ('6ba7b814-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b814-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8149dad11d180b400c04fd430c8',
@@ -91,7 +98,7 @@ class TestUUID(unittest.TestCase):
              (0x6ba7b814, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
              0x6ba7b8149dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b814-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b814, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b814, 0xb4, self.uuid.RFC_4122, 1),
             ('7d444840-9dc0-11d1-b245-5ffdce74fad2',
              '{7d444840-9dc0-11d1-b245-5ffdce74fad2}',
              '7d4448409dc011d1b2455ffdce74fad2',
@@ -100,7 +107,7 @@ class TestUUID(unittest.TestCase):
              (0x7d444840, 0x9dc0, 0x11d1, 0xb2, 0x45, 0x5ffdce74fad2),
              0x7d4448409dc011d1b2455ffdce74fad2,
              'urn:uuid:7d444840-9dc0-11d1-b245-5ffdce74fad2',
-             0x1d19dc07d444840, 0x3245, uuid.RFC_4122, 1),
+             0x1d19dc07d444840, 0x3245, self.uuid.RFC_4122, 1),
             ('e902893a-9d22-3c7e-a7b8-d6e313b71d9f',
              '{e902893a-9d22-3c7e-a7b8-d6e313b71d9f}',
              'e902893a9d223c7ea7b8d6e313b71d9f',
@@ -109,7 +116,7 @@ class TestUUID(unittest.TestCase):
              (0xe902893a, 0x9d22, 0x3c7e, 0xa7, 0xb8, 0xd6e313b71d9f),
              0xe902893a9d223c7ea7b8d6e313b71d9f,
              'urn:uuid:e902893a-9d22-3c7e-a7b8-d6e313b71d9f',
-             0xc7e9d22e902893a, 0x27b8, uuid.RFC_4122, 3),
+             0xc7e9d22e902893a, 0x27b8, self.uuid.RFC_4122, 3),
             ('eb424026-6f54-4ef8-a4d0-bb658a1fc6cf',
              '{eb424026-6f54-4ef8-a4d0-bb658a1fc6cf}',
              'eb4240266f544ef8a4d0bb658a1fc6cf',
@@ -118,7 +125,7 @@ class TestUUID(unittest.TestCase):
              (0xeb424026, 0x6f54, 0x4ef8, 0xa4, 0xd0, 0xbb658a1fc6cf),
              0xeb4240266f544ef8a4d0bb658a1fc6cf,
              'urn:uuid:eb424026-6f54-4ef8-a4d0-bb658a1fc6cf',
-             0xef86f54eb424026, 0x24d0, uuid.RFC_4122, 4),
+             0xef86f54eb424026, 0x24d0, self.uuid.RFC_4122, 4),
             ('f81d4fae-7dec-11d0-a765-00a0c91e6bf6',
              '{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}',
              'f81d4fae7dec11d0a76500a0c91e6bf6',
@@ -127,7 +134,7 @@ class TestUUID(unittest.TestCase):
              (0xf81d4fae, 0x7dec, 0x11d0, 0xa7, 0x65, 0x00a0c91e6bf6),
              0xf81d4fae7dec11d0a76500a0c91e6bf6,
              'urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6',
-             0x1d07decf81d4fae, 0x2765, uuid.RFC_4122, 1),
+             0x1d07decf81d4fae, 0x2765, self.uuid.RFC_4122, 1),
             ('fffefdfc-fffe-fffe-fffe-fffefdfcfbfa',
              '{fffefdfc-fffe-fffe-fffe-fffefdfcfbfa}',
              'fffefdfcfffefffefffefffefdfcfbfa',
@@ -136,7 +143,7 @@ class TestUUID(unittest.TestCase):
              (0xfffefdfc, 0xfffe, 0xfffe, 0xff, 0xfe, 0xfffefdfcfbfa),
              0xfffefdfcfffefffefffefffefdfcfbfa,
              'urn:uuid:fffefdfc-fffe-fffe-fffe-fffefdfcfbfa',
-             0xffefffefffefdfc, 0x3ffe, uuid.RESERVED_FUTURE, None),
+             0xffefffefffefdfc, 0x3ffe, self.uuid.RESERVED_FUTURE, None),
             ('ffffffff-ffff-ffff-ffff-ffffffffffff',
              '{ffffffff-ffff-ffff-ffff-ffffffffffff}',
              'ffffffffffffffffffffffffffffffff',
@@ -145,14 +152,14 @@ class TestUUID(unittest.TestCase):
              (0xffffffff, 0xffff, 0xffff, 0xff, 0xff, 0xffffffffffff),
              0xffffffffffffffffffffffffffffffff,
              'urn:uuid:ffffffff-ffff-ffff-ffff-ffffffffffff',
-             0xfffffffffffffff, 0x3fff, uuid.RESERVED_FUTURE, None),
+             0xfffffffffffffff, 0x3fff, self.uuid.RESERVED_FUTURE, None),
             ]:
             equivalents = []
             # Construct each UUID in several different ways.
-            for u in [uuid.UUID(string), uuid.UUID(curly), uuid.UUID(hex),
-                      uuid.UUID(bytes=bytes), uuid.UUID(bytes_le=bytes_le),
-                      uuid.UUID(fields=fields), uuid.UUID(int=integer),
-                      uuid.UUID(urn)]:
+            for u in [self.uuid.UUID(string), self.uuid.UUID(curly), self.uuid.UUID(hex),
+                      self.uuid.UUID(bytes=bytes), self.uuid.UUID(bytes_le=bytes_le),
+                      self.uuid.UUID(fields=fields), self.uuid.UUID(int=integer),
+                      self.uuid.UUID(urn)]:
                 # Test all conversions and properties of the UUID object.
                 equal(str(u), string)
                 equal(int(u), integer)
@@ -206,64 +213,64 @@ class TestUUID(unittest.TestCase):
         badtype = lambda f: self.assertRaises(TypeError, f)
 
         # Badly formed hex strings.
-        badvalue(lambda: uuid.UUID(''))
-        badvalue(lambda: uuid.UUID('abc'))
-        badvalue(lambda: uuid.UUID('1234567812345678123456781234567'))
-        badvalue(lambda: uuid.UUID('123456781234567812345678123456789'))
-        badvalue(lambda: uuid.UUID('123456781234567812345678z2345678'))
+        badvalue(lambda: self.uuid.UUID(''))
+        badvalue(lambda: self.uuid.UUID('abc'))
+        badvalue(lambda: self.uuid.UUID('1234567812345678123456781234567'))
+        badvalue(lambda: self.uuid.UUID('123456781234567812345678123456789'))
+        badvalue(lambda: self.uuid.UUID('123456781234567812345678z2345678'))
 
         # Badly formed bytes.
-        badvalue(lambda: uuid.UUID(bytes='abc'))
-        badvalue(lambda: uuid.UUID(bytes='\0'*15))
-        badvalue(lambda: uuid.UUID(bytes='\0'*17))
+        badvalue(lambda: self.uuid.UUID(bytes='abc'))
+        badvalue(lambda: self.uuid.UUID(bytes='\0'*15))
+        badvalue(lambda: self.uuid.UUID(bytes='\0'*17))
 
         # Badly formed bytes_le.
-        badvalue(lambda: uuid.UUID(bytes_le='abc'))
-        badvalue(lambda: uuid.UUID(bytes_le='\0'*15))
-        badvalue(lambda: uuid.UUID(bytes_le='\0'*17))
+        badvalue(lambda: self.uuid.UUID(bytes_le='abc'))
+        badvalue(lambda: self.uuid.UUID(bytes_le='\0'*15))
+        badvalue(lambda: self.uuid.UUID(bytes_le='\0'*17))
 
         # Badly formed fields.
-        badvalue(lambda: uuid.UUID(fields=(1,)))
-        badvalue(lambda: uuid.UUID(fields=(1, 2, 3, 4, 5)))
-        badvalue(lambda: uuid.UUID(fields=(1, 2, 3, 4, 5, 6, 7)))
+        badvalue(lambda: self.uuid.UUID(fields=(1,)))
+        badvalue(lambda: self.uuid.UUID(fields=(1, 2, 3, 4, 5)))
+        badvalue(lambda: self.uuid.UUID(fields=(1, 2, 3, 4, 5, 6, 7)))
 
         # Field values out of range.
-        badvalue(lambda: uuid.UUID(fields=(-1, 0, 0, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0x100000000, 0, 0, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, -1, 0, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0x10000, 0, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, -1, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0x10000, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, -1, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0x100, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, -1, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0x100, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0, -1)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0, 0x1000000000000)))
+        badvalue(lambda: self.uuid.UUID(fields=(-1, 0, 0, 0, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0x100000000, 0, 0, 0, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, -1, 0, 0, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0x10000, 0, 0, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, -1, 0, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, 0x10000, 0, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, 0, -1, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, 0, 0x100, 0, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, 0, 0, -1, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, 0, 0, 0x100, 0)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, 0, 0, 0, -1)))
+        badvalue(lambda: self.uuid.UUID(fields=(0, 0, 0, 0, 0, 0x1000000000000)))
 
         # Version number out of range.
-        badvalue(lambda: uuid.UUID('00'*16, version=0))
-        badvalue(lambda: uuid.UUID('00'*16, version=6))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=0))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=6))
 
         # Integer value out of range.
-        badvalue(lambda: uuid.UUID(int=-1))
-        badvalue(lambda: uuid.UUID(int=1<<128))
+        badvalue(lambda: self.uuid.UUID(int=-1))
+        badvalue(lambda: self.uuid.UUID(int=1<<128))
 
         # Must supply exactly one of hex, bytes, fields, int.
         h, b, f, i = '00'*16, b'\0'*16, (0, 0, 0, 0, 0, 0), 0
-        uuid.UUID(h)
-        uuid.UUID(hex=h)
-        uuid.UUID(bytes=b)
-        uuid.UUID(bytes_le=b)
-        uuid.UUID(fields=f)
-        uuid.UUID(int=i)
+        self.uuid.UUID(h)
+        self.uuid.UUID(hex=h)
+        self.uuid.UUID(bytes=b)
+        self.uuid.UUID(bytes_le=b)
+        self.uuid.UUID(fields=f)
+        self.uuid.UUID(int=i)
 
         # Wrong number of arguments (positional).
-        badtype(lambda: uuid.UUID())
-        badtype(lambda: uuid.UUID(h, b))
-        badtype(lambda: uuid.UUID(h, b, b))
-        badtype(lambda: uuid.UUID(h, b, b, f))
-        badtype(lambda: uuid.UUID(h, b, b, f, i))
+        badtype(lambda: self.uuid.UUID())
+        badtype(lambda: self.uuid.UUID(h, b))
+        badtype(lambda: self.uuid.UUID(h, b, b))
+        badtype(lambda: self.uuid.UUID(h, b, b, f))
+        badtype(lambda: self.uuid.UUID(h, b, b, f, i))
 
         # Duplicate arguments.
         for hh in [[], [('hex', h)]]:
@@ -273,12 +280,12 @@ class TestUUID(unittest.TestCase):
                         for ff in [[], [('fields', f)]]:
                             args = dict(hh + bb + bble + ii + ff)
                             if len(args) != 0:
-                                badtype(lambda: uuid.UUID(h, **args))
+                                badtype(lambda: self.uuid.UUID(h, **args))
                             if len(args) != 1:
-                                badtype(lambda: uuid.UUID(**args))
+                                badtype(lambda: self.uuid.UUID(**args))
 
         # Immutability.
-        u = uuid.UUID(h)
+        u = self.uuid.UUID(h)
         badtype(lambda: setattr(u, 'hex', h))
         badtype(lambda: setattr(u, 'bytes', b))
         badtype(lambda: setattr(u, 'bytes_le', b))
@@ -297,122 +304,161 @@ class TestUUID(unittest.TestCase):
         badtype(lambda: u > object())
 
     def test_getnode(self):
-        node1 = uuid.getnode()
+        node1 = self.uuid.getnode()
         self.assertTrue(0 < node1 < (1 << 48), '%012x' % node1)
 
         # Test it again to ensure consistency.
-        node2 = uuid.getnode()
+        node2 = self.uuid.getnode()
         self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    # bpo-32502: UUID1 requires a 48-bit identifier, but hardware identifiers
+    # need not necessarily be 48 bits (e.g., EUI-64).
+    def test_uuid1_eui64(self):
+        # Confirm that uuid.getnode ignores hardware addresses larger than 48
+        # bits. Mock out each platform's *_getnode helper functions to return
+        # something just larger than 48 bits to test. This will cause
+        # uuid.getnode to fall back on uuid._random_getnode, which will
+        # generate a valid value.
+        too_large_getter = lambda: 1 << 48
+        with unittest.mock.patch.multiple(
+            self.uuid,
+            _node=None,  # Ignore any cached node value.
+            _NODE_GETTERS_WIN32=[too_large_getter],
+            _NODE_GETTERS_UNIX=[too_large_getter],
+        ):
+            node = self.uuid.getnode()
+        self.assertTrue(0 < node < (1 << 48), '%012x' % node)
+
+        # Confirm that uuid1 can use the generated node, i.e., the that
+        # uuid.getnode fell back on uuid._random_getnode() rather than using
+        # the value from too_large_getter above.
+        try:
+            self.uuid.uuid1(node=node)
+        except ValueError as e:
+            self.fail('uuid1 was given an invalid node ID')
+
     def test_uuid1(self):
         equal = self.assertEqual
 
         # Make sure uuid1() generates UUIDs that are actually version 1.
-        for u in [uuid.uuid1() for i in range(10)]:
-            equal(u.variant, uuid.RFC_4122)
+        for u in [self.uuid.uuid1() for i in range(10)]:
+            equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 1)
+            self.assertIn(u.is_safe, {self.uuid.SafeUUID.safe,
+                                      self.uuid.SafeUUID.unsafe,
+                                      self.uuid.SafeUUID.unknown})
 
         # Make sure the generated UUIDs are actually unique.
         uuids = {}
-        for u in [uuid.uuid1() for i in range(1000)]:
+        for u in [self.uuid.uuid1() for i in range(1000)]:
             uuids[u] = 1
         equal(len(uuids.keys()), 1000)
 
         # Make sure the supplied node ID appears in the UUID.
-        u = uuid.uuid1(0)
+        u = self.uuid.uuid1(0)
         equal(u.node, 0)
-        u = uuid.uuid1(0x123456789abc)
+        u = self.uuid.uuid1(0x123456789abc)
         equal(u.node, 0x123456789abc)
-        u = uuid.uuid1(0xffffffffffff)
+        u = self.uuid.uuid1(0xffffffffffff)
         equal(u.node, 0xffffffffffff)
 
         # Make sure the supplied clock sequence appears in the UUID.
-        u = uuid.uuid1(0x123456789abc, 0)
+        u = self.uuid.uuid1(0x123456789abc, 0)
         equal(u.node, 0x123456789abc)
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) | u.clock_seq_low, 0)
-        u = uuid.uuid1(0x123456789abc, 0x1234)
+        u = self.uuid.uuid1(0x123456789abc, 0x1234)
         equal(u.node, 0x123456789abc)
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x1234)
-        u = uuid.uuid1(0x123456789abc, 0x3fff)
+        u = self.uuid.uuid1(0x123456789abc, 0x3fff)
         equal(u.node, 0x123456789abc)
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x3fff)
 
-    requires_ugt = unittest.skipUnless(uuid._uuid_generate_time is not None,
-                                       'requires uuid_generate_time_safe(3)')
-
-    @requires_ugt
-    # bpo-29925: On Mac OS X Tiger, uuid.uuid1().is_safe returns
-    # uuid.SafeUUID.unknown
+    # bpo-29925: On Mac OS X Tiger, self.uuid.uuid1().is_safe returns
+    # self.uuid.SafeUUID.unknown
     @support.requires_mac_ver(10, 5)
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_safe(self):
-        u = uuid.uuid1()
+        if not self.uuid._has_uuid_generate_time_safe:
+            self.skipTest('requires uuid_generate_time_safe(3)')
+
+        u = self.uuid.uuid1()
         # uuid_generate_time_safe() may return 0 or -1 but what it returns is
         # dependent on the underlying platform support.  At least it cannot be
         # unknown (unless I suppose the platform is buggy).
-        self.assertNotEqual(u.is_safe, uuid.SafeUUID.unknown)
+        self.assertNotEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
-    @requires_ugt
+    @contextlib.contextmanager
+    def mock_generate_time_safe(self, safe_value):
+        """
+        Mock uuid._generate_time_safe() to return a given *safe_value*.
+        """
+        if os.name != 'posix':
+            self.skipTest('POSIX-only test')
+        self.uuid._load_system_functions()
+        f = self.uuid._generate_time_safe
+        if f is None:
+            self.skipTest('need uuid._generate_time_safe')
+        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
+                                        lambda: (f()[0], safe_value)):
+            yield
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_unknown(self):
         # Even if the platform has uuid_generate_time_safe(), let's mock it to
         # be uuid_generate_time() and ensure the safety is unknown.
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', None):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
+        with self.mock_generate_time_safe(None):
+            u = self.uuid.uuid1()
+            self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
-    @requires_ugt
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_safe(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: 0):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.safe)
+        with self.mock_generate_time_safe(0):
+            u = self.uuid.uuid1()
+            self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
 
-    @requires_ugt
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_unsafe(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: -1):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.unsafe)
+        with self.mock_generate_time_safe(-1):
+            u = self.uuid.uuid1()
+            self.assertEqual(u.is_safe, self.uuid.SafeUUID.unsafe)
 
-    @requires_ugt
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_bogus_return_value(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: 3):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
+        with self.mock_generate_time_safe(3):
+            u = self.uuid.uuid1()
+            self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
     def test_uuid3(self):
         equal = self.assertEqual
 
         # Test some known version-3 UUIDs.
-        for u, v in [(uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org'),
+        for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
-                     (uuid.uuid3(uuid.NAMESPACE_URL, 'http://python.org/'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_URL, 'http://python.org/'),
                       '9fe8e8c4-aaa8-32a9-a55c-4535a88b748d'),
-                     (uuid.uuid3(uuid.NAMESPACE_OID, '1.3.6.1'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_OID, '1.3.6.1'),
                       'dd1a1cef-13d5-368a-ad82-eca71acd4cd1'),
-                     (uuid.uuid3(uuid.NAMESPACE_X500, 'c=ca'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_X500, 'c=ca'),
                       '658d3002-db6b-3040-a1d1-8ddd7d189a4d'),
                     ]:
-            equal(u.variant, uuid.RFC_4122)
+            equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 3)
-            equal(u, uuid.UUID(v))
+            equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
     def test_uuid4(self):
         equal = self.assertEqual
 
         # Make sure uuid4() generates UUIDs that are actually version 4.
-        for u in [uuid.uuid4() for i in range(10)]:
-            equal(u.variant, uuid.RFC_4122)
+        for u in [self.uuid.uuid4() for i in range(10)]:
+            equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 4)
 
         # Make sure the generated UUIDs are actually unique.
         uuids = {}
-        for u in [uuid.uuid4() for i in range(1000)]:
+        for u in [self.uuid.uuid4() for i in range(1000)]:
             uuids[u] = 1
         equal(len(uuids.keys()), 1000)
 
@@ -420,44 +466,54 @@ class TestUUID(unittest.TestCase):
         equal = self.assertEqual
 
         # Test some known version-5 UUIDs.
-        for u, v in [(uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org'),
+        for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
-                     (uuid.uuid5(uuid.NAMESPACE_URL, 'http://python.org/'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_URL, 'http://python.org/'),
                       '4c565f0d-3f5a-5890-b41b-20cf47701c5e'),
-                     (uuid.uuid5(uuid.NAMESPACE_OID, '1.3.6.1'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_OID, '1.3.6.1'),
                       '1447fa61-5277-5fef-a9b3-fbc6e44f4af3'),
-                     (uuid.uuid5(uuid.NAMESPACE_X500, 'c=ca'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_X500, 'c=ca'),
                       'cc957dd1-a972-5349-98cd-874190002798'),
                     ]:
-            equal(u.variant, uuid.RFC_4122)
+            equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 5)
-            equal(u, uuid.UUID(v))
+            equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def testIssue8621(self):
-        # On at least some versions of OSX uuid.uuid4 generates
+        # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any
         # children started using fork.
         fds = os.pipe()
         pid = os.fork()
         if pid == 0:
             os.close(fds[0])
-            value = uuid.uuid4()
+            value = self.uuid.uuid4()
             os.write(fds[1], value.hex.encode('latin-1'))
             os._exit(0)
 
         else:
             os.close(fds[1])
             self.addCleanup(os.close, fds[0])
-            parent_value = uuid.uuid4().hex
+            parent_value = self.uuid.uuid4().hex
             os.waitpid(pid, 0)
             child_value = os.read(fds[0], 100).decode('latin-1')
 
             self.assertNotEqual(parent_value, child_value)
 
 
-class TestInternals(unittest.TestCase):
+class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
+    uuid = py_uuid
+
+@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
+class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
+    uuid = c_uuid
+
+
+class BaseTestInternals:
+    uuid = None
+
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
         data = '''
@@ -473,7 +529,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
                                         return_value='/sbin/ifconfig'):
             with unittest.mock.patch.object(subprocess, 'Popen',
                                             return_value=popen):
-                mac = uuid._find_mac(
+                mac = self.uuid._find_mac(
                     command='ifconfig',
                     args='',
                     hw_identifiers=[b'hwaddr'],
@@ -482,75 +538,85 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         self.assertEqual(mac, 0x1234567890ab)
 
-    def check_node(self, node, requires=None, network=False):
+    def check_node(self, node, requires=None):
         if requires and node is None:
             self.skipTest('requires ' + requires)
         hex = '%012x' % node
         if support.verbose >= 2:
             print(hex, end=' ')
-        if network:
-            # 47 bit will never be set in IEEE 802 addresses obtained
-            # from network cards.
-            self.assertFalse(node & 0x010000000000, hex)
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ifconfig_getnode(self):
-        node = uuid._ifconfig_getnode()
-        self.check_node(node, 'ifconfig', True)
+        node = self.uuid._ifconfig_getnode()
+        self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ip_getnode(self):
-        node = uuid._ip_getnode()
-        self.check_node(node, 'ip', True)
+        node = self.uuid._ip_getnode()
+        self.check_node(node, 'ip')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_arp_getnode(self):
-        node = uuid._arp_getnode()
-        self.check_node(node, 'arp', True)
+        node = self.uuid._arp_getnode()
+        self.check_node(node, 'arp')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_lanscan_getnode(self):
-        node = uuid._lanscan_getnode()
-        self.check_node(node, 'lanscan', True)
+        node = self.uuid._lanscan_getnode()
+        self.check_node(node, 'lanscan')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_netstat_getnode(self):
-        node = uuid._netstat_getnode()
-        self.check_node(node, 'netstat', True)
+        node = self.uuid._netstat_getnode()
+        self.check_node(node, 'netstat')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_ipconfig_getnode(self):
-        node = uuid._ipconfig_getnode()
-        self.check_node(node, 'ipconfig', True)
+        node = self.uuid._ipconfig_getnode()
+        self.check_node(node, 'ipconfig')
 
     @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
     @unittest.skipUnless(importable('netbios'), 'requires netbios')
     def test_netbios_getnode(self):
-        node = uuid._netbios_getnode()
-        self.check_node(node, network=True)
+        node = self.uuid._netbios_getnode()
+        self.check_node(node)
 
     def test_random_getnode(self):
-        node = uuid._random_getnode()
-        # Least significant bit of first octet must be set.
-        self.assertTrue(node & 0x010000000000, '%012x' % node)
+        node = self.uuid._random_getnode()
+        # The multicast bit, i.e. the least significant bit of first octet,
+        # must be set for randomly generated MAC addresses.  See RFC 4122,
+        # $4.1.6.
+        self.assertTrue(node & (1 << 40), '%012x' % node)
         self.check_node(node)
 
+        node2 = self.uuid._random_getnode()
+        self.assertNotEqual(node2, node, '%012x' % node)
+
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
-    def test_unixdll_getnode(self):
+    def test_unix_getnode(self):
+        if not importable('_uuid') and not importable('ctypes'):
+            self.skipTest("neither _uuid extension nor ctypes available")
         try: # Issues 1481, 3581: _uuid_generate_time() might be None.
-            node = uuid._unixdll_getnode()
+            node = self.uuid._unix_getnode()
         except TypeError:
             self.skipTest('requires uuid_generate_time')
-        self.check_node(node)
+        self.check_node(node, 'unix')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
-        node = uuid._windll_getnode()
+        node = self.uuid._windll_getnode()
         self.check_node(node)
+
+
+class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = py_uuid
+
+@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
+class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = c_uuid
 
 
 if __name__ == '__main__':

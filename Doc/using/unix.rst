@@ -30,7 +30,7 @@ following links:
       for Debian users
    https://en.opensuse.org/Portal:Packaging
       for OpenSuse users
-   https://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
+   https://docs-old.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
       for Fedora users
    http://www.slackbook.org/html/package-management-making-packages.html
       for Slackware users
@@ -67,7 +67,7 @@ Building Python
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `clone
-<https://docs.python.org/devguide/setup.html#getting-the-source-code>`_.  (If you want
+<https://devguide.python.org/setup/#getting-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
 The build process consists in the usual ::

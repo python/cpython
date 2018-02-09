@@ -402,6 +402,9 @@ class TestABC(unittest.TestCase):
         C()
         self.assertEqual(B.counter, 1)
 
+    def test_ABC_has___slots__(self):
+        self.assertTrue(hasattr(abc.ABC, '__slots__'))
+
 
 class TestABCWithInitSubclass(unittest.TestCase):
     def test_works_with_init_subclass(self):

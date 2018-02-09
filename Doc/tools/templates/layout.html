@@ -4,7 +4,8 @@
                  style="vertical-align: middle; margin-top: -1px"/></li>
         <li><a href="https://www.python.org/">Python</a>{{ reldelim1 }}</li>
         <li>
-          {%- if versionswitcher is defined %}
+          {%- if switchers is defined %}
+          <span class="language_switcher_placeholder">{{ language or 'en' }}</span>
           <span class="version_switcher_placeholder">{{ release }}</span>
           <a href="{{ pathto('index') }}">{% trans %}Documentation {% endtrans %}</a>{{ reldelim1 }}
           {%- else %}
@@ -41,7 +42,7 @@
     <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html" />
     {% if builder != "htmlhelp" %}
     {% if not embedded %}<script type="text/javascript" src="{{ pathto('_static/copybutton.js', 1) }}"></script>{% endif %}
-    {% if versionswitcher is defined and not embedded %}<script type="text/javascript" src="{{ pathto('_static/version_switch.js', 1) }}"></script>{% endif %}
+    {% if switchers is defined and not embedded %}<script type="text/javascript" src="{{ pathto('_static/switchers.js', 1) }}"></script>{% endif %}
     {% if pagename == 'whatsnew/changelog' and not embedded %}
     <script type="text/javascript">
       $(document).ready(function() {

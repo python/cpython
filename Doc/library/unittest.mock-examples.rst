@@ -1008,7 +1008,7 @@ subclass.
     True
 
 Sometimes this is inconvenient. For example, `one user
-<https://code.google.com/p/mock/issues/detail?id=105>`_ is subclassing mock to
+<https://code.google.com/archive/p/mock/issues/105>`_ is subclassing mock to
 created a `Twisted adaptor
 <https://twistedmatrix.com/documents/11.0.0/api/twisted.python.components.html>`_.
 Having this applied to attributes too actually causes errors.
@@ -1251,7 +1251,7 @@ With a bit of tweaking you could have the comparison function raise the
 :exc:`AssertionError` directly and provide a more useful failure message.
 
 As of version 1.5, the Python testing library `PyHamcrest
-<https://pyhamcrest.readthedocs.org/>`_ provides similar functionality,
+<https://pyhamcrest.readthedocs.io/>`_ provides similar functionality,
 that may be useful here, in the form of its equality matcher
 (`hamcrest.library.integration.match_equality
-<https://pyhamcrest.readthedocs.org/en/release-1.8/integration/#module-hamcrest.library.integration.match_equality>`_).
+<https://pyhamcrest.readthedocs.io/en/release-1.8/integration/#module-hamcrest.library.integration.match_equality>`_).

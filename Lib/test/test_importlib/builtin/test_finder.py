@@ -22,7 +22,7 @@ class FindSpecTests(abc.FinderTests):
     # Built-in modules cannot be a package.
     test_package = None
 
-    # Built-in modules cannobt be in a package.
+    # Built-in modules cannot be in a package.
     test_module_in_package = None
 
     # Built-in modules cannot be a package.

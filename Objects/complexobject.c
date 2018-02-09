@@ -363,9 +363,9 @@ complex_repr(PyComplexObject *v)
     /* These do not need to be freed. re is either an alias
        for pre or a pointer to a constant.  lead and tail
        are pointers to constants. */
-    char *re = NULL;
-    char *lead = "";
-    char *tail = "";
+    const char *re = NULL;
+    const char *lead = "";
+    const char *tail = "";
 
     if (v->cval.real == 0. && copysign(1.0, v->cval.real)==1.0) {
         /* Real part is +0: just output the imaginary part and do not
@@ -914,10 +914,10 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
         if (s_buffer == NULL) {
             return NULL;
         }
+        assert(PyUnicode_IS_ASCII(s_buffer));
+        /* Simply get a pointer to existing ASCII characters. */
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        if (s == NULL) {
-            goto exit;
-        }
+        assert(s != NULL);
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -928,7 +928,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 
     result = _Py_string_to_number_with_underscores(s, len, "complex", v, type,
                                                    complex_from_string_inner);
-  exit:
     Py_DECREF(s_buffer);
     return result;
 }

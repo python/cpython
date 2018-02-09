@@ -27,7 +27,7 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
                   int version);
 
 static PyObject *
-marshal_dump(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -36,10 +36,6 @@ marshal_dump(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
 
     if (!_PyArg_ParseStack(args, nargs, "OO|i:dump",
         &value, &file, &version)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("dump", kwnames)) {
         goto exit;
     }
     return_value = marshal_dump_impl(module, value, file, version);
@@ -88,7 +84,7 @@ static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version);
 
 static PyObject *
-marshal_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -96,10 +92,6 @@ marshal_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 
     if (!_PyArg_ParseStack(args, nargs, "O|i:dumps",
         &value, &version)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("dumps", kwnames)) {
         goto exit;
     }
     return_value = marshal_dumps_impl(module, value, version);
@@ -142,4 +134,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9dec2158b8c5d975 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=584eb2222d86fdc3 input=a9049054013a1b77]*/

@@ -26,7 +26,7 @@
  * http://lxr.mozilla.org/seamonkey/source/modules/libimg/png/mozpngconf.h#115
  *
  * The list of relevant exported symbols can be had with this command:
- * 
+ *
        nm pyexpat.so \
            | grep -v " [a-zBUA] " \
            | grep -v "_fini\|_init\|initpyexpat"

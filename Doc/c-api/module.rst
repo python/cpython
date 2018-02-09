@@ -50,7 +50,7 @@ Module Objects
 
 .. c:function:: PyObject* PyModule_New(const char *name)
 
-   Similar to :c:func:`PyImport_NewObject`, but the name is a UTF-8 encoded
+   Similar to :c:func:`PyModule_NewObject`, but the name is a UTF-8 encoded
    string instead of a Unicode object.
 
 

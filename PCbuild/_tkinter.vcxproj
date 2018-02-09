@@ -77,18 +77,22 @@
     <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <ItemGroup>
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclDllName)" />
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tkDllName)" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
       <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="tcl.vcxproj">
-      <Project>{b5fd6f1d-129e-4bff-9340-03606fac7283}</Project>
-    </ProjectReference>
-    <ProjectReference Include="tk.vcxproj">
-      <Project>{7e85eccf-a72c-4da4-9e52-884508e80ba1}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="_CopyTclTkDLL" Inputs="@(_TclTkDLL)" Outputs="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
+    <Copy SourceFiles="@(_TclTkDLL)" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanTclTkDLL" BeforeTargets="Clean">
+    <Delete Files="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>
