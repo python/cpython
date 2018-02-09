@@ -75,6 +75,8 @@ New Features
 Other Language Changes
 ======================
 
+* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
+  (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
 
 New Modules
