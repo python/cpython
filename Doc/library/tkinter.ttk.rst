@@ -66,13 +66,13 @@ for improved styling effects.
 Ttk Widgets
 -----------
 
-Ttk comes with 17 widgets, eleven of which already existed in tkinter:
+Ttk comes with 18 widgets, twelve of which already existed in tkinter:
 :class:`Button`, :class:`Checkbutton`, :class:`Entry`, :class:`Frame`,
 :class:`Label`, :class:`LabelFrame`, :class:`Menubutton`, :class:`PanedWindow`,
-:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`. The other six are
-new: :class:`Combobox`, :class:`Notebook`, :class:`Progressbar`,
-:class:`Separator`, :class:`Sizegrip` and :class:`Treeview`. And all them are
-subclasses of :class:`Widget`.
+:class:`Radiobutton`, :class:`Scale`, :class:`Scrollbar`, and :class:`Spinbox`.
+The other six are new: :class:`Combobox`, :class:`Notebook`,
+:class:`Progressbar`, :class:`Separator`, :class:`Sizegrip` and
+:class:`Treeview`. And all them are subclasses of :class:`Widget`.
 
 Using the Ttk widgets gives the application an improved look and feel.
 As discussed above, there are differences in how the styling is coded.
@@ -379,6 +379,87 @@ ttk.Combobox
    .. method:: set(value)
 
       Sets the value of the combobox to *value*.
+
+
+Spinbox
+-------
+The :class:`ttk.Spinbox` widget is a :class:`ttk.Entry` enhanced with increment
+and decrement arrows.  It can be used for numbers or lists of string values.
+This widget is a subclass of :class:`Entry`.
+
+Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
+:meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
+and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
+:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
+:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.xview`,
+it has some other methods, described at :class:`ttk.Spinbox`.
+
+Options
+^^^^^^^
+
+This widget accepts the following specific options:
+
+  .. tabularcolumns:: |l|L|
+
++----------------------+------------------------------------------------------+
+| Option               | Description                                          |
++======================+======================================================+
+| from                 | Float value.  If set, this is the minimum value to   |
+|                      | which the decrement button will decrement.  Must be  |
+|                      | spelled as ``from_`` when used as an argument, since |
+|                      | ``from`` is a Python keyword.                        |
++----------------------+------------------------------------------------------+
+| to                   | Float value.  If set, this is the maximum value to   |
+|                      | which the increment button will increment.           |
++----------------------+------------------------------------------------------+
+| increment            | Float value.  Specifies the amount which the         |
+|                      | increment/decrement buttons change the               |
+|                      | value. Defaults to 1.0.                              |
++----------------------+------------------------------------------------------+
+| values               | Sequence of string or float values.  If specified,   |
+|                      | the increment/decrement buttons will cycle through   |
+|                      | the items in this sequence rather than incrementing  |
+|                      | or decrementing numbers.                             |
+|                      |                                                      |
++----------------------+------------------------------------------------------+
+| wrap                 | Boolean value.  If ``True``, increment and decrement |
+|                      | buttons will cycle from the ``to`` value to the      |
+|                      | ``from`` value or the ``from`` value to the ``to``   |
+|                      | value, respectively.                                 |
++----------------------+------------------------------------------------------+
+| format               | String value.  This specifies the format of numbers  |
+|                      | set by the increment/decrement buttons.  It must be  |
+|                      | in the form "%W.Pf", where W is the padded width of  |
+|                      | the value, P is the precision, and '%' and 'f' are   |
+|                      | literal.                                             |
++----------------------+------------------------------------------------------+
+| command              | Python callable.  Will be called with no arguments   |
+|                      | whenever either of the increment or decrement buttons|
+|                      | are pressed.                                         |
+|                      |                                                      |
++----------------------+------------------------------------------------------+
+
+
+Virtual events
+^^^^^^^^^^^^^^
+
+The spinbox widget generates an **<<Increment>>** virtual event when the
+user presses <Up>, and a **<<Decrement>>** virtual event when the user
+presses <Down>.
+
+ttk.Spinbox
+^^^^^^^^^^^^
+
+.. class:: Spinbox
+
+   .. method:: get()
+
+      Returns the current value of the spinbox.
+
+
+   .. method:: set(value)
+
+      Sets the value of the spinbox to *value*.
 
 
 Notebook
