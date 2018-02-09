@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-_Py_HashSecret_t _Py_HashSecret = {0};
+_Py_HashSecret_t _Py_HashSecret = {{0}};
 
 #if Py_HASH_ALGORITHM == Py_HASH_EXTERNAL
 extern PyHash_FuncDef PyHash_Func;

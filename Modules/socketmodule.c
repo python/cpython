@@ -4867,7 +4867,9 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
             if (type == -1) {
                 int tmp;
                 socklen_t slen = sizeof(tmp);
-                if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &tmp, &slen) == 0) {
+                if (getsockopt(fd, SOL_SOCKET, SO_TYPE,
+                               (void *)&tmp, &slen) == 0)
+                {
                     type = tmp;
                 } else {
 #ifdef MS_WINDOWS
@@ -4885,7 +4887,9 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
             if (proto == -1) {
                 int tmp;
                 socklen_t slen = sizeof(tmp);
-                if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &tmp, &slen) == 0) {
+                if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL,
+                               (void *)&tmp, &slen) == 0)
+                {
                     proto = tmp;
                 } else {
 #ifdef MS_WINDOWS
