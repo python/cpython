@@ -261,20 +261,8 @@ class HelperFunctionsTests(unittest.TestCase):
     def test_getsitepackages(self):
         site.PREFIXES = ['xoxo']
         dirs = site.getsitepackages()
-
-        if (sys.platform == "darwin" and
-            sysconfig.get_config_var("PYTHONFRAMEWORK")):
-            # OS X framework builds
-            site.PREFIXES = ['Python.framework']
-            dirs = site.getsitepackages()
-            self.assertEqual(len(dirs), 2)
-            wanted = os.path.join('/Library',
-                                  sysconfig.get_config_var("PYTHONFRAMEWORK"),
-                                  '%d.%d' % sys.version_info[:2],
-                                  'site-packages')
-            self.assertEqual(dirs[1], wanted)
-        elif os.sep == '/':
-            # OS X non-framework builds, Linux, FreeBSD, etc
+        if os.sep == '/':
+            # OS X, Linux, FreeBSD, etc
             self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
                                   'python%d.%d' % sys.version_info[:2],
@@ -560,7 +548,7 @@ class _pthFileTests(unittest.TestCase):
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
         ], env=env, encoding='ansi')
         actual_sys_path = output.rstrip().split('\n')
-        self.assert_(actual_sys_path, "sys.flags.no_site was False")
+        self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
             actual_sys_path,
             sys_path,

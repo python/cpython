@@ -242,6 +242,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.7a0  3390 (add LOAD_METHOD and CALL_METHOD opcodes)
 #     Python 3.7a0  3391 (update GET_AITER #31709)
 #     Python 3.7a0  3392 (PEP 552: Deterministic pycs)
+#     Python 3.7a0  3393 (remove  STORE_ANNOTATION opcode)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -250,7 +251,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3392).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3393).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -1275,9 +1276,9 @@ class PathFinder:
         elif spec.loader is None:
             namespace_path = spec.submodule_search_locations
             if namespace_path:
-                # We found at least one namespace path.  Return a
-                #  spec which can create the namespace package.
-                spec.origin = 'namespace'
+                # We found at least one namespace path.  Return a spec which
+                # can create the namespace package.
+                spec.origin = None
                 spec.submodule_search_locations = _NamespacePath(fullname, namespace_path, cls._get_spec)
                 return spec
             else:

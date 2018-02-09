@@ -2459,6 +2459,8 @@ bytes_methods[] = {
      _Py_isalnum__doc__},
     {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
      _Py_isalpha__doc__},
+    {"isascii", (PyCFunction)stringlib_isascii, METH_NOARGS,
+     _Py_isascii__doc__},
     {"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
      _Py_isdigit__doc__},
     {"islower", (PyCFunction)stringlib_islower, METH_NOARGS,

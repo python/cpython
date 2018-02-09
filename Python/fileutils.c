@@ -449,7 +449,12 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
                    int current_locale, int surrogateescape)
 {
     if (current_locale) {
+#ifdef __ANDROID__
+        return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
+                                surrogateescape);
+#else
         return decode_current_locale(arg, wstr, wlen, reason, surrogateescape);
+#endif
     }
 
 #if defined(__APPLE__) || defined(__ANDROID__)
@@ -605,8 +610,13 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
                  int raw_malloc, int current_locale, int surrogateescape)
 {
     if (current_locale) {
+#ifdef __ANDROID__
+        return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
+                                raw_malloc, surrogateescape);
+#else
         return encode_current_locale(text, str, error_pos, reason,
                                      raw_malloc, surrogateescape);
+#endif
     }
 
 #if defined(__APPLE__) || defined(__ANDROID__)
@@ -903,6 +913,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 }
 
 
+/* This function MUST be kept async-signal-safe on POSIX when raise=0. */
 static int
 get_inheritable(int fd, int raise)
 {
@@ -948,6 +959,8 @@ _Py_get_inheritable(int fd)
     return get_inheritable(fd, 1);
 }
 
+
+/* This function MUST be kept async-signal-safe on POSIX when raise=0. */
 static int
 set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 {
@@ -1004,8 +1017,10 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 #else
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    if (ioctl_works != 0) {
+    if (ioctl_works != 0 && raise != 0) {
         /* fast-path: ioctl() only requires one syscall */
+        /* caveat: raise=0 is an indicator that we must be async-signal-safe
+         * thus avoid using ioctl() so we skip the fast-path. */
         if (inheritable)
             request = FIONCLEX;
         else
@@ -1076,8 +1091,7 @@ make_non_inheritable(int fd)
 }
 
 /* Set the inheritable flag of the specified file descriptor.
-   On success: return 0, on error: raise an exception if raise is nonzero
-   and return -1.
+   On success: return 0, on error: raise an exception and return -1.
 
    If atomic_flag_works is not NULL:
 
@@ -1096,6 +1110,15 @@ int
 _Py_set_inheritable(int fd, int inheritable, int *atomic_flag_works)
 {
     return set_inheritable(fd, inheritable, 1, atomic_flag_works);
+}
+
+/* Same as _Py_set_inheritable() but on error, set errno and
+   don't raise an exception.
+   This function is async-signal-safe. */
+int
+_Py_set_inheritable_async_safe(int fd, int inheritable, int *atomic_flag_works)
+{
+    return set_inheritable(fd, inheritable, 0, atomic_flag_works);
 }
 
 static int

@@ -1,4 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf830
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf200
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 CourierNewPSMT;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
@@ -10,21 +10,51 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
 
 \b \cf0 NOTE:
-\b0   This is an early developer preview of the next feature release of Python 3.  Many features are yet to be added and existing features may change substantially or be deleted prior to the feature code freeze.\
+\b0   This is a beta preview of the next feature release of Python 3.  Existing features may change or be deleted prior to the release code freeze.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 \ul \ulc0 Certificate verification and OpenSSL\
+\b \cf0 \ul \ulc0 Which installer variant should I use? [CHANGED in 3.7.0b1]
+\b0 \ulnone \
+\
+For Python.3.7, python.org currently provides two installer variants for download: one that installs a 
+\i 64-bit/32-bit Intel
+\i0  Python capable of running on 
+\i macOS 10.6 (Snow Leopard)
+\i0  or later; and one that installs a 
+\i 64-bit-only 
+\i0 Python capable of running on 
+\i macOS 10.9 (Mavericks)
+\i0  or later.  This ReadMe was installed with the 
+\i $MACOSX_DEPLOYMENT_TARGET
+\i0  variant.  Use the 10.6 variant if you are running on macOS 10.6 through 10.8 or if you want to produce standalone applications that can run on systems from 10.6.  If you are running on macOS 10.9 or later and if you have no need for compatibility with older systems, use the 10.9 variant.  The Pythons installed by these installers are built with private copies of some third-party libraries not included with or newer than those in macOS itself.  The list of these libraries varies by installer variant and is included at the end of the License.rtf file.
+\b \ul \
+\
+Using IDLE or other Tk applications [NEW/CHANGED in 3.7.0b1] 
+\b0 \ulnone \
+\
+The 10.9+ installer variant comes with its own private version of Tcl/Tk 8.6. It does not use system-supplied or third-party supplied versions of Tcl/Tk.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 For the 10.6+ variant, you continue to need to install a newer third-party version of the 
+\i Tcl/Tk
+\i0  8.5 (not 8.6) frameworks to use IDLE or other programs that use the Tkinter graphical user interface toolkit.  Visit {\field{\*\fldinst{HYPERLINK "https://www.python.org/download/mac/tcltk/"}}{\fldrslt https://www.python.org/download/mac/tcltk/}} for current information about supported and recommended versions of 
+\i Tcl/Tk
+\i0  for this version of Python and of macOS.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b \cf0 \ul \ulc0 \
+Certificate verification and OpenSSL \{UPDATED in 3.7.0b1]\
 
 \b0 \ulnone \
-This variant of Python 3.7 includes its own private copy of OpenSSL 1.0.2.  The deprecated Apple-supplied OpenSSL libraries are no longer used.  This means that the trust certificates in system and user keychains managed by the 
+This variant of Python 3.7 includes its own private copy of OpenSSL 1.1.0.  The deprecated Apple-supplied OpenSSL libraries are no longer used.  This means that the trust certificates in system and user keychains managed by the 
 \i Keychain Access 
 \i0 application and the 
 \i security
 \i0  command line utility are no longer used as defaults by the Python 
 \f1 ssl
-\f0  module.  For this preview release, a sample command script is included in 
+\f0  module.  For this beta release, a sample command script is included in 
 \f1 /Applications/Python 3.7
 \f0  to install a curated bundle of default root certificates from the third-party 
 \f1 certifi
@@ -37,17 +67,7 @@ The bundled
 \f0  included with this installer has its own default certificate store for verifying download connections.\
 \
 
-\b \ul Update your version of Tcl/Tk to use IDLE or other Tk applications
-\b0 \ulnone \
-\
-To use IDLE or other programs that use the Tkinter graphical user interface toolkit, you need to install a newer third-party version of the 
-\i Tcl/Tk
-\i0  frameworks.  Visit {\field{\*\fldinst{HYPERLINK "https://www.python.org/download/mac/tcltk/"}}{\fldrslt https://www.python.org/download/mac/tcltk/}} for current information about supported and recommended versions of 
-\i Tcl/Tk
-\i0  for this version of Python and of Mac OS X.  For this developer preview, the installer is still linked with Tcl/Tk 8.5.\
-
-\b \ul \
-Other changes\
+\b \ul Other changes\
 
 \b0 \ulnone \
 For other changes in this release, see the 
