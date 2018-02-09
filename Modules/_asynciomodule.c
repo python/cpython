@@ -492,10 +492,9 @@ future_init(FutureObj *fut, PyObject *loop)
         }
     }
 
-    fut->fut_callback0 = NULL;
-    fut->fut_context0 = NULL;
-    fut->fut_callbacks = NULL;
-
+    Py_CLEAR(fut->fut_callback0);
+    Py_CLEAR(fut->fut_context0);
+    Py_CLEAR(fut->fut_callbacks);
     return 0;
 }
 
