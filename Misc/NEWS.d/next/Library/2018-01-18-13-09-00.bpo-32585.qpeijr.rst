@@ -1,0 +1,1 @@
+Add Ttk spinbox widget to to tkinter.ttk.  Patch by Alan D Moore.
