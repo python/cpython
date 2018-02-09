@@ -273,8 +273,8 @@ Initializing and finalizing the interpreter
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
    time (without calling :c:func:`Py_Initialize` again first).  Normally the
-   return value is 0.  If there were errors during finalization
-   (flushing buffered data), -1 is returned.
+   return value is ``0``.  If there were errors during finalization
+   (flushing buffered data), ``-1`` is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -1018,7 +1018,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
-   so then -1 is returned and an error is set.
+   so then ``-1`` is returned and an error is set.
 
    .. versionadded:: 3.7
 

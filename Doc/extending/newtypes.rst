@@ -384,8 +384,8 @@ is used to initialize an object after it's created. Unlike the new method, we
 can't guarantee that the initializer is called.  The initializer isn't called
 when unpickling objects and it can be overridden.  Our initializer accepts
 arguments to provide initial values for our instance. Initializers always accept
-positional and keyword arguments. Initializers should return either 0 on
-success or -1 on error.
+positional and keyword arguments. Initializers should return either ``0`` on
+success or ``-1`` on error.
 
 Initializers can be called multiple times.  Anyone can call the :meth:`__init__`
 method on our objects.  For this reason, we have to be extra careful when
