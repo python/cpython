@@ -131,6 +131,11 @@ Changes in the Python API
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
 
+* A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
+  :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
+  a database if it does not exist.
+  (Contributed by Serhiy Storchaka in :issue:`32749`.)
+
 
 CPython bytecode changes
 ------------------------

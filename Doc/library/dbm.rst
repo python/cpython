@@ -339,9 +339,23 @@ The module defines the following:
    dumbdbm database is created, files with :file:`.dat` and :file:`.dir` extensions
    are created.
 
-   The optional *flag* argument supports only the semantics of ``'c'``
-   and ``'n'`` values.  Other values will default to database being always
-   opened for update, and will be created if it does not exist.
+   The optional *flag* argument can be:
+
+   +---------+-------------------------------------------+
+   | Value   | Meaning                                   |
+   +=========+===========================================+
+   | ``'r'`` | Open existing database for reading only   |
+   |         | (default)                                 |
+   +---------+-------------------------------------------+
+   | ``'w'`` | Open existing database for reading and    |
+   |         | writing                                   |
+   +---------+-------------------------------------------+
+   | ``'c'`` | Open database for reading and writing,    |
+   |         | creating it if it doesn't exist           |
+   +---------+-------------------------------------------+
+   | ``'n'`` | Always create a new, empty database, open |
+   |         | for reading and writing                   |
+   +---------+-------------------------------------------+
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be modified
@@ -351,9 +365,10 @@ The module defines the following:
       :func:`.open` always creates a new database when the flag has the value
       ``'n'``.
 
-   .. deprecated-removed:: 3.6 3.8
-      Creating database in ``'r'`` and ``'w'`` modes.  Modifying database in
-      ``'r'`` mode.
+   .. versionchanged:: 3.8
+      A database opened with flags ``'r'`` is now read-only.  Opening with
+      flags ``'r'`` and ``'w'`` no longer creates a database if it does not
+      exist.
 
    In addition to the methods provided by the
    :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects
