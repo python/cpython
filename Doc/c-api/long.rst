@@ -137,7 +137,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Raise :exc:`OverflowError` if the value of *obj* is out of range for a
    :c:type:`long`.
 
-   Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: long PyLong_AsLongAndOverflow(PyObject *obj, int *overflow)
@@ -151,7 +151,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other exception
    occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
-   Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: long long PyLong_AsLongLong(PyObject *obj)
@@ -166,7 +166,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Raise :exc:`OverflowError` if the value of *obj* is out of range for a
    :c:type:`long`.
 
-   Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: long long PyLong_AsLongLongAndOverflow(PyObject *obj, int *overflow)
@@ -180,7 +180,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    and return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other
    exception occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
-   Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionadded:: 3.2
 
@@ -197,7 +197,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
    :c:type:`Py_ssize_t`.
 
-   Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)
@@ -259,7 +259,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    If the value of *obj* is out of range for an :c:type:`unsigned long`,
    return the reduction of that value modulo ``ULONG_MAX + 1``.
 
-   Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: unsigned long long PyLong_AsUnsignedLongLongMask(PyObject *obj)
@@ -271,7 +271,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
    return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
 
-   Returns -1 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: double PyLong_AsDouble(PyObject *pylong)
@@ -282,7 +282,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
    :c:type:`double`.
 
-   Returns -1.0 on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``-1.0`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: void* PyLong_AsVoidPtr(PyObject *pylong)
@@ -292,4 +292,4 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    is only assured to produce a usable :c:type:`void` pointer for values created
    with :c:func:`PyLong_FromVoidPtr`.
 
-   Returns NULL on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns *NULL* on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
