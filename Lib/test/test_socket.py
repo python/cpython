@@ -5901,10 +5901,11 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
         if unknown:
             msg = ("\nFound new TCP flags %s, probably you are building"
                    " CPython with a newer Windows SDK than official build's.\n"
-                   "If you insist on building CPython with current Windows SDK, "
-                   "maybe you need to remove them on older version MS-Windows "
-                   "during run-time via hard code patch, see issue32394.\n"
-                   "Full TCP flags in this machine: %s"
+                   "If you insist on building CPython with the current "
+                   "Windows SDK, maybe you need to remove them on older "
+                   "version MS-Windows during run-time via hard code patch, "
+                   "see issue32394.\n"
+                   "Full avaliable TCP flags on this system: %s"
                     ) % (unknown, provided)
             raise Exception(msg)
 
