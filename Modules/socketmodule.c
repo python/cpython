@@ -332,31 +332,31 @@ remove_unusable_flags(PyObject *m){
     RtlGetVersion RtlFun;
     RTL_OSVERSIONINFOEXW ver;
     DWORD winMajor, winMinor, winBuild;
-    
+
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
         return m;
     }
-    
+
     /* get Windows version */
     ntdll = GetModuleHandleW(L"ntdll.dll");
     if (ntdll == NULL) {
         return m;
     }
-    
+
     RtlFun = (RtlGetVersion)GetProcAddress(ntdll, "RtlGetVersion");
     if (RtlFun == NULL){
         return m;
     }
-    
+
     memset(&ver, 0, sizeof(ver));
     ver.dwOSVersionInfoSize = sizeof(ver);
     RtlFun(&ver);
-    
+
     winMajor = ver.dwMajorVersion;
     winMinor = ver.dwMinorVersion;
     winBuild = ver.dwBuildNumber;
-    
+
     /* remove unusable flags */
     if (winMajor == 10 && winMinor == 0) {
         for (int i=0; i<sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {

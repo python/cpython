@@ -5897,7 +5897,7 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
     def testNewTCPFlags(self):
         provided = [s for s in dir(socket) if s.startswith('TCP')]
         unknown = [s for s in provided if s not in self.knownTCPFlags]
-        
+
         if unknown:
             msg = ("\nFound new TCP flags %s, probably you are building"
                    " CPython with a newer Windows SDK than official build's.\n"
