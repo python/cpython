@@ -8,7 +8,7 @@ import re
 import sys
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR
-from operator import attrgetter
+from operator import attrgetter, methodcaller
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
@@ -749,7 +749,10 @@ class PurePath(object):
 
     root = property(attrgetter('_root'),
                     doc="""The root of the path, if any.""")
-
+    
+    str = property(methodcaller('__str__', 
+                                doc="Return the string representation of the path, suitable for passing to system calls."))
+    
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
