@@ -47,33 +47,10 @@ the setsockopt() and getsockopt() methods.
 """
 
 import _socket
+from _socket import *
 
 import os, sys, io, selectors
 from enum import IntEnum, IntFlag
-
-# Remove some options on old version Windows.
-# https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx
-if hasattr(sys, 'getwindowsversion'):
-    # (new_option, win10_buildnumber)
-    # make sure the list ordered by descending win10_buildnumber
-    _new_flags = [
-        ('TCP_KEEPCNT',  15063),  # Windows 10 1703
-        ('TCP_FASTOPEN', 14393)   # Windows 10 1607
-        ]
-    _WIN_MAJOR, _WIN_MINOR, _WIN_BUILD, *_ = sys.getwindowsversion()
-    if _WIN_MAJOR == 10 and _WIN_MINOR == 0:
-        for _flag, _build in _new_flags:
-            if _WIN_BUILD < _build:
-                if hasattr(_socket, _flag):
-                    delattr(_socket, _flag)
-            else:
-                break
-    elif _WIN_MAJOR < 10:
-        for _flag, _ in _new_flags:
-            if hasattr(_socket, _flag):
-                delattr(_socket, _flag)
-
-from _socket import *
 
 try:
     import errno
