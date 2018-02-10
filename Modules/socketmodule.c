@@ -302,10 +302,84 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #  include <fcntl.h>
 # endif
 
-/* Provides the GetVersionEx() function */
-#include <windows.h>
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <VersionHelpers.h>
+
+/* This block remove some options on older version Windows during run-time.
+   https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
+#if 1
+typedef NTSTATUS(WINAPI* RtlGetVersion)(PRTL_OSVERSIONINFOEXW);
+typedef struct{
+    DWORD build_number;  /* available since Windows 10 build number */
+    const char flag_name[20];
+} FlagRuntimeInfo;
+
+/* IMPORTANT: make sure the list ordered by descending build_number */
+FlagRuntimeInfo flags[] = {
+    /* Windows 10 1709 */
+    {16299, "TCP_KEEPIDLE"},
+    {16299, "TCP_KEEPINTVL"},
+    /* Windows 10 1703 */
+    {15063, "TCP_KEEPCNT"},
+    /* Windows 10 1607 */
+    {14393, "TCP_FASTOPEN"}
+};
+
+PyMODINIT_FUNC
+remove_unusable_flags(PyObject *m){
+    PyObject *dict;
+    HMODULE ntdll;
+    RTL_OSVERSIONINFOEXW ver;
+    DWORD winMajor, winMinor, winBuild;
+    
+    dict = PyModule_GetDict(m);
+    if (dict == NULL) {
+        return m;
+    }
+    
+    /* get Windows version */
+    ntdll = GetModuleHandleW(L"ntdll.dll");
+    if (ntdll == NULL) {
+        return m;
+    }
+    
+    RtlGetVersion RtlFun = (RtlGetVersion)GetProcAddress(
+                            ntdll, "RtlGetVersion");
+    if (RtlFun == NULL){
+        return m;
+    }
+    
+    memset(&ver, 0, sizeof(ver));
+    ver.dwOSVersionInfoSize = sizeof(ver);
+    RtlFun(&ver);
+    
+    winMajor = ver.dwMajorVersion;
+    winMinor = ver.dwMinorVersion;
+    winBuild = ver.dwBuildNumber;
+    
+    /* remove unusable flags */
+    if (winMajor == 10 && winMinor == 0) {
+        for (int i=0; i<sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
+            if (winBuild < flags[i].build_number) {
+                if (PyDict_GetItemString(dict, flags[i].flag_name) != NULL) {
+                    PyDict_DelItemString(dict, flags[i].flag_name);
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    else if (winMajor < 10) {
+       for (int i=0; i<sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
+            if (PyDict_GetItemString(dict, flags[i].flag_name) != NULL) {
+                PyDict_DelItemString(dict, flags[i].flag_name);
+            }
+        }
+    }
+    return m;
+}
+#endif
 
 #endif
 
@@ -6687,48 +6761,11 @@ PyMODINIT_FUNC
 PyInit__socket(void)
 {
     PyObject *m, *has_ipv6;
-    
-#ifdef MS_WINDOWS
-    OSVERSIONINFOEX ver;
-    DWORD winMajor, winMinor, winBuild;
-    
-    BOOL addTCP_KEEPCNT = TRUE;
-    BOOL addTCP_FASTOPEN = TRUE;
-#endif
 
     if (!os_init())
         return NULL;
 
 #ifdef MS_WINDOWS
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    if (GetVersionEx((OSVERSIONINFO*) &ver)) {
-        winMajor = ver.dwMajorVersion;
-        winMinor = ver.dwMinorVersion;
-        winBuild = ver.dwBuildNumber;
-        
-        /* Remove some options on old version Windows.
-           https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx
-        */
-        if (winMajor == 10 && winMinor == 0) {
-            /* Windows 10 1703 */
-            if (winBuild >= 15063) {
-                ;
-            }
-            /* Windows 10 1607 */
-            else if (winBuild >= 14393) {
-                addTCP_KEEPCNT = FALSE;
-            }
-            else {
-                addTCP_KEEPCNT = FALSE;
-                addTCP_FASTOPEN = FALSE;
-            }
-        }
-        else if (winMajor < 10) {
-            addTCP_KEEPCNT = FALSE;
-            addTCP_FASTOPEN = FALSE;
-        }
-    }
-
     if (support_wsa_no_inherit == -1) {
         support_wsa_no_inherit = IsWindows7SP1OrGreater();
     }
@@ -7689,13 +7726,7 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, TCP_KEEPINTVL);
 #endif
 #ifdef  TCP_KEEPCNT
-    #ifdef MS_WINDOWS
-        if (addTCP_KEEPCNT) {
-            PyModule_AddIntMacro(m, TCP_KEEPCNT);
-        }
-    #else
-        PyModule_AddIntMacro(m, TCP_KEEPCNT);
-    #endif
+    PyModule_AddIntMacro(m, TCP_KEEPCNT);
 #endif
 #ifdef  TCP_SYNCNT
     PyModule_AddIntMacro(m, TCP_SYNCNT);
@@ -7716,13 +7747,7 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, TCP_QUICKACK);
 #endif
 #ifdef  TCP_FASTOPEN
-    #ifdef MS_WINDOWS
-        if (addTCP_FASTOPEN) {
-            PyModule_AddIntMacro(m, TCP_FASTOPEN);
-        }
-    #else
-        PyModule_AddIntMacro(m, TCP_FASTOPEN);
-    #endif
+    PyModule_AddIntMacro(m, TCP_FASTOPEN);
 #endif
 #ifdef  TCP_CONGESTION
     PyModule_AddIntMacro(m, TCP_CONGESTION);
@@ -7934,5 +7959,10 @@ PyInit__socket(void)
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
     netdb_lock = PyThread_allocate_lock();
 #endif
+
+#ifdef MS_WINDOWS
+    return remove_unusable_flags(m);
+#else
     return m;
+#endif
 }
