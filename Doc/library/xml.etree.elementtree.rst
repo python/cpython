@@ -297,7 +297,7 @@ If the XML input has `namespaces
 with prefixes in the form ``prefix:sometag`` get expanded to
 ``{uri}sometag`` where the *prefix* is replaced by the full *URI*.
 Also, if there is a `default namespace
-<https://www.w3.org/TR/2006/REC-xml-names-20060816/#defaulting>`__,
+<https://www.w3.org/TR/xml-names/#defaulting>`__,
 that full URI gets prepended to all of the non-prefixed tags.
 
 Here is an XML example that incorporates two namespaces, one with the
