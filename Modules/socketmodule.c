@@ -305,12 +305,11 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <VersionHelpers.h>
 
-/* This block remove some options on older version Windows during run-time.
+/* This block removes some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
 #if 1
-typedef NTSTATUS(WINAPI* RtlGetVersion)(PRTL_OSVERSIONINFOEXW);
 typedef struct{
-    DWORD build_number;  /* available since Windows 10 build number */
+    DWORD build_number;  /* available since this Windows 10 build number */
     const char flag_name[20];
 } FlagRuntimeInfo;
 
@@ -329,50 +328,35 @@ PyMODINIT_FUNC
 remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
-    HMODULE ntdll;
-    RtlGetVersion RtlFun;
-    RTL_OSVERSIONINFOEXW ver;
-    DWORD winMajor, winMinor, winBuild;
+    OSVERSIONINFOEX info;
+    DWORDLONG dwlConditionMask = 0;
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
         return m;
     }
 
-    /* get Windows version */
-    ntdll = GetModuleHandleW(L"ntdll.dll");
-    if (ntdll == NULL) {
-        return m;
-    }
+    /* set to Windows 10, except BuildNumber. */
+    memset(&info, 0, sizeof(info));
+    info.dwOSVersionInfoSize = sizeof(info);
+    info.dwMajorVersion = 10;
+    info.dwMinorVersion = 0;
 
-    RtlFun = (RtlGetVersion)GetProcAddress(ntdll, "RtlGetVersion");
-    if (RtlFun == NULL) {
-        return m;
-    }
+    /* set Condition Mask */
+    VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
 
-    memset(&ver, 0, sizeof(ver));
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    RtlFun(&ver);
-
-    winMajor = ver.dwMajorVersion;
-    winMinor = ver.dwMinorVersion;
-    winBuild = ver.dwBuildNumber;
-
-    /* remove unusable flags */
-    if (winMajor == 10 && winMinor == 0) {
-        for (int i=0; i<sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
-            if (winBuild < flags[i].build_number) {
-                if (PyDict_GetItemString(dict, flags[i].flag_name) != NULL) {
-                    PyDict_DelItemString(dict, flags[i].flag_name);
-                }
-            }
-            else {
-                break;
-            }
+    for (int i=0; i<sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
+        info.dwBuildNumber = flags[i].build_number;
+        /* greater than or equal to the specified version? */
+        if (VerifyVersionInfo(
+                &info,
+                VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
+                dwlConditionMask)) {
+            break;
         }
-    }
-    else if (winMajor < 10) {
-       for (int i=0; i<sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
+        else {
             if (PyDict_GetItemString(dict, flags[i].flag_name) != NULL) {
                 PyDict_DelItemString(dict, flags[i].flag_name);
             }
