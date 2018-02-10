@@ -142,13 +142,21 @@ class TestChainMap(unittest.TestCase):
             d.popitem()
 
     def test_order_preservation(self):
-        OD = OrderedDict
-        d = ChainMap(OD(a=1, b=2), OD(b=3, c=4), OD(c=5, d=6),
-                     OD(d=7, e=8), OD(e=9, f=10, g=11, h=12))
-        self.assertEqual(list(d), ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
-        self.assertEqual(list(d.items()), [('a', 1), ('b', 2), ('c', 4),
-                                           ('d', 6), ('e', 8), ('f', 10),
-                                           ('g', 11), ('h', 12)])
+        d = ChainMap(
+                OrderedDict(j=0, h=88888),
+                OrderedDict(),
+                OrderedDict(i=9999, d=4444, c=3333),
+                OrderedDict(f=666, b=222, g=777, c=333, h=888),
+                OrderedDict(),
+                OrderedDict(e=55, b=22),
+                OrderedDict(a=1, b=2, c=3, d=4, e=5),
+                OrderedDict(),
+            )
+        self.assertEqual(''.join(d), 'abcdefghij')
+        self.assertEqual(list(d.items()),
+            [('a', 1), ('b', 222), ('c', 3333), ('d', 4444),
+             ('e', 55), ('f', 666), ('g', 777), ('h', 88888),
+             ('i', 9999), ('j', 0)])
 
     def test_dict_coercion(self):
         d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
