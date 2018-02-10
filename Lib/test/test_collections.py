@@ -1867,6 +1867,14 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
 
+    def test_order_preservation(self):
+        self.assertEqual(list(Counter('abracadabra').items()),
+               [('a', 5), ('b', 2), ('r', 2), ('c', 1), ('d', 1)])
+        # letters with same count:   ^----------^         ^---------^
+
+        self.assertEqual(list(Counter('xyzpdqqdpzyx').items()),
+               [('x', 2), ('y', 2), ('z', 2), ('p', 2), ('d', 2), ('q', 2)])
+
     def test_update(self):
         c = Counter()
         c.update(self=42)
