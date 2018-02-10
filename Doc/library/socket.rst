@@ -314,14 +314,14 @@ Constants
    .. versionchanged:: 3.6
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
-      
+
    .. versionchanged:: 3.6.5
       On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
       supports.
 
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
-      
+
       On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
       supports.
 
