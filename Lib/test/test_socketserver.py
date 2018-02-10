@@ -12,6 +12,7 @@ import tempfile
 import threading
 import unittest
 import socketserver
+import multiprocessing
 
 import test.support
 from test.support import reap_children, reap_threads, verbose
@@ -69,7 +70,6 @@ def simple_subprocess(testcase):
         testcase.assertEqual(pid2, pid)
         testcase.assertEqual(72 << 8, status)
 
-
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
@@ -78,9 +78,18 @@ class SocketServerTest(unittest.TestCase):
         self.port_seed = 0
         self.test_files = []
 
+        # The ProcessingTCPServer and ProcessingUDPServer both modify the
+        # environment, specifically the "multiprocessing.process._dangling"
+        # WeakSet() of created processes.
+        self._multiproc_dangling = multiprocessing.process._dangling.copy()
+
     def tearDown(self):
         signal_alarm(0)  # Didn't deadlock.
         reap_children()
+
+        # Make sure to reset the environment after the test.
+        multiprocessing.process._dangling.clear()
+        multiprocessing.process._dangling.update(self._multiproc_dangling)
 
         for fn in self.test_files:
             try:
