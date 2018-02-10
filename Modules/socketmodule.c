@@ -326,7 +326,8 @@ FlagRuntimeInfo flags[] = {
 };
 
 PyMODINIT_FUNC
-remove_unusable_flags(PyObject *m){
+remove_unusable_flags(PyObject *m)
+{
     PyObject *dict;
     HMODULE ntdll;
     RtlGetVersion RtlFun;
@@ -345,7 +346,7 @@ remove_unusable_flags(PyObject *m){
     }
 
     RtlFun = (RtlGetVersion)GetProcAddress(ntdll, "RtlGetVersion");
-    if (RtlFun == NULL){
+    if (RtlFun == NULL) {
         return m;
     }
 
