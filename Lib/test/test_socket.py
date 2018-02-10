@@ -5885,11 +5885,11 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
                        # avaliable since long time ago
                        'TCP_MAXSEG',
                        'TCP_NODELAY',
-                       # added in Windows 10 1607
+                       # available starting with Windows 10 1607
                        'TCP_FASTOPEN',
-                       # added in Windows 10 1703
+                       # available starting with Windows 10 1703
                        'TCP_KEEPCNT',
-                       # added in Windows 10 1709
+                       # available starting with Windows 10 1709
                        'TCP_KEEPIDLE',
                        'TCP_KEEPINTVL'
                        }

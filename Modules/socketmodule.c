@@ -309,22 +309,22 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
 #if 1
 typedef struct{
-    DWORD build_number;  /* available since this Windows 10 build number */
+    DWORD build_number;  /* available starting with this Win10 BuildNumber */
     const char flag_name[20];
 } FlagRuntimeInfo;
 
 /* IMPORTANT: make sure the list ordered by descending build_number */
-FlagRuntimeInfo flags[] = {
-    /* added in Windows 10 1709 */
+static FlagRuntimeInfo flags[] = {
+    /* available starting with Windows 10 1709 */
     {16299, "TCP_KEEPIDLE"},
     {16299, "TCP_KEEPINTVL"},
-    /* added in Windows 10 1703 */
+    /* available starting with Windows 10 1703 */
     {15063, "TCP_KEEPCNT"},
-    /* added in Windows 10 1607 */
+    /* available starting with Windows 10 1607 */
     {14393, "TCP_FASTOPEN"}
 };
 
-PyMODINIT_FUNC
+static PyObject *
 remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
@@ -347,9 +347,10 @@ remove_unusable_flags(PyObject *m)
     VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
 
-    for (int i=0; i<sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
+    for (int i = 0; i < sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
         info.dwBuildNumber = flags[i].build_number;
-        /* greater than or equal to the specified version? */
+        /* greater than or equal to the specified version? 
+           Compatibility Mode will not cheat VerifyVersionInfo(...) */
         if (VerifyVersionInfo(
                 &info,
                 VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
