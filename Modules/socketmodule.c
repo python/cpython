@@ -329,6 +329,7 @@ PyMODINIT_FUNC
 remove_unusable_flags(PyObject *m){
     PyObject *dict;
     HMODULE ntdll;
+    RtlGetVersion RtlFun;
     RTL_OSVERSIONINFOEXW ver;
     DWORD winMajor, winMinor, winBuild;
     
@@ -343,8 +344,7 @@ remove_unusable_flags(PyObject *m){
         return m;
     }
     
-    RtlGetVersion RtlFun = (RtlGetVersion)GetProcAddress(
-                            ntdll, "RtlGetVersion");
+    RtlFun = (RtlGetVersion)GetProcAddress(ntdll, "RtlGetVersion");
     if (RtlFun == NULL){
         return m;
     }

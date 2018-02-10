@@ -5880,19 +5880,33 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
-class TestMSWindowsTCPOptions(unittest.TestCase):
-    knownTCPOptions = {'TCP_FASTOPEN', 'TCP_KEEPCNT', 'TCP_MAXSEG', 'TCP_NODELAY'}
+class TestMSWindowsTCPFlags(unittest.TestCase):
+    knownTCPFlags = {
+                       # avaliable since long time ago
+                       'TCP_MAXSEG',
+                       'TCP_NODELAY',
+                       # added in Windows 10 1607
+                       'TCP_FASTOPEN',
+                       # added in Windows 10 1703
+                       'TCP_KEEPCNT',
+                       # added in Windows 10 1709
+                       'TCP_KEEPIDLE',
+                       'TCP_KEEPINTVL'
+                       }
 
-    def testNewTCPOption(self):
+    def testNewTCPFlags(self):
         provided = [s for s in dir(socket) if s.startswith('TCP')]
-        for s in provided:
-            if s not in self.knownTCPOptions:
-                msg = ("New TCP option %s was added to MS-Windows, "
-                       "we need to remove it on old version MS-Windows "
-                       "via hard code patch, see issue32394.\n"
-                       "Full options in this machine: %s"
-                        ) % (s, provided)
-                raise Exception(msg)
+        unknown = [s for s in provided if s not in self.knownTCPFlags]
+        
+        if unknown:
+            msg = ("\nFound new TCP flags %s, probably you are building"
+                   " CPython with a newer Windows SDK than official build's.\n"
+                   "If you insist on building CPython with current Windows SDK, "
+                   "you need to remove them on older version MS-Windows during "
+                   "run-time via hard code patch, see issue32394.\n"
+                   "Full TCP flags in this machine: %s"
+                    ) % (unknown, provided)
+            raise Exception(msg)
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
@@ -5953,7 +5967,7 @@ def test_main():
         SendfileUsingSendTest,
         SendfileUsingSendfileTest,
     ])
-    tests.append(TestMSWindowsTCPOptions)
+    tests.append(TestMSWindowsTCPFlags)
 
     thread_info = support.threading_setup()
     support.run_unittest(*tests)
