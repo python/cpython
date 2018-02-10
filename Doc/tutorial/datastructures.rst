@@ -511,7 +511,7 @@ using a non-existent key.
 
 Performing ``list(d)`` on a dictionary returns a list of all the keys
 used in the dictionary, in insertion order (if you want it sorted, just use
-``sorted(d)`` instead). [2]_  To check whether a single key is in the
+``sorted(d)`` instead). To check whether a single key is in the
 dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
@@ -710,7 +710,3 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. [1] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.
-
-.. [2] Calling ``d.keys()`` will return a :dfn:`dictionary view` object.  It
-       supports operations like membership test and iteration, but its contents
-       are not independent of the original dictionary -- it is only a *view*.
