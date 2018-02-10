@@ -173,7 +173,15 @@ class Pool(object):
 
         self._processes = processes
         self._pool = []
-        self._repopulate_pool()
+        try:
+            self._repopulate_pool()
+        except Exception:
+            for p in self._pool:
+                if p.exitcode is None:
+                    p.terminate()
+            for p in self._pool:
+                p.join()
+            raise
 
         self._worker_handler = threading.Thread(
             target=Pool._handle_workers,
@@ -235,10 +243,10 @@ class Pool(object):
                                    self._initargs, self._maxtasksperchild,
                                    self._wrap_exception)
                             )
-            self._pool.append(w)
             w.name = w.name.replace('Process', 'PoolWorker')
             w.daemon = True
             w.start()
+            self._pool.append(w)
             util.debug('added worker')
 
     def _maintain_pool(self):

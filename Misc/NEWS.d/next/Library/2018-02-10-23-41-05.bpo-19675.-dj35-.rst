@@ -1,0 +1,2 @@
+multiprocessing.Pool does no longer leak processes if the construction of
+the pool fails.
