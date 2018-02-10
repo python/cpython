@@ -316,12 +316,12 @@ typedef struct{
 
 /* IMPORTANT: make sure the list ordered by descending build_number */
 FlagRuntimeInfo flags[] = {
-    /* Windows 10 1709 */
+    /* added in Windows 10 1709 */
     {16299, "TCP_KEEPIDLE"},
     {16299, "TCP_KEEPINTVL"},
-    /* Windows 10 1703 */
+    /* added in Windows 10 1703 */
     {15063, "TCP_KEEPCNT"},
-    /* Windows 10 1607 */
+    /* added in Windows 10 1607 */
     {14393, "TCP_FASTOPEN"}
 };
 
