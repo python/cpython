@@ -13,7 +13,6 @@
 # XXX: show string offset and offending character for all errors
 
 from sre_constants import *
-import unicodedata
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
@@ -324,6 +323,7 @@ def _class_escape(source, escape):
             chr(c) # raise ValueError for invalid code
             return LITERAL, c
         elif c == "N" and source.istext:
+            import unicodedata
             # named unicode escape e.g. \N{EM DASH}
             if not source.match('{'):
                 raise source.error("missing {")
@@ -383,6 +383,7 @@ def _escape(source, escape, state):
             chr(c) # raise ValueError for invalid code
             return LITERAL, c
         elif c == "N" and source.istext:
+            import unicodedata
             # named unicode escape e.g. \N{EM DASH}
             if not source.match('{'):
                 raise source.error("missing {")
