@@ -1,0 +1,1 @@
+Add recipe in logging cookbook on configuring a "Console" handler.
