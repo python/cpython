@@ -267,7 +267,8 @@ default values. The arguments that are most commonly needed are:
    .. index::
       single: universal newlines; subprocess module
 
-   If *encoding* or *errors* are specified, or *universal_newlines* is true,
+   If *encoding* or *errors* are specified, or *text* (also known as
+   *universal_newlines*) is true,
    the file objects *stdin*, *stdout* and *stderr* will be opened in text
    mode using the *encoding* and *errors* specified in the call or the
    defaults for :class:`io.TextIOWrapper`.
@@ -283,6 +284,9 @@ default values. The arguments that are most commonly needed are:
 
    .. versionadded:: 3.6
       Added *encoding* and *errors* parameters.
+
+   .. versionadded:: 3.7
+      Added the *text* parameter as an alias for *universal_newlines*.
 
    .. note::
 
