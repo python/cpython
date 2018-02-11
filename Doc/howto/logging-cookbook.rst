@@ -2523,3 +2523,40 @@ In this case, the message #5 printed to ``stdout`` doesn't appear, as expected.
 Of course, the approach described here can be generalised, for example to attach
 logging filters temporarily. Note that the above code works in Python 2 as well
 as Python 3.
+
+
+Logging to console stderr and stdout
+------------------------------------
+
+Some applications want to log to ``stdout`` and ``stderr`` based on the level
+of the ``LogRecord``. To be able to do so we need two ``StreamHandler``
+pointing to the two streams, but we want all messages **above** INFO to not
+go to ``stderr``, as otherwise ``ERROR`` messages will appear twice in the console.
+This can be achieved with a filter as shown below::
+
+	import logging
+
+	class MaxLevelFilter:
+		def __init__(self, max_level=None):
+			self.max_level = max_level
+
+		def filter(self, record):
+			return record.levelno <= self.max_level
+
+
+	import sys
+	logger = logging.getLogger()
+	logger.setLevel(logging.DEBUG)
+	stdout = logging.StreamHandler(sys.stdout)
+	stdout.setLevel("DEBUG")
+	stdout.addFilter(MaxLevelFilter("INFO"))
+	stderr = logging.StreamHandler(sys.stderr)
+	stderr.setLevel(logging.WARNING)
+	logger.addHandler(stdout)
+	logger.addHandler(stderr)
+
+	logger.info('INFO')
+	logger.error('ERROR')
+
+This will create an app that logs ``INFO`` and below to ``stdout`` and
+``WARN`` and above to ``stderr``.
