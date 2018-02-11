@@ -523,8 +523,9 @@ functions.
 
    .. versionadded:: 3.6
       *encoding* and *errors* were added.
+
    .. versionadded:: 3.7
-      *text* was added.
+      *text* was added as a more readable alias for *universal_newlines*.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
