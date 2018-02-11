@@ -189,7 +189,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       use of this call there is no guarantee that changes are written back before
       the object is destroyed.  If *offset* and *size* are specified, only
       changes to the given range of bytes will be flushed to disk; otherwise, the
-      whole extent of the mapping is flushed.
+      whole extent of the mapping is flushed. *offset* must be a multiple of the
+      PAGESIZE.
 
       **(Windows version)** A nonzero value returned indicates success; zero
       indicates failure.
