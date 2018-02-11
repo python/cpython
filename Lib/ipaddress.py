@@ -1258,6 +1258,11 @@ class _BaseV4:
     def version(self):
         return self._version
 
+    @property
+    def bits(self):
+        fstr = '0' + str(IPV4LENGTH) + 'b'
+        return '0b' + format(int(self), fstr)
+
 
 class IPv4Address(_BaseV4, _BaseAddress):
 
@@ -1889,6 +1894,11 @@ class _BaseV6:
     @property
     def version(self):
         return self._version
+
+    @property
+    def bits(self):
+        fstr = '0' + str(IPV6LENGTH) + 'b'
+        return '0b' + format(int(self), fstr)
 
 
 class IPv6Address(_BaseV6, _BaseAddress):

@@ -170,6 +170,11 @@ class CommonTestMixin_v6(CommonTestMixin):
 class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     factory = ipaddress.IPv4Address
 
+    def test_bits(self):
+        addr = "0.0.0.42"  # because there are lots of left zeroes
+        addr_obj = ipaddress.IPv4Address(addr)
+        self.assertEqual(addr_obj.bits, '0b00000000000000000000000000101010')
+
     def test_network_passed_as_address(self):
         addr = "127.0.0.1/24"
         with self.assertAddressError("Unexpected '/' in %r", addr):
@@ -265,6 +270,16 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
 
 class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     factory = ipaddress.IPv6Address
+
+    def test_bits(self):
+        addr = "1:0db8:85a3:0000:0000:8a2e:0370:7334"
+        addr_obj = ipaddress.IPv6Address(addr)
+        self.assertEqual(addr_obj.bits, 
+            "0b00000000000000010000110110111000"
+            "10000101101000110000000000000000"
+            "00000000000000001000101000101110"
+            "00000011011100000111001100110100")
+
 
     def test_network_passed_as_address(self):
         addr = "::1/24"
