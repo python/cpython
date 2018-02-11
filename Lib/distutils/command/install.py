@@ -8,7 +8,7 @@ import os
 from distutils import log
 from distutils.core import Command
 from distutils.debug import DEBUG
-from distutils.sysconfig import (get_config_vars, cross_compiling)
+from distutils.sysconfig import get_config_vars, cross_compiling
 from distutils.errors import DistutilsPlatformError
 from distutils.file_util import write_file
 from distutils.util import convert_path, subst_vars, change_root

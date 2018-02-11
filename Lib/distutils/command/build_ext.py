@@ -10,8 +10,7 @@ import re
 import sys
 from distutils.core import Command
 from distutils.errors import *
-from distutils.sysconfig import (customize_compiler, get_python_version,
-                                 cross_compiling)
+from distutils.sysconfig import customize_compiler, get_python_version
 from distutils.sysconfig import get_config_h_filename
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
@@ -157,7 +156,7 @@ class build_ext(Command):
 
         # If in a virtualenv, add its include directory
         # Issue 16116
-        if not cross_compiling and sys.exec_prefix != sys.base_exec_prefix:
+        if sys.exec_prefix != sys.base_exec_prefix:
             self.include_dirs.append(os.path.join(sys.exec_prefix, 'include'))
 
         # Put the Python "system" include dir at the end, so that

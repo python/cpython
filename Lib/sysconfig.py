@@ -470,35 +470,31 @@ def _generate_posix_vars():
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:
         f.write(pybuilddir)
 
-def import_sysconfigdata():
+def get_build_time_vars():
     # _sysconfigdata is generated at build time, see _generate_posix_vars()
     name = _get_sysconfigdata_name()
-    pop_first_path = False
-    try:
-        # Temporarily update sys.path to import the sysconfigdata module when
-        # cross compiling.
-        if cross_compiling:
-            if _is_python_source_dir(_PROJECT_BASE):
-                bdir = os.path.join(_PROJECT_BASE, 'pybuilddir.txt')
-                with open(bdir) as f:
-                    pybuilddir = f.read().strip()
-                    pybuilddir = os.path.join(_PROJECT_BASE, pybuilddir)
-                    sys.path.insert(0, pybuilddir)
-                    pop_first_path = True
-            else:
-                stdlib_dir = os.path.join(get_cross_build_var('prefix'),
-                           'lib', 'python%s' % get_cross_build_var('version'))
-                sys.path.insert(0, stdlib_dir)
-                pop_first_path = True
-        return __import__(name, globals(), locals(), ['build_time_vars'], 0)
-    finally:
-        if pop_first_path:
-            sys.path.pop(0)
+    if cross_compiling:
+        if _is_python_source_dir(_PROJECT_BASE):
+            bdir = os.path.join(_PROJECT_BASE, 'pybuilddir.txt')
+            with open(bdir, encoding='ascii') as f:
+                libdir = f.read().strip()
+            libdir = os.path.join(_PROJECT_BASE, libdir)
+        else:
+            libdir = os.path.join(get_cross_build_var('prefix'),
+                       'lib', 'python%s' % get_cross_build_var('version'))
+        sysconf = os.path.join(libdir, name + '.py')
+        with open(sysconf) as f:
+            code = f.read()
+        locals_ = {}
+        exec(code, globals(), locals_)
+        return locals_['build_time_vars']
+    else:
+        _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
+        return _temp.build_time_vars
 
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
-    _temp = import_sysconfigdata()
-    build_time_vars = _temp.build_time_vars
+    build_time_vars = get_build_time_vars()
     vars.update(build_time_vars)
 
 def _init_non_posix(vars):
@@ -714,10 +710,6 @@ def get_platform():
         # XXX what about the architecture? NT is Intel or Alpha
         return sys.platform
 
-    # Set for cross builds explicitly
-    if cross_compiling:
-        return get_cross_build_var('host_platform')
-
     # Try to distinguish various flavours of Unix
     osname, host, release, version, machine = os.uname()
 
@@ -758,11 +750,6 @@ def get_platform():
                                             osname, release, machine)
 
     return "%s-%s-%s" % (osname, release, machine)
-
-
-def get_host_platform():
-    """Return the host platform for cross builds, None otherwise."""
-    return get_cross_build_var('host_platform')
 
 
 def get_python_version():

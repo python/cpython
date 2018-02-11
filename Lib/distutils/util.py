@@ -14,7 +14,7 @@ from distutils.dep_util import newer
 from distutils.spawn import spawn
 from distutils import log
 from distutils.errors import DistutilsByteCompileError
-from sysconfig import get_cross_build_var
+from sysconfig import cross_compiling, get_cross_build_var
 
 def get_host_platform():
     """Return a string that identifies the current platform.  This is used mainly to
@@ -46,9 +46,8 @@ def get_host_platform():
         return sys.platform
 
     # Set for cross builds explicitly
-    cross_build_host_platform = get_cross_build_var('host_platform')
-    if cross_build_host_platform is not None:
-        return cross_build_host_platform
+    if cross_compiling:
+        return get_cross_build_var('host_platform')
 
     if os.name != "posix" or not hasattr(os, 'uname'):
         # XXX what about the architecture? NT is Intel or Alpha,

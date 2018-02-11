@@ -14,7 +14,8 @@ import os
 import re
 import sys
 
-from sysconfig import get_cross_build_var, import_sysconfigdata
+from sysconfig import (cross_compiling, get_cross_build_var,
+                       get_build_time_vars)
 from .errors import DistutilsPlatformError
 from .util import get_platform, get_host_platform
 
@@ -23,15 +24,12 @@ PREFIX = os.path.normpath(sys.prefix)
 EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 BASE_PREFIX = os.path.normpath(sys.base_prefix)
 BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
-cross_compiling = False
 
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCbuild/win32 or project/PCbuild/amd64.
 # set for cross builds
-_cross_build_project_base = get_cross_build_var('project_base')
-if _cross_build_project_base is not None:
-    cross_compiling = True
-    project_base = _cross_build_project_base
+if cross_compiling:
+    project_base = get_cross_build_var('project_base')
     PREFIX = get_cross_build_var('prefix')
     EXEC_PREFIX = get_cross_build_var('exec-prefix')
     BASE_PREFIX = PREFIX
@@ -79,9 +77,8 @@ python_build = _python_build()
 build_flags = ''
 try:
     if not python_build:
-        _cross_build_abiflags = get_cross_build_var('abiflags')
-        build_flags = (sys.abiflags if _cross_build_abiflags is None else
-                       _cross_build_abiflags)
+        build_flags = (get_cross_build_var('abiflags') if cross_compiling else
+                       sys.abiflags)
 except AttributeError:
     # It's not a configure-based build, so the sys module doesn't have
     # this attribute, which is fine.
@@ -266,9 +263,8 @@ def get_makefile_filename():
         return os.path.join(_sys_home or project_base, "Makefile")
     lib_dir = get_python_lib(plat_specific=0, standard_lib=1)
     config_file = 'config-{}{}'.format(get_python_version(), build_flags)
-    multiarch = get_cross_build_var('multiarch')
-    if multiarch is None:
-        multiarch = getattr(sys.implementation, '_multiarch', '')
+    multiarch = (get_cross_build_var('multiarch') if cross_compiling else
+                 getattr(sys.implementation, '_multiarch', ''))
     if multiarch:
         config_file += '-%s' % multiarch
     return os.path.join(lib_dir, config_file, 'Makefile')
@@ -444,8 +440,7 @@ _config_vars = None
 
 def _init_posix():
     """Initialize the module as appropriate for POSIX systems."""
-    _temp = import_sysconfigdata()
-    build_time_vars = _temp.build_time_vars
+    build_time_vars = get_build_time_vars()
     global _config_vars
     _config_vars = {}
     _config_vars.update(build_time_vars)
