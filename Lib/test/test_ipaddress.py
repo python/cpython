@@ -274,7 +274,7 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     def test_bits(self):
         addr = "1:0db8:85a3:0000:0000:8a2e:0370:7334"
         addr_obj = ipaddress.IPv6Address(addr)
-        self.assertEqual(addr_obj.bits, 
+        self.assertEqual(addr_obj.bits,
             "0b00000000000000010000110110111000"
             "10000101101000110000000000000000"
             "00000000000000001000101000101110"
