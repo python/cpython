@@ -40,6 +40,15 @@ matrix:
       # in this instance for its better error messages.
       env: TESTING=cpython
     - os: linux
+      language: c
+      compiler: clang
+      before_script:
+        - |
+            ./configure LDFLAGS="-static -static-libgcc" CPPFLAGS="-static"
+            cp ./Modules.local ./Modules/Modules.local
+            make LDFLAGS="-static" LINKFORSHARED=""
+
+    - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
