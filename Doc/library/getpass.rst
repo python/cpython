@@ -43,9 +43,10 @@ The :mod:`getpass` module provides two functions:
 
    This function checks the environment variables :envvar:`LOGNAME`,
    :envvar:`USER`, :envvar:`LNAME` and :envvar:`USERNAME`, in order, and
-   returns the value of the first one which is set to a non-empty string.  If
-   none are set, the login name from the password database is returned on
-   systems which support the :mod:`pwd` module, otherwise, an exception is
-   raised.
+   returns the value of the first one which is set to a non-empty string.
+   If none are set, the function attempts to retrieve the login name from the
+   password database. On systems which the :mod:`pwd` module is not supported,
+   an :exc:`ImportError` is raised. If no login name is found, an
+   :exc:`KeyError` is raised :func:`pwd.getpwuid`.
 
    In general, this function should be preferred over :func:`os.getlogin()`.
