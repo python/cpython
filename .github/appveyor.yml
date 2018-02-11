@@ -14,7 +14,8 @@ before_build:
       } elseif (!$env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT) {
         echo 'Not a PR, doing full build.'
       } else {
-        $mergebase = git merge-base $env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT origin/$env:APPVEYOR_REPO_BRANCH
+        git fetch origin
+        $mergebase = git merge-base $env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT refs/heads/$env:APPVEYOR_REPO_BRANCH
         $changes = git diff --name-only HEAD $mergebase | grep -vE '(\.rst$)|(^Doc)|(^Misc)'
         If (!$changes) {
           echo 'Only docs were updated, stopping build process.'
