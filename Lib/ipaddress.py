@@ -1260,6 +1260,8 @@ class _BaseV4:
 
     @property
     def bits(self):
+        """Returns the binary representation of the IPv4 address, padded to 32
+        bits."""
         fstr = '0' + str(IPV4LENGTH) + 'b'
         return '0b' + format(int(self), fstr)
 
@@ -1897,6 +1899,8 @@ class _BaseV6:
 
     @property
     def bits(self):
+        """Returns the binary representation of the IPv6 address, padded to 128
+        bits."""
         fstr = '0' + str(IPV6LENGTH) + 'b'
         return '0b' + format(int(self), fstr)
 
