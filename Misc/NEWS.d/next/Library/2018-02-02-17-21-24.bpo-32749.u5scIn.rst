@@ -1,0 +1,3 @@
+A :mod:`dbm.dumb` database opened with flags 'r' is now read-only.
+:func:`dbm.dumb.open` with flags 'r' and 'w' no longer creates a database if
+it does not exist.
