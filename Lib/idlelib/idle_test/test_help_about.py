@@ -56,7 +56,6 @@ class LiveDialogTest(unittest.TestCase):
 
         for button, printer, name in button_sources:
             with self.subTest(name=name):
-                if name=='license': raise NameError()
                 printer._Printer__setup()
                 button.invoke()
                 get = dialog._current_textview.viewframe.textframe.text.get
