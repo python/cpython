@@ -109,7 +109,7 @@ def check(file):
     if verbose:
         print "checking", file, "...",
     try:
-        f = io.open(file)
+        f = open(file, "rb")
     except IOError, msg:
         errprint("%s: I/O Error: %s" % (file, str(msg)))
         return
@@ -133,7 +133,7 @@ def check(file):
                 shutil.copyfile(file, bak)
                 if verbose:
                     print "backed up", file, "to", bak
-            f = io.open(file, "w", newline=newline)
+            f = open(file, "wb")
             r.write(f)
             f.close()
             if verbose:
@@ -144,7 +144,21 @@ def check(file):
             print "unchanged."
         return False
 
-def _rstrip(line, JUNK='\n \t'):
+def _detect_newlines(lines):
+    newlines = {'\r\n' if line[-2:] == '\r\n' else
+                '\n' if line[-1:] == '\n' else
+                '\r' if line[-1:] == '\r' else
+                ''
+                for line in lines}
+    newlines.discard('')
+    newlines = tuple(sorted(newlines))
+    if not newlines:
+        return '\n'
+    if len(newlines) == 1:
+        return newlines[0]
+    return newlines
+
+def _rstrip(line, JUNK='\r\n \t'):
     """Return line stripped of trailing spaces, tabs, newlines.
 
     Note that line.rstrip() instead also strips sundry control characters,
@@ -166,10 +180,18 @@ class Reindenter:
         # Raw file lines.
         self.raw = f.readlines()
 
+        # Save the newlines found in the file so they can be used to
+        #  create output without mutating the newlines.
+        self.newlines = _detect_newlines(self.raw)
+        if isinstance(self.newlines, tuple):
+            self.newline = self.newlines[0]
+        else:
+            self.newline = self.newlines
+
         # File lines, rstripped & tab-expanded.  Dummy at start is so
         # that we can use tokenize's 1-based line numbering easily.
-        # Note that a line is all-blank iff it's "\n".
-        self.lines = [_rstrip(line).expandtabs() + "\n"
+        # Note that a line is all-blank iff it's newline.
+        self.lines = [_rstrip(line).expandtabs() + self.newline
                       for line in self.raw]
         self.lines.insert(0, None)
         self.index = 1  # index into self.lines of next line
@@ -180,15 +202,11 @@ class Reindenter:
         # indeed, they're our headache!
         self.stats = []
 
-        # Save the newlines found in the file so they can be used to
-        #  create output without mutating the newlines.
-        self.newlines = f.newlines
-
     def run(self):
         tokenize.tokenize(self.getline, self.tokeneater)
         # Remove trailing empty lines.
         lines = self.lines
-        while lines and lines[-1] == "\n":
+        while lines and lines[-1] == self.newline:
             lines.pop()
         # Sentinel.
         stats = self.stats
@@ -244,7 +262,7 @@ class Reindenter:
             else:
                 for line in lines[thisstmt:nextstmt]:
                     if diff > 0:
-                        if line == "\n":
+                        if line == self.newline:
                             after.append(line)
                         else:
                             after.append(" " * diff + line)
