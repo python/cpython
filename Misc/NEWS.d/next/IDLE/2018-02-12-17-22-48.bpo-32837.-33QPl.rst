@@ -1,0 +1,2 @@
+Using the system and place-dependent default encoding for open() is a bad
+idea for IDLE's system and location-independent files.
