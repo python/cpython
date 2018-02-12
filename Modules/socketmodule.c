@@ -182,14 +182,12 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #endif
 
 #ifdef __VXWORKS__
-#include <sys/socket.h>
-#include <ipcom_vxworks.h>
-#include <ipcom_err.h>
-#include <ipnet.h>
 # include <ipcom_sock2.h>
-# include <wrapper/wrapperHostLib.h>
 # include <hostLib.h>
-# define gethostbyaddr ipcom_gethostbyaddr
+# define gethostbyaddr_r ipcom_gethostbyaddr_r
+#ifndef _WRS_CONFIG_PYTHON_LIBS_STATIC
+// Shared Lib build
+#endif
 # define h_errno  errno
 #endif
 
