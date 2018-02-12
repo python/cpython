@@ -4704,8 +4704,10 @@ static PyMethodDef object_methods[] = {
 };
 
 PyDoc_STRVAR(object_doc,
-"object()\n--\n\nThe starting base class of all types and classes other\n"
-"than itself.");
+"object()\n--\n\n"
+"The base class of the class hierarchy.\n\n"
+"When called, it accepts no arguments and returns a new featureless\n"
+"instance that has no instance attributes and cannot be given any.\n");
 
 PyTypeObject PyBaseObject_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
