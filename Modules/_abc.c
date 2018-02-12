@@ -116,6 +116,9 @@ _get_impl(PyObject *self)
 static int
 _in_weak_set(PyObject *set, PyObject *obj)
 {
+    if (PySet_Size(set) == 0) {
+        return 0;
+    }
     PyObject *ref = PyWeakref_NewRef(obj, NULL);
     if (ref == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
@@ -302,12 +305,13 @@ compute_abstract_methods(PyObject *self)
     for (Py_ssize_t pos = 0; pos < PyList_GET_SIZE(items); pos++) {
         PyObject *it = PySequence_Fast(
                 PyList_GET_ITEM(items, pos),
-                "items() returned non-sequence item");
+                "items() returned non-iterable");
         if (!it) {
             goto error;
         }
         if (PySequence_Fast_GET_SIZE(it) != 2) {
-            PyErr_SetString(PyExc_TypeError, "items() returned not 2-tuple item");
+            PyErr_SetString(PyExc_TypeError,
+                            "items() returned item which size is not 2");
             Py_DECREF(it);
             goto error;
         }
@@ -535,7 +539,7 @@ _abc_instancecheck(PyObject *m, PyObject *args)
     }
     result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
                                            subclass, NULL);
-    if (result == NULL || result == Py_True) {
+    if (result == NULL || PyObject_IsTrue(result)) {
         goto end;
     }
     Py_DECREF(result);
@@ -700,11 +704,6 @@ static int
 subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                              PyObject **result)
 {
-    Py_ssize_t registry_size = PySet_Size(impl->_abc_registry);
-    if (registry_size == 0) {
-        return 0;
-    }
-
     // Fast path: check subclass is in weakref directly.
     int ret = _in_weak_set(impl->_abc_registry, subclass);
     if (ret < 0) {
@@ -716,6 +715,10 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
         return 1;
     }
 
+    Py_ssize_t registry_size = PySet_Size(impl->_abc_registry);
+    if (registry_size == 0) {
+        return 0;
+    }
     // Weakref callback may remove entry from set.
     // Se we take snapshot of registry first.
     PyObject **copy = PyMem_Malloc(sizeof(PyObject*) * registry_size);
