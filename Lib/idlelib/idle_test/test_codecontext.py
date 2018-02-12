@@ -37,6 +37,7 @@ class C1():
 
 
 def setUpModule():
+    requires('gui')
     global root
     codecontext.idleConf.userCfg = testcfg
     root = Tk()
@@ -62,7 +63,6 @@ class CodeContextTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        requires('gui')
         frame = cls.frame = Frame(root)
         text = cls.text = Text(frame)
         # Mock 'after' to prevent timer events from being added.  They
