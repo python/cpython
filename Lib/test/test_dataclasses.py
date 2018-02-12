@@ -2393,6 +2393,9 @@ class TestHash(unittest.TestCase):
         self.assertNotEqual(C(1), C(1))
         self.assertEqual(hash(C(1)), hash(C(1.0)))
 
+    def test_hash_no_args(self):
+        # Test dataclasses with no hash= argument.
+
 
 if __name__ == '__main__':
     unittest.main()
