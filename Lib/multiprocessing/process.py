@@ -314,10 +314,14 @@ class BaseProcess(object):
         finally:
             threading._shutdown()
             util.info('process exiting with exitcode %d' % exitcode)
-            if sys.stdout is not None and not sys.stdout.closed:
+            try:
                 sys.stdout.flush()
-            if sys.stderr is not None and not sys.stderr.closed:
+            except (AttributeError, ValueError):
+                pass
+            try:
                 sys.stderr.flush()
+            except (AttributeError, ValueError):
+                pass
 
         return exitcode
 

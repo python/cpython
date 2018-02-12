@@ -1,0 +1,3 @@
+bugfix: Process return value is 0 when multiprocessing is used with closed
+stdout or stderr streams, or if stdout or stderr is None (e.g. using
+pythonw.exe on windows)
