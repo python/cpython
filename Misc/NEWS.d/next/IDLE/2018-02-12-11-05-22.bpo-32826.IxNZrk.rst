@@ -1,5 +1,3 @@
 Add "encoding=utf-8" to open() in idle_test/test_help_about.
-
 On at least one system, readline() causes decoding of multiple lines,
-
 including line 27 of idlelib/CREDITS.txt, with a non-ascii character.
