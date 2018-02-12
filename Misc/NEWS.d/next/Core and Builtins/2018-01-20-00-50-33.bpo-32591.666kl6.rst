@@ -1,4 +1,0 @@
-Added built-in support for tracking the origin of coroutine objects; see
-sys.set_coroutine_origin_tracking_depth and CoroutineType.cr_origin. This
-replaces the asyncio debug mode's use of coroutine wrapping for native
-coroutine objects.

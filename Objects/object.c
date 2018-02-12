@@ -917,6 +917,11 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
         }
         *result = (*tp->tp_getattr)(v, (char *)name_str);
     }
+    else {
+        *result = NULL;
+        return 0;
+    }
+
     if (*result != NULL) {
         return 1;
     }

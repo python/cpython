@@ -1788,7 +1788,7 @@ class RunningLoopTests(unittest.TestCase):
             outer_loop.close()
 
 
-class BaseLoopSendfileTests(test_utils.TestCase):
+class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
 
@@ -1799,9 +1799,11 @@ class BaseLoopSendfileTests(test_utils.TestCase):
             self.closed = False
             self.data = bytearray()
             self.fut = loop.create_future()
+            self.transport = None
 
         def connection_made(self, transport):
             self.started = True
+            self.transport = transport
 
         def data_received(self, data):
             self.data.extend(data)
@@ -1809,6 +1811,7 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         def connection_lost(self, exc):
             self.closed = True
             self.fut.set_result(None)
+            self.transport = None
 
         async def wait_closed(self):
             await self.fut
@@ -1853,6 +1856,10 @@ class BaseLoopSendfileTests(test_utils.TestCase):
         def cleanup():
             server.close()
             self.run_loop(server.wait_closed())
+            sock.close()
+            if proto.transport is not None:
+                proto.transport.close()
+                self.run_loop(proto.wait_closed())
 
         self.addCleanup(cleanup)
 

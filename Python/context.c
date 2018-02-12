@@ -8,7 +8,7 @@
 
 #define CONTEXT_FREELIST_MAXLEN 255
 static PyContext *ctx_freelist = NULL;
-static Py_ssize_t ctx_freelist_len = 0;
+static int ctx_freelist_len = 0;
 
 
 #include "clinic/context.c.h"
@@ -85,7 +85,8 @@ PyContext_Enter(PyContext *ctx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
     ctx->ctx_entered = 1;
@@ -107,7 +108,8 @@ PyContext_Exit(PyContext *ctx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
 
     if (ts->context != (PyObject *)ctx) {
         /* Can only happen if someone misuses the C API */
@@ -145,7 +147,8 @@ PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
 {
     assert(PyContextVar_CheckExact(var));
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
     if (ts->context == NULL) {
         goto not_found;
     }
@@ -340,7 +343,8 @@ context_new_from_vars(PyHamtObject *vars)
 static inline PyContext *
 context_get(void)
 {
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = PyThreadState_GET();
+    assert(ts != NULL);
     PyContext *current_ctx = (PyContext *)ts->context;
     if (current_ctx == NULL) {
         current_ctx = context_new_empty();
@@ -1173,7 +1177,7 @@ get_token_missing(void)
 int
 PyContext_ClearFreeList(void)
 {
-    Py_ssize_t size = ctx_freelist_len;
+    int size = ctx_freelist_len;
     while (ctx_freelist_len) {
         PyContext *ctx = ctx_freelist;
         ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
