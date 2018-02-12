@@ -2534,29 +2534,29 @@ pointing to the two streams, but we want all messages **above** INFO to not
 go to ``stderr``, as otherwise ``ERROR`` messages will appear twice in the console.
 This can be achieved with a filter as shown below::
 
-	import logging
+    import logging
 
-	class MaxLevelFilter:
-		def __init__(self, max_level=None):
-			self.max_level = max_level
+    class MaxLevelFilter:
+        def __init__(self, max_level=None):
+            self.max_level = max_level
 
-		def filter(self, record):
-			return record.levelno <= self.max_level
+        def filter(self, record):
+            return record.levelno <= self.max_level
 
 
-	import sys
-	logger = logging.getLogger()
-	logger.setLevel(logging.DEBUG)
-	stdout = logging.StreamHandler(sys.stdout)
-	stdout.setLevel("DEBUG")
-	stdout.addFilter(MaxLevelFilter("INFO"))
-	stderr = logging.StreamHandler(sys.stderr)
-	stderr.setLevel(logging.WARNING)
-	logger.addHandler(stdout)
-	logger.addHandler(stderr)
+    import sys
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    stdout = logging.StreamHandler(sys.stdout)
+    stdout.setLevel("DEBUG")
+    stdout.addFilter(MaxLevelFilter("INFO"))
+    stderr = logging.StreamHandler(sys.stderr)
+    stderr.setLevel(logging.WARNING)
+    logger.addHandler(stdout)
+    logger.addHandler(stderr)
 
-	logger.info('INFO')
-	logger.error('ERROR')
+    logger.info('INFO')
+    logger.error('ERROR')
 
 This will create an app that logs ``INFO`` and below to ``stdout`` and
 ``WARN`` and above to ``stderr``.
