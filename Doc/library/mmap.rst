@@ -94,8 +94,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
-   defaults to 0.  *offset* must be a multiple of the PAGESIZE or
-   ALLOCATIONGRANULARITY.
+   defaults to 0.  *offset* must be a multiple of the :const:`PAGESIZE` or
+   :const:`ALLOCATIONGRANULARITY`.
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
@@ -189,8 +189,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       use of this call there is no guarantee that changes are written back before
       the object is destroyed.  If *offset* and *size* are specified, only
       changes to the given range of bytes will be flushed to disk; otherwise, the
-      whole extent of the mapping is flushed. *offset* must be a multiple of the
-      PAGESIZE.
+      whole extent of the mapping is flushed.  *offset* must be a multiple of the
+      :const:`PAGESIZE` or :const:`ALLOCATIONGRANULARITY`.
 
       **(Windows version)** A nonzero value returned indicates success; zero
       indicates failure.
