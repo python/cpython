@@ -182,12 +182,15 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #endif
 
 #ifdef __VXWORKS__
-#ifndef 
+#include <sys/socket.h>
+#include <ipcom_vxworks.h>
+#include <ipcom_err.h>
+#include <ipnet.h>
 # include <ipcom_sock2.h>
-# define gethostbyaddr_r  ipcom_gethostbyaddr_r
+# include <wrapper/wrapperHostLib.h>
+# include <hostLib.h>
 # define gethostbyaddr ipcom_gethostbyaddr
 # define h_errno  errno
-# include <hostLib.h>
 #endif
 
 #if !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
