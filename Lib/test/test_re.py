@@ -213,11 +213,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there'),
                          'hello there')
 
-    def test_bug_462270(self):
-        # Test for empty sub() behaviour, see SF bug #462270
-        self.assertEqual(re.sub('x*', '-', 'abxd'), '-a-b-d-')
-        self.assertEqual(re.sub('x+', '-', 'abxd'), 'ab-d')
-
     def test_symbolic_groups(self):
         re.compile(r'(?P<a>x)(?P=a)(?(a)y)')
         re.compile(r'(?P<a1>x)(?P=a1)(?(a1)y)')
@@ -331,10 +326,10 @@ class ReTests(unittest.TestCase):
                          ['', 'a', '', '', 'c'])
 
         for sep, expected in [
-            (':*', ['', 'a', 'b', 'c', '']),
-            ('(?::*)', ['', 'a', 'b', 'c', '']),
-            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c', '', '']),
-            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c', None, '']),
+            (':*', ['', '', 'a', '', 'b', '', 'c', '']),
+            ('(?::*)', ['', '', 'a', '', 'b', '', 'c', '']),
+            ('(:*)', ['', ':', '', '', 'a', ':', '', '', 'b', '::', '', '', 'c', '', '']),
+            ('(:)*', ['', ':', '', None, 'a', ':', '', None, 'b', ':', '', None, 'c', None, '']),
         ]:
             with self.subTest(sep=sep):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
@@ -357,7 +352,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.split("(:+)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
         self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
-                         ['', ':', 'a', ':', 'b::c'])
+                         ['', ':', '', '', 'a:b::c'])
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
@@ -1753,13 +1748,13 @@ class ReTests(unittest.TestCase):
     def test_zerowidth(self):
         # Issues 852532, 1647489, 3262, 25054.
         self.assertEqual(re.split(r"\b", "a::bc"), ['', 'a', '::', 'bc', ''])
-        self.assertEqual(re.split(r"\b|:+", "a::bc"), ['', 'a', '', 'bc', ''])
-        self.assertEqual(re.split(r"(?<!\w)(?=\w)|:+", "a::bc"), ['', 'a', 'bc'])
+        self.assertEqual(re.split(r"\b|:+", "a::bc"), ['', 'a', '', '', 'bc', ''])
+        self.assertEqual(re.split(r"(?<!\w)(?=\w)|:+", "a::bc"), ['', 'a', '', 'bc'])
         self.assertEqual(re.split(r"(?<=\w)(?!\w)|:+", "a::bc"), ['a', '', 'bc', ''])
 
         self.assertEqual(re.sub(r"\b", "-", "a::bc"), '-a-::-bc-')
-        self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a--bc-')
-        self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::]bc[]')
+        self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a---bc-')
+        self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::][]bc[]')
 
         self.assertEqual(re.findall(r"\b|:+", "a::bc"), ['', '', '::', '', ''])
         self.assertEqual(re.findall(r"\b|\w+", "a::bc"),

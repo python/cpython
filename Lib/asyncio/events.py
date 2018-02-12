@@ -3,7 +3,7 @@
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle',
+    'Handle', 'TimerHandle', 'SendfileNotAvailableError',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     'get_child_watcher', 'set_child_watcher',
@@ -11,6 +11,7 @@ __all__ = (
     '_get_running_loop',
 )
 
+import contextvars
 import os
 import socket
 import subprocess
@@ -20,13 +21,25 @@ import threading
 from . import format_helpers
 
 
+class SendfileNotAvailableError(RuntimeError):
+    """Sendfile syscall is not available.
+
+    Raised if OS does not support senfile syscall for given socket or
+    file type.
+    """
+
+
 class Handle:
     """Object returned by callback registration methods."""
 
     __slots__ = ('_callback', '_args', '_cancelled', '_loop',
-                 '_source_traceback', '_repr', '__weakref__')
+                 '_source_traceback', '_repr', '__weakref__',
+                 '_context')
 
-    def __init__(self, callback, args, loop):
+    def __init__(self, callback, args, loop, context=None):
+        if context is None:
+            context = contextvars.copy_context()
+        self._context = context
         self._loop = loop
         self._callback = callback
         self._args = args
@@ -72,7 +85,7 @@ class Handle:
 
     def _run(self):
         try:
-            self._callback(*self._args)
+            self._context.run(self._callback, *self._args)
         except Exception as exc:
             cb = format_helpers._format_callback_source(
                 self._callback, self._args)
@@ -93,9 +106,9 @@ class TimerHandle(Handle):
 
     __slots__ = ['_scheduled', '_when']
 
-    def __init__(self, when, callback, args, loop):
+    def __init__(self, when, callback, args, loop, context=None):
         assert when is not None
-        super().__init__(callback, args, loop)
+        super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
         self._when = when
@@ -143,17 +156,55 @@ class TimerHandle(Handle):
             self._loop._timer_handle_cancelled(self)
         super().cancel()
 
+    def when(self):
+        """Return a scheduled callback time.
+
+        The time is an absolute timestamp, using the same time
+        reference as loop.time().
+        """
+        return self._when
+
 
 class AbstractServer:
     """Abstract server returned by create_server()."""
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
-        return NotImplemented
+        raise NotImplementedError
+
+    def get_loop(self):
+        """Get the event loop the Server object is attached to."""
+        raise NotImplementedError
+
+    def is_serving(self):
+        """Return True if the server is accepting connections."""
+        raise NotImplementedError
+
+    async def start_serving(self):
+        """Start accepting connections.
+
+        This method is idempotent, so it can be called when
+        the server is already being serving.
+        """
+        raise NotImplementedError
+
+    async def serve_forever(self):
+        """Start accepting connections until the coroutine is cancelled.
+
+        The server is closed when the coroutine is cancelled.
+        """
+        raise NotImplementedError
 
     async def wait_closed(self):
         """Coroutine to wait until service is closed."""
-        return NotImplemented
+        raise NotImplementedError
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        self.close()
+        await self.wait_closed()
 
 
 class AbstractEventLoop:
@@ -262,7 +313,8 @@ class AbstractEventLoop:
             *, family=socket.AF_UNSPEC,
             flags=socket.AI_PASSIVE, sock=None, backlog=100,
             ssl=None, reuse_address=None, reuse_port=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            start_serving=True):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -302,6 +354,30 @@ class AbstractEventLoop:
         will wait for completion of the SSL handshake before aborting the
         connection. Default is 10s, longer timeouts may increase vulnerability
         to DoS attacks (see https://support.f5.com/csp/article/K13834)
+
+        start_serving set to True (default) causes the created server
+        to start accepting connections immediately.  When set to False,
+        the user should await Server.start_serving() or Server.serve_forever()
+        to make the server to start accepting connections.
+        """
+        raise NotImplementedError
+
+    async def sendfile(self, transport, file, offset=0, count=None,
+                       *, fallback=True):
+        """Send a file through a transport.
+
+        Return an amount of sent bytes.
+        """
+        raise NotImplementedError
+
+    async def start_tls(self, transport, protocol, sslcontext, *,
+                        server_side=False,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        """Upgrade a transport to TLS.
+
+        Return a new transport that *protocol* should start using
+        immediately.
         """
         raise NotImplementedError
 
@@ -315,7 +391,8 @@ class AbstractEventLoop:
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            start_serving=True):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop
@@ -335,6 +412,11 @@ class AbstractEventLoop:
 
         ssl_handshake_timeout is the time in seconds that an SSL server
         will wait for the SSL handshake to complete (defaults to 10s).
+
+        start_serving set to True (default) causes the created server
+        to start accepting connections immediately.  When set to False,
+        the user should await Server.start_serving() or Server.serve_forever()
+        to make the server to start accepting connections.
         """
         raise NotImplementedError
 
@@ -447,6 +529,10 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     async def sock_accept(self, sock):
+        raise NotImplementedError
+
+    async def sock_sendfile(self, sock, file, offset=0, count=None,
+                            *, fallback=None):
         raise NotImplementedError
 
     # Signal handling.

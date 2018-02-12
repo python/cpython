@@ -1,4 +1,0 @@
-The optimizer is now protected from spending much time doing complex
-calculations and consuming much memory for creating large constants in
-constant folding. Increased limits for constants that can be produced in
-constant folding.

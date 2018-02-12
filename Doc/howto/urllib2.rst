@@ -403,7 +403,7 @@ fetched, particularly the headers sent by the server. It is currently an
 :class:`http.client.HTTPMessage` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
-`Quick Reference to HTTP Headers <https://www.cs.tut.fi/~jkorpela/http.html>`_
+`Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_
 for a useful listing of HTTP headers with brief explanations of their meaning
 and use.
 

@@ -139,6 +139,7 @@ class BaseFutureTests:
         asyncio.set_event_loop(self.loop)
         f = self._new_future()
         self.assertIs(f._loop, self.loop)
+        self.assertIs(f.get_loop(), self.loop)
 
     def test_constructor_positional(self):
         # Make sure Future doesn't accept a positional argument
@@ -173,10 +174,6 @@ class BaseFutureTests:
         fut = self.cls.__new__(self.cls, loop=self.loop)
         with self.assertRaises((RuntimeError, AttributeError)):
             fut.remove_done_callback(lambda f: None)
-
-        fut = self.cls.__new__(self.cls, loop=self.loop)
-        with self.assertRaises((RuntimeError, AttributeError)):
-            fut._schedule_callbacks()
 
         fut = self.cls.__new__(self.cls, loop=self.loop)
         try:
@@ -369,8 +366,14 @@ class BaseFutureTests:
         def test():
             arg1, arg2 = coro()
 
-        self.assertRaises(AssertionError, test)
+        with self.assertRaisesRegex(RuntimeError, "await wasn't used"):
+            test()
         fut.cancel()
+
+    def test_log_traceback(self):
+        fut = self._new_future(loop=self.loop)
+        with self.assertRaisesRegex(ValueError, 'can only be set to False'):
+            fut._log_traceback = True
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_abandoned(self, m_log):
@@ -558,16 +561,22 @@ class BaseFutureTests:
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CFutureTests(BaseFutureTests, test_utils.TestCase):
-    cls = futures._CFuture
+    try:
+        cls = futures._CFuture
+    except AttributeError:
+        cls = None
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CSubFutureTests(BaseFutureTests, test_utils.TestCase):
-    class CSubFuture(futures._CFuture):
-        pass
+    try:
+        class CSubFuture(futures._CFuture):
+            pass
 
-    cls = CSubFuture
+        cls = CSubFuture
+    except AttributeError:
+        cls = None
 
 
 class PyFutureTests(BaseFutureTests, test_utils.TestCase):

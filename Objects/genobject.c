@@ -32,6 +32,8 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
+    /* No need to visit cr_origin, because it's just tuples/str/int, so can't
+       participate in a reference cycle. */
     return exc_state_traverse(&gen->gi_exc_state, visit, arg);
 }
 
@@ -42,9 +44,10 @@ _PyGen_Finalize(PyObject *self)
     PyObject *res = NULL;
     PyObject *error_type, *error_value, *error_traceback;
 
-    if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL)
+    if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL) {
         /* Generator isn't paused, so no need to close */
         return;
+    }
 
     if (PyAsyncGen_CheckExact(self)) {
         PyAsyncGenObject *agen = (PyAsyncGenObject*)self;
@@ -73,20 +76,18 @@ _PyGen_Finalize(PyObject *self)
        issue a RuntimeWarning. */
     if (gen->gi_code != NULL &&
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
-        gen->gi_frame->f_lasti == -1) {
-        if (!error_value) {
-            PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                             "coroutine '%.50S' was never awaited",
-                             gen->gi_qualname);
-        }
+        gen->gi_frame->f_lasti == -1)
+    {
+        _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
     else {
         res = gen_close(gen, NULL);
     }
 
     if (res == NULL) {
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
             PyErr_WriteUnraisable(self);
+        }
     }
     else {
         Py_DECREF(res);
@@ -136,6 +137,9 @@ gen_dealloc(PyGenObject *gen)
     if (gen->gi_frame != NULL) {
         gen->gi_frame->f_gen = NULL;
         Py_CLEAR(gen->gi_frame);
+    }
+    if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
+        Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
     }
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
@@ -245,59 +249,17 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         Py_CLEAR(result);
     }
     else if (!result && PyErr_ExceptionMatches(PyExc_StopIteration)) {
-        /* Check for __future__ generator_stop and conditionally turn
-         * a leaking StopIteration into RuntimeError (with its cause
-         * set appropriately). */
-
-        const int check_stop_iter_error_flags = CO_FUTURE_GENERATOR_STOP |
-                                                CO_COROUTINE |
-                                                CO_ITERABLE_COROUTINE |
-                                                CO_ASYNC_GENERATOR;
-
-        if (gen->gi_code != NULL &&
-            ((PyCodeObject *)gen->gi_code)->co_flags &
-                check_stop_iter_error_flags)
-        {
-            /* `gen` is either:
-                  * a generator with CO_FUTURE_GENERATOR_STOP flag;
-                  * a coroutine;
-                  * a generator with CO_ITERABLE_COROUTINE flag
-                    (decorated with types.coroutine decorator);
-                  * an async generator.
-            */
-            const char *msg = "generator raised StopIteration";
-            if (PyCoro_CheckExact(gen)) {
-                msg = "coroutine raised StopIteration";
-            }
-            else if PyAsyncGen_CheckExact(gen) {
-                msg = "async generator raised StopIteration";
-            }
-            _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
+        const char *msg = "generator raised StopIteration";
+        if (PyCoro_CheckExact(gen)) {
+            msg = "coroutine raised StopIteration";
         }
-        else {
-            /* `gen` is an ordinary generator without
-               CO_FUTURE_GENERATOR_STOP flag.
-            */
-
-            PyObject *exc, *val, *tb;
-
-            /* Pop the exception before issuing a warning. */
-            PyErr_Fetch(&exc, &val, &tb);
-
-            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "generator '%.50S' raised StopIteration",
-                                 gen->gi_qualname)) {
-                /* Warning was converted to an error. */
-                Py_XDECREF(exc);
-                Py_XDECREF(val);
-                Py_XDECREF(tb);
-            }
-            else {
-                PyErr_Restore(exc, val, tb);
-            }
+        else if PyAsyncGen_CheckExact(gen) {
+            msg = "async generator raised StopIteration";
         }
+        _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
+
     }
-    else if (PyAsyncGen_CheckExact(gen) && !result &&
+    else if (!result && PyAsyncGen_CheckExact(gen) &&
              PyErr_ExceptionMatches(PyExc_StopAsyncIteration))
     {
         /* code in `gen` raised a StopAsyncIteration error:
@@ -349,13 +311,11 @@ gen_close_iter(PyObject *yf)
             return -1;
     }
     else {
-        PyObject *meth = _PyObject_GetAttrId(yf, &PyId_close);
-        if (meth == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                PyErr_WriteUnraisable(yf);
-            PyErr_Clear();
+        PyObject *meth;
+        if (_PyObject_LookupAttrId(yf, &PyId_close, &meth) < 0) {
+            PyErr_WriteUnraisable(yf);
         }
-        else {
+        if (meth) {
             retval = _PyObject_CallNoArg(meth);
             Py_DECREF(meth);
             if (retval == NULL)
@@ -468,13 +428,12 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             gen->gi_running = 0;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
-            PyObject *meth = _PyObject_GetAttrId(yf, &PyId_throw);
+            PyObject *meth;
+            if (_PyObject_LookupAttrId(yf, &PyId_throw, &meth) < 0) {
+                Py_DECREF(yf);
+                return NULL;
+            }
             if (meth == NULL) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    Py_DECREF(yf);
-                    return NULL;
-                }
-                PyErr_Clear();
                 Py_DECREF(yf);
                 goto throw_here;
             }
@@ -990,6 +949,7 @@ static PyMemberDef coro_memberlist[] = {
     {"cr_frame",     T_OBJECT, offsetof(PyCoroObject, cr_frame),    READONLY},
     {"cr_running",   T_BOOL,   offsetof(PyCoroObject, cr_running),  READONLY},
     {"cr_code",      T_OBJECT, offsetof(PyCoroObject, cr_code),     READONLY},
+    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin),   READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1158,10 +1118,59 @@ PyTypeObject _PyCoroWrapper_Type = {
     0,                                          /* tp_free */
 };
 
+static PyObject *
+compute_cr_origin(int origin_depth)
+{
+    PyFrameObject *frame = PyEval_GetFrame();
+    /* First count how many frames we have */
+    int frame_count = 0;
+    for (; frame && frame_count < origin_depth; ++frame_count) {
+        frame = frame->f_back;
+    }
+
+    /* Now collect them */
+    PyObject *cr_origin = PyTuple_New(frame_count);
+    frame = PyEval_GetFrame();
+    for (int i = 0; i < frame_count; ++i) {
+        PyObject *frameinfo = Py_BuildValue(
+            "OiO",
+            frame->f_code->co_filename,
+            PyFrame_GetLineNumber(frame),
+            frame->f_code->co_name);
+        if (!frameinfo) {
+            Py_DECREF(cr_origin);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(cr_origin, i, frameinfo);
+        frame = frame->f_back;
+    }
+
+    return cr_origin;
+}
+
 PyObject *
 PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
-    return gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
+    PyObject *coro = gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
+    if (!coro) {
+        return NULL;
+    }
+
+    PyThreadState *tstate = PyThreadState_GET();
+    int origin_depth = tstate->coroutine_origin_tracking_depth;
+
+    if (origin_depth == 0) {
+        ((PyCoroObject *)coro)->cr_origin = NULL;
+    } else {
+        PyObject *cr_origin = compute_cr_origin(origin_depth);
+        if (!cr_origin) {
+            Py_DECREF(coro);
+            return NULL;
+        }
+        ((PyCoroObject *)coro)->cr_origin = cr_origin;
+    }
+
+    return coro;
 }
 
 

@@ -1599,6 +1599,20 @@ expression support in the :mod:`re` module).
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
 
+   .. note::
+      When formatting a number (:class:`int`, :class:`float`, :class:`float`
+      and subclasses) with the ``n`` type (ex: ``'{:n}'.format(1234)``), the
+      function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+      locale to decode ``decimal_point`` and ``thousands_sep`` fields of
+      :c:func:`localeconv` if they are non-ASCII or longer than 1 byte, and the
+      ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale. This
+      temporary change affects other threads.
+
+   .. versionchanged:: 3.7
+      When formatting a number with the ``n`` type, the function sets
+      temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
+      cases.
+
 
 .. method:: str.format_map(mapping)
 
@@ -1637,6 +1651,15 @@ expression support in the :mod:`re` module).
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the "Alphabetic" property defined in the Unicode Standard.
+
+
+.. method:: str.isascii()
+
+   Return true if the string is empty or all characters in the string are ASCII,
+   false otherwise.
+   ASCII characters have code points in the range U+0000-U+007F.
+
+   .. versionadded:: 3.7
 
 
 .. method:: str.isdecimal()
@@ -2925,6 +2948,16 @@ place, and instead produce new objects.
       True
       >>> b'ABCabc1'.isalpha()
       False
+
+
+.. method:: bytes.isascii()
+            bytearray.isascii()
+
+   Return true if the sequence is empty or all bytes in the sequence are ASCII,
+   false otherwise.
+   ASCII bytes are in the range 0-0x7F.
+
+   .. versionadded:: 3.7
 
 
 .. method:: bytes.isdigit()

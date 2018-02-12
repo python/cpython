@@ -165,6 +165,27 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_isascii__doc__,
+"isascii($self, /)\n"
+"--\n"
+"\n"
+"Return True if all characters in the string are ASCII, False otherwise.\n"
+"\n"
+"ASCII characters have code points in the range U+0000-U+007F.\n"
+"Empty string is ASCII too.");
+
+#define UNICODE_ISASCII_METHODDEF    \
+    {"isascii", (PyCFunction)unicode_isascii, METH_NOARGS, unicode_isascii__doc__},
+
+static PyObject *
+unicode_isascii_impl(PyObject *self);
+
+static PyObject *
+unicode_isascii(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicode_isascii_impl(self);
+}
+
 PyDoc_STRVAR(unicode_islower__doc__,
 "islower($self, /)\n"
 "--\n"
@@ -930,4 +951,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=1ad4e81b68194264 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=561c88c912b8fe3b input=a9049054013a1b77]*/
