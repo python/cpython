@@ -1,2 +1,0 @@
-Added bits() method to return the fully padded binary representation of an
-IPv4 or IPv6 address.  Test case included.
