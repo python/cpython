@@ -576,6 +576,31 @@ class ConditionTests(test_utils.TestCase):
 
         self.assertTrue(cond.locked())
 
+    def test_wait_cancel_after_notify(self):
+        # See bpo-32841
+        cond = asyncio.Condition(loop=self.loop)
+        waited = False
+
+        async def wait_on_cond():
+            nonlocal waited
+            async with cond:
+                waited = True  # Make sure this area was reached
+                await cond.wait()
+
+        waiter = asyncio.ensure_future(wait_on_cond(), loop=self.loop)
+        test_utils.run_briefly(self.loop)  # Start waiting
+
+        self.loop.run_until_complete(cond.acquire())
+        cond.notify()
+        test_utils.run_briefly(self.loop)  # Get to acquire()
+        waiter.cancel()
+        test_utils.run_briefly(self.loop)  # Activate cancellation
+        cond.release()
+        test_utils.run_briefly(self.loop)  # Cancellation should occur
+
+        self.assertTrue(waiter.cancelled())
+        self.assertTrue(waited)
+
     def test_wait_unacquired(self):
         cond = asyncio.Condition(loop=self.loop)
         self.assertRaises(
