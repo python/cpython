@@ -1093,7 +1093,7 @@ class _BaseV4:
         """Format: ends with b for bin, h for hex, n for native (bin for ipv4,
         hex for ipv6).  Takes # to include 0b, and _ as a separator
         """
-        if fmt[-1] in 'bnx':
+        if len(fmt) and fmt[-1] in 'bnx':
             fmt_base = fmt[-1]
             if fmt_base == 'n':
                 fmt_base = 'b'  # binary is default for ipv4
@@ -1668,7 +1668,7 @@ class _BaseV6:
         """Format: ends with b for bin, h for hex, n for native (bin for ipv4,
         hex for ipv6).  Takes # to include 0b, and _ as a separator
         """
-        if fmt[-1] in 'bnx':
+        if len(fmt) and fmt[-1] in 'bnx':
             fmt_base = fmt[-1]
             if fmt_base == 'n':
                 fmt_base = 'x'  # hex is default for ipv4
