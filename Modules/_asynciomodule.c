@@ -458,7 +458,6 @@ future_schedule_callbacks(FutureObj *fut)
     return 0;
 }
 
-static int FutureObj_clear(FutureObj *fut);
 
 static int
 future_init(FutureObj *fut, PyObject *loop)
@@ -467,7 +466,15 @@ future_init(FutureObj *fut, PyObject *loop)
     int is_true;
     _Py_IDENTIFIER(get_debug);
 
-    (void)FutureObj_clear(fut);
+    // Same to FutureObj_clear() but not clearing fut->dict
+    Py_CLEAR(fut->fut_loop);
+    Py_CLEAR(fut->fut_callback0);
+    Py_CLEAR(fut->fut_context0);
+    Py_CLEAR(fut->fut_callbacks);
+    Py_CLEAR(fut->fut_result);
+    Py_CLEAR(fut->fut_exception);
+    Py_CLEAR(fut->fut_source_tb);
+
     fut->fut_state = STATE_PENDING;
     fut->fut_log_tb = 0;
     fut->fut_blocking = 0;
