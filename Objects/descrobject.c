@@ -1490,10 +1490,10 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     Py_XINCREF(fdel);
     Py_XINCREF(doc);
 
-    self->prop_get = fget;
-    self->prop_set = fset;
-    self->prop_del = fdel;
-    self->prop_doc = doc;
+    Py_XSETREF(self->prop_get, fget);
+    Py_XSETREF(self->prop_set, fset);
+    Py_XSETREF(self->prop_del, fdel);
+    Py_XSETREF(self->prop_doc, doc);
     self->getter_doc = 0;
 
     /* if no docstring given and the getter has one, use that one */
