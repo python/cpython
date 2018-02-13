@@ -2865,8 +2865,9 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
     PyHeapTypeObject *res;
     PyMemberDef *memb;
-    PyObject *modname;
     PyTypeObject *type, *base;
+
+    PyObject *modname;
 
     PyType_Slot *slot;
     Py_ssize_t nmembers, weaklistoffset, dictoffset;

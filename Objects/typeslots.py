@@ -27,7 +27,7 @@ def generate_typeslots(out=sys.stdout):
 
     M = max(res.keys())+1
     for i in range(1,M):
-        if i in res:
+        if i in res and not res[i].startswith("no_"):
             out.write("offsetof(PyHeapTypeObject, %s),\n" % res[i])
         else:
             out.write("0,\n")

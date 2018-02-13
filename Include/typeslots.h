@@ -83,3 +83,7 @@
 /* New in 3.5 */
 #define Py_tp_finalize 80
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+/* New in 3.8 */
+#define Py_no_offsets 81
+#endif

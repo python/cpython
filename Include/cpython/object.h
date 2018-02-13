@@ -302,6 +302,10 @@ PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
 PyAPI_FUNC(PyTypeObject *) PyType_DefiningTypeFromSlotFunc(PyTypeObject *, int, void *);
 
+PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
+PyAPI_FUNC(PyTypeObject *) PyType_DefiningTypeFromSlotFunc(PyTypeObject *, int, void *);
+PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
+
 struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
