@@ -920,7 +920,10 @@ class ChainMap(_collections_abc.MutableMapping):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
 
     def __iter__(self):
-        return iter(set().union(*self.maps))
+        d = {}
+        for mapping in reversed(self.maps):
+            d.update(mapping)                   # reuses stored hash values if possible
+        return iter(d)
 
     def __contains__(self, key):
         return any(key in m for m in self.maps)
@@ -930,8 +933,7 @@ class ChainMap(_collections_abc.MutableMapping):
 
     @_recursive_repr()
     def __repr__(self):
-        return '{0.__class__.__name__}({1})'.format(
-            self, ', '.join(map(repr, self.maps)))
+        return f'{self.__class__.__name__}({", ".join(map(repr, self.maps))})'
 
     @classmethod
     def fromkeys(cls, iterable, *args):
