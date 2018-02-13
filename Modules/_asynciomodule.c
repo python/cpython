@@ -142,8 +142,6 @@ future_init(FutureObj *fut, PyObject *loop)
 
     // Same to FutureObj_clear() but not clearing fut->dict
     Py_CLEAR(fut->fut_loop);
-    Py_CLEAR(fut->fut_callback0);
-    Py_CLEAR(fut->fut_context0);
     Py_CLEAR(fut->fut_callbacks);
     Py_CLEAR(fut->fut_result);
     Py_CLEAR(fut->fut_exception);

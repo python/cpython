@@ -1483,11 +1483,11 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_XINCREF(del);
     Py_XINCREF(doc);
 
-    Py_XSETREF(prop->prop_get, fget);
-    Py_XSETREF(prop->prop_set, fset);
-    Py_XSETREF(prop->prop_del, fdel);
+    Py_XSETREF(prop->prop_get, get);
+    Py_XSETREF(prop->prop_set, set);
+    Py_XSETREF(prop->prop_del, del);
     Py_XSETREF(prop->prop_doc, doc);
-    self->getter_doc = 0;
+    prop->getter_doc = 0;
 
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && get != NULL) {
