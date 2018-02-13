@@ -1089,6 +1089,43 @@ class _BaseV4:
     def _explode_shorthand_ip_string(self):
         return str(self)
 
+    def __format__(self, fmt):
+        """Format: ends with b for bin, h for hex, n for native (bin for ipv4,
+        hex for ipv6).  Takes # to include 0b, and _ as a separator
+        """
+        if fmt[-1] in 'bnx':
+            fmt_base = fmt[-1]
+            if fmt_base == 'n':
+                fmt_base = 'b'  # binary is default for ipv4
+
+            if '_' in fmt:
+                separator = '_'
+            else:
+                separator = ''
+
+            # binary
+            if fmt_base == 'b':
+                # resulting string is '0b' + 32 bits
+                #  plus 7 _ if needed
+                padlen = IPV4LENGTH+2 + (7*len(separator))
+            
+            # hex
+            elif fmt_base == 'x':
+                # resulting string is '0x' + 8 hex digits
+                # plus a single _ if needed
+                padlen = int(IPV4LENGTH/4)+2 + len(separator)
+
+            retstr = f'{int(self):#0{padlen}{separator}{fmt_base}}'
+
+            # strip left two if necessary
+            if '#' not in fmt:
+                retstr = retstr[2:]
+                
+        else:
+            retstr = str(self)
+
+        return retstr
+
     @classmethod
     def _make_netmask(cls, arg):
         """Make a (netmask, prefix_len) tuple from the given argument.
@@ -1257,12 +1294,6 @@ class _BaseV4:
     @property
     def version(self):
         return self._version
-
-    @property
-    def bits(self):
-        """Returns the binary representation of the IPv4 address, padded to 32
-        bits."""
-        return f'{int(self):#0{IPV4LENGTH+2}b}'
 
 
 class IPv4Address(_BaseV4, _BaseAddress):
@@ -1895,12 +1926,6 @@ class _BaseV6:
     @property
     def version(self):
         return self._version
-
-    @property
-    def bits(self):
-        """Returns the binary representation of the IPv6 address, padded to 128
-        bits."""
-        return f'{int(self):#0{IPV6LENGTH+2}b}'
 
 
 class IPv6Address(_BaseV6, _BaseAddress):
