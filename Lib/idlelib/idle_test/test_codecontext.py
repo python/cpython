@@ -103,6 +103,10 @@ class CodeContextTest(unittest.TestCase):
         with self.assertRaises(TclError) as msg:
             self.root.tk.call('after', 'info', self.cc.t2)
             self.assertIn("doesn't exist", msg)
+        # For coverage on the except.  Have to delete because the
+        # above Tcl error is caught by after_cancel.
+        del self.cc.t1, self.cc.t2
+        self.cc.__del__()
 
     def test_reload(self):
         codecontext.CodeContext.reload()
