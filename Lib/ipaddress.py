@@ -1664,6 +1664,43 @@ class _BaseV6:
     # when constructed (see _make_netmask()).
     _netmask_cache = {}
 
+    def __format__(self, fmt):
+        """Format: ends with b for bin, h for hex, n for native (bin for ipv4,
+        hex for ipv6).  Takes # to include 0b, and _ as a separator
+        """
+        if fmt[-1] in 'bnx':
+            fmt_base = fmt[-1]
+            if fmt_base == 'n':
+                fmt_base = 'x'  # hex is default for ipv4
+
+            if '_' in fmt:
+                separator = '_'
+            else:
+                separator = ''
+
+            # binary
+            if fmt_base == 'b':
+                # resulting string is '0b' + 32 bits
+                #  plus 7 _ if needed
+                padlen = IPV6LENGTH+2 + (31*len(separator))
+            
+            # hex
+            elif fmt_base == 'x':
+                # resulting string is '0x' + 8 hex digits
+                # plus 7 single _ if needed
+                padlen = int(IPV6LENGTH/4)+2 + (7*len(separator))
+
+            retstr = f'{int(self):#0{padlen}{separator}{fmt_base}}'
+
+            # strip left two if necessary
+            if '#' not in fmt:
+                retstr = retstr[2:]
+                
+        else:
+            retstr = str(self)
+
+        return retstr
+
     @classmethod
     def _make_netmask(cls, arg):
         """Make a (netmask, prefix_len) tuple from the given argument.
