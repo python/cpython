@@ -158,6 +158,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
     def test_after_info(self):
         root = self.root
+
+        # No events.
+        self.assertEqual(root.after_info(), ())
+
         # Add timer.
         timer = root.after(1, lambda: 'break')
 
@@ -172,12 +176,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # Only contains new events and not 'timer'.
         self.assertEqual(root.after_info(), (idle1, timer2, timer1))
 
-        # With a paramter returns a tuple of (script, type).
+        # With a parameter returns a tuple of (script, type).
         timer1_info = root.after_info(timer1)
-        self.assertIn('lambda', timer1_info[0])
+        self.assertEqual(len(timer1_info), 2)
         self.assertEqual(timer1_info[1], 'timer')
         idle1_info = root.after_info(idle1)
-        self.assertIn('lambda', idle1_info[0])
+        self.assertEqual(len(idle1_info), 2)
         self.assertEqual(idle1_info[1], 'idle')
 
         root.after_cancel(timer1)
@@ -189,6 +193,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         root.after_cancel(idle1)
         with self.assertRaises(tkinter.TclError):
             root.after_info(idle1)
+
+        # No events.
+        self.assertEqual(root.after_info(), ())
 
 
 tests_gui = (MiscTest, )
