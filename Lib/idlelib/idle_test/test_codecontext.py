@@ -1,4 +1,6 @@
 """Test idlelib.codecontext.
+
+Coverage: 100%
 """
 
 import re
@@ -6,13 +8,12 @@ import re
 import unittest
 from unittest import mock
 from test.support import requires
-from tkinter import Tk, Frame, Text
+from tkinter import Tk, Frame, Text, TclError
 
 import idlelib.codecontext as codecontext
 from idlelib import config
 
 
-root = None
 usercfg = codecontext.idleConf.userCfg
 testcfg = {
     'main': config.IdleUserConfParser(''),
@@ -36,21 +37,6 @@ class C1():
 """
 
 
-def setUpModule():
-    requires('gui')
-    global root
-    codecontext.idleConf.userCfg = testcfg
-    root = Tk()
-
-
-def tearDownModule():
-    global root
-    codecontext.idleConf.userCfg = usercfg
-    root.update_idletasks()
-    root.destroy()
-    del root
-
-
 class DummyEditwin:
     def __init__(self, root, frame, text):
         self.root = root
@@ -63,22 +49,25 @@ class CodeContextTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        requires('gui')
+        root = cls.root = Tk()
         frame = cls.frame = Frame(root)
         text = cls.text = Text(frame)
-        # Mock 'after' to prevent timer events from being added.  They
-        # can impact other tests, even if they are deleted before this
-        # test exits.
-        text.after = mock.Mock()
         text.insert('1.0', code_sample)
         # Need to pack for creation of code context label widget.
         frame.pack(side='left', fill='both', expand=1)
         text.pack(side='top', fill='both', expand=1)
         cls.editor = DummyEditwin(root, frame, text)
+        codecontext.idleConf.userCfg = testcfg
 
     @classmethod
     def tearDownClass(cls):
+        codecontext.idleConf.userCfg = usercfg
         cls.editor.text.delete('1.0', 'end')
         del cls.editor, cls.frame, cls.text
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
 
     def setUp(self):
         self.cc = codecontext.CodeContext(self.editor)
@@ -86,6 +75,8 @@ class CodeContextTest(unittest.TestCase):
     def tearDown(self):
         if self.cc.label:
             self.cc.label.destroy()
+        # Explicitly call __del__ to remove scheduled scripts.
+        self.cc.__del__()
         del self.cc.label, self.cc
 
     def test_init(self):
@@ -99,7 +90,19 @@ class CodeContextTest(unittest.TestCase):
         self.assertIsNone(cc.label)
         eq(cc.info, [(0, -1, '', False)])
         eq(cc.topvisible, 1)
-        self.text.after.call_count == 2
+        self.root.tk.call('after', 'info', self.cc.t1)
+        self.root.tk.call('after', 'info', self.cc.t2)
+
+    def test_del(self):
+        self.root.tk.call('after', 'info', self.cc.t1)
+        self.root.tk.call('after', 'info', self.cc.t2)
+        self.cc.__del__()
+        with self.assertRaises(TclError) as msg:
+            self.root.tk.call('after', 'info', self.cc.t1)
+            self.assertIn("doesn't exist", msg)
+        with self.assertRaises(TclError) as msg:
+            self.root.tk.call('after', 'info', self.cc.t2)
+            self.assertIn("doesn't exist", msg)
 
     def test_reload(self):
         codecontext.CodeContext.reload()

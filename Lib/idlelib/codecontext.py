@@ -79,6 +79,7 @@ class CodeContext:
 ##                                     "fgcolor", type="str", default="Black")
 
     def __del__(self):
+        "Cancel scheduled events."
         try:
             self.text.after_cancel(self.t1)
             self.text.after_cancel(self.t2)
@@ -217,3 +218,8 @@ class CodeContext:
 
 
 CodeContext.reload()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    import unittest
+    unittest.main('idlelib.idle_test.test_codecontext', verbosity=2, exit=False)
