@@ -156,6 +156,40 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.tk.call('after', 'info', idle1)
 
+    def test_after_info(self):
+        root = self.root
+        # Add timer.
+        timer = root.after(1, lambda: 'break')
+
+        # With no parameter, it returns a tuple of the event handler ids.
+        self.assertEqual(root.after_info(), (timer, ))
+        # Process event to remove it.
+        root.update()
+
+        timer1 = root.after(5000, lambda: 'break')
+        timer2 = root.after(5000, lambda: 'break')
+        idle1 = root.after_idle(lambda: 'break')
+        # Only contains new events and not 'timer'.
+        self.assertEqual(root.after_info(), (idle1, timer2, timer1))
+
+        # With a paramter returns a tuple of (script, type).
+        timer1_info = root.after_info(timer1)
+        self.assertIn('lambda', timer1_info[0])
+        self.assertEqual(timer1_info[1], 'timer')
+        idle1_info = root.after_info(idle1)
+        self.assertIn('lambda', idle1_info[0])
+        self.assertEqual(idle1_info[1], 'idle')
+
+        root.after_cancel(timer1)
+        with self.assertRaises(tkinter.TclError):
+            root.after_info(timer1)
+        root.after_cancel(timer2)
+        with self.assertRaises(tkinter.TclError):
+            root.after_info(timer2)
+        root.after_cancel(idle1)
+        with self.assertRaises(tkinter.TclError):
+            root.after_info(idle1)
+
 
 tests_gui = (MiscTest, )
 
