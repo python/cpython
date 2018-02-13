@@ -29,7 +29,7 @@ def py_make_scanner(context):
         try:
             nextchar = string[idx]
         except IndexError:
-            raise StopIteration(idx)
+            raise StopIteration(idx) from None
 
         if nextchar == '"':
             return parse_string(string, idx + 1, strict)

@@ -132,7 +132,7 @@ Standard names are defined for the following types:
    C".)
 
 
-.. data:: SlotWrapperType
+.. data:: WrapperDescriptorType
 
    The type of methods of some built-in data types and base classes such as
    :meth:`object.__init__` or :meth:`object.__lt__`.
@@ -151,6 +151,14 @@ Standard names are defined for the following types:
 .. data:: MethodDescriptorType
 
    The type of methods of some built-in data types such as :meth:`str.join`.
+
+   .. versionadded:: 3.7
+
+
+.. data:: ClassMethodDescriptorType
+
+   The type of *unbound* class methods of some built-in data types such as
+   ``dict.__dict__['fromkeys']``.
 
    .. versionadded:: 3.7
 
@@ -190,15 +198,22 @@ Standard names are defined for the following types:
          Defaults to ``None``. Previously the attribute was optional.
 
 
-.. data:: TracebackType
+.. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exc_info()[2]``.
+
+   See :ref:`the language reference <traceback-objects>` for details of the
+   available attributes and operations, and guidance on creating tracebacks
+   dynamically.
 
 
 .. data:: FrameType
 
    The type of frame objects such as found in ``tb.tb_frame`` if ``tb`` is a
    traceback object.
+
+   See :ref:`the language reference <frame-objects>` for details of the
+   available attributes and operations.
 
 
 .. data:: GetSetDescriptorType

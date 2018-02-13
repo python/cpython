@@ -153,28 +153,32 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
         If args is not empty, call a callable passing positional and keyword
         arguments.
         """
-        if not _is_subtype(self.expected, self._base_type):
-            raise TypeError('%s() arg 1 must be %s' %
-                            (name, self._base_type_str))
-        if args and args[0] is None:
-            warnings.warn("callable is None",
-                          DeprecationWarning, 3)
-            args = ()
-        if not args:
-            self.msg = kwargs.pop('msg', None)
-            if kwargs:
-                warnings.warn('%r is an invalid keyword argument for '
-                              'this function' % next(iter(kwargs)),
-                              DeprecationWarning, 3)
-            return self
-
-        callable_obj, *args = args
         try:
-            self.obj_name = callable_obj.__name__
-        except AttributeError:
-            self.obj_name = str(callable_obj)
-        with self:
-            callable_obj(*args, **kwargs)
+            if not _is_subtype(self.expected, self._base_type):
+                raise TypeError('%s() arg 1 must be %s' %
+                                (name, self._base_type_str))
+            if args and args[0] is None:
+                warnings.warn("callable is None",
+                              DeprecationWarning, 3)
+                args = ()
+            if not args:
+                self.msg = kwargs.pop('msg', None)
+                if kwargs:
+                    warnings.warn('%r is an invalid keyword argument for '
+                                  'this function' % next(iter(kwargs)),
+                                  DeprecationWarning, 3)
+                return self
+
+            callable_obj, *args = args
+            try:
+                self.obj_name = callable_obj.__name__
+            except AttributeError:
+                self.obj_name = str(callable_obj)
+            with self:
+                callable_obj(*args, **kwargs)
+        finally:
+            # bpo-23890: manually break a reference cycle
+            self = None
 
 
 class _AssertRaisesContext(_AssertRaisesBaseContext):
@@ -332,6 +336,16 @@ class _AssertLogsContext(_BaseTestCaseContext):
             self._raiseFailure(
                 "no logs of level {} or higher triggered on {}"
                 .format(logging.getLevelName(self.level), self.logger.name))
+
+
+class _OrderedChainMap(collections.ChainMap):
+    def __iter__(self):
+        seen = set()
+        for mapping in self.maps:
+            for k in mapping:
+                if k not in seen:
+                    seen.add(k)
+                    yield k
 
 
 class TestCase(object):
@@ -510,7 +524,7 @@ class TestCase(object):
             return
         parent = self._subtest
         if parent is None:
-            params_map = collections.ChainMap(params)
+            params_map = _OrderedChainMap(params)
         else:
             params_map = parent.params.new_child(params)
         self._subtest = _SubTest(self, msg, params_map)
@@ -725,7 +739,11 @@ class TestCase(object):
                self.assertEqual(the_exception.error_code, 3)
         """
         context = _AssertRaisesContext(expected_exception, self)
-        return context.handle('assertRaises', args, kwargs)
+        try:
+            return context.handle('assertRaises', args, kwargs)
+        finally:
+            # bpo-23890: manually break a reference cycle
+            context = None
 
     def assertWarns(self, expected_warning, *args, **kwargs):
         """Fail unless a warning of class warnClass is triggered
@@ -834,7 +852,8 @@ class TestCase(object):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is more than the given delta.
+           difference between the two objects is more than the given
+           delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -848,23 +867,28 @@ class TestCase(object):
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
 
+        diff = abs(first - second)
         if delta is not None:
-            if abs(first - second) <= delta:
+            if diff <= delta:
                 return
 
-            standardMsg = '%s != %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s != %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
 
-            if round(abs(second-first), places) == 0:
+            if round(diff, places) == 0:
                 return
 
-            standardMsg = '%s != %s within %r places' % (safe_repr(first),
-                                                          safe_repr(second),
-                                                          places)
+            standardMsg = '%s != %s within %r places (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                places,
+                safe_repr(diff))
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
 
@@ -873,7 +897,7 @@ class TestCase(object):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is less than the given delta.
+           difference between the two objects is less than the given delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -882,16 +906,19 @@ class TestCase(object):
         """
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
+        diff = abs(first - second)
         if delta is not None:
-            if not (first == second) and abs(first - second) > delta:
+            if not (first == second) and diff > delta:
                 return
-            standardMsg = '%s == %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s == %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
-            if not (first == second) and round(abs(second-first), places) != 0:
+            if not (first == second) and round(diff, places) != 0:
                 return
             standardMsg = '%s == %s within %r places' % (safe_repr(first),
                                                          safe_repr(second),
@@ -899,7 +926,6 @@ class TestCase(object):
 
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
-
 
     def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
@@ -1248,7 +1274,7 @@ class TestCase(object):
 
         Args:
             expected_exception: Exception class expected to be raised.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1267,7 +1293,7 @@ class TestCase(object):
 
         Args:
             expected_warning: Warning class expected to be triggered.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1403,7 +1429,7 @@ class _SubTest(TestCase):
         if self.params:
             params_desc = ', '.join(
                 "{}={!r}".format(k, v)
-                for (k, v) in sorted(self.params.items()))
+                for (k, v) in self.params.items())
             parts.append("({})".format(params_desc))
         return " ".join(parts) or '(<subtest>)'
 

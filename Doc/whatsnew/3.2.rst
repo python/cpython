@@ -1062,13 +1062,16 @@ The :func:`~math.erf` function computes a probability integral or `Gaussian
 error function <https://en.wikipedia.org/wiki/Error_function>`_.  The
 complementary error function, :func:`~math.erfc`, is ``1 - erf(x)``:
 
->>> from math import erf, erfc, sqrt
->>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
-0.682689492137086
->>> erfc(1.0/sqrt(2.0))  # portion of normal distribution outside 1 standard deviation
-0.31731050786291404
->>> erf(1.0/sqrt(2.0)) + erfc(1.0/sqrt(2.0))
-1.0
+.. doctest::
+   :options: +SKIP
+
+   >>> from math import erf, erfc, sqrt
+   >>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
+   0.682689492137086
+   >>> erfc(1.0/sqrt(2.0))  # portion of normal distribution outside 1 standard deviation
+   0.31731050786291404
+   >>> erf(1.0/sqrt(2.0)) + erfc(1.0/sqrt(2.0))
+   1.0
 
 The :func:`~math.gamma` function is a continuous extension of the factorial
 function.  See https://en.wikipedia.org/wiki/Gamma_function for details.  Because
@@ -1384,7 +1387,7 @@ guaranteed not to block when :func:`select.select` says a pipe is ready
 for writing.
 
 >>> import select
->>> select.PIPE_BUF
+>>> select.PIPE_BUF  # doctest: +SKIP
 512
 
 (Available on Unix systems. Patch by Sébastien Sablé in :issue:`9862`)
@@ -1640,7 +1643,7 @@ for secure (encrypted, authenticated) internet connections:
 * The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
-  <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
 
 * When linked against recent versions of OpenSSL, the :mod:`ssl` module now
   supports the Server Name Indication extension to the TLS protocol, allowing

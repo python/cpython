@@ -383,8 +383,9 @@ class ComplexTest(unittest.TestCase):
             def __complex__(self):
                 return None
 
-        self.assertAlmostEqual(complex(complex0(1j)), 42j)
-        self.assertAlmostEqual(complex(complex1(1j)), 2j)
+        self.assertEqual(complex(complex0(1j)), 42j)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(complex(complex1(1j)), 2j)
         self.assertRaises(TypeError, complex, complex2(1j))
 
     @support.requires_IEEE_754

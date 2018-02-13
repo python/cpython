@@ -23,10 +23,7 @@ class netrc:
     def __init__(self, file=None):
         default_netrc = file is None
         if file is None:
-            try:
-                file = os.path.join(os.environ['HOME'], ".netrc")
-            except KeyError:
-                raise OSError("Could not find .netrc: $HOME is not set")
+            file = os.path.join(os.path.expanduser("~"), ".netrc")
         self.hosts = {}
         self.macros = {}
         with open(file) as fp:
@@ -127,15 +124,15 @@ class netrc:
         rep = ""
         for host in self.hosts.keys():
             attrs = self.hosts[host]
-            rep = rep + "machine "+ host + "\n\tlogin " + repr(attrs[0]) + "\n"
+            rep += f"machine {host}\n\tlogin {attrs[0]}\n"
             if attrs[1]:
-                rep = rep + "account " + repr(attrs[1])
-            rep = rep + "\tpassword " + repr(attrs[2]) + "\n"
+                rep += f"\taccount {attrs[1]}\n"
+            rep += f"\tpassword {attrs[2]}\n"
         for macro in self.macros.keys():
-            rep = rep + "macdef " + macro + "\n"
+            rep += f"macdef {macro}\n"
             for line in self.macros[macro]:
-                rep = rep + line
-            rep = rep + "\n"
+                rep += line
+            rep += "\n"
         return rep
 
 if __name__ == '__main__':

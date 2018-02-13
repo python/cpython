@@ -589,7 +589,7 @@ class MutableSet(Set):
         try:
             value = next(it)
         except StopIteration:
-            raise KeyError
+            raise KeyError from None
         self.discard(value)
         return value
 
@@ -746,7 +746,7 @@ class ItemsView(MappingView, Set):
 ItemsView.register(dict_items)
 
 
-class ValuesView(MappingView):
+class ValuesView(MappingView, Collection):
 
     __slots__ = ()
 
@@ -808,7 +808,7 @@ class MutableMapping(Mapping):
         try:
             key = next(iter(self))
         except StopIteration:
-            raise KeyError
+            raise KeyError from None
         value = self[key]
         del self[key]
         return key, value
@@ -899,6 +899,9 @@ class Sequence(Reversible, Collection):
     def index(self, value, start=0, stop=None):
         '''S.index(value, [start, [stop]]) -> integer -- return first index of value.
            Raises ValueError if the value is not present.
+
+           Supporting start and stop arguments is optional, but
+           recommended.
         '''
         if start is not None and start < 0:
             start = max(len(self) + start, 0)

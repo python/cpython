@@ -20,14 +20,6 @@
         <WxlTemplate Include="*.wxl_template" />
     </ItemGroup>
     <ItemGroup>
-        <InstallFiles Include="$(tcltkDir)bin\*.dll" Exclude="$(tcltkDir)bin\*g.dll">
-            <SourceBase>$(tcltkDir)</SourceBase>
-            <Source>!(bindpath.tcltk)</Source>
-            <TargetBase>$(tcltkDir)bin</TargetBase>
-            <Target_>DLLs\</Target_>
-            <Group>tcltk_dlls</Group>
-        </InstallFiles>
-
         <InstallFiles Include="$(tcltkDir)lib\**\*">
             <SourceBase>$(tcltkDir)</SourceBase>
             <Source>!(bindpath.tcltk)</Source>

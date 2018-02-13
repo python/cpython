@@ -80,27 +80,27 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_tkinter_tkapp_adderrinfo__doc__,
-"adderrinfo($self, msg, /)\n"
+PyDoc_STRVAR(_tkinter_tkapp_adderrorinfo__doc__,
+"adderrorinfo($self, msg, /)\n"
 "--\n"
 "\n");
 
-#define _TKINTER_TKAPP_ADDERRINFO_METHODDEF    \
-    {"adderrinfo", (PyCFunction)_tkinter_tkapp_adderrinfo, METH_O, _tkinter_tkapp_adderrinfo__doc__},
+#define _TKINTER_TKAPP_ADDERRORINFO_METHODDEF    \
+    {"adderrorinfo", (PyCFunction)_tkinter_tkapp_adderrorinfo, METH_O, _tkinter_tkapp_adderrorinfo__doc__},
 
 static PyObject *
-_tkinter_tkapp_adderrinfo_impl(TkappObject *self, const char *msg);
+_tkinter_tkapp_adderrorinfo_impl(TkappObject *self, const char *msg);
 
 static PyObject *
-_tkinter_tkapp_adderrinfo(TkappObject *self, PyObject *arg)
+_tkinter_tkapp_adderrorinfo(TkappObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *msg;
 
-    if (!PyArg_Parse(arg, "s:adderrinfo", &msg)) {
+    if (!PyArg_Parse(arg, "s:adderrorinfo", &msg)) {
         goto exit;
     }
-    return_value = _tkinter_tkapp_adderrinfo_impl(self, msg);
+    return_value = _tkinter_tkapp_adderrorinfo_impl(self, msg);
 
 exit:
     return return_value;
@@ -263,7 +263,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
                                   PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createcommand(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_tkinter_tkapp_createcommand(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *name;
@@ -271,10 +271,6 @@ _tkinter_tkapp_createcommand(TkappObject *self, PyObject **args, Py_ssize_t narg
 
     if (!_PyArg_ParseStack(args, nargs, "sO:createcommand",
         &name, &func)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("createcommand", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_createcommand_impl(self, name, func);
@@ -324,7 +320,7 @@ _tkinter_tkapp_createfilehandler_impl(TkappObject *self, PyObject *file,
                                       int mask, PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createfilehandler(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *file;
@@ -333,10 +329,6 @@ _tkinter_tkapp_createfilehandler(TkappObject *self, PyObject **args, Py_ssize_t 
 
     if (!_PyArg_ParseStack(args, nargs, "OiO:createfilehandler",
         &file, &mask, &func)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("createfilehandler", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_createfilehandler_impl(self, file, mask, func);
@@ -389,7 +381,7 @@ _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
                                        PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int milliseconds;
@@ -397,10 +389,6 @@ _tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject **args, Py_ssize_t
 
     if (!_PyArg_ParseStack(args, nargs, "iO:createtimerhandler",
         &milliseconds, &func)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("createtimerhandler", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_createtimerhandler_impl(self, milliseconds, func);
@@ -421,17 +409,13 @@ static PyObject *
 _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold);
 
 static PyObject *
-_tkinter_tkapp_mainloop(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_tkinter_tkapp_mainloop(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int threshold = 0;
 
     if (!_PyArg_ParseStack(args, nargs, "|i:mainloop",
         &threshold)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("mainloop", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_mainloop_impl(self, threshold);
@@ -452,17 +436,13 @@ static PyObject *
 _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags);
 
 static PyObject *
-_tkinter_tkapp_dooneevent(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_tkinter_tkapp_dooneevent(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int flags = 0;
 
     if (!_PyArg_ParseStack(args, nargs, "|i:dooneevent",
         &flags)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("dooneevent", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_dooneevent_impl(self, flags);
@@ -572,7 +552,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *use);
 
 static PyObject *
-_tkinter_create(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *screenName = NULL;
@@ -586,10 +566,6 @@ _tkinter_create(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
 
     if (!_PyArg_ParseStack(args, nargs, "|zssiiiiz:create",
         &screenName, &baseName, &className, &interactive, &wantobjects, &wantTk, &sync, &use)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("create", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_create_impl(module, screenName, baseName, className, interactive, wantobjects, wantTk, sync, use);
@@ -662,4 +638,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=328e29a146c4a63b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb3202e07db3dbb1 input=a9049054013a1b77]*/

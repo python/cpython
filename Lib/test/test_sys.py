@@ -9,17 +9,13 @@ import operator
 import codecs
 import gc
 import sysconfig
-import platform
 import locale
+import threading
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
 numruns = 0
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 class SysModuleTest(unittest.TestCase):
 
@@ -173,7 +169,6 @@ class SysModuleTest(unittest.TestCase):
                 sys.setcheckinterval(n)
                 self.assertEqual(sys.getcheckinterval(), n)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
         self.assertRaises(TypeError, sys.setswitchinterval, "a")
@@ -349,21 +344,8 @@ class SysModuleTest(unittest.TestCase):
         )
 
     # sys._current_frames() is a CPython-only gimmick.
-    def test_current_frames(self):
-        have_threads = True
-        try:
-            import _thread
-        except ImportError:
-            have_threads = False
-
-        if have_threads:
-            self.current_frames_with_threads()
-        else:
-            self.current_frames_without_threads()
-
-    # Test sys._current_frames() in a WITH_THREADS build.
     @test.support.reap_threads
-    def current_frames_with_threads(self):
+    def test_current_frames(self):
         import threading
         import traceback
 
@@ -393,6 +375,9 @@ class SysModuleTest(unittest.TestCase):
         thread_id = thread_info[0]
 
         d = sys._current_frames()
+        for tid in d:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
 
         main_id = threading.get_ident()
         self.assertIn(main_id, d)
@@ -423,15 +408,6 @@ class SysModuleTest(unittest.TestCase):
         # Reap the spawned thread.
         leave_g.set()
         t.join()
-
-    # Test sys._current_frames() when thread support doesn't exist.
-    def current_frames_without_threads(self):
-        # Not much happens here:  there is only one thread, with artificial
-        # "thread id" 0.
-        d = sys._current_frames()
-        self.assertEqual(len(d), 1)
-        self.assertIn(0, d)
-        self.assertTrue(d[0] is sys._getframe())
 
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
@@ -514,8 +490,6 @@ class SysModuleTest(unittest.TestCase):
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
 
-    @unittest.skipUnless(hasattr(sys, 'thread_info'),
-                         'Threading required for this test.')
     def test_thread_info(self):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
@@ -552,12 +526,16 @@ class SysModuleTest(unittest.TestCase):
         attrs = ("debug",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
                  "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated")
+                 "bytes_warning", "quiet", "hash_randomization", "isolated",
+                 "dev_mode", "utf8_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
+            attr_type = bool if attr == "dev_mode" else int
+            self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
+
+        self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -680,6 +658,7 @@ class SysModuleTest(unittest.TestCase):
         # Force the POSIX locale
         env = os.environ.copy()
         env["LC_ALL"] = "C"
+        env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
             'def dump(name):',
@@ -733,8 +712,8 @@ class SysModuleTest(unittest.TestCase):
         # have no any effect
         out = self.c_locale_get_error_handler(encoding=':')
         self.assertEqual(out,
-                         'stdin: surrogateescape\n'
-                         'stdout: surrogateescape\n'
+                         'stdin: strict\n'
+                         'stdout: strict\n'
                          'stderr: backslashreplace\n')
         out = self.c_locale_get_error_handler(encoding='')
         self.assertEqual(out,
@@ -778,8 +757,15 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
+        try:
+            import _testcapi
+        except ImportError:
+            with_pymalloc = support.with_pymalloc()
+        else:
+            alloc_name = _testcapi.pymem_getallocatorsname()
+            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+
         # Some sanity checks
-        with_pymalloc = sysconfig.get_config_var('WITH_PYMALLOC')
         a = sys.getallocatedblocks()
         self.assertIs(type(a), int)
         if with_pymalloc:
@@ -832,6 +818,39 @@ class SysModuleTest(unittest.TestCase):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)
         self.assertGreater(level, 0)
+
+    def test_sys_tracebacklimit(self):
+        code = """if 1:
+            import sys
+            def f1():
+                1 / 0
+            def f2():
+                f1()
+            sys.tracebacklimit = %r
+            f2()
+        """
+        def check(tracebacklimit, expected):
+            p = subprocess.Popen([sys.executable, '-c', code % tracebacklimit],
+                                 stderr=subprocess.PIPE)
+            out = p.communicate()[1]
+            self.assertEqual(out.splitlines(), expected)
+
+        traceback = [
+            b'Traceback (most recent call last):',
+            b'  File "<string>", line 8, in <module>',
+            b'  File "<string>", line 6, in f2',
+            b'  File "<string>", line 4, in f1',
+            b'ZeroDivisionError: division by zero'
+        ]
+        check(10, traceback)
+        check(3, traceback)
+        check(2, traceback[:1] + traceback[2:])
+        check(1, traceback[:1] + traceback[3:])
+        check(0, [traceback[-1]])
+        check(-1, [traceback[-1]])
+        check(1<<1000, traceback)
+        check(-1<<1000, [traceback[-1]])
+        check(None, traceback)
 
 
 @test.support.cpython_only
@@ -920,13 +939,15 @@ class SizeofTest(unittest.TestCase):
             return inner
         check(get_cell().__closure__[0], size('P'))
         # code
-        check(get_cell().__code__, size('6i13P'))
-        check(get_cell.__code__, size('6i13P'))
+        def check_code_size(a, expected_size):
+            self.assertGreaterEqual(sys.getsizeof(a), expected_size)
+        check_code_size(get_cell().__code__, size('6i13P'))
+        check_code_size(get_cell.__code__, size('6i13P'))
         def get_cell2(x):
             def inner():
                 return x
             return inner
-        check(get_cell2.__code__, size('6i13P') + calcsize('n'))
+        check_code_size(get_cell2.__code__, size('6i13P') + calcsize('n'))
         # complex
         check(complex(0,1), size('2d'))
         # method_descriptor (descriptor object)
@@ -994,7 +1015,7 @@ class SizeofTest(unittest.TestCase):
         nfrees = len(x.f_code.co_freevars)
         extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
                   ncells + nfrees - 1
-        check(x, vsize('12P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, vsize('5P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
         check(func, size('12P'))
@@ -1011,7 +1032,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('Pb2PPP'))
+        check(get_gen(), size('Pb2PPP4P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1097,6 +1118,7 @@ class SizeofTest(unittest.TestCase):
             fmt += '3n2P'
         s = vsize(fmt)
         check(int, s)
+        # class
         s = vsize(fmt +                 # PyTypeObject
                   '3P'                  # PyAsyncMethods
                   '36P'                 # PyNumberMethods
@@ -1104,13 +1126,17 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '4P')
-        # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        s += calcsize("2nP2n") + 8 + 5*calcsize("n2P")
-        # class
         class newstyleclass(object): pass
-        check(newstyleclass, s)
+        # Separate block for PyDictKeysObject with 8 keys and 5 entries
+        check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P' + '2nP2n'))
+        check(newstyleclass().__dict__, size('nQ2P') + 5*self.P)
+        o = newstyleclass()
+        o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
+        # Separate block for PyDictKeysObject with 16 keys and 10 entries
+        check(newstyleclass, s + calcsize("2nP2n0P") + 16 + 10*calcsize("n2P"))
+        # dict with shared keys
+        check(newstyleclass().__dict__, size('nQ2P') + 10*self.P)
         # unicode
         # each tuple contains a string and its expected character size
         # don't put any static strings here, as they may contain

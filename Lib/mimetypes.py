@@ -245,7 +245,7 @@ class MimeTypes:
             while True:
                 try:
                     ctype = _winreg.EnumKey(mimedb, i)
-                except EnvironmentError:
+                except OSError:
                     break
                 else:
                     if '\0' not in ctype:
@@ -259,13 +259,13 @@ class MimeTypes:
                         # Only check file extensions
                         if not subkeyname.startswith("."):
                             continue
-                        # raises EnvironmentError if no 'Content Type' value
+                        # raises OSError if no 'Content Type' value
                         mimetype, datatype = _winreg.QueryValueEx(
                             subkey, 'Content Type')
                         if datatype != _winreg.REG_SZ:
                             continue
                         self.add_type(mimetype, subkeyname, strict)
-                except EnvironmentError:
+                except OSError:
                     continue
 
 def guess_type(url, strict=True):
@@ -410,10 +410,8 @@ def _default_mime_types():
         '.bat'    : 'text/plain',
         '.bcpio'  : 'application/x-bcpio',
         '.bin'    : 'application/octet-stream',
-        '.bmp'    : 'image/x-ms-bmp',
+        '.bmp'    : 'image/bmp',
         '.c'      : 'text/plain',
-        # Duplicates :(
-        '.cdf'    : 'application/x-cdf',
         '.cdf'    : 'application/x-netcdf',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
@@ -439,6 +437,7 @@ def _default_mime_types():
         '.jpeg'   : 'image/jpeg',
         '.jpg'    : 'image/jpeg',
         '.js'     : 'application/javascript',
+        '.json'   : 'application/json',
         '.ksh'    : 'text/plain',
         '.latex'  : 'application/x-latex',
         '.m1v'    : 'video/mpeg',
@@ -521,8 +520,6 @@ def _default_mime_types():
         '.wsdl'   : 'application/xml',
         '.xbm'    : 'image/x-xbitmap',
         '.xlb'    : 'application/vnd.ms-excel',
-        # Duplicates :(
-        '.xls'    : 'application/excel',
         '.xls'    : 'application/vnd.ms-excel',
         '.xml'    : 'text/xml',
         '.xpdl'   : 'application/xml',

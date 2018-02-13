@@ -85,15 +85,13 @@ module signal
    thread.  XXX This is a hack.
 */
 
-#ifdef WITH_THREAD
 #include <sys/types.h> /* For pid_t */
 #include "pythread.h"
-static long main_thread;
+static unsigned long main_thread;
 static pid_t main_pid;
-#endif
 
 static volatile struct {
-    sig_atomic_t tripped;
+    _Py_atomic_int tripped;
     PyObject *func;
 } Handlers[NSIG];
 
@@ -102,18 +100,19 @@ static volatile struct {
 
 static volatile struct {
     SOCKET_T fd;
+    int warn_on_full_buffer;
     int use_send;
-    int send_err_set;
-    int send_errno;
-    int send_win_error;
-} wakeup = {INVALID_FD, 0, 0};
+} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1, .use_send = 0};
 #else
 #define INVALID_FD (-1)
-static volatile sig_atomic_t wakeup_fd = -1;
+static volatile struct {
+    sig_atomic_t fd;
+    int warn_on_full_buffer;
+} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1};
 #endif
 
 /* Speed up sigcheck() when none tripped */
-static volatile sig_atomic_t is_tripped = 0;
+static _Py_atomic_int is_tripped;
 
 static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
@@ -133,12 +132,21 @@ static HANDLE sigint_event = NULL;
 #ifdef HAVE_GETITIMER
 static PyObject *ItimerError;
 
-/* auxiliary functions for setitimer/getitimer */
-static void
-timeval_from_double(double d, struct timeval *tv)
+/* auxiliary functions for setitimer */
+static int
+timeval_from_double(PyObject *obj, struct timeval *tv)
 {
-    tv->tv_sec = floor(d);
-    tv->tv_usec = fmod(d, 1.0) * 1000000.0;
+    if (obj == NULL) {
+        tv->tv_sec = 0;
+        tv->tv_usec = 0;
+        return 0;
+    }
+
+    _PyTime_t t;
+    if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_CEILING) < 0) {
+        return -1;
+    }
+    return _PyTime_AsTimeval(t, tv, _PyTime_ROUND_CEILING);
 }
 
 Py_LOCAL_INLINE(double)
@@ -189,12 +197,6 @@ It raises KeyboardInterrupt.");
 
 
 static int
-checksignals_witharg(void * unused)
-{
-    return PyErr_CheckSignals();
-}
-
-static int
 report_wakeup_write_error(void *data)
 {
     int save_errno = errno;
@@ -209,28 +211,15 @@ report_wakeup_write_error(void *data)
 
 #ifdef MS_WINDOWS
 static int
-report_wakeup_send_error(void* Py_UNUSED(data))
+report_wakeup_send_error(void* data)
 {
-    PyObject *res;
-
-    if (wakeup.send_win_error) {
-        /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
-           recognizes the error codes used by both GetLastError() and
-           WSAGetLastError */
-        res = PyErr_SetExcFromWindowsErr(PyExc_OSError, wakeup.send_win_error);
-    }
-    else {
-        errno = wakeup.send_errno;
-        res = PyErr_SetFromErrno(PyExc_OSError);
-    }
-
-    assert(res == NULL);
-    wakeup.send_err_set = 0;
-
+    /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
+       recognizes the error codes used by both GetLastError() and
+       WSAGetLastError */
+    PyErr_SetExcFromWindowsErr(PyExc_OSError, (int) (intptr_t) data);
     PySys_WriteStderr("Exception ignored when trying to send to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
-
     return 0;
 }
 #endif   /* MS_WINDOWS */
@@ -242,51 +231,76 @@ trip_signal(int sig_num)
     int fd;
     Py_ssize_t rc;
 
-    Handlers[sig_num].tripped = 1;
+    _Py_atomic_store_relaxed(&Handlers[sig_num].tripped, 1);
+
+    /* Set is_tripped after setting .tripped, as it gets
+       cleared in PyErr_CheckSignals() before .tripped. */
+    _Py_atomic_store(&is_tripped, 1);
+
+    /* Notify ceval.c */
+    _PyEval_SignalReceived();
+
+    /* And then write to the wakeup fd *after* setting all the globals and
+       doing the _PyEval_SignalReceived. We used to write to the wakeup fd
+       and then set the flag, but this allowed the following sequence of events
+       (especially on windows, where trip_signal may run in a new thread):
+
+       - main thread blocks on select([wakeup.fd], ...)
+       - signal arrives
+       - trip_signal writes to the wakeup fd
+       - the main thread wakes up
+       - the main thread checks the signal flags, sees that they're unset
+       - the main thread empties the wakeup fd
+       - the main thread goes back to sleep
+       - trip_signal sets the flags to request the Python-level signal handler
+         be run
+       - the main thread doesn't notice, because it's asleep
+
+       See bpo-30038 for more details.
+    */
 
 #ifdef MS_WINDOWS
     fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
 #else
-    fd = wakeup_fd;
+    fd = wakeup.fd;
 #endif
 
     if (fd != INVALID_FD) {
         byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
         if (wakeup.use_send) {
-            do {
-                rc = send(fd, &byte, 1, 0);
-            } while (rc < 0 && errno == EINTR);
+            rc = send(fd, &byte, 1, 0);
 
-            /* we only have a storage for one error in the wakeup structure */
-            if (rc < 0 && !wakeup.send_err_set) {
-                wakeup.send_err_set = 1;
-                wakeup.send_errno = errno;
-                wakeup.send_win_error = GetLastError();
-                Py_AddPendingCall(report_wakeup_send_error, NULL);
+            if (rc < 0) {
+                int last_error = GetLastError();
+                if (wakeup.warn_on_full_buffer ||
+                    last_error != WSAEWOULDBLOCK)
+                {
+                    /* Py_AddPendingCall() isn't signal-safe, but we
+                       still use it for this exceptional case. */
+                    Py_AddPendingCall(report_wakeup_send_error,
+                                      (void *)(intptr_t) last_error);
+                }
             }
         }
         else
 #endif
         {
-            byte = (unsigned char)sig_num;
-
             /* _Py_write_noraise() retries write() if write() is interrupted by
                a signal (fails with EINTR). */
             rc = _Py_write_noraise(fd, &byte, 1);
 
             if (rc < 0) {
-                Py_AddPendingCall(report_wakeup_write_error,
-                                  (void *)(intptr_t)errno);
+                if (wakeup.warn_on_full_buffer ||
+                    (errno != EWOULDBLOCK && errno != EAGAIN))
+                {
+                    /* Py_AddPendingCall() isn't signal-safe, but we
+                       still use it for this exceptional case. */
+                    Py_AddPendingCall(report_wakeup_write_error,
+                                      (void *)(intptr_t)errno);
+                }
             }
         }
-    }
-
-    if (!is_tripped) {
-        /* Set is_tripped after setting .tripped, as it gets
-           cleared in PyErr_CheckSignals() before .tripped. */
-        is_tripped = 1;
-        Py_AddPendingCall(checksignals_witharg, NULL);
     }
 }
 
@@ -295,10 +309,8 @@ signal_handler(int sig_num)
 {
     int save_errno = errno;
 
-#ifdef WITH_THREAD
     /* See NOTES section above */
     if (getpid() == main_pid)
-#endif
     {
         trip_signal(sig_num);
     }
@@ -418,13 +430,11 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread) {
         PyErr_SetString(PyExc_ValueError,
                         "signal only works in main thread");
         return NULL;
     }
-#endif
     if (signalnum < 1 || signalnum >= NSIG) {
         PyErr_SetString(PyExc_ValueError,
                         "signal number out of range");
@@ -441,12 +451,15 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     }
     else
         func = signal_handler;
+    /* Check for pending signals before changing signal handler */
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (PyOS_setsig(signalnum, func) == SIG_ERR) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     old_handler = Handlers[signalnum].func;
-    Handlers[signalnum].tripped = 0;
     Py_INCREF(handler);
     Handlers[signalnum].func = handler;
     if (old_handler != NULL)
@@ -526,9 +539,13 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 
 
 static PyObject*
-signal_set_wakeup_fd(PyObject *self, PyObject *args)
+signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
 {
     struct _Py_stat_struct status;
+    static char *kwlist[] = {
+        "", "warn_on_full_buffer", NULL,
+    };
+    int warn_on_full_buffer = 1;
 #ifdef MS_WINDOWS
     PyObject *fdobj;
     SOCKET_T sockfd, old_sockfd;
@@ -537,7 +554,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
     PyObject *mod;
     int is_socket;
 
-    if (!PyArg_ParseTuple(args, "O:set_wakeup_fd", &fdobj))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$p:set_wakeup_fd", kwlist,
+                                     &fdobj, &warn_on_full_buffer))
         return NULL;
 
     sockfd = PyLong_AsSocket_t(fdobj);
@@ -546,17 +564,16 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 #else
     int fd, old_fd;
 
-    if (!PyArg_ParseTuple(args, "i:set_wakeup_fd", &fd))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "i|$p:set_wakeup_fd", kwlist,
+                                     &fd, &warn_on_full_buffer))
         return NULL;
 #endif
 
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread) {
         PyErr_SetString(PyExc_ValueError,
                         "set_wakeup_fd only works in main thread");
         return NULL;
     }
-#endif
 
 #ifdef MS_WINDOWS
     is_socket = 0;
@@ -599,6 +616,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 
     old_sockfd = wakeup.fd;
     wakeup.fd = sockfd;
+    wakeup.warn_on_full_buffer = warn_on_full_buffer;
     wakeup.use_send = is_socket;
 
     if (old_sockfd != INVALID_FD)
@@ -623,15 +641,16 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         }
     }
 
-    old_fd = wakeup_fd;
-    wakeup_fd = fd;
+    old_fd = wakeup.fd;
+    wakeup.fd = fd;
+    wakeup.warn_on_full_buffer = warn_on_full_buffer;
 
     return PyLong_FromLong(old_fd);
 #endif
 }
 
 PyDoc_STRVAR(set_wakeup_fd_doc,
-"set_wakeup_fd(fd) -> fd\n\
+"set_wakeup_fd(fd, *, warn_on_full_buffer=True) -> fd\n\
 \n\
 Sets the fd to be written to (with the signal number) when a signal\n\
 comes in.  A library can use this to wakeup select or poll.\n\
@@ -649,11 +668,11 @@ PySignal_SetWakeupFd(int fd)
 
 #ifdef MS_WINDOWS
     old_fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
-    wakeup.fd = fd;
 #else
-    old_fd = wakeup_fd;
-    wakeup_fd = fd;
+    old_fd = wakeup.fd;
 #endif
+    wakeup.fd = fd;
+    wakeup.warn_on_full_buffer = 1;
     return old_fd;
 }
 
@@ -664,8 +683,8 @@ PySignal_SetWakeupFd(int fd)
 signal.setitimer
 
     which:    int
-    seconds:  double
-    interval: double = 0.0
+    seconds:  object
+    interval: object(c_default="NULL") = 0.0
     /
 
 Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).
@@ -677,14 +696,19 @@ Returns old values as a tuple: (delay, interval).
 [clinic start generated code]*/
 
 static PyObject *
-signal_setitimer_impl(PyObject *module, int which, double seconds,
-                      double interval)
-/*[clinic end generated code: output=6f51da0fe0787f2c input=0d27d417cfcbd51a]*/
+signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
+                      PyObject *interval)
+/*[clinic end generated code: output=65f9dcbddc35527b input=de43daf194e6f66f]*/
 {
     struct itimerval new, old;
 
-    timeval_from_double(seconds, &new.it_value);
-    timeval_from_double(interval, &new.it_interval);
+    if (timeval_from_double(seconds, &new.it_value) < 0) {
+        return NULL;
+    }
+    if (timeval_from_double(interval, &new.it_interval) < 0) {
+        return NULL;
+    }
+
     /* Let OS check "which" value */
     if (setitimer(which, &new, &old) != 0) {
         PyErr_SetFromErrno(ItimerError);
@@ -1083,12 +1107,12 @@ signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
 #endif   /* #ifdef HAVE_SIGTIMEDWAIT */
 
 
-#if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)
+#if defined(HAVE_PTHREAD_KILL)
 
 /*[clinic input]
 signal.pthread_kill
 
-    thread_id:  long
+    thread_id:  unsigned_long(bitwise=True)
     signalnum:  int
     /
 
@@ -1096,8 +1120,9 @@ Send a signal to a thread.
 [clinic start generated code]*/
 
 static PyObject *
-signal_pthread_kill_impl(PyObject *module, long thread_id, int signalnum)
-/*[clinic end generated code: output=2a09ce41f1c4228a input=77ed6a3b6f2a8122]*/
+signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
+                         int signalnum)
+/*[clinic end generated code: output=7629919b791bc27f input=1d901f2c7bb544ff]*/
 {
     int err;
 
@@ -1115,7 +1140,7 @@ signal_pthread_kill_impl(PyObject *module, long thread_id, int signalnum)
     Py_RETURN_NONE;
 }
 
-#endif   /* #if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD) */
+#endif   /* #if defined(HAVE_PTHREAD_KILL) */
 
 
 
@@ -1128,7 +1153,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_GETITIMER_METHODDEF
     SIGNAL_SIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd",           signal_set_wakeup_fd, METH_VARARGS, set_wakeup_fd_doc},
+    {"set_wakeup_fd", (PyCFunction)signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PTHREAD_KILL_METHODDEF
@@ -1195,10 +1220,8 @@ PyInit__signal(void)
     PyObject *m, *d, *x;
     int i;
 
-#ifdef WITH_THREAD
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-#endif
 
     /* Create the module and add the functions */
     m = PyModule_Create(&signalmodule);
@@ -1249,11 +1272,11 @@ PyInit__signal(void)
         goto finally;
     Py_INCREF(IntHandler);
 
-    Handlers[0].tripped = 0;
+    _Py_atomic_store_relaxed(&Handlers[0].tripped, 0);
     for (i = 1; i < NSIG; i++) {
         void (*t)(int);
         t = PyOS_getsig(i);
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         if (t == SIG_DFL)
             Handlers[i].func = DefaultHandler;
         else if (t == SIG_IGN)
@@ -1437,7 +1460,7 @@ PyInit__signal(void)
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
-            PyExc_IOError, NULL);
+            PyExc_OSError, NULL);
     if (ItimerError != NULL)
         PyDict_SetItemString(d, "ItimerError", ItimerError);
 #endif
@@ -1477,7 +1500,7 @@ finisignal(void)
 
     for (i = 1; i < NSIG; i++) {
         func = Handlers[i].func;
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         Handlers[i].func = NULL;
         if (i != SIGINT && func != NULL && func != Py_None &&
             func != DefaultHandler && func != IgnoreHandler)
@@ -1498,13 +1521,11 @@ PyErr_CheckSignals(void)
     int i;
     PyObject *f;
 
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return 0;
 
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread)
         return 0;
-#endif
 
     /*
      * The is_tripped variable is meant to speed up the calls to
@@ -1520,24 +1541,26 @@ PyErr_CheckSignals(void)
      *       we receive a signal i after we zero is_tripped and before we
      *       check Handlers[i].tripped.
      */
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
 
     if (!(f = (PyObject *)PyEval_GetFrame()))
         f = Py_None;
 
     for (i = 1; i < NSIG; i++) {
-        if (Handlers[i].tripped) {
+        if (_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
             PyObject *result = NULL;
             PyObject *arglist = Py_BuildValue("(iO)", i, f);
-            Handlers[i].tripped = 0;
+            _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
 
             if (arglist) {
                 result = PyEval_CallObject(Handlers[i].func,
                                            arglist);
                 Py_DECREF(arglist);
             }
-            if (!result)
+            if (!result) {
+                _Py_atomic_store(&is_tripped, 1);
                 return -1;
+            }
 
             Py_DECREF(result);
         }
@@ -1574,12 +1597,10 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    if (Handlers[SIGINT].tripped) {
-#ifdef WITH_THREAD
+    if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
         if (PyThread_get_thread_ident() != main_thread)
             return 0;
-#endif
-        Handlers[SIGINT].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
         return 1;
     }
     return 0;
@@ -1589,41 +1610,29 @@ static void
 _clear_pending_signals(void)
 {
     int i;
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return;
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
     for (i = 1; i < NSIG; ++i) {
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
 
 void
-PyOS_AfterFork(void)
+_PySignal_AfterFork(void)
 {
     /* Clear the signal flags after forking so that they aren't handled
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
-#ifdef WITH_THREAD
-    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
-     * can be called safely. */
-    PyThread_ReInitTLS();
-    _PyGILState_Reinit();
-    PyEval_ReInitThreads();
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-    _PyImport_ReInitLock();
-#endif
 }
 
 int
 _PyOS_IsMainThread(void)
 {
-#ifdef WITH_THREAD
     return PyThread_get_thread_ident() == main_thread;
-#else
-    return 1;
-#endif
 }
 
 #ifdef MS_WINDOWS

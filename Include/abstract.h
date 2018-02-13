@@ -157,11 +157,11 @@ PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable,
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) _PyStack_AsTuple(
-    PyObject **stack,
+    PyObject *const *stack,
     Py_ssize_t nargs);
 
 PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
-    PyObject **stack,
+    PyObject *const *stack,
     Py_ssize_t nargs,
     Py_ssize_t start,
     Py_ssize_t end);
@@ -170,14 +170,14 @@ PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
    format to a Python dictionary ("kwargs" dict).
 
    The type of kwnames keys is not checked. The final function getting
-   arguments is reponsible to check if all keys are strings, for example using
+   arguments is responsible to check if all keys are strings, for example using
    PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
 
    Duplicate keys are merged using the last value. If duplicate keys must raise
    an exception, the caller is responsible to implement an explicit keys on
    kwnames. */
 PyAPI_FUNC(PyObject *) _PyStack_AsDict(
-    PyObject **values,
+    PyObject *const *values,
     PyObject *kwnames);
 
 /* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
@@ -192,10 +192,10 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
    The type of keyword keys is not checked, these checks should be done
    later (ex: _PyArg_ParseStackAndKeywords). */
 PyAPI_FUNC(int) _PyStack_UnpackDict(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs,
-    PyObject ***p_stack,
+    PyObject *const **p_stack,
     PyObject **p_kwnames);
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
@@ -209,6 +209,10 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
+/* Return 1 if callable supports FASTCALL calling convention for positional
+   arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords() */
+PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
+
 /* Call the callable object 'callable' with the "fast call" calling convention:
    args is a C array for positional arguments (nargs is the number of
    positional arguments), kwargs is a dictionary for keyword arguments.
@@ -220,7 +224,7 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    error. */
 PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
     PyObject *callable,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs);
 
@@ -241,7 +245,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
    error. */
 PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords(
     PyObject *callable,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames);
 
@@ -260,7 +264,7 @@ PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
 PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
     PyObject *callable,
     PyObject *obj,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs);
 
 PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
@@ -363,7 +367,7 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
 
 /* Implemented elsewhere:
 
-   long PyObject_Hash(PyObject *o);
+   Py_hash_t PyObject_Hash(PyObject *o);
 
    Compute and return the hash, hash_value, of an object, o.  On
    failure, return -1.
@@ -1093,6 +1097,9 @@ PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
 PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
+
+/* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
+PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 #endif /* !Py_LIMITED_API */
 
 

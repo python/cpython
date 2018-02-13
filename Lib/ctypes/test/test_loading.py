@@ -62,6 +62,8 @@ class LoaderTest(unittest.TestCase):
             windll["kernel32"].GetModuleHandleW
             windll.LoadLibrary("kernel32").GetModuleHandleW
             WinDLL("kernel32").GetModuleHandleW
+            # embedded null character
+            self.assertRaises(ValueError, windll.LoadLibrary, "kernel32\0")
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')

@@ -942,7 +942,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                           [], [divmod, 'x', 1, 5j, 2j, frozenset()])
         # comparing dicts
         self.assertCountEqual([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
-        # comparing heterogenous non-hashable sequences
+        # comparing heterogeneous non-hashable sequences
         self.assertCountEqual([1, 'x', divmod, []], [divmod, [], 'x', 1])
         self.assertRaises(self.failureException, self.assertCountEqual,
                           [], [divmod, [], 'x', 1, 5j, 2j, set()])
@@ -1272,6 +1272,19 @@ test case
             self.assertRaises((ValueError, 1))
         with self.assertRaises(TypeError):
             self.assertRaises((ValueError, object))
+
+    def testAssertRaisesRefcount(self):
+        # bpo-23890: assertRaises() must not keep objects alive longer
+        # than expected
+        def func() :
+            try:
+                raise ValueError
+            except ValueError:
+                raise ValueError
+
+        refcount = sys.getrefcount(func)
+        self.assertRaises(ValueError, func)
+        self.assertEqual(refcount, sys.getrefcount(func))
 
     def testAssertRaisesRegex(self):
         class ExceptionMock(Exception):

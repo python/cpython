@@ -164,21 +164,21 @@ Builtins and restricted execution
 
 .. index:: pair: restricted; execution
 
-The builtins namespace associated with the execution of a code block is actually
-found by looking up the name ``__builtins__`` in its global namespace; this
-should be a dictionary or a module (in the latter case the module's dictionary
-is used).  By default, when in the :mod:`__main__` module, ``__builtins__`` is
-the built-in module :mod:`builtins`; when in any other module,
-``__builtins__`` is an alias for the dictionary of the :mod:`builtins` module
-itself.  ``__builtins__`` can be set to a user-created dictionary to create a
-weak form of restricted execution.
-
 .. impl-detail::
 
    Users should not touch ``__builtins__``; it is strictly an implementation
    detail.  Users wanting to override values in the builtins namespace should
    :keyword:`import` the :mod:`builtins` module and modify its
    attributes appropriately.
+
+The builtins namespace associated with the execution of a code block
+is actually found by looking up the name ``__builtins__`` in its
+global namespace; this should be a dictionary or a module (in the
+latter case the module's dictionary is used).  By default, when in the
+:mod:`__main__` module, ``__builtins__`` is the built-in module
+:mod:`builtins`; when in any other module, ``__builtins__`` is an
+alias for the dictionary of the :mod:`builtins` module itself.
+
 
 .. _dynamic-features:
 
@@ -193,12 +193,6 @@ This means that the following code will print 42::
        print(i)
    i = 42
    f()
-
-There are several cases where Python statements are illegal when used in
-conjunction with nested scopes that contain free variables.
-
-If a variable is referenced in an enclosing scope, it is illegal to delete the
-name.  An error will be reported at compile time.
 
 .. XXX from * also invalid with relative imports (at least currently)
 

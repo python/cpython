@@ -104,10 +104,6 @@ typedef wchar_t Py_UNICODE /* Py_DEPRECATED(3.3) */;
 #endif
 
 #ifdef HAVE_WCHAR_H
-/* Work around a cosmetic bug in BSDI 4.x wchar.h; thanks to Thomas Wouters */
-# ifdef _HAVE_BSDI
-#  include <time.h>
-# endif
 #  include <wchar.h>
 #endif
 
@@ -756,23 +752,27 @@ PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4(
 PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4Copy(PyObject *unicode);
 #endif
 
+#ifndef Py_LIMITED_API
 /* Return a read-only pointer to the Unicode object's internal
    Py_UNICODE buffer.
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     ) /* Py_DEPRECATED(3.3) */;
-#endif
+
+/* Similar to PyUnicode_AsUnicode(), but raises a ValueError if the string
+   contains null characters. */
+PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
+    PyObject *unicode           /* Unicode object */
+    );
 
 /* Return a read-only pointer to the Unicode object's internal
    Py_UNICODE buffer and save the length at size.
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* location where to save the length */
@@ -1223,7 +1223,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Encode(
 /* Encodes a Unicode object and returns the result as Python
    object.
 
-   This API is DEPRECATED.  It is superceeded by PyUnicode_AsEncodedString()
+   This API is DEPRECATED.  It is superseded by PyUnicode_AsEncodedString()
    since all standard encodings (except rot13) encode str to bytes.
    Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
    that encode form str to non-bytes. */
@@ -1613,50 +1613,41 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeASCII(
 
    This codec uses mappings to encode and decode characters.
 
-   Decoding mappings must map single string characters to single
-   Unicode characters, integers (which are then interpreted as Unicode
-   ordinals) or None (meaning "undefined mapping" and causing an
-   error).
+   Decoding mappings must map byte ordinals (integers in the range from 0 to
+   255) to Unicode strings, integers (which are then interpreted as Unicode
+   ordinals) or None.  Unmapped data bytes (ones which cause a LookupError)
+   as well as mapped to None, 0xFFFE or '\ufffe' are treated as "undefined
+   mapping" and cause an error.
 
-   Encoding mappings must map single Unicode characters to single
-   string characters, integers (which are then interpreted as Latin-1
-   ordinals) or None (meaning "undefined mapping" and causing an
-   error).
-
-   If a character lookup fails with a LookupError, the character is
-   copied as-is meaning that its ordinal value will be interpreted as
-   Unicode or Latin-1 ordinal resp. Because of this mappings only need
-   to contain those mappings which map characters to different code
-   points.
+   Encoding mappings must map Unicode ordinal integers to bytes objects,
+   integers in the range from 0 to 255 or None.  Unmapped character
+   ordinals (ones which cause a LookupError) as well as mapped to
+   None are treated as "undefined mapping" and cause an error.
 
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeCharmap(
     const char *string,         /* Encoded string */
     Py_ssize_t length,          /* size of string */
-    PyObject *mapping,          /* character mapping
-                                   (char ordinal -> unicode ordinal) */
+    PyObject *mapping,          /* decoding mapping */
     const char *errors          /* error handling */
     );
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsCharmapString(
     PyObject *unicode,          /* Unicode object */
-    PyObject *mapping           /* character mapping
-                                   (unicode ordinal -> char ordinal) */
+    PyObject *mapping           /* encoding mapping */
     );
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeCharmap(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
-    PyObject *mapping,          /* character mapping
-                                   (unicode ordinal -> char ordinal) */
+    PyObject *mapping,          /* encoding mapping */
     const char *errors          /* error handling */
     ) Py_DEPRECATED(3.3);
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
     PyObject *unicode,          /* Unicode object */
-    PyObject *mapping,          /* character mapping
-                                   (unicode ordinal -> char ordinal) */
+    PyObject *mapping,          /* encoding mapping */
     const char *errors          /* error handling */
     );
 #endif
@@ -1665,8 +1656,8 @@ PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
    character mapping table to it and return the resulting Unicode
    object.
 
-   The mapping table must map Unicode ordinal integers to Unicode
-   ordinal integers or None (causing deletion of the character).
+   The mapping table must map Unicode ordinal integers to Unicode strings,
+   Unicode ordinal integers or None (causing deletion of the character).
 
    Mapping tables may be dictionaries or sequences. Unmapped character
    ordinals (ones which cause a LookupError) are left untouched and
@@ -1732,6 +1723,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
 
 #endif /* MS_WINDOWS */
 
+#ifndef Py_LIMITED_API
 /* --- Decimal Encoder ---------------------------------------------------- */
 
 /* Takes a Unicode string holding a decimal value and writes it into
@@ -1756,14 +1748,12 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
 
 */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     char *output,               /* Output buffer; must have size >= length */
     const char *errors          /* error handling */
     ) /* Py_DEPRECATED(3.3) */;
-#endif
 
 /* Transforms code points that have decimal digit property to the
    corresponding ASCII digit code points.
@@ -1771,19 +1761,18 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
    Returns a new Unicode string on success, NULL on failure.
 */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
     ) /* Py_DEPRECATED(3.3) */;
-#endif
 
-/* Similar to PyUnicode_TransformDecimalToASCII(), but takes a PyObject
-   as argument instead of a raw buffer and length.  This function additionally
-   transforms spaces to ASCII because this is what the callers in longobject,
-   floatobject, and complexobject did anyways. */
+/* Coverts a Unicode object holding a decimal value to an ASCII string
+   for using in int, float and complex parsers.
+   Transforms code points that have decimal digit property to the
+   corresponding ASCII digit code points.  Transforms spaces to ASCII.
+   Transforms code points starting from the first non-ASCII code point that
+   is neither a decimal digit nor a space to the end into '?'. */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
     PyObject *unicode           /* Unicode object */
     );
@@ -1964,8 +1953,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_RSplit(
 /* Translate a string by applying a character mapping table to it and
    return the resulting Unicode object.
 
-   The mapping table must map Unicode ordinal integers to Unicode
-   ordinal integers or None (causing deletion of the character).
+   The mapping table must map Unicode ordinal integers to Unicode strings,
+   Unicode ordinal integers or None (causing deletion of the character).
 
    Mapping tables may be dictionaries or sequences. Unmapped character
    ordinals (ones which cause a LookupError) are left untouched and
@@ -1990,7 +1979,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Join(
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyUnicode_JoinArray(
     PyObject *separator,
-    PyObject **items,
+    PyObject *const *items,
     Py_ssize_t seqlen
     );
 #endif /* Py_LIMITED_API */
@@ -2322,6 +2311,10 @@ PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
 PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
+#elif !defined(NDEBUG)
+/* For asserts that call _PyUnicode_CheckConsistency(), which would
+ * otherwise be a problem when building with asserts but without Py_DEBUG. */
+#define _PyUnicode_CheckConsistency(op, check_content) PyUnicode_Check(op)
 #endif
 
 #ifndef Py_LIMITED_API

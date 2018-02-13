@@ -135,8 +135,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data = locale.locale_alias.copy()
-    data.update(parse(args.locale_alias))
     data.update(parse_glibc_supported(args.glibc_supported))
+    data.update(parse(args.locale_alias))
     while True:
         # Repeat optimization while the size is decreased.
         n = len(data)

@@ -92,6 +92,58 @@ _Py_bytes_isalnum(const char *cptr, Py_ssize_t len)
 }
 
 
+PyDoc_STRVAR_shared(_Py_isascii__doc__,
+"B.isascii() -> bool\n\
+\n\
+Return True if B is empty or all characters in B are ASCII,\n\
+False otherwise.");
+
+// Optimization is copied from ascii_decode in unicodeobject.c
+/* Mask to quickly check whether a C 'long' contains a
+   non-ASCII, UTF8-encoded char. */
+#if (SIZEOF_LONG == 8)
+# define ASCII_CHAR_MASK 0x8080808080808080UL
+#elif (SIZEOF_LONG == 4)
+# define ASCII_CHAR_MASK 0x80808080UL
+#else
+# error C 'long' size should be either 4 or 8!
+#endif
+
+PyObject*
+_Py_bytes_isascii(const char *cptr, Py_ssize_t len)
+{
+    const char *p = cptr;
+    const char *end = p + len;
+    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
+
+    while (p < end) {
+        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
+           for an explanation. */
+        if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
+            /* Help allocation */
+            const char *_p = p;
+            while (_p < aligned_end) {
+                unsigned long value = *(unsigned long *) _p;
+                if (value & ASCII_CHAR_MASK) {
+                    Py_RETURN_FALSE;
+                }
+                _p += SIZEOF_LONG;
+            }
+            p = _p;
+            if (_p == end)
+                break;
+        }
+        if ((unsigned char)*p & 0x80) {
+            Py_RETURN_FALSE;
+        }
+        p++;
+    }
+    Py_RETURN_TRUE;
+}
+
+#undef ASCII_CHAR_MASK
+
+
 PyDoc_STRVAR_shared(_Py_isdigit__doc__,
 "B.isdigit() -> bool\n\
 \n\
@@ -399,12 +451,15 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 #include "stringlib/find.h"
 
 /*
-Wraps stringlib_parse_args_finds() and additionally checks whether the
-first argument is an integer in range(0, 256).
+Wraps stringlib_parse_args_finds() and additionally checks the first
+argument type.
 
-If this is the case, writes the integer value to the byte parameter
-and sets subobj to NULL. Otherwise, sets the first argument to subobj
-and doesn't touch byte. The other parameters are similar to those of
+In case the first argument is a bytes-like object, sets it to subobj,
+and doesn't touch the byte parameter.
+In case it is an integer in range(0, 256), writes the integer value
+to byte, and sets subobj to NULL.
+
+The other parameters are similar to those of
 stringlib_parse_args_finds().
 */
 
@@ -415,27 +470,28 @@ parse_args_finds_byte(const char *function_name, PyObject *args,
 {
     PyObject *tmp_subobj;
     Py_ssize_t ival;
-    PyObject *err;
 
     if(!stringlib_parse_args_finds(function_name, args, &tmp_subobj,
                                    start, end))
         return 0;
 
-    if (!PyNumber_Check(tmp_subobj)) {
+    if (PyObject_CheckBuffer(tmp_subobj)) {
         *subobj = tmp_subobj;
         return 1;
     }
 
-    ival = PyNumber_AsSsize_t(tmp_subobj, PyExc_OverflowError);
-    if (ival == -1) {
-        err = PyErr_Occurred();
-        if (err && !PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
-            PyErr_Clear();
-            *subobj = tmp_subobj;
-            return 1;
-        }
+    if (!PyIndex_Check(tmp_subobj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or bytes-like object, "
+                     "not '%.200s'",
+                     Py_TYPE(tmp_subobj)->tp_name);
+        return 0;
     }
 
+    ival = PyNumber_AsSsize_t(tmp_subobj, NULL);
+    if (ival == -1 && PyErr_Occurred()) {
+        return 0;
+    }
     if (ival < 0 || ival > 255) {
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         return 0;
@@ -542,7 +598,11 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *args)
 PyDoc_STRVAR_shared(_Py_index__doc__,
 "B.index(sub[, start[, end]]) -> int\n\
 \n\
-Like B.find() but raise ValueError when the subsection is not found.");
+Return the lowest index in B where subsection sub is found,\n\
+such that sub is contained within B[start,end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Raises ValueError when the subsection is not found.");
 
 PyObject *
 _Py_bytes_index(const char *str, Py_ssize_t len, PyObject *args)
@@ -579,7 +639,11 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *args)
 PyDoc_STRVAR_shared(_Py_rindex__doc__,
 "B.rindex(sub[, start[, end]]) -> int\n\
 \n\
-Like B.rfind() but raise ValueError when the subsection is not found.");
+Return the highest index in B where subsection sub is found,\n\
+such that sub is contained within B[start,end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Raise ValueError when the subsection is not found.");
 
 PyObject *
 _Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *args)
@@ -811,4 +875,3 @@ PyDoc_STRVAR_shared(_Py_zfill__doc__,
 "\n"
 "Pad a numeric string B with zeros on the left, to fill a field\n"
 "of the specified width.  B is never truncated.");
-

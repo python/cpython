@@ -92,7 +92,6 @@ class CommonTestMixin:
                 y = pickle.loads(pickle.dumps(x, proto))
                 self.assertEqual(y, x)
 
-
 class CommonTestMixin_v4(CommonTestMixin):
 
     def test_leading_zeros(self):
@@ -477,6 +476,56 @@ class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
 class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Network
 
+    def test_subnet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').subnet_of(
+                self.factory('10.0.1.0/24')))
+        # containee inside container
+        self.assertTrue(
+            self.factory('10.0.0.0/30').subnet_of(
+                self.factory('10.0.0.0/24')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').subnet_of(
+                self.factory('10.0.1.0/24')))
+        # containee larger than container
+        self.assertFalse(
+            self.factory('10.0.1.0/24').subnet_of(
+                self.factory('10.0.0.0/30')))
+
+    def test_supernet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').supernet_of(
+                self.factory('10.0.1.0/24')))
+        # containee inside container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').supernet_of(
+                self.factory('10.0.0.0/24')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').supernet_of(
+                self.factory('10.0.1.0/24')))
+        # containee larger than container
+        self.assertTrue(
+            self.factory('10.0.0.0/24').supernet_of(
+                self.factory('10.0.0.0/30')))
+
+    def test_subnet_of_mixed_types(self):
+        with self.assertRaises(TypeError):
+            ipaddress.IPv4Network('10.0.0.0/30').supernet_of(
+                ipaddress.IPv6Network('::1/128'))
+        with self.assertRaises(TypeError):
+            ipaddress.IPv6Network('::1/128').supernet_of(
+                ipaddress.IPv4Network('10.0.0.0/30'))
+        with self.assertRaises(TypeError):
+            ipaddress.IPv4Network('10.0.0.0/30').subnet_of(
+                ipaddress.IPv6Network('::1/128'))
+        with self.assertRaises(TypeError):
+            ipaddress.IPv6Network('::1/128').subnet_of(
+                ipaddress.IPv4Network('10.0.0.0/30'))
+
 
 class NetmaskTestMixin_v6(CommonTestMixin_v6):
     """Input validation on interfaces and networks is very similar"""
@@ -539,6 +588,42 @@ class InterfaceTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
 
 class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Network
+
+    def test_subnet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('2000:999::/56').subnet_of(
+                self.factory('2000:aaa::/48')))
+        # containee inside container
+        self.assertTrue(
+            self.factory('2000:aaa::/56').subnet_of(
+                self.factory('2000:aaa::/48')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('2000:bbb::/56').subnet_of(
+                self.factory('2000:aaa::/48')))
+        # containee larger than container
+        self.assertFalse(
+            self.factory('2000:aaa::/48').subnet_of(
+                self.factory('2000:aaa::/56')))
+
+    def test_supernet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('2000:999::/56').supernet_of(
+                self.factory('2000:aaa::/48')))
+        # containee inside container
+        self.assertFalse(
+            self.factory('2000:aaa::/56').supernet_of(
+                self.factory('2000:aaa::/48')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('2000:bbb::/56').supernet_of(
+                self.factory('2000:aaa::/48')))
+        # containee larger than container
+        self.assertTrue(
+            self.factory('2000:aaa::/48').supernet_of(
+                self.factory('2000:aaa::/56')))
 
 
 class FactoryFunctionErrors(BaseTestCase):
@@ -1405,14 +1490,35 @@ class IpaddrUnitTest(unittest.TestCase):
                         ipaddress.ip_address('::2'))
 
     def testInterfaceComparison(self):
-        self.assertTrue(ipaddress.ip_interface('1.1.1.1') <=
-                        ipaddress.ip_interface('1.1.1.1'))
-        self.assertTrue(ipaddress.ip_interface('1.1.1.1') <=
-                        ipaddress.ip_interface('1.1.1.2'))
-        self.assertTrue(ipaddress.ip_interface('::1') <=
-                        ipaddress.ip_interface('::1'))
-        self.assertTrue(ipaddress.ip_interface('::1') <=
-                        ipaddress.ip_interface('::2'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') ==
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/16') <
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') <
+                        ipaddress.ip_interface('1.1.1.2/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.2/16') <
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') >
+                        ipaddress.ip_interface('1.1.1.1/16'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.2/24') >
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') >
+                        ipaddress.ip_interface('1.1.1.2/16'))
+
+        self.assertTrue(ipaddress.ip_interface('::1/64') ==
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::1/64') <
+                        ipaddress.ip_interface('::1/80'))
+        self.assertTrue(ipaddress.ip_interface('::1/64') <
+                        ipaddress.ip_interface('::2/64'))
+        self.assertTrue(ipaddress.ip_interface('::2/48') <
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::1/80') >
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::2/64') >
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::1/64') >
+                        ipaddress.ip_interface('::2/48'))
 
     def testNetworkComparison(self):
         # ip1 and ip2 have the same network address

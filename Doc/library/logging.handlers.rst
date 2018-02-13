@@ -59,12 +59,25 @@ and :meth:`flush` methods).
       :meth:`close` method is inherited from :class:`~logging.Handler` and so
       does no output, so an explicit :meth:`flush` call may be needed at times.
 
+   .. method:: setStream(stream)
+
+      Sets the instance's stream to the specified value, if it is different.
+      The old stream is flushed before the new stream is set.
+
+      :param stream: The stream that the handler should use.
+
+      :return: the old stream, if the stream was changed, or *None* if it wasn't.
+
+   .. versionadded:: 3.7
+
+
 .. versionchanged:: 3.2
    The ``StreamHandler`` class now has a ``terminator`` attribute, default
    value ``'\n'``, which is used as the terminator when writing a formatted
    record to a stream. If you don't want this newline termination, you can
    set the handler instance's ``terminator`` attribute to the empty string.
    In earlier versions, the terminator was hardcoded as ``'\n'``.
+
 
 .. _file-handler:
 

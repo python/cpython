@@ -294,19 +294,20 @@ algorithms implemented in this module in other circumstances.
    This function is deprecated in this module. Use :func:`urllib.parse.parse_qsl`
    instead. It is maintained here only for backward compatibility.
 
-.. function:: parse_multipart(fp, pdict)
+.. function:: parse_multipart(fp, pdict, encoding="utf-8")
 
    Parse input of type :mimetype:`multipart/form-data` (for  file uploads).
-   Arguments are *fp* for the input file and *pdict* for a dictionary containing
-   other parameters in the :mailheader:`Content-Type` header.
+   Arguments are *fp* for the input file, *pdict* for a dictionary containing
+   other parameters in the :mailheader:`Content-Type` header, and *encoding*,
+   the request encoding.
 
-   Returns a dictionary just like :func:`urllib.parse.parse_qs` keys are the field names, each
-   value is a list of values for that field.  This is easy to use but not much good
-   if you are expecting megabytes to be uploaded --- in that case, use the
-   :class:`FieldStorage` class instead which is much more flexible.
+   Returns a dictionary just like :func:`urllib.parse.parse_qs`: keys are the
+   field names, each value is a list of values for that field. For non-file
+   fields, the value is a list of strings.
 
-   Note that this does not parse nested multipart parts --- use
-   :class:`FieldStorage` for that.
+   This is easy to use but not much good if you are expecting megabytes to be
+   uploaded --- in that case, use the :class:`FieldStorage` class instead
+   which is much more flexible.
 
 
 .. function:: parse_header(string)

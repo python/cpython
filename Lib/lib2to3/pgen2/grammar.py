@@ -17,7 +17,7 @@ import collections
 import pickle
 
 # Local imports
-from . import token, tokenize
+from . import token
 
 
 class Grammar(object):
@@ -107,6 +107,10 @@ class Grammar(object):
         with open(filename, "rb") as f:
             d = pickle.load(f)
         self.__dict__.update(d)
+
+    def loads(self, pkl):
+        """Load the grammar tables from a pickle bytes object."""
+        self.__dict__.update(pickle.loads(pkl))
 
     def copy(self):
         """

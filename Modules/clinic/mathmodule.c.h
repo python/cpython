@@ -15,7 +15,7 @@ static PyObject *
 math_gcd_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-math_gcd(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -24,10 +24,6 @@ math_gcd(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     if (!_PyArg_UnpackStack(args, nargs, "gcd",
         2, 2,
         &a, &b)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("gcd", kwnames)) {
         goto exit;
     }
     return_value = math_gcd_impl(module, a, b);
@@ -136,7 +132,7 @@ static PyObject *
 math_ldexp_impl(PyObject *module, double x, PyObject *i);
 
 static PyObject *
-math_ldexp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_ldexp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -144,10 +140,6 @@ math_ldexp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
 
     if (!_PyArg_ParseStack(args, nargs, "dO:ldexp",
         &x, &i)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("ldexp", kwnames)) {
         goto exit;
     }
     return_value = math_ldexp_impl(module, x, i);
@@ -261,7 +253,7 @@ static PyObject *
 math_fmod_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_fmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_fmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -269,10 +261,6 @@ math_fmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 
     if (!_PyArg_ParseStack(args, nargs, "dd:fmod",
         &x, &y)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("fmod", kwnames)) {
         goto exit;
     }
     return_value = math_fmod_impl(module, x, y);
@@ -294,7 +282,7 @@ static PyObject *
 math_hypot_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_hypot(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -302,10 +290,6 @@ math_hypot(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
 
     if (!_PyArg_ParseStack(args, nargs, "dd:hypot",
         &x, &y)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("hypot", kwnames)) {
         goto exit;
     }
     return_value = math_hypot_impl(module, x, y);
@@ -327,7 +311,7 @@ static PyObject *
 math_pow_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_pow(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -335,10 +319,6 @@ math_pow(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 
     if (!_PyArg_ParseStack(args, nargs, "dd:pow",
         &x, &y)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("pow", kwnames)) {
         goto exit;
     }
     return_value = math_pow_impl(module, x, y);
@@ -505,14 +485,14 @@ PyDoc_STRVAR(math_isclose__doc__,
 "only close to themselves.");
 
 #define MATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)math_isclose, METH_FASTCALL, math_isclose__doc__},
+    {"isclose", (PyCFunction)math_isclose, METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
 
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
                   double abs_tol);
 
 static PyObject *
-math_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
@@ -536,4 +516,4 @@ math_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71806f73a5c4bf0b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e554bad553045546 input=a9049054013a1b77]*/

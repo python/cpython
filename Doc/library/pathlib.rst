@@ -271,6 +271,10 @@ property:
 Methods and properties
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. testsetup::
+
+   from pathlib import PurePosixPath, PureWindowsPath
+
 Pure paths provide the following methods and properties:
 
 .. data:: PurePath.drive
@@ -657,6 +661,8 @@ call fails (for example because the path doesn't exist):
    Return information about this path (similarly to :func:`os.stat`).
    The result is looked up at each call to this method.
 
+   ::
+
       >>> p = Path('setup.py')
       >>> p.stat().st_size
       956
@@ -753,6 +759,18 @@ call fails (for example because the path doesn't exist):
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+
+.. method:: Path.is_mount()
+
+   Return ``True`` if the path is a :dfn:`mount point`: a point in a
+   file system where a different file system has been mounted.  On POSIX, the
+   function checks whether *path*'s parent, :file:`path/..`, is on a different
+   device than *path*, or whether :file:`path/..` and *path* point to the same
+   i-node on the same device --- this should detect mount points for all Unix
+   and POSIX variants.  Not implemented on Windows.
+
+   .. versionadded:: 3.7
 
 
 .. method:: Path.is_symlink()
@@ -948,7 +966,7 @@ call fails (for example because the path doesn't exist):
 .. method:: Path.rglob(pattern)
 
    This is like calling :meth:`Path.glob` with "``**``" added in front of the
-   given *pattern*:
+   given *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -972,6 +990,8 @@ call fails (for example because the path doesn't exist):
    An :exc:`OSError` can be raised if either file cannot be accessed for some
    reason.
 
+   ::
+
       >>> p = Path('spam')
       >>> q = Path('eggs')
       >>> p.samefile(q)
@@ -987,6 +1007,8 @@ call fails (for example because the path doesn't exist):
    Make this path a symbolic link to *target*.  Under Windows,
    *target_is_directory* must be true (default ``False``) if the link's target
    is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+
+   ::
 
       >>> p = Path('mylink')
       >>> p.symlink_to('setup.py')
@@ -1045,3 +1067,36 @@ call fails (for example because the path doesn't exist):
       'Text file contents'
 
    .. versionadded:: 3.5
+
+Correspondence to tools in the :mod:`os` module
+-----------------------------------------------
+
+Below is a table mapping various :mod:`os` functions to their corresponding
+:class:`PurePath`/:class:`Path` equivalent.
+
+.. note::
+
+   Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
+   overlapping use-cases, their semantics differ enough to warrant not
+   considering them equivalent.
+
+============================   ==============================
+os and os.path                 pathlib
+============================   ==============================
+:func:`os.path.abspath`        :meth:`Path.resolve`
+:func:`os.getcwd`              :func:`Path.cwd`
+:func:`os.path.exists`         :meth:`Path.exists`
+:func:`os.path.expanduser`     :meth:`Path.expanduser` and
+                               :meth:`Path.home`
+:func:`os.path.isdir`          :meth:`Path.is_dir`
+:func:`os.path.isfile`         :meth:`Path.is_file`
+:func:`os.path.islink`         :meth:`Path.is_symlink`
+:func:`os.stat`                :meth:`Path.stat`,
+                               :meth:`Path.owner`,
+                               :meth:`Path.group`
+:func:`os.path.isabs`          :meth:`PurePath.is_absolute`
+:func:`os.path.join`           :func:`PurePath.joinpath`
+:func:`os.path.basename`       :data:`PurePath.name`
+:func:`os.path.dirname`        :data:`PurePath.parent`
+:func:`os.path.splitext`       :data:`PurePath.suffix`
+============================   ==============================

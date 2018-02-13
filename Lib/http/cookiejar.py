@@ -33,10 +33,7 @@ import datetime
 import re
 import time
 import urllib.parse, urllib.request
-try:
-    import threading as _threading
-except ImportError:
-    import dummy_threading as _threading
+import threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm
 

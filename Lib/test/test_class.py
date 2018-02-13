@@ -568,5 +568,81 @@ class ClassTests(unittest.TestCase):
         a = A(hash(A.f)^(-1))
         hash(a.f)
 
+    def testSetattrWrapperNameIntern(self):
+        # Issue #25794: __setattr__ should intern the attribute name
+        class A:
+            pass
+
+        def add(self, other):
+            return 'summa'
+
+        name = str(b'__add__', 'ascii')  # shouldn't be optimized
+        self.assertIsNot(name, '__add__')  # not interned
+        type.__setattr__(A, name, add)
+        self.assertEqual(A() + 1, 'summa')
+
+        name2 = str(b'__add__', 'ascii')
+        self.assertIsNot(name2, '__add__')
+        self.assertIsNot(name2, name)
+        type.__delattr__(A, name2)
+        with self.assertRaises(TypeError):
+            A() + 1
+
+    def testSetattrNonStringName(self):
+        class A:
+            pass
+
+        with self.assertRaises(TypeError):
+            type.__setattr__(A, b'x', None)
+
+    def testConstructorErrorMessages(self):
+        # bpo-31506: Improves the error message logic for object_new & object_init
+
+        # Class without any method overrides
+        class C:
+            pass
+
+        with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
+            C(42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
+            C.__new__(C, 42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+            C().__init__(42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
+            object.__new__(C, 42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+            object.__init__(C(), 42)
+
+        # Class with both `__init__` & `__new__` method overridden
+        class D:
+            def __new__(cls, *args, **kwargs):
+                super().__new__(cls, *args, **kwargs)
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+            D(42)
+
+        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+            D.__new__(D, 42)
+
+        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+            object.__new__(D, 42)
+
+        # Class that only overrides __init__
+        class E:
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+            E().__init__(42)
+
+        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+            object.__init__(E(), 42)
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,18 +1,16 @@
-try:
-    import _thread
-except ImportError:
-    _thread = None
 import importlib
 import importlib.util
 import os
 import os.path
 import sys
 from test import support
+from test.support import script_helper
 import unittest
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
     import imp
+import _imp
 
 
 def requires_load_dynamic(meth):
@@ -23,7 +21,6 @@ def requires_load_dynamic(meth):
                            'imp.load_dynamic() required')(meth)
 
 
-@unittest.skipIf(_thread is None, '_thread module is required')
 class LockTests(unittest.TestCase):
 
     """Very basic test of import lock functions."""
@@ -117,7 +114,7 @@ class ImportTests(unittest.TestCase):
         # Martin von Loewis note what shared library cannot have non-ascii
         # character because init_xxx function cannot be compiled
         # and issue never happens for dynamic modules.
-        # But sources modified to follow generic way for processing pathes.
+        # But sources modified to follow generic way for processing paths.
 
         # the return encoding could be uppercase or None
         fs_encoding = sys.getfilesystemencoding()
@@ -313,6 +310,45 @@ class ImportTests(unittest.TestCase):
                                               open(imp.__file__))
         loader.get_data(imp.__file__)  # File should be closed
         loader.get_data(imp.__file__)  # Will need to create a newly opened file
+
+    def test_load_source(self):
+        # Create a temporary module since load_source(name) modifies
+        # sys.modules[name] attributes like __loader___
+        modname = f"tmp{__name__}"
+        mod = type(sys.modules[__name__])(modname)
+        with support.swap_item(sys.modules, modname, mod):
+            with self.assertRaisesRegex(ValueError, 'embedded null'):
+                imp.load_source(modname, __file__ + "\0")
+
+    @support.cpython_only
+    def test_issue31315(self):
+        # There shouldn't be an assertion failure in imp.create_dynamic(),
+        # when spec.name is not a string.
+        create_dynamic = support.get_attribute(imp, 'create_dynamic')
+        class BadSpec:
+            name = None
+            origin = 'foo'
+        with self.assertRaises(TypeError):
+            create_dynamic(BadSpec())
+
+    def test_source_hash(self):
+        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xc6\xe7Z\r\x03:}\xab')
+        self.assertEqual(_imp.source_hash(43, b'hi'), b'\x85\x9765\xf8\x9a\x8b9')
+
+    def test_pyc_invalidation_mode_from_cmdline(self):
+        cases = [
+            ([], "default"),
+            (["--check-hash-based-pycs", "default"], "default"),
+            (["--check-hash-based-pycs", "always"], "always"),
+            (["--check-hash-based-pycs", "never"], "never"),
+        ]
+        for interp_args, expected in cases:
+            args = interp_args + [
+                "-c",
+                "import _imp; print(_imp.check_hash_based_pycs)",
+            ]
+            res = script_helper.assert_python_ok(*args)
+            self.assertEqual(res.out.strip().decode('utf-8'), expected)
 
 
 class ReloadTests(unittest.TestCase):

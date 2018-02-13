@@ -7,7 +7,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 import copyreg
 import functools
 import io
@@ -165,7 +165,10 @@ else:
                 if len(cmsg_data) % a.itemsize != 0:
                     raise ValueError
                 a.frombytes(cmsg_data)
-                assert len(a) % 256 == msg[0]
+                if len(a) % 256 != msg[0]:
+                    raise AssertionError(
+                        "Len is {0:n} but msg[0] is {1!r}".format(
+                            len(a), msg[0]))
                 return list(a)
         except (ValueError, IndexError):
             pass

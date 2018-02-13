@@ -144,9 +144,9 @@ type.
    +-------------------+------------------------------+------------------------------------+
    | Field             | C Type                       | Meaning                            |
    +===================+==============================+====================================+
-   | ``name``          | ``char *``                   | name of the struct sequence type   |
+   | ``name``          | ``const char *``             | name of the struct sequence type   |
    +-------------------+------------------------------+------------------------------------+
-   | ``doc``           | ``char *``                   | pointer to docstring for the type  |
+   | ``doc``           | ``const char *``             | pointer to docstring for the type  |
    |                   |                              | or NULL to omit                    |
    +-------------------+------------------------------+------------------------------------+
    | ``fields``        | ``PyStructSequence_Field *`` | pointer to *NULL*-terminated array |
@@ -164,16 +164,16 @@ type.
    :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 
-   +-----------+---------------+--------------------------------------+
-   | Field     | C Type        | Meaning                              |
-   +===========+===============+======================================+
-   | ``name``  | ``char *``    | name for the field or *NULL* to end  |
-   |           |               | the list of named fields, set to     |
-   |           |               | PyStructSequence_UnnamedField to     |
-   |           |               | leave unnamed                        |
-   +-----------+---------------+--------------------------------------+
-   | ``doc``   | ``char *``    | field docstring or *NULL* to omit    |
-   +-----------+---------------+--------------------------------------+
+   +-----------+------------------+--------------------------------------+
+   | Field     | C Type           | Meaning                              |
+   +===========+==================+======================================+
+   | ``name``  | ``const char *`` | name for the field or *NULL* to end  |
+   |           |                  | the list of named fields, set to     |
+   |           |                  | PyStructSequence_UnnamedField to     |
+   |           |                  | leave unnamed                        |
+   +-----------+------------------+--------------------------------------+
+   | ``doc``   | ``const char *`` | field docstring or *NULL* to omit    |
+   +-----------+------------------+--------------------------------------+
 
 
 .. c:var:: char* PyStructSequence_UnnamedField

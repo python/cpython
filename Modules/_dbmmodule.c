@@ -483,7 +483,7 @@ PyInit__dbm(void) {
     d = PyModule_GetDict(m);
     if (DbmError == NULL)
         DbmError = PyErr_NewException("_dbm.error",
-                                      PyExc_IOError, NULL);
+                                      PyExc_OSError, NULL);
     s = PyUnicode_FromString(which_dbm);
     if (s != NULL) {
         PyDict_SetItemString(d, "library", s);

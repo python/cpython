@@ -12,19 +12,27 @@
 
    To improve cache locality, each probe inspects a series of consecutive
    nearby entries before moving on to probes elsewhere in memory.  This leaves
-   us with a hybrid of linear probing and open addressing.  The linear probing
+   us with a hybrid of linear probing and randomized probing.  The linear probing
    reduces the cost of hash collisions because consecutive memory accesses
    tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
-   we then use open addressing with the upper bits from the hash value.  This
-   helps break-up long chains of collisions.
+   we then use more of the upper bits from the hash value and apply a simple
+   linear congruential random number genearator.  This helps break-up long
+   chains of collisions.
 
    All arithmetic on hash should ignore overflow.
 
    Unlike the dictionary implementation, the lookkey function can return
    NULL if the rich comparison returns an error.
+
+   Use cases for sets differ considerably from dictionaries where looked-up
+   keys are more likely to be present.  In contrast, sets are primarily
+   about membership testing where the presence of an element is not known in
+   advance.  Accordingly, the set implementation needs to optimize for both
+   the found and not-found case.
 */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 /* Object used as dummy key to fill deleted entries */
@@ -179,7 +187,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto restart;
             mask = so->mask;                 /* help avoid a register spill */
         }
-        else if (entry->hash == -1 && freeslot == NULL)
+        else if (entry->hash == -1)
             freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
@@ -208,7 +216,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                         goto restart;
                     mask = so->mask;
                 }
-                else if (entry->hash == -1 && freeslot == NULL)
+                else if (entry->hash == -1)
                     freeslot = entry;
             }
         }
@@ -236,7 +244,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry->hash = hash;
     if ((size_t)so->fill*5 < mask*3)
         return 0;
-    return set_table_resize(so, so->used);
+    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
 
   found_active:
     Py_DECREF(key);
@@ -302,7 +310,6 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     setentry small_copy[PySet_MINSIZE];
 
     assert(minused >= 0);
-    minused = (minused > 50000) ? minused * 2 : minused * 4;
 
     /* Find the smallest table size > minused. */
     /* XXX speed-up with intrinsics */
@@ -554,6 +561,7 @@ set_dealloc(PySetObject *so)
     setentry *entry;
     Py_ssize_t used = so->used;
 
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_SAFE_BEGIN(so)
     if (so->weakreflist != NULL)
@@ -643,8 +651,8 @@ set_merge(PySetObject *so, PyObject *otherset)
      * that there will be no (or few) overlapping keys.
      */
     if ((so->fill + other->used)*5 >= so->mask*3) {
-       if (set_table_resize(so, so->used + other->used) != 0)
-           return -1;
+        if (set_table_resize(so, (so->used + other->used)*2) != 0)
+            return -1;
     }
     so_entry = so->table;
     other_entry = other->table;
@@ -787,6 +795,7 @@ frozenset_hash(PyObject *self)
     hash ^= ((Py_uhash_t)PySet_GET_SIZE(self) + 1) * 1927868237UL;
 
     /* Disperse patterns arising in nested frozensets */
+    hash ^= (hash >> 11) ^ (hash >> 25);
     hash = hash * 69069U + 907133923UL;
 
     /* -1 is reserved as an error code */
@@ -810,6 +819,8 @@ typedef struct {
 static void
 setiter_dealloc(setiterobject *si)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(si);
     Py_XDECREF(si->si_set);
     PyObject_GC_Del(si);
 }
@@ -987,7 +998,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         if (dictsize < 0)
             return -1;
         if ((so->fill + dictsize)*5 >= so->mask*3) {
-            if (set_table_resize(so, so->used + dictsize) != 0)
+            if (set_table_resize(so, (so->used + dictsize)*2) != 0)
                 return -1;
         }
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
@@ -1084,7 +1095,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL, *result;
 
-    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset()", kwds))
+    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
@@ -1507,7 +1518,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
     /* If more than 1/4th are dummies, then resize them away. */
     if ((size_t)(so->fill - so->used) <= (size_t)so->mask / 4)
         return 0;
-    return set_table_resize(so, so->used);
+    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
 }
 
 static PyObject *
@@ -1547,20 +1558,26 @@ set_difference(PySetObject *so, PyObject *other)
     PyObject *key;
     Py_hash_t hash;
     setentry *entry;
-    Py_ssize_t pos = 0;
+    Py_ssize_t pos = 0, other_size;
     int rv;
 
     if (PySet_GET_SIZE(so) == 0) {
         return set_copy(so);
     }
 
-    if (!PyAnySet_Check(other)  && !PyDict_CheckExact(other)) {
+    if (PyAnySet_Check(other)) {
+        other_size = PySet_GET_SIZE(other);
+    }
+    else if (PyDict_CheckExact(other)) {
+        other_size = PyDict_GET_SIZE(other);
+    }
+    else {
         return set_copy_and_difference(so, other);
     }
 
     /* If len(so) much more than len(other), it's more efficient to simply copy
      * so and then iterate other looking for common elements. */
-    if ((PySet_GET_SIZE(so) >> 2) > PyObject_Size(other)) {
+    if ((PySet_GET_SIZE(so) >> 2) > other_size) {
         return set_copy_and_difference(so, other);
     }
 
@@ -2001,7 +2018,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL;
 
-    if (!_PyArg_NoKeywords("set()", kwds))
+    if (!_PyArg_NoKeywords("set", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
