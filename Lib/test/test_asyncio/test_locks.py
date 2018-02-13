@@ -214,11 +214,11 @@ class LockTests(test_utils.TestCase):
             call_count += 1
             await lock.acquire()
             lock_count += 1
-  
+
         async def lockandtrigger():
             await lock.acquire()
             self.loop.call_soon(trigger)
-          
+
         def trigger():
             t1.cancel()
             lock.release()
@@ -247,8 +247,6 @@ class LockTests(test_utils.TestCase):
         t3.cancel()
         test_utils.run_briefly(self.loop)
         self.assertTrue(t3.cancelled())
-
-
 
     def test_finished_waiter_cancelled(self):
         lock = asyncio.Lock(loop=self.loop)
