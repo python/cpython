@@ -398,6 +398,12 @@ Other Language Changes
   ``format(str(self), '')``.
   (Contributed by Serhiy Storchaka in :issue:`28974`.)
 
+* In order to better support dynamic creation of stack traces,
+  :class:`types.TracebackType` can now be instantiated from Python code, and
+  the ``tb_next`` attribute on :ref:`tracebacks <traceback-objects>` is now
+  writable.
+  (Contributed by Nathaniel J. Smith in :issue:`30579`.)
+
 
 New Modules
 ===========
