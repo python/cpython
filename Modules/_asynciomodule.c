@@ -458,12 +458,19 @@ future_schedule_callbacks(FutureObj *fut)
     return 0;
 }
 
+static int FutureObj_clear(FutureObj *fut);
+
 static int
 future_init(FutureObj *fut, PyObject *loop)
 {
     PyObject *res;
     int is_true;
     _Py_IDENTIFIER(get_debug);
+
+    (void)FutureObj_clear(fut);
+    fut->fut_state = STATE_PENDING;
+    fut->fut_log_tb = 0;
+    fut->fut_blocking = 0;
 
     if (loop == Py_None) {
         loop = get_event_loop();
@@ -474,7 +481,7 @@ future_init(FutureObj *fut, PyObject *loop)
     else {
         Py_INCREF(loop);
     }
-    Py_XSETREF(fut->fut_loop, loop);
+    fut->fut_loop = loop;
 
     res = _PyObject_CallMethodId(fut->fut_loop, &PyId_get_debug, NULL);
     if (res == NULL) {
@@ -486,15 +493,12 @@ future_init(FutureObj *fut, PyObject *loop)
         return -1;
     }
     if (is_true) {
-        Py_XSETREF(fut->fut_source_tb, _PyObject_CallNoArg(traceback_extract_stack));
+        fut->fut_source_tb = _PyObject_CallNoArg(traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
         }
     }
 
-    Py_CLEAR(fut->fut_callback0);
-    Py_CLEAR(fut->fut_context0);
-    Py_CLEAR(fut->fut_callbacks);
     return 0;
 }
 
@@ -1937,7 +1941,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
         return -1;
     }
 
-    self->task_context = PyContext_CopyCurrent();
+    Py_XSETREF(self->task_context, PyContext_CopyCurrent());
     if (self->task_context == NULL) {
         return -1;
     }

@@ -2379,18 +2379,13 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         @asyncio.coroutine
         def coro():
             pass
-        # Overwrite call_soon() to prevent increasing refcounts that are
-        # irrelevant to the test.
-        with support.swap_attr(self.loop, 'call_soon', lambda _step, context=None: None):
-            task = self.new_task(self.loop, coro())
-            refs_before = gettotalrefcount()
-            for i in range(100):
-                task.__init__(coro(), loop=self.loop)
-            self.assertAlmostEqual(gettotalrefcount() - refs_before, 0,
-                                   delta=10)
-        # Prevent destroying the task while it is pending.
-        self.loop.call_soon(task._step)
+        task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            task.__init__(coro(), loop=self.loop)
+            self.loop.run_until_complete(task)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and
