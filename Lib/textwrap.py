@@ -14,6 +14,40 @@ __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
 # some Unicode spaces (like \u00a0) are non-breaking whitespaces.
 _whitespace = '\t\n\x0b\x0c\r '
 
+try:
+    from unicodedata import east_asian_width
+
+    def _width(text):
+        """Return the display width of the text in columns, according to
+        unicodedata.east_asian_width only.
+        """
+        return sum(2 if east_asian_width(char) in {'F', 'W'} else 1
+                 for char in text)
+
+    def _slice(text, index):
+        """Return the two slices of text cut to index.
+        """
+        width = 0
+        pos = 0
+        for char in text:
+            width += 2 if east_asian_width(char) in {'F', 'W'} else 1
+            if width > index:
+                break
+            pos += 1
+        return text[:pos], text[pos:]
+
+except ImportError:
+
+    def _width(text):
+        """Fallback in case unicodedata is not available: The display width of
+        a text is just its number of characters.
+        """
+        return len(text)
+
+    def _slice(text, index):
+        return text[:index], text[index:]
+
+
 class TextWrapper:
     """
     Object for wrapping/filling text.  The public interface consists of
@@ -215,8 +249,9 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words:
-            cur_line.append(reversed_chunks[-1][:space_left])
-            reversed_chunks[-1] = reversed_chunks[-1][space_left:]
+            left, right = _slice(reversed_chunks[-1], space_left)
+            cur_line.append(left)
+            reversed_chunks[-1] = right
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
@@ -244,14 +279,13 @@ class TextWrapper:
         lines, but apart from that whitespace is preserved.
         """
         lines = []
-        if self.width <= 0:
-            raise ValueError("invalid width %r (must be > 0)" % self.width)
         if self.max_lines is not None:
             if self.max_lines > 1:
                 indent = self.subsequent_indent
             else:
                 indent = self.initial_indent
-            if len(indent) + len(self.placeholder.lstrip()) > self.width:
+            if (_width(indent) +
+                _width(self.placeholder.lstrip()) > self.width):
                 raise ValueError("placeholder too large for max width")
 
         # Arrange in reverse order so items can be efficiently popped
@@ -272,7 +306,7 @@ class TextWrapper:
                 indent = self.initial_indent
 
             # Maximum width for this line.
-            width = self.width - len(indent)
+            width = self.width - _width(indent)
 
             # First chunk on line is whitespace -- drop it, unless this
             # is the very beginning of the text (ie. no lines started yet).
@@ -280,7 +314,7 @@ class TextWrapper:
                 del chunks[-1]
 
             while chunks:
-                l = len(chunks[-1])
+                l = _width(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
                 if cur_len + l <= width:
@@ -290,16 +324,15 @@ class TextWrapper:
                 # Nope, this line is full.
                 else:
                     break
-
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).
-            if chunks and len(chunks[-1]) > width:
+            if chunks and _width(chunks[-1]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
-                cur_len = sum(map(len, cur_line))
+                cur_len = sum(map(_width, cur_line))
 
             # If the last chunk on this line is all whitespace, drop it.
             if self.drop_whitespace and cur_line and cur_line[-1].strip() == '':
-                cur_len -= len(cur_line[-1])
+                cur_len -= _width(cur_line[-1])
                 del cur_line[-1]
 
             if cur_line:
@@ -315,17 +348,17 @@ class TextWrapper:
                 else:
                     while cur_line:
                         if (cur_line[-1].strip() and
-                            cur_len + len(self.placeholder) <= width):
+                            cur_len + _width(self.placeholder) <= width):
                             cur_line.append(self.placeholder)
                             lines.append(indent + ''.join(cur_line))
                             break
-                        cur_len -= len(cur_line[-1])
+                        cur_len -= _width(cur_line[-1])
                         del cur_line[-1]
                     else:
                         if lines:
                             prev_line = lines[-1].rstrip()
-                            if (len(prev_line) + len(self.placeholder) <=
-                                    self.width):
+                            if (_width(prev_line) +
+                                _width(self.placeholder) <= self.width):
                                 lines[-1] = prev_line + self.placeholder
                                 break
                         lines.append(indent + self.placeholder.lstrip())
@@ -348,6 +381,10 @@ class TextWrapper:
         and all other whitespace characters (including newline) are
         converted to space.
         """
+        if self.width <= 0:
+            raise ValueError("invalid width %r (must be > 0)" % self.width)
+        elif self.width == 1 and _width(text) > len(text):
+            raise ValueError("invalid width 1 (must be > 1 when CJK chars)")
         chunks = self._split_chunks(text)
         if self.fix_sentence_endings:
             self._fix_sentence_endings(chunks)

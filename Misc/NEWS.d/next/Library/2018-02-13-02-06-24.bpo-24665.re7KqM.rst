@@ -1,0 +1,2 @@
+Textwrap now take into account CJK double characters while measuring line
+width.
