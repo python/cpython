@@ -4500,7 +4500,7 @@ unicode_decode_call_errorhandler_writer(
     }
     if (need_to_grow) {
         writer->overallocate = 1;
-        if (_PyUnicodeWriter_Prepare(writer, writer->min_length,
+        if (_PyUnicodeWriter_Prepare(writer, writer->min_length - writer->pos,
                             PyUnicode_MAX_CHAR_VALUE(repunicode)) == -1)
             goto onError;
     }
@@ -6176,9 +6176,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_ASCII_CHAR
 #undef WRITE_CHAR
@@ -6455,9 +6453,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_CHAR
     }
