@@ -7439,11 +7439,11 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                 "not a symbolic link");
         return NULL;
     }
-    print_name = rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
+    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
 
     result = PyUnicode_FromWideChar(print_name,
-                    rdb->SymbolicLinkReparseBuffer.PrintNameLength/2);
+                    rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
     return result;
 }
 
@@ -11472,7 +11472,7 @@ PyDoc_STRVAR(termsize__doc__,
     "This function will only be defined if an implementation is\n"         \
     "available for this system.\n"                                         \
     "\n"                                                                   \
-    "shutil.get_terminal_size is the high-level function which should \n"  \
+    "shutil.get_terminal_size is the high-level function which should\n"  \
     "normally be used, os.get_terminal_size is the low-level implementation.");
 
 static PyObject*

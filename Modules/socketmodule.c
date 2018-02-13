@@ -1099,25 +1099,33 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
 }
 
 
-/* Create a string object representing an IP address.
-   This is always a string of the form 'dd.dd.dd.dd' (with variable
-   size numbers). */
+/* Convert IPv4 sockaddr to a Python str. */
 
 static PyObject *
-makeipaddr(struct sockaddr *addr, int addrlen)
+make_ipv4_addr(const struct sockaddr_in *addr)
 {
-    char buf[NI_MAXHOST];
-    int error;
-
-    error = getnameinfo(addr, addrlen, buf, sizeof(buf), NULL, 0,
-        NI_NUMERICHOST);
-    if (error) {
-        set_gaierror(error);
+    char buf[INET_ADDRSTRLEN];
+    if (inet_ntop(AF_INET, &addr->sin_addr, buf, sizeof(buf)) == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return PyUnicode_FromString(buf);
 }
 
+#ifdef ENABLE_IPV6
+/* Convert IPv6 sockaddr to a Python str. */
+
+static PyObject *
+make_ipv6_addr(const struct sockaddr_in6 *addr)
+{
+    char buf[INET6_ADDRSTRLEN];
+    if (inet_ntop(AF_INET6, &addr->sin6_addr, buf, sizeof(buf)) == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyUnicode_FromString(buf);
+}
+#endif
 
 #ifdef USE_BLUETOOTH
 /* Convert a string representation of a Bluetooth address into a numeric
@@ -1182,11 +1190,10 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 
     case AF_INET:
     {
-        struct sockaddr_in *a;
-        PyObject *addrobj = makeipaddr(addr, sizeof(*a));
+        const struct sockaddr_in *a = (const struct sockaddr_in *)addr;
+        PyObject *addrobj = make_ipv4_addr(a);
         PyObject *ret = NULL;
         if (addrobj) {
-            a = (struct sockaddr_in *)addr;
             ret = Py_BuildValue("Oi", addrobj, ntohs(a->sin_port));
             Py_DECREF(addrobj);
         }
@@ -1230,11 +1237,10 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #ifdef ENABLE_IPV6
     case AF_INET6:
     {
-        struct sockaddr_in6 *a;
-        PyObject *addrobj = makeipaddr(addr, sizeof(*a));
+        const struct sockaddr_in6 *a = (const struct sockaddr_in6 *)addr;
+        PyObject *addrobj = make_ipv6_addr(a);
         PyObject *ret = NULL;
         if (addrobj) {
-            a = (struct sockaddr_in6 *)addr;
             ret = Py_BuildValue("OiII",
                                 addrobj,
                                 ntohs(a->sin6_port),
@@ -2661,8 +2667,8 @@ sock_gettimeout(PySocketSockObject *s)
 PyDoc_STRVAR(gettimeout_doc,
 "gettimeout() -> timeout\n\
 \n\
-Returns the timeout in seconds (float) associated with socket \n\
-operations. A timeout of None indicates that timeouts on socket \n\
+Returns the timeout in seconds (float) associated with socket\n\
+operations. A timeout of None indicates that timeouts on socket\n\
 operations are disabled.");
 
 /* s.setsockopt() method.
@@ -2752,7 +2758,7 @@ setsockopt(level, option, value: buffer)\n\
 setsockopt(level, option, None, optlen: int)\n\
 \n\
 Set a socket option.  See the Unix manual for level and option.\n\
-The value argument can either be an integer, a string buffer, or \n\
+The value argument can either be an integer, a string buffer, or\n\
 None, optlen.");
 
 
@@ -3310,8 +3316,8 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(recv_into_doc,
 "recv_into(buffer, [nbytes[, flags]]) -> nbytes_read\n\
 \n\
-A version of recv() that stores its data into a buffer rather than creating \n\
-a new string.  Receive up to buffersize bytes from the socket.  If buffersize \n\
+A version of recv() that stores its data into a buffer rather than creating\n\
+a new string.  Receive up to buffersize bytes from the socket.  If buffersize\n\
 is not specified (or 0), receive up to the size available in the given buffer.\n\
 \n\
 See recv() for documentation about the flags.");
@@ -4867,7 +4873,9 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
             if (type == -1) {
                 int tmp;
                 socklen_t slen = sizeof(tmp);
-                if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &tmp, &slen) == 0) {
+                if (getsockopt(fd, SOL_SOCKET, SO_TYPE,
+                               (void *)&tmp, &slen) == 0)
+                {
                     type = tmp;
                 } else {
 #ifdef MS_WINDOWS
@@ -4885,7 +4893,9 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
             if (proto == -1) {
                 int tmp;
                 socklen_t slen = sizeof(tmp);
-                if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &tmp, &slen) == 0) {
+                if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL,
+                               (void *)&tmp, &slen) == 0)
+                {
                     proto = tmp;
                 } else {
 #ifdef MS_WINDOWS
@@ -5150,14 +5160,14 @@ static PyObject *
 socket_gethostbyname(PyObject *self, PyObject *args)
 {
     char *name;
-    sock_addr_t addrbuf;
+    struct sockaddr_in addrbuf;
     PyObject *ret = NULL;
 
     if (!PyArg_ParseTuple(args, "et:gethostbyname", "idna", &name))
         return NULL;
-    if (setipaddr(name, SAS2SA(&addrbuf),  sizeof(addrbuf), AF_INET) < 0)
+    if (setipaddr(name, (struct sockaddr *)&addrbuf,  sizeof(addrbuf), AF_INET) < 0)
         goto finally;
-    ret = makeipaddr(SAS2SA(&addrbuf), sizeof(struct sockaddr_in));
+    ret = make_ipv4_addr(&addrbuf);
 finally:
     PyMem_Free(name);
     return ret;
@@ -5259,7 +5269,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
             sin.sin_len = sizeof(sin);
 #endif
             memcpy(&sin.sin_addr, *pch, sizeof(sin.sin_addr));
-            tmp = makeipaddr((struct sockaddr *)&sin, sizeof(sin));
+            tmp = make_ipv4_addr(&sin);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin))
                 memcpy((char *) addr, &sin, sizeof(sin));
@@ -5276,8 +5286,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
             sin6.sin6_len = sizeof(sin6);
 #endif
             memcpy(&sin6.sin6_addr, *pch, sizeof(sin6.sin6_addr));
-            tmp = makeipaddr((struct sockaddr *)&sin6,
-                sizeof(sin6));
+            tmp = make_ipv6_addr(&sin6);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin6))
                 memcpy((char *) addr, &sin6, sizeof(sin6));
@@ -5772,7 +5781,7 @@ Convert a 16-bit unsigned integer from network to host byte order.\n\
 Note that in case the received integer does not fit in 16-bit unsigned\n\
 integer, but does fit in a positive C int, it is silently truncated to\n\
 16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an \n\
+However, this silent truncation feature is deprecated, and will raise an\n\
 exception in future versions of Python.");
 
 
@@ -5843,7 +5852,7 @@ Convert a 16-bit unsigned integer from host to network byte order.\n\
 Note that in case the received integer does not fit in 16-bit unsigned\n\
 integer, but does fit in a positive C int, it is silently truncated to\n\
 16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an \n\
+However, this silent truncation feature is deprecated, and will raise an\n\
 exception in future versions of Python.");
 
 
@@ -6048,13 +6057,10 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     Py_buffer packed_ip;
     const char* retval;
 #ifdef ENABLE_IPV6
-    char ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+    char ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 #else
-    char ip[INET_ADDRSTRLEN + 1];
+    char ip[INET_ADDRSTRLEN];
 #endif
-
-    /* Guarantee NUL-termination for PyUnicode_FromString() below */
-    memset((void *) &ip[0], '\0', sizeof(ip));
 
     if (!PyArg_ParseTuple(args, "iy*:inet_ntop", &af, &packed_ip)) {
         return NULL;
@@ -6083,6 +6089,7 @@ socket_inet_ntop(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    /* inet_ntop guarantee NUL-termination of resulting string. */
     retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
     PyBuffer_Release(&packed_ip);
     if (!retval) {
@@ -6156,7 +6163,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     }
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)
     if ((flags & AI_NUMERICSERV) && (pptr == NULL || (pptr[0] == '0' && pptr[1] == 0))) {
-        /* On OSX upto at least OSX 10.8 getaddrinfo crashes
+        /* On OSX up to at least OSX 10.8 getaddrinfo crashes
          * if AI_NUMERICSERV is set and the servname is NULL or "0".
          * This workaround avoids a segfault in libsystem.
          */

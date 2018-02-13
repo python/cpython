@@ -202,9 +202,9 @@ The grammar for a replacement field is as follows:
    .. productionlist:: sf
       replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-      arg_name: [`identifier` | `integer`]
+      arg_name: [`identifier` | `digit`+]
       attribute_name: `identifier`
-      element_index: `integer` | `index_string`
+      element_index: `digit`+ | `index_string`
       index_string: <any source character except "]"> +
       conversion: "r" | "s" | "a"
       format_spec: <described in the next section>
@@ -304,9 +304,9 @@ The general form of a *standard format specifier* is:
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `integer`
+   width: `digit`+
    grouping_option: "_" | ","
-   precision: `integer`
+   precision: `digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*

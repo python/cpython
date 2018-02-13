@@ -187,7 +187,7 @@ is_coroutine(PyObject *coro)
         return _is_coroutine(coro);
     }
 
-    /* either an error has occured or
+    /* either an error has occurred or
        type(coro) is in iscoroutine_typecache
     */
     return has_it;
@@ -458,12 +458,26 @@ future_schedule_callbacks(FutureObj *fut)
     return 0;
 }
 
+
 static int
 future_init(FutureObj *fut, PyObject *loop)
 {
     PyObject *res;
     int is_true;
     _Py_IDENTIFIER(get_debug);
+
+    // Same to FutureObj_clear() but not clearing fut->dict
+    Py_CLEAR(fut->fut_loop);
+    Py_CLEAR(fut->fut_callback0);
+    Py_CLEAR(fut->fut_context0);
+    Py_CLEAR(fut->fut_callbacks);
+    Py_CLEAR(fut->fut_result);
+    Py_CLEAR(fut->fut_exception);
+    Py_CLEAR(fut->fut_source_tb);
+
+    fut->fut_state = STATE_PENDING;
+    fut->fut_log_tb = 0;
+    fut->fut_blocking = 0;
 
     if (loop == Py_None) {
         loop = get_event_loop();
@@ -474,7 +488,7 @@ future_init(FutureObj *fut, PyObject *loop)
     else {
         Py_INCREF(loop);
     }
-    Py_XSETREF(fut->fut_loop, loop);
+    fut->fut_loop = loop;
 
     res = _PyObject_CallMethodId(fut->fut_loop, &PyId_get_debug, NULL);
     if (res == NULL) {
@@ -486,15 +500,11 @@ future_init(FutureObj *fut, PyObject *loop)
         return -1;
     }
     if (is_true) {
-        Py_XSETREF(fut->fut_source_tb, _PyObject_CallNoArg(traceback_extract_stack));
+        fut->fut_source_tb = _PyObject_CallNoArg(traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
         }
     }
-
-    fut->fut_callback0 = NULL;
-    fut->fut_context0 = NULL;
-    fut->fut_callbacks = NULL;
 
     return 0;
 }
@@ -1938,16 +1948,16 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
         return -1;
     }
 
-    self->task_context = PyContext_CopyCurrent();
+    Py_XSETREF(self->task_context, PyContext_CopyCurrent());
     if (self->task_context == NULL) {
         return -1;
     }
 
-    self->task_fut_waiter = NULL;
+    Py_CLEAR(self->task_fut_waiter);
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     Py_INCREF(coro);
-    self->task_coro = coro;
+    Py_XSETREF(self->task_coro, coro);
 
     if (task_call_step_soon(self, NULL)) {
         return -1;

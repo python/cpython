@@ -950,7 +950,7 @@ Internal types
       .. index:: object: frame
 
       Frame objects represent execution frames.  They may occur in traceback objects
-      (see below).
+      (see below), and are also passed to registered trace functions.
 
       .. index::
          single: f_back (frame attribute)
@@ -1003,6 +1003,8 @@ Internal types
 
          .. versionadded:: 3.4
 
+   .. _traceback-objects:
+
    Traceback objects
       .. index::
          object: traceback
@@ -1015,31 +1017,51 @@ Internal types
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
-      is created when an exception occurs.  When the search for an exception handler
+      is implicitly created when an exception occurs, and may also be explicitly
+      created by calling :class:`types.TracebackType`.
+
+      For implicitly created tracebacks, when the search for an exception handler
       unwinds the execution stack, at each unwound level a traceback object is
       inserted in front of the current traceback.  When an exception handler is
       entered, the stack trace is made available to the program. (See section
       :ref:`try`.) It is accessible as the third item of the
-      tuple returned by ``sys.exc_info()``. When the program contains no suitable
+      tuple returned by ``sys.exc_info()``, and as the ``__traceback__`` attribute
+      of the caught exception.
+
+      When the program contains no suitable
       handler, the stack trace is written (nicely formatted) to the standard error
       stream; if the interpreter is interactive, it is also made available to the user
       as ``sys.last_traceback``.
 
+      For explicitly created tracebacks, it is up to the creator of the traceback
+      to determine how the ``tb_next`` attributes should be linked to form a
+      full stack trace.
+
       .. index::
-         single: tb_next (traceback attribute)
          single: tb_frame (traceback attribute)
          single: tb_lineno (traceback attribute)
          single: tb_lasti (traceback attribute)
          statement: try
 
-      Special read-only attributes: :attr:`tb_next` is the next level in the stack
-      trace (towards the frame where the exception occurred), or ``None`` if there is
-      no next level; :attr:`tb_frame` points to the execution frame of the current
-      level; :attr:`tb_lineno` gives the line number where the exception occurred;
-      :attr:`tb_lasti` indicates the precise instruction.  The line number and last
-      instruction in the traceback may differ from the line number of its frame object
-      if the exception occurred in a :keyword:`try` statement with no matching except
-      clause or with a finally clause.
+      Special read-only attributes:
+      :attr:`tb_frame` points to the execution frame of the current level;
+      :attr:`tb_lineno` gives the line number where the exception occurred;
+      :attr:`tb_lasti` indicates the precise instruction.
+      The line number and last instruction in the traceback may differ from the
+      line number of its frame object if the exception occurred in a
+      :keyword:`try` statement with no matching except clause or with a
+      finally clause.
+
+      .. index::
+         single: tb_next (traceback attribute)
+
+      Special writable attribute: :attr:`tb_next` is the next level in the stack
+      trace (towards the frame where the exception occurred), or ``None`` if
+      there is no next level.
+
+    .. versionchanged:: 3.7
+       Traceback objects can now be explicitly instantiated from Python code,
+       and the ``tb_next`` attribute of existing instances can be updated.
 
    Slice objects
       .. index:: builtin: slice
@@ -1463,10 +1485,12 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__getattr__(self, name)
 
-   Called when an attribute lookup has not found the attribute in the usual places
-   (i.e. it is not an instance attribute nor is it found in the class tree for
-   ``self``).  ``name`` is the attribute name. This method should return the
-   (computed) attribute value or raise an :exc:`AttributeError` exception.
+   Called when the default attribute access fails with an :exc:`AttributeError`
+   (either :meth:`__getattribute__` raises an :exc:`AttributeError` because
+   *name* is not an instance attribute or an attribute in the class tree
+   for ``self``; or :meth:`__get__` of a *name* property raises
+   :exc:`AttributeError`).  This method should either return the (computed)
+   attribute value or raise an :exc:`AttributeError` exception.
 
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
