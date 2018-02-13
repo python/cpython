@@ -308,7 +308,7 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 /* This block removes some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
 #if 1
-typedef struct{
+typedef struct {
     DWORD build_number;  /* available starting with this Win10 BuildNumber */
     const char flag_name[20];
 } FlagRuntimeInfo;
@@ -329,7 +329,7 @@ remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
     OSVERSIONINFOEX info;
-    DWORDLONG dwlConditionMask = 0;
+    DWORDLONG dwlConditionMask;
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
@@ -343,6 +343,7 @@ remove_unusable_flags(PyObject *m)
     info.dwMinorVersion = 0;
 
     /* set Condition Mask */
+    dwlConditionMask = 0;
     VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
