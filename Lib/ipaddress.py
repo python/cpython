@@ -1108,7 +1108,7 @@ class _BaseV4:
                 # resulting string is '0b' + 32 bits
                 #  plus 7 _ if needed
                 padlen = IPV4LENGTH+2 + (7*len(separator))
-            
+
             # hex
             elif fmt_base == 'x':
                 # resulting string is '0x' + 8 hex digits
@@ -1120,7 +1120,7 @@ class _BaseV4:
             # strip left two if necessary
             if '#' not in fmt:
                 retstr = retstr[2:]
-                
+
         else:
             retstr = str(self)
 
@@ -1683,7 +1683,7 @@ class _BaseV6:
                 # resulting string is '0b' + 32 bits
                 #  plus 7 _ if needed
                 padlen = IPV6LENGTH+2 + (31*len(separator))
-            
+
             # hex
             elif fmt_base == 'x':
                 # resulting string is '0x' + 8 hex digits
@@ -1695,7 +1695,7 @@ class _BaseV6:
             # strip left two if necessary
             if '#' not in fmt:
                 retstr = retstr[2:]
-                
+
         else:
             retstr = str(self)
 

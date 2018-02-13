@@ -169,10 +169,10 @@ class CommonTestMixin_v6(CommonTestMixin):
 
 class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     factory = ipaddress.IPv4Address
-    
+
     def test_format(self):
         addr = ipaddress.IPv4Address("1.2.3.4")
-        pairs  = [ 
+        pairs  = [
             ("b" ,"00000001000000100000001100000100"),
             ("n" ,"00000001000000100000001100000100"),
             ("x" ,"01020304"),
@@ -189,7 +189,7 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
         for (fmt, txt) in pairs:
             res = format(addr, fmt)
             self.assertEqual(txt, format(addr, fmt))
-        
+
 
     def test_network_passed_as_address(self):
         addr = "127.0.0.1/24"
@@ -289,7 +289,7 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_format(self):
         addr = ipaddress.IPv6Address("::1.2.3.4")
-        pairs  = [ 
+        pairs  = [
             ("b"
             ,"000000000000000000000000000000000"
             "000000000000000000000000000000000"
