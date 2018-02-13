@@ -644,7 +644,7 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
     if (self->unused_data == NULL)
         goto error;
 
