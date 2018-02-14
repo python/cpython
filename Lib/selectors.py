@@ -428,7 +428,7 @@ if hasattr(select, 'epoll'):
         def select(self, timeout=None):
             if timeout is None:
                 timeout = -1
-            elif timeout <= 0:
+            elif timeout < -1:
                 timeout = 0
             else:
                 # epoll_wait() has a resolution of 1 millisecond, round away
