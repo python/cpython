@@ -75,6 +75,10 @@
 #include <alloca.h>
 #endif
 
+#ifdef __VXWORKS__
+#define alloca __builtin_alloca
+#endif
+
 #if defined(_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.
    MingW, AFAIK, doesn't support it.
