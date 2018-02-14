@@ -1,0 +1,2 @@
+``_abc`` module is added.  It is speedup module implemented in C for
+``abc``. It makes Python startup 10% faster.
