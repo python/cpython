@@ -1728,7 +1728,10 @@ class Popen(object):
             """Send a signal to the process."""
             # Skip signalling a process that we know has already died.
             if self.returncode is None:
-                os.kill(self.pid, sig)
+                # Issue32795
+                # Send signal to the whole process group to prevent
+                # making the subprocess a zombie due to its subprocesses
+                os.killpg(self.pid, sig)
 
         def terminate(self):
             """Terminate the process with SIGTERM
