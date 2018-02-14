@@ -734,7 +734,7 @@ regen-importlib: Programs/_freeze_importlib
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
-	regen-ast regen-importlib regen-token
+	regen-ast regen-importlib regen-token regen-symbol
 
 ############################################################################
 # Special rules for object files
@@ -818,10 +818,14 @@ Parser/printgrammar.o: $(srcdir)/Parser/printgrammar.c
 
 Parser/pgenmain.o:	$(srcdir)/Include/parsetok.h
 
-.PHONY=regen-token
+.PHONY=regen-token regen-symbol
 regen-token:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Lib/token.py $(srcdir)/Include/token.h $(srcdir)/Lib/token.py.new
 	$(UPDATE_FILE) $(srcdir)/Lib/token.py $(srcdir)/Lib/token.py.new
+
+regen-symbol:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Lib/symbol.py $(srcdir)/Include/graminit.h $(srcdir)/Lib/symbol.py.new $(srcdir)/Lib/symbol.py
+	$(UPDATE_FILE) $(srcdir)/Lib/symbol.py $(srcdir)/Lib/symbol.py.new
 
 .PHONY=regen-ast
 regen-ast:
