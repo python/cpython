@@ -2235,7 +2235,7 @@ class SendfileMixin:
                                     "not supported"):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file,
-                                  fallback=False))
+                                   fallback=False))
 
         cli_proto.transport.close()
         self.run_loop(srv_proto.done)
