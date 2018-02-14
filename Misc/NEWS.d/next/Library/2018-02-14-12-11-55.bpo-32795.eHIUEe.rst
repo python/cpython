@@ -1,0 +1,2 @@
+Subprocess now become process group leaders, so its spawned sub-subprocesses
+can get killed properly. Patch by Fangyi Zhou.
