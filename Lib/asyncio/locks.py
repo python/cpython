@@ -349,12 +349,16 @@ class Condition(_ContextManagerMixin):
 
         finally:
             # Must reacquire lock even if wait is cancelled
+            cancelled = False
             while True:
                 try:
                     yield from self.acquire()
                     break
                 except futures.CancelledError:
-                    pass
+                    cancelled = True
+
+            if cancelled:
+                raise futures.CancelledError
 
     @coroutine
     def wait_for(self, predicate):
