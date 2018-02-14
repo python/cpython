@@ -65,14 +65,12 @@ RARROW = 51
 ELLIPSIS = 52
 # Don't forget to update the table _PyParser_TokenNames in tokenizer.c!
 OP = 53
-AWAIT = 54
-ASYNC = 55
-ERRORTOKEN = 56
+ERRORTOKEN = 54
 # These aren't used by the C tokenizer but are needed for tokenize.py
-COMMENT = 57
-NL = 58
-ENCODING = 59
-N_TOKENS = 60
+COMMENT = 55
+NL = 56
+ENCODING = 57
+N_TOKENS = 58
 # Special definitions for cooperation with parser
 NT_OFFSET = 256
 #--end constants--
@@ -100,6 +98,9 @@ def _main():
     outFileName = "Lib/token.py"
     if len(args) > 1:
         outFileName = args[1]
+    skeletonFileName = __file__
+    if len(args) > 2:
+        skeletonFileName = args[2]
     try:
         fp = open(inFileName)
     except OSError as err:
@@ -131,7 +132,7 @@ def _main():
     keys = sorted(tokens.keys())
     # load the output skeleton from the target:
     try:
-        fp = open(outFileName)
+        fp = open(skeletonFileName)
     except OSError as err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(2)
