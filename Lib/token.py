@@ -100,6 +100,9 @@ def _main():
     outFileName = "Lib/token.py"
     if len(args) > 1:
         outFileName = args[1]
+    skeletonFileName = __file__
+    if len(args) > 2:
+        skeletonFileName = args[2]
     try:
         fp = open(inFileName)
     except OSError as err:
@@ -131,7 +134,7 @@ def _main():
     keys = sorted(tokens.keys())
     # load the output skeleton from the target:
     try:
-        fp = open(outFileName)
+        fp = open(skeletonFileName)
     except OSError as err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(2)
