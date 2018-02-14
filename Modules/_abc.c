@@ -1,9 +1,5 @@
 /* ABCMeta implementation */
 
-/* TODO: Test this hard in multithreaded context. */
-/* TODO: Think about inlining some calls and/or using macros */
-/* TODO: Use separate branches with "fast paths" */
-
 #include "Python.h"
 #include "structmember.h"
 
@@ -281,7 +277,8 @@ compute_abstract_methods(PyObject *self)
         goto error;
     }
 
-    /* TODO: Fast path for exact dicts with PyDict_Next */
+    // We can't use PyDict_Next(ns) even when ns is dict because
+    // _PyObject_IsAbstract() can mutate ns.
     items = PyMapping_Items(ns);
     if (!items) {
         goto error;
