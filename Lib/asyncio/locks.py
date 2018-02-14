@@ -358,12 +358,16 @@ class Condition(_ContextManagerMixin):
 
         finally:
             # Must reacquire lock even if wait is cancelled
+            cancelled = False
             while True:
                 try:
                     await self.acquire()
                     break
                 except futures.CancelledError:
-                    pass
+                    cancelled = True
+
+            if cancelled:
+                raise futures.CancelledError
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
