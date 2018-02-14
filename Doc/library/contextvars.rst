@@ -254,7 +254,7 @@ client::
         client_addr_var.set(addr)
 
         # In any code that we call is is now possible to get
-        # client's address by calling `client_addr_var.get()`.
+        # client's address by calling 'client_addr_var.get()'.
 
         while True:
             line = await reader.readline()
