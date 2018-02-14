@@ -39,9 +39,9 @@ typedef struct {
 static void
 abc_data_dealloc(_abc_data *self)
 {
-    Py_DECREF(self->_abc_registry);
-    Py_DECREF(self->_abc_cache);
-    Py_DECREF(self->_abc_negative_cache);
+    Py_XDECREF(self->_abc_registry);
+    Py_XDECREF(self->_abc_cache);
+    Py_XDECREF(self->_abc_negative_cache);
     Py_DECREF(self->_abc_negative_cache_version);
     Py_TYPE(self)->tp_free(self);
 }
@@ -49,40 +49,17 @@ abc_data_dealloc(_abc_data *self)
 static PyObject *
 abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *registry = NULL, *cache = NULL, *negative_cache = NULL;
-    registry = PySet_New(NULL);
-    if (registry == NULL) {
-        return NULL;
-    }
-    cache = PySet_New(NULL);
-    if (cache == NULL) {
-        Py_DECREF(registry);
-        return NULL;
-    }
-    negative_cache = PySet_New(NULL);
-    if (negative_cache == NULL) {
-        Py_DECREF(registry);
-        Py_DECREF(cache);
-        return NULL;
-    }
-
     _abc_data *self = (_abc_data *) type->tp_alloc(type, 0);
     if (self == NULL) {
-        goto error;
+        return NULL;
     }
 
-    self->_abc_registry = registry;
-    self->_abc_cache = cache;
-    self->_abc_negative_cache = negative_cache;
+    self->_abc_registry = NULL;
+    self->_abc_cache = NULL;
+    self->_abc_negative_cache = NULL;
     self->_abc_negative_cache_version = abc_invalidation_counter;
     Py_INCREF(abc_invalidation_counter);
     return (PyObject *) self;
-
-error:
-    Py_DECREF(registry);
-    Py_DECREF(cache);
-    Py_DECREF(negative_cache);
-    return NULL;
 }
 
 PyDoc_STRVAR(abc_data_doc,
@@ -116,7 +93,7 @@ _get_impl(PyObject *self)
 static int
 _in_weak_set(PyObject *set, PyObject *obj)
 {
-    if (PySet_Size(set) == 0) {
+    if (set == NULL || PySet_Size(set) == 0) {
         return 0;
     }
     PyObject *ref = PyWeakref_NewRef(obj, NULL);
@@ -154,8 +131,16 @@ static PyMethodDef _destroy_def = {
 };
 
 static int
-_add_to_weak_set(PyObject *set, PyObject *obj)
+_add_to_weak_set(PyObject **pset, PyObject *obj)
 {
+    if (*pset == NULL) {
+        *pset = PySet_New(NULL);
+        if (*pset == NULL) {
+            return -1;
+        }
+    }
+
+    PyObject *set = *pset;
     PyObject *ref, *wr;
     PyObject *destroy_cb;
     wr = PyWeakref_NewRef(set, NULL);
@@ -192,7 +177,7 @@ _reset_registry(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    if (PySet_Clear(impl->_abc_registry) < 0) {
+    if (impl->_abc_registry != NULL && PySet_Clear(impl->_abc_registry) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -465,7 +450,7 @@ _abc_register(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    if (_add_to_weak_set(impl->_abc_registry, subclass) < 0) {
+    if (_add_to_weak_set(&impl->_abc_registry, subclass) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -594,7 +579,8 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     assert(r >= 0);  // Both should be PyLong
     if (r > 0) {
         /* Invalidate the negative cache. */
-        if (PySet_Clear(impl->_abc_negative_cache) < 0) {
+        if (impl->_abc_negative_cache != NULL &&
+                PySet_Clear(impl->_abc_negative_cache) < 0) {
             goto end;
         }
         /* INCREF the new value of cache version,
@@ -621,7 +607,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
     if (ok == Py_True) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
+        if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
             goto end;
         }
         result = Py_True;
@@ -629,7 +615,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
     if (ok == Py_False) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(impl->_abc_negative_cache, subclass) < 0) {
+        if (_add_to_weak_set(&impl->_abc_negative_cache, subclass) < 0) {
             goto end;
         }
         result = Py_False;
@@ -652,7 +638,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
             goto end;
         }
         if ((PyObject *)self == mro_item) {
-            if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
+            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
             result = Py_True;
@@ -675,7 +661,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
         int r = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
         if (r > 0) {
-            if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
+            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
             result = Py_True;
@@ -687,7 +673,7 @@ _abc_subclasscheck(PyObject *m, PyObject *args)
     }
 
     /* No dice; update negative cache. */
-    if (_add_to_weak_set(impl->_abc_negative_cache, subclass) < 0) {
+    if (_add_to_weak_set(&impl->_abc_negative_cache, subclass) < 0) {
         goto end;
     }
     result = Py_False;
@@ -715,6 +701,9 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
         return 1;
     }
 
+    if (impl->_abc_registry == NULL) {
+        return 0;
+    }
     Py_ssize_t registry_size = PySet_Size(impl->_abc_registry);
     if (registry_size == 0) {
         return 0;
@@ -751,7 +740,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
             break;
         }
         if (r > 0) {
-            if (_add_to_weak_set(impl->_abc_cache, subclass) < 0) {
+            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
                 ret = -1;
                 break;
             }
