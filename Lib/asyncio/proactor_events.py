@@ -111,7 +111,10 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def _force_close(self, exc):
         if self._empty_waiter is not None:
-            self._empty_waiter.set_exception(exc)
+            if exc is None:
+                self._empty_waiter.set_result(None)
+            else:
+                self._empty_waiter.set_exception(exc)
         if self._closing:
             return
         self._closing = True
