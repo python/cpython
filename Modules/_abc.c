@@ -54,6 +54,9 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    self->_abc_registry = NULL;
+    self->_abc_cache = NULL;
+    self->_abc_negative_cache = NULL;
     self->_abc_negative_cache_version = abc_invalidation_counter;
     Py_INCREF(abc_invalidation_counter);
     return (PyObject *) self;
