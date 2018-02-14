@@ -524,12 +524,23 @@ _abc_instancecheck(PyObject *m, PyObject *args)
     }
     result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
                                            subclass, NULL);
-    if (result == NULL || PyObject_IsTrue(result)) {
+    if (result == NULL) {
         goto end;
     }
-    Py_DECREF(result);
-    result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                           subtype, NULL);
+
+    switch (PyObject_IsTrue(result)) {
+    case -1:
+        Py_DECREF(result);
+        result = NULL;
+        break;
+    case 0:
+        Py_DECREF(result);
+        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
+                                               subtype, NULL);
+        break;
+    case 1:  // Nothing to do.
+        break;
+    }
 
 end:
     Py_XDECREF(impl);
