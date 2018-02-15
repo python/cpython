@@ -319,7 +319,7 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
             ("#_x" ,"0x0000_0000_0000_0000_0000_0000_0102_0304"),
         ]
         for (fmt, txt) in pairs:
-            res = format(addr, fmt)
+            self.assertEqual(txt, format(addr, fmt))
 
     def test_network_passed_as_address(self):
         addr = "::1/24"
