@@ -123,10 +123,14 @@ class bdist_rpm(Command):
 
         ('quiet', 'q',
          "Run the INSTALL phase of RPM building in quiet mode"),
+
+         #
+         ('preserve-times=', None,
+          "Preserve the time stamp of copied files"),
         ]
 
     boolean_options = ['keep-temp', 'use-rpm-opt-flags', 'rpm3-mode',
-                       'no-autoreq', 'quiet']
+                       'no-autoreq', 'quiet', 'preserve-times']
 
     negative_opt = {'no-keep-temp': 'keep-temp',
                     'no-rpm-opt-flags': 'use-rpm-opt-flags',
@@ -177,6 +181,8 @@ class bdist_rpm(Command):
 
         self.force_arch = None
         self.quiet = 0
+
+        self.preserve_times = 1
 
     def finalize_options(self):
         self.set_undefined_options('bdist', ('bdist_base', 'bdist_base'))
@@ -298,11 +304,11 @@ class bdist_rpm(Command):
 
         source = sdist.get_archive_files()[0]
         source_dir = rpm_dir['SOURCES']
-        self.copy_file(source, source_dir)
+        self.copy_file(source, source_dir, preserve_mode=preserve_times)
 
         if self.icon:
             if os.path.exists(self.icon):
-                self.copy_file(self.icon, source_dir)
+                self.copy_file(self.icon, source_dir, preserve_mode=preserve_times)
             else:
                 raise DistutilsFileError(
                       "icon file '%s' does not exist" % self.icon)

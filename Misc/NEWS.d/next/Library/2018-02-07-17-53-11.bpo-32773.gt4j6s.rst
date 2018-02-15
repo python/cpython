@@ -1,0 +1,1 @@
+added --option to allow changing the preserve_mode for copy_file() within bdist_rpm.py
