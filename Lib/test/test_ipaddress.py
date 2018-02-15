@@ -187,7 +187,6 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
             ("#_x" ,"0x0102_0304"),
         ]
         for (fmt, txt) in pairs:
-            res = format(addr, fmt)
             self.assertEqual(txt, format(addr, fmt))
 
 
