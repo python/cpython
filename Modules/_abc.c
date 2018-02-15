@@ -198,12 +198,13 @@ _reset_caches(PyObject *m, PyObject *args)
     if (impl == NULL) {
         return NULL;
     }
-    if (PySet_Clear(impl->_abc_cache) < 0) {
+    if (impl->_abc_cache != NULL && PySet_Clear(impl->_abc_cache) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
     /* also the second cache */
-    if (PySet_Clear(impl->_abc_negative_cache) < 0) {
+    if (impl->_abc_negative_cache != NULL &&
+            PySet_Clear(impl->_abc_negative_cache) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
