@@ -538,6 +538,8 @@ _abc_instancecheck(PyObject *m, PyObject *args)
         break;
     case 1:  // Nothing to do.
         break;
+    default:
+        Py_UNREACHABLE();
     }
 
 end:
