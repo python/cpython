@@ -1,0 +1,1 @@
+adding compatibility for pathlike objects in sys.path
