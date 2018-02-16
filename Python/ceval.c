@@ -254,8 +254,8 @@ PyEval_SaveThread(void)
     PyThreadState *tstate = PyThreadState_Swap(NULL);
     if (tstate == NULL)
         Py_FatalError("PyEval_SaveThread: NULL tstate");
-    if (gil_created())
-        drop_gil(tstate);
+    assert(gil_created());
+    drop_gil(tstate);
     return tstate;
 }
 
@@ -264,17 +264,18 @@ PyEval_RestoreThread(PyThreadState *tstate)
 {
     if (tstate == NULL)
         Py_FatalError("PyEval_RestoreThread: NULL tstate");
-    if (gil_created()) {
-        int err = errno;
-        take_gil(tstate);
-        /* _Py_Finalizing is protected by the GIL */
-        if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
-            drop_gil(tstate);
-            PyThread_exit_thread();
-            Py_UNREACHABLE();
-        }
-        errno = err;
+    assert(gil_created());
+
+    int err = errno;
+    take_gil(tstate);
+    /* _Py_Finalizing is protected by the GIL */
+    if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
+        drop_gil(tstate);
+        PyThread_exit_thread();
+        Py_UNREACHABLE();
     }
+    errno = err;
+
     PyThreadState_Swap(tstate);
 }
 
@@ -1570,61 +1571,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             Py_DECREF(sub);
             if (err != 0)
                 goto error;
-            DISPATCH();
-        }
-
-        TARGET(STORE_ANNOTATION) {
-            _Py_IDENTIFIER(__annotations__);
-            PyObject *ann_dict;
-            PyObject *ann = POP();
-            PyObject *name = GETITEM(names, oparg);
-            int err;
-            if (f->f_locals == NULL) {
-                PyErr_Format(PyExc_SystemError,
-                             "no locals found when storing annotation");
-                Py_DECREF(ann);
-                goto error;
-            }
-            /* first try to get __annotations__ from locals... */
-            if (PyDict_CheckExact(f->f_locals)) {
-                ann_dict = _PyDict_GetItemId(f->f_locals,
-                                             &PyId___annotations__);
-                if (ann_dict == NULL) {
-                    PyErr_SetString(PyExc_NameError,
-                                    "__annotations__ not found");
-                    Py_DECREF(ann);
-                    goto error;
-                }
-                Py_INCREF(ann_dict);
-            }
-            else {
-                PyObject *ann_str = _PyUnicode_FromId(&PyId___annotations__);
-                if (ann_str == NULL) {
-                    Py_DECREF(ann);
-                    goto error;
-                }
-                ann_dict = PyObject_GetItem(f->f_locals, ann_str);
-                if (ann_dict == NULL) {
-                    if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-                        PyErr_SetString(PyExc_NameError,
-                                        "__annotations__ not found");
-                    }
-                    Py_DECREF(ann);
-                    goto error;
-                }
-            }
-            /* ...if succeeded, __annotations__[name] = ann */
-            if (PyDict_CheckExact(ann_dict)) {
-                err = PyDict_SetItem(ann_dict, name, ann);
-            }
-            else {
-                err = PyObject_SetItem(ann_dict, name, ann);
-            }
-            Py_DECREF(ann_dict);
-            Py_DECREF(ann);
-            if (err != 0) {
-                goto error;
-            }
             DISPATCH();
         }
 
@@ -3525,7 +3471,7 @@ fast_yield:
                                 tstate, f,
                                 PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
-                /* why = WHY_EXCEPTION; */
+                /* why = WHY_EXCEPTION; useless yet but cause compiler warnings */
             }
         }
     }

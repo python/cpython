@@ -1,2 +1,0 @@
-If the :envvar:`SOURCE_DATE_EPOCH` environment variable is set,
-:mod:`py_compile` will always create hash-based ``.pyc`` files.

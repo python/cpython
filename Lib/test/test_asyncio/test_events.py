@@ -2134,6 +2134,8 @@ class SendfileMixin:
         port = support.find_unused_port()
         srv_proto = MySendfileProto(loop=self.loop, close_after=close_after)
         if is_ssl:
+            if not ssl:
+                self.skipTest("No ssl module")
             srv_ctx = test_utils.simple_server_sslcontext()
             cli_ctx = test_utils.simple_client_sslcontext()
         else:
@@ -2676,6 +2678,12 @@ class TimerTests(unittest.TestCase):
         h = asyncio.TimerHandle(when, lambda: False, (),
                                 mock.Mock())
         self.assertEqual(hash(h), hash(when))
+
+    def test_when(self):
+        when = time.monotonic()
+        h = asyncio.TimerHandle(when, lambda: False, (),
+                                mock.Mock())
+        self.assertEqual(when, h.when())
 
     def test_timer(self):
         def callback(*args):

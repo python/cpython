@@ -171,7 +171,7 @@ a different clock than :func:`time.time`.
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
+   An instance of :class:`asyncio.TimerHandle` is returned, which can be
    used to cancel the callback.
 
    *callback* will be called exactly once per call to :meth:`call_later`.
@@ -193,7 +193,7 @@ a different clock than :func:`time.time`.
 
    This method's behavior is the same as :meth:`call_later`.
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
+   An instance of :class:`asyncio.TimerHandle` is returned, which can be
    used to cancel the callback.
 
    :ref:`Use functools.partial to pass keywords to the callback
@@ -546,7 +546,7 @@ Creating listening connections
 File Transferring
 -----------------
 
-.. coroutinemethod:: AbstractEventLoop.sendfile(sock, transport, \
+.. coroutinemethod:: AbstractEventLoop.sendfile(transport, file, \
                                                 offset=0, count=None, \
                                                 *, fallback=True)
 
@@ -782,6 +782,12 @@ Resolve host name
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getnameinfo` function but non-blocking.
 
+.. versionchanged:: 3.7
+   Both *getaddrinfo* and *getnameinfo* methods were always documented
+   to return a coroutine, but prior to Python 3.7 they were, in fact,
+   returning :class:`asyncio.Future` objects.  Starting with Python 3.7
+   both methods are coroutines.
+
 
 Connect pipes
 -------------
@@ -852,7 +858,7 @@ Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
 pool of processes). By default, an event loop uses a thread pool executor
 (:class:`~concurrent.futures.ThreadPoolExecutor`).
 
-.. coroutinemethod:: AbstractEventLoop.run_in_executor(executor, func, \*args)
+.. method:: AbstractEventLoop.run_in_executor(executor, func, \*args)
 
    Arrange for a *func* to be called in the specified executor.
 
@@ -862,17 +868,14 @@ pool of processes). By default, an event loop uses a thread pool executor
    :ref:`Use functools.partial to pass keywords to the *func*
    <asyncio-pass-keywords>`.
 
+   This method returns a :class:`asyncio.Future` object.
+
    .. versionchanged:: 3.5.3
       :meth:`BaseEventLoop.run_in_executor` no longer configures the
       ``max_workers`` of the thread pool executor it creates, instead
       leaving it up to the thread pool executor
       (:class:`~concurrent.futures.ThreadPoolExecutor`) to set the
       default.
-
-   .. versionchanged:: 3.7
-      Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned a :class:`Future`.
-      Since Python 3.7, this is an ``async def`` method.
 
 .. method:: AbstractEventLoop.set_default_executor(executor)
 
@@ -1073,8 +1076,7 @@ Handle
 .. class:: Handle
 
    A callback wrapper object returned by :func:`AbstractEventLoop.call_soon`,
-   :func:`AbstractEventLoop.call_soon_threadsafe`, :func:`AbstractEventLoop.call_later`,
-   and :func:`AbstractEventLoop.call_at`.
+   :func:`AbstractEventLoop.call_soon_threadsafe`.
 
    .. method:: cancel()
 
@@ -1084,6 +1086,22 @@ Handle
    .. method:: cancelled()
 
       Return ``True`` if the call was cancelled.
+
+      .. versionadded:: 3.7
+
+.. class:: TimerHandle
+
+   A callback wrapper object returned by :func:`AbstractEventLoop.call_later`,
+   and :func:`AbstractEventLoop.call_at`.
+
+   The class is inherited from :class:`Handle`.
+
+   .. method:: when()
+
+      Return a scheduled callback time as :class:`float` seconds.
+
+      The time is an absolute timestamp, using the same time
+      reference as :meth:`AbstractEventLoop.time`.
 
       .. versionadded:: 3.7
 

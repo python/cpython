@@ -15,7 +15,8 @@ env:
     - OPENSSL=1.1.0g
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
-    - CFLAGS="-I${OPENSSL_DIR}/include"
+    # Use -O3 because we don't use debugger on Travis-CI
+    - CFLAGS="-I${OPENSSL_DIR}/include -O3"
     - LDFLAGS="-L${OPENSSL_DIR}/lib"
     # Set rpath with env var instead of -Wl,-rpath linker flag
     # OpenSSL ignores LDFLAGS when linking bin/openssl
@@ -97,7 +98,7 @@ before_script:
       echo "Files changed: "
       echo $files_changed
 
-      if ! echo $files_changed | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
+      if ! echo "$files_changed" | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
       then
         echo "Only docs were updated, stopping build process."
         exit

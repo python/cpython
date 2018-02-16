@@ -32,7 +32,9 @@ extern PyObject* PyInit__locale(void);
 #endif
 extern PyObject* PyInit__codecs(void);
 extern PyObject* PyInit__weakref(void);
+/* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
+extern PyObject* PyInit__xxsubinterpreters(void);
 extern PyObject* PyInit_zipimport(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
@@ -75,7 +77,7 @@ extern PyObject* PyInit__opcode(void);
 /* -- ADDMODULE MARKER 1 -- */
 
 extern PyObject* PyMarshal_Init(void);
-extern PyObject* PyInit_imp(void);
+extern PyObject* PyInit__imp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
@@ -128,6 +130,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_json", PyInit__json},
 
     {"xxsubtype", PyInit_xxsubtype},
+    {"_xxsubinterpreters", PyInit__xxsubinterpreters},
     {"zipimport", PyInit_zipimport},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
@@ -149,7 +152,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"marshal", PyMarshal_Init},
 
     /* This lives it with import.c */
-    {"_imp", PyInit_imp},
+    {"_imp", PyInit__imp},
 
     /* These entries are here for sys.builtin_module_names */
     {"builtins", NULL},

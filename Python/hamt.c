@@ -620,7 +620,8 @@ hamt_node_bitmap_clone_without(PyHamtNode_Bitmap *o, uint32_t bit)
         new->b_array[i] = o->b_array[i];
     }
 
-    for (i = val_idx + 1; i < Py_SIZE(o); i++) {
+    assert(Py_SIZE(o) >= 0 && Py_SIZE(o) <= 32);
+    for (i = val_idx + 1; i < (uint32_t)Py_SIZE(o); i++) {
         Py_XINCREF(o->b_array[i]);
         new->b_array[i - 2] = o->b_array[i];
     }
@@ -728,7 +729,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
         uint32_t key_idx = 2 * idx;
         uint32_t val_idx = key_idx + 1;
 
-        assert(val_idx < Py_SIZE(self));
+        assert(val_idx < (size_t)Py_SIZE(self));
 
         PyObject *key_or_null = self->b_array[key_idx];
         PyObject *val_or_node = self->b_array[val_idx];
@@ -920,7 +921,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             uint32_t key_idx = 2 * idx;
             uint32_t val_idx = key_idx + 1;
-            Py_ssize_t i;
+            uint32_t i;
 
             *added_leaf = 1;
 
@@ -947,7 +948,8 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             /* Copy all keys/values that will be after the new key/value
                we are adding. */
-            for (i = key_idx; i < Py_SIZE(self); i++) {
+            assert(Py_SIZE(self) >= 0 && Py_SIZE(self) <= 32);
+            for (i = key_idx; i < (uint32_t)Py_SIZE(self); i++) {
                 Py_XINCREF(self->b_array[i]);
                 new_node->b_array[i + 2] = self->b_array[i];
             }
@@ -1121,7 +1123,7 @@ hamt_node_bitmap_find(PyHamtNode_Bitmap *self,
     key_idx = idx * 2;
     val_idx = key_idx + 1;
 
-    assert(val_idx < Py_SIZE(self));
+    assert(val_idx < (size_t)Py_SIZE(self));
 
     key_or_null = self->b_array[key_idx];
     val_or_node = self->b_array[val_idx];
@@ -1474,7 +1476,7 @@ hamt_node_collision_without(PyHamtNode_Collision *self,
             if (new_count == 1) {
                 /* The node has two keys, and after deletion the
                    new Collision node would have one.  Collision nodes
-                   with one key shouldn't exist, co convert it to a
+                   with one key shouldn't exist, so convert it to a
                    Bitmap node.
                 */
                 PyHamtNode_Bitmap *node = (PyHamtNode_Bitmap *)
@@ -2356,6 +2358,8 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
             Py_INCREF(o);
             return o;
         case W_NEWNODE: {
+            assert(new_root != NULL);
+
             PyHamtObject *new_o = hamt_alloc();
             if (new_o == NULL) {
                 Py_DECREF(new_root);
