@@ -762,11 +762,13 @@ class Misc:
         """Cancel scheduling of function identified with ID.
 
         Identifier returned by after or after_idle must be
-        given as first parameter."""
+        given as first parameter.
+        """
+        if not id:
+            raise ValueError('id must be a valid identifier returned from '
+                             'after or after_idle')
         try:
             data = self.tk.call('after', 'info', id)
-            # In Tk 8.3, splitlist returns: (script, type)
-            # In Tk 8.4, splitlist may return (script, type) or (script,)
             script = self.tk.splitlist(data)[0]
             self.deletecommand(script)
         except TclError:

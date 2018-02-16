@@ -48,6 +48,39 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                 '^must specify a background color$',
                 root.tk_setPalette, highlightColor='blue')
 
+    def test_after_cancel(self):
+        root = self.root
+        timer1 = root.after(5000, lambda: 'break')
+        idle1 = root.after_idle(lambda: 'break')
+
+        # No value for id raises a ValueError.
+        with self.assertRaises(ValueError):
+            root.after_cancel(None)
+
+        # A non-existent id raises a TclError, which is caught in after_cancel.
+        with self.assertRaises(tkinter.TclError):
+            root.tk.call('after', 'info', 'spam')
+        root.after_cancel('spam')
+
+        # Cancel timer event.
+        (script, _) = root.tk.splitlist(root.tk.call('after', 'info', timer1))
+        self.assertIn(script, root._tclCommands)
+        root.after_cancel(timer1)
+        self.assertNotIn(script, root._tclCommands)
+        with self.assertRaises(tkinter.TclError):
+            root.tk.call('after', 'info', timer1)
+
+        # Cancel same event - nothing happens.
+        root.after_cancel(timer1)
+
+        # Cancel idle event.
+        (script, _) = root.tk.splitlist(root.tk.call('after', 'info', idle1))
+        self.assertIn(script, root._tclCommands)
+        root.after_cancel(idle1)
+        self.assertNotIn(script, root._tclCommands)
+        with self.assertRaises(tkinter.TclError):
+            root.tk.call('after', 'info', idle1)
+
 
 tests_gui = (MiscTest, )
 
