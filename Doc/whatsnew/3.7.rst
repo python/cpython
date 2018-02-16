@@ -1146,7 +1146,7 @@ Changes in the Python API
 
   :func:`re.sub()` now replaces empty matches adjacent to a previous
   non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
-  ``'-a-b--d-'`` instead of ``'-a-b--d-'`` (the first minus between 'b' and
+  ``'-a-b--d-'`` instead of ``'-a-b-d-'`` (the first minus between 'b' and
   'd' replaces 'x', and the second minus replaces an empty string between
   'x' and 'd').
 
