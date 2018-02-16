@@ -2031,7 +2031,6 @@ class PyBuildExt(build_ext):
                 if (self.compiler.find_library_file(lib_dirs, lib_name)):
                     ffi_lib = lib_name
                     break
-
         if ffi_inc and ffi_lib:
             ext.include_dirs.extend(ffi_inc)
             ext.libraries.append(ffi_lib)

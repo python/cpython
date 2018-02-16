@@ -83,6 +83,13 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
                 found=true
                 AC_MSG_RESULT([yes])
                 break
+            elif test -f "$ssldir/public/openssl/ssl.h"; then
+                OPENSSL_INCLUDES="-I$ssldir/public"
+                OPENSSL_LDFLAGS="-L$ssldir/../lib"
+                OPENSSL_LIBS="-lOPENSSL"
+                found=true
+                AC_MSG_RESULT([yes])
+                break
             else
                 AC_MSG_RESULT([no])
             fi

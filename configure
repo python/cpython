@@ -16848,6 +16848,14 @@ $as_echo_n "checking for openssl/ssl.h in $ssldir... " >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
                 break
+            elif test -f "$ssldir/public/openssl/ssl.h"; then
+                OPENSSL_INCLUDES="-I$ssldir/public"
+                OPENSSL_LDFLAGS="-L$ssldir/../lib"
+                OPENSSL_LIBS="-lOPENSSL"
+                found=true
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+                break
             else
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
