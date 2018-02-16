@@ -1,17 +1,18 @@
 # Copyright 2007 Google, Inc. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
 
-# Note: each test is run with _Py_ABCMeta and _C_ABCMeta, except for two tests, where we
-# need to "sync" with actual abc.ABCMeta, these tests check get_cache_token and ABC helper.
+# Note: each test is run with Python and C versions of ABCMeta. Except for
+# test_ABC_helper(), which assures that abc.ABC is an instance of abc.ABCMeta.
 
 """Unit tests for abc.py."""
 
 import unittest
 
 import abc
+import _py_abc
 from inspect import isabstract
 
-def test_factory(abc_ABCMeta):
+def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
 
         def test_abstractproperty_basics(self):
@@ -296,16 +297,16 @@ def test_factory(abc_ABCMeta):
             self.assertIs(C, A.register(C))
 
         def test_isinstance_invalidation(self):
-            class A(metaclass=abc.ABCMeta):
+            class A(metaclass=abc_ABCMeta):
                 pass
             class B:
                 pass
             b = B()
             self.assertFalse(isinstance(b, A))
             self.assertFalse(isinstance(b, (A,)))
-            token_old = abc.get_cache_token()
+            token_old = abc_get_cache_token()
             A.register(B)
-            token_new = abc.get_cache_token()
+            token_new = abc_get_cache_token()
             self.assertNotEqual(token_old, token_new)
             self.assertTrue(isinstance(b, A))
             self.assertTrue(isinstance(b, (A,)))
@@ -423,18 +424,22 @@ def test_factory(abc_ABCMeta):
 
     class TestABCWithInitSubclass(unittest.TestCase):
         def test_works_with_init_subclass(self):
+            class abc_ABC(metaclass=abc_ABCMeta):
+                __slots__ = ()
             saved_kwargs = {}
             class ReceivesClassKwargs:
                 def __init_subclass__(cls, **kwargs):
                     super().__init_subclass__()
                     saved_kwargs.update(kwargs)
-            class Receiver(ReceivesClassKwargs, abc.ABC, x=1, y=2, z=3):
+            class Receiver(ReceivesClassKwargs, abc_ABC, x=1, y=2, z=3):
                 pass
             self.assertEqual(saved_kwargs, dict(x=1, y=2, z=3))
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
-TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc._Py_ABCMeta)
-TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(abc._C_ABCMeta)
+TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,
+                                                                        abc.get_cache_token)
+TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(_py_abc.ABCMeta,
+                                                                     _py_abc.get_cache_token)
 
 if __name__ == "__main__":
     unittest.main()
