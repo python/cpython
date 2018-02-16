@@ -653,6 +653,12 @@ class SSLObject:
         ssl_version, secret_bits)``."""
         return self._sslobj.cipher()
 
+    def kxinfo(self):
+        """Return a two-tuple containing the key exchange method and the key length
+        used for the exchange or ``None`` if not connected or not using DHE or
+        ECDHE"""
+        return self._sslobj.kxinfo()
+
     def shared_ciphers(self):
         """Return a list of ciphers shared by the client during the handshake or
         None if this is not a valid server connection.
@@ -895,6 +901,13 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.cipher()
+
+    def kxinfo(self):
+        self._checkClosed()
+        if not self._sslobj:
+            return None
+        else:
+            return self._sslobj.kxinfo()
 
     def shared_ciphers(self):
         self._checkClosed()

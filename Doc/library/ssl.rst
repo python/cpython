@@ -1180,6 +1180,13 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.5
 
+.. method:: SSLSocket.kxinfo()
+
+   Returns a two-tuple containing the key exchange method and the key length
+   used for the exchange. If no connection has been established or neither ECDH
+   nor DH is used at all, the method returns ``None``. When using OpenSSL <
+   v1.0.2 this method always returns ``None``.
+
 .. method:: SSLSocket.compression()
 
    Return the compression algorithm being used as a string, or ``None``

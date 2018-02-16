@@ -138,6 +138,11 @@ static void _PySSLFixErrno(void) {
 #  define OPENSSL_VERSION_1_1 1
 #endif
 
+/* SSL_get_server_tmp_key() appeared in OpenSSL 1.0.2 */
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000L) && !defined(LIBRESSL_VERSION_NUMBER)
+#  define OPENSSL_VERSION_1_0_2 1
+#endif
+
 /* Openssl comes with TLSv1.1 and TLSv1.2 between 1.0.0h and 1.0.1
     http://www.openssl.org/news/changelog.html
  */
@@ -1895,6 +1900,93 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self)
     return PyUnicode_FromString(version);
 }
 
+/*[clinic input]
+_ssl._SSLSocket.kxinfo
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_kxinfo_impl(PySSLSocket *self)
+/*[clinic end generated code: output=1b696880c75827d1 input=38d59706e6823f52]*/
+{
+#if !defined(OPENSSL_VERSION_1_0_2)
+    Py_RETURN_NONE;
+#else
+    if (self->ssl == NULL)
+        Py_RETURN_NONE;
+
+    if (!SSL_is_init_finished(self->ssl)) {
+        /* handshake not finished */
+        Py_RETURN_NONE;
+    }
+
+    EVP_PKEY *key;
+    if (!SSL_get_server_tmp_key(self->ssl, &key))
+        Py_RETURN_NONE;
+
+    int bits = EVP_PKEY_bits(key);
+
+    const char *kxinfo = NULL;
+
+    switch (EVP_PKEY_id(key)) {
+    case EVP_PKEY_RSA:
+        kxinfo = "RSA";
+        break;
+
+    case EVP_PKEY_DH:
+        kxinfo = "DH";
+        break;
+
+#ifndef OPENSSL_NO_EC
+    case EVP_PKEY_EC:
+        {
+            EC_KEY *ec = EVP_PKEY_get1_EC_KEY(key);
+            if(ec != NULL)
+            {
+                int nid = EC_GROUP_get_curve_name(EC_KEY_get0_group(ec));
+                if(nid != 0)
+                {
+                    kxinfo = EC_curve_nid2nist(nid);
+                    if (!kxinfo)
+                        kxinfo = OBJ_nid2sn(nid);
+                }
+                EC_KEY_free(ec);
+            }
+        }
+        break;
+#endif
+    default:
+        kxinfo = OBJ_nid2sn(EVP_PKEY_id(key));
+    }
+    EVP_PKEY_free(key);
+
+
+    if(kxinfo == NULL)
+        kxinfo = "unknown";
+
+    PyObject *v, *retval = PyTuple_New(2);
+    if (retval == NULL)
+        return NULL;
+
+    v = PyUnicode_FromString(kxinfo);
+    if (v == NULL) {
+        Py_DECREF(retval);
+        return NULL;
+    }
+
+    PyTuple_SET_ITEM(retval, 0, v);
+
+    v = PyLong_FromLong(bits);
+    if (v == NULL){
+        Py_DECREF(retval);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(retval, 1, v);
+
+    return retval;
+
+#endif
+}
+
 #if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
 /*[clinic input]
 _ssl._SSLSocket.selected_npn_protocol
@@ -2711,6 +2803,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
+    _SSL__SSLSOCKET_KXINFO_METHODDEF
     _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
     _SSL__SSLSOCKET_COMPRESSION_METHODDEF

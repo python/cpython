@@ -1,0 +1,1 @@
+Added method SSLSocket.kxinfo() to provide information about key exchange
