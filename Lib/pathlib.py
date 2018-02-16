@@ -584,7 +584,7 @@ class _PathParents(Sequence):
 
 
 class PurePath(object):
-    """Deal with paths without any filesystem I/O.
+    """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
     don't imply any actual filesystem I/O.  Depending on your system,
