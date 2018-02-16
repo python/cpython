@@ -205,11 +205,13 @@ static int compiler_set_qualname(struct compiler *);
 static int compiler_sync_comprehension_generator(
                                       struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type);
 
 static int compiler_async_comprehension_generator(
                                       struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
@@ -3782,22 +3784,24 @@ compiler_call_helper(struct compiler *c,
 static int
 compiler_comprehension_generator(struct compiler *c,
                                  asdl_seq *generators, int gen_index,
+                                 int depth,
                                  expr_ty elt, expr_ty val, int type)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return compiler_async_comprehension_generator(
-            c, generators, gen_index, elt, val, type);
+            c, generators, gen_index, depth, elt, val, type);
     } else {
         return compiler_sync_comprehension_generator(
-            c, generators, gen_index, elt, val, type);
+            c, generators, gen_index, depth, elt, val, type);
     }
 }
 
 static int
 compiler_sync_comprehension_generator(struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
     /* generate code for the iterator, then each of the ifs,
@@ -3852,6 +3856,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         }
     }
     if (start) {
+        depth++;
         compiler_use_next_block(c, start);
         ADDOP_JREL(c, FOR_ITER, anchor);
         NEXT_BLOCK(c);
@@ -3869,7 +3874,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
 
     if (++gen_index < asdl_seq_LEN(generators))
         if (!compiler_comprehension_generator(c,
-                                              generators, gen_index,
+                                              generators, gen_index, depth,
                                               elt, val, type))
         return 0;
 
@@ -3884,18 +3889,18 @@ compiler_sync_comprehension_generator(struct compiler *c,
             break;
         case COMP_LISTCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, LIST_APPEND, gen_index + 1);
+            ADDOP_I(c, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, SET_ADD, gen_index + 1);
+            ADDOP_I(c, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With 'd[k] = v', v is evaluated before k, so we do
                the same. */
             VISIT(c, expr, val);
             VISIT(c, expr, elt);
-            ADDOP_I(c, MAP_ADD, gen_index + 1);
+            ADDOP_I(c, MAP_ADD, depth + 1);
             break;
         default:
             return 0;
@@ -3915,6 +3920,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
 static int
 compiler_async_comprehension_generator(struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
     _Py_IDENTIFIER(StopAsyncIteration);
@@ -3998,9 +4004,10 @@ compiler_async_comprehension_generator(struct compiler *c,
         NEXT_BLOCK(c);
     }
 
+    depth++;
     if (++gen_index < asdl_seq_LEN(generators))
         if (!compiler_comprehension_generator(c,
-                                              generators, gen_index,
+                                              generators, gen_index, depth,
                                               elt, val, type))
         return 0;
 
@@ -4015,18 +4022,18 @@ compiler_async_comprehension_generator(struct compiler *c,
             break;
         case COMP_LISTCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, LIST_APPEND, gen_index + 1);
+            ADDOP_I(c, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, SET_ADD, gen_index + 1);
+            ADDOP_I(c, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With 'd[k] = v', v is evaluated before k, so we do
                the same. */
             VISIT(c, expr, val);
             VISIT(c, expr, elt);
-            ADDOP_I(c, MAP_ADD, gen_index + 1);
+            ADDOP_I(c, MAP_ADD, depth + 1);
             break;
         default:
             return 0;
@@ -4094,7 +4101,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP_I(c, op, 0);
     }
 
-    if (!compiler_comprehension_generator(c, generators, 0, elt,
+    if (!compiler_comprehension_generator(c, generators, 0, 0, elt,
                                           val, type))
         goto error_in_scope;
 

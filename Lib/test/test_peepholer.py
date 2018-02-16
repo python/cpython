@@ -3,6 +3,19 @@ import unittest
 
 from test.bytecode_helper import BytecodeTestCase
 
+def count_instr_recursively(f, opname):
+    count = 0
+    for instr in dis.get_instructions(f):
+        if instr.opname == opname:
+            count += 1
+    if hasattr(f, '__code__'):
+        f = f.__code__
+    for c in f.co_consts:
+        if hasattr(c, 'co_code'):
+            count += count_instr_recursively(c, opname)
+    return count
+
+
 class TestTranforms(BytecodeTestCase):
 
     def test_unot(self):
@@ -310,6 +323,20 @@ class TestTranforms(BytecodeTestCase):
                 self.assertFalse(instr.opname.startswith('UNARY_'))
                 self.assertFalse(instr.opname.startswith('BINARY_'))
                 self.assertFalse(instr.opname.startswith('BUILD_'))
+
+    def test_assignment_idiom_in_comprehesions(self):
+        def listcomp():
+            return [y for x in a for y in [f(x)]]
+        self.assertEqual(count_instr_recursively(listcomp, 'FOR_ITER'), 1)
+        def setcomp():
+            return {y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(setcomp, 'FOR_ITER'), 1)
+        def dictcomp():
+            return {y: y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(dictcomp, 'FOR_ITER'), 1)
+        def genexpr():
+            return (y for x in a for y in [f(x)])
+        self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
 
 class TestBuglets(unittest.TestCase):
