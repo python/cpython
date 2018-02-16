@@ -369,9 +369,9 @@ ABC hierarchy::
     An abstract base class for a :term:`loader`.
     See :pep:`302` for the exact definition for a loader.
 
-    For loaders that wish to support resource reading, they should
-    implement a ``get_resource_reader(fullname)`` method as specified
-    by :class:`importlib.abc.ResourceReader`.
+    Loaders that wish to support resource reading should implement a
+    ``get_resource_reader(fullname)`` method as specified by
+    :class:`importlib.abc.ResourceReader`.
 
     .. versionchanged:: 3.7
        Introduced the optional ``get_resource_reader()`` method.
@@ -813,8 +813,25 @@ Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do
 not** have to exist as physical files and directories on the file system.
 
-Loaders can support resources by implementing the :class:`ResourceReader`
-abstract base class.
+.. note::
+
+   This module provides functionality similar to `pkg_resources
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
+   Resource Access
+   <http://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
+   without the performance overhead of that package.  This makes reading
+   resources included in packages easier, with more stable and consistent
+   semantics.
+
+   The standalone backport of this module provides more information
+   on `using importlib.resources
+   <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
+   `migrating from pkg_resources to importlib.resources
+   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
+
+Loaders that wish to support resource reading should implement a
+``get_resource_reader(fullname)`` method as specified by
+:class:`importlib.abc.ResourceReader`.
 
 The following types are defined.
 
