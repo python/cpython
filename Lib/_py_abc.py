@@ -103,7 +103,7 @@ class ABCMeta(type):
                 return False
             # Fall back to the subclass check.
             return cls.__subclasscheck__(subclass)
-        return any(cls.__subclasscheck__(c) for c in {subclass, subtype})
+        return any(cls.__subclasscheck__(c) for c in (subclass, subtype))
 
     def __subclasscheck__(cls, subclass):
         """Override for issubclass(subclass, cls)."""
