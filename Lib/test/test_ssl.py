@@ -1237,8 +1237,15 @@ class ContextTests(unittest.TestCase):
     @unittest.skipUnless(ssl.HAS_ECDH, "ECDH disabled on this OpenSSL build")
     def test_set_ecdh_curve(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        if support.verbose:
+            sys.stdout.write("\n... Trying curves\n")
+            sys.stdout.write("... prime256v1\n")
         ctx.set_ecdh_curve("prime256v1")
         ctx.set_ecdh_curve(b"prime256v1")
+        if support.verbose:
+            sys.stdout.write("... X25519\n")
+        ctx.set_ecdh_curve("X25519")
+        ctx.set_ecdh_curve(b"X25519")
         self.assertRaises(TypeError, ctx.set_ecdh_curve)
         self.assertRaises(TypeError, ctx.set_ecdh_curve, None)
         self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo")
@@ -3014,6 +3021,7 @@ class ThreadedTests(unittest.TestCase):
         finally:
             f.close()
         self.assertEqual(d1, d2)
+        pass
 
     def test_asyncore_server(self):
         """Check the example asyncore integration."""

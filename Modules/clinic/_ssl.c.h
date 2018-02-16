@@ -132,6 +132,23 @@ _ssl__SSLSocket_version(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_version_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_kxinfo__doc__,
+"kxinfo($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_KXINFO_METHODDEF    \
+    {"kxinfo", (PyCFunction)_ssl__SSLSocket_kxinfo, METH_NOARGS, _ssl__SSLSocket_kxinfo__doc__},
+
+static PyObject *
+_ssl__SSLSocket_kxinfo_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_kxinfo(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_kxinfo_impl(self);
+}
+
 #if (defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG))
 
 PyDoc_STRVAR(_ssl__SSLSocket_selected_npn_protocol__doc__,
@@ -1168,4 +1185,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=3d42305ed0ad162a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38dd8b1e72a7c5df input=a9049054013a1b77]*/
