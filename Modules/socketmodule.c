@@ -2590,9 +2590,11 @@ sock_settimeout(PySocketSockObject *s, PyObject *arg)
         return NULL;
 
     s->sock_timeout = timeout;
+#ifndef __VXWORKS__
     if (internal_setblocking(s, timeout < 0) == -1) {
         return NULL;
     }
+#endif
     Py_RETURN_NONE;
 }
 
