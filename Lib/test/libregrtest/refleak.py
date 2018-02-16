@@ -5,7 +5,13 @@ import sys
 import warnings
 from inspect import isabstract
 from test import support
-from _abc import _get_dump
+try:
+    from _abc import _get_dump
+except ImportError:
+    def _get_dump(cls):
+        # For legacy Python version
+        return (cls._abc_registry, cls._abc_cache,
+                cls._abc_negative_cache, cls._abc_negative_cache_version)
 
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
