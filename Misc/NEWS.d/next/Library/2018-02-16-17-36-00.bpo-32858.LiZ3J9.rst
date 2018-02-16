@@ -1,0 +1,2 @@
+Added support for selecting X25519 in SSLContext.set_ecdh_curve(). Added
+method SSLSocket.kxinfo() to provide information about key exchange
