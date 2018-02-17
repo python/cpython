@@ -692,7 +692,10 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
-        int r = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
+        PyObject *scls = PyList_GET_ITEM(subclasses, pos);
+        Py_INCREF(scls);
+        int r = PyObject_IsSubclass(subclass, scls);
+        Py_DECREF(scls);
         if (r > 0) {
             if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
                 goto end;

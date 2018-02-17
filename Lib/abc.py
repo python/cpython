@@ -107,6 +107,7 @@ try:
                       _reset_registry, _reset_caches)
 except ImportError:
     from _py_abc import ABCMeta, get_cache_token
+    ABCMeta.__module__ = 'abc'
 else:
     class ABCMeta(type):
         """Metaclass for defining Abstract Base Classes (ABCs).
