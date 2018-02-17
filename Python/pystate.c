@@ -125,7 +125,8 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-
+    interp->id_refcount = -1;
+    interp->id_mutex = NULL;
     interp->modules = NULL;
     interp->modules_by_index = NULL;
     interp->sysdict = NULL;
@@ -247,6 +248,9 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
             Py_FatalError("PyInterpreterState_Delete: remaining subinterpreters");
     }
     HEAD_UNLOCK();
+    if (interp->id_mutex != NULL) {
+        PyThread_free_lock(interp->id_mutex);
+    }
     PyMem_RawFree(interp);
 }
 
@@ -283,6 +287,58 @@ error:
                  "unrecognized interpreter ID %lld", requested_id);
     return NULL;
 }
+
+
+int
+_PyInterpreterState_IDInitref(PyInterpreterState *interp)
+{
+    if (interp->id_mutex != NULL) {
+        return 0;
+    }
+    interp->id_mutex = PyThread_allocate_lock();
+    if (interp->id_mutex == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to create init interpreter ID mutex");
+        return -1;
+    }
+    interp->id_refcount = 0;
+    return 0;
+}
+
+
+void
+_PyInterpreterState_IDIncref(PyInterpreterState *interp)
+{
+    if (interp->id_mutex == NULL) {
+        return;
+    }
+    PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
+    interp->id_refcount += 1;
+    PyThread_release_lock(interp->id_mutex);
+}
+
+
+void
+_PyInterpreterState_IDDecref(PyInterpreterState *interp)
+{
+    if (interp->id_mutex == NULL) {
+        return;
+    }
+    PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
+    assert(interp->id_refcount != 0);
+    interp->id_refcount -= 1;
+    int64_t refcount = interp->id_refcount;
+    PyThread_release_lock(interp->id_mutex);
+
+    if (refcount == 0) {
+        PyThreadState *tstate, *save_tstate;
+        tstate = PyInterpreterState_ThreadHead(interp);
+        save_tstate = PyThreadState_Swap(tstate);
+        Py_EndInterpreter(tstate);
+        PyThreadState_Swap(save_tstate);
+    }
+}
+
 
 /* Default implementation for _PyThreadState_GetFrame */
 static struct _frame *
