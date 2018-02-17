@@ -69,6 +69,10 @@ PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(PY_INT64_T);
 
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
 
 /* cross-interpreter data */
 
