@@ -416,7 +416,7 @@ Internal ABC helper for class set-up. Should be never used outside abc module.
 
 static PyObject *
 _abc__abc_init(PyObject *module, PyObject *self)
-/*[clinic end generated code: output=594757375714cda1 input=6061a045416da18b]*/
+/*[clinic end generated code: output=594757375714cda1 input=8d7fe470ff77f029]*/
 {
     PyObject *data;
     if (compute_abstract_methods(self) < 0) {
@@ -448,7 +448,7 @@ Internal ABC helper for subclasss registration. Should be never used outside abc
 
 static PyObject *
 _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
-/*[clinic end generated code: output=7851e7668c963524 input=4b94c86e77e9e901]*/
+/*[clinic end generated code: output=7851e7668c963524 input=ca589f8c3080e67f]*/
 {
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
@@ -504,7 +504,7 @@ Internal ABC helper for instance checks. Should be never used outside abc module
 static PyObject *
 _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                              PyObject *instance)
-/*[clinic end generated code: output=b8b5148f63b6b56f input=5b15699272795a93]*/
+/*[clinic end generated code: output=b8b5148f63b6b56f input=a4f4525679261084]*/
 {
     PyObject *subtype, *result = NULL, *subclass = NULL;
     _abc_data *impl = _get_impl(self);
@@ -592,7 +592,7 @@ Internal ABC helper for subclasss checks. Should be never used outside abc modul
 static PyObject *
 _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
                              PyObject *subclass)
-/*[clinic end generated code: output=b56c9e4a530e3894 input=4c87faea511976a8]*/
+/*[clinic end generated code: output=b56c9e4a530e3894 input=1d947243409d10b8]*/
 {
     PyObject *ok, *mro, *subclasses = NULL, *result = NULL;
     Py_ssize_t pos;
@@ -802,7 +802,7 @@ with every call to register() on any ABC.
 
 static PyObject *
 _abc_get_cache_token_impl(PyObject *module)
-/*[clinic end generated code: output=c7d87841e033dacc input=1d49ab7218687f59]*/
+/*[clinic end generated code: output=c7d87841e033dacc input=70413d1c423ad9f9]*/
 {
     return PyLong_FromUnsignedLongLong(abc_invalidation_counter);
 }

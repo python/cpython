@@ -41,7 +41,7 @@ PyDoc_STRVAR(_abc__abc_init__doc__,
 "_abc_init($module, self, /)\n"
 "--\n"
 "\n"
-"Internal ABC helper for class set-up. Should be never used outside abc module");
+"Internal ABC helper for class set-up. Should be never used outside abc module.");
 
 #define _ABC__ABC_INIT_METHODDEF    \
     {"_abc_init", (PyCFunction)_abc__abc_init, METH_O, _abc__abc_init__doc__},
@@ -50,7 +50,7 @@ PyDoc_STRVAR(_abc__abc_register__doc__,
 "_abc_register($module, self, subclass, /)\n"
 "--\n"
 "\n"
-"Internal ABC helper for subclasss registration. Should be never used outside abc module");
+"Internal ABC helper for subclasss registration. Should be never used outside abc module.");
 
 #define _ABC__ABC_REGISTER_METHODDEF    \
     {"_abc_register", (PyCFunction)_abc__abc_register, METH_FASTCALL, _abc__abc_register__doc__},
@@ -80,7 +80,7 @@ PyDoc_STRVAR(_abc__abc_instancecheck__doc__,
 "_abc_instancecheck($module, self, instance, /)\n"
 "--\n"
 "\n"
-"Internal ABC helper for instance checks. Should be never used outside abc module");
+"Internal ABC helper for instance checks. Should be never used outside abc module.");
 
 #define _ABC__ABC_INSTANCECHECK_METHODDEF    \
     {"_abc_instancecheck", (PyCFunction)_abc__abc_instancecheck, METH_FASTCALL, _abc__abc_instancecheck__doc__},
@@ -111,7 +111,7 @@ PyDoc_STRVAR(_abc__abc_subclasscheck__doc__,
 "_abc_subclasscheck($module, self, subclass, /)\n"
 "--\n"
 "\n"
-"Internal ABC helper for subclasss checks. Should be never used outside abc module");
+"Internal ABC helper for subclasss checks. Should be never used outside abc module.");
 
 #define _ABC__ABC_SUBCLASSCHECK_METHODDEF    \
     {"_abc_subclasscheck", (PyCFunction)_abc__abc_subclasscheck, METH_FASTCALL, _abc__abc_subclasscheck__doc__},
@@ -146,7 +146,7 @@ PyDoc_STRVAR(_abc_get_cache_token__doc__,
 "\n"
 "The token is an opaque object (supporting equality testing) identifying the\n"
 "current version of the ABC cache for virtual subclasses. The token changes\n"
-"with every call to ``register()`` on any ABC.");
+"with every call to register() on any ABC.");
 
 #define _ABC_GET_CACHE_TOKEN_METHODDEF    \
     {"get_cache_token", (PyCFunction)_abc_get_cache_token, METH_NOARGS, _abc_get_cache_token__doc__},
@@ -159,4 +159,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=3e785943d168e371 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d6f861a8f45bc6f input=a9049054013a1b77]*/
