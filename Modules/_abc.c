@@ -2,6 +2,12 @@
 
 #include "Python.h"
 #include "structmember.h"
+#include "clinic/_abc.c.h"
+
+/*[clinic input]
+module _abc
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=964f5328e1aefcda]*/
 
 PyDoc_STRVAR(_abc__doc__,
 "Module contains faster C implementation of abc.ABCMeta");
@@ -156,19 +162,21 @@ _add_to_weak_set(PyObject **pset, PyObject *obj)
     return ret;
 }
 
+/*[clinic input]
+_abc._reset_registry
 
-PyDoc_STRVAR(_reset_registry_doc,
-"Internal ABC helper to reset registry of a given class.\n\
-\n\
-Should be only used by refleak.py");
+    self: object
+    /
+
+Internal ABC helper to reset registry of a given class.
+
+Should be only used by refleak.py
+[clinic start generated code]*/
 
 static PyObject *
-_reset_registry(PyObject *m, PyObject *args)
+_abc__reset_registry(PyObject *module, PyObject *self)
+/*[clinic end generated code: output=92d591a43566cc10 input=12a0b7eb339ac35c]*/
 {
-    PyObject *self;
-    if (!PyArg_UnpackTuple(args, "_reset_registry", 1, 1, &self)) {
-        return NULL;
-    }
     _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
@@ -181,20 +189,22 @@ _reset_registry(PyObject *m, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(_reset_caches_doc,
-"Internal ABC helper to reset both caches of a given class.\n\
-\n\
-Should be only used by refleak.py");
+/*[clinic input]
+_abc._reset_caches
+
+    self: object
+    /
+
+Internal ABC helper to reset both caches of a given class.
+
+Should be only used by refleak.py
+[clinic start generated code]*/
 
 static PyObject *
-_reset_caches(PyObject *m, PyObject *args)
+_abc__reset_caches(PyObject *module, PyObject *self)
+/*[clinic end generated code: output=f296f0d5c513f80c input=c0ac616fd8acfb6f]*/
 {
-    PyObject *self;
-    _abc_data *impl;
-    if (!PyArg_UnpackTuple(args, "_reset_caches", 1, 1, &self)) {
-        return NULL;
-    }
-    impl = _get_impl(self);
+    _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
     }
@@ -212,22 +222,25 @@ _reset_caches(PyObject *m, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(_get_dump_doc,
-"Internal ABC helper for cache and registry debugging.\n\
-\n\
-Return shallow copies of registry, of both caches, and\n\
-negative cache version. Don't call this function directly,\n\
-instead use ABC._dump_registry() for a nice repr.");
+/*[clinic input]
+_abc._get_dump
+
+    self: object
+    /
+
+Internal ABC helper for cache and registry debugging.
+
+Return shallow copies of registry, of both caches, and
+negative cache version. Don't call this function directly,
+instead use ABC._dump_registry() for a nice repr.
+[clinic start generated code]*/
 
 static PyObject *
-_get_dump(PyObject *m, PyObject *args)
+_abc__get_dump(PyObject *module, PyObject *self)
+/*[clinic end generated code: output=9d9569a8e2c1c443 input=2c5deb1bfe9e3c79]*/
 {
-    PyObject *self, *registry, *cache, *negative_cache;
-    _abc_data *impl;
-    if (!PyArg_UnpackTuple(args, "_get_dump", 1, 1, &self)) {
-        return NULL;
-    }
-    impl = _get_impl(self);
+    PyObject *registry, *cache, *negative_cache;
+    _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
     }
@@ -383,17 +396,20 @@ error:
     return ret;
 }
 
-PyDoc_STRVAR(_abc_init_doc,
-"Internal ABC helper for class set-up. Should be never used outside abc module");
+/*[clinic input]
+_abc._abc_init
+
+    self: object
+    /
+
+Internal ABC helper for class set-up. Should be never used outside abc module
+[clinic start generated code]*/
 
 static PyObject *
-_abc_init(PyObject *m, PyObject *args)
+_abc__abc_init(PyObject *module, PyObject *self)
+/*[clinic end generated code: output=594757375714cda1 input=6061a045416da18b]*/
 {
-    PyObject *self, *data;
-    if (!PyArg_UnpackTuple(args, "_abc_init", 1, 1, &self)) {
-        return NULL;
-    }
-
+    PyObject *data;
     if (compute_abstract_methods(self) < 0) {
         return NULL;
     }
@@ -411,16 +427,20 @@ _abc_init(PyObject *m, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(_abc_register_doc,
-"Internal ABC helper for subclasss registration. Should be never used outside abc module");
+/*[clinic input]
+_abc._abc_register
+
+    self: object
+    subclass: object
+    /
+
+Internal ABC helper for subclasss registration. Should be never used outside abc module
+[clinic start generated code]*/
 
 static PyObject *
-_abc_register(PyObject *m, PyObject *args)
+_abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
+/*[clinic end generated code: output=7851e7668c963524 input=4b94c86e77e9e901]*/
 {
-    PyObject *self, *subclass = NULL;
-    if (!PyArg_UnpackTuple(args, "_abc_register", 2, 2, &self, &subclass)) {
-        return NULL;
-    }
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
         return NULL;
@@ -470,18 +490,23 @@ _abc_register(PyObject *m, PyObject *args)
     return subclass;
 }
 
-PyDoc_STRVAR(_abc_instancecheck_doc,
-"Internal ABC helper for instance checks. Should be never used outside abc module");
+
+/*[clinic input]
+_abc._abc_instancecheck
+
+    self: object
+    instance: object
+    /
+
+Internal ABC helper for instance checks. Should be never used outside abc module
+[clinic start generated code]*/
 
 static PyObject *
-_abc_instancecheck(PyObject *m, PyObject *args)
+_abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
+                             PyObject *instance)
+/*[clinic end generated code: output=b8b5148f63b6b56f input=5b15699272795a93]*/
 {
-    PyObject *self, *result = NULL, *subclass = NULL,
-             *subtype, *instance = NULL;
-    if (!PyArg_UnpackTuple(args, "_abc_instancecheck", 2, 2, &self, &instance)) {
-        return NULL;
-    }
-
+    PyObject *subtype, *result = NULL, *subclass = NULL;
     _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
@@ -555,20 +580,24 @@ end:
 static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                                         PyObject **result);
 
-PyDoc_STRVAR(_abc_subclasscheck_doc,
-"Internal ABC helper for subclasss checks. Should be never used outside abc module");
+/*[clinic input]
+_abc._abc_subclasscheck
+
+    self: object
+    subclass: object
+    /
+
+Internal ABC helper for subclasss checks. Should be never used outside abc module
+[clinic start generated code]*/
 
 static PyObject *
-_abc_subclasscheck(PyObject *m, PyObject *args)
+_abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
+                             PyObject *subclass)
+/*[clinic end generated code: output=b56c9e4a530e3894 input=4c87faea511976a8]*/
 {
-    PyObject *self, *subclasses = NULL, *subclass = NULL, *result = NULL;
-    PyObject *ok, *mro;
+    PyObject *ok, *mro, *subclasses = NULL, *result = NULL;
     Py_ssize_t pos;
     int incache;
-    if (!PyArg_UnpackTuple(args, "_abc_subclasscheck", 2, 2, &self, &subclass)) {
-        return NULL;
-    }
-
     _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
@@ -768,38 +797,33 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     return ret;
 }
 
+/*[clinic input]
+_abc.get_cache_token
 
-PyDoc_STRVAR(_cache_token_doc,
-"Returns the current ABC cache token.\n\
-\n\
-The token is an opaque object (supporting equality testing) identifying the\n\
-current version of the ABC cache for virtual subclasses. The token changes\n\
-with every call to ``register()`` on any ABC.");
+Returns the current ABC cache token.
+
+The token is an opaque object (supporting equality testing) identifying the
+current version of the ABC cache for virtual subclasses. The token changes
+with every call to ``register()`` on any ABC.
+[clinic start generated code]*/
 
 static PyObject *
-get_cache_token(void)
+_abc_get_cache_token_impl(PyObject *module)
+/*[clinic end generated code: output=c7d87841e033dacc input=2a19dea381467239]*/
 {
     Py_INCREF(abc_invalidation_counter);
     return abc_invalidation_counter;
 }
 
 static struct PyMethodDef module_functions[] = {
-    {"get_cache_token", (PyCFunction)get_cache_token, METH_NOARGS,
-        _cache_token_doc},
-    {"_abc_init", (PyCFunction)_abc_init, METH_VARARGS,
-        _abc_init_doc},
-    {"_reset_registry", (PyCFunction)_reset_registry, METH_VARARGS,
-        _reset_registry_doc},
-    {"_reset_caches", (PyCFunction)_reset_caches, METH_VARARGS,
-        _reset_caches_doc},
-    {"_get_dump", (PyCFunction)_get_dump, METH_VARARGS,
-        _get_dump_doc},
-    {"_abc_register", (PyCFunction)_abc_register, METH_VARARGS,
-        _abc_register_doc},
-    {"_abc_instancecheck", (PyCFunction)_abc_instancecheck, METH_VARARGS,
-        _abc_instancecheck_doc},
-    {"_abc_subclasscheck", (PyCFunction)_abc_subclasscheck, METH_VARARGS,
-        _abc_subclasscheck_doc},
+    _ABC_GET_CACHE_TOKEN_METHODDEF
+    _ABC__ABC_INIT_METHODDEF
+    _ABC__RESET_REGISTRY_METHODDEF
+    _ABC__RESET_CACHES_METHODDEF
+    _ABC__GET_DUMP_METHODDEF
+    _ABC__ABC_REGISTER_METHODDEF
+    _ABC__ABC_INSTANCECHECK_METHODDEF
+    _ABC__ABC_SUBCLASSCHECK_METHODDEF
     {NULL,       NULL}          /* sentinel */
 };
 
