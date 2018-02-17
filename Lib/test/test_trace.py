@@ -387,5 +387,15 @@ class TestCommandLine(unittest.TestCase):
             status, stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
             self.assertIn(b'functions called:', stdout)
 
+    def test_sys_argv_list(self):
+        with open(TESTFN, 'w') as fd:
+            self.addCleanup(unlink, TESTFN)
+            fd.write("import sys\n")
+            fd.write("print(type(sys.argv))\n")
+
+        status, direct_stdout, stderr = assert_python_ok(TESTFN)
+        status, trace_stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+        self.assertIn(direct_stdout.strip(), trace_stdout)
+
 if __name__ == '__main__':
     unittest.main()

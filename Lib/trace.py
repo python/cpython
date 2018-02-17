@@ -705,7 +705,7 @@ def main():
     if opts.filename is None:
         parser.error('filename is missing: required with the main options')
 
-    sys.argv = opts.filename, *opts.arguments
+    sys.argv = [opts.filename, *opts.arguments]
     sys.path[0] = os.path.dirname(opts.filename)
 
     t = Trace(opts.count, opts.trace, countfuncs=opts.listfuncs,
