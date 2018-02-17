@@ -190,7 +190,10 @@ class RobotFileParser:
         return self.default_entry.req_rate
 
     def __str__(self):
-        return ''.join([str(entry) + "\n" for entry in self.entries])
+        ret = [str(entry) for entry in self.entries]
+        if self.default_entry is not None:
+            ret.append(str(self.default_entry))
+        return '\n\n'.join(ret)
 
 
 class RuleLine:
@@ -222,10 +225,14 @@ class Entry:
     def __str__(self):
         ret = []
         for agent in self.useragents:
-            ret.extend(["User-agent: ", agent, "\n"])
+            ret.append("User-agent: {0}".format(agent))
+        if self.delay is not None:
+            ret.append("Crawl-delay: {0}".format(self.delay))
+        if self.req_rate is not None:
+            ret.append("Request-rate: {0.requests}/{0.seconds}".format(self.req_rate))
         for line in self.rulelines:
-            ret.extend([str(line), "\n"])
-        return ''.join(ret)
+            ret.append(str(line))
+        return '\n'.join(ret)
 
     def applies_to(self, useragent):
         """check if this entry applies to the specified agent"""
