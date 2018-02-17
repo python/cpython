@@ -3102,6 +3102,14 @@ class FDInheritanceTests(unittest.TestCase):
         self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
         self.assertFalse(os.get_inheritable(fd3))
 
+        # dup2(fd, fd) must have no effect for a valid fd
+        os.set_inheritable(fd, True)
+        os.dup2(fd, fd, inheritable=False)
+        self.assertTrue(os.get_inheritable(fd))
+        os.set_inheritable(fd, False)
+        os.dup2(fd, fd, inheritable=True)
+        self.assertFalse(os.get_inheritable(fd))
+
     @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
     def test_openpty(self):
         master_fd, slave_fd = os.openpty()
