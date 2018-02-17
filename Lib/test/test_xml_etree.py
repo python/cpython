@@ -1281,6 +1281,31 @@ XINCLUDE_BAD["B2.xml"] = """\
 </div>
 """
 
+XINCLUDE["Recursive1.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive2.xml:</p>
+  <xi:include href="Recursive2.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive2.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive3.xml:</p>
+  <xi:include href="Recursive3.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive3.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="Recursive1.xml"/>
+</document>
+"""
+
+
 class XIncludeTest(unittest.TestCase):
 
     def xinclude_loader(self, href, parse="xml", encoding=None):
@@ -1413,6 +1438,13 @@ class XIncludeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 "xi:fallback tag must be child of xi:include "
                 "('{http://www.w3.org/2001/XInclude}fallback')")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(SyntaxError) as cm:
+            ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
 
 # --------------------------------------------------------------------
 # reported bugs

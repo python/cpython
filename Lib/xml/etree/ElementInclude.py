@@ -50,6 +50,7 @@
 
 import copy
 from . import ElementTree
+from urllib.parse import urljoin
 
 XINCLUDE = "{http://www.w3.org/2001/XInclude}"
 
@@ -92,13 +93,22 @@ def default_loader(href, parse, encoding=None):
 # @param loader Optional resource loader.  If omitted, it defaults
 #     to {@link default_loader}.  If given, it should be a callable
 #     that implements the same interface as <b>default_loader</b>.
+# @param base_url The base URL of the original file, to resolve
+#     relative include file references.
 # @throws FatalIncludeError If the function fails to include a given
 #     resource, or if the tree contains malformed XInclude elements.
-# @throws OSError If the function fails to load a given resource.
+# @throws IOError If the function fails to load a given resource.
+# @returns the node or its replacement if it was an XInclude node
 
-def include(elem, loader=None):
+def include(elem, loader=None, base_url=None):
+    if hasattr(elem, 'getroot'):
+        elem = elem.getroot()
     if loader is None:
         loader = default_loader
+    _include(elem, loader, base_url, set())
+
+
+def _include(elem, loader, base_url, _parent_hrefs):
     # look for xinclude elements
     i = 0
     while i < len(elem):
@@ -106,14 +116,20 @@ def include(elem, loader=None):
         if e.tag == XINCLUDE_INCLUDE:
             # process xinclude directive
             href = e.get("href")
+            if base_url:
+                href = urljoin(base_url, href)
             parse = e.get("parse", "xml")
             if parse == "xml":
+                if href in _parent_hrefs:
+                    raise FatalIncludeError("recursive include of %s" % href)
+                _parent_hrefs.add(href)
                 node = loader(href, parse)
                 if node is None:
                     raise FatalIncludeError(
                         "cannot load %r as %r" % (href, parse)
                         )
-                node = copy.copy(node)
+                node = copy.copy(node)  # FIXME: this makes little sense with recursive includes
+                _include(node, loader, href, _parent_hrefs)
                 if e.tail:
                     node.tail = (node.tail or "") + e.tail
                 elem[i] = node
@@ -123,11 +139,13 @@ def include(elem, loader=None):
                     raise FatalIncludeError(
                         "cannot load %r as %r" % (href, parse)
                         )
+                if e.tail:
+                    text += e.tail
                 if i:
                     node = elem[i-1]
-                    node.tail = (node.tail or "") + text + (e.tail or "")
+                    node.tail = (node.tail or "") + text
                 else:
-                    elem.text = (elem.text or "") + text + (e.tail or "")
+                    elem.text = (elem.text or "") + text
                 del elem[i]
                 continue
             else:
@@ -139,5 +157,5 @@ def include(elem, loader=None):
                 "xi:fallback tag must be child of xi:include (%r)" % e.tag
                 )
         else:
-            include(e, loader)
-        i = i + 1
+            _include(e, loader, base_url, _parent_hrefs)
+        i += 1
