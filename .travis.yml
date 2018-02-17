@@ -111,8 +111,7 @@ before_script:
       fi
       openssl version
       ./configure --with-pydebug
-      make -j4
-      make -j4 regen-all clinic
+      make -j4 regen-all
       changes=`git status --porcelain`
       if ! test -z "$changes"
       then
@@ -120,6 +119,7 @@ before_script:
         echo "$changes"
         exit 1
       fi
+      make -j4
       make pythoninfo
 
 script:
