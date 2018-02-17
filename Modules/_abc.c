@@ -25,7 +25,7 @@ _Py_IDENTIFIER(__subclasshook__);
    negative cache to be cleared before its next use.
    Note: this counter is private. Use `abc.get_cache_token()` for
    external code. */
-static PyObject *abc_invalidation_counter;
+static unsigned long long abc_invalidation_counter = 0;
 
 /* This object stores internal state for ABCs.
    Note that we can use normal sets for caches,
@@ -35,7 +35,7 @@ typedef struct {
     PyObject *_abc_registry;
     PyObject *_abc_cache; /* Normal set of weak references. */
     PyObject *_abc_negative_cache; /* Normal set of weak references. */
-    PyObject *_abc_negative_cache_version;
+    unsigned long long _abc_negative_cache_version;
 } _abc_data;
 
 static void
@@ -44,7 +44,6 @@ abc_data_dealloc(_abc_data *self)
     Py_XDECREF(self->_abc_registry);
     Py_XDECREF(self->_abc_cache);
     Py_XDECREF(self->_abc_negative_cache);
-    Py_DECREF(self->_abc_negative_cache_version);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -60,7 +59,6 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->_abc_cache = NULL;
     self->_abc_negative_cache = NULL;
     self->_abc_negative_cache_version = abc_invalidation_counter;
-    Py_INCREF(abc_invalidation_counter);
     return (PyObject *) self;
 }
 
@@ -239,7 +237,7 @@ static PyObject *
 _abc__get_dump(PyObject *module, PyObject *self)
 /*[clinic end generated code: output=9d9569a8e2c1c443 input=2c5deb1bfe9e3c79]*/
 {
-    PyObject *registry, *cache, *negative_cache;
+    PyObject *registry, *cache, *negative_cache, *cache_version;
     _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
@@ -262,13 +260,19 @@ _abc__get_dump(PyObject *module, PyObject *self)
         Py_DECREF(cache);
         return NULL;
     }
-    Py_INCREF(impl->_abc_negative_cache_version); /* PyTuple_Pack doesn't do this. */
-    PyObject *res = PyTuple_Pack(4,
-            registry, cache, negative_cache, impl->_abc_negative_cache_version);
+    cache_version = PyLong_FromUnsignedLongLong(impl->_abc_negative_cache_version);
+    if (cache_version == NULL) {
+        Py_DECREF(impl);
+        Py_DECREF(registry);
+        Py_DECREF(cache);
+        Py_DECREF(negative_cache);
+        return NULL;
+    }
+    PyObject *res = PyTuple_Pack(4, registry, cache, negative_cache, cache_version);
     Py_DECREF(registry);
     Py_DECREF(cache);
     Py_DECREF(negative_cache);
-    Py_DECREF(impl->_abc_negative_cache_version);
+    Py_DECREF(cache_version);
     Py_DECREF(impl);
     return res;
 }
@@ -475,16 +479,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     Py_DECREF(impl);
 
     /* Invalidate negative cache */
-    PyObject *one = PyLong_FromLong(1);
-    if (one == NULL) {
-        return NULL;
-    }
-    PyObject *next_version = PyNumber_Add(abc_invalidation_counter, one);
-    Py_DECREF(one);
-    if (next_version == NULL) {
-        return NULL;
-    }
-    Py_SETREF(abc_invalidation_counter, next_version);
+    abc_invalidation_counter++;
 
     Py_INCREF(subclass);
     return subclass;
@@ -525,11 +520,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     }
     subtype = (PyObject *)Py_TYPE(instance);
     if (subtype == subclass) {
-        int r = PyObject_RichCompareBool(
-            impl->_abc_negative_cache_version,
-            abc_invalidation_counter, Py_EQ);
-        assert(r >= 0);  // Both should be PyLong
-        if (r > 0) {
+        if (impl->_abc_negative_cache_version == abc_invalidation_counter) {
             incache = _in_weak_set(impl->_abc_negative_cache, subclass);
             if (incache < 0) {
                 goto end;
@@ -614,19 +605,13 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 2. Check negative cache; may have to invalidate. */
-    int r = PyObject_RichCompareBool(impl->_abc_negative_cache_version,
-                                     abc_invalidation_counter, Py_LT);
-    assert(r >= 0);  // Both should be PyLong
-    if (r > 0) {
+    if (impl->_abc_negative_cache_version < abc_invalidation_counter) {
         /* Invalidate the negative cache. */
         if (impl->_abc_negative_cache != NULL &&
                 PySet_Clear(impl->_abc_negative_cache) < 0) {
             goto end;
         }
-        /* INCREF the new value of cache version,
-           then carefully DECREF the old one. */
-        Py_INCREF(abc_invalidation_counter);
-        Py_SETREF(impl->_abc_negative_cache_version, abc_invalidation_counter);
+        impl->_abc_negative_cache_version = abc_invalidation_counter;
     }
     else {
         incache = _in_weak_set(impl->_abc_negative_cache, subclass);
@@ -811,8 +796,7 @@ static PyObject *
 _abc_get_cache_token_impl(PyObject *module)
 /*[clinic end generated code: output=c7d87841e033dacc input=1d49ab7218687f59]*/
 {
-    Py_INCREF(abc_invalidation_counter);
-    return abc_invalidation_counter;
+    return PyLong_FromUnsignedLongLong(abc_invalidation_counter);
 }
 
 static struct PyMethodDef module_functions[] = {
@@ -848,6 +832,5 @@ PyInit__abc(void)
     }
     _abc_data_type.tp_doc = abc_data_doc;
 
-    abc_invalidation_counter = PyLong_FromLong(0);
     return PyModule_Create(&_abcmodule);
 }
