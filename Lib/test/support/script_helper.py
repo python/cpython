@@ -166,7 +166,9 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
     object.
     """
-    cmd_line = [sys.executable, '-E']
+    cmd_line = [sys.executable]
+    if not interpreter_requires_environment():
+        cmd_line.append('-E')
     cmd_line.extend(args)
     # Under Fedora (?), GNU readline can output junk on stderr when initialized,
     # depending on the TERM setting.  Setting TERM=vt100 is supposed to disable

@@ -65,7 +65,7 @@ for %%e in (%libraries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
         echo.Fetching %%e...
-        %PYTHON% "%PCBUILD%get_external.py" -O %ORG% %%e
+        %PYTHON% -E "%PCBUILD%get_external.py" -O %ORG% %%e
     )
 )
 
