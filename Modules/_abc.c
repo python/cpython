@@ -809,7 +809,7 @@ with every call to ``register()`` on any ABC.
 
 static PyObject *
 _abc_get_cache_token_impl(PyObject *module)
-/*[clinic end generated code: output=c7d87841e033dacc input=2a19dea381467239]*/
+/*[clinic end generated code: output=c7d87841e033dacc input=1d49ab7218687f59]*/
 {
     Py_INCREF(abc_invalidation_counter);
     return abc_invalidation_counter;
