@@ -93,7 +93,7 @@ _get_impl(PyObject *self)
 static int
 _in_weak_set(PyObject *set, PyObject *obj)
 {
-    if (set == NULL || PySet_Size(set) == 0) {
+    if (set == NULL || PySet_GET_SIZE(set) == 0) {
         return 0;
     }
     PyObject *ref = PyWeakref_NewRef(obj, NULL);
@@ -148,6 +148,10 @@ _add_to_weak_set(PyObject **pset, PyObject *obj)
         return -1;
     }
     destroy_cb = PyCFunction_NewEx(&_destroy_def, wr, NULL);
+    if (destroy_cb == NULL) {
+        Py_DECREF(wr);
+        return -1;
+    }
     ref = PyWeakref_NewRef(obj, destroy_cb);
     Py_DECREF(destroy_cb);
     if (ref == NULL) {
@@ -374,7 +378,8 @@ compute_abstract_methods(PyObject *self)
             int is_abstract = _PyObject_IsAbstract(value);
             Py_DECREF(value);
             if (is_abstract < 0 ||
-                    (is_abstract && PySet_Add(abstracts, key) < 0)) {
+                    (is_abstract && PySet_Add(abstracts, key) < 0))
+            {
                 Py_DECREF(key);
                 Py_DECREF(iter);
                 goto error;
@@ -406,7 +411,7 @@ _abc._abc_init
     self: object
     /
 
-Internal ABC helper for class set-up. Should be never used outside abc module
+Internal ABC helper for class set-up. Should be never used outside abc module.
 [clinic start generated code]*/
 
 static PyObject *
@@ -438,7 +443,7 @@ _abc._abc_register
     subclass: object
     /
 
-Internal ABC helper for subclasss registration. Should be never used outside abc module
+Internal ABC helper for subclasss registration. Should be never used outside abc module.
 [clinic start generated code]*/
 
 static PyObject *
@@ -493,7 +498,7 @@ _abc._abc_instancecheck
     instance: object
     /
 
-Internal ABC helper for instance checks. Should be never used outside abc module
+Internal ABC helper for instance checks. Should be never used outside abc module.
 [clinic start generated code]*/
 
 static PyObject *
@@ -508,6 +513,9 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     }
 
     subclass = _PyObject_GetAttrId(instance, &PyId___class__);
+    if (subclass == NULL) {
+        return NULL;
+    }
     /* Inline the cache checking. */
     int incache = _in_weak_set(impl->_abc_cache, subclass);
     if (incache < 0) {
@@ -578,7 +586,7 @@ _abc._abc_subclasscheck
     subclass: object
     /
 
-Internal ABC helper for subclasss checks. Should be never used outside abc module
+Internal ABC helper for subclasss checks. Should be never used outside abc module.
 [clinic start generated code]*/
 
 static PyObject *
@@ -657,8 +665,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     /* 4. Check if it's a direct subclass. */
     mro = ((PyTypeObject *)subclass)->tp_mro;
     assert(PyTuple_Check(mro));
-    for (pos = 0; pos < PyTuple_Size(mro); pos++) {
-        PyObject *mro_item = PyTuple_GetItem(mro, pos);
+    for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
+        PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
         if (mro_item == NULL) {
             goto end;
         }
@@ -679,7 +687,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
-    if(!PyList_Check(subclasses)) {
+    if (!PyList_Check(subclasses)) {
         PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
         goto end;
     }
@@ -734,7 +742,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
         return 0;
     }
     // Weakref callback may remove entry from set.
-    // Se we take snapshot of registry first.
+    // So we take snapshot of registry first.
     PyObject **copy = PyMem_Malloc(sizeof(PyObject*) * registry_size);
     PyObject *key;
     Py_ssize_t pos = 0;
@@ -789,7 +797,7 @@ Returns the current ABC cache token.
 
 The token is an opaque object (supporting equality testing) identifying the
 current version of the ABC cache for virtual subclasses. The token changes
-with every call to ``register()`` on any ABC.
+with every call to register() on any ABC.
 [clinic start generated code]*/
 
 static PyObject *
