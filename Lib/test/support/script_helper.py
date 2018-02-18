@@ -36,6 +36,11 @@ def interpreter_requires_environment():
     """
     global __cached_interp_requires_environment
     if __cached_interp_requires_environment is None:
+        # If PYTHONHOME is set, assume that we need it
+        if os.environ['PYTHONHOME']:
+            __cached_interp_requires_environment = True
+            return True
+
         # Try running an interpreter with -E to see if it works or not.
         try:
             subprocess.check_call([sys.executable, '-E',
