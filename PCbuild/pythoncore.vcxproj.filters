@@ -473,6 +473,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\_abc.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_bisectmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>

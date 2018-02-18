@@ -712,6 +712,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
+        # _abc speedups
+        exts.append( Extension("_abc", ["_abc.c"]) )
         # _queue module
         exts.append( Extension("_queue", ["_queuemodule.c"]) )
 

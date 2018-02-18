@@ -761,8 +761,8 @@ class GenericTests(BaseTestCase):
         self.assertIsInstance(1, C)
         C[int]
         self.assertIsInstance(1, C)
-        C._abc_registry.clear()
-        C._abc_cache.clear()  # To keep refleak hunting mode clean
+        C._abc_registry_clear()
+        C._abc_caches_clear()  # To keep refleak hunting mode clean
 
     def test_false_subclasses(self):
         class MyMapping(MutableMapping[str, str]): pass
