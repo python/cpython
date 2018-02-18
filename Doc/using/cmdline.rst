@@ -210,6 +210,20 @@ Miscellaneous options
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
 
 
+.. cmdoption:: --check-hash-based-pycs default|always|never
+
+   Control the validation behavior of hash-based ``.pyc`` files. See
+   :ref:`pyc-invalidation`. When set to ``default``, checked and unchecked
+   hash-based bytecode cache files are validated according to their default
+   semantics. When set to ``always``, all hash-based ``.pyc`` files, whether
+   checked or unchecked, are validated against their corresponding source
+   file. When set to ``never``, hash-based ``.pyc`` files are not validated
+   against their corresponding source files.
+
+   The semantics of timestamp-based ``.pyc`` files are unaffected by this
+   option.
+
+
 .. cmdoption:: -d
 
    Turn on parser debugging output (for expert only, depending on compilation
@@ -263,8 +277,9 @@ Miscellaneous options
 
 .. cmdoption:: -R
 
-   Kept for compatibility.  On Python 3.3 and greater, hash randomization is
-   turned on by default.
+   Turn on hash randomization. This option only has an effect if the
+   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
+   randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`__hash__` values of str, bytes and datetime
@@ -279,6 +294,9 @@ Miscellaneous options
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
+
+   .. versionchanged:: 3.7
+      The option is no longer ignored.
 
    .. versionadded:: 3.2.3
 
@@ -338,49 +356,27 @@ Miscellaneous options
    :option:`-W` options are ignored (though, a warning message is printed about
    invalid options when the first warning is issued).
 
-   Warnings can also be controlled from within a Python program using the
+   Warnings can also be controlled using the :envvar:`PYTHONWARNINGS`
+   environment variable and from within a Python program using the
    :mod:`warnings` module.
 
-   The simplest form of argument is one of the following action strings (or a
-   unique abbreviation):
+   The simplest settings apply a particular action unconditionally to all
+   warnings emitted by a process (even those that are otherwise ignored by
+   default)::
 
-   ``ignore``
-      Ignore all warnings.
-   ``default``
-      Explicitly request the default behavior (printing each warning once per
-      source line).
-   ``all``
-      Print a warning each time it occurs (this may generate many messages if a
-      warning is triggered repeatedly for the same source line, such as inside a
-      loop).
-   ``module``
-      Print each warning only the first time it occurs in each module.
-   ``once``
-      Print each warning only the first time it occurs in the program.
-   ``error``
-      Raise an exception instead of printing a warning message.
+       -Wdefault  # Warn once per call location
+       -Werror    # Convert to exceptions
+       -Walways   # Warn every time
+       -Wmodule   # Warn once per calling module
+       -Wonce     # Warn once per Python process
+       -Wignore   # Never warn
 
-   The full form of argument is::
+   The action names can be abbreviated as desired (e.g. ``-Wi``, ``-Wd``,
+   ``-Wa``, ``-We``) and the interpreter will resolve them to the appropriate
+   action name.
 
-       action:message:category:module:line
-
-   Here, *action* is as explained above but only applies to messages that match
-   the remaining fields.  Empty fields match all values; trailing empty fields
-   may be omitted.  The *message* field matches the start of the warning message
-   printed; this match is case-insensitive.  The *category* field matches the
-   warning category.  This must be a class name; the match tests whether the
-   actual warning category of the message is a subclass of the specified warning
-   category.  The full class name must be given.  The *module* field matches the
-   (fully-qualified) module name; this match is case-sensitive.  The *line*
-   field matches the line number, where zero matches all line numbers and is
-   thus equivalent to an omitted line number.
-
-   .. seealso::
-      :mod:`warnings` -- the warnings module
-
-      :pep:`230` -- Warning framework
-
-      :envvar:`PYTHONWARNINGS`
+   See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
+   details.
 
 
 .. cmdoption:: -x
@@ -416,11 +412,7 @@ Miscellaneous options
      not be more verbose than the default if the code is correct: new warnings
      are only emitted when an issue is detected. Effect of the developer mode:
 
-     * Warning filters: add a filter to display all warnings (``"default"``
-       action), except of :exc:`BytesWarning` which still depends on the
-       :option:`-b` option, and use ``"always"`` action for
-       :exc:`ResourceWarning` warnings. For example, display
-       :exc:`DeprecationWarning` warnings.
+     * Add ``default`` warning filter, as :option:`-W` ``default``.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
      * Enable the :mod:`faulthandler` module to dump the Python traceback
@@ -428,6 +420,9 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+
+   * ``-X utf8`` enables the UTF-8 mode, whereas ``-X utf8=0`` disables the
+     UTF-8 mode.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -445,7 +440,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importtime`` and ``-X dev`` options.
+      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
 
 Options you shouldn't use
@@ -642,7 +637,23 @@ conflict.
 
    This is equivalent to the :option:`-W` option. If set to a comma
    separated string, it is equivalent to specifying :option:`-W` multiple
-   times.
+   times, with filters later in the list taking precedence over those earlier
+   in the list.
+
+   The simplest settings apply a particular action unconditionally to all
+   warnings emitted by a process (even those that are otherwise ignored by
+   default)::
+
+       PYTHONWARNINGS=default  # Warn once per call location
+       PYTHONWARNINGS=error    # Convert to exceptions
+       PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=module   # Warn once per calling module
+       PYTHONWARNINGS=once     # Warn once per Python process
+       PYTHONWARNINGS=ignore   # Never warn
+
+   See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
+   details.
+
 
 .. envvar:: PYTHONFAULTHANDLER
 
@@ -762,9 +773,7 @@ conflict.
 
    If set to the value ``0``, causes the main Python command line application
    to skip coercing the legacy ASCII-based C locale to a more capable UTF-8
-   based alternative. Note that this setting is checked even when the
-   :option:`-E` or :option:`-I` options are used, as it is handled prior to
-   the processing of command line options.
+   based alternative.
 
    If this variable is *not* set, or is set to a value other than ``0``, and
    the current locale reported for the ``LC_CTYPE`` category is the default
@@ -805,6 +814,14 @@ conflict.
    CPython "development mode". See the :option:`-X` ``dev`` option.
 
    .. versionadded:: 3.7
+
+.. envvar:: PYTHONUTF8
+
+   If set to ``1``, enable the UTF-8 mode. If set to ``0``, disable the UTF-8
+   mode. Any other non-empty string cause an error.
+
+   .. versionadded:: 3.7
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

@@ -332,13 +332,9 @@ class FaultHandlerTests(unittest.TestCase):
     def test_disabled_by_default(self):
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
-        args = filter(None, (sys.executable,
-                             "-E" if sys.flags.ignore_environment else "",
-                             "-c", code))
-        env = os.environ.copy()
-        env.pop("PYTHONFAULTHANDLER", None)
+        args = (sys.executable, "-E", "-c", code)
         # don't use assert_python_ok() because it always enables faulthandler
-        output = subprocess.check_output(args, env=env)
+        output = subprocess.check_output(args)
         self.assertEqual(output.rstrip(), b"False")
 
     def test_sys_xoptions(self):
@@ -357,15 +353,17 @@ class FaultHandlerTests(unittest.TestCase):
         # empty env var
         code = "import faulthandler; print(faulthandler.is_enabled())"
         args = (sys.executable, "-c", code)
-        env = os.environ.copy()
+        env = dict(os.environ)
         env['PYTHONFAULTHANDLER'] = ''
+        env['PYTHONDEVMODE'] = ''
         # don't use assert_python_ok() because it always enables faulthandler
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"False")
 
         # non-empty env var
-        env = os.environ.copy()
+        env = dict(os.environ)
         env['PYTHONFAULTHANDLER'] = '1'
+        env['PYTHONDEVMODE'] = ''
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"True")
 

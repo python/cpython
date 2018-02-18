@@ -38,7 +38,7 @@ or :class:`datetime.datetime` objects.
 
 .. seealso::
 
-   `PList manual page <https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`_
+   `PList manual page <https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/PropertyLists/>`_
       Apple's documentation of the file format.
 
 

@@ -1167,7 +1167,7 @@ new_arena(void)
     static int debug_stats = -1;
 
     if (debug_stats == -1) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
+        const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
     if (debug_stats)
@@ -2469,7 +2469,7 @@ pool_is_in_list(const poolp target, poolp list)
  * checks.
  *
  * Return 0 if the memory debug hooks are not installed or no statistics was
- * writen into out, return 1 otherwise.
+ * written into out, return 1 otherwise.
  */
 int
 _PyObject_DebugMallocStats(FILE *out)

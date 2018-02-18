@@ -16,6 +16,8 @@ import warnings as original_warnings
 py_warnings = support.import_fresh_module('warnings', blocked=['_warnings'])
 c_warnings = support.import_fresh_module('warnings', fresh=['_warnings'])
 
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
 @contextmanager
 def warnings_state(module):
     """Use a specific warnings implementation in warning_tests."""
@@ -320,6 +322,7 @@ class FilterTests(BaseTest):
                 self.module.filters[0][0], "error",
                 "simplefilter did not promote filter to the beginning of list"
             )
+
     def test_append_duplicate(self):
         with original_warnings.catch_warnings(module=self.module,
                 record=True) as w:
@@ -1110,20 +1113,23 @@ class EnvironmentVariableTests(BaseTest):
     def test_single_warning(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout, b"['ignore::DeprecationWarning']")
 
     def test_comma_separated_warnings(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
     def test_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
@@ -1131,7 +1137,8 @@ class EnvironmentVariableTests(BaseTest):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
             "warnings.warn('Message', DeprecationWarning)",
-            PYTHONWARNINGS="default::DeprecationWarning")
+            PYTHONWARNINGS="default::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['default::DeprecationWarning', 'error::DeprecationWarning']")
         self.assertEqual(stderr.splitlines(),
@@ -1139,13 +1146,45 @@ class EnvironmentVariableTests(BaseTest):
              b"  File \"<string>\", line 1, in <module>",
              b"DeprecationWarning: Message"])
 
+    def test_default_filter_configuration(self):
+        pure_python_api = self.module is py_warnings
+        if Py_DEBUG:
+            expected_default_filters = []
+        else:
+            if pure_python_api:
+                main_module_filter = re.compile("__main__")
+            else:
+                main_module_filter = "__main__"
+            expected_default_filters = [
+                ('default', None, DeprecationWarning, main_module_filter, 0),
+                ('ignore', None, DeprecationWarning, None, 0),
+                ('ignore', None, PendingDeprecationWarning, None, 0),
+                ('ignore', None, ImportWarning, None, 0),
+                ('ignore', None, ResourceWarning, None, 0),
+            ]
+        expected_output = [str(f).encode() for f in expected_default_filters]
+
+        if pure_python_api:
+            # Disable the warnings acceleration module in the subprocess
+            code = "import sys; sys.modules.pop('warnings', None); sys.modules['_warnings'] = None; "
+        else:
+            code = ""
+        code += "import warnings; [print(f) for f in warnings.filters]"
+
+        rc, stdout, stderr = assert_python_ok("-c", code, __isolated=True)
+        stdout_lines = [line.strip() for line in stdout.splitlines()]
+        self.maxDiff = None
+        self.assertEqual(stdout_lines, expected_output)
+
+
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
                          'requires non-ascii filesystemencoding')
     def test_nonascii(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS="ignore:DeprecaciónWarning")
+            PYTHONWARNINGS="ignore:DeprecaciónWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             "['ignore:DeprecaciónWarning']".encode('utf-8'))
 
@@ -1187,7 +1226,7 @@ a=A()
         rc, out, err = assert_python_ok("-c", code)
         # note: "__main__" filename is not correct, it should be the name
         # of the script
-        self.assertEqual(err, b'__main__:7: UserWarning: test')
+        self.assertEqual(err.decode(), '__main__:7: UserWarning: test')
 
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python

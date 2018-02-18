@@ -1,13 +1,13 @@
 import sys
 import types
 from copy import deepcopy
-import collections
 import inspect
 
 __all__ = ['dataclass',
            'field',
            'FrozenInstanceError',
            'InitVar',
+           'MISSING',
 
            # Helper functions.
            'fields',
@@ -15,7 +15,144 @@ __all__ = ['dataclass',
            'astuple',
            'make_dataclass',
            'replace',
+           'is_dataclass',
            ]
+
+# Conditions for adding methods.  The boxes indicate what action the
+#  dataclass decorator takes.  For all of these tables, when I talk
+#  about init=, repr=, eq=, order=, hash=, or frozen=, I'm referring
+#  to the arguments to the @dataclass decorator.  When checking if a
+#  dunder method already exists, I mean check for an entry in the
+#  class's __dict__.  I never check to see if an attribute is defined
+#  in a base class.
+
+# Key:
+# +=========+=========================================+
+# + Value   | Meaning                                 |
+# +=========+=========================================+
+# | <blank> | No action: no method is added.          |
+# +---------+-----------------------------------------+
+# | add     | Generated method is added.              |
+# +---------+-----------------------------------------+
+# | add*    | Generated method is added only if the   |
+# |         |  existing attribute is None and if the  |
+# |         |  user supplied a __eq__ method in the   |
+# |         |  class definition.                      |
+# +---------+-----------------------------------------+
+# | raise   | TypeError is raised.                    |
+# +---------+-----------------------------------------+
+# | None    | Attribute is set to None.               |
+# +=========+=========================================+
+
+# __init__
+#
+#   +--- init= parameter
+#   |
+#   v     |       |       |
+#         |  no   |  yes  |  <--- class has __init__ in __dict__?
+# +=======+=======+=======+
+# | False |       |       |
+# +-------+-------+-------+
+# | True  | add   |       |  <- the default
+# +=======+=======+=======+
+
+# __repr__
+#
+#    +--- repr= parameter
+#    |
+#    v    |       |       |
+#         |  no   |  yes  |  <--- class has __repr__ in __dict__?
+# +=======+=======+=======+
+# | False |       |       |
+# +-------+-------+-------+
+# | True  | add   |       |  <- the default
+# +=======+=======+=======+
+
+
+# __setattr__
+# __delattr__
+#
+#    +--- frozen= parameter
+#    |
+#    v    |       |       |
+#         |  no   |  yes  |  <--- class has __setattr__ or __delattr__ in __dict__?
+# +=======+=======+=======+
+# | False |       |       |  <- the default
+# +-------+-------+-------+
+# | True  | add   | raise |
+# +=======+=======+=======+
+# Raise because not adding these methods would break the "frozen-ness"
+#  of the class.
+
+# __eq__
+#
+#    +--- eq= parameter
+#    |
+#    v    |       |       |
+#         |  no   |  yes  |  <--- class has __eq__ in __dict__?
+# +=======+=======+=======+
+# | False |       |       |
+# +-------+-------+-------+
+# | True  | add   |       |  <- the default
+# +=======+=======+=======+
+
+# __lt__
+# __le__
+# __gt__
+# __ge__
+#
+#    +--- order= parameter
+#    |
+#    v    |       |       |
+#         |  no   |  yes  |  <--- class has any comparison method in __dict__?
+# +=======+=======+=======+
+# | False |       |       |  <- the default
+# +-------+-------+-------+
+# | True  | add   | raise |
+# +=======+=======+=======+
+# Raise because to allow this case would interfere with using
+#  functools.total_ordering.
+
+# __hash__
+
+#      +------------------- hash= parameter
+#      |       +----------- eq= parameter
+#      |       |       +--- frozen= parameter
+#      |       |       |
+#      v       v       v    |        |        |
+#                           |   no   |  yes   |  <--- class has __hash__ in __dict__?
+# +=========+=======+=======+========+========+
+# | 1 None  | False | False |        |        | No __eq__, use the base class __hash__
+# +---------+-------+-------+--------+--------+
+# | 2 None  | False | True  |        |        | No __eq__, use the base class __hash__
+# +---------+-------+-------+--------+--------+
+# | 3 None  | True  | False | None   |        | <-- the default, not hashable
+# +---------+-------+-------+--------+--------+
+# | 4 None  | True  | True  | add    | add*   | Frozen, so hashable
+# +---------+-------+-------+--------+--------+
+# | 5 False | False | False |        |        |
+# +---------+-------+-------+--------+--------+
+# | 6 False | False | True  |        |        |
+# +---------+-------+-------+--------+--------+
+# | 7 False | True  | False |        |        |
+# +---------+-------+-------+--------+--------+
+# | 8 False | True  | True  |        |        |
+# +---------+-------+-------+--------+--------+
+# | 9 True  | False | False | add    | add*   | Has no __eq__, but hashable
+# +---------+-------+-------+--------+--------+
+# |10 True  | False | True  | add    | add*   | Has no __eq__, but hashable
+# +---------+-------+-------+--------+--------+
+# |11 True  | True  | False | add    | add*   | Not frozen, but hashable
+# +---------+-------+-------+--------+--------+
+# |12 True  | True  | True  | add    | add*   | Frozen, so hashable
+# +=========+=======+=======+========+========+
+# For boxes that are blank, __hash__ is untouched and therefore
+#  inherited from the base class.  If the base is object, then
+#  id-based hashing is used.
+# Note that a class may have already __hash__=None if it specified an
+#  __eq__ method in the class body (not one that was created by
+#  @dataclass).
+
 
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
@@ -29,11 +166,11 @@ class _HAS_DEFAULT_FACTORY_CLASS:
         return '<factory>'
 _HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
 
-# A sentinel object to detect if a parameter is supplied or not.
-class _MISSING_FACTORY:
-    def __repr__(self):
-        return '<missing>'
-_MISSING = _MISSING_FACTORY()
+# A sentinel object to detect if a parameter is supplied or not.  Use
+#  a class to give it a better repr.
+class _MISSING_TYPE:
+    pass
+MISSING = _MISSING_TYPE()
 
 # Since most per-field metadata will be unused, create an empty
 #  read-only proxy that can be shared among all fields.
@@ -114,7 +251,7 @@ class Field:
 # This function is used instead of exposing Field creation directly,
 #  so that a type checker can be told (via overloads) that this is a
 #  function whose type depends on its parameters.
-def field(*, default=_MISSING, default_factory=_MISSING, init=True, repr=True,
+def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
           hash=None, compare=True, metadata=None):
     """Return an object to identify dataclass fields.
 
@@ -130,7 +267,7 @@ def field(*, default=_MISSING, default_factory=_MISSING, init=True, repr=True,
     It is an error to specify both default and default_factory.
     """
 
-    if default is not _MISSING and default_factory is not _MISSING:
+    if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
     return Field(default, default_factory, init, repr, hash, compare,
                  metadata)
@@ -142,19 +279,19 @@ def _tuple_str(obj_name, fields):
     #  return "(self.x,self.y)".
 
     # Special case for the 0-tuple.
-    if len(fields) == 0:
+    if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
 
 
-def _create_fn(name, args, body, globals=None, locals=None,
-               return_type=_MISSING):
+def _create_fn(name, args, body, *, globals=None, locals=None,
+               return_type=MISSING):
     # Note that we mutate locals when exec() is called. Caller beware!
     if locals is None:
         locals = {}
     return_annotation = ''
-    if return_type is not _MISSING:
+    if return_type is not MISSING:
         locals['_return_type'] = return_type
         return_annotation = '->_return_type'
     args = ','.join(args)
@@ -182,7 +319,7 @@ def _field_init(f, frozen, globals, self_name):
     #  initialize this field.
 
     default_name = f'_dflt_{f.name}'
-    if f.default_factory is not _MISSING:
+    if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
             #  given, use it.  If not, call the factory.
@@ -210,10 +347,10 @@ def _field_init(f, frozen, globals, self_name):
     else:
         # No default factory.
         if f.init:
-            if f.default is _MISSING:
+            if f.default is MISSING:
                 # There's no default, just do an assignment.
                 value = f.name
-            elif f.default is not _MISSING:
+            elif f.default is not MISSING:
                 globals[default_name] = f.default
                 value = f.name
         else:
@@ -236,14 +373,14 @@ def _init_param(f):
     #  For example, the equivalent of 'x:int=3' (except instead of 'int',
     #  reference a variable set to int, and instead of '3', reference a
     #  variable set to 3).
-    if f.default is _MISSING and f.default_factory is _MISSING:
+    if f.default is MISSING and f.default_factory is MISSING:
         # There's no default, and no default_factory, just
         #  output the variable name and type.
         default = ''
-    elif f.default is not _MISSING:
+    elif f.default is not MISSING:
         # There's a default, this will be the name that's used to look it up.
         default = f'=_dflt_{f.name}'
-    elif f.default_factory is not _MISSING:
+    elif f.default_factory is not MISSING:
         # There's a factory function. Set a marker.
         default = '=_HAS_DEFAULT_FACTORY'
     return f'{f.name}:_type_{f.name}{default}'
@@ -261,13 +398,13 @@ def _init_fn(fields, frozen, has_post_init, self_name):
     for f in fields:
         # Only consider fields in the __init__ call.
         if f.init:
-            if not (f.default is _MISSING and f.default_factory is _MISSING):
+            if not (f.default is MISSING and f.default_factory is MISSING):
                 seen_default = True
             elif seen_default:
                 raise TypeError(f'non-default argument {f.name!r} '
                                 'follows default argument')
 
-    globals = {'_MISSING': _MISSING,
+    globals = {'MISSING': MISSING,
                '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY}
 
     body_lines = []
@@ -286,7 +423,7 @@ def _init_fn(fields, frozen, has_post_init, self_name):
         body_lines += [f'{self_name}.{_POST_INIT_NAME}({params_str})']
 
     # If no body lines, use 'pass'.
-    if len(body_lines) == 0:
+    if not body_lines:
         body_lines = ['pass']
 
     locals = {f'_type_{f.name}': f.type for f in fields}
@@ -328,32 +465,6 @@ def _cmp_fn(name, op, self_tuple, other_tuple):
                         'return NotImplemented'])
 
 
-def _set_eq_fns(cls, fields):
-    # Create and set the equality comparison methods on cls.
-    # Pre-compute self_tuple and other_tuple, then re-use them for
-    #  each function.
-    self_tuple = _tuple_str('self', fields)
-    other_tuple = _tuple_str('other', fields)
-    for name, op in [('__eq__', '=='),
-                     ('__ne__', '!='),
-                     ]:
-        _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple))
-
-
-def _set_order_fns(cls, fields):
-    # Create and set the ordering methods on cls.
-    # Pre-compute self_tuple and other_tuple, then re-use them for
-    #  each function.
-    self_tuple = _tuple_str('self', fields)
-    other_tuple = _tuple_str('other', fields)
-    for name, op in [('__lt__', '<'),
-                     ('__le__', '<='),
-                     ('__gt__', '>'),
-                     ('__ge__', '>='),
-                     ]:
-        _set_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple))
-
-
 def _hash_fn(fields):
     self_tuple = _tuple_str('self', fields)
     return _create_fn('__hash__',
@@ -368,7 +479,7 @@ def _get_field(cls, a_name, a_type):
 
     # If the default value isn't derived from field, then it's
     #  only a normal default value.  Convert it to a Field().
-    default = getattr(cls, a_name, _MISSING)
+    default = getattr(cls, a_name, MISSING)
     if isinstance(default, Field):
         f = default
     else:
@@ -388,7 +499,8 @@ def _get_field(cls, a_name, a_type):
     if typing is not None:
         # This test uses a typing internal class, but it's the best
         #  way to test if this is a ClassVar.
-        if type(a_type) is typing._ClassVar:
+        if (type(a_type) is typing._GenericAlias and
+                a_type.__origin__ is typing.ClassVar):
             # This field is a ClassVar, so it's not a field.
             f._field_type = _FIELD_CLASSVAR
 
@@ -404,7 +516,7 @@ def _get_field(cls, a_name, a_type):
 
     # Special restrictions for ClassVar and InitVar.
     if f._field_type in (_FIELD_CLASSVAR, _FIELD_INITVAR):
-        if f.default_factory is not _MISSING:
+        if f.default_factory is not MISSING:
             raise TypeError(f'field {f.name} cannot have a '
                             'default factory')
         # Should I check for other field settings? default_factory
@@ -429,28 +541,28 @@ def _find_fields(cls):
     #  a Field(), then it contains additional info beyond (and
     #  possibly including) the actual default value.  Pseudo-fields
     #  ClassVars and InitVars are included, despite the fact that
-    #  they're not real fields.  That's deal with later.
+    #  they're not real fields.  That's dealt with later.
 
     annotations = getattr(cls, '__annotations__', {})
-
     return [_get_field(cls, a_name, a_type)
             for a_name, a_type in annotations.items()]
 
 
-def _set_attribute(cls, name, value):
-    # Raise TypeError if an attribute by this name already exists.
+def _set_new_attribute(cls, name, value):
+    # Never overwrites an existing attribute.  Returns True if the
+    #  attribute already exists.
     if name in cls.__dict__:
-        raise TypeError(f'Cannot overwrite attribute {name} '
-                        f'in {cls.__name__}')
+        return True
     setattr(cls, name, value)
+    return False
 
 
 def _process_class(cls, repr, eq, order, hash, init, frozen):
-    # Use an OrderedDict because:
-    #  - Order matters!
-    #  - Derived class fields overwrite base class fields, but the
-    #    order is defined by the base class, which is found first.
-    fields = collections.OrderedDict()
+    # Now that dicts retain insertion order, there's no reason to use
+    #  an ordered dict.  I am leveraging that ordering here, because
+    #  derived class fields overwrite base class fields, but the order
+    #  is defined by the base class, which is found first.
+    fields = {}
 
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
@@ -474,7 +586,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
         #  with the real default.  This is so that normal class
         #  introspection sees a real default value, not a Field.
         if isinstance(getattr(cls, f.name, None), Field):
-            if f.default is _MISSING:
+            if f.default is MISSING:
                 # If there's no default, delete the class attribute.
                 #  This happens if we specify field(repr=False), for
                 #  example (that is, we specified a field object, but
@@ -493,6 +605,9 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
     #  be inherited down.
     is_frozen = frozen or cls.__setattr__ is _frozen_setattr
 
+    # Was this class defined with an __eq__?  Used in __hash__ logic.
+    auto_hash_test= '__eq__' in cls.__dict__ and getattr(cls.__dict__, '__hash__', MISSING) is None
+
     # If we're generating ordering methods, we must be generating
     #  the eq methods.
     if order and not eq:
@@ -503,62 +618,91 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
         has_post_init = hasattr(cls, _POST_INIT_NAME)
 
         # Include InitVars and regular fields (so, not ClassVars).
-        _set_attribute(cls, '__init__',
-                       _init_fn(list(filter(lambda f: f._field_type
-                                              in (_FIELD, _FIELD_INITVAR),
-                                            fields.values())),
-                                is_frozen,
-                                has_post_init,
-                                # The name to use for the "self" param
-                                #  in __init__.  Use "self" if possible.
-                                '__dataclass_self__' if 'self' in fields
-                                    else 'self',
-                                ))
+        flds = [f for f in fields.values()
+                if f._field_type in (_FIELD, _FIELD_INITVAR)]
+        _set_new_attribute(cls, '__init__',
+                           _init_fn(flds,
+                                    is_frozen,
+                                    has_post_init,
+                                    # The name to use for the "self" param
+                                    #  in __init__.  Use "self" if possible.
+                                    '__dataclass_self__' if 'self' in fields
+                                            else 'self',
+                          ))
 
     # Get the fields as a list, and include only real fields.  This is
     #  used in all of the following methods.
-    field_list = list(filter(lambda f: f._field_type is _FIELD,
-                             fields.values()))
+    field_list = [f for f in fields.values() if f._field_type is _FIELD]
 
     if repr:
-        _set_attribute(cls, '__repr__',
-                       _repr_fn(list(filter(lambda f: f.repr, field_list))))
-
-    if is_frozen:
-        _set_attribute(cls, '__setattr__', _frozen_setattr)
-        _set_attribute(cls, '__delattr__', _frozen_delattr)
-
-    generate_hash = False
-    if hash is None:
-        if eq and frozen:
-            # Generate a hash function.
-            generate_hash = True
-        elif eq and not frozen:
-            # Not hashable.
-            _set_attribute(cls, '__hash__', None)
-        elif not eq:
-            # Otherwise, use the base class definition of hash().  That is,
-            #  don't set anything on this class.
-            pass
-        else:
-            assert "can't get here"
-    else:
-        generate_hash = hash
-    if generate_hash:
-        _set_attribute(cls, '__hash__',
-                       _hash_fn(list(filter(lambda f: f.compare
-                                                      if f.hash is None
-                                                      else f.hash,
-                                            field_list))))
+        flds = [f for f in field_list if f.repr]
+        _set_new_attribute(cls, '__repr__', _repr_fn(flds))
 
     if eq:
-        # Create and __eq__ and __ne__ methods.
-        _set_eq_fns(cls, list(filter(lambda f: f.compare, field_list)))
+        # Create _eq__ method.  There's no need for a __ne__ method,
+        #  since python will call __eq__ and negate it.
+        flds = [f for f in field_list if f.compare]
+        self_tuple = _tuple_str('self', flds)
+        other_tuple = _tuple_str('other', flds)
+        _set_new_attribute(cls, '__eq__',
+                           _cmp_fn('__eq__', '==',
+                                   self_tuple, other_tuple))
 
     if order:
-        # Create and __lt__, __le__, __gt__, and __ge__ methods.
-        # Create and set the comparison functions.
-        _set_order_fns(cls, list(filter(lambda f: f.compare, field_list)))
+        # Create and set the ordering methods.
+        flds = [f for f in field_list if f.compare]
+        self_tuple = _tuple_str('self', flds)
+        other_tuple = _tuple_str('other', flds)
+        for name, op in [('__lt__', '<'),
+                         ('__le__', '<='),
+                         ('__gt__', '>'),
+                         ('__ge__', '>='),
+                         ]:
+            if _set_new_attribute(cls, name,
+                                  _cmp_fn(name, op, self_tuple, other_tuple)):
+                raise TypeError(f'Cannot overwrite attribute {name} '
+                                f'in {cls.__name__}. Consider using '
+                                'functools.total_ordering')
+
+    if is_frozen:
+        for name, fn in [('__setattr__', _frozen_setattr),
+                         ('__delattr__', _frozen_delattr)]:
+            if _set_new_attribute(cls, name, fn):
+                raise TypeError(f'Cannot overwrite attribute {name} '
+                                f'in {cls.__name__}')
+
+    # Decide if/how we're going to create a hash function.
+    # TODO: Move this table to module scope, so it's not recreated
+    #  all the time.
+    generate_hash = {(None,  False, False): ('',     ''),
+                     (None,  False, True):  ('',     ''),
+                     (None,  True,  False): ('none', ''),
+                     (None,  True,  True):  ('fn',   'fn-x'),
+                     (False, False, False): ('',     ''),
+                     (False, False, True):  ('',     ''),
+                     (False, True,  False): ('',     ''),
+                     (False, True,  True):  ('',     ''),
+                     (True,  False, False): ('fn',   'fn-x'),
+                     (True,  False, True):  ('fn',   'fn-x'),
+                     (True,  True,  False): ('fn',   'fn-x'),
+                     (True,  True,  True):  ('fn',   'fn-x'),
+                     }[None if hash is None else bool(hash),   # Force bool() if not None.
+                       bool(eq),
+                       bool(frozen)]['__hash__' in cls.__dict__]
+    # No need to call _set_new_attribute here, since we already know if
+    #  we're overwriting a __hash__ or not.
+    if generate_hash == '':
+        # Do nothing.
+        pass
+    elif generate_hash == 'none':
+        cls.__hash__ = None
+    elif generate_hash in ('fn', 'fn-x'):
+        if generate_hash == 'fn' or auto_hash_test:
+            flds = [f for f in field_list
+                    if (f.compare if f.hash is None else f.hash)]
+            cls.__hash__ = _hash_fn(flds)
+    else:
+        assert False, f"can't get here: {generate_hash}"
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
@@ -569,7 +713,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 
 
 # _cls should never be specified by keyword, so start it with an
-#  underscore. The presense of _cls is used to detect if this
+#  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
               hash=None, frozen=False):
@@ -610,13 +754,20 @@ def fields(class_or_instance):
     except AttributeError:
         raise TypeError('must be called with a dataclass type or instance')
 
-    # Exclude pseudo-fields.
+    # Exclude pseudo-fields.  Note that fields is sorted by insertion
+    #  order, so the order of the tuple is as the fields were defined.
     return tuple(f for f in fields.values() if f._field_type is _FIELD)
 
 
-def _isdataclass(obj):
+def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
     return not isinstance(obj, type) and hasattr(obj, _MARKER)
+
+
+def is_dataclass(obj):
+    """Returns True if obj is a dataclass or an instance of a
+    dataclass."""
+    return hasattr(obj, _MARKER)
 
 
 def asdict(obj, *, dict_factory=dict):
@@ -638,12 +789,12 @@ def asdict(obj, *, dict_factory=dict):
     dataclass instances. This will also look into built-in containers:
     tuples, lists, and dicts.
     """
-    if not _isdataclass(obj):
+    if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
     return _asdict_inner(obj, dict_factory)
 
 def _asdict_inner(obj, dict_factory):
-    if _isdataclass(obj):
+    if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
@@ -669,7 +820,7 @@ def astuple(obj, *, tuple_factory=tuple):
           y: int
 
     c = C(1, 2)
-    assert asdtuple(c) == (1, 2)
+    assert astuple(c) == (1, 2)
 
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
@@ -677,12 +828,12 @@ def astuple(obj, *, tuple_factory=tuple):
     tuples, lists, and dicts.
     """
 
-    if not _isdataclass(obj):
+    if not _is_dataclass_instance(obj):
         raise TypeError("astuple() should be called on dataclass instances")
     return _astuple_inner(obj, tuple_factory)
 
 def _astuple_inner(obj, tuple_factory):
-    if _isdataclass(obj):
+    if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _astuple_inner(getattr(obj, f.name), tuple_factory)
@@ -697,23 +848,29 @@ def _astuple_inner(obj, tuple_factory):
         return deepcopy(obj)
 
 
-def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
+def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
+                   repr=True, eq=True, order=False, hash=None, frozen=False):
     """Return a new dynamically created dataclass.
 
-    The dataclass name will be 'cls_name'.  'fields' is an interable
-    of either (name, type) or (name, type, Field) objects. Field
-    objects are created by calling 'field(name, type [, Field])'.
+    The dataclass name will be 'cls_name'.  'fields' is an iterable
+    of either (name), (name, type) or (name, type, Field) objects. If type is
+    omitted, use the string 'typing.Any'.  Field objects are created by
+    the equivalent of calling 'field(name, type [, Field-info])'.
 
-      C = make_class('C', [('a', int', ('b', int, Field(init=False))], bases=Base)
+      C = make_dataclass('C', ['x', ('y', int), ('z', int, field(init=False))], bases=(Base,))
 
     is equivalent to:
 
       @dataclass
       class C(Base):
-          a: int
-          b: int = field(init=False)
+          x: 'typing.Any'
+          y: int
+          z: int = field(init=False)
 
-    For the bases and namespace paremeters, see the builtin type() function.
+    For the bases and namespace parameters, see the builtin type() function.
+
+    The parameters init, repr, eq, order, hash, and frozen are passed to
+    dataclass().
     """
 
     if namespace is None:
@@ -722,15 +879,22 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None):
         # Copy namespace since we're going to mutate it.
         namespace = namespace.copy()
 
-    anns = collections.OrderedDict((name, tp) for name, tp, *_ in fields)
-    namespace['__annotations__'] = anns
+    anns = {}
     for item in fields:
-        if len(item) == 3:
+        if isinstance(item, str):
+            name = item
+            tp = 'typing.Any'
+        elif len(item) == 2:
+            name, tp, = item
+        elif len(item) == 3:
             name, tp, spec = item
             namespace[name] = spec
-    cls = type(cls_name, bases, namespace)
-    return dataclass(cls)
+        anns[name] = tp
 
+    namespace['__annotations__'] = anns
+    cls = type(cls_name, bases, namespace)
+    return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
+                     hash=hash, frozen=frozen)
 
 def replace(obj, **changes):
     """Return a new object replacing specified fields with new values.
@@ -750,7 +914,7 @@ def replace(obj, **changes):
     # We're going to mutate 'changes', but that's okay because it's a new
     #  dict, even if called with 'replace(obj, **my_changes)'.
 
-    if not _isdataclass(obj):
+    if not _is_dataclass_instance(obj):
         raise TypeError("replace() should be called on dataclass instances")
 
     # It's an error to have init=False fields in 'changes'.

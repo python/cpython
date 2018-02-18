@@ -436,6 +436,21 @@ Other constructors, all class methods:
    d``.
 
 
+.. classmethod:: date.fromisoformat(date_string)
+
+  Return a :class:`date` corresponding to a *date_string* in the format emitted
+  by :meth:`date.isoformat`. Specifically, this function supports strings in
+  the format(s) ``YYYY-MM-DD``.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`date.isoformat`.
+
+  .. versionadded:: 3.7
+
+
+
 Class attributes:
 
 .. attribute:: date.min
@@ -818,6 +833,21 @@ Other constructors, all class methods:
    .. versionchanged:: 3.6
       Added the *tzinfo* argument.
 
+
+.. classmethod:: datetime.fromisoformat(date_string)
+
+  Return a :class:`datetime` corresponding to a *date_string* in one of the
+  formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
+  Specifically, this function supports strings in the format(s)
+  ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]]``,
+  where ``*`` can match any single character.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`datetime.isoformat`.
+
+  .. versionadded:: 3.7
 
 .. classmethod:: datetime.strptime(date_string, format)
 
@@ -1486,6 +1516,23 @@ In boolean contexts, a :class:`.time` object is always considered to be true.
    error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
    details.
 
+
+Other constructor:
+
+.. classmethod:: time.fromisoformat(time_string)
+
+  Return a :class:`time` corresponding to a *time_string* in one of the
+  formats emitted by :meth:`time.isoformat`. Specifically, this function supports
+  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]``.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`time.isoformat`.
+
+  .. versionadded:: 3.7
+
+
 Instance methods:
 
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
@@ -1586,7 +1633,6 @@ Instance methods:
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.tzname(None)``, or raises an exception if the latter doesn't
    return ``None`` or a string object.
-
 
 Example:
 

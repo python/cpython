@@ -2267,7 +2267,6 @@ just 1 digit at the start, so that the copying code was exercised for every
 digit beyond the first.
 ***/
         twodigits c;           /* current input character */
-        double fsize_z;
         Py_ssize_t size_z;
         Py_ssize_t digits = 0;
         int i;
@@ -2331,8 +2330,8 @@ digit beyond the first.
          * need to initialize z->ob_digit -- no slot is read up before
          * being stored into.
          */
-        fsize_z = digits * log_base_BASE[base] + 1;
-        if (fsize_z > MAX_LONG_DIGITS) {
+        double fsize_z = (double)digits * log_base_BASE[base] + 1.0;
+        if (fsize_z > (double)MAX_LONG_DIGITS) {
             /* The same exception as in _PyLong_New(). */
             PyErr_SetString(PyExc_OverflowError,
                             "too many digits in integer");
