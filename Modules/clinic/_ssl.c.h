@@ -66,7 +66,7 @@ static PyObject *
 _ssl__SSLSocket_peer_certificate_impl(PySSLSocket *self, int binary_mode);
 
 static PyObject *
-_ssl__SSLSocket_peer_certificate(PySSLSocket *self, PyObject **args, Py_ssize_t nargs)
+_ssl__SSLSocket_peer_certificate(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int binary_mode = 0;
@@ -476,7 +476,7 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
                                       PyObject *keyfile, PyObject *password);
 
 static PyObject *
-_ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"certfile", "keyfile", "password", NULL};
@@ -510,7 +510,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
                                             PyObject *cadata);
 
 static PyObject *
-_ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"cafile", "capath", "cadata", NULL};
@@ -550,7 +550,7 @@ _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
                                    int server_side, PyObject *hostname_obj);
 
 static PyObject *
-_ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sock", "server_side", "server_hostname", NULL};
@@ -584,7 +584,7 @@ _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
                                 PyObject *hostname_obj);
 
 static PyObject *
-_ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"incoming", "outgoing", "server_side", "server_hostname", NULL};
@@ -706,7 +706,7 @@ static PyObject *
 _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form);
 
 static PyObject *
-_ssl__SSLContext_get_ca_certs(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl__SSLContext_get_ca_certs(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"binary_form", NULL};
@@ -763,7 +763,7 @@ static PyObject *
 _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len);
 
 static PyObject *
-_ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject **args, Py_ssize_t nargs)
+_ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int len = -1;
@@ -848,7 +848,7 @@ static PyObject *
 _ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy);
 
 static PyObject *
-_ssl_RAND_add(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer view = {NULL, NULL};
@@ -1017,7 +1017,7 @@ static PyObject *
 _ssl_txt2obj_impl(PyObject *module, const char *txt, int name);
 
 static PyObject *
-_ssl_txt2obj(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"txt", "name", NULL};
@@ -1083,7 +1083,7 @@ static PyObject *
 _ssl_enum_certificates_impl(PyObject *module, const char *store_name);
 
 static PyObject *
-_ssl_enum_certificates(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"store_name", NULL};
@@ -1122,7 +1122,7 @@ static PyObject *
 _ssl_enum_crls_impl(PyObject *module, const char *store_name);
 
 static PyObject *
-_ssl_enum_crls(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"store_name", NULL};
@@ -1168,4 +1168,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=00790af9c3f31706 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3d42305ed0ad162a input=a9049054013a1b77]*/

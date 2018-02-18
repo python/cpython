@@ -39,7 +39,7 @@ if "%DO_FETCH%"=="false" goto end
 :fetch
 
 if "%ORG%"=="" (set ORG=python)
-call "%PCBUILD%find_python.bat" "%PYTHON%"
+call "%PCBUILD%\find_python.bat" "%PYTHON%"
 
 if "%PYTHON%"=="" (
     where /Q git || echo Python 3.6 could not be found or installed, and git.exe is not on your PATH && exit /B 1

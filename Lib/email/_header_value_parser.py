@@ -430,7 +430,10 @@ class AngleAddr(TokenList):
     def addr_spec(self):
         for x in self:
             if x.token_type == 'addr-spec':
-                return x.addr_spec
+                if x.local_part:
+                    return x.addr_spec
+                else:
+                    return quote_string(x.local_part) + x.addr_spec
         else:
             return '<>'
 
@@ -1164,6 +1167,9 @@ def get_bare_quoted_string(value):
             "expected '\"' but found '{}'".format(value))
     bare_quoted_string = BareQuotedString()
     value = value[1:]
+    if value[0] == '"':
+        token, value = get_qcontent(value)
+        bare_quoted_string.append(token)
     while value and value[0] != '"':
         if value[0] in WSP:
             token, value = get_fws(value)
@@ -2739,8 +2745,8 @@ def _fold_mime_parameters(part, lines, maxlen, encoding):
 
     Using the decoded list of parameters and values, format them according to
     the RFC rules, including using RFC2231 encoding if the value cannot be
-    expressed in 'encoding' and/or the paramter+value is too long to fit within
-    'maxlen'.
+    expressed in 'encoding' and/or the parameter+value is too long to fit
+    within 'maxlen'.
 
     """
     # Special case for RFC2231 encoding: start from decoded values and use

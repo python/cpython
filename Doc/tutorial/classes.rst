@@ -876,9 +876,9 @@ Generator Expressions
 =====================
 
 Some simple generators can be coded succinctly as expressions using a syntax
-similar to list comprehensions but with parentheses instead of brackets.  These
-expressions are designed for situations where the generator is used right away
-by an enclosing function.  Generator expressions are more compact but less
+similar to list comprehensions but with parentheses instead of square brackets.
+These expressions are designed for situations where the generator is used right
+away by an enclosing function.  Generator expressions are more compact but less
 versatile than full generator definitions and tend to be more memory friendly
 than equivalent list comprehensions.
 
@@ -892,10 +892,7 @@ Examples::
    >>> sum(x*y for x,y in zip(xvec, yvec))         # dot product
    260
 
-   >>> from math import pi, sin
-   >>> sine_table = {x: sin(x*pi/180) for x in range(0, 91)}
-
-   >>> unique_words = set(word  for line in page  for word in line.split())
+   >>> unique_words = set(word for line in page  for word in line.split())
 
    >>> valedictorian = max((student.gpa, student.name) for student in graduates)
 

@@ -48,7 +48,7 @@ Key terms
   repository of open source licensed packages made available for use by
   other Python users.
 * the `Python Packaging Authority
-  <https://www.pypa.io/en/latest/>`__ are the group of
+  <https://www.pypa.io/>`__ are the group of
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation,

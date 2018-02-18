@@ -146,7 +146,7 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed);
 
 static PyObject *
-int_to_bytes(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"length", "byteorder", "signed", NULL};
@@ -193,7 +193,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed);
 
 static PyObject *
-int_from_bytes(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"bytes", "byteorder", "signed", NULL};
@@ -211,4 +211,4 @@ int_from_bytes(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c9adfdc329651cc4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd64beb83bd16df3 input=a9049054013a1b77]*/

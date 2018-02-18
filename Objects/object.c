@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "internal/pystate.h"
+#include "internal/context.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
@@ -816,16 +817,11 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    isabstract = _PyObject_GetAttrId(obj, &PyId___isabstractmethod__);
-    if (isabstract == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            return 0;
-        }
-        return -1;
+    res = _PyObject_LookupAttrId(obj, &PyId___isabstractmethod__, &isabstract);
+    if (res > 0) {
+        res = PyObject_IsTrue(isabstract);
+        Py_DECREF(isabstract);
     }
-    res = PyObject_IsTrue(isabstract);
-    Py_DECREF(isabstract);
     return res;
 }
 
@@ -888,15 +884,78 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 }
 
 int
-PyObject_HasAttr(PyObject *v, PyObject *name)
+_PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
 {
-    PyObject *res = PyObject_GetAttr(v, name);
-    if (res != NULL) {
-        Py_DECREF(res);
+    PyTypeObject *tp = Py_TYPE(v);
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     name->ob_type->tp_name);
+        *result = NULL;
+        return -1;
+    }
+
+    if (tp->tp_getattro == PyObject_GenericGetAttr) {
+        *result = _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    if (tp->tp_getattro != NULL) {
+        *result = (*tp->tp_getattro)(v, name);
+    }
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL) {
+            *result = NULL;
+            return -1;
+        }
+        *result = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    else {
+        *result = NULL;
+        return 0;
+    }
+
+    if (*result != NULL) {
         return 1;
+    }
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        return -1;
     }
     PyErr_Clear();
     return 0;
+}
+
+int
+_PyObject_LookupAttrId(PyObject *v, _Py_Identifier *name, PyObject **result)
+{
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname) {
+        *result = NULL;
+        return -1;
+    }
+    return  _PyObject_LookupAttr(v, oname, result);
+}
+
+int
+PyObject_HasAttr(PyObject *v, PyObject *name)
+{
+    PyObject *res;
+    if (_PyObject_LookupAttr(v, name, &res) < 0) {
+        PyErr_Clear();
+        return 0;
+    }
+    if (res == NULL) {
+        return 0;
+    }
+    Py_DECREF(res);
+    return 1;
 }
 
 int
@@ -1098,10 +1157,13 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *
-_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
+_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
+                                 PyObject *dict, int suppress)
 {
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
+
+       When suppress=1, this function suppress AttributeError.
     */
 
     PyTypeObject *tp = Py_TYPE(obj);
@@ -1132,6 +1194,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         f = descr->ob_type->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
             res = f(descr, obj, (PyObject *)obj->ob_type);
+            if (res == NULL && suppress &&
+                    PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
             goto done;
         }
     }
@@ -1171,6 +1237,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
 
     if (f != NULL) {
         res = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (res == NULL && suppress &&
+                PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
         goto done;
     }
 
@@ -1180,9 +1250,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         goto done;
     }
 
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
+    if (!suppress) {
+        PyErr_Format(PyExc_AttributeError,
+                     "'%.50s' object has no attribute '%U'",
+                     tp->tp_name, name);
+    }
   done:
     Py_XDECREF(descr);
     Py_DECREF(name);
@@ -1192,7 +1264,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
 PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
-    return _PyObject_GenericGetAttrWithDict(obj, name, NULL);
+    return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 0);
 }
 
 int

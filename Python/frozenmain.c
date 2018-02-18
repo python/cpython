@@ -23,7 +23,7 @@ Py_FrozenMain(int argc, char **argv)
         exit(1);
     }
 
-    char *p;
+    const char *p;
     int i, n, sts = 1;
     int inspect = 0;
     int unbuffered = 0;

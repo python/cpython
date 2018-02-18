@@ -56,9 +56,6 @@ class PosixTests(unittest.TestCase):
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'inter process signals not reliable (do not mix well with threading) '
-        'on freebsd6')
     def test_interprocess_signal(self):
         dirname = os.path.dirname(__file__)
         script = os.path.join(dirname, 'signalinterproctester.py')
@@ -90,6 +87,15 @@ class WindowsSignalTests(unittest.TestCase):
 
 
 class WakeupFDTests(unittest.TestCase):
+
+    def test_invalid_call(self):
+        # First parameter is positional-only
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signum=signal.SIGINT)
+
+        # warn_on_full_buffer is a keyword-only parameter
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signal.SIGINT, False)
 
     def test_invalid_fd(self):
         fd = support.make_bad_fd()
@@ -423,6 +429,89 @@ class WakeupSocketSignalTests(unittest.TestCase):
         """.format(action=action)
         assert_python_ok('-c', code)
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    def test_warn_on_full_buffer(self):
+        # Use a subprocess to have only one thread.
+        if os.name == 'nt':
+            action = 'send'
+        else:
+            action = 'write'
+        code = """if 1:
+        import errno
+        import signal
+        import socket
+        import sys
+        import time
+        import _testcapi
+        from test.support import captured_stderr
+
+        signum = signal.SIGINT
+
+        # This handler will be called, but we intentionally won't read from
+        # the wakeup fd.
+        def handler(signum, frame):
+            pass
+
+        signal.signal(signum, handler)
+
+        read, write = socket.socketpair()
+        read.setblocking(False)
+        write.setblocking(False)
+
+        # Fill the send buffer
+        try:
+            while True:
+                write.send(b"x")
+        except BlockingIOError:
+            pass
+
+        # By default, we get a warning when a signal arrives
+        signal.set_wakeup_fd(write.fileno())
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+            not in err):
+            raise AssertionError(err)
+
+        # And also if warn_on_full_buffer=True
+        signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=True)
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+            not in err):
+            raise AssertionError(err)
+
+        # But not if warn_on_full_buffer=False
+        signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=False)
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if err != "":
+            raise AssertionError("got unexpected output %r" % (err,))
+
+        # And then check the default again, to make sure warn_on_full_buffer
+        # settings don't leak across calls.
+        signal.set_wakeup_fd(write.fileno())
+
+        with captured_stderr() as err:
+            _testcapi.raise_signal(signum)
+
+        err = err.getvalue()
+        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+            not in err):
+            raise AssertionError(err)
+
+        """.format(action=action)
+        assert_python_ok('-c', code)
+
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class SiginterruptTest(unittest.TestCase):
@@ -559,7 +648,7 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform in ('freebsd6', 'netbsd5'),
+    @unittest.skipIf(sys.platform in ('netbsd5',),
         'itimer not reliable (does not mix well with threading) on some BSDs.')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
@@ -581,9 +670,6 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
-    # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'itimer not reliable (does not mix well with threading) on freebsd6')
     def test_itimer_prof(self):
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)
@@ -669,16 +755,6 @@ class PendingSignalsTests(unittest.TestCase):
                 1/0
 
             signal.signal(signum, handler)
-
-            if sys.platform == 'freebsd6':
-                # Issue #12392 and #12469: send a signal to the main thread
-                # doesn't work before the creation of the first thread on
-                # FreeBSD 6
-                def noop():
-                    pass
-                thread = threading.Thread(target=noop)
-                thread.start()
-                thread.join()
 
             tid = threading.get_ident()
             try:
@@ -918,9 +994,6 @@ class PendingSignalsTests(unittest.TestCase):
         """
         assert_python_ok('-c', code)
 
-    @unittest.skipIf(sys.platform == 'freebsd6',
-        "issue #12392: send a signal to the main thread doesn't work "
-        "before the creation of the first thread on FreeBSD 6")
     @unittest.skipUnless(hasattr(signal, 'pthread_kill'),
                          'need signal.pthread_kill()')
     def test_pthread_kill_main_thread(self):

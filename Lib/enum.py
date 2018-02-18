@@ -64,6 +64,7 @@ class _EnumDict(dict):
         super().__init__()
         self._member_names = []
         self._last_values = []
+        self._ignore = []
 
     def __setitem__(self, key, value):
         """Changes anything not dundered or not a descriptor.
@@ -77,17 +78,28 @@ class _EnumDict(dict):
         if _is_sunder(key):
             if key not in (
                     '_order_', '_create_pseudo_member_',
-                    '_generate_next_value_', '_missing_',
+                    '_generate_next_value_', '_missing_', '_ignore_',
                     ):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
                 setattr(self, '_generate_next_value', value)
+            elif key == '_ignore_':
+                if isinstance(value, str):
+                    value = value.replace(',',' ').split()
+                else:
+                    value = list(value)
+                self._ignore = value
+                already = set(value) & set(self._member_names)
+                if already:
+                    raise ValueError('_ignore_ cannot specify already set names: %r' % (already, ))
         elif _is_dunder(key):
             if key == '__order__':
                 key = '_order_'
         elif key in self._member_names:
             # descriptor overwriting an enum?
             raise TypeError('Attempted to reuse key: %r' % key)
+        elif key in self._ignore:
+            pass
         elif not _is_descriptor(value):
             if key in self:
                 # enum overwriting a descriptor?
@@ -124,6 +136,12 @@ class EnumMeta(type):
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
         # class will fail).
+        #
+        # remove any keys listed in _ignore_
+        classdict.setdefault('_ignore_', []).append('_ignore_')
+        ignore = classdict['_ignore_']
+        for key in ignore:
+            classdict.pop(key, None)
         member_type, first_enum = metacls._get_mixins_(bases)
         __new__, save_new, use_args = metacls._find_new_(classdict, member_type,
                                                         first_enum)

@@ -74,6 +74,11 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 .br
        [
+.B \--check-hash-based-pycs
+\'default\'|\'always\'|\'never\'
+]
+.br
+       [
 .B \-c
 .I command
 |
@@ -122,6 +127,9 @@ and comparing bytes/bytearray with str. (-bb: issue errors)
 Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
 arguments to the command).
+.TP
+.BI "\-\-check-hash-based-pycs " mode
+Configure how Python evaluates the up-to-dateness of hash-based .pyc files.
 .TP
 .B \-d
 Turn on parser debugging output (for expert only, depending on
