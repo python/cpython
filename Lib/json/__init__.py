@@ -272,6 +272,16 @@ def detect_encoding(b):
     return 'utf-8'
 
 
+def from_file(filepath, *, cls=None, object_hook=None, parse_float=None,
+        parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+    with open(filepath) as _data:
+        data = _data
+    return loads(data,
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+
+
 def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
