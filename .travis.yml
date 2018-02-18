@@ -82,6 +82,10 @@ before_install:
         then
           echo "Not a PR, doing full build."
         else
+          # Pull requests are slightly complicated because $TRAVIS_COMMIT_RANGE
+          # may include more changes than desired if the history is convoluted.
+          # Instead, explicitly fetch the base branch and compare against the
+          # merge-base commit.
           git fetch -q origin +refs/heads/$TRAVIS_BRANCH
           changes=$(git diff --name-only HEAD $(git merge-base HEAD FETCH_HEAD))
           echo "Files changed:"
