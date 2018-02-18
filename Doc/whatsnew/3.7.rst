@@ -853,7 +853,7 @@ Optimizations
 * Constant folding is moved from peephole optimizer to new AST optimizer.
   (Contributed by Eugene Toder and INADA Naoki in :issue:`29469`)
 
-* Most functions and methods in :mod:`abc` have been rewrittent in C.
+* Most functions and methods in :mod:`abc` have been rewritten in C.
   This makes creation of abstract base classes, and calling :func:`isinstance`
   and :func:`issubclass` on them 1.5x faster.  This also reduces Python
   start-up time by up to 10%. (Contributed by Ivan Levkivskyi and INADA Naoki
