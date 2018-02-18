@@ -43,7 +43,9 @@
     <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
-    <ExternalsDir>$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals\`))</ExternalsDir>
+    <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
+    <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
+    <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
     <sqlite3Dir>$(ExternalsDir)sqlite-3.21.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
