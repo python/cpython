@@ -502,9 +502,13 @@ def mode(data):
     if len(table) == 1:
         return table[0][0]
     elif table:
-        raise StatisticsError(
-                'no unique mode; found %d equally common values' % len(table)
-                )
+        _data = list(value for value, frequency in table)
+        if _data == list(data):
+            raise StatisticsError(
+                    'no unique mode; found %d equally common values' % len(table)
+                    )
+        else:
+            return _data
     else:
         raise StatisticsError('no mode for empty data')
 

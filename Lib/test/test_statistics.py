@@ -1788,8 +1788,8 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # Test mode with bimodal data.
         data = [1, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 7, 8, 9, 9]
         assert data.count(2) == data.count(6) == 4
-        # Check for an exception.
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        # Check for a list of modes.
+        self.assertEqual(self.func(data), [2, 6])
 
     def test_unique_data_failure(self):
         # Test mode exception when data points are all unique.
