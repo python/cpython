@@ -42,7 +42,7 @@ matrix:
       compiler: gcc
       env: OPTIONAL=true
       before_script:
-        - ./configure
+        - ./configure PYTHON_FOR_REGEN=python3
         - make -s -j4
         # Need a venv that can parse covered code.
         - ./python -m venv venv
@@ -85,7 +85,7 @@ before_install:
 
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
-  - ./configure --with-pydebug
+  - ./configure --with-pydebug PYTHON_FOR_REGEN=python3
   - make -j4 regen-all
   - changes=`git status --porcelain`
   - |
