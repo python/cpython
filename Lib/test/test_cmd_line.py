@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from test.support import script_helper, is_android
 from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
-    assert_python_failure)
+    assert_python_failure, interpreter_requires_environment)
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
