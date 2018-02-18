@@ -161,7 +161,7 @@ $(PYTHON_ZIP): python_dist
 	    ln -sf python3 python
 
 	mkdir -p $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/etc; \
-	    ln -sf $(py_srcdir)/Android/resources/inputrc $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/etc
+	    cp $(py_srcdir)/Android/resources/inputrc $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/etc
 
 	cd $(PY_DESTDIR)/$(SYS_EXEC_PREFIX); \
 	    $(STRIP) bin/python$(py_version); \
