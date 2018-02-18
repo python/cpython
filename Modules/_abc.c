@@ -241,42 +241,15 @@ static PyObject *
 _abc__get_dump(PyObject *module, PyObject *self)
 /*[clinic end generated code: output=9d9569a8e2c1c443 input=2c5deb1bfe9e3c79]*/
 {
-    PyObject *registry, *cache, *negative_cache, *cache_version;
     _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
     }
-    registry = PySet_New(impl->_abc_registry);
-    if (registry == NULL) {
-        Py_DECREF(impl);
-        return NULL;
-    }
-    cache = PySet_New(impl->_abc_cache);
-    if (cache == NULL) {
-        Py_DECREF(impl);
-        Py_DECREF(registry);
-        return NULL;
-    }
-    negative_cache = PySet_New(impl->_abc_negative_cache);
-    if (negative_cache == NULL) {
-        Py_DECREF(impl);
-        Py_DECREF(registry);
-        Py_DECREF(cache);
-        return NULL;
-    }
-    cache_version = PyLong_FromUnsignedLongLong(impl->_abc_negative_cache_version);
-    if (cache_version == NULL) {
-        Py_DECREF(impl);
-        Py_DECREF(registry);
-        Py_DECREF(cache);
-        Py_DECREF(negative_cache);
-        return NULL;
-    }
-    PyObject *res = PyTuple_Pack(4, registry, cache, negative_cache, cache_version);
-    Py_DECREF(registry);
-    Py_DECREF(cache);
-    Py_DECREF(negative_cache);
-    Py_DECREF(cache_version);
+    PyObject *res = Py_BuildValue("NNNK",
+                                  PySet_New(impl->_abc_registry),
+                                  PySet_New(impl->_abc_cache),
+                                  PySet_New(impl->_abc_negative_cache),
+                                  impl->_abc_negative_cache_version);
     Py_DECREF(impl);
     return res;
 }
@@ -514,6 +487,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 
     subclass = _PyObject_GetAttrId(instance, &PyId___class__);
     if (subclass == NULL) {
+        Py_DECREF(impl);
         return NULL;
     }
     /* Inline the cache checking. */
@@ -616,7 +590,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     if (impl->_abc_negative_cache_version < abc_invalidation_counter) {
         /* Invalidate the negative cache. */
         if (impl->_abc_negative_cache != NULL &&
-                PySet_Clear(impl->_abc_negative_cache) < 0) {
+                PySet_Clear(impl->_abc_negative_cache) < 0)
+        {
             goto end;
         }
         impl->_abc_negative_cache_version = abc_invalidation_counter;
