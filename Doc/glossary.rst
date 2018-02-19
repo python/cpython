@@ -299,6 +299,11 @@ Glossary
       with :term:`abstract base classes <abstract base class>`.)  Instead, it
       typically employs :func:`hasattr` tests or :term:`EAFP` programming.
 
+   dunder
+      A dunder is a variable, method or package whose name is with two leading
+      and two trailing underscores, such as ``__all__``, ``__author__``,
+      ``__version__`` or ``__main__``.
+
    EAFP
       Easier to ask for forgiveness than permission.  This common Python coding
       style assumes the existence of valid keys or attributes and catches
