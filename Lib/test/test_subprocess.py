@@ -1170,7 +1170,7 @@ class ProcessTestCase(BaseTestCase):
             import msvcrt
             import subprocess
 
-            cmd = {NONEXISTING_CMD!r}
+            cmd = {NONEXISTING_CMD[0]!r}
 
             for report_type in [msvcrt.CRT_WARN,
                                 msvcrt.CRT_ERROR,
