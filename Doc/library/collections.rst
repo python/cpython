@@ -300,7 +300,7 @@ counts, but the output will exclude results with counts of zero or less.
 
    .. method:: remove(value)
 
-      Removed the first occurrence of *value*.  If not found, raises a
+      Remove the first occurrence of *value*.  If not found, raises a
       :exc:`ValueError`.
 
       .. versionadded:: 2.5
