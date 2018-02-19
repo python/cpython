@@ -707,7 +707,7 @@ class CmdLineTest(unittest.TestCase):
         args = sys.executable, '-c', 'print(0)'
         prefix, exe = os.path.split(sys.executable)
         executable = prefix + '\\.\\.\\.\\' + exe
-        
+
         proc = subprocess.run(args, stdout=subprocess.PIPE,
                               executable=executable)
         self.assertEqual(proc.returncode, 0, proc)
