@@ -1,0 +1,2 @@
+Skip link creation from a tar file during extraction if the target path is
+equal to the link target.
