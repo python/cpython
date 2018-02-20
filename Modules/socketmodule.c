@@ -317,16 +317,15 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #include <VersionHelpers.h>
 #endif
 
-/* This block removes some flags on older version Windows during run-time.
+/* remove some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
-#if 1
 typedef struct {
     DWORD build_number;  /* available starting with this Win10 BuildNumber */
     const char flag_name[20];
 } FlagRuntimeInfo;
 
 /* IMPORTANT: make sure the list ordered by descending build_number */
-static FlagRuntimeInfo flags[] = {
+static FlagRuntimeInfo win_runtime_flags[] = {
     /* available starting with Windows 10 1703 */
     {15063, "TCP_KEEPCNT"},
     /* available starting with Windows 10 1607 */
@@ -357,8 +356,8 @@ remove_unusable_flags(PyObject *m)
     VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
 
-    for (int i = 0; i < sizeof(flags)/sizeof(FlagRuntimeInfo); i++) {
-        info.dwBuildNumber = flags[i].build_number;
+    for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
+        info.dwBuildNumber = win_runtime_flags[i].build_number;
         /* greater than or equal to the specified version? 
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
         if (VerifyVersionInfo(
@@ -368,14 +367,17 @@ remove_unusable_flags(PyObject *m)
             break;
         }
         else {
-            if (PyDict_GetItemString(dict, flags[i].flag_name) != NULL) {
-                PyDict_DelItemString(dict, flags[i].flag_name);
+            if (PyDict_GetItemString(
+                    dict,
+                    win_runtime_flags[i].flag_name) != NULL) {
+                PyDict_DelItemString(
+                    dict,
+                    win_runtime_flags[i].flag_name);
             }
         }
     }
     return m;
 }
-#endif
 
 #endif
 
@@ -7756,10 +7758,11 @@ PyInit__socket(void)
 #endif
 
 #ifdef MS_WINDOWS
-    return remove_unusable_flags(m);
-#else
-    return m;
+    /* removes some flags on older version Windows during run-time */
+    remove_unusable_flags(m);
 #endif
+
+    return m;
 }
 
 
