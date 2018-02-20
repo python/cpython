@@ -1,1 +1,1 @@
-:mod:`tkinter` change handling of ``None`` parameter call to after_cancel.
+In :mod:`tkinter`, ``after_cancel(None)`` now raises a :exc:`ValueError` instead of canceling the first scheduled function.  Patch by Cheryl Sabella.
