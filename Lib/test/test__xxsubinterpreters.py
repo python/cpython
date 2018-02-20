@@ -17,18 +17,18 @@ def _captured_script(script):
     indented = script.replace('\n', '\n                ')
     wrapped = dedent(f"""
         import contextlib
-        with open({w}, 'w') as chan:
-            with contextlib.redirect_stdout(chan):
+        with open({w}, 'w') as spipe:
+            with contextlib.redirect_stdout(spipe):
                 {indented}
         """)
     return wrapped, open(r)
 
 
 def _run_output(interp, request, shared=None):
-    script, chan = _captured_script(request)
-    with chan:
+    script, rpipe = _captured_script(request)
+    with rpipe:
         interpreters.run_string(interp, script, shared)
-        return chan.read()
+        return rpipe.read()
 
 
 @contextlib.contextmanager
@@ -37,8 +37,8 @@ def _running(interp):
     def run():
         interpreters.run_string(interp, dedent(f"""
             # wait for "signal"
-            with open({r}) as chan:
-                chan.read()
+            with open({r}) as rpipe:
+                rpipe.read()
             """))
 
     t = threading.Thread(target=run)
@@ -46,8 +46,8 @@ def _running(interp):
 
     yield
 
-    with open(w, 'w') as chan:
-        chan.write('done')
+    with open(w, 'w') as spipe:
+        spipe.write('done')
     t.join()
 
 
@@ -1209,7 +1209,7 @@ class ChannelTests(TestBase):
         with self.assertRaises(interpreters.ChannelEmptyError):
             interpreters.channel_recv(cid)
 
-    def test_run_string_arg(self):
+    def test_run_string_arg_unresolved(self):
         cid = interpreters.channel_create()
         interp = interpreters.create()
 
@@ -1219,6 +1219,24 @@ class ChannelTests(TestBase):
             _interpreters.channel_send(cid, b'spam')
             """),
             dict(cid=cid.send))
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, b'spam')
+        self.assertEqual(out.strip(), 'send')
+
+    def test_run_string_arg_resolved(self):
+        cid = interpreters.channel_create()
+        cid = interpreters._channel_id(cid, _resolve=True)
+        interp = interpreters.create()
+
+        out = _run_output(interp, dedent("""
+            import _xxsubinterpreters as _interpreters
+            print(chan.end)
+            _interpreters.channel_send(chan, b'spam')
+            #print(chan.id.end)
+            #_interpreters.channel_send(chan.id, b'spam')
+            """),
+            dict(chan=cid.send))
         obj = interpreters.channel_recv(cid)
 
         self.assertEqual(obj, b'spam')

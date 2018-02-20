@@ -1304,12 +1304,13 @@ typedef struct channelid {
     PyObject_HEAD
     int64_t id;
     int end;
+    int resolve;
     _channels *channels;
 } channelid;
 
 static channelid *
 newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels,
-             int force)
+             int force, int resolve)
 {
     channelid *self = PyObject_New(channelid, cls);
     if (self == NULL) {
@@ -1317,6 +1318,7 @@ newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels,
     }
     self->id = cid;
     self->end = end;
+    self->resolve = resolve;
     self->channels = channels;
 
     if (_channels_add_id_object(channels, cid) != 0) {
@@ -1337,14 +1339,15 @@ static _channels * _global_channels(void);
 static PyObject *
 channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "send", "recv", "force", NULL};
+    static char *kwlist[] = {"id", "send", "recv", "force", "_resolve", NULL};
     PyObject *id;
     int send = -1;
     int recv = -1;
     int force = 0;
+    int resolve = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$ppp:ChannelID.__init__", kwlist,
-                                     &id, &send, &recv, &force))
+                                     "O|$pppp:ChannelID.__new__", kwlist,
+                                     &id, &send, &recv, &force, &resolve))
         return NULL;
 
     // Coerce and check the ID.
@@ -1376,7 +1379,8 @@ channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
         end = CHANNEL_RECV;
     }
 
-    return (PyObject *)newchannelid(cls, cid, end, _global_channels(), force);
+    return (PyObject *)newchannelid(cls, cid, end, _global_channels(),
+                                    force, resolve);
 }
 
 static void
@@ -1519,15 +1523,20 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
 struct _channelid_xid {
     int64_t id;
     int end;
+    int resolve;
 };
 
 static PyObject *
 _channelid_from_xid(_PyCrossInterpreterData *data)
 {
     struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    // Note that we do not preserve the "resolve" flag.
     PyObject *cid = (PyObject *)newchannelid(&ChannelIDtype, xid->id, xid->end,
-                                             _global_channels(), 0);
+                                             _global_channels(), 0, 0);
     if (xid->end == 0) {
+        return cid;
+    }
+    if (!xid->resolve) {
         return cid;
     }
 
@@ -1568,6 +1577,7 @@ _channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
     }
     xid->id = ((channelid *)obj)->id;
     xid->end = ((channelid *)obj)->end;
+    xid->resolve = ((channelid *)obj)->resolve;
 
     data->data = xid;
     data->obj = obj;
@@ -1583,7 +1593,7 @@ channelid_end(PyObject *self, void *end)
     channelid *cid = (channelid *)self;
     if (end != NULL) {
         return (PyObject *)newchannelid(Py_TYPE(self), cid->id, *(int *)end,
-                                        cid->channels, force);
+                                        cid->channels, force, cid->resolve);
     }
 
     if (cid->end == CHANNEL_SEND) {
@@ -2378,7 +2388,7 @@ channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
     PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, cid, 0,
-                                            &_globals.channels, 0);
+                                            &_globals.channels, 0, 0);
     if (id == NULL) {
         if (_channel_destroy(&_globals.channels, cid) != 0) {
             // XXX issue a warning?
@@ -2436,7 +2446,7 @@ channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
     int64_t *cur = cids;
     for (int64_t i=0; i < count; cur++, i++) {
         PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cur, 0,
-                                                &_globals.channels, 0);
+                                                &_globals.channels, 0, 0);
         if (id == NULL) {
             Py_DECREF(ids);
             ids = NULL;
