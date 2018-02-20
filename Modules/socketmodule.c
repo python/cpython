@@ -7950,7 +7950,7 @@ PyInit__socket(void)
 #endif
 
 #ifdef MS_WINDOWS
-    /* removes some flags on older version Windows during run-time */
+    /* remove some flags on older version Windows during run-time */
     remove_unusable_flags(m);
 #endif
 
