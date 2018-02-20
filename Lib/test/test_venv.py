@@ -281,6 +281,24 @@ class BasicTest(BaseTest):
         out, err = p.communicate()
         self.assertEqual(out.strip(), envpy.encode())
 
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_unicode_in_batch_file(self):
+        """
+        Test isolation from system site-packages
+        """
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'ϼўТλФЙ')
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        envpy = os.path.join(env_dir, self.bindir, self.exe)
+        cmd = [activate, '&', self.exe, '-c', 'print(0)']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, encoding='oem',
+                             shell=True)
+        out, err = p.communicate()
+        print(err)
+        self.assertEqual(out.strip(), '0')
 
 @skipInVenv
 class EnsurePipTest(BaseTest):
