@@ -1525,8 +1525,38 @@ static PyObject *
 _channelid_from_xid(_PyCrossInterpreterData *data)
 {
     struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
-    return (PyObject *)newchannelid(&ChannelIDtype, xid->id, xid->end,
-                                    _global_channels(), 0);
+    PyObject *cid = (PyObject *)newchannelid(&ChannelIDtype, xid->id, xid->end,
+                                             _global_channels(), 0);
+    if (xid->end == 0) {
+        return cid;
+    }
+
+    /* Try returning a high-level channel end but fall back to the ID. */
+    PyObject *highlevel = PyImport_ImportModule("interpreters");
+    if (highlevel == NULL) {
+        PyErr_Clear();
+        highlevel = PyImport_ImportModule("test.support.interpreters");
+        if (highlevel == NULL) {
+            goto error;
+        }
+    }
+    const char *clsname = (xid->end == CHANNEL_RECV) ? "RecvChannel" :
+                                                       "SendChannel";
+    PyObject *cls = PyObject_GetAttrString(highlevel, clsname);
+    Py_DECREF(highlevel);
+    if (cls == NULL) {
+        goto error;
+    }
+    PyObject *chan = PyObject_CallFunctionObjArgs(cls, cid, NULL);
+    if (chan == NULL) {
+        goto error;
+    }
+    Py_DECREF(cid);
+    return chan;
+
+error:
+    PyErr_Clear();
+    return cid;
 }
 
 static int
