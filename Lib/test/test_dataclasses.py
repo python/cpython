@@ -2395,6 +2395,11 @@ class TestHash(unittest.TestCase):
 
     def test_hash_no_args(self):
         # Test dataclasses with no hash= argument.
+        @dataclass
+        class C:
+            i: int = 0
+        with self.assertRaisesRegex(TypeError, ''):
+            hash(C())
 
 
 if __name__ == '__main__':
