@@ -1589,6 +1589,16 @@ class ExecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
+    @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
+    def test_execve_with_empty_path(self):
+        # bpo-32890: Check GetLastError() misuse
+        try:
+            os.execve('', ['arg'], {})
+        except OSError as e:
+            self.assertTrue(e.winerror is None or e.winerror != 0)
+        else:
+            self.fail('No OSError raised')
+
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32ErrorTests(unittest.TestCase):
