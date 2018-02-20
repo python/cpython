@@ -41,5 +41,5 @@ set "PATH=%VIRTUAL_ENV%\__VENV_BIN_NAME__;%PATH%"
 :END
 if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" %_OLD_CODEPAGE% > nul
-    set _OLD_CODEPAGE=
+    set "_OLD_CODEPAGE="
 )
