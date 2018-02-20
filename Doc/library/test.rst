@@ -225,6 +225,22 @@ This module defines the following exceptions:
 
 The :mod:`test.support` module defines the following constants:
 
+
+.. data:: HOST
+
+   Set to ``localhost``.
+
+
+.. data:: HOSTv4
+
+   Set to ``127.0.0.1``.
+
+
+.. data:: HOSTv6
+
+   Set to ``::1``.
+
+
 .. data:: verbose
 
    ``True`` when verbose output is enabled. Should be checked when more
@@ -249,7 +265,11 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: FS_NONASCII
 
-   A non-ASCII character encodable by :func:`os.fsencode`.
+   A non-ASCII character encodable by :func:`os.fsencode`.  The function
+   tries several possible characters and uses the first one that is
+   encodable.  First it tries printable and common characters so that the
+   filename is readable and then tries more special characters, meaning ones
+   that may be displayed differently depending on locale and font.
 
 
 .. data:: TESTFN
@@ -260,7 +280,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: TESTFN_UNICODE
 
-    Set to a non-ASCII name for a temporary file.
+    Set to a non-ASCII filename containing several unicode characters.
 
 
 .. data:: TESTFN_ENCODING
@@ -284,7 +304,8 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: TESTFN_NONASCII
 
-   Set to a filename containing the :data:`FS_NONASCII` character.
+   Set to a filename containing the :data:`FS_NONASCII` character, if it
+   exists.
 
 
 .. data:: IPV6_ENABLED
@@ -299,7 +320,8 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: PGO
 
-   Set when tests can be skipped when they are not useful for PGO.
+   Set by ``libregrtest/main.py`` so tests can be skipped when they are not
+   useful for PGO.  Defaults to ``False``.
 
 
 .. data:: PIPE_MAX_SIZE
@@ -312,11 +334,6 @@ The :mod:`test.support` module defines the following constants:
 
    A constant that is likely larger than the underlying OS socket buffer size,
    to make writes blocking.
-
-
-.. data:: TEST_SUPPORT_DIR
-
-   Set to the top level directory that contains :mod:`test.support`.
 
 
 .. data:: TEST_HOME_DIR
@@ -334,12 +351,6 @@ The :mod:`test.support` module defines the following constants:
    Set to :data:`sys.maxsize` for big memory tests.
 
 
-.. data:: max_memuse
-
-   Set by :func:`set_memlimit` as the memory limit for big memory tests.
-   Limited by :data:`MAX_Py_ssize_t`.
-
-
 .. data:: real_max_memuse
 
    Set by :func:`set_memlimit` as the memory limit for big memory tests.  Not
@@ -348,14 +359,13 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: MISSING_C_DOCSTRINGS
 
-   Return ``True`` if running on CPython, not on Windows, and configuration
+   Set to ``True`` if running on CPython, not on Windows, and configuration
    not set with ``WITH_DOC_STRINGS``.
 
 
 .. data:: HAVE_DOCSTRINGS
 
-   Check for presence of docstrings.
-
+   Set to ``True`` if docstrings are enabled.
 
 
 The :mod:`test.support` module defines the following functions:
@@ -371,31 +381,30 @@ The :mod:`test.support` module defines the following functions:
    Delete *name* from ``sys.modules``.
 
 
-.. function:: unlink(filename)
+The following functions are needed due to antiviruses that can hold files
+open and prevent deletion.  On Windows platforms, the base functionality
+is wrapped with a wait loop that checks for the existence of the file.
 
-   Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence fo the file.
+   .. function:: unlink(filename)
 
+      Call :func:`os.unlink` on *filename*.
 
-.. function:: rmdir(filename)
+   .. function:: rmdir(filename)
 
-   Call :func:`os.rmdir` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence of the file.
+      Call :func:`os.rmdir` on *filename*.
 
+   .. function:: rmtree(path)
 
-.. function:: rmtree(path)
-
-   Call :func:`shutil.rmtree` on *path* or call :func:`os.lstat` and
-   :func:`os.rmdir` to remove a path and its contents.  On Windows platforms,
-   this is wrapped with a wait loop that checks for the existence of the files.
+      Call :func:`shutil.rmtree` on *path* or call :func:`os.lstat` and
+      :func:`os.rmdir` to remove a path and its contents.
 
 
 .. function:: make_legacy_pyc(source)
 
-   Move a PEP 3147/488 pyc file to its legacy pyc location and return the file
-   system path to the legacy pyc file.  The *source* value is the file system
-   path to the source file.  It does not need to exist, however the PEP
-   3147/488 pyc file must exist.
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return
+   the file system path to the legacy pyc file.  The *source* value is the
+   file system path to the source file.  It does not need to exist, however
+   the :pep:`3147`/:pep:`488` pyc file must exist.
 
 
 .. function:: is_resource_enabled(resource)
@@ -423,11 +432,6 @@ The :mod:`test.support` module defines the following functions:
    Used when tests are executed by :mod:`test.regrtest`.
 
 
-.. function:: system_must_validate_cert(f)
-
-   Raise :exc:`unittest.SkipTest` on TLS certification validation failures.
-
-
 .. function:: sortdict(dict)
 
    Return a repr of *dict* with keys sorted.
@@ -451,16 +455,6 @@ The :mod:`test.support` module defines the following functions:
 .. function:: fd_count()
 
    Count the number of open file descriptors.
-
-
-.. function:: match_test(test)
-
-   Match *test* to patterns set in :func:`set_match_tests`.
-
-
-.. function:: set_match_tests(patterns)
-
-   Define match test with regular expression *patterns*.
 
 
 .. function:: run_unittest(\*classes)
@@ -500,7 +494,9 @@ The :mod:`test.support` module defines the following functions:
 .. function:: check_impl_detail(**guards)
 
    Use this check to guard CPython's implementation-specific tests or to
-   run them only on the implementations guarded by the arguments::
+   run them only on the implementations guarded by the arguments.  This
+   function returns ``True`` or ``False`` depending on the host platform.
+   Example usage::
 
       check_impl_detail()               # Only on CPython (default).
       check_impl_detail(jython=True)    # Only on Jython.
@@ -592,17 +588,17 @@ The :mod:`test.support` module defines the following functions:
    time the regrtest began.
 
 
-.. function:: get_original_stdout
+.. function:: get_original_stdout()
 
    Return the original stdout set by :func:`record_original_stdout` or
    ``sys.stdout`` if it's not set.
 
 
-.. function:: strip_python_strerr(stderr)
+.. function:: strip_python_stderr(stderr)
 
-   Strip the *stderr* of a Python process from potential debug output
-   emitted by the interpreter.  This will typically be run on the result of
-   :meth:`subprocess.Popen.communicate`.
+   Strip the byte-string *stderr* of a Python process from potential
+   debug output emitted by the interpreter.  This will typically be
+   run on the result of :meth:`subprocess.Popen.communicate`.
 
 
 .. function:: args_from_interpreter_flags()
@@ -691,7 +687,10 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: disable_faulthandler()
 
-   A context manager that replaces ``sys.stderr`` with ``sys.__stderr__``.
+   A context manager that uses ``sys.__stderr__`` instead of
+   :data:`sys.stderr`, since :mod:`test.regrtest` replaces :data:`sys.stderr`
+   with a :class:`io.StringIO` which has no file descriptor when a test is run
+   with ``-W/--verbose3``.
 
 
 .. function:: gc_collect()
@@ -705,8 +704,7 @@ The :mod:`test.support` module defines the following functions:
 .. function:: disable_gc()
 
    A context manager that disables the garbage collector upon entry and
-   reenables it upon exit.
-
+   reenables it upon exit, if it was initially enabled.
 
 .. function:: swap_attr(obj, attr, new_val)
 
@@ -752,20 +750,22 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: start_threads(threads, unlock=None)
 
-   Context manager to start *threads*.  It attempts to join the threads upon
-   exit.
+   Context manager to start *threads*, which is a sequence of threads.
+   *unlock* is a function called after the threads are started, even if an
+   exception was raised; an example would be :meth:`threading.Event.set`.
+   This also attempts to join the started threads upon exit.
 
 
 .. function:: calcobjsize(fmt)
 
-   Return :func:`struct.calcsize` for ``nP{fmt}0n`` or, if ``gettotalrefcount``
-   exists, ``2PnP{fmt}0P``.
+   Return the size of the :c:type:`PyObject` whose structure is
+   defined by *fmt* including the Python object header and alignment.
 
 
 .. function:: calcvobjsize(fmt)
 
-   Return :func:`struct.calcsize` for ``nPn{fmt}0n`` or, if ``gettotalrefcount``
-   exists, ``2PnPn{fmt}0P``.
+   Return the size of the :c:type:`PyVarObject` whose structure is
+   defined by *fmt* including the Python object header and alignment.
 
 
 .. function:: checksizeof(test, o, size)
@@ -809,6 +809,11 @@ The :mod:`test.support` module defines the following functions:
    have an associated comment identifying the relevant tracker issue.
 
 
+.. decorator:: system_must_validate_cert(f)
+
+   A decorator that skips the test on TLS certification validation failures.
+
+
 .. decorator:: run_with_locale(catstr, *locales)
 
    A decorator for running a function in a different locale, correctly
@@ -826,19 +831,19 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: requires_freebsd_version(*min_version)
 
    Decorator for the minimum version when running test on FreeBSD.  If the
-   FreeBSD version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   FreeBSD version is less than the minimum, the test is skipped.
 
 
 .. decorator:: requires_linux_version(*min_version)
 
    Decorator for the minimum version when running test on Linux.  If the
-   Linux version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   Linux version is less than the minimum, the test is skipped.
 
 
 .. decorator:: requires_mac_version(*min_version)
 
    Decorator for the minimum version when running test on Mac OS X.  If the
-   MAC OS X version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   MAC OS X version is less than the minimum, the test is skipped.
 
 
 .. decorator:: requires_IEEE_754
@@ -876,7 +881,7 @@ The :mod:`test.support` module defines the following functions:
    Decorator for only running the test if :data:`HAVE_DOCSTRINGS`.
 
 
-.. decorator:: cpython_only(test)
+.. decorator:: cpython_only()
 
    Decorator for tests only applicable to CPython.
 
@@ -887,12 +892,12 @@ The :mod:`test.support` module defines the following functions:
    returns ``False``, then uses *msg* as the reason for skipping the test.
 
 
-.. decorator:: no_tracing(func)
+.. decorator:: no_tracing()
 
    Decorator to temporarily turn off tracing for the duration of the test.
 
 
-.. decorator:: refcount_test(test)
+.. decorator:: refcount_test()
 
    Decorator for tests which involve reference counting.  The decorator does
    not run the test if it is not run by CPython.  Any trace function is unset
@@ -900,7 +905,7 @@ The :mod:`test.support` module defines the following functions:
    the trace function.
 
 
-.. decorator:: reap_threads(func)
+.. decorator:: reap_threads()
 
    Decorator to ensure the threads are cleaned up even if the test fails.
 
@@ -920,10 +925,9 @@ The :mod:`test.support` module defines the following functions:
    means the test doesn't support dummy runs when ``-M`` is not specified.
 
 
-.. decorator:: bigaddrspacetest(f)
+.. decorator:: bigaddrspacetest()
 
-   Decorator for tests that fill the address space.  *f* is the function to
-   wrap.
+   Decorator for tests that fill the address space.
 
 
 .. function:: make_bad_fd()
@@ -946,7 +950,7 @@ The :mod:`test.support` module defines the following functions:
    Open *url*.  If open fails, raises :exc:`TestFailed`.
 
 
-.. function:: import_module(name, deprecated=False, *, required_on())
+.. function:: import_module(name, deprecated=False, *, required_on=())
 
    This function imports and returns the named module. Unlike a normal
    import, this function raises :exc:`unittest.SkipTest` if the module
@@ -1131,19 +1135,6 @@ The :mod:`test.support` module defines the following functions:
    :mod:`tracemalloc` is enabled.
 
 
-.. function:: check_free_after_iterating(test, iter, cls, args=())
-
-   Assert that *iter* is deallocated after iterating.
-
-
-.. function:: missing_compiler_executable(cmd_names=[])
-
-   Check for the existence of the compiler executables whose names are listed
-   in *cmd_names* or all the compiler executables when *cmd_names* is empty
-   and return the first missing executable or ``None`` when none is found
-   missing.
-
-
 .. function:: check__all__(test_case, module, name_of_module=None, extra=(), blacklist=())
 
    Assert that the ``__all__`` variable of *module* contains all public names.
@@ -1238,7 +1229,7 @@ The :mod:`test.support` module defines the following classes:
 
    A context manager to force import to return a new module reference.  This
    is useful for testing module-level behaviors, such as the emission of a
-   DeprecationWarning on import.  Example usage::
+   :exc:`DeprecationWarning` on import.  Example usage::
 
       with CleanImport('foo'):
           importlib.import_module('foo')  # New reference.
@@ -1246,13 +1237,13 @@ The :mod:`test.support` module defines the following classes:
 
 .. class:: DirsOnSysPath(*paths)
 
-   A context manager to temporarily add directories to sys.path.
+   A context manager to temporarily add directories to :data:`sys.path`.
 
-   This makes a copy of :data:`sys.path`, appends any directories given
-   as positional arguments, then reverts :data:`sys.path` to the copied
+   This makes a copy of ``sys.path``, appends any directories given
+   as positional arguments, then reverts ``sys.path`` to the copied
    settings when the context ends.
 
-   Note that *all* :data:`sys.path` modifications in the body of the
+   Note that *all* ``sys.path`` modifications in the body of the
    context manager, including replacement of the object,
    will be reverted at the end of the block.
 
@@ -1262,35 +1253,24 @@ The :mod:`test.support` module defines the following classes:
    Class to save and restore signal handlers registered by the Python signal
    handler.
 
+   Upon instantiation, creates a list of signal numbers, excluding ``SIGKILL``
+   and ``SIGSTOP`` signals.
 
-.. class:: Matcher()
+   .. method:: save(self)
 
-   .. method:: matches(self, d, **kwargs)
+      Save the signal handlers to a dictionary mapping signal numbers to the
+      current signal handler.
 
-      Try to match a single dict with the supplied arguments.
+   .. method:: restore(self)
 
-
-   .. method:: match_value(self, k, dv, v)
-
-      Try to match a single stored value (*dv*) with a supplied value (*v*).
+      Set the signal numbers from the :meth:`save` dictionary to the saved
+      handler.
 
 
 .. class:: WarningsRecorder()
 
    Class used to record warnings for unit tests. See documentation of
    :func:`check_warnings` above for more details.
-
-
-.. class:: BasicTestRunner()
-
-   .. method:: run(test)
-
-      Run *test* and return the result.
-
-
-.. class:: TestHandler(logging.handlers.BufferingHandler)
-
-   Class for logging support.
 
 
 :mod:`test.support.script_helper` --- Utilities for the Python execution tests
@@ -1335,11 +1315,11 @@ script execution tests.
    variables *env_vars* succeeds (``rc == 0``) and return a ``(return code,
    stdout, stderr)`` tuple.
 
-   If the ``__cleanenv`` keyword is set, *env_vars* is used as a fresh
+   If the *__cleanenv* keyword is set, *env_vars* is used as a fresh
    environment.
 
    Python is started in isolated mode (command line option ``-I``),
-   except if the ``__isolated`` keyword is set to ``False``.
+   except if the *__isolated* keyword is set to ``False``.
 
 
 .. function:: assert_python_failure(*args, **env_vars)
