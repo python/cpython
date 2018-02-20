@@ -1759,8 +1759,13 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     }
 
     // Switch to interpreter.
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+    PyThreadState *save_tstate = NULL;
+    if (interp != PyThreadState_Get()->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+    }
 
     // Run the script.
     _sharedexception *exc = NULL;
@@ -2079,9 +2084,9 @@ interp_create(PyObject *self, PyObject *args)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *tstate, *save_tstate;
-    save_tstate = PyThreadState_Swap(NULL);
-    tstate = Py_NewInterpreter();
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    // XXX Possible GILState issues?
+    PyThreadState *tstate = Py_NewInterpreter();
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to
@@ -2096,6 +2101,7 @@ interp_create(PyObject *self, PyObject *args)
     return _get_id(tstate->interp);
 
 error:
+    // XXX Possible GILState issues?
     save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
     PyThreadState_Swap(save_tstate);
@@ -2146,9 +2152,9 @@ interp_destroy(PyObject *self, PyObject *args)
 
     // Destroy the interpreter.
     //PyInterpreterState_Delete(interp);
-    PyThreadState *tstate, *save_tstate;
-    tstate = PyInterpreterState_ThreadHead(interp);
-    save_tstate = PyThreadState_Swap(tstate);
+    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+    // XXX Possible GILState issues?
+    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
     PyThreadState_Swap(save_tstate);
 
