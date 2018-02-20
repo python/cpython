@@ -3,6 +3,7 @@ import os
 import pickle
 from textwrap import dedent, indent
 import threading
+import time
 import unittest
 
 from test import support
@@ -1146,6 +1147,54 @@ class ChannelTests(TestBase):
         obj = interpreters.channel_recv(cid)
 
         self.assertEqual(obj, b'spam')
+
+    def test_send_recv_different_threads(self):
+        cid = interpreters.channel_create()
+
+        def f():
+            while True:
+                try:
+                    obj = interpreters.channel_recv(cid)
+                    break
+                except interpreters.ChannelEmptyError:
+                    time.sleep(0.1)
+            interpreters.channel_send(cid, obj)
+        t = threading.Thread(target=f)
+        t.start()
+
+        interpreters.channel_send(cid, b'spam')
+        t.join()
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, b'spam')
+
+    def test_send_recv_different_interpreters_and_threads(self):
+        cid = interpreters.channel_create()
+        id1 = interpreters.create()
+        out = None
+
+        def f():
+            nonlocal out
+            out = _run_output(id1, dedent(f"""
+                import time
+                import _xxsubinterpreters as _interpreters
+                while True:
+                    try:
+                        obj = _interpreters.channel_recv({int(cid)})
+                        break
+                    except _interpreters.ChannelEmptyError:
+                        time.sleep(0.1)
+                assert(obj == b'spam')
+                _interpreters.channel_send({int(cid)}, b'eggs')
+                """))
+        t = threading.Thread(target=f)
+        t.start()
+
+        interpreters.channel_send(cid, b'spam')
+        t.join()
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, b'eggs')
 
     def test_send_not_found(self):
         with self.assertRaises(interpreters.ChannelNotFoundError):
