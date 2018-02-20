@@ -1564,26 +1564,19 @@ initsite(void)
 static int
 is_valid_fd(int fd)
 {
-#ifdef __APPLE__
-    /* bpo-30225: On macOS Tiger, when stdout is redirected to a pipe
-       and the other side of the pipe is closed, dup(1) succeed, whereas
-       fstat(1, &st) fails with EBADF. Prefer fstat() over dup() to detect
-       such error. */
+#ifndef MS_WINDOWS
+    /* Prefer fstat() over dup2() on POSIX because under certain conditions
+       dup2() succeeds for a descriptor unusable for I/O whereas fstat()
+       fails with EBADF (bpo-30225, bpo-32849, descriptors open with O_PATH
+       before Linux 3.6). */
     struct stat st;
     return (fstat(fd, &st) == 0);
 #else
-    int fd2;
-    if (fd < 0)
-        return 0;
+    int res;
     _Py_BEGIN_SUPPRESS_IPH
-    /* Prefer dup() over fstat(). fstat() can require input/output whereas
-       dup() doesn't, there is a low risk of EMFILE/ENFILE at Python
-       startup. */
-    fd2 = dup(fd);
-    if (fd2 >= 0)
-        close(fd2);
+    res = dup2(fd, fd);
     _Py_END_SUPPRESS_IPH
-    return fd2 >= 0;
+    return res == 0;
 #endif
 }
 
