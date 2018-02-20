@@ -8016,7 +8016,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #if defined(HAVE_DUP3) && \
     !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
     /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
-    int dup3_works = -1;
+    static int dup3_works = -1;
 #endif
 
     if (fd < 0 || fd2 < 0) {
