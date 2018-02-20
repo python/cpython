@@ -583,6 +583,19 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertRaises(ValueError, ast.literal_eval, '3+(0+6j)')
         self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
 
+    def test_literal_eval_message(self):
+        # Issue #32888
+        tests = {
+            "2 * 5": "BinOp not allowed in literal",
+            "[] + []": "List not allowed in binary +/-",
+            "+''": "Str not allowed in unary +/-",
+            ast.BinOp(ast.Num(1), ast.Add(), 'oops'): "malformed node or string: 'oops'",
+        }
+        for test, message in tests.items():
+            with self.assertRaises(ValueError) as cm:
+                ast.literal_eval(test)
+            self.assertIn(message, str(cm.exception))
+
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',
