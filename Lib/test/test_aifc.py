@@ -263,6 +263,14 @@ class AIFCLowLevelTest(unittest.TestCase):
         b = io.BytesIO(b'FORM' + struct.pack('>L', 4) + b'AIFF')
         self.assertRaises(aifc.Error, aifc.open, b)
 
+    def test_read_no_ssnd_chunk(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 38, 0, 0, 0, 0, 0, 0)
+        b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+        with self.assertRaisesRegex(aifc.Error, 'COMM chunk and/or SSND chunk'
+                                                ' missing'):
+            aifc.open(io.BytesIO(b))
+
     def test_read_wrong_compression_type(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
         b += b'COMM' + struct.pack('>LhlhhLL', 23, 0, 0, 0, 0, 0, 0)
