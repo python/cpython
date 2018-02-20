@@ -46,23 +46,23 @@ def literal_eval(node_or_string):
         node_or_string = parse(node_or_string, mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
-    def _convert_num(node):
+    def _convert_num(node, ctx):
         if isinstance(node, Constant):
             if isinstance(node.value, (int, float, complex)):
                 return node.value
         elif isinstance(node, Num):
             return node.n
         elif isinstance(node, AST):
-            raise ValueError('%s not allowed in literal' % type(node).__name__)
+            raise ValueError('%s not allowed in %s' % (type(node).__name__, ctx))
         raise ValueError('malformed node or string: ' + repr(node))
-    def _convert_signed_num(node):
+    def _convert_signed_num(node, ctx):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
-            operand = _convert_num(node.operand)
+            operand = _convert_num(node.operand, 'unary +/-')
             if isinstance(node.op, UAdd):
                 return + operand
             else:
                 return - operand
-        return _convert_num(node)
+        return _convert_num(node, ctx)
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
@@ -82,14 +82,14 @@ def literal_eval(node_or_string):
         elif isinstance(node, NameConstant):
             return node.value
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
-            left = _convert_signed_num(node.left)
-            right = _convert_num(node.right)
+            left = _convert_signed_num(node.left, 'binary +/-')
+            right = _convert_num(node.right, 'binary +/-')
             if isinstance(left, (int, float)) and isinstance(right, complex):
                 if isinstance(node.op, Add):
                     return left + right
                 else:
                     return left - right
-        return _convert_signed_num(node)
+        return _convert_signed_num(node, 'literal')
     return _convert(node_or_string)
 
 
