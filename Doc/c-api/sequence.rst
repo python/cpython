@@ -17,9 +17,8 @@ Sequence Protocol
 
    .. index:: builtin: len
 
-   Returns the number of objects in sequence *o* on success, and ``-1`` on failure.
-   For objects that do not provide sequence protocol, this is equivalent to the
-   Python expression ``len(o)``.
+   Returns the number of objects in sequence *o* on success, and ``-1`` on
+   failure.  This is equivalent to the Python expression ``len(o)``.
 
 
 .. c:function:: PyObject* PySequence_Concat(PyObject *o1, PyObject *o2)
