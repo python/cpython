@@ -1259,7 +1259,7 @@ location listed above.
             cls.__name__ for cls in object.__subclasses__()
             if cls.__module__ == 'builtins'
         ]
-        if subclasses and object.__class__ != type:
+        if subclasses and object is not builtins.object:
             push("Built-in subclasses:")
             for subclassname in sorted(subclasses):
                 push('    ' + subclassname)
