@@ -567,8 +567,6 @@ append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
     switch (e->kind) {
     case Constant_kind:
         return append_fstring_unicode(writer, e->v.Constant.value);
-    case Str_kind:
-        return append_fstring_unicode(writer, e->v.Str.s);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, is_format_spec);
     case FormattedValue_kind:
@@ -694,8 +692,7 @@ append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 
     /* Special case: integers require a space for attribute access to be
        unambiguous.  Floats and complex numbers don't but work with it, too. */
-    if (e->v.Attribute.value->kind == Num_kind ||
-        e->v.Attribute.value->kind == Constant_kind)
+    if (e->v.Attribute.value->kind == Constant_kind)
     {
         period = " .";
     }
@@ -841,21 +838,14 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
     case Call_kind:
         return append_ast_call(writer, e);
     case Constant_kind:
+        if (e->v.Constant.value == Py_Ellipsis) {
+            APPEND_STR_FINISH("...");
+        }
         return append_repr(writer, e->v.Constant.value);
-    case Num_kind:
-        return append_repr(writer, e->v.Num.n);
-    case Str_kind:
-        return append_repr(writer, e->v.Str.s);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
     case FormattedValue_kind:
         return append_formattedvalue(writer, e, false);
-    case Bytes_kind:
-        return append_repr(writer, e->v.Bytes.s);
-    case Ellipsis_kind:
-        APPEND_STR_FINISH("...");
-    case NameConstant_kind:
-        return append_repr(writer, e->v.NameConstant.value);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         return append_ast_attribute(writer, e);

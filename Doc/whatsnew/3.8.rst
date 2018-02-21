@@ -216,6 +216,11 @@ Deprecated
 
   (Contributed by Berker Peksag in :issue:`9372`.)
 
+* :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and
+  ``Ellipsis`` are considered deprecated and will be removed in future Python
+  versions. :class:`~ast.Constant` should be used instead.
+  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
 
 Removed
 =======

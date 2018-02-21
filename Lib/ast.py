@@ -48,10 +48,8 @@ def literal_eval(node_or_string):
         node_or_string = node_or_string.body
     def _convert_num(node):
         if isinstance(node, Constant):
-            if isinstance(node.value, (int, float, complex)):
+            if type(node.value) in (int, float, complex):
                 return node.value
-        elif isinstance(node, Num):
-            return node.n
         raise ValueError('malformed node or string: ' + repr(node))
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
@@ -64,10 +62,6 @@ def literal_eval(node_or_string):
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
-        elif isinstance(node, (Str, Bytes)):
-            return node.s
-        elif isinstance(node, Num):
-            return node.n
         elif isinstance(node, Tuple):
             return tuple(map(_convert, node.elts))
         elif isinstance(node, List):
@@ -77,8 +71,6 @@ def literal_eval(node_or_string):
         elif isinstance(node, Dict):
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
-        elif isinstance(node, NameConstant):
-            return node.value
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
             left = _convert_signed_num(node.left)
             right = _convert_num(node.right)
@@ -329,3 +321,77 @@ class NodeTransformer(NodeVisitor):
                 else:
                     setattr(node, field, new_node)
         return node
+
+
+def _getter(self):
+    return self.value
+
+def _setter(self, value):
+    self.value = value
+
+Constant.n = property(_getter, _setter)
+Constant.s = property(_getter, _setter)
+
+_unspecified = object()
+
+
+class Num(Constant):
+    _fields = ('n',)
+
+    def __new__(cls, s=_unspecified, **kwargs):
+        if s is _unspecified:
+            return Constant(**kwargs)
+        return Constant(value=s, **kwargs)
+
+    @staticmethod
+    def __instancecheck__(instance):
+        return (isinstance(instance, Constant) and
+                type(instance.value) in (int, float, complex))
+
+
+class Str(Constant):
+    _fields = ('s',)
+
+    def __new__(cls, s=_unspecified, **kwargs):
+        if s is _unspecified:
+            return Constant(**kwargs)
+        return Constant(value=s, **kwargs)
+
+    @staticmethod
+    def __instancecheck__(instance):
+        return isinstance(instance, Constant) and type(instance.value) is str
+
+
+class Bytes(Constant):
+    _fields = ('s',)
+
+    def __new__(cls, s=_unspecified, **kwargs):
+        if s is _unspecified:
+            return Constant(**kwargs)
+        return Constant(value=s, **kwargs)
+
+    @staticmethod
+    def __instancecheck__(instance):
+        return isinstance(instance, Constant) and type(instance.value) is bytes
+
+
+class NameConstant(Constant):
+    def __new__(cls, *args, **kwargs):
+        return Constant(*args, **kwargs)
+
+    @staticmethod
+    def __instancecheck__(instance):
+        return (isinstance(instance, Constant) and
+                (instance.value is False or instance.value is True or
+                 instance.value is None))
+
+
+class Ellipsis(Constant):
+    _fields = ()
+
+    def __new__(cls, **kwargs):
+        return Constant(..., **kwargs)
+
+    @staticmethod
+    def __instancecheck__(instance):
+        return isinstance(instance, Constant) and instance.value is ...

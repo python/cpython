@@ -78,8 +78,8 @@ Node classes
 
       node = ast.UnaryOp()
       node.op = ast.USub()
-      node.operand = ast.Num()
-      node.operand.n = 5
+      node.operand = ast.Constant()
+      node.operand.value = 5
       node.operand.lineno = 0
       node.operand.col_offset = 0
       node.lineno = 0
@@ -87,7 +87,7 @@ Node classes
 
    or the more compact ::
 
-      node = ast.UnaryOp(ast.USub(), ast.Num(5, lineno=0, col_offset=0),
+      node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
 
 
@@ -239,7 +239,7 @@ and classes for traversing abstract syntax trees:
           def visit_Name(self, node):
               return copy_location(Subscript(
                   value=Name(id='data', ctx=Load()),
-                  slice=Index(value=Str(s=node.id)),
+                  slice=Index(value=Constant(value=node.id)),
                   ctx=node.ctx
               ), node)
 
