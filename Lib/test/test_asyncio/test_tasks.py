@@ -2373,6 +2373,20 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
 
+    @support.refcount_test
+    def test_refleaks_in_task___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        @asyncio.coroutine
+        def coro():
+            pass
+        task = self.new_task(self.loop, coro())
+        self.loop.run_until_complete(task)
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            task.__init__(coro(), loop=self.loop)
+            self.loop.run_until_complete(task)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and
                      hasattr(tasks, '_CTask'),

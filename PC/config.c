@@ -5,6 +5,7 @@
 
 #include "Python.h"
 
+extern PyObject* PyInit__abc(void);
 extern PyObject* PyInit_array(void);
 extern PyObject* PyInit_audioop(void);
 extern PyObject* PyInit_binascii(void);
@@ -31,7 +32,9 @@ extern PyObject* PyInit__locale(void);
 #endif
 extern PyObject* PyInit__codecs(void);
 extern PyObject* PyInit__weakref(void);
+/* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
+extern PyObject* PyInit__xxsubinterpreters(void);
 extern PyObject* PyInit_zipimport(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
@@ -78,6 +81,7 @@ extern PyObject* PyInit__imp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
+    {"_abc", PyInit__abc},
     {"array", PyInit_array},
     {"_ast", PyInit__ast},
     {"audioop", PyInit_audioop},
@@ -126,6 +130,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_json", PyInit__json},
 
     {"xxsubtype", PyInit_xxsubtype},
+    {"_xxsubinterpreters", PyInit__xxsubinterpreters},
     {"zipimport", PyInit_zipimport},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},

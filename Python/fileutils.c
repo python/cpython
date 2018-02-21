@@ -1289,7 +1289,8 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     if (wpath == NULL)
         return NULL;
 
-    usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
+    usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
+                                wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
         return NULL;
