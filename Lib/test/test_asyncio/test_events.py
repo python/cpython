@@ -2197,7 +2197,7 @@ class SockSendfileMixin(SendfileBase):
 
     def test_sock_sendfile_zero_size(self):
         sock, proto = self.prepare_socksendfile()
-        fname = support.TESTFN + '.suffix'
+        fname = support.TESTFN + '.zero'
         with open(fname, 'wb') as f:
             pass  # make zero sized file
         f = open(fname, 'rb')
