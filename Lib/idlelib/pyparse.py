@@ -1,8 +1,20 @@
+"""Define partial Python code Parser used by editor and hyperparser.
+
+Instances of StringTranslatePseudoMapping are used with str.translate.
+
+The following bound search and match functions are defined:
+_synchre - start of popular statement;
+_junkre - whitespace or comment line;
+_match_stringre: string, possibly without closer;
+_itemre - line that may have bracket structure start;
+_closere - line that must be followed by dedent.
+_chew_ordinaryre - non-special characters.
+"""
 from collections.abc import Mapping
 import re
 import sys
 
-# Reason last stmt is continued (or C_NONE if it's not).
+# Reason last statement is continued (or C_NONE if it's not).
 (C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,
  C_STRING_NEXT_LINES, C_BRACKET) = range(5)
 
@@ -10,7 +22,7 @@ if 0:   # for throwaway debugging output
     def dump(*stuff):
         sys.__stdout__.write(" ".join(map(str, stuff)) + "\n")
 
-# Find what looks like the start of a popular stmt.
+# Find what looks like the start of a popular statement.
 
 _synchre = re.compile(r"""
     ^
@@ -70,7 +82,7 @@ _itemre = re.compile(r"""
     [^\s#\\]    # if we match, m.end()-1 is the interesting char
 """, re.VERBOSE).match
 
-# Match start of stmts that should be followed by a dedent.
+# Match start of statements that should be followed by a dedent.
 
 _closere = re.compile(r"""
     \s*
@@ -174,7 +186,7 @@ class Parser:
             i = str.rfind(":\n", 0, limit)
             if i < 0:
                 break
-            i = str.rfind('\n', 0, i) + 1  # start of colon line
+            i = str.rfind('\n', 0, i) + 1  # start of colon line (-1+1=0)
             m = _synchre(str, i, limit)
             if m and not is_char_in_string(m.start()):
                 pos = m.start()
@@ -248,8 +260,8 @@ class Parser:
         str = str.replace('xx', 'x')
         str = str.replace('xx', 'x')
         str = str.replace('\nx', '\n')
-        # note that replacing x\n with \n would be incorrect, because
-        # x may be preceded by a backslash
+        # Replacing x\n with \n would be incorrect because
+        # x may be preceded by a backslash.
 
         # March over the squashed version of the program, accumulating
         # the line numbers of non-continued stmts, and determining
@@ -379,8 +391,7 @@ class Parser:
                 (4, 0)). Strings and comments are treated as brackets, for
                 the matter.
             self.lastch
-                last non-whitespace character before optional trailing
-                comment
+                last interesting character before optional trailing comment
             self.lastopenbracketpos
                 if continuation is C_BRACKET, index of last open bracket
         """
@@ -391,11 +402,11 @@ class Parser:
 
         # Set p and q to slice indices of last interesting stmt.
         str, goodlines = self.str, self.goodlines
-        i = len(goodlines) - 1
-        p = len(str)    # index of newest line
+        i = len(goodlines) - 1  # Index of newest line.
+        p = len(str)  # End of goodlines[i]
         while i:
             assert p
-            # p is the index of the stmt at line number goodlines[i].
+            # Make p be the index of the stmt at line number goodlines[i].
             # Move p back to the stmt at line number goodlines[i-1].
             q = p
             for nothing in range(goodlines[i-1], goodlines[i]):

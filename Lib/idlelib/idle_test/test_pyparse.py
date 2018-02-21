@@ -149,6 +149,10 @@ class PyParseTest(unittest.TestCase):
         p.set_lo(44)
         self.assertEqual(p.str, code[44:])
 
+    def test_tran(self):
+        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(self.parser._tran),
+                          'xxx(((x)))x"x\'x\n')
+
     def test_study1(self):
         eq = self.assertEqual
         p = self.parser
@@ -161,23 +165,22 @@ class PyParseTest(unittest.TestCase):
         tests = (
             TestInfo('', [0], NONE),
             # Docstrings.
-            TestInfo('"""This is a completed docstring."""\n', [0, 1], NONE),
-            TestInfo('"""This is a continuation docstring.\n', [0, 1], FIRST),
+            TestInfo('"""This is a complete docstring."""\n', [0, 1], NONE),
+            TestInfo("'''This is a complete docstring.'''\n", [0, 1], NONE),
+            TestInfo('"""This is a continued docstring.\n', [0, 1], FIRST),
+            TestInfo("'''This is a continued docstring.\n", [0, 1], FIRST),
             TestInfo('"""Closing quote does not match."\n', [0, 1], FIRST),
-            TestInfo("'''This is a completed docstring.'''\n", [0, 1], NONE),
             TestInfo('"""Bracket in docstring [\n', [0, 1], FIRST),
-            TestInfo("'''This is a continuation docstring.\n", [0, 1], FIRST),
-            TestInfo("'''This is a multiline-continutation docstring.\n\n",
-                     [0, 2], NEXT),
+            TestInfo("'''Incomplete two line docstring.\n\n", [0, 2], NEXT),
             # Single-quoted strings.
-            TestInfo('"This is a completed string."\n', [0, 1], NONE),
-            TestInfo('"This is a continuation string.\n', [0, 1], NONE),
-            TestInfo('"This is a continuation string.\n\n', [0, 1, 2], NONE),
-            # Comment.
-            TestInfo('# Comment\\\n', [0, 1], NONE),  # Backslash not continuation.
+            TestInfo('"This is a complete string."\n', [0, 1], NONE),
+            TestInfo('"This is an incomplete string.\n', [0, 1], NONE),
+            TestInfo("'This is more incomplete.\n\n", [0, 1, 2], NONE),
+            # Comment (backslash does not continue comments).
+            TestInfo('# Comment\\\n', [0, 1], NONE),
             # Brackets.
-            TestInfo('("""Complete docstring in bracket"""\n', [0, 1], BRACKET),
-            TestInfo('("""Open docstring in bracket\n', [0, 1], FIRST),
+            TestInfo('("""Complete string in bracket"""\n', [0, 1], BRACKET),
+            TestInfo('("""Open string in bracket\n', [0, 1], FIRST),
             TestInfo('a = (1 + 2) - 5 *\\\n', [0, 1], BACKSLASH),  # No bracket.
             TestInfo('\n   def function1(self, a,\n                 b):\n',
                      [0, 1, 3], NONE),
@@ -191,7 +194,7 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setstr(test.string)  # resets study_level
                 study()
                 eq(p.study_level, 1)
                 eq(p.goodlines, test.goodlines)
@@ -211,7 +214,7 @@ class PyParseTest(unittest.TestCase):
         tests = (
             TestInfo('', NONE),
             TestInfo('"""This is a continuation docstring.\n', FIRST),
-            TestInfo("'''This is a multiline-continutation docstring.\n\n", NEXT),
+            TestInfo("'''This is a multiline-continued docstring.\n\n", NEXT),
             TestInfo('a = (1 + 2) - 5 *\\\n', BACKSLASH),
             TestInfo('\n   def function1(self, a,\\\n', BRACKET)
             )
@@ -233,10 +236,10 @@ class PyParseTest(unittest.TestCase):
             TestInfo('', 0, 0, '', None, ((0, 0),)),
             TestInfo("'''This is a multiline continutation docstring.\n\n",
                      0, 49, "'", None, ((0, 0), (0, 1), (49, 0))),
-            TestInfo('# Comment\\\n',
-                     0, 11, '', None, ((0, 0), (0, 1), (11, 0))),
+            TestInfo(' # Comment\\\n',
+                     0, 12, '', None, ((0, 0), (1, 1), (12, 0))),
             # A comment without a space is a special case
-            TestInfo('    #Comment\\\n',
+            TestInfo(' #Comment\\\n',
                      0, 0, '', None, ((0, 0),)),
             # Backslash continuation.
             TestInfo('a = (1 + 2) - 5 *\\\n',
@@ -260,12 +263,11 @@ class PyParseTest(unittest.TestCase):
             TestInfo('())\n',
                      0, 4, ')', None, ((0, 0), (0, 1), (2, 0), (3, 0))),
             TestInfo(')(\n', 0, 3, '(', 1, ((0, 0), (1, 0), (1, 1))),
-            # The mismatched example reports all brackets are closed.
+            # Wrong closers still decrement stack level.
             TestInfo('{)(]\n',
                      0, 5, ']', None, ((0, 0), (0, 1), (2, 0), (2, 1), (4, 0))),
             # Character after backslash.
             TestInfo(':\\a\n', 0, 4, '\\a', None, ((0, 0),)),
-            # Character after backslash.
             TestInfo('\n', 0, 0, '', None, ((0, 0),)),
             )
 
@@ -293,10 +295,10 @@ class PyParseTest(unittest.TestCase):
 
         TestInfo = namedtuple('TestInfo', ['string', 'lines'])
         tests = (
-            TestInfo('[x for x in a]\n', 1),       # Closed on one line.
-            TestInfo('[x\nfor x in a\n', 2),       # Not closed.
-            TestInfo('[x\\\nfor x in a\\\n', 2),   # Not closed; uneeded backslash.
-            TestInfo('[x\nfor x in a\n]\n', 3),    # Closed on multi-line.
+            TestInfo('[x for x in a]\n', 1),      # Closed on one line.
+            TestInfo('[x\nfor x in a\n', 2),      # Not closed.
+            TestInfo('[x\\\nfor x in a\\\n', 2),  # "", uneeded backslashes.
+            TestInfo('[x\nfor x in a\n]\n', 3),   # Closed on multi-line.
             TestInfo('\n"""Docstring comment L1"""\nL2\nL3\nL4\n', 1),
             TestInfo('\n"""Docstring comment L1\nL2"""\nL3\nL4\n', 1),
             TestInfo('\n"""Docstring comment L1\\\nL2\\\nL3\\\nL4\\\n', 4),
@@ -328,7 +330,7 @@ class PyParseTest(unittest.TestCase):
             # No characters after bracket.
             TestInfo('\n    def function1(\n', 8),
             TestInfo('\n\tdef function1(\n', 8),
-            TestInfo('\n    def function1(  \n', 8),  # Spaces ignored after bracket.
+            TestInfo('\n    def function1(  \n', 8),  # Ignore extra spaces.
             TestInfo('[\n"first item",\n  # Comment line\n    "next item",\n', 0),
             TestInfo('[\n  "first item",\n  # Comment line\n    "next item",\n', 2),
             TestInfo('["first item",\n  # Comment line\n    "next item",\n', 1),
