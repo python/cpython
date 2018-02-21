@@ -1882,13 +1882,15 @@ to speed up repeated connections from the same clients.
    :meth:`~SSLContext.wrap_socket` in order to match the hostname.  Enabling
    hostname checking automatically sets :attr:`~SSLContext.verify_mode` from
    :data:`CERT_NONE` to :data:`CERT_REQUIRED`.  It cannot be set back to
-   :data:`CERT_NONE` as long as hostname checking is enabled.
+   :data:`CERT_NONE` as long as hostname checking is enabled. The
+   :data:`PROTOCOL_TLS_CLIENT` protocol enables hostname checking by default.
+   With other protocols, hostname checking must be enabled explicitly.
 
    Example::
 
       import socket, ssl
 
-      context = ssl.SSLContext()
+      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
       context.verify_mode = ssl.CERT_REQUIRED
       context.check_hostname = True
       context.load_default_certs()
@@ -2217,9 +2219,7 @@ If you prefer to tune security settings yourself, you might create
 a context from scratch (but beware that you might not get the settings
 right)::
 
-   >>> context = ssl.SSLContext()
-   >>> context.verify_mode = ssl.CERT_REQUIRED
-   >>> context.check_hostname = True
+   >>> context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
    >>> context.load_verify_locations("/etc/ssl/certs/ca-bundle.crt")
 
 (this snippet assumes your operating system places a bundle of all CA
@@ -2227,9 +2227,12 @@ certificates in ``/etc/ssl/certs/ca-bundle.crt``; if not, you'll get an
 error and have to adjust the location)
 
 When you use the context to connect to a server, :const:`CERT_REQUIRED`
-validates the server certificate: it ensures that the server certificate
-was signed with one of the CA certificates, and checks the signature for
-correctness::
+validates the server certificate and :meth:`~SSLContext.check_hostname`
+matches the hostname. Both setting ensure that the server certificate
+was signed with one of the CA certificates and is a valid certificate
+for the given server name. The :data:`PROTOCOL_TLS_CLIENT` protocol
+configures the context for cert and hostname verification. All
+remaining protocols are insecure by default::
 
    >>> conn = context.wrap_socket(socket.socket(socket.AF_INET),
    ...                            server_hostname="www.python.org")
