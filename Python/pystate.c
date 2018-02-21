@@ -331,9 +331,10 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     PyThread_release_lock(interp->id_mutex);
 
     if (refcount == 0) {
-        PyThreadState *tstate, *save_tstate;
-        tstate = PyInterpreterState_ThreadHead(interp);
-        save_tstate = PyThreadState_Swap(tstate);
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        PyThreadState *save_tstate = PyThreadState_Swap(tstate);
         Py_EndInterpreter(tstate);
         PyThreadState_Swap(save_tstate);
     }
@@ -1213,8 +1214,14 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         }
         return;
     }
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+
+    PyThreadState *save_tstate = NULL;
+    if (interp != PyThreadState_Get()->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+    }
 
     // "Release" the data and/or the object.
     if (data->free != NULL) {
@@ -1223,8 +1230,9 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     Py_XDECREF(data->obj);
 
     // Switch back.
-    if (save_tstate != NULL)
+    if (save_tstate != NULL) {
         PyThreadState_Swap(save_tstate);
+    }
 }
 
 PyObject *
