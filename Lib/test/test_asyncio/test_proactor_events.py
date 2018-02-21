@@ -862,27 +862,6 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
         return sock, proto
 
-    def test_sock_sendfile_success(self):
-        sock, proto = self.prepare()
-        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, len(self.DATA))
-        self.assertEqual(proto.data, self.DATA)
-        self.assertEqual(self.file.tell(), len(self.DATA))
-
-    def test_sock_sendfile_with_offset_and_count(self):
-        sock, proto = self.prepare()
-        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
-                                                    1000, 2000))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(proto.data, self.DATA[1000:3000])
-        self.assertEqual(self.file.tell(), 3000)
-        self.assertEqual(ret, 2000)
-
     def test_sock_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
@@ -910,36 +889,6 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
         self.assertEqual(self.file.tell(), 0)
-
-    def test_sock_sendfile_zero_size(self):
-        sock, proto = self.prepare()
-        fname = support.TESTFN + '.suffix'
-        with open(fname, 'wb') as f:
-            pass  # make zero sized file
-        f = open(fname, 'rb')
-        self.addCleanup(support.unlink, fname)
-        ret = self.run_loop(self.loop._sock_sendfile_native(sock, f,
-                                                            0, None))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, 0)
-        self.assertEqual(self.file.tell(), 0)
-        f.close()
-
-    def test_sock_sendfile_mix_with_regular_send(self):
-        buf = b'1234567890' * 1024 * 1024  # 10 MB
-        sock, proto = self.prepare()
-        self.run_loop(self.loop.sock_sendall(sock, buf))
-        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
-        self.run_loop(self.loop.sock_sendall(sock, buf))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, len(self.DATA))
-        expected = buf + self.DATA + buf
-        self.assertEqual(proto.data, expected)
-        self.assertEqual(self.file.tell(), len(self.DATA))
 
 
 if __name__ == '__main__':
