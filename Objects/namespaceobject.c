@@ -40,18 +40,16 @@ namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
 {
-    // ignore args if it's NULL or empty
-    if (args != NULL) {
-        Py_ssize_t argcount = PyObject_Size(args);
-        if (argcount < 0)
-            return -1;
-        else if (argcount > 0) {
-            PyErr_Format(PyExc_TypeError, "no positional arguments expected");
-            return -1;
-        }
+    if (PyTuple_GET_SIZE(args) != 0) {
+        PyErr_Format(PyExc_TypeError, "no positional arguments expected");
+        return -1;
     }
-    if (kwds == NULL)
+    if (kwds == NULL) {
         return 0;
+    }
+    if (!PyArg_ValidateKeywordArguments(kwds)) {
+        return -1;
+    }
     return PyDict_Update(ns->ns_dict, kwds);
 }
 

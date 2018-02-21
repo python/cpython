@@ -56,7 +56,7 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.org/en/latest/>`_ and `py.test <http://pytest.org>`_
+   `Nose <https://nose.readthedocs.io/>`_ and `py.test <https://docs.pytest.org/>`_
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
@@ -219,6 +219,22 @@ Command-line options
 
    Stop the test run on the first error or failure.
 
+.. cmdoption:: -k
+
+   Only run test methods and classes that match the pattern or substring.
+   This option may be used multiple times, in which case all test cases that
+   match of the given patterns are included.
+
+   Patterns that contain a wildcard character (``*``) are matched against the
+   test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
+   substring matching is used.
+
+   Patterns are matched against the fully qualified test method name as
+   imported by the test loader.
+
+   For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
+   ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
+
 .. cmdoption:: --locals
 
    Show local variables in tracebacks.
@@ -228,6 +244,9 @@ Command-line options
 
 .. versionadded:: 3.5
    The command-line option ``--locals``.
+
+.. versionadded:: 3.7
+   The command-line option ``-k``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -402,9 +421,13 @@ you can do it yourself::
 
    def suite():
        suite = unittest.TestSuite()
-       suite.addTest(WidgetTestCase('test_default_size'))
-       suite.addTest(WidgetTestCase('test_resize'))
+       suite.addTest(WidgetTestCase('test_default_widget_size'))
+       suite.addTest(WidgetTestCase('test_widget_resize'))
        return suite
+
+   if __name__ == '__main__':
+       runner = unittest.TextTestRunner()
+       runner.run(suite())
 
 You can place the definitions of test cases and test suites in the same modules
 as the code they are to test (such as :file:`widget.py`), but there are several
@@ -1170,6 +1193,9 @@ Test cases
          :meth:`.assertRegex`.
       .. versionadded:: 3.2
          :meth:`.assertNotRegex`.
+      .. versionadded:: 3.5
+         The name ``assertNotRegexpMatches`` is a deprecated alias
+         for :meth:`.assertNotRegex`.
 
 
    .. method:: assertCountEqual(first, second, msg=None)
@@ -1435,9 +1461,9 @@ For historical reasons, some of the :class:`TestCase` methods had one or more
 aliases that are now deprecated.  The following table lists the correct names
 along with their deprecated aliases:
 
-   ==============================  ====================== ======================
+   ==============================  ====================== =======================
     Method Name                     Deprecated alias       Deprecated alias
-   ==============================  ====================== ======================
+   ==============================  ====================== =======================
     :meth:`.assertEqual`            failUnlessEqual        assertEquals
     :meth:`.assertNotEqual`         failIfEqual            assertNotEquals
     :meth:`.assertTrue`             failUnless             assert\_
@@ -1446,8 +1472,9 @@ along with their deprecated aliases:
     :meth:`.assertAlmostEqual`      failUnlessAlmostEqual  assertAlmostEquals
     :meth:`.assertNotAlmostEqual`   failIfAlmostEqual      assertNotAlmostEquals
     :meth:`.assertRegex`                                   assertRegexpMatches
+    :meth:`.assertNotRegex`                                assertNotRegexpMatches
     :meth:`.assertRaisesRegex`                             assertRaisesRegexp
-   ==============================  ====================== ======================
+   ==============================  ====================== =======================
 
    .. deprecated:: 3.1
          the fail* aliases listed in the second column.
@@ -1455,8 +1482,9 @@ along with their deprecated aliases:
          the assert* aliases listed in the third column.
    .. deprecated:: 3.2
          ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
-         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`
-
+         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
+   .. deprecated:: 3.5
+         the ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
@@ -1735,6 +1763,21 @@ Loading and running tests
       :class:`TestSuite` class.
 
       This affects all the :meth:`loadTestsFrom\*` methods.
+
+   .. attribute:: testNamePatterns
+
+      List of Unix shell-style wildcard test name patterns that test methods
+      have to match to be included in test suites (see ``-v`` option).
+
+      If this attribute is not ``None`` (the default), all test methods to be
+      included in test suites must match one of the patterns in this list.
+      Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
+      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      will have to be converted using ``*`` wildcards.
+
+      This affects all the :meth:`loadTestsFrom\*` methods.
+
+      .. versionadded:: 3.7
 
 
 .. class:: TestResult

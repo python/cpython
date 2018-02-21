@@ -48,7 +48,7 @@ Sample use, programmatically
   r.write_results(show_missing=True, coverdir="/tmp")
 """
 __all__ = ['Trace', 'CoverageResults']
-import argparse
+
 import linecache
 import os
 import re
@@ -61,21 +61,15 @@ import dis
 import pickle
 from time import monotonic as _time
 
-try:
-    import threading
-except ImportError:
-    _settrace = sys.settrace
+import threading
 
-    def _unsettrace():
-        sys.settrace(None)
-else:
-    def _settrace(func):
-        threading.settrace(func)
-        sys.settrace(func)
+def _settrace(func):
+    threading.settrace(func)
+    sys.settrace(func)
 
-    def _unsettrace():
-        sys.settrace(None)
-        threading.settrace(None)
+def _unsettrace():
+    sys.settrace(None)
+    threading.settrace(None)
 
 PRAGMA_NOCOVER = "#pragma NO COVER"
 
@@ -609,6 +603,7 @@ class Trace:
                                callers=self._callers)
 
 def main():
+    import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version='trace 2.0')
@@ -710,7 +705,7 @@ def main():
     if opts.filename is None:
         parser.error('filename is missing: required with the main options')
 
-    sys.argv = opts.filename, *opts.arguments
+    sys.argv = [opts.filename, *opts.arguments]
     sys.path[0] = os.path.dirname(opts.filename)
 
     t = Trace(opts.count, opts.trace, countfuncs=opts.listfuncs,

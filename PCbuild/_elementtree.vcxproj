@@ -62,11 +62,8 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;USE_PYEXPAT_CAPI;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <BaseAddress>0x1D100000</BaseAddress>
-    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\expat\ascii.h" />
@@ -87,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_elementtree.c" />
+    <ClCompile Include="..\Modules\expat\loadlibrary.c" />
     <ClCompile Include="..\Modules\expat\xmlparse.c" />
     <ClCompile Include="..\Modules\expat\xmlrole.c" />
     <ClCompile Include="..\Modules\expat\xmltok.c" />

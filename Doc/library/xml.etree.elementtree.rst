@@ -297,7 +297,7 @@ If the XML input has `namespaces
 with prefixes in the form ``prefix:sometag`` get expanded to
 ``{uri}sometag`` where the *prefix* is replaced by the full *URI*.
 Also, if there is a `default namespace
-<https://www.w3.org/TR/2006/REC-xml-names-20060816/#defaulting>`__,
+<https://www.w3.org/TR/xml-names/#defaulting>`__,
 that full URI gets prepended to all of the non-prefixed tags.
 
 Here is an XML example that incorporates two namespaces, one with the
@@ -436,6 +436,11 @@ Supported XPath syntax
 +-----------------------+------------------------------------------------------+
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
++-----------------------+------------------------------------------------------+
+| ``[.='text']``        | Selects all elements whose complete text content,    |
+|                       | including descendants, equals the given ``text``.    |
+|                       |                                                      |
+|                       | .. versionadded:: 3.7                                |
 +-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
@@ -1192,7 +1197,7 @@ Exceptions
 
 .. rubric:: Footnotes
 
-.. [#] The encoding string included in XML output should conform to the
+.. [1] The encoding string included in XML output should conform to the
    appropriate standards.  For example, "UTF-8" is valid, but "UTF8" is
    not.  See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and https://www.iana.org/assignments/character-sets/character-sets.xhtml.

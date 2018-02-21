@@ -2,12 +2,8 @@
 
 class RstripExtension:
 
-    menudefs = [
-        ('format', [None, ('Strip trailing whitespace', '<<do-rstrip>>'), ] ), ]
-
     def __init__(self, editwin):
         self.editwin = editwin
-        self.editwin.text.bind("<<do-rstrip>>", self.do_rstrip)
 
     def do_rstrip(self, event=None):
 

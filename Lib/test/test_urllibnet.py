@@ -11,6 +11,7 @@ import time
 
 support.requires('network')
 
+
 class URLTimeoutTest(unittest.TestCase):
     # XXX this test doesn't seem to test anything useful.
 
@@ -25,7 +26,7 @@ class URLTimeoutTest(unittest.TestCase):
     def testURLread(self):
         with support.transient_internet("www.example.com"):
             f = urllib.request.urlopen("http://www.example.com/")
-            x = f.read()
+            f.read()
 
 
 class urlopenNetworkTests(unittest.TestCase):
@@ -188,6 +189,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_reporthook(self):
         records = []
+
         def recording_reporthook(blocks, block_size, total_size):
             records.append((blocks, block_size, total_size))
 

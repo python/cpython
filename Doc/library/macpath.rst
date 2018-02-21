@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/macpath.py`
 
+.. deprecated-removed:: 3.7 3.8
+
 --------------
 
 This module is the Mac OS 9 (and earlier) implementation of the :mod:`os.path`

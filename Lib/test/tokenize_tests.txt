@@ -1,5 +1,5 @@
 # Tests for the 'tokenize' module.
-# Large bits stolen from test_grammar.py. 
+# Large bits stolen from test_grammar.py.
 
 # Comments
 "#"

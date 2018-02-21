@@ -52,7 +52,7 @@ message objects.
 
 .. class:: EmailMessage(policy=default)
 
-   If *policy* is specified use the rules it specifies to udpate and serialize
+   If *policy* is specified use the rules it specifies to update and serialize
    the representation of the message.  If *policy* is not set, use the
    :class:`~email.policy.default` policy, which follows the rules of the email
    RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
@@ -63,7 +63,7 @@ message objects.
 
       Return the entire message flattened as a string.  When optional
       *unixfrom* is true, the envelope header is included in the returned
-      string.  *unixfrom* defaults to ``False``.  For backward compabitility
+      string.  *unixfrom* defaults to ``False``.  For backward compatibility
       with the base :class:`~email.message.Message` class *maxheaderlen* is
       accepted, but defaults to ``None``, which means that by default the line
       length is controlled by the
@@ -213,7 +213,7 @@ message objects.
          del msg['subject']
          msg['subject'] = 'Python roolz!'
 
-      If the :mod:`policy` defines certain haders to be unique (as the standard
+      If the :mod:`policy` defines certain headers to be unique (as the standard
       policies do), this method may raise a :exc:`ValueError` when an attempt
       is made to assign a value to such a header when one already exists.  This
       behavior is intentional for consistency's sake, but do not depend on it
@@ -558,7 +558,7 @@ message objects.
       the part a candidate match if the value of the header is ``inline``.
 
       If none of the candidates matches any of the preferences in
-      *preferneclist*, return ``None``.
+      *preferencelist*, return ``None``.
 
       Notes: (1) For most applications the only *preferencelist* combinations
       that really make sense are ``('plain',)``, ``('html', 'plain')``, and the
@@ -746,6 +746,6 @@ message objects.
 
 .. rubric:: Footnotes
 
-.. [1] Oringally added in 3.4 as a :term:`provisional module <provisional
+.. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`.  Docs for legacy message class moved to
        :ref:`compat32_message`.

@@ -344,7 +344,8 @@ class TracebackFormatTests(unittest.TestCase):
         # 2nd last line contains the repetition count
         self.assertEqual(actual[:-2], expected[:-2])
         self.assertRegex(actual[-2], expected[-2])
-        self.assertEqual(actual[-1], expected[-1])
+        # last line can have additional text appended
+        self.assertIn(expected[-1], actual[-1])
 
         # Check the recursion count is roughly as expected
         rec_limit = sys.getrecursionlimit()
@@ -441,6 +442,33 @@ class TracebackFormatTests(unittest.TestCase):
             '  File "%s", line %d, in fmt\n'
             '    return traceback.format_stack()\n' % (__file__, lineno+1),
         ])
+
+    @cpython_only
+    def test_unhashable(self):
+        from _testcapi import exception_print
+
+        class UnhashableException(Exception):
+            def __eq__(self, other):
+                return True
+
+        ex1 = UnhashableException('ex1')
+        ex2 = UnhashableException('ex2')
+        try:
+            raise ex2 from ex1
+        except UnhashableException:
+            try:
+                raise ex1
+            except UnhashableException:
+                exc_type, exc_val, exc_tb = sys.exc_info()
+
+        with captured_output("stderr") as stderr_f:
+            exception_print(exc_val)
+
+        tb = stderr_f.getvalue().strip().splitlines()
+        self.assertEqual(11, len(tb))
+        self.assertEqual(context_message.strip(), tb[5])
+        self.assertIn('UnhashableException: ex2', tb[3])
+        self.assertIn('UnhashableException: ex1', tb[10])
 
 
 cause_message = (
@@ -992,6 +1020,25 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(expected_stack, exc.stack)
         self.assertEqual(exc_info[0], exc.exc_type)
         self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_unhashable(self):
+        class UnhashableException(Exception):
+            def __eq__(self, other):
+                return True
+
+        ex1 = UnhashableException('ex1')
+        ex2 = UnhashableException('ex2')
+        try:
+            raise ex2 from ex1
+        except UnhashableException:
+            try:
+                raise ex1
+            except UnhashableException:
+                exc_info = sys.exc_info()
+        exc = traceback.TracebackException(*exc_info)
+        formatted = list(exc.format())
+        self.assertIn('UnhashableException: ex2\n', formatted[2])
+        self.assertIn('UnhashableException: ex1\n', formatted[6])
 
     def test_limit(self):
         def recurse(n):

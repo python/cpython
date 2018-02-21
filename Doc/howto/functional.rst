@@ -210,7 +210,7 @@ You can experiment with the iteration interface manually:
     3
     >>> next(it)
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
+      File "<stdin>", line 1, in <module>
     StopIteration
     >>>
 
@@ -474,7 +474,7 @@ Here's a sample usage of the ``generate_ints()`` generator:
     2
     >>> next(gen)
     Traceback (most recent call last):
-      File "stdin", line 1, in ?
+      File "stdin", line 1, in <module>
       File "stdin", line 2, in generate_ints
     StopIteration
 
@@ -577,7 +577,7 @@ And here's an example of changing the counter:
     9
     >>> next(it)  #doctest: +SKIP
     Traceback (most recent call last):
-      File "t.py", line 15, in ?
+      File "t.py", line 15, in <module>
         it.next()
     StopIteration
 
@@ -653,8 +653,9 @@ This can also be written as a list comprehension:
     [0, 2, 4, 6, 8]
 
 
-:func:`enumerate(iter) <enumerate>` counts off the elements in the iterable,
-returning 2-tuples containing the count and each element. ::
+:func:`enumerate(iter, start=0) <enumerate>` counts off the elements in the
+iterable returning 2-tuples containing the count (from *start*) and
+each element. ::
 
     >>> for item in enumerate(['subject', 'verb', 'object']):
     ...     print(item)
@@ -747,14 +748,16 @@ The module's functions fall into a few broad classes:
 Creating new iterators
 ----------------------
 
-:func:`itertools.count(n) <itertools.count>` returns an infinite stream of
-integers, increasing by 1 each time.  You can optionally supply the starting
-number, which defaults to 0::
+:func:`itertools.count(start, step) <itertools.count>` returns an infinite
+stream of evenly spaced values.  You can optionally supply the starting number,
+which defaults to 0, and the interval between numbers, which defaults to 1::
 
     itertools.count() =>
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...
     itertools.count(10) =>
       10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ...
+    itertools.count(10, 5) =>
+      10, 15, 20, 25, 30, 35, 40, 45, 50, 55, ...
 
 :func:`itertools.cycle(iter) <itertools.cycle>` saves a copy of the contents of
 a provided iterable and returns a new iterator that returns its elements from
@@ -1060,10 +1063,10 @@ write the obvious :keyword:`for` loop::
    for i in [1,2,3]:
        product *= i
 
-A related function is `itertools.accumulate(iterable, func=operator.add) <itertools.accumulate`.
-It performs the same calculation, but instead of returning only the
-final result, :func:`accumulate` returns an iterator that also yields
-each partial result::
+A related function is :func:`itertools.accumulate(iterable, func=operator.add)
+<itertools.accumulate>`.  It performs the same calculation, but instead of
+returning only the final result, :func:`accumulate` returns an iterator that
+also yields each partial result::
 
     itertools.accumulate([1,2,3,4,5]) =>
       1, 3, 6, 10, 15
@@ -1234,6 +1237,8 @@ Python documentation
 --------------------
 
 Documentation for the :mod:`itertools` module.
+
+Documentation for the :mod:`functools` module.
 
 Documentation for the :mod:`operator` module.
 

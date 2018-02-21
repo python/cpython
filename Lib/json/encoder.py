@@ -176,8 +176,8 @@ class JSONEncoder(object):
                 return JSONEncoder.default(self, o)
 
         """
-        raise TypeError("Object of type '%s' is not JSON serializable" %
-                        o.__class__.__name__)
+        raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
 
     def encode(self, o):
         """Return a JSON string representation of a Python data structure.
@@ -373,7 +373,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif _skipkeys:
                 continue
             else:
-                raise TypeError("key " + repr(key) + " is not a string")
+                raise TypeError(f'keys must be str, int, float, bool or None, '
+                                f'not {key.__class__.__name__}')
             if first:
                 first = False
             else:

@@ -1670,6 +1670,9 @@ _multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *se
         if (r == -1)
             return NULL;
     }
+    /* PySequence_Length() can fail */
+    if (PyErr_Occurred())
+        return NULL;
 
     Py_RETURN_NONE;
 }

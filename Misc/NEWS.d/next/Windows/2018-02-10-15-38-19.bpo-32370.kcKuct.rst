@@ -1,0 +1,2 @@
+Use the correct encoding for ipconfig output in the uuid module.
+Patch by Segev Finer.

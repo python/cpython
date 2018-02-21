@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Include">
@@ -81,6 +81,9 @@
     <ClInclude Include="..\Include\complexobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\context.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -127,6 +130,30 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\import.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\ceval.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\condvar.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\context.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\gil.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\hamt.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\mem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\warnings.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\intrcheck.h">
@@ -216,7 +243,7 @@
     <ClInclude Include="..\Include\pyfpe.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pygetopt.h">
+    <ClInclude Include="..\Include\internal\pygetopt.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pylifecycle.h">
@@ -321,39 +348,6 @@
     <ClInclude Include="..\Modules\_io\_iomodule.h">
       <Filter>Modules\_io</Filter>
     </ClInclude>
-    <ClInclude Include="..\Modules\zlib\crc32.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\deflate.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inffast.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inffixed.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inflate.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inftrees.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\trees.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zconf.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zconf.in.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zlib.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zutil.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h">
       <Filter>Modules\cjkcodecs</Filter>
     </ClInclude>
@@ -444,9 +438,42 @@
     <ClInclude Include="..\Include\odictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="$(zlibDir)\crc32.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\deflate.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inffast.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inffixed.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inflate.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inftrees.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\trees.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zconf.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zconf.in.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zlib.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zutil.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_asynciomodule.c">
+    <ClCompile Include="..\Modules\_abc.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_bisectmodule.c">
@@ -489,6 +516,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_pickle.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_queuemodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_randommodule.c">
@@ -613,39 +643,6 @@
     </ClCompile>
     <ClCompile Include="..\Modules\_io\_iomodule.c">
       <Filter>Modules\_io</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\adler32.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\compress.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\crc32.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\deflate.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\infback.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inffast.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inflate.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inftrees.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\trees.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\uncompr.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\zutil.c">
-      <Filter>Modules\zlib</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_cn.c">
       <Filter>Modules\cjkcodecs</Filter>
@@ -842,6 +839,12 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\ast_opt.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\ast_unparse.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -852,6 +855,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\context.h">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\dynamic_annotations.c">
@@ -896,6 +902,9 @@
     <ClCompile Include="..\Python\graminit.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\hamt.h">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\import.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -912,6 +921,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\mystrtoul.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\pathconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\peephole.c">
@@ -971,7 +983,7 @@
     <ClCompile Include="..\Python\traceback.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\random.c">
+    <ClCompile Include="..\Python\bootstrap_hash.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_winapi.c">
@@ -1000,6 +1012,48 @@
     </ClCompile>
     <ClCompile Include="..\Objects\odictobject.c">
       <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PC\_findvs.cpp">
+      <Filter>PC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_asynciomodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_contextvarsmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\adler32.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\compress.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\crc32.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\deflate.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\infback.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inffast.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inflate.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inftrees.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\trees.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\uncompr.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\zutil.c">
+      <Filter>Modules\zlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

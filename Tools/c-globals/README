@@ -1,0 +1,41 @@
+#######################################
+# C Globals and CPython Runtime State.
+
+CPython's C code makes extensive use of global variables.  Each global
+falls into one of several categories:
+
+* (effectively) constants (incl. static types)
+* globals used exclusively in main or in the REPL
+* freelists, caches, and counters
+* process-global state
+* module state
+* Python runtime state
+
+The ignored-globals.txt file is organized similarly.  Of the different
+categories, the last two are problematic and generally should not exist
+in the codebase.
+
+Globals that hold module state (i.e. in Modules/*.c) cause problems
+when multiple interpreters are in use.  For more info, see PEP 3121,
+which addresses the situation for extension modules in general.
+
+Globals in the last category should be avoided as well.  The problem
+isn't with the Python runtime having state.  Rather, the problem is with
+that state being spread throughout the codebase in dozens of individual
+globals.  Unlike the other globals, the runtime state represents a set
+of values that are constantly shifting in a complex way.  When they are
+spread out it's harder to get a clear picture of what the runtime
+involves.  Furthermore, when they are spread out it complicates efforts
+that change the runtime.
+
+Consequently, the globals for Python's runtime state have been
+consolidated under a single top-level _PyRuntime global. No new globals
+should be added for runtime state.  Instead, they should be added to
+_PyRuntimeState or one of its sub-structs.  The check-c-globals script
+should be run to ensure that no new globals have been added:
+
+  python3 Tools/c-globals/check-c-globals.py
+
+If it reports any globals then they should be resolved.  If the globals
+are runtime state then they should be folded into _PyRuntimeState.
+Otherwise they should be added to ignored-globals.txt.
