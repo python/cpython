@@ -15,6 +15,7 @@ except ImportError:
     ssl = None
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import errno
@@ -2158,7 +2159,7 @@ class SockSendfileMixin(SendfileBase):
         srv_sock.bind((support.HOST, port))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
-        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+        self.run_loop(self.loop.sock_connect(sock, ('127.0.0.1', port)))
 
         def cleanup():
             if proto.transport is not None:
@@ -2197,14 +2198,9 @@ class SockSendfileMixin(SendfileBase):
 
     def test_sock_sendfile_zero_size(self):
         sock, proto = self.prepare_socksendfile()
-        fname = support.TESTFN + '.zero'
-        with open(fname, 'wb') as f:
-            pass  # make zero sized file
-        f = open(fname, 'rb')
-        self.addCleanup(f.close)
-        self.addCleanup(support.unlink, fname)
-        ret = self.run_loop(self.loop.sock_sendfile(sock, f,
-                                                    0, None))
+        with tempfile.TemporaryFile() as f:
+            ret = self.run_loop(self.loop.sock_sendfile(sock, f,
+                                                        0, None))
         sock.close()
         self.run_loop(proto.wait_closed())
 
