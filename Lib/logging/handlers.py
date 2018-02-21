@@ -51,7 +51,7 @@ class BaseRotatingHandler(logging.FileHandler):
         """
         Use the specified filename for streamed logging
         """
-        logging.FileHandler.__init__(self, filename, mode, encoding, delay)
+        super().__init__(filename, mode, encoding, delay)
         self.mode = mode
         self.encoding = encoding
         self.namer = None
@@ -67,7 +67,7 @@ class BaseRotatingHandler(logging.FileHandler):
         try:
             if self.shouldRollover(record):
                 self.doRollover()
-            logging.FileHandler.emit(self, record)
+            super().emit(record)
         except Exception:
             self.handleError(record)
 
@@ -431,7 +431,7 @@ class WatchedFileHandler(logging.FileHandler):
     Schroeder.
     """
     def __init__(self, filename, mode='a', encoding=None, delay=False):
-        logging.FileHandler.__init__(self, filename, mode, encoding, delay)
+        super().__init__(filename, mode, encoding, delay)
         self.dev, self.ino = -1, -1
         self._statstream()
 
@@ -476,7 +476,7 @@ class WatchedFileHandler(logging.FileHandler):
         record to it.
         """
         self.reopenIfNeeded()
-        logging.FileHandler.emit(self, record)
+        super().emit(record)
 
 
 class SocketHandler(logging.Handler):
