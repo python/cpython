@@ -1,0 +1,2 @@
+ast.literal_eval() no longer accepts booleans as numbers when pass AST
+argument.

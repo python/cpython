@@ -692,6 +692,7 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertRaises(ValueError, ast.literal_eval, '3+-6j')
         self.assertRaises(ValueError, ast.literal_eval, '3+(0+6j)')
         self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
+        self.assertRaises(ValueError, ast.literal_eval, 'True+6j')
 
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
@@ -1219,6 +1220,11 @@ class ConstantTests(unittest.TestCase):
         binop.right = new_right
 
         self.assertEqual(ast.literal_eval(binop), 10+20j)
+
+        new_left = ast.Constant(value=True)
+        ast.copy_location(new_left, binop.left)
+        binop.left = new_left
+        self.assertRaises(ValueError, ast.literal_eval, binop)
 
 
 def main():
