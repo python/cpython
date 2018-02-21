@@ -2092,22 +2092,7 @@ class SubprocessTestsMixin:
             self.loop.run_until_complete(connect(shell=False))
 
 
-class MySendfileProto(MyBaseProto):
-
-    def __init__(self, loop=None, close_after=0):
-        super().__init__(loop)
-        self.data = bytearray()
-        self.close_after = close_after
-
-    def data_received(self, data):
-        self.data.extend(data)
-        super().data_received(data)
-        if self.close_after and self.nbytes >= self.close_after:
-            self.transport.close()
-
-
-class SendfileMixin:
-    # Note: sendfile via SSL transport is equal to sendfile fallback
+class SendfileBase:
 
     DATA = b"12345abcde" * 160 * 1024  # 160 KiB
 
@@ -2130,9 +2115,28 @@ class SendfileMixin:
     def run_loop(self, coro):
         return self.loop.run_until_complete(coro)
 
-    def prepare(self, *, is_ssl=False, close_after=0):
+
+class SendfileMixin(SendfileBase):
+    class MySendfileProto(MyBaseProto):
+
+        def __init__(self, loop=None, close_after=0):
+            super().__init__(loop)
+            self.data = bytearray()
+            self.close_after = close_after
+
+        def data_received(self, data):
+            self.data.extend(data)
+            super().data_received(data)
+            if self.close_after and self.nbytes >= self.close_after:
+                self.transport.close()
+
+
+    # Note: sendfile via SSL transport is equal to sendfile fallback
+
+    def prepare_sendfile(self, *, is_ssl=False, close_after=0):
         port = support.find_unused_port()
-        srv_proto = MySendfileProto(loop=self.loop, close_after=close_after)
+        srv_proto = self.MySendfileProto(loop=self.loop,
+                                         close_after=close_after)
         if is_ssl:
             if not ssl:
                 self.skipTest("No ssl module")
@@ -2156,7 +2160,7 @@ class SendfileMixin:
         # reduce send socket buffer size to test on relative small data sets
         cli_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
         cli_sock.connect((support.HOST, port))
-        cli_proto = MySendfileProto(loop=self.loop)
+        cli_proto = self.MySendfileProto(loop=self.loop)
         tr, pr = self.run_loop(self.loop.create_connection(
             lambda: cli_proto, sock=cli_sock,
             ssl=cli_ctx, server_hostname=server_hostname))
@@ -2189,7 +2193,7 @@ class SendfileMixin:
             tr.close()
 
     def test_sendfile(self):
-        srv_proto, cli_proto = self.prepare()
+        srv_proto, cli_proto = self.prepare_sendfile()
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file))
         cli_proto.transport.close()
@@ -2200,7 +2204,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_force_fallback(self):
-        srv_proto, cli_proto = self.prepare()
+        srv_proto, cli_proto = self.prepare_sendfile()
 
         def sendfile_native(transp, file, offset, count):
             # to raise SendfileNotAvailableError
@@ -2222,7 +2226,7 @@ class SendfileMixin:
         if sys.platform == 'win32':
             if isinstance(self.loop, asyncio.ProactorEventLoop):
                 self.skipTest("Fails on proactor event loop")
-        srv_proto, cli_proto = self.prepare()
+        srv_proto, cli_proto = self.prepare_sendfile()
 
         def sendfile_native(transp, file, offset, count):
             # to raise SendfileNotAvailableError
@@ -2243,7 +2247,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), 0)
 
     def test_sendfile_ssl(self):
-        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        srv_proto, cli_proto = self.prepare_sendfile(is_ssl=True)
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file))
         cli_proto.transport.close()
@@ -2254,7 +2258,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_for_closing_transp(self):
-        srv_proto, cli_proto = self.prepare()
+        srv_proto, cli_proto = self.prepare_sendfile()
         cli_proto.transport.close()
         with self.assertRaisesRegex(RuntimeError, "is closing"):
             self.run_loop(self.loop.sendfile(cli_proto.transport, self.file))
@@ -2263,7 +2267,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), 0)
 
     def test_sendfile_pre_and_post_data(self):
-        srv_proto, cli_proto = self.prepare()
+        srv_proto, cli_proto = self.prepare_sendfile()
         PREFIX = b'zxcvbnm' * 1024
         SUFFIX = b'0987654321' * 1024
         cli_proto.transport.write(PREFIX)
@@ -2277,7 +2281,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_ssl_pre_and_post_data(self):
-        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        srv_proto, cli_proto = self.prepare_sendfile(is_ssl=True)
         PREFIX = b'zxcvbnm' * 1024
         SUFFIX = b'0987654321' * 1024
         cli_proto.transport.write(PREFIX)
@@ -2291,7 +2295,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_partial(self):
-        srv_proto, cli_proto = self.prepare()
+        srv_proto, cli_proto = self.prepare_sendfile()
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file, 1000, 100))
         cli_proto.transport.close()
@@ -2302,7 +2306,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), 1100)
 
     def test_sendfile_ssl_partial(self):
-        srv_proto, cli_proto = self.prepare(is_ssl=True)
+        srv_proto, cli_proto = self.prepare_sendfile(is_ssl=True)
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file, 1000, 100))
         cli_proto.transport.close()
@@ -2313,7 +2317,8 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), 1100)
 
     def test_sendfile_close_peer_after_receiving(self):
-        srv_proto, cli_proto = self.prepare(close_after=len(self.DATA))
+        srv_proto, cli_proto = self.prepare_sendfile(
+            close_after=len(self.DATA))
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file))
         cli_proto.transport.close()
@@ -2324,8 +2329,8 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_ssl_close_peer_after_receiving(self):
-        srv_proto, cli_proto = self.prepare(is_ssl=True,
-                                            close_after=len(self.DATA))
+        srv_proto, cli_proto = self.prepare_sendfile(
+            is_ssl=True, close_after=len(self.DATA))
         ret = self.run_loop(
             self.loop.sendfile(cli_proto.transport, self.file))
         self.run_loop(srv_proto.done)
@@ -2335,7 +2340,7 @@ class SendfileMixin:
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_close_peer_in_middle_of_receiving(self):
-        srv_proto, cli_proto = self.prepare(close_after=1024)
+        srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file))
@@ -2356,7 +2361,7 @@ class SendfileMixin:
 
         self.loop._sendfile_native = sendfile_native
 
-        srv_proto, cli_proto = self.prepare(close_after=1024)
+        srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file))
@@ -2370,7 +2375,7 @@ class SendfileMixin:
     @unittest.skipIf(not hasattr(os, 'sendfile'),
                      "Don't have native sendfile support")
     def test_sendfile_prevents_bare_write(self):
-        srv_proto, cli_proto = self.prepare()
+        srv_proto, cli_proto = self.prepare_sendfile()
         fut = self.loop.create_future()
 
         async def coro():
