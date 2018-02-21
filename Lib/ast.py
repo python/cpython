@@ -48,7 +48,7 @@ def literal_eval(node_or_string):
         node_or_string = node_or_string.body
     def _convert_num(node):
         if isinstance(node, Constant):
-            if isinstance(node.value, (int, float, complex)):
+            if type(node.value) in (int, float, complex):
                 return node.value
         elif isinstance(node, Num):
             return node.n
@@ -82,7 +82,7 @@ def literal_eval(node_or_string):
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
             left = _convert_signed_num(node.left)
             right = _convert_num(node.right)
-            if isinstance(left, (int, float)) and isinstance(right, complex):
+            if type(left) in (int, float) and type(right) is complex:
                 if isinstance(node.op, Add):
                     return left + right
                 else:
