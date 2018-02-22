@@ -701,6 +701,17 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'bpo-32457 only applies on Windows')
+    def test_argv0_normalization(self):
+        args = sys.executable, '-c', 'print(0)'
+        prefix, exe = os.path.split(sys.executable)
+        executable = prefix + '\\.\\.\\.\\' + exe
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              executable=executable)
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.strip(), b'0')
 
 @unittest.skipIf(interpreter_requires_environment(),
                  'Cannot run -I tests when PYTHON env vars are required.')
