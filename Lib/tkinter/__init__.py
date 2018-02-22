@@ -739,6 +739,7 @@ class Misc:
         if not func:
             # I'd rather use time.sleep(ms*0.001)
             self.tk.call('after', ms)
+            return None
         else:
             def callit():
                 try:
