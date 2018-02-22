@@ -26,6 +26,10 @@ enum {
     DEFAULT_PROTOCOL = 3
 };
 
+#ifdef __VXWORKS__
+#undef NONE
+#endif
+
 /* Pickle opcodes. These must be kept updated with pickle.py.
    Extensive docs are in pickletools.py. */
 enum opcode {
