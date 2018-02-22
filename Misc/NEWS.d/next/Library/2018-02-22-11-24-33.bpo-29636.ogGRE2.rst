@@ -1,0 +1,5 @@
+Add whitespace options for formatting JSON with the ``json.tool`` CLI. The
+following mutually exclusive options are now supported: ``--indent`` for
+setting the indent level in spaces; ``--tab`` for indenting with tabs;
+``--no-indent`` for suppressing newlines; and ``--compact`` for suppressing
+all whitespace. The default behavior remains the same as ``--indent=4``.
