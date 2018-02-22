@@ -97,10 +97,11 @@ void
 dump_counts(FILE* f)
 {
     PyInterpreterState *interp = PyThreadState_GET()->interp;
-    if (!inter->core_config.show_alloc_count) {
+    if (!interp->core_config.show_alloc_count) {
         return;
     }
 
+    PyTypeObject *tp;
     for (tp = type_list; tp; tp = tp->tp_next)
         fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "
             "freed: %" PY_FORMAT_SIZE_T "d, "

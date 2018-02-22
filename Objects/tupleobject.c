@@ -45,7 +45,7 @@ static void
 show_track(void)
 {
     PyInterpreterState *interp = PyThreadState_GET()->interp;
-    if (!inter->core_config.show_alloc_count) {
+    if (!interp->core_config.show_alloc_count) {
         return;
     }
 
