@@ -1,0 +1,20 @@
+Found a issue
+
+when i use the code
+
+a = 1
+b = input("enter a number")
+sum = b + b
+print(sum)
+
+
+
+
+
+output shows
+enter a number : a
+2
+
+when user input value a then the input function works like b = a
+but the output i expect is a error, because input function in python 2.7 can only have int value
+the above code (b = input("")) is working as b = a
