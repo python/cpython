@@ -5489,6 +5489,28 @@ class CapiTest(unittest.TestCase):
 
                 self.assertEqual(dt1.astimezone(timezone.utc), dt_utc)
 
+    def test_timezones_offset_zero(self):
+        utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()
+
+        with self.subTest(testname="utc0"):
+            self.assertIs(utc0, timezone.utc)
+
+        with self.subTest(testname="utc1"):
+            self.assertIs(utc1, timezone.utc)
+
+        with self.subTest(testname="non_utc"):
+            self.assertIsNot(non_utc, timezone.utc)
+
+            non_utc_exp = timezone(timedelta(hours=0), "")
+
+            self.assertEqual(non_utc, non_utc_exp)
+
+            dt1 = datetime(2000, 2, 4, tzinfo=non_utc)
+            dt2 = datetime(2000, 2, 4, tzinfo=non_utc_exp)
+
+            self.assertEqual(dt1, dt2)
+            self.assertEqual(dt1.tzname(), dt2.tzname())
+
     def test_check_date(self):
         class DateSubclass(date):
             pass
