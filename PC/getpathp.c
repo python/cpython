@@ -241,6 +241,36 @@ join(wchar_t *buffer, const wchar_t *stuff)
     }
 }
 
+static int _PathCchCanonicalizeEx_Initialized = 0;
+typedef HRESULT(__stdcall *PPathCchCanonicalizeEx) (PWSTR pszPathOut, size_t cchPathOut,
+    PCWSTR pszPathIn, unsigned long dwFlags);
+static PPathCchCanonicalizeEx _PathCchCanonicalizeEx;
+
+static void canonicalize(wchar_t *buffer, const wchar_t *path)
+{
+    if (_PathCchCanonicalizeEx_Initialized == 0) {
+        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        if (pathapi) {
+            _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
+        }
+        else {
+            _PathCchCanonicalizeEx = NULL;
+        }
+        _PathCchCanonicalizeEx_Initialized = 1;
+    }
+
+    if (_PathCchCanonicalizeEx) {
+        if (FAILED(_PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+            Py_FatalError("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+    else {
+        if (!PathCanonicalizeW(buffer, path)) {
+            Py_FatalError("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+}
+
 /* gotlandmark only called by search_for_prefix, which ensures
    'prefix' is null terminated in bounds.  join() ensures
    'landmark' can not overflow prefix if too long.
@@ -431,6 +461,7 @@ static void
 get_progpath(void)
 {
     extern wchar_t *Py_GetProgramName(void);
+    wchar_t modulepath[MAXPATHLEN];
     wchar_t *path = _wgetenv(L"PATH");
     wchar_t *prog = Py_GetProgramName();
 
@@ -443,8 +474,10 @@ get_progpath(void)
 #else
     dllpath[0] = 0;
 #endif
-    if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
+    if (GetModuleFileNameW(NULL, modulepath, MAXPATHLEN)) {
+        canonicalize(progpath, modulepath);
         return;
+    }
     if (prog == NULL || *prog == '\0')
         prog = L"python";
 
