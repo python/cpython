@@ -1,4 +1,7 @@
-"""Unittest for idlelib.pyparse.py."""
+"""Unittest for idlelib.pyparse.py.
+
+Coverage: 97%
+"""
 
 from collections import namedtuple
 import unittest
@@ -272,8 +275,6 @@ class PyParseTest(unittest.TestCase):
             )
 
         for test in tests:
-            # There is a bug where this is carried forward from last item.
-            p.lastopenbracketpos = None
             with self.subTest(string=test.string):
                 setstr(test.string)
                 study()
@@ -463,33 +464,6 @@ class PyParseTest(unittest.TestCase):
             with self.subTest(string=test.string):
                 setstr(test.string)
                 test.assert_(closer())
-
-    def test_get_last_open_bracket_pos(self):
-        eq = self.assertEqual
-        p = self.parser
-        setstr = p.set_str
-        openbracket = p.get_last_open_bracket_pos
-
-        TestInfo = namedtuple('TestInfo', ['string', 'position'])
-        tests = (
-            TestInfo('', None),
-            TestInfo('a\n', None),
-            TestInfo('# (\n', None),
-            TestInfo('""" (\n', None),
-            TestInfo('a = (1 + 2) - 5 *\\\n', None),
-            TestInfo('\n   def function1(self, a,\n', 17),
-            TestInfo('\n   def function1(self, a,  # End of line comment.\n', 17),
-            TestInfo('{)(]\n', None),
-            TestInfo('(((((((((()))))))\n', 2),
-            TestInfo('(((((((((())\n)))\n))\n', 2),
-            )
-
-        for test in tests:
-            # There is a bug where the value is carried forward from last item.
-            p.lastopenbracketpos = None
-            with self.subTest(string=test.string):
-                setstr(test.string)
-                eq(openbracket(), test.position)
 
     def test_get_last_stmt_bracketing(self):
         eq = self.assertEqual
