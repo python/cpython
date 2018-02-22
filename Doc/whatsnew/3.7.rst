@@ -859,6 +859,11 @@ Optimizations
   start-up time by up to 10%. (Contributed by Ivan Levkivskyi and INADA Naoki
   in :issue:`31333`)
 
+* Significant speed improvements to alternate constructors for
+  :class:`datetime.date` and :class:`datetime.datetime` by using fast-path
+  constructors when not constructing subclasses. (Contributed by Paul Ganssle
+  in :issue:`32403`)
+
 Build and C API Changes
 =======================
 
