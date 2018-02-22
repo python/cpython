@@ -11,12 +11,12 @@ import importlib
 import sys
 import time
 import shutil
+import threading
 import unittest
 from unittest import mock
 from test.support import (
     verbose, import_module, run_unittest, TESTFN, reap_threads,
     forget, unlink, rmtree, start_threads)
-threading = import_module('threading')
 
 def task(N, done, done_tasks, errors):
     try:
@@ -230,7 +230,8 @@ class ThreadedImportTests(unittest.TestCase):
                 import random
             t = threading.Thread(target=target)
             t.start()
-            t.join()"""
+            t.join()
+            t = None"""
         sys.path.insert(0, os.curdir)
         self.addCleanup(sys.path.remove, os.curdir)
         filename = TESTFN + ".py"
@@ -241,6 +242,7 @@ class ThreadedImportTests(unittest.TestCase):
         self.addCleanup(rmtree, '__pycache__')
         importlib.invalidate_caches()
         __import__(TESTFN)
+        del sys.modules[TESTFN]
 
 
 @reap_threads

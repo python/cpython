@@ -7,6 +7,7 @@ import io
 import sys
 import struct
 import aifc
+import warnings
 
 
 class AifcTest(audiotests.AudioWriteTests,
@@ -144,7 +145,9 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
         frames = byteswap(frames, 2)
 
 
-class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
+class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
+    module = aifc
+
     def test_skipunknown(self):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.
@@ -262,6 +265,14 @@ class AIFCLowLevelTest(unittest.TestCase):
     def test_read_no_comm_chunk(self):
         b = io.BytesIO(b'FORM' + struct.pack('>L', 4) + b'AIFF')
         self.assertRaises(aifc.Error, aifc.open, b)
+
+    def test_read_no_ssnd_chunk(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 38, 0, 0, 0, 0, 0, 0)
+        b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+        with self.assertRaisesRegex(aifc.Error, 'COMM chunk and/or SSND chunk'
+                                                ' missing'):
+            aifc.open(io.BytesIO(b))
 
     def test_read_wrong_compression_type(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'

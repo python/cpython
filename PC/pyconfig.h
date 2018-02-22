@@ -112,8 +112,6 @@ WIN32 is still required for the locale module.
    defined on Win32 *and* Win64. Win32 only code must therefore be
    guarded as follows:
         #if defined(MS_WIN32) && !defined(MS_WIN64)
-   Some modules are disabled on Itanium processors, therefore we
-   have MS_WINI64 set for those targets, otherwise MS_WINX64
 */
 #ifdef _WIN64
 #define MS_WIN64
@@ -121,17 +119,12 @@ WIN32 is still required for the locale module.
 
 /* set the COMPILER */
 #ifdef MS_WIN64
-#if defined(_M_IA64)
-#define COMPILER _Py_PASTE_VERSION("64 bit (Itanium)")
-#define MS_WINI64
-#define PYD_PLATFORM_TAG "win_ia64"
-#elif defined(_M_X64) || defined(_M_AMD64)
+#if defined(_M_X64) || defined(_M_AMD64)
 #if defined(__INTEL_COMPILER)
 #define COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 64 bit (amd64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #endif /* __INTEL_COMPILER */
-#define MS_WINX64
 #define PYD_PLATFORM_TAG "win_amd64"
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
@@ -150,7 +143,7 @@ WIN32 is still required for the locale module.
    structures etc so it can optionally use new Windows features if it
    determines at runtime they are available.
 */
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN) || defined(Py_BUILD_CORE_MODULE)
 #ifndef NTDDI_VERSION
 #define NTDDI_VERSION Py_NTDDI
 #endif
@@ -284,17 +277,18 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* For an MSVC DLL, we can nominate the .lib files used by extensions */
 #ifdef MS_COREDLL
-#       ifndef Py_BUILD_CORE /* not building the core - must be an ext */
+#       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+                /* not building the core - must be an ext */
 #               if defined(_MSC_VER)
-                        /* So MSVC users need not specify the .lib file in
-                        their Makefile (other compilers are generally
-                        taken care of by distutils.) */
+                        /* So MSVC users need not specify the .lib
+                        file in their Makefile (other compilers are
+                        generally taken care of by distutils.) */
 #                       if defined(_DEBUG)
-#                               pragma comment(lib,"python37_d.lib")
+#                               pragma comment(lib,"python38_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
-#                               pragma comment(lib,"python37.lib")
+#                               pragma comment(lib,"python38.lib")
 #                       endif /* _DEBUG */
 #               endif /* _MSC_VER */
 #       endif /* Py_BUILD_CORE */
@@ -692,5 +686,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* framework name */
 #define _PYTHONFRAMEWORK ""
+
+/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
+#define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
 
 #endif /* !Py_CONFIG_H */

@@ -237,6 +237,23 @@ class ImportTests(unittest.TestCase):
         import test.support as y
         self.assertIs(y, test.support, y.__name__)
 
+    def test_issue31286(self):
+        # import in a 'finally' block resulted in SystemError
+        try:
+            x = ...
+        finally:
+            import test.support.script_helper as x
+
+        # import in a 'while' loop resulted in stack overflow
+        i = 0
+        while i < 10:
+            import test.support.script_helper as x
+            i += 1
+
+        # import in a 'for' loop resulted in segmentation fault
+        for i in range(2):
+            import test.support.script_helper as x
+
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
         source = TESTFN + os.extsep + "py"
@@ -382,6 +399,18 @@ class ImportTests(unittest.TestCase):
 
         self.assertEqual(str(cm.exception),
             "cannot import name 'does_not_exist' from '<unknown module name>' (unknown location)")
+
+    @cpython_only
+    def test_issue31492(self):
+        # There shouldn't be an assertion failure in case of failing to import
+        # from a module with a bad __name__ attribute, or in case of failing
+        # to access an attribute of such a module.
+        with swap_attr(os, '__name__', None):
+            with self.assertRaises(ImportError):
+                from os import does_not_exist
+
+            with self.assertRaises(AttributeError):
+                os.does_not_exist
 
     def test_concurrency(self):
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
@@ -569,7 +598,7 @@ func_filename = func.__code__.co_filename
     def test_foreign_code(self):
         py_compile.compile(self.file_name)
         with open(self.compiled_name, "rb") as f:
-            header = f.read(12)
+            header = f.read(16)
             code = marshal.load(f)
         constants = list(code.co_consts)
         foreign_code = importlib.import_module.__code__

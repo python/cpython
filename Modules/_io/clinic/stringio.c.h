@@ -54,7 +54,7 @@ static PyObject *
 _io_StringIO_read_impl(stringio *self, Py_ssize_t size);
 
 static PyObject *
-_io_StringIO_read(stringio *self, PyObject **args, Py_ssize_t nargs)
+_io_StringIO_read(stringio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -84,7 +84,7 @@ static PyObject *
 _io_StringIO_readline_impl(stringio *self, Py_ssize_t size);
 
 static PyObject *
-_io_StringIO_readline(stringio *self, PyObject **args, Py_ssize_t nargs)
+_io_StringIO_readline(stringio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -116,7 +116,7 @@ static PyObject *
 _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size);
 
 static PyObject *
-_io_StringIO_truncate(stringio *self, PyObject **args, Py_ssize_t nargs)
+_io_StringIO_truncate(stringio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = self->pos;
@@ -150,7 +150,7 @@ static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence);
 
 static PyObject *
-_io_StringIO_seek(stringio *self, PyObject **args, Py_ssize_t nargs)
+_io_StringIO_seek(stringio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
@@ -286,4 +286,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=a5e963d90b4eedc0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73c4d6e5cc3b1a58 input=a9049054013a1b77]*/

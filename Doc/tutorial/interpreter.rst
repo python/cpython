@@ -10,13 +10,13 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python3.7`
+The Python interpreter is usually installed as :file:`/usr/local/bin/python3.8`
 on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command:
 
 .. code-block:: text
 
-   python3.7
+   python3.8
 
 to the shell. [#]_ Since the choice of the directory where the interpreter lives
 is an installation option, other places are possible; check with your local
@@ -98,8 +98,8 @@ before printing the first prompt:
 
 .. code-block:: shell-session
 
-   $ python3.7
-   Python 3.7 (default, Sep 16 2015, 09:25:04)
+   $ python3.8
+   Python 3.8 (default, Sep 16 2015, 09:25:04)
    [GCC 4.8.2] on linux
    Type "help", "copyright", "credits" or "license" for more information.
    >>>

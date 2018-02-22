@@ -11,7 +11,6 @@ Usage::
 
 """
 import argparse
-import collections
 import json
 import sys
 
@@ -41,10 +40,9 @@ def main():
                         help='sort the output of dictionaries by key')
     options = parser.parse_args()
 
-    hook = collections.OrderedDict if options.sort_keys else None
     with options.infile as infile:
         try:
-            obj = json.load(infile, object_pairs_hook=hook)
+            obj = json.load(infile)
         except ValueError as e:
             raise SystemExit(e)
 

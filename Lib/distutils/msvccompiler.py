@@ -172,7 +172,7 @@ def get_build_version():
 def get_build_architecture():
     """Return the processor architecture.
 
-    Possible results are "Intel", "Itanium", or "AMD64".
+    Possible results are "Intel" or "AMD64".
     """
 
     prefix = " bit ("

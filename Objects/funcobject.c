@@ -2,6 +2,8 @@
 /* Function object implementation */
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "code.h"
 #include "structmember.h"
 
@@ -707,7 +709,7 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable))
         return -1;
     Py_INCREF(callable);
-    cm->cm_callable = callable;
+    Py_XSETREF(cm->cm_callable, callable);
     return 0;
 }
 
@@ -888,7 +890,7 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable))
         return -1;
     Py_INCREF(callable);
-    sm->sm_callable = callable;
+    Py_XSETREF(sm->sm_callable, callable);
     return 0;
 }
 

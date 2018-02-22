@@ -543,6 +543,28 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
          >>> ip_network('192.0.2.0/24').supernet(new_prefix=20)
          IPv4Network('192.0.0.0/20')
 
+   .. method:: subnet_of(other)
+
+      Returns *True* if this network is a subnet of *other*.
+
+        >>> a = ip_network('192.168.1.0/24')
+        >>> b = ip_network('192.168.1.128/30')
+        >>> b.subnet_of(a)
+        True
+
+      .. versionadded:: 3.7
+
+   .. method:: supernet_of(other)
+
+      Returns *True* if this network is a supernet of *other*.
+
+        >>> a = ip_network('192.168.1.0/24')
+        >>> b = ip_network('192.168.1.128/30')
+        >>> a.supernet_of(b)
+        True
+
+      .. versionadded:: 3.7
+
    .. method:: compare_networks(other)
 
       Compare this network to *other*.  In this comparison only the network
@@ -621,6 +643,8 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. method:: address_exclude(network)
    .. method:: subnets(prefixlen_diff=1, new_prefix=None)
    .. method:: supernet(prefixlen_diff=1, new_prefix=None)
+   .. method:: subnet_of(other)
+   .. method:: supernet_of(other)
    .. method:: compare_networks(other)
 
       Refer to the corresponding attribute documentation in

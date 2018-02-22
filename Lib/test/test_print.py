@@ -1,4 +1,5 @@
 import unittest
+import sys
 from io import StringIO
 
 from test import support
@@ -154,6 +155,64 @@ class TestPy2MigrationHint(unittest.TestCase):
             exec(python2_print_str)
 
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
+
+    def test_string_with_leading_whitespace(self):
+        python2_print_str = '''if 1:
+            print "Hello World"
+        '''
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print("Hello World")', str(context.exception))
+
+    # bpo-32685: Suggestions for print statement should be proper when
+    # it is in the same line as the header of a compound statement
+    # and/or followed by a semicolon
+    def test_string_with_semicolon(self):
+        python2_print_str = 'print p;'
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print(p)', str(context.exception))
+
+    def test_string_in_loop_on_same_line(self):
+        python2_print_str = 'for i in s: print i'
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print(i)', str(context.exception))
+
+    def test_stream_redirection_hint_for_py2_migration(self):
+        # Test correct hint produced for Py2 redirection syntax
+        with self.assertRaises(TypeError) as context:
+            print >> sys.stderr, "message"
+        self.assertIn('Did you mean "print(<message>, '
+                'file=<output_stream>)"?', str(context.exception))
+
+        # Test correct hint is produced in the case where RHS implements
+        # __rrshift__ but returns NotImplemented
+        with self.assertRaises(TypeError) as context:
+            print >> 42
+        self.assertIn('Did you mean "print(<message>, '
+                'file=<output_stream>)"?', str(context.exception))
+
+        # Test stream redirection hint is specific to print
+        with self.assertRaises(TypeError) as context:
+            max >> sys.stderr
+        self.assertNotIn('Did you mean ', str(context.exception))
+
+        # Test stream redirection hint is specific to rshift
+        with self.assertRaises(TypeError) as context:
+            print << sys.stderr
+        self.assertNotIn('Did you mean', str(context.exception))
+
+        # Ensure right operand implementing rrshift still works
+        class OverrideRRShift:
+            def __rrshift__(self, lhs):
+                return 42 # Force result independent of LHS
+
+        self.assertEqual(print >> OverrideRRShift(), 42)
+
 
 
 if __name__ == "__main__":

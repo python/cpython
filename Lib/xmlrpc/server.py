@@ -270,10 +270,14 @@ class SimpleXMLRPCDispatcher:
         except:
             # report exception back to server
             exc_type, exc_value, exc_tb = sys.exc_info()
-            response = dumps(
-                Fault(1, "%s:%s" % (exc_type, exc_value)),
-                encoding=self.encoding, allow_none=self.allow_none,
-                )
+            try:
+                response = dumps(
+                    Fault(1, "%s:%s" % (exc_type, exc_value)),
+                    encoding=self.encoding, allow_none=self.allow_none,
+                    )
+            finally:
+                # Break reference cycle
+                exc_type = exc_value = exc_tb = None
 
         return response.encode(self.encoding, 'xmlcharrefreplace')
 
@@ -365,10 +369,14 @@ class SimpleXMLRPCDispatcher:
                     )
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
-                results.append(
-                    {'faultCode' : 1,
-                     'faultString' : "%s:%s" % (exc_type, exc_value)}
-                    )
+                try:
+                    results.append(
+                        {'faultCode' : 1,
+                         'faultString' : "%s:%s" % (exc_type, exc_value)}
+                        )
+                finally:
+                    # Break reference cycle
+                    exc_type = exc_value = exc_tb = None
         return results
 
     def _dispatch(self, method, params):
@@ -630,10 +638,14 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
             # (each dispatcher should have handled their own
             # exceptions)
             exc_type, exc_value = sys.exc_info()[:2]
-            response = dumps(
-                Fault(1, "%s:%s" % (exc_type, exc_value)),
-                encoding=self.encoding, allow_none=self.allow_none)
-            response = response.encode(self.encoding, 'xmlcharrefreplace')
+            try:
+                response = dumps(
+                    Fault(1, "%s:%s" % (exc_type, exc_value)),
+                    encoding=self.encoding, allow_none=self.allow_none)
+                response = response.encode(self.encoding, 'xmlcharrefreplace')
+            finally:
+                # Break reference cycle
+                exc_type = exc_value = None
         return response
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):

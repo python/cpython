@@ -15,6 +15,7 @@ class HTTPStatus(IntEnum):
         * RFC 7238: Permanent Redirect
         * RFC 2295: Transparent Content Negotiation in HTTP
         * RFC 2774: An HTTP Extension Framework
+        * RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
     """
     def __new__(cls, value, phrase, description=''):
         obj = int.__new__(cls, value)
@@ -98,6 +99,8 @@ class HTTPStatus(IntEnum):
         'Cannot satisfy request range')
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
+    MISDIRECTED_REQUEST = (421, 'Misdirected Request',
+        'Server is not able to produce a response')
     UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
     LOCKED = 423, 'Locked'
     FAILED_DEPENDENCY = 424, 'Failed Dependency'
