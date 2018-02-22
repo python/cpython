@@ -18,6 +18,10 @@ print_footer ()
 	config_args := $@
 	py_srcdir := $PY_SRCDIR
 	makefile := $makefile
+	# Cannot use \$CURDIR as, because of some distutils bug, the Makefile must
+	# also be run from the setup.py directory when building third-party
+	# extension modules.
+	MAKEFILE_DIR := \$(dir \$(abspath \$(lastword \$(MAKEFILE_LIST))))
 	include \$(py_srcdir)/Android/build.mk
 	EOF
 }

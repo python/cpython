@@ -3,9 +3,9 @@
 # Directory names.
 py_version := $(shell cat $(py_srcdir)/configure | \
                 sed -e "s/^PACKAGE_VERSION=['\"]*\([0-9]*\.[0-9]*\)['\"]*$$\|^.*$$/\1/" -e "/^$$/d")
-export BUILD_DIR := $(CURDIR)/build
-export DIST_DIR := $(CURDIR)/dist
-avd_dir := $(CURDIR)/avd
+export BUILD_DIR := $(MAKEFILE_DIR)build
+export DIST_DIR := $(MAKEFILE_DIR)dist
+avd_dir := $(MAKEFILE_DIR)avd
 native_build_dir := $(BUILD_DIR)/python-native
 py_name := python$(py_version)
 export BUILD_TYPE := android-$(ANDROID_API)-$(ANDROID_ARCH)
@@ -58,7 +58,7 @@ native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Set
 	$(MAKE) -C $(native_build_dir)
 
 # Target-specific exported variables.
-build configure host python_dist hostclean: \
+build configure host python_dist setup hostclean: \
                     export PATH := $(native_build_dir):$(PATH)
 external_libraries: export CC := $(CC)
 external_libraries: export AR := $(AR)
@@ -194,6 +194,12 @@ $(PY_STDLIB_ZIP): python_dist
 	    zip -Drg $(PY_STDLIB_ZIP) $$SYS_PREFIX/$(STDLIB_DIR)* \
 	        -x \*.so \*.pyo \*opt-\*.pyc
 
+# Build and install a third-party extension module from the setup.py directory:
+#     make -f /path/to/Makefile/generated/by/makesetup setup
+setup: required
+	CROSS_BUILD_PYTHON_DIR=$(PY_DESTDIR)/$(SYS_EXEC_PREFIX) \
+	    $(native_python_exe) setup.py install; \
+
 # Make things clean, before making a distribution.
 distclean: kill_emulator hostclean
 	rm -f $(PYTHON_ZIP)
@@ -235,5 +241,5 @@ else
 endif
 
 .PHONY: build configure prefixes disabled_modules host native_python \
-        external_libraries openssl \
+        external_libraries openssl setup \
         dist python_dist distclean hostclean clean
