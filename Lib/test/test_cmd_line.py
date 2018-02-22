@@ -489,6 +489,18 @@ class CmdLineTest(unittest.TestCase):
                                           cwd=tmpdir)
             self.assertEqual(out.strip(), b"ok")
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'bpo-32457 only applies on Windows')
+    def test_argv0_normalization(self):
+        args = sys.executable, '-c', 'print(0)'
+        prefix, exe = os.path.split(sys.executable)
+        executable = prefix + '\\.\\.\\.\\' + exe
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              executable=executable)
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.strip(), b'0')
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
