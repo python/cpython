@@ -1520,6 +1520,11 @@ class _BasePathTest(object):
             self._check_resolve_relative(p, P(BASE, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks
         d = tempfile.mkdtemp(suffix='-dirD')
+        # bpo-32907: Canonicalize the temporary directory path since
+        # it is used in comparisons with other canonicalized paths below.
+        # Use Path.resolve() instead of os.path.realpath() to ensure that
+        # symlinks and "short" (8.3) filenames are resolved on Windows.
+        d = str(P(d).resolve())
         self.addCleanup(support.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
