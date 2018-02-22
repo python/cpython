@@ -2366,8 +2366,7 @@ features:
 
    .. attribute:: st_ino
 
-      Inode number. On Windows, this is an arbitrary value that uniquely
-      identifies the file on its device.
+      Inode number.
 
    .. attribute:: st_dev
 
@@ -2527,8 +2526,8 @@ features:
       Added the :attr:`st_file_attributes` member on Windows.
 
    .. versionchanged:: 3.5
-      Windows now returns an arbitrary but useful value for
-      :attr:`st_ino`.
+      Windows now returns the `file index
+      <https://msdn.microsoft.com/en-us/library/aa363788>`_ as :attr:`st_ino`.
 
    .. versionadded:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
