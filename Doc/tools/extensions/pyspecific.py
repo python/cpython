@@ -204,7 +204,8 @@ class DeprecatedRemoved(Directive):
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
-        text = self._label % version
+        label = translators['sphinx'].gettext(self._label)
+        text = label % version
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
                                                       self.lineno+1)
@@ -222,11 +223,11 @@ class DeprecatedRemoved(Directive):
                 content += node[0].children
                 node[0].replace_self(nodes.paragraph('', '', content, translatable=False))
             node[0].insert(0, nodes.inline('', '%s: ' % text,
-                                           classes=['versionmodified'], translatable=True))
+                                           classes=['versionmodified']))
         else:
             para = nodes.paragraph('', '',
                                    nodes.inline('', '%s.' % text,
-                                                classes=['versionmodified'], translatable=True),
+                                                classes=['versionmodified']),
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
