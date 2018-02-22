@@ -228,6 +228,7 @@
     <ClInclude Include="$(zlibDir)\zutil.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\_abc.c" />
     <ClCompile Include="..\Modules\_asynciomodule.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
     <ClCompile Include="..\Modules\_blake2\blake2module.c" />
@@ -279,6 +280,7 @@
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
+    <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
     <ClCompile Include="..\Modules\zipimport.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
