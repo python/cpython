@@ -246,6 +246,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.7a2  3391 (update GET_AITER #31709)
 #     Python 3.7a4  3392 (PEP 552: Deterministic pycs #31650)
 #     Python 3.7b1  3393 (remove STORE_ANNOTATION opcode #32550)
+#     Python 3.8a1  3400 (move frame block handling to compiler #17611)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -254,7 +255,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3393).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3400).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
