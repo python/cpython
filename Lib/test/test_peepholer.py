@@ -268,7 +268,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 6)
+        self.assertLessEqual(len(returns), 6)
 
     def test_elim_jump_after_return2(self):
         # Eliminate dead code: jumps immediately after returns can't be reached
@@ -282,7 +282,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 2)
+        self.assertLessEqual(len(returns), 2)
 
     def test_make_function_doesnt_bail(self):
         def f():
