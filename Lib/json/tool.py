@@ -26,18 +26,20 @@ def main():
     parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
                         default=sys.stdout,
                         help='write the output of infile to outfile')
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--indent', default=4, type=int,
-                       help='Indent level (number of spaces) for '
-                       'pretty-printing. Defaults to 4.')
-    group.add_argument('--no-indent', action='store_const', dest='indent',
-                       const=None, help='Use compact mode.')
-    group.add_argument('--tab', action='store_const', dest='indent',
-                       const='\t', help='Use tabs for indentation.')
-    group.add_argument('--compact', action='store_true',
-                       help='Use most compact whitespace format.')
     parser.add_argument('--sort-keys', action='store_true',
                         help='sort the output of dictionaries by key')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--indent', default=4, type=int,
+                       help='separate items with newlines and use this number '
+                       'of spaces for indentation')
+    group.add_argument('--tab', action='store_const', dest='indent',
+                       const='\t', help='separate items with newlines and use '
+                       'tabs for indentation')
+    group.add_argument('--no-indent', action='store_const', dest='indent',
+                       const=None,
+                       help='separate items with spaces rather than newlines')
+    group.add_argument('--compact', action='store_true',
+                       help='suppress all whitespace separation (most compact)')
     options = parser.parse_args()
 
     with options.infile as infile:
