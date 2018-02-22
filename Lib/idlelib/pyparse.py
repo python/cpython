@@ -18,10 +18,6 @@ import sys
 (C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,
  C_STRING_NEXT_LINES, C_BRACKET) = range(5)
 
-if 0:   # for throwaway debugging output
-    def dump(*stuff):
-        sys.__stdout__.write(" ".join(map(str, stuff)) + "\n")
-
 # Find what looks like the start of a popular statement.
 
 _synchre = re.compile(r"""
