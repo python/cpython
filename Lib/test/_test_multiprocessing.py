@@ -583,26 +583,52 @@ class _TestProcess(BaseTestCase):
         proc.join()
         self.assertTrue(evt.is_set())
 
-    @classmethod
-    def _test_error_on_stdio_flush(self, evt):
+    @staticmethod
+    def closeIO(stream_name, evt, type_):
+        if type_ == 'threads':
+            # it is safe to close std streams in another process, but if thread
+            # are used, we must not close the original std streams
+            closed_stream = io.StringIO()
+            closed_stream.close()
+            setattr(sys, stream_name, closed_stream)
+        else:
+            # using StringIO is not the same as using a real closed file,
+            # because a closed StringIO throws no exception when its flush
+            # method is called
+            getattr(sys, stream_name).close()
         evt.set()
 
-    def test_error_on_stdio_flush(self):
-        streams = [io.StringIO(), None]
-        streams[0].close()
+    @staticmethod
+    def removeIO(stream_name, evt, type_):
+        setattr(sys, stream_name, None)
+        evt.set()
+
+    def test_closed_stdio(self):
+        """
+        bpo-28326: multiprocessing.Process depends on sys.stdout being open
+        """
+        self.run_process(self.closeIO)
+
+    def test_no_stdio(self):
+        """
+        bpo-31804: set sys.stdio and sys.stderr to None, instead of
+        changing the Python interpreter to pythonw.exe. (OS independence)
+        """
+        self.run_process(self.removeIO)
+
+    def run_process(self, target):
         for stream_name in ('stdout', 'stderr'):
-            for stream in streams:
-                old_stream = getattr(sys, stream_name)
-                setattr(sys, stream_name, stream)
-                try:
-                    evt = self.Event()
-                    proc = self.Process(target=self._test_error_on_stdio_flush,
-                                        args=(evt,))
-                    proc.start()
-                    proc.join()
-                    self.assertTrue(evt.is_set())
-                finally:
+            old_stream = getattr(sys, stream_name)
+            evt = self.Event()
+            proc = self.Process(target=target, args=(stream_name, evt, self.TYPE))
+            try:
+                proc.start()
+                proc.join()
+            finally:
+                if self.TYPE == 'threads':
                     setattr(sys, stream_name, old_stream)
+            self.assertTrue(evt.is_set())
+            self.assertEqual(proc.exitcode, 0)
 
     @classmethod
     def _sleep_and_set_event(self, evt, delay=0.0):
@@ -652,39 +678,6 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             self.check_forkserver_death(signal.SIGKILL)
 
-
-class TestStdOutAndErr(unittest.TestCase):
-    @staticmethod
-    def closeIO(stream_name):
-        getattr(sys, stream_name).close()
-
-    @staticmethod
-    def removeIO(stream_name):
-        setattr(sys, stream_name, None)
-
-    def test_closed_stdio(self):
-        """
-        bpo-28326: multiprocessing.Process depends on sys.stdout being open
-        """
-        self.run_process(self.closeIO)
-
-    def test_no_stdio(self):
-        """
-        bpo-31804: set sys.stdio and sys.stderr to None, instead of
-        changing the Python interpreter to pythonw.exe. (OS independence)
-        """
-        self.run_process(self.removeIO)
-
-    def run_process(self, target):
-        for stream_name in ('stdout', 'stderr'):
-            proc = multiprocessing.Process(target=target, args=(stream_name,))
-            proc.start()
-            proc.join()
-            self.assertEqual(proc.exitcode, 0)
-
-#
-#
-#
 
 class _UpperCaser(multiprocessing.Process):
 
