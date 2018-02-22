@@ -1,16 +1,24 @@
+"""Define partial Python code Parser used by editor and hyperparser.
+
+Instances of StringTranslatePseudoMapping are used with str.translate.
+
+The following bound search and match functions are defined:
+_synchre - start of popular statement;
+_junkre - whitespace or comment line;
+_match_stringre: string, possibly without closer;
+_itemre - line that may have bracket structure start;
+_closere - line that must be followed by dedent.
+_chew_ordinaryre - non-special characters.
+"""
 from collections.abc import Mapping
 import re
 import sys
 
-# Reason last stmt is continued (or C_NONE if it's not).
+# Reason last statement is continued (or C_NONE if it's not).
 (C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,
  C_STRING_NEXT_LINES, C_BRACKET) = range(5)
 
-if 0:   # for throwaway debugging output
-    def dump(*stuff):
-        sys.__stdout__.write(" ".join(map(str, stuff)) + "\n")
-
-# Find what looks like the start of a popular stmt.
+# Find what looks like the start of a popular statement.
 
 _synchre = re.compile(r"""
     ^
@@ -70,7 +78,7 @@ _itemre = re.compile(r"""
     [^\s#\\]    # if we match, m.end()-1 is the interesting char
 """, re.VERBOSE).match
 
-# Match start of stmts that should be followed by a dedent.
+# Match start of statements that should be followed by a dedent.
 
 _closere = re.compile(r"""
     \s*
@@ -146,19 +154,20 @@ class Parser:
         self.str = s
         self.study_level = 0
 
-    # Return index of a good place to begin parsing, as close to the
-    # end of the string as possible.  This will be the start of some
-    # popular stmt like "if" or "def".  Return None if none found:
-    # the caller should pass more prior context then, if possible, or
-    # if not (the entire program text up until the point of interest
-    # has already been tried) pass 0 to set_lo.
-    #
-    # This will be reliable iff given a reliable is_char_in_string
-    # function, meaning that when it says "no", it's absolutely
-    # guaranteed that the char is not in a string.
-
     def find_good_parse_start(self, is_char_in_string=None,
                               _synchre=_synchre):
+        """
+        Return index of a good place to begin parsing, as close to the
+        end of the string as possible.  This will be the start of some
+        popular stmt like "if" or "def".  Return None if none found:
+        the caller should pass more prior context then, if possible, or
+        if not (the entire program text up until the point of interest
+        has already been tried) pass 0 to set_lo().
+
+        This will be reliable iff given a reliable is_char_in_string()
+        function, meaning that when it says "no", it's absolutely
+        guaranteed that the char is not in a string.
+        """
         str, pos = self.str, None
 
         if not is_char_in_string:
@@ -173,7 +182,7 @@ class Parser:
             i = str.rfind(":\n", 0, limit)
             if i < 0:
                 break
-            i = str.rfind('\n', 0, i) + 1  # start of colon line
+            i = str.rfind('\n', 0, i) + 1  # start of colon line (-1+1=0)
             m = _synchre(str, i, limit)
             if m and not is_char_in_string(m.start()):
                 pos = m.start()
@@ -206,10 +215,11 @@ class Parser:
                 break
         return pos
 
-    # Throw away the start of the string.  Intended to be called with
-    # find_good_parse_start's result.
-
     def set_lo(self, lo):
+        """ Throw away the start of the string.
+
+        Intended to be called with the result of find_good_parse_start().
+        """
         assert lo == 0 or self.str[lo-1] == '\n'
         if lo > 0:
             self.str = self.str[lo:]
@@ -224,11 +234,13 @@ class Parser:
     _tran.update((ord(c), ord(c)) for c in "\"'\\\n#")
     _tran = StringTranslatePseudoMapping(_tran, default_value=ord('x'))
 
-    # As quickly as humanly possible <wink>, find the line numbers (0-
-    # based) of the non-continuation lines.
-    # Creates self.{goodlines, continuation}.
-
     def _study1(self):
+        """Find the line numbers of non-continuation lines.
+
+        As quickly as humanly possible <wink>, find the line numbers (0-
+        based) of the non-continuation lines.
+        Creates self.{goodlines, continuation}.
+        """
         if self.study_level >= 1:
             return
         self.study_level = 1
@@ -244,8 +256,8 @@ class Parser:
         str = str.replace('xx', 'x')
         str = str.replace('xx', 'x')
         str = str.replace('\nx', '\n')
-        # note that replacing x\n with \n would be incorrect, because
-        # x may be preceded by a backslash
+        # Replacing x\n with \n would be incorrect because
+        # x may be preceded by a backslash.
 
         # March over the squashed version of the program, accumulating
         # the line numbers of non-continued stmts, and determining
@@ -360,24 +372,25 @@ class Parser:
         self._study1()
         return self.continuation
 
-    # study1 was sufficient to determine the continuation status,
-    # but doing more requires looking at every character.  study2
-    # does this for the last interesting statement in the block.
-    # Creates:
-    #     self.stmt_start, stmt_end
-    #         slice indices of last interesting stmt
-    #     self.stmt_bracketing
-    #         the bracketing structure of the last interesting stmt;
-    #         for example, for the statement "say(boo) or die", stmt_bracketing
-    #         will be [(0, 0), (3, 1), (8, 0)]. Strings and comments are
-    #         treated as brackets, for the matter.
-    #     self.lastch
-    #         last non-whitespace character before optional trailing
-    #         comment
-    #     self.lastopenbracketpos
-    #         if continuation is C_BRACKET, index of last open bracket
-
     def _study2(self):
+        """
+        study1 was sufficient to determine the continuation status,
+        but doing more requires looking at every character.  study2
+        does this for the last interesting statement in the block.
+        Creates:
+            self.stmt_start, stmt_end
+                slice indices of last interesting stmt
+            self.stmt_bracketing
+                the bracketing structure of the last interesting stmt; for
+                example, for the statement "say(boo) or die",
+                stmt_bracketing will be ((0, 0), (0, 1), (2, 0), (2, 1),
+                (4, 0)). Strings and comments are treated as brackets, for
+                the matter.
+            self.lastch
+                last interesting character before optional trailing comment
+            self.lastopenbracketpos
+                if continuation is C_BRACKET, index of last open bracket
+        """
         if self.study_level >= 2:
             return
         self._study1()
@@ -385,11 +398,11 @@ class Parser:
 
         # Set p and q to slice indices of last interesting stmt.
         str, goodlines = self.str, self.goodlines
-        i = len(goodlines) - 1
-        p = len(str)    # index of newest line
+        i = len(goodlines) - 1  # Index of newest line.
+        p = len(str)  # End of goodlines[i]
         while i:
             assert p
-            # p is the index of the stmt at line number goodlines[i].
+            # Make p be the index of the stmt at line number goodlines[i].
             # Move p back to the stmt at line number goodlines[i-1].
             q = p
             for nothing in range(goodlines[i-1], goodlines[i]):
@@ -479,14 +492,14 @@ class Parser:
         # end while p < q:
 
         self.lastch = lastch
-        if stack:
-            self.lastopenbracketpos = stack[-1]
+        self.lastopenbracketpos = stack[-1] if stack else None
         self.stmt_bracketing = tuple(bracketing)
 
-    # Assuming continuation is C_BRACKET, return the number
-    # of spaces the next line should be indented.
-
     def compute_bracket_indent(self):
+        """Return number of spaces the next line should be indented.
+
+        Line continuation must be C_BRACKET.
+        """
         self._study2()
         assert self.continuation == C_BRACKET
         j = self.lastopenbracketpos
@@ -513,20 +526,22 @@ class Parser:
             extra = self.indentwidth
         return len(str[i:j].expandtabs(self.tabwidth)) + extra
 
-    # Return number of physical lines in last stmt (whether or not
-    # it's an interesting stmt!  this is intended to be called when
-    # continuation is C_BACKSLASH).
-
     def get_num_lines_in_stmt(self):
+        """Return number of physical lines in last stmt.
+
+        The statement doesn't have to be an interesting statement.  This is
+        intended to be called when continuation is C_BACKSLASH.
+        """
         self._study1()
         goodlines = self.goodlines
         return goodlines[-1] - goodlines[-2]
 
-    # Assuming continuation is C_BACKSLASH, return the number of spaces
-    # the next line should be indented.  Also assuming the new line is
-    # the first one following the initial line of the stmt.
-
     def compute_backslash_indent(self):
+        """Return number of spaces the next line should be indented.
+
+        Line continuation must be C_BACKSLASH.  Also assume that the new
+        line is the first one following the initial line of the stmt.
+        """
         self._study2()
         assert self.continuation == C_BACKSLASH
         str = self.str
@@ -551,6 +566,8 @@ class Parser:
             elif ch == '"' or ch == "'":
                 i = _match_stringre(str, i, endpos).end()
             elif ch == '#':
+                # This line is unreachable because the # makes a comment of
+                # everything after it.
                 break
             elif level == 0 and ch == '=' and \
                    (i == 0 or str[i-1] not in "=<>!") and \
@@ -576,10 +593,10 @@ class Parser:
         return len(str[self.stmt_start:i].expandtabs(\
                                      self.tabwidth)) + 1
 
-    # Return the leading whitespace on the initial line of the last
-    # interesting stmt.
-
     def get_base_indent_string(self):
+        """Return the leading whitespace on the initial line of the last
+        interesting stmt.
+        """
         self._study2()
         i, n = self.stmt_start, self.stmt_end
         j = i
@@ -588,30 +605,25 @@ class Parser:
             j = j + 1
         return str[i:j]
 
-    # Did the last interesting stmt open a block?
-
     def is_block_opener(self):
+        "Return True if the last interesting statemtent opens a block."
         self._study2()
         return self.lastch == ':'
 
-    # Did the last interesting stmt close a block?
-
     def is_block_closer(self):
+        "Return True if the last interesting statement closes a block."
         self._study2()
         return _closere(self.str, self.stmt_start) is not None
 
-    # index of last open bracket ({[, or None if none
-    lastopenbracketpos = None
-
-    def get_last_open_bracket_pos(self):
-        self._study2()
-        return self.lastopenbracketpos
-
-    # the structure of the bracketing of the last interesting statement,
-    # in the format defined in _study2, or None if the text didn't contain
-    # anything
-    stmt_bracketing = None
-
     def get_last_stmt_bracketing(self):
+        """Return bracketing structure of the last interesting statement.
+
+        The returned tuple is in the format defined in _study2().
+        """
         self._study2()
         return self.stmt_bracketing
+
+
+if __name__ == '__main__':  #pragma: nocover
+    import unittest
+    unittest.main('idlelib.idle_test.test_pyparse', verbosity=2)

@@ -340,6 +340,25 @@ For example::
        PEP written and implemented by Eric V. Smith
 
 
+PEP 567: Context Variables
+--------------------------
+
+Adds a new module :mod:`contextvars`, that provides APIs to manage,
+store, and access non-local state.
+
+Context variables are natively supported in :mod:`asyncio` and are
+ready to be used without any extra configuration.
+
+The :mod:`decimal` module was updated to use *contextvars* to store
+the current decimal context.  This allows decimal operations to work
+with the correct context in async/await code.
+
+.. seealso::
+
+    :pep:`567` -- Context Variables
+       PEP written and implemented by Yury Selivanov
+
+
 New Development Mode: -X dev
 ----------------------------
 
@@ -834,6 +853,12 @@ Optimizations
 * Constant folding is moved from peephole optimizer to new AST optimizer.
   (Contributed by Eugene Toder and INADA Naoki in :issue:`29469`)
 
+* Most functions and methods in :mod:`abc` have been rewritten in C.
+  This makes creation of abstract base classes, and calling :func:`isinstance`
+  and :func:`issubclass` on them 1.5x faster.  This also reduces Python
+  start-up time by up to 10%. (Contributed by Ivan Levkivskyi and INADA Naoki
+  in :issue:`31333`)
+
 Build and C API Changes
 =======================
 
@@ -1146,7 +1171,7 @@ Changes in the Python API
 
   :func:`re.sub()` now replaces empty matches adjacent to a previous
   non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
-  ``'-a-b--d-'`` instead of ``'-a-b--d-'`` (the first minus between 'b' and
+  ``'-a-b--d-'`` instead of ``'-a-b-d-'`` (the first minus between 'b' and
   'd' replaces 'x', and the second minus replaces an empty string between
   'x' and 'd').
 
