@@ -909,6 +909,11 @@ Build and C API Changes
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
 
+* Added C API support for timezones with timezone constructors
+  :c:func:`PyTimeZone_FromOffset` and :c:func:`PyTimeZone_FromOffsetAndName`,
+  and access to the UTC singleton with :c:data:`PyDateTime_TimeZone_UTC`.
+  Contributed by Paul Ganssle in :issue:`10381`.
+
 
 Other CPython Implementation Changes
 ====================================
