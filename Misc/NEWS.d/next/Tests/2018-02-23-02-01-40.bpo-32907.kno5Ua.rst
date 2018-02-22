@@ -1,0 +1,2 @@
+Fix test_pathlib to not fail if tempfile.mkdtemp() returns a non-canonical
+path.
