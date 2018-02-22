@@ -588,7 +588,7 @@ class _TestProcess(BaseTestCase):
         if type_ == 'threads':
             # it is safe to close std streams in another process, but if thread
             # are used, we must not close the original std streams
-            closed_stream = io.StringIO()
+            closed_stream = _file_like(io.StringIO())
             closed_stream.close()
             setattr(sys, stream_name, closed_stream)
         else:
@@ -3873,6 +3873,9 @@ class _file_like(object):
     def flush(self):
         self._delegate.write(''.join(self.cache))
         self._cache = []
+
+    def close(self):
+        self._delegate.close()
 
 class TestStdinBadfiledescriptor(unittest.TestCase):
 
