@@ -496,8 +496,7 @@ class Parser:
         # end while p < q:
 
         self.lastch = lastch
-        if stack:
-            self.lastopenbracketpos = stack[-1]
+        self.lastopenbracketpos = stack[-1] if stack else None
         self.stmt_bracketing = tuple(bracketing)
 
     def compute_bracket_indent(self):
@@ -620,22 +619,10 @@ class Parser:
         self._study2()
         return _closere(self.str, self.stmt_start) is not None
 
-    # XXX - is this used?
-    lastopenbracketpos = None
-
-    def get_last_open_bracket_pos(self):
-        "Return index of last open bracket or None."
-        self._study2()
-        return self.lastopenbracketpos
-
-    # XXX - is this used?
-    stmt_bracketing = None
-
     def get_last_stmt_bracketing(self):
-        """Return a tuple of the structure of the bracketing of the last
-        interesting statement.
+        """Return bracketing structure of the last interesting statement.
 
-        Tuple is in the format defined in _study2().
+        The returned tuple is in the format defined in _study2().
         """
         self._study2()
         return self.stmt_bracketing
