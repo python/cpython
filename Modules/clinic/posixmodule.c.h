@@ -972,20 +972,23 @@ PyDoc_STRVAR(os__getfinalpathname__doc__,
     {"_getfinalpathname", (PyCFunction)os__getfinalpathname, METH_O, os__getfinalpathname__doc__},
 
 static PyObject *
-os__getfinalpathname_impl(PyObject *module, PyObject *path);
+os__getfinalpathname_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__getfinalpathname(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    path_t path = PATH_T_INITIALIZE("_getfinalpathname", "path", 0, 0);
 
-    if (!PyArg_Parse(arg, "U:_getfinalpathname", &path)) {
+    if (!PyArg_Parse(arg, "O&:_getfinalpathname", path_converter, &path)) {
         goto exit;
     }
-    return_value = os__getfinalpathname_impl(module, path);
+    return_value = os__getfinalpathname_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -1037,23 +1040,26 @@ PyDoc_STRVAR(os__getvolumepathname__doc__,
     {"_getvolumepathname", (PyCFunction)os__getvolumepathname, METH_FASTCALL|METH_KEYWORDS, os__getvolumepathname__doc__},
 
 static PyObject *
-os__getvolumepathname_impl(PyObject *module, PyObject *path);
+os__getvolumepathname_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"U:_getvolumepathname", _keywords, 0};
-    PyObject *path;
+    static _PyArg_Parser _parser = {"O&:_getvolumepathname", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("_getvolumepathname", "path", 0, 0);
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &path)) {
+        path_converter, &path)) {
         goto exit;
     }
-    return_value = os__getvolumepathname_impl(module, path);
+    return_value = os__getvolumepathname_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -5014,23 +5020,26 @@ PyDoc_STRVAR(os__getdiskusage__doc__,
     {"_getdiskusage", (PyCFunction)os__getdiskusage, METH_FASTCALL|METH_KEYWORDS, os__getdiskusage__doc__},
 
 static PyObject *
-os__getdiskusage_impl(PyObject *module, Py_UNICODE *path);
+os__getdiskusage_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"u:_getdiskusage", _keywords, 0};
-    Py_UNICODE *path;
+    static _PyArg_Parser _parser = {"O&:_getdiskusage", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("_getdiskusage", "path", 0, 0);
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &path)) {
+        path_converter, &path)) {
         goto exit;
     }
-    return_value = os__getdiskusage_impl(module, path);
+    return_value = os__getdiskusage_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -6580,4 +6589,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=8e5d4a01257b6292 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc603214822bdda6 input=a9049054013a1b77]*/
