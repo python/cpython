@@ -213,7 +213,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__;
+static PyObject *__doc__, *__annotations__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -311,7 +311,11 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         if (!__doc__)
             return NULL;
     }
-
+    if (!__annotations__) {
+        __annotations__ = PyUnicode_InternFromString("__annotations__");
+        if (!__annotations__)
+            return NULL;
+    }
     if (!compiler_init(&c))
         return NULL;
     Py_INCREF(filename);
@@ -1056,8 +1060,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case DELETE_FAST:
             return 0;
-        case STORE_ANNOTATION:
-            return -1;
 
         case RAISE_VARARGS:
             return -oparg;
@@ -1700,12 +1702,29 @@ error:
 }
 
 static int
+compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
+{
+    PyObject *ann_as_str;
+    ann_as_str = _PyAST_ExprAsUnicode(annotation, 1);
+    if (!ann_as_str) {
+        return 0;
+    }
+    ADDOP_N(c, LOAD_CONST, ann_as_str, consts);
+    return 1;
+}
+
+static int
 compiler_visit_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, PyObject *names)
 {
     if (annotation) {
         PyObject *mangled;
-        VISIT(c, expr, annotation);
+        if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+            VISIT(c, annexpr, annotation)
+        }
+        else {
+            VISIT(c, expr, annotation);
+        }
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
@@ -4688,9 +4707,16 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             if (!mangled) {
                 return 0;
             }
-            VISIT(c, expr, s->v.AnnAssign.annotation);
-            /* ADDOP_N decrefs its argument */
-            ADDOP_N(c, STORE_ANNOTATION, mangled, names);
+            if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+                VISIT(c, annexpr, s->v.AnnAssign.annotation)
+            }
+            else {
+                VISIT(c, expr, s->v.AnnAssign.annotation);
+            }
+            ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
+            ADDOP_O(c, LOAD_CONST, mangled, consts);
+            Py_DECREF(mangled);
+            ADDOP(c, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:

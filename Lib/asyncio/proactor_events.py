@@ -12,6 +12,7 @@ import warnings
 from . import base_events
 from . import constants
 from . import futures
+from . import protocols
 from . import sslproto
 from . import transports
 from .log import logger
@@ -91,17 +92,19 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
-        if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
-            if self._loop.get_debug():
-                logger.debug("%r: %s", self, message, exc_info=True)
-        else:
-            self._loop.call_exception_handler({
-                'message': message,
-                'exception': exc,
-                'transport': self,
-                'protocol': self._protocol,
-            })
-        self._force_close(exc)
+        try:
+            if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
+                if self._loop.get_debug():
+                    logger.debug("%r: %s", self, message, exc_info=True)
+            else:
+                self._loop.call_exception_handler({
+                    'message': message,
+                    'exception': exc,
+                    'transport': self,
+                    'protocol': self._protocol,
+                })
+        finally:
+            self._force_close(exc)
 
     def _force_close(self, exc):
         if self._closing:
@@ -150,6 +153,12 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, waiter, extra, server)
         self._paused = False
+
+        if protocols._is_buffered_protocol(protocol):
+            self._loop_reading = self._loop_reading__get_buffer
+        else:
+            self._loop_reading = self._loop_reading__data_received
+
         self._loop.call_soon(self._loop_reading)
 
     def is_reading(self):
@@ -159,6 +168,11 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._closing or self._paused:
             return
         self._paused = True
+
+        if self._read_fut is not None and not self._read_fut.done():
+            self._read_fut.cancel()
+            self._read_fut = None
+
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
@@ -170,17 +184,36 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
-    def _loop_reading(self, fut=None):
+    def _loop_reading__on_eof(self):
+        if self._loop.get_debug():
+            logger.debug("%r received EOF", self)
+
+        try:
+            keep_open = self._protocol.eof_received()
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.eof_received() call failed.')
+            return
+
+        if not keep_open:
+            self.close()
+
+    def _loop_reading__data_received(self, fut=None):
         if self._paused:
             return
-        data = None
 
+        data = None
         try:
             if fut is not None:
                 assert self._read_fut is fut or (self._read_fut is None and
                                                  self._closing)
                 self._read_fut = None
-                data = fut.result()  # deliver data later in "finally" clause
+                if fut.done():
+                    # deliver data later in "finally" clause
+                    data = fut.result()
+                else:
+                    # the future will be replaced by next proactor.recv call
+                    fut.cancel()
 
             if self._closing:
                 # since close() has been called we ignore any read data
@@ -192,7 +225,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                 return
 
             # reschedule a new read
-            self._read_fut = self._loop._proactor.recv(self._sock, 4096)
+            self._read_fut = self._loop._proactor.recv(self._sock, 32768)
         except ConnectionAbortedError as exc:
             if not self._closing:
                 self._fatal_error(exc, 'Fatal read error on pipe transport')
@@ -211,12 +244,81 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         finally:
             if data:
                 self._protocol.data_received(data)
-            elif data is not None:
-                if self._loop.get_debug():
-                    logger.debug("%r received EOF", self)
-                keep_open = self._protocol.eof_received()
-                if not keep_open:
-                    self.close()
+            elif data == b'':
+                self._loop_reading__on_eof()
+
+    def _loop_reading__get_buffer(self, fut=None):
+        if self._paused:
+            return
+
+        nbytes = None
+        if fut is not None:
+            assert self._read_fut is fut or (self._read_fut is None and
+                                             self._closing)
+            self._read_fut = None
+            try:
+                if fut.done():
+                    nbytes = fut.result()
+                else:
+                    # the future will be replaced by next proactor.recv call
+                    fut.cancel()
+            except ConnectionAbortedError as exc:
+                if not self._closing:
+                    self._fatal_error(
+                        exc, 'Fatal read error on pipe transport')
+                elif self._loop.get_debug():
+                    logger.debug("Read error on pipe transport while closing",
+                                 exc_info=True)
+            except ConnectionResetError as exc:
+                self._force_close(exc)
+            except OSError as exc:
+                self._fatal_error(exc, 'Fatal read error on pipe transport')
+            except futures.CancelledError:
+                if not self._closing:
+                    raise
+
+            if nbytes is not None:
+                if nbytes == 0:
+                    # we got end-of-file so no need to reschedule a new read
+                    self._loop_reading__on_eof()
+                else:
+                    try:
+                        self._protocol.buffer_updated(nbytes)
+                    except Exception as exc:
+                        self._fatal_error(
+                            exc,
+                            'Fatal error: '
+                            'protocol.buffer_updated() call failed.')
+                        return
+
+        if self._closing or nbytes == 0:
+            # since close() has been called we ignore any read data
+            return
+
+        try:
+            buf = self._protocol.get_buffer()
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.get_buffer() call failed.')
+            return
+
+        try:
+            # schedule a new read
+            self._read_fut = self._loop._proactor.recv_into(self._sock, buf)
+            self._read_fut.add_done_callback(self._loop_reading)
+        except ConnectionAbortedError as exc:
+            if not self._closing:
+                self._fatal_error(exc, 'Fatal read error on pipe transport')
+            elif self._loop.get_debug():
+                logger.debug("Read error on pipe transport while closing",
+                             exc_info=True)
+        except ConnectionResetError as exc:
+            self._force_close(exc)
+        except OSError as exc:
+            self._fatal_error(exc, 'Fatal read error on pipe transport')
+        except futures.CancelledError:
+            if not self._closing:
+                raise
 
 
 class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
@@ -344,6 +446,8 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
                                _ProactorBaseWritePipeTransport,
                                transports.Transport):
     """Transport for connected sockets."""
+
+    _sendfile_compatible = constants._SendfileMode.FALLBACK
 
     def _set_extra(self, sock):
         self._extra['socket'] = sock

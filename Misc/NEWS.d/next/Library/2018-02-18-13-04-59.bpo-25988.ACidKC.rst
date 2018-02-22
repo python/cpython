@@ -1,0 +1,2 @@
+Emit a :exc:`DeprecationWarning` when using or importing an ABC directly
+from :mod:`collections` rather than from :mod:`collections.abc`.

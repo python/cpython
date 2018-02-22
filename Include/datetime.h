@@ -156,12 +156,16 @@ typedef struct {
     PyTypeObject *DeltaType;
     PyTypeObject *TZInfoType;
 
+    /* singletons */
+    PyObject *TimeZone_UTC;
+
     /* constructors */
     PyObject *(*Date_FromDate)(int, int, int, PyTypeObject*);
     PyObject *(*DateTime_FromDateAndTime)(int, int, int, int, int, int, int,
         PyObject*, PyTypeObject*);
     PyObject *(*Time_FromTime)(int, int, int, int, PyObject*, PyTypeObject*);
     PyObject *(*Delta_FromDelta)(int, int, int, int, PyTypeObject*);
+    PyObject *(*TimeZone_FromTimeZone)(PyObject *offset, PyObject *name);
 
     /* constructors for the DB API */
     PyObject *(*DateTime_FromTimestamp)(PyObject*, PyObject*, PyObject*);
@@ -200,6 +204,9 @@ typedef struct {
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #define PyDateTime_IMPORT \
     PyDateTimeAPI = (PyDateTime_CAPI *)PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)
+
+/* Macro for access to the UTC singleton */
+#define PyDateTime_TimeZone_UTC PyDateTimeAPI->TimeZone_UTC
 
 /* Macros for type checking when not building the Python core. */
 #define PyDate_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->DateType)
@@ -240,6 +247,12 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #define PyDelta_FromDSU(days, seconds, useconds) \
     PyDateTimeAPI->Delta_FromDelta(days, seconds, useconds, 1, \
         PyDateTimeAPI->DeltaType)
+
+#define PyTimeZone_FromOffset(offset) \
+    PyDateTimeAPI->TimeZone_FromTimeZone(offset, NULL)
+
+#define PyTimeZone_FromOffsetAndName(offset, name) \
+    PyDateTimeAPI->TimeZone_FromTimeZone(offset, name)
 
 /* Macros supporting the DB API. */
 #define PyDateTime_FromTimestamp(args) \

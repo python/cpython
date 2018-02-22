@@ -132,8 +132,9 @@ def coroutine(func):
                         res = yield from await_meth()
             return res
 
+    coro = types.coroutine(coro)
     if not _DEBUG:
-        wrapper = types.coroutine(coro)
+        wrapper = coro
     else:
         @functools.wraps(func)
         def wrapper(*args, **kwds):

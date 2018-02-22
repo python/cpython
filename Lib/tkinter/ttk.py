@@ -19,7 +19,7 @@ __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
            "PanedWindow", "Progressbar", "Radiobutton", "Scale", "Scrollbar",
-           "Separator", "Sizegrip", "Style", "Treeview",
+           "Separator", "Sizegrip", "Spinbox", "Style", "Treeview",
            # Extensions
            "LabeledScale", "OptionMenu",
            # functions
@@ -1149,6 +1149,33 @@ class Sizegrip(Widget):
             class, cursor, state, style, takefocus
         """
         Widget.__init__(self, master, "ttk::sizegrip", kw)
+
+
+class Spinbox(Entry):
+    """Ttk Spinbox is an Entry with increment and decrement arrows
+
+    It is commonly used for number entry or to select from a list of
+    string values.
+    """
+
+    def __init__(self, master=None, **kw):
+        """Construct a Ttk Spinbox widget with the parent master.
+
+        STANDARD OPTIONS
+
+            class, cursor, style, takefocus, validate,
+            validatecommand, xscrollcommand, invalidcommand
+
+        WIDGET-SPECIFIC OPTIONS
+
+            to, from_, increment, values, wrap, format, command
+        """
+        Entry.__init__(self, master, "ttk::spinbox", **kw)
+
+
+    def set(self, value):
+        """Sets the value of the Spinbox to value."""
+        self.tk.call(self._w, "set", value)
 
 
 class Treeview(Widget, tkinter.XView, tkinter.YView):

@@ -9,6 +9,7 @@ import io
 import random
 import re
 import sys
+import textwrap
 import types
 import unittest
 import weakref
@@ -2372,6 +2373,20 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
 
+    @support.refcount_test
+    def test_refleaks_in_task___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        @asyncio.coroutine
+        def coro():
+            pass
+        task = self.new_task(self.loop, coro())
+        self.loop.run_until_complete(task)
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            task.__init__(coro(), loop=self.loop)
+            self.loop.run_until_complete(task)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and
                      hasattr(tasks, '_CTask'),
@@ -2447,7 +2462,7 @@ class CTask_Future_Tests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         try:
             fut = Fut(loop=self.loop)
-            self.loop.call_later(0.1, fut.set_result(1))
+            self.loop.call_later(0.1, fut.set_result, 1)
             task = asyncio.Task(coro(), loop=self.loop)
             res = self.loop.run_until_complete(task)
         finally:
@@ -2998,9 +3013,8 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         def task_factory(loop, coro):
             raise NameError
 
-        run = self.loop.create_task(
-            self.loop.run_in_executor(
-                None, lambda: self.target(advance_coro=True)))
+        run = self.loop.run_in_executor(
+            None, lambda: self.target(advance_coro=True))
 
         # Set exception handler
         callback = test_utils.MockCallback()
@@ -3089,6 +3103,22 @@ class CompatibilityTests(test_utils.TestCase):
 
         result = self.loop.run_until_complete(inner())
         self.assertEqual(['ok1', 'ok2'], result)
+
+    def test_debug_mode_interop(self):
+        # https://bugs.python.org/issue32636
+        code = textwrap.dedent("""
+            import asyncio
+
+            async def native_coro():
+                pass
+
+            @asyncio.coroutine
+            def old_style_coro():
+                yield from native_coro()
+
+            asyncio.run(old_style_coro())
+        """)
+        assert_python_ok("-c", code, PYTHONASYNCIODEBUG="1")
 
 
 if __name__ == '__main__':
