@@ -57,11 +57,20 @@ XINCLUDE = "{http://www.w3.org/2001/XInclude}"
 XINCLUDE_INCLUDE = XINCLUDE + "include"
 XINCLUDE_FALLBACK = XINCLUDE + "fallback"
 
+# For security reasons, the inclusion depth is limited to this read-only value by default.
+DEFAULT_MAX_INCLUSION_DEPTH = 6
+
+
 ##
 # Fatal include error.
 
 class FatalIncludeError(SyntaxError):
     pass
+
+
+class LimitedRecursiveIncludeError(FatalIncludeError):
+    pass
+
 
 ##
 # Default loader.  This loader reads an included resource from disk.
@@ -95,20 +104,31 @@ def default_loader(href, parse, encoding=None):
 #     that implements the same interface as <b>default_loader</b>.
 # @param base_url The base URL of the original file, to resolve
 #     relative include file references.
+# @param max_depth The maximum number of recursive inclusions.
+#     Limited to reduce the risk of malicious content explosion.
+#     Pass a negative value to disable the limitation.
+# @throws LimitedRecursiveIncludeError If the {@link max_depth} was exceeded.
 # @throws FatalIncludeError If the function fails to include a given
 #     resource, or if the tree contains malformed XInclude elements.
 # @throws IOError If the function fails to load a given resource.
 # @returns the node or its replacement if it was an XInclude node
 
-def include(elem, loader=None, base_url=None):
+def include(elem, loader=None, base_url=None,
+            max_depth=DEFAULT_MAX_INCLUSION_DEPTH):
+    if max_depth is None:
+        max_depth = -1
+    elif max_depth < 0:
+        raise ValueError("expected non-negative depth or None for 'max_depth', got %r" % max_depth)
+
     if hasattr(elem, 'getroot'):
         elem = elem.getroot()
     if loader is None:
         loader = default_loader
-    _include(elem, loader, base_url, set())
+
+    _include(elem, loader, base_url, max_depth, set())
 
 
-def _include(elem, loader, base_url, _parent_hrefs):
+def _include(elem, loader, base_url, max_depth, _parent_hrefs):
     # look for xinclude elements
     i = 0
     while i < len(elem):
@@ -122,6 +142,9 @@ def _include(elem, loader, base_url, _parent_hrefs):
             if parse == "xml":
                 if href in _parent_hrefs:
                     raise FatalIncludeError("recursive include of %s" % href)
+                if max_depth == 0:
+                    raise LimitedRecursiveIncludeError(
+                        "maximum xinclude depth reached when including file %s" % href)
                 _parent_hrefs.add(href)
                 node = loader(href, parse)
                 if node is None:
@@ -129,7 +152,7 @@ def _include(elem, loader, base_url, _parent_hrefs):
                         "cannot load %r as %r" % (href, parse)
                         )
                 node = copy.copy(node)  # FIXME: this makes little sense with recursive includes
-                _include(node, loader, href, _parent_hrefs)
+                _include(node, loader, href, max_depth - 1, _parent_hrefs)
                 _parent_hrefs.remove(href)
                 if e.tail:
                     node.tail = (node.tail or "") + e.tail
@@ -158,5 +181,5 @@ def _include(elem, loader, base_url, _parent_hrefs):
                 "xi:fallback tag must be child of xi:include (%r)" % e.tag
                 )
         else:
-            _include(e, loader, base_url, _parent_hrefs)
+            _include(e, loader, base_url, max_depth, _parent_hrefs)
         i += 1
