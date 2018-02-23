@@ -24,12 +24,4 @@ Where: [X.Y] is the branch name, e.g. [3.6].
 
 GH-NNNN refers to the PR number from `master`.
 
-# Other checklist
-
-[ ] Sign the C.L.A
-[ ] Link your GitHub account to b.p.o
-[ ] If applicable, add a News file using blurb
-[ ] Will backport be needed? Save us the trouble and let us know.
-[ ] If applicable, add yourself to Misc/ACKS
-
 -->
