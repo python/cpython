@@ -81,7 +81,7 @@ class DictComprehensionTest(unittest.TestCase):
             compile("{x: y for y, x in ((1, 2), (3, 4))} += 5", "<test>",
                     "exec")
 
-    def test_assignment_idiom_in_comprehesions(self):
+    def test_assignment_idiom_in_comprehensions(self):
         expected = {1: 1, 2: 4, 3: 9, 4: 16}
         actual = {j: j*j for i in range(4) for j in [i+1]}
         self.assertEqual(actual, expected)

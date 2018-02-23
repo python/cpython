@@ -324,7 +324,7 @@ class TestTranforms(BytecodeTestCase):
                 self.assertFalse(instr.opname.startswith('BINARY_'))
                 self.assertFalse(instr.opname.startswith('BUILD_'))
 
-    def test_assignment_idiom_in_comprehesions(self):
+    def test_assignment_idiom_in_comprehensions(self):
         def listcomp():
             return [y for x in a for y in [f(x)]]
         self.assertEqual(count_instr_recursively(listcomp, 'FOR_ITER'), 1)
