@@ -948,10 +948,14 @@ def temp_dir(path=None, quiet=False):
             warnings.warn(f'tests may fail, unable to create '
                           f'temporary directory {path!r}: {exc}',
                           RuntimeWarning, stacklevel=3)
+    if dir_created:
+        pid = os.getpid()
     try:
         yield path
     finally:
-        if dir_created:
+        # In case the process forks, let only the parent remove the
+        # directory. The child has a diffent process id. (bpo-30028)
+        if dir_created and pid == os.getpid():
             rmtree(path)
 
 @contextlib.contextmanager
