@@ -404,12 +404,11 @@ class SSLContext(_SSLContext):
         if server_name_callback is None:
             self.sni_callback = None
         else:
-            if not hasattr(server_name_callback, '__call__'):
+            if not callable(server_name_callback):
                 raise TypeError("not a callable object")
 
             def shim_cb(sslobj, servername, sslctx):
-                if servername is not None:
-                    servername = servername.encode("ascii").decode("idna")
+                servername = self._encode_hostname(servername)
                 return server_name_callback(sslobj, servername, sslctx)
 
             self.sni_callback = shim_cb

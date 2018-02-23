@@ -408,8 +408,6 @@ class _ssl.SSLSession "PySSLSession *" "&PySSLSession_Type"
 
 static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
-
-#define PySSLContext_Check(v)   PyObject_IsInstance((v), (PyObject*)&PySSLContext_Type)
 #define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
 #define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
 #define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
@@ -4047,15 +4045,6 @@ _servername_callback(SSL *s, int *al, void *args)
          * None and SSLContext are OK, integer or other values are an error.
          */
         if (result == Py_None) {
-            ret = SSL_TLSEXT_ERR_OK;
-        }
-        else if (PySSLContext_Check(result)) {
-            if (ssl->ctx != (PySSLContext *)result) {
-                /* if result is not sock.context: socket.context = result */
-                Py_INCREF(result);
-                Py_SETREF(ssl->ctx, (PySSLContext *)result);
-                SSL_set_SSL_CTX(ssl->ssl, ssl->ctx->ctx);
-            }
             ret = SSL_TLSEXT_ERR_OK;
         } else {
             *al = (int) PyLong_AsLong(result);
