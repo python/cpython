@@ -488,7 +488,7 @@ class _IPAddressBase:
         """
         # int allows a leading +/- as well as surrounding whitespace,
         # so we ensure that isn't the case
-        if not _BaseV4._DECIMAL_DIGITS.issuperset(prefixlen_str):
+        if not (prefixlen_str.isascii() and prefixlen_str.isdigit()):
             cls._report_invalid_netmask(prefixlen_str)
         try:
             prefixlen = int(prefixlen_str)
@@ -1076,7 +1076,6 @@ class _BaseV4:
     _version = 4
     # Equivalent to 255.255.255.255 or 32 bits of 1's.
     _ALL_ONES = (2**IPV4LENGTH) - 1
-    _DECIMAL_DIGITS = frozenset('0123456789')
 
     # the valid octets for host and netmasks. only useful for IPv4.
     _valid_mask_octets = frozenset({255, 254, 252, 248, 240, 224, 192, 128, 0})
@@ -1156,7 +1155,7 @@ class _BaseV4:
         if not octet_str:
             raise ValueError("Empty octet not permitted")
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
-        if not cls._DECIMAL_DIGITS.issuperset(octet_str):
+        if not (octet_str.isascii() and octet_str.isdigit()):
             msg = "Only decimal digits permitted in %r"
             raise ValueError(msg % octet_str)
         # We do the length check second, since the invalid character error
