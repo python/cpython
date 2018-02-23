@@ -1261,6 +1261,17 @@ XINCLUDE["default.xml"] = """\
 </document>
 """.format(html.escape(SIMPLE_XMLFILE, True))
 
+XINCLUDE["include_c1_repeated.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+</document>
+"""
+
 #
 # badly formatted xi:include tags
 
@@ -1406,6 +1417,13 @@ class XIncludeTest(unittest.TestCase):
             '    </ns0:fallback>\n'
             '  </ns0:include>\n'
             '</div>') # C5
+
+    def test_xinclude_repeated(self):
+        from xml.etree import ElementInclude
+
+        document = self.xinclude_loader("include_c1_repeated.xml")
+        ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(1+4*2, len(document.findall(".//p")))
 
     def test_xinclude_failures(self):
         from xml.etree import ElementInclude

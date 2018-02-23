@@ -130,6 +130,7 @@ def _include(elem, loader, base_url, _parent_hrefs):
                         )
                 node = copy.copy(node)  # FIXME: this makes little sense with recursive includes
                 _include(node, loader, href, _parent_hrefs)
+                _parent_hrefs.remove(href)
                 if e.tail:
                     node.tail = (node.tail or "") + e.tail
                 elem[i] = node
