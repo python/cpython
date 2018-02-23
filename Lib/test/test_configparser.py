@@ -663,35 +663,42 @@ boolean {0[0]} NO
 
         cf = self.fromstring(config_string)
         for space_around_delimiters in (True, False):
-            output = io.StringIO()
-            cf.write(output, space_around_delimiters=space_around_delimiters)
-            delimiter = self.delimiters[0]
-            if space_around_delimiters:
-                delimiter = " {} ".format(delimiter)
-            expect_string = (
-                "[{default_section}]\n"
-                "foo{equals}another very\n"
-                "\tlong line\n"
-                "\n"
-                "[Long Line]\n"
-                "foo{equals}this line is much, much longer than my editor\n"
-                "\tlikes it.\n"
-                "\n"
-                "[Long Line - With Comments!]\n"
-                "test{equals}we\n"
-                "\talso\n"
-                "\tcomments\n"
-                "\tmultiline\n"
-                "\n".format(equals=delimiter,
-                            default_section=self.default_section)
-                )
-            if self.allow_no_value:
-                expect_string += (
-                    "[Valueless]\n"
-                    "option-without-value\n"
-                    "\n"
-                    )
-            self.assertEqual(output.getvalue(), expect_string)
+            for trim_final_blankline in (True, False):
+                for blankline_around_sections in (True, False):
+                    output = io.StringIO()
+                    cf.write(output,
+                             space_around_delimiters=space_around_delimiters,
+                             trim_final_blankline=trim_final_blankline,
+                             blankline_around_sections=blankline_around_sections)
+                    delimiter = self.delimiters[0]
+                    if space_around_delimiters:
+                        delimiter = " {} ".format(delimiter)
+                    expect_string = (
+                        "[{default_section}]\n"
+                        "foo{equals}another very\n"
+                        "\tlong line\n" +
+                        ("\n" if blankline_around_sections else "") +
+                        "[Long Line]\n"
+                        "foo{equals}this line is much, much longer than my editor\n"
+                        "\tlikes it.\n" +
+                        ("\n" if blankline_around_sections else "") +
+                        "[Long Line - With Comments!]\n"
+                        "test{equals}we\n"
+                        "\talso\n"
+                        "\tcomments\n"
+                        "\tmultiline\n" +
+                        ('\n' if blankline_around_sections else "")
+                    ).format(equals=delimiter,
+                                default_section=self.default_section)
+                    if self.allow_no_value:
+                        expect_string += (
+                            "[Valueless]\n"
+                            "option-without-value\n" +
+                            ('\n' if blankline_around_sections else "")
+                        )
+                    if trim_final_blankline and blankline_around_sections:
+                        expect_string = expect_string[:-1]
+                    self.assertEqual(output.getvalue(), expect_string)
 
     def test_set_string_types(self):
         cf = self.fromstring("[sect]\n"
