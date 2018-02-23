@@ -1043,7 +1043,7 @@ Server
           async def main(host, port):
               srv = await asyncio.start_server(
                   client_connected, host, port)
-              await loop.serve_forever()
+              await srv.serve_forever()
 
           asyncio.run(main('127.0.0.1', 0))
 
