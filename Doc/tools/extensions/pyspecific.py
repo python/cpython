@@ -196,7 +196,7 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _label = 'Deprecated since version %s, will be removed in version %s'
+    _label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
 
     def run(self):
         node = addnodes.versionmodified()
@@ -204,11 +204,12 @@ class DeprecatedRemoved(Directive):
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
-        text = self._label % version
+        label = translators['sphinx'].gettext(self._label)
+        text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
                                                       self.lineno+1)
-            para = nodes.paragraph(self.arguments[2], '', *inodes)
+            para = nodes.paragraph(self.arguments[2], '', *inodes, translatable=False)
             node.append(para)
         else:
             messages = []
@@ -220,13 +221,14 @@ class DeprecatedRemoved(Directive):
                 content.source = node[0].source
                 content.line = node[0].line
                 content += node[0].children
-                node[0].replace_self(nodes.paragraph('', '', content))
+                node[0].replace_self(nodes.paragraph('', '', content, translatable=False))
             node[0].insert(0, nodes.inline('', '%s: ' % text,
                                            classes=['versionmodified']))
         else:
             para = nodes.paragraph('', '',
                                    nodes.inline('', '%s.' % text,
-                                                classes=['versionmodified']))
+                                                classes=['versionmodified']),
+                                   translatable=False)
             node.append(para)
         env = self.state.document.settings.env
         env.note_versionchange('deprecated', version[0], node, self.lineno)
