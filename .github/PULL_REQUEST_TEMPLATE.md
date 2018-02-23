@@ -1,9 +1,6 @@
 <!--
 Thanks for your contribution!
 
-Please take a quick look at those things down there. They're quite important.
-Really!
-
 # Pull Request title
 
 It should be in the following format
