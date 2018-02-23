@@ -1619,6 +1619,7 @@ class _BaseV6:
     _version = 6
     _ALL_ONES = (2**IPV6LENGTH) - 1
     _HEXTET_COUNT = 8
+    _HEX_DIGITS = frozenset('0123456789ABCDEFabcdef')
     _max_prefixlen = IPV6LENGTH
 
     # There are only a bunch of valid v6 netmasks, so we cache them all
@@ -1762,22 +1763,16 @@ class _BaseV6:
               [0..FFFF].
 
         """
-        # Reject non-ASCII characters, '+' and '-', since int() accepts them.
-        msg = "Only hex digits permitted in %r"
-        if not hextet_str.isascii() or not hextet_str.isalnum():
-            raise ValueError(msg % hextet_str)
-
+        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        if not cls._HEX_DIGITS.issuperset(hextet_str):
+            raise ValueError("Only hex digits permitted in %r" % hextet_str)
         # We do the length check second, since the invalid character error
         # is likely to be more informative for the user
         if len(hextet_str) > 4:
             msg = "At most 4 characters permitted in %r"
             raise ValueError(msg % hextet_str)
-
-        try:
-            # Length check means we can skip checking the integer value
-            return int(hextet_str, 16)
-        except ValueError:
-            raise ValueError(msg % hextet_str)
+        # Length check means we can skip checking the integer value
+        return int(hextet_str, 16)
 
     @classmethod
     def _compress_hextets(cls, hextets):
