@@ -490,7 +490,6 @@ class _IPAddressBase:
         # so we ensure that isn't the case
         if not prefixlen_str.isascii() or not prefixlen_str.isdigit():
             cls._report_invalid_netmask(prefixlen_str)
-
         try:
             prefixlen = int(prefixlen_str)
         except ValueError:
