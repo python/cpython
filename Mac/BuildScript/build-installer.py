@@ -161,7 +161,7 @@ def getTargetCompilers():
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'gcc++') )
+    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
 
 CC, CXX = getTargetCompilers()
 
