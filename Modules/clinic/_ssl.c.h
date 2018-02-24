@@ -650,19 +650,6 @@ PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
 
 #endif /* !defined(OPENSSL_NO_ECDH) */
 
-PyDoc_STRVAR(_ssl__SSLContext_set_servername_callback__doc__,
-"set_servername_callback($self, method, /)\n"
-"--\n"
-"\n"
-"Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n"
-"\n"
-"If the argument is None then the callback is disabled. The method is called\n"
-"with the SSLSocket, the server name as a string, and the SSLContext object.\n"
-"See RFC 6066 for details of the SNI extension.");
-
-#define _SSL__SSLCONTEXT_SET_SERVERNAME_CALLBACK_METHODDEF    \
-    {"set_servername_callback", (PyCFunction)_ssl__SSLContext_set_servername_callback, METH_O, _ssl__SSLContext_set_servername_callback__doc__},
-
 PyDoc_STRVAR(_ssl__SSLContext_cert_store_stats__doc__,
 "cert_store_stats($self, /)\n"
 "--\n"
@@ -1168,4 +1155,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=3d42305ed0ad162a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84e1fd89aff9b0f7 input=a9049054013a1b77]*/
