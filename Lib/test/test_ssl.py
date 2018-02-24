@@ -455,6 +455,8 @@ class BasicSocketTests(unittest.TestCase):
             self.assertRaises(OSError, ss.recvfrom_into, bytearray(b'x'), 1)
             self.assertRaises(OSError, ss.send, b'x')
             self.assertRaises(OSError, ss.sendto, b'x', ('0.0.0.0', 0))
+            self.assertRaises(NotImplementedError, ss.sendmsg,
+                              [b'x'], (), 0, ('0.0.0.0', 0))
 
     def test_timeout(self):
         # Issue #8524: when creating an SSL socket, the timeout of the
@@ -3381,11 +3383,13 @@ class ThreadedTests(unittest.TestCase):
                                 chatty=False) as server:
             with context.wrap_socket(socket.socket()) as s:
                 self.assertIs(s.version(), None)
+                self.assertIs(s._sslobj, None)
                 s.connect((HOST, server.port))
                 if ssl.OPENSSL_VERSION_INFO >= (1, 0, 2):
                     self.assertEqual(s.version(), 'TLSv1.2')
                 else:  # 0.9.8 to 1.0.1
                     self.assertIn(s.version(), ('TLSv1', 'TLSv1.2'))
+            self.assertIs(s._sslobj, None)
             self.assertIs(s.version(), None)
 
     @unittest.skipUnless(ssl.HAS_TLSv1_3,
