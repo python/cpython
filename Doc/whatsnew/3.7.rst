@@ -677,6 +677,12 @@ OpenSSL 1.1.1. (Contributed by Christian Heimes in :issue:`32947`,
 recommend :meth:`~ssl.SSLContext.wrap_socket` instead.
 (Contributed by Christian Heimes in :issue:`28124`.)
 
+:class:`~ssl.SSLSocket` and :class:`~ssl.SSLObject` no longer have a public
+constructor. Direct instantiation was never a documented and supported
+feature. Instances must be created with :class:`~ssl.SSLContext` methods
+:meth:`~ssl.SSLContext.wrap_socket` and :meth:`~ssl.SSLContext.wrap_bio`.
+(Contributed by Christian Heimes in :issue:`32951`)
+
 
 string
 ------

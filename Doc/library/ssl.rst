@@ -998,7 +998,7 @@ SSL Sockets
    the specification of normal, OS-level sockets.  See especially the
    :ref:`notes on non-blocking sockets <ssl-nonblocking>`.
 
-   :class:`SSLSocket` are not created directly, but using the
+   Instances of :class:`SSLSocket` must be created using the
    :meth:`SSLContext.wrap_socket` method.
 
    .. versionchanged:: 3.5
@@ -1013,6 +1013,11 @@ SSL Sockets
       It is deprecated to create a :class:`SSLSocket` instance directly, use
       :meth:`SSLContext.wrap_socket` to wrap a socket.
 
+   .. versionchanged:: 3.7
+      :class:`SSLSocket` instances must to created with
+      :meth:`~SSLContext.wrap_socket`. In earlier versions, it was possible
+      to create instances directly. This was never documented or officially
+      supported.
 
 SSL sockets also have the following additional methods and attributes:
 
@@ -2249,11 +2254,12 @@ provided.
    but does not provide any network IO itself. IO needs to be performed through
    separate "BIO" objects which are OpenSSL's IO abstraction layer.
 
-   An :class:`SSLObject` instance can be created using the
-   :meth:`~SSLContext.wrap_bio` method. This method will create the
-   :class:`SSLObject` instance and bind it to a pair of BIOs. The *incoming*
-   BIO is used to pass data from Python to the SSL protocol instance, while the
-   *outgoing* BIO is used to pass data the other way around.
+   This class has no public constructor.  An :class:`SSLObject` instance
+   must be created using the :meth:`~SSLContext.wrap_bio` method. This
+   method will create the :class:`SSLObject` instance and bind it to a
+   pair of BIOs. The *incoming* BIO is used to pass data from Python to the
+   SSL protocol instance, while the *outgoing* BIO is used to pass data the
+   other way around.
 
    The following methods are available:
 
@@ -2304,6 +2310,12 @@ provided.
    - There is no module-level ``wrap_bio()`` call like there is for
      :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created
      via an :class:`SSLContext`.
+
+   .. versionchanged:: 3.7
+      :class:`SSLObject` instances must to created with
+      :meth:`~SSLContext.wrap_bio`. In earlier versions, it was possible to
+      create instances directly. This was never documented or officially
+      supported.
 
 An SSLObject communicates with the outside world using memory buffers. The
 class :class:`MemoryBIO` provides a memory buffer that can be used for this
