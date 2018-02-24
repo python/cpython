@@ -1689,7 +1689,7 @@ class SimpleBackgroundTests(unittest.TestCase):
     @needs_sni
     def test_context_setget(self):
         # Check that the context of a connected socket can be replaced.
-        ctx1 = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx1 = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
         ctx2 = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         s = socket.socket(socket.AF_INET)
         with ctx1.wrap_socket(s) as ss:
@@ -1986,7 +1986,7 @@ if _have_threads:
             else:
                 self.context = ssl.SSLContext(ssl_version
                                               if ssl_version is not None
-                                              else ssl.PROTOCOL_TLSv1)
+                                              else ssl.PROTOCOL_TLS)
                 self.context.verify_mode = (certreqs if certreqs is not None
                                             else ssl.CERT_NONE)
                 if cacerts:
