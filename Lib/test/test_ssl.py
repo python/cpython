@@ -1528,16 +1528,6 @@ class SSLErrorTests(unittest.TestCase):
                 # For compatibility
                 self.assertEqual(cm.exception.errno, ssl.SSL_ERROR_WANT_READ)
 
-    def test_bad_idna_in_server_hostname(self):
-        # Note: this test is testing some code that probably shouldn't exist
-        # in the first place, so if it starts failing at some point because
-        # you made the ssl module stop doing IDNA decoding then please feel
-        # free to remove it. The test was mainly added because this case used
-        # to cause memory corruption (see bpo-30594).
-        ctx = ssl.create_default_context()
-        with self.assertRaises(UnicodeError):
-            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
-                         server_hostname="xn--.com")
 
     def test_bad_server_hostname(self):
         ctx = ssl.create_default_context()
@@ -2634,10 +2624,10 @@ class ThreadedTests(unittest.TestCase):
         if support.verbose:
             sys.stdout.write("\n")
 
-        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.load_cert_chain(IDNSANSFILE)
 
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.verify_mode = ssl.CERT_REQUIRED
         context.check_hostname = True
         context.load_verify_locations(SIGNING_CA)
@@ -2646,18 +2636,26 @@ class ThreadedTests(unittest.TestCase):
         # different ways
         idn_hostnames = [
             ('könig.idn.pythontest.net',
-             'könig.idn.pythontest.net',),
+             'xn--knig-5qa.idn.pythontest.net'),
             ('xn--knig-5qa.idn.pythontest.net',
              'xn--knig-5qa.idn.pythontest.net'),
             (b'xn--knig-5qa.idn.pythontest.net',
-             b'xn--knig-5qa.idn.pythontest.net'),
+             'xn--knig-5qa.idn.pythontest.net'),
 
             ('königsgäßchen.idna2003.pythontest.net',
-             'königsgäßchen.idna2003.pythontest.net'),
+             'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
             ('xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
              'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
             (b'xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
-             b'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+             'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+
+            # ('königsgäßchen.idna2008.pythontest.net',
+            #  'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'),
+            ('xn--knigsgchen-b4a3dun.idna2008.pythontest.net',
+             'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'),
+            (b'xn--knigsgchen-b4a3dun.idna2008.pythontest.net',
+             'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'),
+
         ]
         for server_hostname, expected_hostname in idn_hostnames:
             server = ThreadedEchoServer(context=server_context, chatty=True)
@@ -2675,16 +2673,6 @@ class ThreadedTests(unittest.TestCase):
                     s.connect((HOST, server.port))
                     s.getpeercert()
                     self.assertEqual(s.server_hostname, expected_hostname)
-
-        # bug https://bugs.python.org/issue28414
-        # IDNA 2008 deviations are broken
-        idna2008 = 'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
-            with self.assertRaises(UnicodeError):
-                with context.wrap_socket(socket.socket(),
-                                         server_hostname=idna2008) as s:
-                    s.connect((HOST, server.port))
 
         # incorrect hostname should raise an exception
         server = ThreadedEchoServer(context=server_context, chatty=True)
