@@ -237,7 +237,7 @@ def prepare(data):
     if 'start_method' in data:
         set_start_method(data['start_method'], force=True)
 
-    if 'tacker_pid' in data:
+    if 'tracker_pid' in data:
         from . import semaphore_tracker
         semaphore_tracker._semaphore_tracker._pid = data["tracker_pid"]
 
