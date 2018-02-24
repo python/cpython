@@ -111,6 +111,27 @@ class ImportTests(unittest.TestCase):
         self.assertIn(cm.exception.name, {'posixpath', 'ntpath'})
         self.assertIsNotNone(cm.exception)
 
+    def test_from_import_star_invalid_type(self):
+        TESTFNnoat = TESTFN[1:]
+        source = TESTFNnoat + os.extsep + "py"
+        sys.path.insert(0, os.curdir)
+        try:
+            with open(source, "w") as f:
+                f.write("__all__ = [1]")
+            with self.assertRaisesRegex(
+                    TypeError, f"{TESTFNnoat}.__all__ must be str"):
+                exec(f"from {TESTFNnoat} import *")
+            unload(TESTFNnoat)
+            with open(source, "w") as f:
+                f.write("import sys\nsys.modules[__name__].__dict__[1] = 1")
+            with self.assertRaisesRegex(
+                    TypeError, f"{TESTFNnoat}.__dict__ must be str"):
+                exec(f"from {TESTFNnoat} import *")
+        finally:
+            del sys.path[0]
+            remove_files(TESTFNnoat)
+            unload(TESTFNnoat)
+
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
         # this far, we know for sure that "random" exists.
