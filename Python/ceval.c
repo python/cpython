@@ -4849,7 +4849,15 @@ import_all_from(PyObject *locals, PyObject *v)
                 PyErr_Clear();
             break;
         }
-        if (skip_leading_underscores && PyUnicode_Check(name)) {
+        if (!PyUnicode_Check(name)) {
+            PyErr_Format(PyExc_TypeError,
+                         "Item in __all__ must be str, not %.100s",
+                         Py_TYPE(name)->tp_name);
+            Py_DECREF(name);
+            err = -1;
+            break;
+        }
+        if (skip_leading_underscores) {
             if (PyUnicode_READY(name) == -1) {
                 Py_DECREF(name);
                 err = -1;

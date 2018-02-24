@@ -104,6 +104,15 @@ class AllTest(unittest.TestCase):
                   ignored)
             print('Following modules failed to be imported:', failed_imports)
 
+    def test_invalid_type_in_all(self):
+        for mod in sys.modules.values():
+            if hasattr(mod, "__all__") and mod.__name__ != "__future__":
+                break
+        modname = mod.__name__
+        mod.__all__.append(1)
+        with self.assertRaisesRegex(TypeError, "__all__ must be str"):
+            exec("from {} import *".format(modname))
+
 
 if __name__ == "__main__":
     unittest.main()
