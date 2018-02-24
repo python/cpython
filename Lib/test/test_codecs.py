@@ -1210,15 +1210,15 @@ class EscapeDecodeTest(unittest.TestCase):
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarns(SyntaxWarning):
                     check(b"\\" + b, b"\\" + b)
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarns(SyntaxWarning):
                 check(b"\\" + b.upper(), b"\\" + b.upper())
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(SyntaxWarning):
             check(br"\8", b"\\8")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(SyntaxWarning):
             check(br"\9", b"\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(SyntaxWarning):
             check(b"\\\xfa", b"\\\xfa")
 
     def test_errors(self):
@@ -2482,16 +2482,16 @@ class UnicodeEscapeTest(unittest.TestCase):
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtuvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarns(SyntaxWarning):
                     check(b"\\" + b, "\\" + chr(i))
             if b.upper() not in b'UN':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarns(SyntaxWarning):
                     check(b"\\" + b.upper(), "\\" + chr(i-32))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(SyntaxWarning):
             check(br"\8", "\\8")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(SyntaxWarning):
             check(br"\9", "\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(SyntaxWarning):
             check(b"\\\xfa", "\\\xfa")
 
     def test_decode_errors(self):

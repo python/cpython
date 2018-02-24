@@ -1255,7 +1255,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (result == NULL)
         return NULL;
     if (first_invalid_escape != NULL) {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+        if (PyErr_WarnFormat(PyExc_SyntaxWarning, 1,
                              "invalid escape sequence '\\%c'",
                              (unsigned char)*first_invalid_escape) < 0) {
             Py_DECREF(result);

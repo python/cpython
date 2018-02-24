@@ -4158,11 +4158,11 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     if (msg == NULL) {
         return -1;
     }
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
                                    c->c_filename, LINENO(n),
                                    NULL, NULL) < 0)
     {
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             const char *s;
 
             /* Replace the DeprecationWarning exception with a SyntaxError
