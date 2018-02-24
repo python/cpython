@@ -3727,10 +3727,6 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     }
 
     if (PyUnicode_Check(path)) {
-        if (PyUnicode_READY(path) == -1) {
-            Py_DECREF(path);
-            return 0;
-        }
         output = path;
     }
     else if (PyBytes_Check(path) || is_buffer) {
@@ -4190,7 +4186,10 @@ unicode_decode_call_errorhandler_writer(
     Py_ssize_t insize;
     Py_ssize_t newpos;
     Py_ssize_t replen;
+    Py_ssize_t remain;
     PyObject *inputobj = NULL;
+    int need_to_grow = 0;
+    const char *new_inptr;
 
     if (*errorHandler == NULL) {
         *errorHandler = PyCodec_LookupError(errors);
@@ -4221,6 +4220,7 @@ unicode_decode_call_errorhandler_writer(
     inputobj = PyUnicodeDecodeError_GetObject(*exceptionObject);
     if (!inputobj)
         goto onError;
+    remain = *inend - *input - *endinpos;
     *input = PyBytes_AS_STRING(inputobj);
     insize = PyBytes_GET_SIZE(inputobj);
     *inend = *input + insize;
@@ -4238,8 +4238,21 @@ unicode_decode_call_errorhandler_writer(
     replen = PyUnicode_GET_LENGTH(repunicode);
     if (replen > 1) {
         writer->min_length += replen - 1;
+        need_to_grow = 1;
+    }
+    new_inptr = *input + newpos;
+    if (*inend - new_inptr > remain) {
+        /* We don't know the decoding algorithm here so we make the worst
+           assumption that one byte decodes to one unicode character.
+           If unfortunately one byte could decode to more unicode characters,
+           the decoder may write out-of-bound then.  Is it possible for the
+           algorithms using this function? */
+        writer->min_length += *inend - new_inptr - remain;
+        need_to_grow = 1;
+    }
+    if (need_to_grow) {
         writer->overallocate = 1;
-        if (_PyUnicodeWriter_Prepare(writer, writer->min_length,
+        if (_PyUnicodeWriter_Prepare(writer, writer->min_length - writer->pos,
                             PyUnicode_MAX_CHAR_VALUE(repunicode)) == -1)
             goto onError;
     }
@@ -4247,7 +4260,7 @@ unicode_decode_call_errorhandler_writer(
         goto onError;
 
     *endinpos = newpos;
-    *inptr = *input + newpos;
+    *inptr = new_inptr;
 
     /* we made it! */
     Py_DECREF(restuple);
@@ -5572,7 +5585,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 #endif
 
     /* Note: size will always be longer than the resulting Unicode
-       character count */
+       character count normally.  Error handler will take care of
+       resizing when needed. */
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = (e - q + 1) / 2;
     if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
@@ -6067,9 +6081,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_ASCII_CHAR
 #undef WRITE_CHAR
@@ -6346,9 +6358,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_CHAR
     }
@@ -6412,7 +6422,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         if (ch < 0x100) {
             *p++ = (char) ch;
         }
-        /* U+0000-U+00ff range: Map 16-bit characters to '\uHHHH' */
+        /* U+0100-U+ffff range: Map 16-bit characters to '\uHHHH' */
         else if (ch < 0x10000) {
             *p++ = '\\';
             *p++ = 'u';
@@ -11038,7 +11048,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-    assert(_PyUnicode_HASH(right_uni) != 1);
+    assert(_PyUnicode_HASH(right_uni) != -1);
     hash = _PyUnicode_HASH(left);
     if (hash != -1 && hash != _PyUnicode_HASH(right_uni))
         return 0;
@@ -11577,7 +11587,7 @@ unicode_hash(PyObject *self)
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
 \n\
-Return the lowest index in S where substring sub is found, \n\
+Return the lowest index in S where substring sub is found,\n\
 such that sub is contained within S[start:end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\
@@ -11609,6 +11619,25 @@ unicode_index(PyObject *self, PyObject *args)
     }
 
     return PyLong_FromSsize_t(result);
+}
+
+/*[clinic input]
+str.isascii as unicode_isascii
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+[clinic start generated code]*/
+
+static PyObject *
+unicode_isascii_impl(PyObject *self)
+/*[clinic end generated code: output=c5910d64b5a8003f input=5a43cbc6399621d5]*/
+{
+    if (PyUnicode_READY(self) == -1) {
+        return NULL;
+    }
+    return PyBool_FromLong(PyUnicode_IS_ASCII(self));
 }
 
 /*[clinic input]
@@ -13801,6 +13830,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_UPPER_METHODDEF
     {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
     {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    UNICODE_ISASCII_METHODDEF
     UNICODE_ISLOWER_METHODDEF
     UNICODE_ISUPPER_METHODDEF
     UNICODE_ISTITLE_METHODDEF

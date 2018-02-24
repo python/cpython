@@ -146,9 +146,10 @@ Functions, Constants, and Exceptions
 
 .. exception:: CertificateError
 
-   Raised to signal an error with a certificate (such as mismatching
-   hostname).  Certificate errors detected by OpenSSL, though, raise
-   an :exc:`SSLCertVerificationError`.
+   An alias for :exc:`SSLCertVerificationError`.
+
+   .. versionchanged:: 3.7
+      The exception is now an alias for :exc:`SSLCertVerificationError`.
 
 
 Socket creation
@@ -430,8 +431,14 @@ Certificate handling
       of the certificate, is now supported.
 
    .. versionchanged:: 3.7
+      The function is no longer used to TLS connections. Hostname matching
+      is now performed by OpenSSL.
+
       Allow wildcard when it is the leftmost and the only character
-      in that segment.
+      in that segment. Partial wildcards like ``www*.example.com`` are no
+      longer supported.
+
+   .. deprecated:: 3.7
 
 .. function:: cert_time_to_seconds(cert_time)
 
@@ -850,6 +857,14 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: HAS_NEVER_CHECK_COMMON_NAME
+
+   Whether the OpenSSL library has built-in support not checking subject
+   common name and :attr:`SSLContext.hostname_checks_common_name` is
+   writeable.
+
+   .. versionadded:: 3.7
+
 .. data:: HAS_ECDH
 
    Whether the OpenSSL library has built-in support for Elliptic Curve-based
@@ -1075,6 +1090,12 @@ SSL sockets also have the following additional methods and attributes:
       The socket timeout is no more reset each time bytes are received or sent.
       The socket timeout is now to maximum total duration of the handshake.
 
+   .. versionchanged:: 3.7
+      Hostname or IP address is matched by OpenSSL during handshake. The
+      function :func:`match_hostname` is no longer used. In case OpenSSL
+      refuses a hostname or IP address, the handshake is aborted early and
+      a TLS alert message is send to the peer.
+
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
    If there is no certificate for the peer on the other end of the connection,
@@ -1246,6 +1267,12 @@ SSL sockets also have the following additional methods and attributes:
    socket or if the hostname was not specified in the constructor.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+      The attribute is now always ASCII text. When ``server_hostname`` is
+      an internationalized domain name (IDN), this attribute now stores the
+      A-label form (``"xn--pythn-mua.org"``), rather than the U-label form
+      (``"pythön.org"``).
 
 .. attribute:: SSLSocket.session
 
@@ -1511,23 +1538,24 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.3
 
-.. method:: SSLContext.set_servername_callback(server_name_callback)
+.. attribute:: SSLContext.sni_callback
 
    Register a callback function that will be called after the TLS Client Hello
    handshake message has been received by the SSL/TLS server when the TLS client
    specifies a server name indication. The server name indication mechanism
    is specified in :rfc:`6066` section 3 - Server Name Indication.
 
-   Only one callback can be set per ``SSLContext``.  If *server_name_callback*
-   is ``None`` then the callback is disabled. Calling this function a
+   Only one callback can be set per ``SSLContext``.  If *sni_callback*
+   is set to ``None`` then the callback is disabled. Calling this function a
    subsequent time will disable the previously registered callback.
 
-   The callback function, *server_name_callback*, will be called with three
+   The callback function will be called with three
    arguments; the first being the :class:`ssl.SSLSocket`, the second is a string
    that represents the server name that the client is intending to communicate
    (or :const:`None` if the TLS Client Hello does not contain a server name)
    and the third argument is the original :class:`SSLContext`. The server name
-   argument is the IDNA decoded server name.
+   argument is text. For internationalized domain name, the server
+   name is an IDN A-label (``"xn--pythn-mua.org"``).
 
    A typical use of this callback is to change the :class:`ssl.SSLSocket`'s
    :attr:`SSLSocket.context` attribute to a new object of type
@@ -1542,22 +1570,32 @@ to speed up repeated connections from the same clients.
    the TLS connection has progressed beyond the TLS Client Hello and therefore
    will not contain return meaningful values nor can they be called safely.
 
-   The *server_name_callback* function must return ``None`` to allow the
+   The *sni_callback* function must return ``None`` to allow the
    TLS negotiation to continue.  If a TLS failure is required, a constant
    :const:`ALERT_DESCRIPTION_* <ALERT_DESCRIPTION_INTERNAL_ERROR>` can be
    returned.  Other return values will result in a TLS fatal error with
    :const:`ALERT_DESCRIPTION_INTERNAL_ERROR`.
 
-   If there is an IDNA decoding error on the server name, the TLS connection
-   will terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
-   alert message to the client.
-
-   If an exception is raised from the *server_name_callback* function the TLS
+   If an exception is raised from the *sni_callback* function the TLS
    connection will terminate with a fatal TLS alert message
    :const:`ALERT_DESCRIPTION_HANDSHAKE_FAILURE`.
 
    This method will raise :exc:`NotImplementedError` if the OpenSSL library
    had OPENSSL_NO_TLSEXT defined when it was built.
+
+   .. versionadded:: 3.7
+
+.. attribute:: SSLContext.set_servername_callback(server_name_callback)
+
+   This is a legacy API retained for backwards compatibility. When possible,
+   you should use :attr:`sni_callback` instead. The given *server_name_callback*
+   is similar to *sni_callback*, except that when the server hostname is an
+   IDN-encoded internationalized domain name, the *server_name_callback*
+   receives a decoded U-label (``"pythön.org"``).
+
+   If there is an decoding error on the server name, the TLS connection will
+   terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
+   alert message to the client.
 
    .. versionadded:: 3.4
 
@@ -1686,7 +1724,7 @@ to speed up repeated connections from the same clients.
 
       import socket, ssl
 
-      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+      context = ssl.SSLContext()
       context.verify_mode = ssl.CERT_REQUIRED
       context.check_hostname = True
       context.load_default_certs()
@@ -1729,6 +1767,17 @@ to speed up repeated connections from the same clients.
 
    The protocol version chosen when constructing the context.  This attribute
    is read-only.
+
+.. attribute:: SSLContext.hostname_checks_common_name
+
+   Whether :attr:`~SSLContext.check_hostname` falls back to verify the cert's
+   subject common name in the absence of a subject alternative name
+   extension (default: true).
+
+   .. versionadded:: 3.7
+
+   .. note::
+      Only writeable with OpenSSL 1.1.0 or higher.
 
 .. attribute:: SSLContext.verify_flags
 
@@ -1920,7 +1969,7 @@ If you prefer to tune security settings yourself, you might create
 a context from scratch (but beware that you might not get the settings
 right)::
 
-   >>> context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+   >>> context = ssl.SSLContext()
    >>> context.verify_mode = ssl.CERT_REQUIRED
    >>> context.check_hostname = True
    >>> context.load_verify_locations("/etc/ssl/certs/ca-bundle.crt")
@@ -2323,6 +2372,10 @@ protocols and applications, the service can be identified by the hostname;
 in this case, the :func:`match_hostname` function can be used.  This common
 check is automatically performed when :attr:`SSLContext.check_hostname` is
 enabled.
+
+.. versionchanged:: 3.7
+   Hostname matchings is now performed by OpenSSL. Python no longer uses
+   :func:`match_hostname`.
 
 In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have

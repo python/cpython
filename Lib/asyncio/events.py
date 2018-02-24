@@ -156,6 +156,14 @@ class TimerHandle(Handle):
             self._loop._timer_handle_cancelled(self)
         super().cancel()
 
+    def when(self):
+        """Return a scheduled callback time.
+
+        The time is an absolute timestamp, using the same time
+        reference as loop.time().
+        """
+        return self._when
+
 
 class AbstractServer:
     """Abstract server returned by create_server()."""
@@ -351,6 +359,14 @@ class AbstractEventLoop:
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
         to make the server to start accepting connections.
+        """
+        raise NotImplementedError
+
+    async def sendfile(self, transport, file, offset=0, count=None,
+                       *, fallback=True):
+        """Send a file through a transport.
+
+        Return an amount of sent bytes.
         """
         raise NotImplementedError
 

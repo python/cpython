@@ -187,7 +187,6 @@ tightloop_example.events = [(0, 'call'),
                             (1, 'line'),
                             (2, 'line'),
                             (3, 'line'),
-                            (4, 'line'),
                             (5, 'line'),
                             (5, 'line'),
                             (5, 'line'),
@@ -715,12 +714,43 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
+    @jump_test(5, 11, [2, 4, 12])
+    def test_jump_over_return_try_finally_in_finally_block(output):
+        try:
+            output.append(2)
+        finally:
+            output.append(4)
+            output.append(5)
+            return
+            try:
+                output.append(8)
+            finally:
+                output.append(10)
+            pass
+        output.append(12)
+
     @jump_test(3, 4, [1, 4])
     def test_jump_infinite_while_loop(output):
         output.append(1)
         while True:
             output.append(3)
         output.append(4)
+
+    @jump_test(2, 4, [4, 4])
+    def test_jump_forwards_into_while_block(output):
+        i = 1
+        output.append(2)
+        while i <= 2:
+            output.append(4)
+            i += 1
+
+    @jump_test(5, 3, [3, 3, 3, 5])
+    def test_jump_backwards_into_while_block(output):
+        i = 1
+        while i <= 2:
+            output.append(3)
+            i += 1
+        output.append(5)
 
     @jump_test(2, 3, [1, 3])
     def test_jump_forwards_out_of_with_block(output):
@@ -916,22 +946,6 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
-    @jump_test(2, 4, [], (ValueError, 'into'))
-    def test_no_jump_forwards_into_while_block(output):
-        i = 1
-        output.append(2)
-        while i <= 2:
-            output.append(4)
-            i += 1
-
-    @jump_test(5, 3, [3, 3], (ValueError, 'into'))
-    def test_no_jump_backwards_into_while_block(output):
-        i = 1
-        while i <= 2:
-            output.append(3)
-            i += 1
-        output.append(5)
-
     @jump_test(1, 3, [], (ValueError, 'into'))
     def test_no_jump_forwards_into_with_block(output):
         output.append(1)
@@ -1023,6 +1037,16 @@ class JumpTestCase(unittest.TestCase):
             output.append(3)
         with tracecontext(output, 4):
             output.append(5)
+
+    @jump_test(5, 7, [2, 4], (ValueError, 'finally'))
+    def test_no_jump_over_return_out_of_finally_block(output):
+        try:
+            output.append(2)
+        finally:
+            output.append(4)
+            output.append(5)
+            return
+        output.append(7)
 
     @jump_test(7, 4, [1, 6], (ValueError, 'into'))
     def test_no_jump_into_for_block_before_else(output):

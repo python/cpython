@@ -38,8 +38,10 @@ from . import constants
 from . import coroutines
 from . import events
 from . import futures
+from . import protocols
 from . import sslproto
 from . import tasks
+from . import transports
 from .log import logger
 
 
@@ -153,6 +155,75 @@ def _run_until_complete_cb(fut):
             # stop it.
             return
     futures._get_loop(fut).stop()
+
+
+
+class _SendfileFallbackProtocol(protocols.Protocol):
+    def __init__(self, transp):
+        if not isinstance(transp, transports._FlowControlMixin):
+            raise TypeError("transport should be _FlowControlMixin instance")
+        self._transport = transp
+        self._proto = transp.get_protocol()
+        self._should_resume_reading = transp.is_reading()
+        self._should_resume_writing = transp._protocol_paused
+        transp.pause_reading()
+        transp.set_protocol(self)
+        if self._should_resume_writing:
+            self._write_ready_fut = self._transport._loop.create_future()
+        else:
+            self._write_ready_fut = None
+
+    async def drain(self):
+        if self._transport.is_closing():
+            raise ConnectionError("Connection closed by peer")
+        fut = self._write_ready_fut
+        if fut is None:
+            return
+        await fut
+
+    def connection_made(self, transport):
+        raise RuntimeError("Invalid state: "
+                           "connection should have been established already.")
+
+    def connection_lost(self, exc):
+        if self._write_ready_fut is not None:
+            # Never happens if peer disconnects after sending the whole content
+            # Thus disconnection is always an exception from user perspective
+            if exc is None:
+                self._write_ready_fut.set_exception(
+                    ConnectionError("Connection is closed by peer"))
+            else:
+                self._write_ready_fut.set_exception(exc)
+        self._proto.connection_lost(exc)
+
+    def pause_writing(self):
+        if self._write_ready_fut is not None:
+            return
+        self._write_ready_fut = self._transport._loop.create_future()
+
+    def resume_writing(self):
+        if self._write_ready_fut is None:
+            return
+        self._write_ready_fut.set_result(False)
+        self._write_ready_fut = None
+
+    def data_received(self, data):
+        raise RuntimeError("Invalid state: reading should be paused")
+
+    def eof_received(self):
+        raise RuntimeError("Invalid state: reading should be paused")
+
+    async def restore(self):
+        self._transport.set_protocol(self._proto)
+        if self._should_resume_reading:
+            self._transport.resume_reading()
+        if self._write_ready_fut is not None:
+            # Cancel the future.
+            # Basically it has no effect because protocol is switched back,
+            # no code should wait for it anymore.
+            self._write_ready_fut.cancel()
+        if self._should_resume_writing:
+            self._proto.resume_writing()
 
 
 class Server(events.AbstractServer):
@@ -650,7 +721,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._write_to_self()
         return handle
 
-    async def run_in_executor(self, executor, func, *args):
+    def run_in_executor(self, executor, func, *args):
         self._check_closed()
         if self._debug:
             self._check_callback(func, 'run_in_executor')
@@ -659,7 +730,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if executor is None:
                 executor = concurrent.futures.ThreadPoolExecutor()
                 self._default_executor = executor
-        return await futures.wrap_future(
+        return futures.wrap_future(
             executor.submit(func, *args), loop=self)
 
     def set_default_executor(self, executor):
@@ -925,6 +996,82 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise
 
         return transport, protocol
+
+    async def sendfile(self, transport, file, offset=0, count=None,
+                       *, fallback=True):
+        """Send a file to transport.
+
+        Return the total number of bytes which were sent.
+
+        The method uses high-performance os.sendfile if available.
+
+        file must be a regular file object opened in binary mode.
+
+        offset tells from where to start reading the file. If specified,
+        count is the total number of bytes to transmit as opposed to
+        sending the file until EOF is reached. File position is updated on
+        return or also in case of error in which case file.tell()
+        can be used to figure out the number of bytes
+        which were sent.
+
+        fallback set to True makes asyncio to manually read and send
+        the file when the platform does not support the sendfile syscall
+        (e.g. Windows or SSL socket on Unix).
+
+        Raise SendfileNotAvailableError if the system does not support
+        sendfile syscall and fallback is False.
+        """
+        if transport.is_closing():
+            raise RuntimeError("Transport is closing")
+        mode = getattr(transport, '_sendfile_compatible',
+                       constants._SendfileMode.UNSUPPORTED)
+        if mode is constants._SendfileMode.UNSUPPORTED:
+            raise RuntimeError(
+                f"sendfile is not supported for transport {transport!r}")
+        if mode is constants._SendfileMode.TRY_NATIVE:
+            try:
+                return await self._sendfile_native(transport, file,
+                                                   offset, count)
+            except events.SendfileNotAvailableError as exc:
+                if not fallback:
+                    raise
+
+        if not fallback:
+            raise RuntimeError(
+                f"fallback is disabled and native sendfile is not "
+                f"supported for transport {transport!r}")
+
+        return await self._sendfile_fallback(transport, file,
+                                             offset, count)
+
+    async def _sendfile_native(self, transp, file, offset, count):
+        raise events.SendfileNotAvailableError(
+            "sendfile syscall is not supported")
+
+    async def _sendfile_fallback(self, transp, file, offset, count):
+        if offset:
+            file.seek(offset)
+        blocksize = min(count, 16384) if count else 16384
+        buf = bytearray(blocksize)
+        total_sent = 0
+        proto = _SendfileFallbackProtocol(transp)
+        try:
+            while True:
+                if count:
+                    blocksize = min(count - total_sent, blocksize)
+                    if blocksize <= 0:
+                        return total_sent
+                view = memoryview(buf)[:blocksize]
+                read = file.readinto(view)
+                if not read:
+                    return total_sent  # EOF
+                await proto.drain()
+                transp.write(view)
+                total_sent += read
+        finally:
+            if total_sent > 0 and hasattr(file, 'seek'):
+                file.seek(offset + total_sent)
+            await proto.restore()
 
     async def start_tls(self, transport, protocol, sslcontext, *,
                         server_side=False,

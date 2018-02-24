@@ -1,0 +1,3 @@
+Removed support of arguments in `tkinter.ttk.Treeview.selection`. It was
+deprecated in 3.6.  Use specialized methods like `selection_set` for
+changing the selection.

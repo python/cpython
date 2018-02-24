@@ -1,3 +1,0 @@
-Implement Server.start_serving(), Server.serve_forever(), and
-Server.is_serving() methods.  Add 'start_serving' keyword parameter to
-loop.create_server() and loop.create_unix_server().

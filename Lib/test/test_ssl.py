@@ -18,6 +18,7 @@ import asyncore
 import weakref
 import platform
 import functools
+import sysconfig
 try:
     import ctypes
 except ImportError:
@@ -30,7 +31,7 @@ PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
 IS_LIBRESSL = ssl.OPENSSL_VERSION.startswith('LibreSSL')
 IS_OPENSSL_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
-
+PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 def data_file(*name):
     return os.path.join(os.path.dirname(__file__), *name)
@@ -104,6 +105,7 @@ SIGNED_CERTFILE_ECC_HOSTNAME = 'localhost-ecc'
 SIGNING_CA = data_file("capath", "ceff1710.0")
 # cert with all kinds of subject alt names
 ALLSANFILE = data_file("allsans.pem")
+IDNSANSFILE = data_file("idnsans.pem")
 
 REMOTE_HOST = "self-signed.pythontest.net"
 
@@ -620,14 +622,16 @@ class BasicSocketTests(unittest.TestCase):
         fail(cert, 'example.net')
 
         # -- IPv6 matching --
-        cert = {'subject': ((('commonName', 'example.com'),),),
-                'subjectAltName': (('DNS', 'example.com'),
-                                   ('IP Address', '2001:0:0:0:0:0:0:CAFE\n'),
-                                   ('IP Address', '2003:0:0:0:0:0:0:BABA\n'))}
-        ok(cert, '2001::cafe')
-        ok(cert, '2003::baba')
-        fail(cert, '2003::bebe')
-        fail(cert, 'example.net')
+        if hasattr(socket, 'AF_INET6'):
+            cert = {'subject': ((('commonName', 'example.com'),),),
+                    'subjectAltName': (
+                        ('DNS', 'example.com'),
+                        ('IP Address', '2001:0:0:0:0:0:0:CAFE\n'),
+                        ('IP Address', '2003:0:0:0:0:0:0:BABA\n'))}
+            ok(cert, '2001::cafe')
+            ok(cert, '2003::baba')
+            fail(cert, '2003::bebe')
+            fail(cert, 'example.net')
 
         # -- Miscellaneous --
 
@@ -663,14 +667,45 @@ class BasicSocketTests(unittest.TestCase):
 
         # Issue #17980: avoid denials of service by refusing more than one
         # wildcard per fragment.
-        cert = {'subject': ((('commonName', 'a*b.com'),),)}
-        fail(cert, 'axxb.com')
-        cert = {'subject': ((('commonName', 'a*b.co*'),),)}
-        fail(cert, 'axxb.com')
-        cert = {'subject': ((('commonName', 'a*b*.com'),),)}
-        with self.assertRaises(ssl.CertificateError) as cm:
-            ssl.match_hostname(cert, 'axxbxxc.com')
-        self.assertIn("too many wildcards", str(cm.exception))
+        cert = {'subject': ((('commonName', 'a*b.example.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "partial wildcards in leftmost label are not supported"):
+            ssl.match_hostname(cert, 'axxb.example.com')
+
+        cert = {'subject': ((('commonName', 'www.*.example.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "wildcard can only be present in the leftmost label"):
+            ssl.match_hostname(cert, 'www.sub.example.com')
+
+        cert = {'subject': ((('commonName', 'a*b*.example.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "too many wildcards"):
+            ssl.match_hostname(cert, 'axxbxxc.example.com')
+
+        cert = {'subject': ((('commonName', '*'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "sole wildcard without additional labels are not support"):
+            ssl.match_hostname(cert, 'host')
+
+        cert = {'subject': ((('commonName', '*.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                r"hostname 'com' doesn't match '\*.com'"):
+            ssl.match_hostname(cert, 'com')
+
+        # extra checks for _inet_paton()
+        for invalid in ['1', '', '1.2.3', '256.0.0.1', '127.0.0.1/24']:
+            with self.assertRaises(ValueError):
+                ssl._inet_paton(invalid)
+        for ipaddr in ['127.0.0.1', '192.168.0.1']:
+            self.assertTrue(ssl._inet_paton(ipaddr))
+        if hasattr(socket, 'AF_INET6'):
+            for ipaddr in ['::1', '2001:db8:85a3::8a2e:370:7334']:
+                self.assertTrue(ssl._inet_paton(ipaddr))
 
     def test_server_side(self):
         # server_hostname doesn't work for server sockets
@@ -936,6 +971,19 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegex(ssl.SSLError, "No cipher can be selected"):
             ctx.set_ciphers("^$:,;?*'dorothyx")
 
+    @unittest.skipUnless(PY_SSL_DEFAULT_CIPHERS == 1,
+                         "Test applies only to Python default ciphers")
+    def test_python_ciphers(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ciphers = ctx.get_ciphers()
+        for suite in ciphers:
+            name = suite['name']
+            self.assertNotIn("PSK", name)
+            self.assertNotIn("SRP", name)
+            self.assertNotIn("MD5", name)
+            self.assertNotIn("RC4", name)
+            self.assertNotIn("3DES", name)
+
     @unittest.skipIf(ssl.OPENSSL_VERSION_INFO < (1, 0, 2, 0, 0), 'OpenSSL too old')
     def test_get_ciphers(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -988,6 +1036,19 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertTrue(ctx.check_hostname)
 
+    def test_hostname_checks_common_name(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertTrue(ctx.hostname_checks_common_name)
+        if ssl.HAS_NEVER_CHECK_COMMON_NAME:
+            ctx.hostname_checks_common_name = True
+            self.assertTrue(ctx.hostname_checks_common_name)
+            ctx.hostname_checks_common_name = False
+            self.assertFalse(ctx.hostname_checks_common_name)
+            ctx.hostname_checks_common_name = True
+            self.assertTrue(ctx.hostname_checks_common_name)
+        else:
+            with self.assertRaises(AttributeError):
+                ctx.hostname_checks_common_name = True
 
     @unittest.skipUnless(have_verify_flags(),
                          "verify_flags need OpenSSL > 0.9.8")
@@ -1500,16 +1561,16 @@ class SSLErrorTests(unittest.TestCase):
                 # For compatibility
                 self.assertEqual(cm.exception.errno, ssl.SSL_ERROR_WANT_READ)
 
-    def test_bad_idna_in_server_hostname(self):
-        # Note: this test is testing some code that probably shouldn't exist
-        # in the first place, so if it starts failing at some point because
-        # you made the ssl module stop doing IDNA decoding then please feel
-        # free to remove it. The test was mainly added because this case used
-        # to cause memory corruption (see bpo-30594).
+
+    def test_bad_server_hostname(self):
         ctx = ssl.create_default_context()
-        with self.assertRaises(UnicodeError):
+        with self.assertRaises(ValueError):
             ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
-                         server_hostname="xn--.com")
+                         server_hostname="")
+        with self.assertRaises(ValueError):
+            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                         server_hostname=".example.org")
+
 
 class MemoryBIOTests(unittest.TestCase):
 
@@ -1575,7 +1636,6 @@ class MemoryBIOTests(unittest.TestCase):
 
 
 class SimpleBackgroundTests(unittest.TestCase):
-
     """Tests that connect to a simple server running in the background"""
 
     def setUp(self):
@@ -2536,8 +2596,9 @@ class ThreadedTests(unittest.TestCase):
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname="invalid") as s:
-                with self.assertRaisesRegex(ssl.CertificateError,
-                                            "hostname 'invalid' doesn't match 'localhost'"):
+                with self.assertRaisesRegex(
+                        ssl.CertificateError,
+                        "Hostname mismatch, certificate is not valid for 'invalid'."):
                     s.connect((HOST, server.port))
 
         # missing server_hostname arg should cause an exception, too
@@ -2591,6 +2652,68 @@ class ThreadedTests(unittest.TestCase):
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+
+    def test_check_hostname_idn(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.load_cert_chain(IDNSANSFILE)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = True
+        context.load_verify_locations(SIGNING_CA)
+
+        # correct hostname should verify, when specified in several
+        # different ways
+        idn_hostnames = [
+            ('könig.idn.pythontest.net',
+             'xn--knig-5qa.idn.pythontest.net'),
+            ('xn--knig-5qa.idn.pythontest.net',
+             'xn--knig-5qa.idn.pythontest.net'),
+            (b'xn--knig-5qa.idn.pythontest.net',
+             'xn--knig-5qa.idn.pythontest.net'),
+
+            ('königsgäßchen.idna2003.pythontest.net',
+             'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+            ('xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
+             'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+            (b'xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
+             'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+
+            # ('königsgäßchen.idna2008.pythontest.net',
+            #  'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'),
+            ('xn--knigsgchen-b4a3dun.idna2008.pythontest.net',
+             'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'),
+            (b'xn--knigsgchen-b4a3dun.idna2008.pythontest.net',
+             'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'),
+
+        ]
+        for server_hostname, expected_hostname in idn_hostnames:
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket(),
+                                         server_hostname=server_hostname) as s:
+                    self.assertEqual(s.server_hostname, expected_hostname)
+                    s.connect((HOST, server.port))
+                    cert = s.getpeercert()
+                    self.assertEqual(s.server_hostname, expected_hostname)
+                    self.assertTrue(cert, "Can't get peer certificate.")
+
+                with ssl.SSLSocket(socket.socket(),
+                                   server_hostname=server_hostname) as s:
+                    s.connect((HOST, server.port))
+                    s.getpeercert()
+                    self.assertEqual(s.server_hostname, expected_hostname)
+
+        # incorrect hostname should raise an exception
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with context.wrap_socket(socket.socket(),
+                                     server_hostname="python.example.org") as s:
+                with self.assertRaises(ssl.CertificateError):
+                    s.connect((HOST, server.port))
 
     def test_wrong_cert(self):
         """Connecting when the server rejects the client's certificate
