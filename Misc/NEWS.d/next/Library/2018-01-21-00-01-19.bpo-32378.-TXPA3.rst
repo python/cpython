@@ -1,0 +1,2 @@
+The ssl module now contains a workaround for missing NPN support in LibreSSL
+2.6.1. Upstream has removed NPN without setting OPENSSL_NO_NEXTPROTONEG.
