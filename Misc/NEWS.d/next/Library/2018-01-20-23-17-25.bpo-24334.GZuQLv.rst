@@ -1,0 +1,4 @@
+Internal implementation details of ssl module were cleaned up. The SSLSocket
+has one less layer of indirection. Owner and session information are now
+handled by the SSLSocket and SSLObject constructor. Channel binding
+implementation has been simplified.

@@ -408,6 +408,8 @@ class _ssl.SSLSession "PySSLSession *" "&PySSLSession_Type"
 
 static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
+static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
+static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
 #define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
 #define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
 #define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
@@ -799,6 +801,7 @@ static PySSLSocket *
 newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
                enum py_ssl_server_or_client socket_type,
                char *server_hostname,
+               PyObject *owner, PyObject *session,
                PySSLMemoryBIO *inbio, PySSLMemoryBIO *outbio)
 {
     PySSLSocket *self;
@@ -871,6 +874,18 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     if (sock != NULL) {
         self->Socket = PyWeakref_NewRef((PyObject *) sock, NULL);
         if (self->Socket == NULL) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+    if (owner && owner != Py_None) {
+        if (PySSL_set_owner(self, owner, NULL) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+    if (session && session != Py_None) {
+        if (PySSL_set_session(self, session, NULL) == -1) {
             Py_DECREF(self);
             return NULL;
         }
@@ -1677,7 +1692,7 @@ _ssl__test_decode_cert_impl(PyObject *module, PyObject *path)
 
 
 /*[clinic input]
-_ssl._SSLSocket.peer_certificate
+_ssl._SSLSocket.getpeercert
     der as binary_mode: bool = False
     /
 
@@ -1693,8 +1708,8 @@ return the certificate even if it wasn't validated.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_peer_certificate_impl(PySSLSocket *self, int binary_mode)
-/*[clinic end generated code: output=f0dc3e4d1d818a1d input=8281bd1d193db843]*/
+_ssl__SSLSocket_getpeercert_impl(PySSLSocket *self, int binary_mode)
+/*[clinic end generated code: output=1f0ab66dfb693c88 input=c0fbe802e57629b7]*/
 {
     int verification;
     X509 *peer_cert;
@@ -2395,13 +2410,11 @@ error:
 _ssl._SSLSocket.shutdown
 
 Does the SSL shutdown handshake with the remote end.
-
-Returns the underlying socket object.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
-/*[clinic end generated code: output=ca1aa7ed9d25ca42 input=ede2cc1a2ddf0ee4]*/
+/*[clinic end generated code: output=ca1aa7ed9d25ca42 input=11d39e69b0a2bf4a]*/
 {
     int err, sockstate, nonblocking;
     int zeros = 0;
@@ -2506,37 +2519,48 @@ error:
 }
 
 /*[clinic input]
-_ssl._SSLSocket.tls_unique_cb
+_ssl._SSLSocket.get_channel_binding
+   cb_type: str = "tls-unique"
 
-Returns the 'tls-unique' channel binding data, as defined by RFC 5929.
+Get channel binding data for current connection.
 
-If the TLS handshake is not yet complete, None is returned.
+Raise ValueError if the requested `cb_type` is not supported.  Return bytes
+of the data or None if the data is not available (e.g. before the handshake).
+Only 'tls-unique' channel binding data from RFC 5929 is supported.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_tls_unique_cb_impl(PySSLSocket *self)
-/*[clinic end generated code: output=f3a832d603f586af input=439525c7b3d8d34d]*/
+_ssl__SSLSocket_get_channel_binding_impl(PySSLSocket *self,
+                                         const char *cb_type)
+/*[clinic end generated code: output=34bac9acb6a61d31 input=08b7e43b99c17d41]*/
 {
-    PyObject *retval = NULL;
     char buf[PySSL_CB_MAXLEN];
     size_t len;
 
-    if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
-        /* if session is resumed XOR we are the client */
-        len = SSL_get_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+    if (strcmp(cb_type, "tls-unique") == 0) {
+        if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
+            /* if session is resumed XOR we are the client */
+            len = SSL_get_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+        }
+        else {
+            /* if a new session XOR we are the server */
+            len = SSL_get_peer_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+        }
     }
     else {
-        /* if a new session XOR we are the server */
-        len = SSL_get_peer_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+        PyErr_Format(
+            PyExc_ValueError,
+            "'%s' channel binding type not implemented",
+            cb_type
+        );
+        return NULL;
     }
 
     /* It cannot be negative in current OpenSSL version as of July 2011 */
     if (len == 0)
         Py_RETURN_NONE;
 
-    retval = PyBytes_FromStringAndSize(buf, len);
-
-    return retval;
+    return PyBytes_FromStringAndSize(buf, len);
 }
 
 #ifdef OPENSSL_VERSION_1_1
@@ -2706,7 +2730,8 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_WRITE_METHODDEF
     _SSL__SSLSOCKET_READ_METHODDEF
     _SSL__SSLSOCKET_PENDING_METHODDEF
-    _SSL__SSLSOCKET_PEER_CERTIFICATE_METHODDEF
+    _SSL__SSLSOCKET_GETPEERCERT_METHODDEF
+    _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
@@ -2714,7 +2739,6 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
     _SSL__SSLSOCKET_COMPRESSION_METHODDEF
     _SSL__SSLSOCKET_SHUTDOWN_METHODDEF
-    _SSL__SSLSOCKET_TLS_UNIQUE_CB_METHODDEF
     {NULL, NULL}
 };
 
@@ -3810,13 +3834,17 @@ _ssl._SSLContext._wrap_socket
     sock: object(subclass_of="PySocketModule.Sock_Type")
     server_side: int
     server_hostname as hostname_obj: object = None
+    *
+    owner: object = None
+    session: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
-                                   int server_side, PyObject *hostname_obj)
-/*[clinic end generated code: output=6973e4b60995e933 input=83859b9156ddfc63]*/
+                                   int server_side, PyObject *hostname_obj,
+                                   PyObject *owner, PyObject *session)
+/*[clinic end generated code: output=f103f238633940b4 input=957d5006183d1894]*/
 {
     char *hostname = NULL;
     PyObject *res;
@@ -3830,6 +3858,7 @@ _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
 
     res = (PyObject *) newPySSLSocket(self, (PySocketSockObject *)sock,
                                       server_side, hostname,
+                                      owner, session,
                                       NULL, NULL);
     if (hostname != NULL)
         PyMem_Free(hostname);
@@ -3842,14 +3871,18 @@ _ssl._SSLContext._wrap_bio
     outgoing: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
     server_side: int
     server_hostname as hostname_obj: object = None
+    *
+    owner: object = None
+    session: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
                                 PySSLMemoryBIO *outgoing, int server_side,
-                                PyObject *hostname_obj)
-/*[clinic end generated code: output=4fe4ba75ad95940d input=17725ecdac0bf220]*/
+                                PyObject *hostname_obj, PyObject *owner,
+                                PyObject *session)
+/*[clinic end generated code: output=5c5d6d9b41f99332 input=8cf22f4d586ac56a]*/
 {
     char *hostname = NULL;
     PyObject *res;
@@ -3862,6 +3895,7 @@ _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
     }
 
     res = (PyObject *) newPySSLSocket(self, NULL, server_side, hostname,
+                                      owner, session,
                                       incoming, outgoing);
 
     PyMem_Free(hostname);
@@ -5662,10 +5696,6 @@ PyInit__ssl(void)
 #endif
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_SNI", r);
-
-    r = Py_True;
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_TLS_UNIQUE", r);
 
 #ifdef OPENSSL_NO_ECDH
     r = Py_False;
