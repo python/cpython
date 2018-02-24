@@ -1,1 +1,1 @@
-Replace StringTranslatePseudoMappingTest with a defaultdict.
+Replace StringTranslatePseudoMapping with a defaultdict.
