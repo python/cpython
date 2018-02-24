@@ -337,13 +337,14 @@ typedef struct {
     unsigned int alpn_protocols_len;
 #endif
 #ifndef OPENSSL_NO_TLSEXT
-    PyObject *set_hostname;
+    PyObject *set_sni_cb;
 #endif
     int check_hostname;
     /* OpenSSL has no API to get hostflags from X509_VERIFY_PARAM* struct.
      * We have to maintain our own copy. OpenSSL's hostflags default to 0.
      */
     unsigned int hostflags;
+    int protocol;
 } PySSLContext;
 
 typedef struct {
@@ -407,8 +408,6 @@ class _ssl.SSLSession "PySSLSession *" "&PySSLSession_Type"
 
 static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
-
-#define PySSLContext_Check(v)   (Py_TYPE(v) == &PySSLContext_Type)
 #define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
 #define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
 #define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
@@ -761,7 +760,7 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
         ERR_clear_error();
     }
 
-    hostname = PyUnicode_Decode(server_hostname, len, "idna", "strict");
+    hostname = PyUnicode_Decode(server_hostname, len, "ascii", "strict");
     if (hostname == NULL) {
         goto error;
     }
@@ -1992,7 +1991,7 @@ PyDoc_STRVAR(PySSL_set_context_doc,
 "_setter_context(ctx)\n\
 \
 This changes the context associated with the SSLSocket. This is typically\n\
-used from within a callback function set by the set_servername_callback\n\
+used from within a callback function set by the sni_callback\n\
 on the SSLContext to change the certificate information associated with the\n\
 SSLSocket before the cryptographic exchange handshake messages\n");
 
@@ -2850,6 +2849,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     }
     self->ctx = ctx;
     self->hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
+    self->protocol = proto_version;
 #if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     self->npn_protocols = NULL;
 #endif
@@ -2857,7 +2857,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->alpn_protocols = NULL;
 #endif
 #ifndef OPENSSL_NO_TLSEXT
-    self->set_hostname = NULL;
+    self->set_sni_cb = NULL;
 #endif
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
@@ -2968,7 +2968,7 @@ static int
 context_traverse(PySSLContext *self, visitproc visit, void *arg)
 {
 #ifndef OPENSSL_NO_TLSEXT
-    Py_VISIT(self->set_hostname);
+    Py_VISIT(self->set_sni_cb);
 #endif
     return 0;
 }
@@ -2977,7 +2977,7 @@ static int
 context_clear(PySSLContext *self)
 {
 #ifndef OPENSSL_NO_TLSEXT
-    Py_CLEAR(self->set_hostname);
+    Py_CLEAR(self->set_sni_cb);
 #endif
     return 0;
 }
@@ -3354,6 +3354,10 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+static PyObject *
+get_protocol(PySSLContext *self, void *c) {
+    return PyLong_FromLong(self->protocol);
+}
 
 typedef struct {
     PyThreadState *thread_state;
@@ -3818,9 +3822,9 @@ _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
     PyObject *res;
 
     /* server_hostname is either None (or absent), or to be encoded
-       using the idna encoding. */
+       as IDN A-label (ASCII str). */
     if (hostname_obj != Py_None) {
-        if (!PyArg_Parse(hostname_obj, "et", "idna", &hostname))
+        if (!PyArg_Parse(hostname_obj, "es", "ascii", &hostname))
             return NULL;
     }
 
@@ -3851,9 +3855,9 @@ _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
     PyObject *res;
 
     /* server_hostname is either None (or absent), or to be encoded
-       using the idna encoding. */
+       as IDN A-label (ASCII str). */
     if (hostname_obj != Py_None) {
-        if (!PyArg_Parse(hostname_obj, "et", "idna", &hostname))
+        if (!PyArg_Parse(hostname_obj, "es", "ascii", &hostname))
             return NULL;
     }
 
@@ -3967,15 +3971,13 @@ _servername_callback(SSL *s, int *al, void *args)
     int ret;
     PySSLContext *ssl_ctx = (PySSLContext *) args;
     PySSLSocket *ssl;
-    PyObject *servername_o;
-    PyObject *servername_idna;
     PyObject *result;
     /* The high-level ssl.SSLSocket object */
     PyObject *ssl_socket;
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    if (ssl_ctx->set_hostname == NULL) {
+    if (ssl_ctx->set_sni_cb == NULL) {
         /* remove race condition in this the call back while if removing the
          * callback is in progress */
         PyGILState_Release(gstate);
@@ -4005,44 +4007,52 @@ _servername_callback(SSL *s, int *al, void *args)
         goto error;
 
     if (servername == NULL) {
-        result = PyObject_CallFunctionObjArgs(ssl_ctx->set_hostname, ssl_socket,
+        result = PyObject_CallFunctionObjArgs(ssl_ctx->set_sni_cb, ssl_socket,
                                               Py_None, ssl_ctx, NULL);
     }
     else {
-        servername_o = PyBytes_FromString(servername);
-        if (servername_o == NULL) {
+        PyObject *servername_bytes;
+        PyObject *servername_str;
+
+        servername_bytes = PyBytes_FromString(servername);
+        if (servername_bytes == NULL) {
             PyErr_WriteUnraisable((PyObject *) ssl_ctx);
             goto error;
         }
-        servername_idna = PyUnicode_FromEncodedObject(servername_o, "idna", NULL);
-        if (servername_idna == NULL) {
-            PyErr_WriteUnraisable(servername_o);
-            Py_DECREF(servername_o);
+        /* server_hostname was encoded to an A-label by our caller; put it
+         * back into a str object, but still as an A-label (bpo-28414)
+         */
+        servername_str = PyUnicode_FromEncodedObject(servername_bytes, "ascii", NULL);
+        Py_DECREF(servername_bytes);
+        if (servername_str == NULL) {
+            PyErr_WriteUnraisable(servername_bytes);
             goto error;
         }
-        Py_DECREF(servername_o);
-        result = PyObject_CallFunctionObjArgs(ssl_ctx->set_hostname, ssl_socket,
-                                              servername_idna, ssl_ctx, NULL);
-        Py_DECREF(servername_idna);
+        result = PyObject_CallFunctionObjArgs(
+            ssl_ctx->set_sni_cb, ssl_socket, servername_str,
+            ssl_ctx, NULL);
+        Py_DECREF(servername_str);
     }
     Py_DECREF(ssl_socket);
 
     if (result == NULL) {
-        PyErr_WriteUnraisable(ssl_ctx->set_hostname);
+        PyErr_WriteUnraisable(ssl_ctx->set_sni_cb);
         *al = SSL_AD_HANDSHAKE_FAILURE;
         ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     }
     else {
-        if (result != Py_None) {
+        /* Result may be None, a SSLContext or an integer
+         * None and SSLContext are OK, integer or other values are an error.
+         */
+        if (result == Py_None) {
+            ret = SSL_TLSEXT_ERR_OK;
+        } else {
             *al = (int) PyLong_AsLong(result);
             if (PyErr_Occurred()) {
                 PyErr_WriteUnraisable(result);
                 *al = SSL_AD_INTERNAL_ERROR;
             }
             ret = SSL_TLSEXT_ERR_ALERT_FATAL;
-        }
-        else {
-            ret = SSL_TLSEXT_ERR_OK;
         }
         Py_DECREF(result);
     }
@@ -4059,48 +4069,58 @@ error:
 }
 #endif
 
-/*[clinic input]
-_ssl._SSLContext.set_servername_callback
-    method as cb: object
-    /
-
-Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.
-
-If the argument is None then the callback is disabled. The method is called
-with the SSLSocket, the server name as a string, and the SSLContext object.
-See RFC 6066 for details of the SNI extension.
-[clinic start generated code]*/
-
 static PyObject *
-_ssl__SSLContext_set_servername_callback(PySSLContext *self, PyObject *cb)
-/*[clinic end generated code: output=3439a1b2d5d3b7ea input=a2a83620197d602b]*/
+get_sni_callback(PySSLContext *self, void *c)
 {
+    PyObject *cb = self->set_sni_cb;
+    if (cb == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(cb);
+    return cb;
+}
+
+static int
+set_sni_callback(PySSLContext *self, PyObject *arg, void *c)
+{
+    if (self->protocol == PY_SSL_VERSION_TLS_CLIENT) {
+        PyErr_SetString(PyExc_ValueError,
+                        "sni_callback cannot be set on TLS_CLIENT context");
+        return -1;
+    }
 #if HAVE_SNI && !defined(OPENSSL_NO_TLSEXT)
-    Py_CLEAR(self->set_hostname);
-    if (cb == Py_None) {
+    Py_CLEAR(self->set_sni_cb);
+    if (arg == Py_None) {
         SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
     }
     else {
-        if (!PyCallable_Check(cb)) {
+        if (!PyCallable_Check(arg)) {
             SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
             PyErr_SetString(PyExc_TypeError,
                             "not a callable object");
-            return NULL;
+            return -1;
         }
-        Py_INCREF(cb);
-        self->set_hostname = cb;
+        Py_INCREF(arg);
+        self->set_sni_cb = arg;
         SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
         SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
     }
-    Py_RETURN_NONE;
+    return 0;
 #else
     PyErr_SetString(PyExc_NotImplementedError,
                     "The TLS extension servername callback, "
                     "SSL_CTX_set_tlsext_servername_callback, "
                     "is not in the current OpenSSL library.");
-    return NULL;
+    return -1;
 #endif
 }
+
+PyDoc_STRVAR(PySSLContext_sni_callback_doc,
+"Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n\
+\n\
+If the argument is None then the callback is disabled. The method is called\n\
+with the SSLSocket, the server name as a string, and the SSLContext object.\n\
+See RFC 6066 for details of the SNI extension.");
 
 /*[clinic input]
 _ssl._SSLContext.cert_store_stats
@@ -4217,8 +4237,12 @@ static PyGetSetDef context_getsetlist[] = {
                        (setter) set_check_hostname, NULL},
     {"_host_flags", (getter) get_host_flags,
                     (setter) set_host_flags, NULL},
+    {"sni_callback", (getter) get_sni_callback,
+                       (setter) set_sni_callback, PySSLContext_sni_callback_doc},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
+    {"protocol", (getter) get_protocol,
+                 NULL, NULL},
     {"verify_flags", (getter) get_verify_flags,
                      (setter) set_verify_flags, NULL},
     {"verify_mode", (getter) get_verify_mode,
@@ -4238,7 +4262,6 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_SESSION_STATS_METHODDEF
     _SSL__SSLCONTEXT_SET_DEFAULT_VERIFY_PATHS_METHODDEF
     _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF
-    _SSL__SSLCONTEXT_SET_SERVERNAME_CALLBACK_METHODDEF
     _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF
     _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF
     _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
