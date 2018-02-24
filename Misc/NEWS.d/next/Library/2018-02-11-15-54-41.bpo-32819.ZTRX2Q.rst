@@ -1,0 +1,3 @@
+ssl.match_hostname() has been simplified and no longer depends on re and
+ipaddress module for wildcard and IP addresses. Error reporting for invalid
+wildcards has been improved.

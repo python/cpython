@@ -622,14 +622,16 @@ class BasicSocketTests(unittest.TestCase):
         fail(cert, 'example.net')
 
         # -- IPv6 matching --
-        cert = {'subject': ((('commonName', 'example.com'),),),
-                'subjectAltName': (('DNS', 'example.com'),
-                                   ('IP Address', '2001:0:0:0:0:0:0:CAFE\n'),
-                                   ('IP Address', '2003:0:0:0:0:0:0:BABA\n'))}
-        ok(cert, '2001::cafe')
-        ok(cert, '2003::baba')
-        fail(cert, '2003::bebe')
-        fail(cert, 'example.net')
+        if hasattr(socket, 'AF_INET6'):
+            cert = {'subject': ((('commonName', 'example.com'),),),
+                    'subjectAltName': (
+                        ('DNS', 'example.com'),
+                        ('IP Address', '2001:0:0:0:0:0:0:CAFE\n'),
+                        ('IP Address', '2003:0:0:0:0:0:0:BABA\n'))}
+            ok(cert, '2001::cafe')
+            ok(cert, '2003::baba')
+            fail(cert, '2003::bebe')
+            fail(cert, 'example.net')
 
         # -- Miscellaneous --
 
@@ -665,14 +667,45 @@ class BasicSocketTests(unittest.TestCase):
 
         # Issue #17980: avoid denials of service by refusing more than one
         # wildcard per fragment.
-        cert = {'subject': ((('commonName', 'a*b.com'),),)}
-        fail(cert, 'axxb.com')
-        cert = {'subject': ((('commonName', 'a*b.co*'),),)}
-        fail(cert, 'axxb.com')
-        cert = {'subject': ((('commonName', 'a*b*.com'),),)}
-        with self.assertRaises(ssl.CertificateError) as cm:
-            ssl.match_hostname(cert, 'axxbxxc.com')
-        self.assertIn("too many wildcards", str(cm.exception))
+        cert = {'subject': ((('commonName', 'a*b.example.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "partial wildcards in leftmost label are not supported"):
+            ssl.match_hostname(cert, 'axxb.example.com')
+
+        cert = {'subject': ((('commonName', 'www.*.example.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "wildcard can only be present in the leftmost label"):
+            ssl.match_hostname(cert, 'www.sub.example.com')
+
+        cert = {'subject': ((('commonName', 'a*b*.example.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "too many wildcards"):
+            ssl.match_hostname(cert, 'axxbxxc.example.com')
+
+        cert = {'subject': ((('commonName', '*'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                "sole wildcard without additional labels are not support"):
+            ssl.match_hostname(cert, 'host')
+
+        cert = {'subject': ((('commonName', '*.com'),),)}
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
+                r"hostname 'com' doesn't match '\*.com'"):
+            ssl.match_hostname(cert, 'com')
+
+        # extra checks for _inet_paton()
+        for invalid in ['1', '', '1.2.3', '256.0.0.1', '127.0.0.1/24']:
+            with self.assertRaises(ValueError):
+                ssl._inet_paton(invalid)
+        for ipaddr in ['127.0.0.1', '192.168.0.1']:
+            self.assertTrue(ssl._inet_paton(ipaddr))
+        if hasattr(socket, 'AF_INET6'):
+            for ipaddr in ['::1', '2001:db8:85a3::8a2e:370:7334']:
+                self.assertTrue(ssl._inet_paton(ipaddr))
 
     def test_server_side(self):
         # server_hostname doesn't work for server sockets
