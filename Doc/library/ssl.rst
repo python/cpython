@@ -1268,6 +1268,12 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.7
+      The attribute is now always ASCII text. When ``server_hostname`` is
+      an internationalized domain name (IDN), this attribute now stores the
+      A-label form (``"xn--pythn-mua.org"``), rather than the U-label form
+      (``"pythön.org"``).
+
 .. attribute:: SSLSocket.session
 
    The :class:`SSLSession` for this SSL connection. The session is available
@@ -1532,23 +1538,24 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.3
 
-.. method:: SSLContext.set_servername_callback(server_name_callback)
+.. attribute:: SSLContext.sni_callback
 
    Register a callback function that will be called after the TLS Client Hello
    handshake message has been received by the SSL/TLS server when the TLS client
    specifies a server name indication. The server name indication mechanism
    is specified in :rfc:`6066` section 3 - Server Name Indication.
 
-   Only one callback can be set per ``SSLContext``.  If *server_name_callback*
-   is ``None`` then the callback is disabled. Calling this function a
+   Only one callback can be set per ``SSLContext``.  If *sni_callback*
+   is set to ``None`` then the callback is disabled. Calling this function a
    subsequent time will disable the previously registered callback.
 
-   The callback function, *server_name_callback*, will be called with three
+   The callback function will be called with three
    arguments; the first being the :class:`ssl.SSLSocket`, the second is a string
    that represents the server name that the client is intending to communicate
    (or :const:`None` if the TLS Client Hello does not contain a server name)
    and the third argument is the original :class:`SSLContext`. The server name
-   argument is the IDNA decoded server name.
+   argument is text. For internationalized domain name, the server
+   name is an IDN A-label (``"xn--pythn-mua.org"``).
 
    A typical use of this callback is to change the :class:`ssl.SSLSocket`'s
    :attr:`SSLSocket.context` attribute to a new object of type
@@ -1563,22 +1570,32 @@ to speed up repeated connections from the same clients.
    the TLS connection has progressed beyond the TLS Client Hello and therefore
    will not contain return meaningful values nor can they be called safely.
 
-   The *server_name_callback* function must return ``None`` to allow the
+   The *sni_callback* function must return ``None`` to allow the
    TLS negotiation to continue.  If a TLS failure is required, a constant
    :const:`ALERT_DESCRIPTION_* <ALERT_DESCRIPTION_INTERNAL_ERROR>` can be
    returned.  Other return values will result in a TLS fatal error with
    :const:`ALERT_DESCRIPTION_INTERNAL_ERROR`.
 
-   If there is an IDNA decoding error on the server name, the TLS connection
-   will terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
-   alert message to the client.
-
-   If an exception is raised from the *server_name_callback* function the TLS
+   If an exception is raised from the *sni_callback* function the TLS
    connection will terminate with a fatal TLS alert message
    :const:`ALERT_DESCRIPTION_HANDSHAKE_FAILURE`.
 
    This method will raise :exc:`NotImplementedError` if the OpenSSL library
    had OPENSSL_NO_TLSEXT defined when it was built.
+
+   .. versionadded:: 3.7
+
+.. attribute:: SSLContext.set_servername_callback(server_name_callback)
+
+   This is a legacy API retained for backwards compatibility. When possible,
+   you should use :attr:`sni_callback` instead. The given *server_name_callback*
+   is similar to *sni_callback*, except that when the server hostname is an
+   IDN-encoded internationalized domain name, the *server_name_callback*
+   receives a decoded U-label (``"pythön.org"``).
+
+   If there is an decoding error on the server name, the TLS connection will
+   terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
+   alert message to the client.
 
    .. versionadded:: 3.4
 
