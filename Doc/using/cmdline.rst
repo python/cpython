@@ -261,8 +261,8 @@ Miscellaneous options
 .. cmdoption:: -O
 
    Remove assert statements and any code conditional on the value of
-   :const:`__debug__`.  Change the filename extension for compiled
-   (:term:`bytecode`) files to include ``.opt-1`` before the ``.pyc``
+   :const:`__debug__`.  Augment the filename for compiled
+   (:term:`bytecode`) files by adding ``.opt-1`` before the ``.pyc``
    extension (see :pep:`488`).  See also :envvar:`PYTHONOPTIMIZE`.
 
    .. versionchanged:: 3.5
@@ -271,8 +271,8 @@ Miscellaneous options
 
 .. cmdoption:: -OO
 
-   Do :option:`-O` and also discard docstrings.  Change the filename extension
-   for compiled (:term:`bytecode`) files to include ``.opt-2`` before the
+   Do :option:`-O` and also discard docstrings.  Augment the filename
+   for compiled (:term:`bytecode`) files by adding ``.opt-2`` before the
    ``.pyc`` extension (see :pep:`488`).
 
    .. versionchanged:: 3.5
