@@ -1,6 +1,6 @@
 """Define partial Python code Parser used by editor and hyperparser.
 
-Instances of StringTranslatePseudoMapping are used with str.translate.
+Instances of ParseMap are used with str.translate.
 
 The following bound search and match functions are defined:
 _synchre - start of popular statement;
@@ -101,7 +101,7 @@ _chew_ordinaryre = re.compile(r"""
 """, re.VERBOSE).match
 
 
-class StringTranslatePseudoMapping(Mapping):
+class ParseMap(Mapping):
     r"""Utility class to be used with str.translate()
 
     This Mapping class wraps a given dict. When a value for a key is
@@ -117,30 +117,22 @@ class StringTranslatePseudoMapping(Mapping):
 
     >>> whitespace_chars = ' \t\n\r'
     >>> preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-    >>> mapping = StringTranslatePseudoMapping(preserve_dict, ord('x'))
+    >>> mapping = ParseMap(preserve_dict)
     >>> text = "a + b\tc\nd"
     >>> text.translate(mapping)
     'x x x\tx\nx'
     """
-    def __init__(self, non_defaults, default_value):
+    def __init__(self, non_defaults):
         self._non_defaults = non_defaults
-        self._default_value = default_value
-
-        def _get(key, _get=non_defaults.get, _default=default_value):
-            return _get(key, _default)
-        self._get = _get
 
     def __getitem__(self, item):
-        return self._get(item)
+        return self._non_defaults.get(item, 'x')
 
     def __len__(self):
         return len(self._non_defaults)
 
     def __iter__(self):
         return iter(self._non_defaults)
-
-    def get(self, key, default=None):
-        return self._get(key)
 
 
 class Parser:
@@ -232,7 +224,7 @@ class Parser:
     _tran.update((ord(c), ord('(')) for c in "({[")
     _tran.update((ord(c), ord(')')) for c in ")}]")
     _tran.update((ord(c), ord(c)) for c in "\"'\\\n#")
-    _tran = StringTranslatePseudoMapping(_tran, default_value=ord('x'))
+    _tran = ParseMap(_tran)
 
     def _study1(self):
         """Find the line numbers of non-continuation lines.
