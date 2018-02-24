@@ -132,7 +132,7 @@ _ssl__SSLSocket_version(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_version_impl(self);
 }
 
-#if (defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG))
+#if defined(HAVE_NPN)
 
 PyDoc_STRVAR(_ssl__SSLSocket_selected_npn_protocol__doc__,
 "selected_npn_protocol($self, /)\n"
@@ -151,7 +151,7 @@ _ssl__SSLSocket_selected_npn_protocol(PySSLSocket *self, PyObject *Py_UNUSED(ign
     return _ssl__SSLSocket_selected_npn_protocol_impl(self);
 }
 
-#endif /* (defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)) */
+#endif /* defined(HAVE_NPN) */
 
 #if defined(HAVE_ALPN)
 
@@ -1175,4 +1175,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=d987411caeb106e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a00fef6a470cfc2c input=a9049054013a1b77]*/
