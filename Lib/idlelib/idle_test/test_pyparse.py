@@ -8,46 +8,6 @@ import unittest
 from idlelib import pyparse
 
 
-class StringTranslatePseudoMappingTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        whitespace_chars = ' \t\n\r'
-        cls.preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-        cls.default = ord('x')
-        cls.mapping = pyparse.StringTranslatePseudoMapping(
-                                cls.preserve_dict, default_value=ord('x'))
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.preserve_dict, cls.default, cls.mapping
-
-    def test__init__(self):
-        m = self.mapping
-        self.assertEqual(m._non_defaults, self.preserve_dict)
-        self.assertEqual(m._default_value, self.default)
-
-    def test__get_item__(self):
-        self.assertEqual(self.mapping[ord('\t')], ord('\t'))
-        self.assertEqual(self.mapping[ord('a')], self.default)
-
-    def test__len__(self):
-        self.assertEqual(len(self.mapping), len(self.preserve_dict))
-
-    def test__iter__(self):
-        count = 0
-        for key, value in self.mapping.items():
-            self.assertIn(key, self.preserve_dict)
-            count += 1
-        self.assertEqual(count, len(self.mapping))
-
-    def test_get(self):
-        self.assertEqual(self.mapping.get(ord('\t')), ord('\t'))
-        self.assertEqual(self.mapping.get('a'), self.default)
-        # Default is a parameter, but it isn't used.
-        self.assertEqual(self.mapping.get('a', default=500), self.default)
-
-
 class PyParseTest(unittest.TestCase):
 
     @classmethod

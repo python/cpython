@@ -10,7 +10,7 @@ _itemre - line that may have bracket structure start;
 _closere - line that must be followed by dedent.
 _chew_ordinaryre - non-special characters.
 """
-from collections.abc import Mapping
+from collections import defaultdict
 import re
 import sys
 
@@ -101,48 +101,6 @@ _chew_ordinaryre = re.compile(r"""
 """, re.VERBOSE).match
 
 
-class StringTranslatePseudoMapping(Mapping):
-    r"""Utility class to be used with str.translate()
-
-    This Mapping class wraps a given dict. When a value for a key is
-    requested via __getitem__() or get(), the key is looked up in the
-    given dict. If found there, the value from the dict is returned.
-    Otherwise, the default value given upon initialization is returned.
-
-    This allows using str.translate() to make some replacements, and to
-    replace all characters for which no replacement was specified with
-    a given character instead of leaving them as-is.
-
-    For example, to replace everything except whitespace with 'x':
-
-    >>> whitespace_chars = ' \t\n\r'
-    >>> preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-    >>> mapping = StringTranslatePseudoMapping(preserve_dict, ord('x'))
-    >>> text = "a + b\tc\nd"
-    >>> text.translate(mapping)
-    'x x x\tx\nx'
-    """
-    def __init__(self, non_defaults, default_value):
-        self._non_defaults = non_defaults
-        self._default_value = default_value
-
-        def _get(key, _get=non_defaults.get, _default=default_value):
-            return _get(key, _default)
-        self._get = _get
-
-    def __getitem__(self, item):
-        return self._get(item)
-
-    def __len__(self):
-        return len(self._non_defaults)
-
-    def __iter__(self):
-        return iter(self._non_defaults)
-
-    def get(self, key, default=None):
-        return self._get(key)
-
-
 class Parser:
 
     def __init__(self, indentwidth, tabwidth):
@@ -228,11 +186,10 @@ class Parser:
     # brackets to '(', close brackets to ')' while preserving quotes,
     # backslashes, newlines and hashes. This is to be passed to
     # str.translate() in _study1().
-    _tran = {}
+    _tran = defaultdict(lambda: 'x')
     _tran.update((ord(c), ord('(')) for c in "({[")
     _tran.update((ord(c), ord(')')) for c in ")}]")
     _tran.update((ord(c), ord(c)) for c in "\"'\\\n#")
-    _tran = StringTranslatePseudoMapping(_tran, default_value=ord('x'))
 
     def _study1(self):
         """Find the line numbers of non-continuation lines.

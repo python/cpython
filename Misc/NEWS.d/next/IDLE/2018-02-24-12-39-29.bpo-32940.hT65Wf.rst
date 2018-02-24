@@ -1,0 +1,1 @@
+Replace StringTranslatePseudoMappingTest with a defaultdict.
