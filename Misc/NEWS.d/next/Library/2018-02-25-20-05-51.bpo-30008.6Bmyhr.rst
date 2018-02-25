@@ -1,0 +1,4 @@
+The ssl module no longer uses function that are deprecated since OpenSSL
+1.1.0. The version specific TLS methods are emulated with TLS_method() plus
+SSL_CTX_set_min/max_proto_version(). Pseudo random numbers are generated
+with RAND_bytes().

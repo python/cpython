@@ -45,14 +45,6 @@ static PySocketModule_APIObject PySocketModule;
 #include <sys/poll.h>
 #endif
 
-/* Don't warn about deprecated functions */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 /* Include OpenSSL header files */
 #include "openssl/rsa.h"
 #include "openssl/crypto.h"
@@ -190,6 +182,7 @@ static void _PySSLFixErrno(void) {
 #else /* OpenSSL < 1.1.0 */
 #define HAVE_OPENSSL_CRYPTO_LOCK
 
+#define ASN1_STRING_get0_data ASN1_STRING_data
 #define TLS_method SSLv23_method
 #define TLS_client_method SSLv23_client_method
 #define TLS_server_method SSLv23_server_method
@@ -800,7 +793,7 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
                 goto error;
             }
         } else {
-            if (!X509_VERIFY_PARAM_set1_ip(param, ASN1_STRING_data(ip),
+            if (!X509_VERIFY_PARAM_set1_ip(param, ASN1_STRING_get0_data(ip),
                                            ASN1_STRING_length(ip))) {
                 _setSSLError(NULL, 0, __FILE__, __LINE__);
                 goto error;
@@ -1250,8 +1243,9 @@ _get_peer_alt_names (X509 *certificate) {
                     goto fail;
                 }
                 PyTuple_SET_ITEM(t, 0, v);
-                v = PyUnicode_FromStringAndSize((char *)ASN1_STRING_data(as),
-                                                ASN1_STRING_length(as));
+                v = PyUnicode_FromStringAndSize(
+                    (char *)ASN1_STRING_get0_data(as),
+                    ASN1_STRING_length(as));
                 if (v == NULL) {
                     Py_DECREF(t);
                     goto fail;
@@ -2841,44 +2835,124 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     long options;
     SSL_CTX *ctx = NULL;
     X509_VERIFY_PARAM *params;
-    int result;
+    int result = 0;
 #if defined(SSL_MODE_RELEASE_BUFFERS)
     unsigned long libver;
 #endif
 
     PySSL_BEGIN_ALLOW_THREADS
-    if (proto_version == PY_SSL_VERSION_TLS1)
-        ctx = SSL_CTX_new(TLSv1_method());
-#if HAVE_TLSv1_2
-    else if (proto_version == PY_SSL_VERSION_TLS1_1)
-        ctx = SSL_CTX_new(TLSv1_1_method());
-    else if (proto_version == PY_SSL_VERSION_TLS1_2)
-        ctx = SSL_CTX_new(TLSv1_2_method());
-#endif
-#ifndef OPENSSL_NO_SSL3
-    else if (proto_version == PY_SSL_VERSION_SSL3)
-        ctx = SSL_CTX_new(SSLv3_method());
-#endif
-#ifndef OPENSSL_NO_SSL2
-    else if (proto_version == PY_SSL_VERSION_SSL2)
+    switch (proto_version) {
+#if OPENSSL_VERSION_NUMBER <= 0x10100000L
+    /* OpenSSL < 1.1.0 or not LibreSSL
+     * Use old-style methods for OpenSSL 1.0.2
+     */
+#if defined(SSL2_VERSION) && !defined(OPENSSL_NO_SSL2)
+    case PY_SSL_VERSION_SSL2:
         ctx = SSL_CTX_new(SSLv2_method());
+        break;
 #endif
-    else if (proto_version == PY_SSL_VERSION_TLS) /* SSLv23 */
+#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    case PY_SSL_VERSION_SSL3:
+        ctx = SSL_CTX_new(SSLv3_method());
+        break;
+#endif
+#if defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    case PY_SSL_VERSION_TLS1:
+        ctx = SSL_CTX_new(TLSv1_method());
+        break;
+#endif
+#if defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    case PY_SSL_VERSION_TLS1_1:
+        ctx = SSL_CTX_new(TLSv1_1_method());
+        break;
+#endif
+#if defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    case PY_SSL_VERSION_TLS1_2:
+        ctx = SSL_CTX_new(TLSv1_2_method());
+        break;
+#endif
+#else
+    /* OpenSSL >= 1.1 or LibreSSL
+     * create context with TLS_method for all protocols
+     * no SSLv2_method in OpenSSL 1.1.
+     */
+#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    case PY_SSL_VERSION_SSL3:
         ctx = SSL_CTX_new(TLS_method());
-    else if (proto_version == PY_SSL_VERSION_TLS_CLIENT)
+        if (ctx != NULL) {
+            /* OpenSSL 1.1.0 sets SSL_OP_NO_SSLv3 for TLS_method by default */
+            SSL_CTX_clear_options(ctx, SSL_OP_NO_SSLv3);
+            if (!SSL_CTX_set_min_proto_version(ctx, SSL3_VERSION))
+                result = -2;
+            if (!SSL_CTX_set_max_proto_version(ctx, SSL3_VERSION))
+                result = -2;
+        }
+        break;
+#endif
+#if defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    case PY_SSL_VERSION_TLS1:
+        ctx = SSL_CTX_new(TLS_method());
+        if (ctx != NULL) {
+            SSL_CTX_clear_options(ctx, SSL_OP_NO_TLSv1);
+            if (!SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION))
+                result = -2;
+            if (!SSL_CTX_set_max_proto_version(ctx, TLS1_VERSION))
+                result = -2;
+        }
+        break;
+#endif
+#if defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    case PY_SSL_VERSION_TLS1_1:
+        ctx = SSL_CTX_new(TLS_method());
+        if (ctx != NULL) {
+            SSL_CTX_clear_options(ctx, SSL_OP_NO_TLSv1_1);
+            if (!SSL_CTX_set_min_proto_version(ctx, TLS1_1_VERSION))
+                result = -2;
+            if (!SSL_CTX_set_max_proto_version(ctx, TLS1_1_VERSION))
+                result = -2;
+        }
+        break;
+#endif
+#if defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    case PY_SSL_VERSION_TLS1_2:
+        ctx = SSL_CTX_new(TLS_method());
+        if (ctx != NULL) {
+            SSL_CTX_clear_options(ctx, SSL_OP_NO_TLSv1_2);
+            if (!SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION))
+                result = -2;
+            if (!SSL_CTX_set_max_proto_version(ctx, TLS1_2_VERSION))
+                result = -2;
+        }
+        break;
+#endif
+#endif /* OpenSSL >= 1.1 */
+    case PY_SSL_VERSION_TLS:
+        /* SSLv23 */
+        ctx = SSL_CTX_new(TLS_method());
+        break;
+    case PY_SSL_VERSION_TLS_CLIENT:
         ctx = SSL_CTX_new(TLS_client_method());
-    else if (proto_version == PY_SSL_VERSION_TLS_SERVER)
+        break;
+    case PY_SSL_VERSION_TLS_SERVER:
         ctx = SSL_CTX_new(TLS_server_method());
-    else
-        proto_version = -1;
+        break;
+    default:
+        result = -1;
+        break;
+    }
     PySSL_END_ALLOW_THREADS
 
-    if (proto_version == -1) {
+    if (result == -1) {
         PyErr_SetString(PyExc_ValueError,
                         "invalid protocol version");
         return NULL;
     }
-    if (ctx == NULL) {
+    else if (result == -2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "protocol configuration error");
+        return NULL;
+    }
+    else if (ctx == NULL) {
         _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
@@ -4820,7 +4894,7 @@ PySSL_RAND(int len, int pseudo)
     if (bytes == NULL)
         return NULL;
     if (pseudo) {
-        ok = RAND_pseudo_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
         if (ok == 0 || ok == 1)
             return Py_BuildValue("NO", bytes, ok == 1 ? Py_True : Py_False);
     }
