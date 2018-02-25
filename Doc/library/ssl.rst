@@ -2553,11 +2553,6 @@ In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
 to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
 
-   .. note::
-
-      In client mode, :const:`CERT_OPTIONAL` and :const:`CERT_REQUIRED` are
-      equivalent unless anonymous ciphers are enabled (they are disabled
-      by default).
 
 Protocol versions
 '''''''''''''''''
