@@ -10,18 +10,11 @@ from idlelib import pyparse
 
 class ParseMapTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        keepwhite = {ord(c): ord(c) for c in ' \t\n\r'}
-        cls.mapping = pyparse.ParseMap(keepwhite)
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.mapping
-
     def test__get_item__(self):
-        self.assertEqual(self.mapping[ord('\t')], ord('\t'))
-        self.assertEqual(self.mapping[ord('a')], 'x')
+        keepwhite = {ord(c): ord(c) for c in ' \t\n\r'}
+        mapping = pyparse.ParseMap(keepwhite)
+        self.assertEqual(mapping[ord('\t')], ord('\t'))
+        self.assertEqual(mapping[ord('a')], 'x')
 
 
 class PyParseTest(unittest.TestCase):
