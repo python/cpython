@@ -14,7 +14,7 @@ import gc
 import os
 import errno
 import pprint
-import tempfile
+import shutil
 import urllib2
 import traceback
 import weakref
@@ -1000,6 +1000,10 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaises(ssl.SSLError) as cm:
             ctx.load_dh_params(CERTFILE)
+        with support.temp_dir() as d:
+            fname = os.path.join(d, u'dhpäräm.pem')
+            shutil.copy(DHFILE, fname)
+            ctx.load_dh_params(fname)
 
     @skip_if_broken_ubuntu_ssl
     def test_session_stats(self):
