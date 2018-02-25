@@ -132,7 +132,7 @@ _ssl__SSLSocket_version(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_version_impl(self);
 }
 
-#if defined(HAVE_NPN)
+#if (HAVE_NPN)
 
 PyDoc_STRVAR(_ssl__SSLSocket_selected_npn_protocol__doc__,
 "selected_npn_protocol($self, /)\n"
@@ -151,9 +151,9 @@ _ssl__SSLSocket_selected_npn_protocol(PySSLSocket *self, PyObject *Py_UNUSED(ign
     return _ssl__SSLSocket_selected_npn_protocol_impl(self);
 }
 
-#endif /* defined(HAVE_NPN) */
+#endif /* (HAVE_NPN) */
 
-#if defined(HAVE_ALPN)
+#if (HAVE_ALPN)
 
 PyDoc_STRVAR(_ssl__SSLSocket_selected_alpn_protocol__doc__,
 "selected_alpn_protocol($self, /)\n"
@@ -172,7 +172,7 @@ _ssl__SSLSocket_selected_alpn_protocol(PySSLSocket *self, PyObject *Py_UNUSED(ig
     return _ssl__SSLSocket_selected_alpn_protocol_impl(self);
 }
 
-#endif /* defined(HAVE_ALPN) */
+#endif /* (HAVE_ALPN) */
 
 PyDoc_STRVAR(_ssl__SSLSocket_compression__doc__,
 "compression($self, /)\n"
@@ -1175,4 +1175,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a00fef6a470cfc2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2417fee28666f7c input=a9049054013a1b77]*/
