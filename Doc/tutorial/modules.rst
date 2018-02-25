@@ -112,6 +112,25 @@ Note that in general the practice of importing ``*`` from a module or package is
 frowned upon, since it often causes poorly readable code. However, it is okay to
 use it to save typing in interactive sessions.
 
+If the module name is followed by :keyword:`as`, then the name
+following :keyword:`as` is bound directly to the imported module.
+
+::
+
+   >>> import fibo as fib
+   >>> fib.fib(500)
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+This is effectively importing the module in the same way that ``import fibo``
+will do, with the only difference of it being available as ``fib``.
+
+It can also be used when utilising :keyword:`from` with similar effects::
+
+   >>> from fibo import fib as fibonacci
+   >>> fibonacci(500)
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+
 .. note::
 
    For efficiency reasons, each module is only imported once per interpreter
