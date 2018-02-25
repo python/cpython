@@ -610,7 +610,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
 #elif defined(HAVE_INET_PTON)
 #ifdef ENABLE_IPV6
-        char packed[Py_MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
+	#define PySSL_MAX(x, y) (((x) > (y)) ? (x) : (y))
+        char packed[PySSL_MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
 #else
         char packed[sizeof(struct in_addr)];
 #endif /* ENABLE_IPV6 */
