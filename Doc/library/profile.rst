@@ -235,40 +235,41 @@ functions:
 
    and gathers profiling statistics as in the :func:`run` function above.
 
-.. class:: Profile(timer=None, timeunit=0.0, subcalls=True, builtins=True)
+Both modules also define a :class:`Profile` class that provides more
+control over profiling than the :func:`run` function.
+You can, for example, format profile results without writing the profile data
+to a file::
 
-   This class is normally only used if more precise control over profiling is
-   needed than what the :func:`cProfile.run` function provides.
+   import profile, pstats, io
+   pr = profile.Profile()
+   pr.run('sum(range(1000000))')
+   s = io.StringIO()
+   sortby = pstats.SortKey.CUMULATIVE
+   ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+   ps.print_stats()
+   print(s.getvalue())
+
+.. class:: Profile(timer=None, bias=None)
 
    A custom timer can be supplied for measuring how long code takes to run via
-   the *timer* argument. This must be a function that returns a single number
-   representing the current time. If the number is an integer, the *timeunit*
-   specifies a multiplier that specifies the duration of each unit of time. For
-   example, if the timer returns times measured in thousands of seconds, the
-   time unit would be ``.001``.
+   the *timer* argument. See :ref:`Using a custom timer <profile-timers>` for
+   details.
 
-   Directly using the :class:`Profile` class allows formatting profile results
-   without writing the profile data to a file::
+   A custom bias setting can be supplied to aid calibration. See
+   :ref:`Calibration <profile-calibration>` for more information.
 
-      import cProfile, pstats, io
-      from pstats import SortKey
-      pr = cProfile.Profile()
-      pr.enable()
-      # ... do something ...
-      pr.disable()
-      s = io.StringIO()
-      sortby = SortKey.CUMULATIVE
-      ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-      ps.print_stats()
-      print(s.getvalue())
+   .. method:: run(cmd)
 
-   .. method:: enable()
+      Profile the cmd via :func:`exec`.
 
-      Start collecting profiling data.
+   .. method:: runctx(cmd, globals, locals)
 
-   .. method:: disable()
+      Profile the cmd via :func:`exec` with the specified global and
+      local environment.
 
-      Stop collecting profiling data.
+   .. method:: runcall(func, *args, **kwargs)
+
+      Profile ``func(*args, **kwargs)``
 
    .. method:: create_stats()
 
@@ -284,6 +285,29 @@ functions:
 
       Write the results of the current profile to *filename*.
 
+.. class:: cprofile.Profile(timer=None, timeunit=0.0, subcalls=True, builtins=True)
+
+   This class allows for profiling all code that executes between the
+   invocation of the :meth:`enable` and :meth:`disable` methods::
+
+      pr = cProfile.Profile()
+      pr.enable()
+      # ... do something ...
+      pr.disable()
+      print(pr.print_stats())
+
+   A custom timer can be supplied for measuring how long code takes to run via
+   the *timer* argument. See :ref:`Using a custom timer <profile-timers>` for
+   details.
+
+   .. method:: enable()
+
+      Start collecting profiling data.
+
+   .. method:: disable()
+
+      Stop collecting profiling data.
+
    .. method:: run(cmd)
 
       Profile the cmd via :func:`exec`.
@@ -296,6 +320,23 @@ functions:
    .. method:: runcall(func, *args, **kwargs)
 
       Profile ``func(*args, **kwargs)``
+
+   .. method:: create_stats()
+
+      Stop collecting profiling data and record the results internally
+      as the current profile.
+
+   .. method:: print_stats(sort=-1)
+
+      Create a :class:`~pstats.Stats` object based on the current
+      profile and print the results to stdout. This method will raise
+      ``TypeError`` if none of the :meth:`run`, :meth:`runctx`,
+      :meth:`runcall`, or :meth:`enable` methods have been called first.
+
+   .. method:: dump_stats(filename)
+
+      Write the results of the current profile to *filename*.
+
 
 .. _profile-stats:
 
