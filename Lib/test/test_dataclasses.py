@@ -421,25 +421,25 @@ class TestCase(unittest.TestCase):
         # Test all 6 cases of:
         #  hash=True/False/None
         #  compare=True/False
-        for (hash_val, compare, result  ) in [
+        for (hash_,    compare, result  ) in [
             (True,     False,   'field' ),
             (True,     True,    'field' ),
             (False,    False,   'absent'),
             (False,    True,    'absent'),
             (None,     False,   'absent'),
             (None,     True,    'field' ),
-        ]:
-            with self.subTest(hash_val=hash_val, compare=compare):
+            ]:
+            with self.subTest(hash=hash_, compare=compare):
                 @dataclass(unsafe_hash=True)
                 class C:
-                    x: int = field(compare=compare, hash=hash_val, default=5)
+                    x: int = field(compare=compare, hash=hash_, default=5)
 
                 if result == 'field':
                     # __hash__ contains the field.
-                    self.assertEqual(C(5).__hash__(), hash((5,)))
+                    self.assertEqual(hash(C(5)), hash((5,)))
                 elif result == 'absent':
                     # The field is not present in the hash.
-                    self.assertEqual(C(5).__hash__(), hash(()))
+                    self.assertEqual(hash(C(5)), hash(()))
                 else:
                     assert False, f'unknown result {result!r}'
 
@@ -2256,22 +2256,14 @@ class TestOrdering(unittest.TestCase):
                     pass
 
 class TestHash(unittest.TestCase):
-    def test_hash(self):
+    def test_unsafe_hash(self):
         @dataclass(unsafe_hash=True)
         class C:
             x: int
             y: str
         self.assertEqual(hash(C(1, 'foo')), hash((1, 'foo')))
 
-    def x_test_hash_false(self):
-        @dataclass(unsafe_hash=None)
-        class C:
-            x: int
-        with self.assertRaisesRegex(TypeError,
-                                    "unhashable type: 'C'"):
-            hash(C(1))
-
-    def xtest_hash_rules(self):
+    def test_hash_rules(self):
         def non_bool(value):
             # Map to something else that's True, but not a bool.
             if value is None:
@@ -2283,85 +2275,70 @@ class TestHash(unittest.TestCase):
         def test(case, unsafe_hash, eq, frozen, with_hash, result):
             with self.subTest(case=case, unsafe_hash=unsafe_hash, eq=eq,
                               frozen=frozen):
-                if with_hash:
-                    @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
-                    class C:
-                        def __hash__(self):
-                            return 0
-                else:
-                    @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
-                    class C:
-                        pass
+                if result != 'exception':
+                    if with_hash:
+                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        class C:
+                            def __hash__(self):
+                                return 0
+                    else:
+                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        class C:
+                            pass
 
                 # See if the result matches what's expected.
-                if result in ('fn', 'fn-x'):
+                if result == 'fn':
                     # __hash__ contains the function we generated.
                     self.assertIn('__hash__', C.__dict__)
                     self.assertIsNotNone(C.__dict__['__hash__'])
-
-                    if result == 'fn-x':
-                        # This is the "auto-hash test" case.  We
-                        #  should overwrite __hash__ iff there's an
-                        #  __eq__ and if __hash__=None.
-
-                        # There are two ways of getting __hash__=None:
-                        #  explicitely, and by defining __eq__.  If
-                        #  __eq__ is defined, python will add __hash__
-                        #  when the class is created.
-                        @dataclass(unsafe_hash=unsafe_hash, eq=eq,
-                                   frozen=frozen)
-                        class C:
-                            def __eq__(self, other): pass
-                            __hash__ = None
-
-                        # Hash should be overwritten (non-None).
-                        self.assertIsNotNone(C.__dict__['__hash__'])
-
-                        # Same test as above, but we don't provide
-                        #  __hash__, it will implicitely set to None.
-                        @dataclass(unsafe_hash=unsafe_hash, eq=eq,
-                                   frozen=frozen)
-                        class C:
-                            def __eq__(self, other): pass
-
-                        # Hash should be overwritten (non-None).
-                        self.assertIsNotNone(C.__dict__['__hash__'])
 
                 elif result == '':
                     # __hash__ is not present in our class.
                     if not with_hash:
                         self.assertNotIn('__hash__', C.__dict__)
+
                 elif result == 'none':
                     # __hash__ is set to None.
                     self.assertIn('__hash__', C.__dict__)
                     self.assertIsNone(C.__dict__['__hash__'])
+
+                elif result == 'exception':
+                    # Creating the class should cause an exception.
+                    #  This only happens with with_hash==True.
+                    assert(with_hash)
+                    with self.assertRaisesRegex(TypeError, 'Cannot overwrite attribute __hash__'):
+                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        class C:
+                            def __hash__(self):
+                                return 0
+
                 else:
                     assert False, f'unknown result {result!r}'
 
-        # There are 12 cases of:
-        #  hash=True/False/None
+        # There are 8 cases of:
+        #  unsafe_hash=True/False
         #  eq=True/False
         #  frozen=True/False
         # And for each of these, a different result if
         #  __hash__ is defined or not.
-        for case, (hash,  eq,    frozen, result_no, result_yes) in enumerate([
-                  (False, False, False,  '',        ''),
-                  (False, False, True,   '',        ''),
-                  (False, True,  False,  'none',    ''),
-                  (False, True,  True,   'fn',      'fn-x'),
-                  (True,  False, False,  'fn',      'fn-x'),
-                  (True,  False, True,   'fn',      'fn-x'),
-                  (True,  True,  False,  'fn',      'fn-x'),
-                  (True,  True,  True,   'fn',      'fn-x'),
-        ], 1):
-            test(case, hash, eq, frozen, False, result_no)
-            test(case, hash, eq, frozen, True,  result_yes)
+        for case, (unsafe_hash,  eq,    frozen, res_no_defined_hash, res_defined_hash) in enumerate([
+                  (False,        False, False,  '',                  ''),
+                  (False,        False, True,   '',                  ''),
+                  (False,        True,  False,  'none',              ''),
+                  (False,        True,  True,   'fn',                ''),
+                  (True,         False, False,  'fn',                'exception'),
+                  (True,         False, True,   'fn',                'exception'),
+                  (True,         True,  False,  'fn',                'exception'),
+                  (True,         True,  True,   'fn',                'exception'),
+                  ], 1):
+            test(case, unsafe_hash, eq, frozen, False, res_no_defined_hash)
+            test(case, unsafe_hash, eq, frozen, True,  res_defined_hash)
 
             # Test non-bool truth values, too.  This is just to
             #  make sure the data-driven table in the decorator
             #  handles non-bool values.
-            test(case, non_bool(hash), non_bool(eq), non_bool(frozen), False, result_no)
-            test(case, non_bool(hash), non_bool(eq), non_bool(frozen), True,  result_yes)
+            test(case, non_bool(unsafe_hash), non_bool(eq), non_bool(frozen), False, res_no_defined_hash)
+            test(case, non_bool(unsafe_hash), non_bool(eq), non_bool(frozen), True,  res_defined_hash)
 
 
     def test_eq_only(self):
