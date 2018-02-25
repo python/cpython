@@ -9,7 +9,7 @@ It should be in the following format:
 bpo-NNNN: Summary of the changes made
 ```
 Where: bpo-NNNN refers to the issue number in the https://bugs.python.org.
-If your PR is for issue 12345 in the bug tracker, then the bpo number is bpo-12345.
+If your PR is for issue 123 in the bug tracker, then the bpo number is bpo-123.
 
 Most PRs will require an issue number. Trivial changes, like fixing a typo, do not need an issue.
 
