@@ -64,6 +64,21 @@ If you intend to use a function often you can assign it to a local name::
    >>> fib(500)
    0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 
+Moreover as keyword is used with import keyword, to either provide a shorter synonym 
+for the full name or as an renaming tool when same name appears in mutiple modules, for example::
+  
+  >>> import fibo as fi
+  
+Now, the functions inside the module can be accessed as follows::
+  >>> fi.fibo(1000)
+  0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
+  >>> fi.fib2(100)
+  [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+  >>> fi.__name__
+  'fibo'
+ 
+Important thing to note here is that only the refrence to module fibo changes, but the name of the module remains same.
+
 
 .. _tut-moremodules:
 
