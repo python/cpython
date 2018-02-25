@@ -81,7 +81,7 @@ static void _clear_joined_ptr(PyObject **p)
 }
 
 /* Types defined by this extension */
-static PyObject *parseerror_obj;
+static PyObject *parseerror_obj = NULL;
 
 
 /* Per-module state; PEP 3121 */
@@ -215,7 +215,7 @@ typedef struct {
 
 
 #define Element_CheckExact(op) (Py_TYPE(op) == m_state->Element_Type)
-#define Element_Check(op) PyObject_TypeCheck(op, &Element_Type)
+#define Element_Check(op) PyObject_TypeCheck(op, m_state->Element_Type)
 
 /* -------------------------------------------------------------------- */
 /* Element constructors and destructor */
@@ -3280,7 +3280,7 @@ typedef struct {
 } XMLParserObject;
 
 static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyTypeObject *cls, PyObject *args, PyObject *kwargs);
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *const *args, Py_ssize_t nargs);
 static PyObject *
 _elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
                                     PyObject *pubid, PyObject *system);
@@ -3411,7 +3411,7 @@ expat_set_error(enum XML_Error error_code, Py_ssize_t line,
 /* handlers */
 
 static void
-expat_default_handler(PyTypeObject *cls, XMLParserObject* self, const XML_Char* data_in,
+expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
                       int data_len)
 {
     PyObject* key;
