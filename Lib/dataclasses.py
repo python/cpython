@@ -712,34 +712,6 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
                                bool(frozen),
                                has_explicit_hash]
 
-    if unsafe_hash:
-        # If there's already a __hash__, raise TypeError, otherwise
-        #  add __hash__.
-        if has_explicit_hash:
-            hash_action = 'exception'
-        else:
-            hash_action = 'add'
-    else:
-        # unsafe_hash is False (the default)
-        if has_explicit_hash:
-            # There's already a __hash__, don't overwrite it.
-            hash_action = ''
-        else:
-            if eq and frozen:
-                # It's frozen and we added __eq__, generate __hash__.
-                hash_action = 'add'
-            elif eq and not frozen:
-                # It's not frozen but has __eq__, make it unhashable.
-                #  This is the default if no params to @dataclass.
-                hash_action = 'none'
-            else:
-                # There's no __eq__, use the base class __hash__.
-                hash_action = ''
-    assert hash_action == _hash_action[bool(unsafe_hash),
-                                       bool(eq),
-                                       bool(frozen),
-                                       has_explicit_hash]
-
     # No need to call _set_new_attribute here, since we already know if
     #  we're overwriting a __hash__ or not.
     if hash_action == '':
