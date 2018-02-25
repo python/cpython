@@ -2149,6 +2149,10 @@ class PyBuildExt(build_ext):
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True
 
+        if sysconfig.get_config_var('HAVE_LIBDL'):
+            # for dlopen, see bpo-32647
+            ext.libraries.append('dl')
+
     def _detect_nis(self, inc_dirs, lib_dirs):
         if host_platform in {'win32', 'cygwin', 'qnx6'}:
             return None
