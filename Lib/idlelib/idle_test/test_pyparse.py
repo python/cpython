@@ -12,36 +12,17 @@ class ParseMapTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        whitespace_chars = ' \t\n\r'
-        cls.preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-        cls.default = 'x'
-        cls.mapping = pyparse.ParseMap(cls.preserve_dict)
+        keepwhite = {ord(c): ord(c) for c in ' \t\n\r'}
+        cls.mapping = pyparse.ParseMap(keepwhite)
 
     @classmethod
     def tearDownClass(cls):
-        del cls.preserve_dict, cls.default, cls.mapping
-
-    def test__init__(self):
-        m = self.mapping
-        self.assertEqual(m._non_defaults, self.preserve_dict)
+        del cls.mapping
 
     def test__get_item__(self):
         self.assertEqual(self.mapping[ord('\t')], ord('\t'))
-        self.assertEqual(self.mapping[ord('a')], self.default)
+        self.assertEqual(self.mapping[ord('a')], 'x')
 
-    def test__len__(self):
-        self.assertEqual(len(self.mapping), len(self.preserve_dict))
-
-    def test__iter__(self):
-        count = 0
-        for key, value in self.mapping.items():
-            self.assertIn(key, self.preserve_dict)
-            count += 1
-        self.assertEqual(count, len(self.mapping))
-
-    def test_get(self):
-        self.assertEqual(self.mapping.get(ord('\t')), ord('\t'))
-        self.assertEqual(self.mapping.get('a'), self.default)
 
 class PyParseTest(unittest.TestCase):
 
@@ -147,8 +128,8 @@ class PyParseTest(unittest.TestCase):
         p.set_lo(44)
         self.assertEqual(p.code, code[44:])
 
-    def test_tran(self):
-        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(self.parser._tran),
+    def test_map1(self):
+        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(self.parser.map1),
                           'xxx(((x)))x"x\'x\n')
 
     def test_study1(self):

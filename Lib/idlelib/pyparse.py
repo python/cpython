@@ -101,38 +101,19 @@ _chew_ordinaryre = re.compile(r"""
 """, re.VERBOSE).match
 
 
-class ParseMap(Mapping):
-    r"""Utility class to be used with str.translate()
+class ParseMap(dict):
+    r"""Dict subclass that maps anything not in dict to 'x'.
 
-    This Mapping class wraps a given dict. When a value for a key is
-    requested via __getitem__() or get(), the key is looked up in the
-    given dict. If found there, the value from the dict is returned.
-    Otherwise, the default value given upon initialization is returned.
+    This is designed to be used with str.translate in study1.
+    Anything not specifically mapped otherwise becomes 'x'.
+    Example: replace everything except whitespace with 'x'.
 
-    This allows using str.translate() to make some replacements, and to
-    replace all characters for which no replacement was specified with
-    a given character instead of leaving them as-is.
-
-    For example, to replace everything except whitespace with 'x':
-
-    >>> whitespace_chars = ' \t\n\r'
-    >>> preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-    >>> mapping = ParseMap(preserve_dict)
-    >>> text = "a + b\tc\nd"
-    >>> text.translate(mapping)
+    >>> keepwhite = ParseMap((ord(c),ord(c)) for c in ' \t\n\r')
+    >>> "a + b\tc\nd".translate(keepwhite)
     'x x x\tx\nx'
     """
-    def __init__(self, non_defaults):
-        self._non_defaults = non_defaults
-
-    def __getitem__(self, item):
-        return self._non_defaults.get(item, 'x')
-
-    def __len__(self):
-        return len(self._non_defaults)
-
-    def __iter__(self):
-        return iter(self._non_defaults)
+    def __getitem__(self, key):
+        return self.get(key, 'x')
 
 
 class Parser:
@@ -216,15 +197,13 @@ class Parser:
         if lo > 0:
             self.code = self.code[lo:]
 
-    # Build a translation table to map uninteresting chars to 'x', open
-    # brackets to '(', close brackets to ')' while preserving quotes,
-    # backslashes, newlines and hashes. This is to be passed to
-    # str.translate() in _study1().
-    _tran = {}
-    _tran.update((ord(c), ord('(')) for c in "({[")
-    _tran.update((ord(c), ord(')')) for c in ")}]")
-    _tran.update((ord(c), ord(c)) for c in "\"'\\\n#")
-    _tran = ParseMap(_tran)
+    # Map1 maps uninteresting chars to 'x', open brackets to '(',
+    # close brackets to ')', and preserves quotes,  backslashes,
+    # newlines and hashes.  Used for str.translate() in _study1().
+    map1 = ParseMap()
+    map1.update((ord(c), ord('(')) for c in "({[")
+    map1.update((ord(c), ord(')')) for c in ")}]")
+    map1.update((ord(c), ord(c)) for c in "\"'\\\n#")
 
     def _study1(self):
         """Find the line numbers of non-continuation lines.
@@ -242,7 +221,7 @@ class Parser:
         # uninteresting characters.  This can cut the number of chars
         # by a factor of 10-40, and so greatly speed the following loop.
         code = self.code
-        code = code.translate(self._tran)
+        code = code.translate(self.map1)
         code = code.replace('xxxxxxxx', 'x')
         code = code.replace('xxxx', 'x')
         code = code.replace('xx', 'x')
