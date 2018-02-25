@@ -669,6 +669,9 @@ expected hostname in A-label form (``"xn--pythn-mua.org"``), rather
 than the U-label form (``"pythön.org"``). (Contributed by
 Nathaniel J. Smith and Christian Heimes in :issue:`28414`.)
 
+The ssl module has preliminary and experimental support for TLS 1.3 and
+OpenSSL 1.1.1. (Contributed by Christian Heimes in :issue:`32947`,
+:issue:`20995`, :issue:`29136`, and :issue:`30622`)
 
 string
 ------
