@@ -2983,13 +2983,25 @@ load_dh_params(PySSLContext *self, PyObject *filepath)
 {
     BIO *bio;
     DH *dh;
-    char *path = PyBytes_AsString(filepath);
-    if (!path) {
-        return NULL;
+    PyObject *filepath_bytes = NULL;
+
+    if (PyString_Check(filepath)) {
+        Py_INCREF(filepath);
+        filepath_bytes = filepath;
+    } else {
+        PyObject *u = PyUnicode_FromObject(filepath);
+        if (!u)
+            return NULL;
+        filepath_bytes = PyUnicode_AsEncodedString(
+            u, Py_FileSystemDefaultEncoding, NULL);
+        Py_DECREF(u);
+        if (!filepath_bytes)
+            return NULL;
     }
 
-    bio = BIO_new_file(path, "r");
+    bio = BIO_new_file(PyBytes_AS_STRING(filepath_bytes), "r");
     if (bio == NULL) {
+        Py_DECREF(filepath_bytes);
         ERR_clear_error();
         PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, filepath);
         return NULL;
@@ -2998,6 +3010,7 @@ load_dh_params(PySSLContext *self, PyObject *filepath)
     PySSL_BEGIN_ALLOW_THREADS
     dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
     BIO_free(bio);
+    Py_DECREF(filepath_bytes);
     PySSL_END_ALLOW_THREADS
     if (dh == NULL) {
         if (errno != 0) {
