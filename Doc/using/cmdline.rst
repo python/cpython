@@ -260,12 +260,23 @@ Miscellaneous options
 
 .. cmdoption:: -O
 
-   Turn on basic optimizations.  See also :envvar:`PYTHONOPTIMIZE`.
+   Remove assert statements and any code conditional on the value of
+   :const:`__debug__`.  Augment the filename for compiled
+   (:term:`bytecode`) files by adding ``.opt-1`` before the ``.pyc``
+   extension (see :pep:`488`).  See also :envvar:`PYTHONOPTIMIZE`.
+
+   .. versionchanged:: 3.5
+      Modify ``.pyc`` filenames according to :pep:`488`.
 
 
 .. cmdoption:: -OO
 
-   Discard docstrings in addition to the :option:`-O` optimizations.
+   Do :option:`-O` and also discard docstrings.  Augment the filename
+   for compiled (:term:`bytecode`) files by adding ``.opt-2`` before the
+   ``.pyc`` extension (see :pep:`488`).
+
+   .. versionchanged:: 3.5
+      Modify ``.pyc`` filenames according to :pep:`488`.
 
 
 .. cmdoption:: -q
