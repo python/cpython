@@ -56,11 +56,7 @@ You can create custom local objects by subclassing the local class:
 
   >>> class MyLocal(local):
   ...     number = 2
-  ...     initialized = False
   ...     def __init__(self, **kw):
-  ...         if self.initialized:
-  ...             raise SystemError('__init__ called too many times')
-  ...         self.initialized = True
   ...         self.__dict__.update(kw)
   ...     def squared(self):
   ...         return self.number ** 2
@@ -97,7 +93,7 @@ As before, we can access the data in a separate thread:
   >>> thread.start()
   >>> thread.join()
   >>> log
-  [[('color', 'red'), ('initialized', True)], 11]
+  [[('color', 'red')], 11]
 
 without affecting this thread's data:
 
