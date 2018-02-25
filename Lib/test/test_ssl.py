@@ -143,6 +143,21 @@ def have_verify_flags():
     # 0.9.8 or higher
     return ssl.OPENSSL_VERSION_INFO >= (0, 9, 8, 0, 15)
 
+def _have_secp_curves():
+    if not ssl.HAS_ECDH:
+        return False
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    try:
+        ctx.set_ecdh_curve("secp384r1")
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+HAVE_SECP_CURVES = _have_secp_curves()
+
+
 def utc_offset(): #NOTE: ignore issues like #1647654
     # local time = utc time + utc offset
     if time.daylight and time.localtime().tm_isdst > 0:
@@ -3522,6 +3537,43 @@ class ThreadedTests(unittest.TestCase):
         parts = cipher.split("-")
         if "ADH" not in parts and "EDH" not in parts and "DHE" not in parts:
             self.fail("Non-DH cipher: " + cipher[0])
+
+    @unittest.skipUnless(HAVE_SECP_CURVES, "needs secp384r1 curve support")
+    def test_ecdh_curve(self):
+        # server secp384r1, client auto
+        client_context, server_context, hostname = testing_context()
+        server_context.set_ecdh_curve("secp384r1")
+        server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
+        server_context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+
+        # server auto, client secp384r1
+        client_context, server_context, hostname = testing_context()
+        client_context.set_ecdh_curve("secp384r1")
+        server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
+        server_context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+
+        # server / client curve mismatch
+        client_context, server_context, hostname = testing_context()
+        client_context.set_ecdh_curve("prime256v1")
+        server_context.set_ecdh_curve("secp384r1")
+        server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
+        server_context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+        try:
+            stats = server_params_test(client_context, server_context,
+                                       chatty=True, connectionchatty=True,
+                                       sni_name=hostname)
+        except ssl.SSLError:
+            pass
+        else:
+            # OpenSSL 1.0.2 does not fail although it should.
+            if IS_OPENSSL_1_1:
+                self.fail("mismatch curve did not fail")
 
     def test_selected_alpn_protocol(self):
         # selected_alpn_protocol() is None unless ALPN is used.
