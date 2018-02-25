@@ -124,7 +124,7 @@ following :keyword:`as` is bound directly to the imported module.
 This is effectively importing the module in the same way that ``import fibo``
 will do, with the only difference of it being available as ``fib``.
 
-It can be also used when utilising :keyword:`from` with similar effects::
+It can also be used when utilising :keyword:`from` with similar effects::
 
    >>> from fibo import fib as fibonacci
    >>> fibonacci(500)
