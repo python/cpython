@@ -115,35 +115,36 @@ __all__ = ['dataclass',
 
 # __hash__
 
-#      +------------------- unsafe_hash= parameter
-#      |       +----------- eq= parameter
-#      |       |       +--- frozen= parameter
-#      |       |       |
-#      v       v       v    |        |        |
-#                           |   no   |  yes   |  <--- class has __hash__ in __dict__?
-# +=========+=======+=======+========+========+
-# | 1 False | False | False |        |        | No __eq__, use the base class __hash__
-# +---------+-------+-------+--------+--------+
-# | 2 False | False | True  |        |        | No __eq__, use the base class __hash__
-# +---------+-------+-------+--------+--------+
-# | 3 False | True  | False | None   |        | <-- the default, not hashable
-# +---------+-------+-------+--------+--------+
-# | 4 False | True  | True  | add    | add*   | Frozen, so hashable
-# +---------+-------+-------+--------+--------+
-# | 5 True  | False | False | add    | add*   | Has no __eq__, but hashable
-# +---------+-------+-------+--------+--------+
-# | 6 True  | False | True  | add    | add*   | Has no __eq__, but hashable
-# +---------+-------+-------+--------+--------+
-# | 7 True  | True  | False | add    | add*   | Not frozen, but hashable
-# +---------+-------+-------+--------+--------+
-# | 8 True  | True  | True  | add    | add*   | Frozen, so hashable
-# +=========+=======+=======+========+========+
+#    +------------------- unsafe_hash= parameter
+#    |       +----------- eq= parameter
+#    |       |       +--- frozen= parameter
+#    |       |       |
+#    v       v       v    |        |        |
+#                         |   no   |  yes   |  <--- class has explicitly defined __hash__
+# +=======+=======+=======+========+========+
+# | False | False | False |        |        | No __eq__, use the base class __hash__
+# +-------+-------+-------+--------+--------+
+# | False | False | True  |        |        | No __eq__, use the base class __hash__
+# +-------+-------+-------+--------+--------+
+# | False | True  | False | None   |        | <-- the default, not hashable
+# +-------+-------+-------+--------+--------+
+# | False | True  | True  | add    |        | Frozen, so hashable, allows override
+# +-------+-------+-------+--------+--------+
+# | True  | False | False | add    | error  | Has no __eq__, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | False | True  | add    | error  | Has no __eq__, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | True  | False | add    | error  | Not frozen, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | True  | True  | add    | error  | Frozen, so hashable
+# +=======+=======+=======+========+========+
 # For boxes that are blank, __hash__ is untouched and therefore
 #  inherited from the base class.  If the base is object, then
 #  id-based hashing is used.
 # Note that a class may have already __hash__=None if it specified an
 #  __eq__ method in the class body (not one that was created by
 #  @dataclass).
+# See _hash_lookup (below) for a coded version of this table.
 
 
 # Raised when an attempt is made to modify a frozen class.
@@ -552,23 +553,37 @@ def _set_new_attribute(cls, name, value):
 # Decide if/how we're going to create a hash function.  Key is
 #  (unsafe_hash, eq, frozen, does-hash-exist).  Value is the action to
 #  take.
-_generate_hash_lookup = {(False, False, False, False): (''),
-                         (False, False, False, True ): (''),
-                         (False, False, True,  False): (''),
-                         (False, False, True,  True ): (''),
-                         (False, True,  False, False): ('none'),
-                         (False, True,  False, True ): (''),
-                         (False, True,  True,  False): ('fn'),
-                         (False, True,  True,  True ): ('fn-x'),
-                         (True,  False, False, False): ('fn'),
-                         (True,  False, False, True ): ('fn-x'),
-                         (True,  False, True,  False): ('fn'),
-                         (True,  False, True,  True ): ('fn-x'),
-                         (True,  True,  False, False): ('fn'),
-                         (True,  True,  False, True ): ('fn-x'),
-                         (True,  True,  True,  False): ('fn'),
-                         (True,  True,  True,  True ): ('fn-x'),
-                         }
+# Actions:
+#  '':          Do nothing.
+#  'none':      Set __hash__ to None.
+#  'add':       Always add a generated __hash__function.
+#  'exception': Raise an exception.
+#
+#                +-------------------------------------- unsafe_hash?
+#                |      +------------------------------- eq?
+#                |      |      +------------------------ frozen?
+#                |      |      |      +----------------  has-explicit-hash?
+#                |      |      |      |
+#                |      |      |      |        +-------  action
+#                |      |      |      |        |
+#                v      v      v      v        v
+_hash_action = {(False, False, False, False): (''),
+                (False, False, False, True ): (''),
+                (False, False, True,  False): (''),
+                (False, False, True,  True ): (''),
+                (False, True,  False, False): ('none'),
+                (False, True,  False, True ): (''),
+                (False, True,  True,  False): ('add'),
+                (False, True,  True,  True ): (''),
+                (True,  False, False, False): ('add'),
+                (True,  False, False, True ): ('exception'),
+                (True,  False, True,  False): ('add'),
+                (True,  False, True,  True ): ('exception'),
+                (True,  True,  False, False): ('add'),
+                (True,  True,  False, True ): ('exception'),
+                (True,  True,  True,  False): ('add'),
+                (True,  True,  True,  True ): ('exception'),
+                }
 
 
 def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
@@ -619,8 +634,14 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
     #  be inherited down.
     is_frozen = frozen or cls.__setattr__ is _frozen_setattr
 
-    # Was this class defined with an __eq__?  Used in __hash__ logic.
-    auto_hash_test= '__eq__' in cls.__dict__ and getattr(cls.__dict__, '__hash__', MISSING) is None
+    # Was this class defined with an explicit __hash__?  Note that if
+    #  __eq__ is defined in this class, then python will automatically
+    #  set __hash__ to None.  This is a heuristic, as it's possible
+    #  that such a __hash__ == None was not auto-generated, but it
+    #  close enough.
+    class_hash = cls.__dict__.get('__hash__', MISSING)
+    has_explicit_hash = not (class_hash is MISSING or
+                             (class_hash is None and '__eq__' in cls.__dict__))
 
     # If we're generating ordering methods, we must be generating
     #  the eq methods.
@@ -675,7 +696,7 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
             if _set_new_attribute(cls, name,
                                   _cmp_fn(name, op, self_tuple, other_tuple)):
                 raise TypeError(f'Cannot overwrite attribute {name} '
-                                f'in {cls.__name__}. Consider using '
+                                f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
 
     if is_frozen:
@@ -683,27 +704,58 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
                          ('__delattr__', _frozen_delattr)]:
             if _set_new_attribute(cls, name, fn):
                 raise TypeError(f'Cannot overwrite attribute {name} '
-                                f'in {cls.__name__}')
+                                f'in class {cls.__name__}')
 
     # Decide if/how we're going to create a hash function.
-    generate_hash = _generate_hash_lookup[bool(unsafe_hash),
-                                          bool(eq),
-                                          bool(frozen),
-                                          '__hash__' in cls.__dict__]
+    hash_action = _hash_action[bool(unsafe_hash),
+                               bool(eq),
+                               bool(frozen),
+                               has_explicit_hash]
+
+    if unsafe_hash:
+        # If there's already a __hash__, raise TypeError, otherwise
+        #  add __hash__.
+        if has_explicit_hash:
+            hash_action = 'exception'
+        else:
+            hash_action = 'add'
+    else:
+        # unsafe_hash is False (the default)
+        if has_explicit_hash:
+            # There's already a __hash__, don't overwrite it.
+            hash_action = ''
+        else:
+            if eq and frozen:
+                # It's frozen and we added __eq__, generate __hash__.
+                hash_action = 'add'
+            elif eq and not frozen:
+                # It's not frozen but has __eq__, make it unhashable.
+                #  This is the default if no params to @dataclass.
+                hash_action = 'none'
+            else:
+                # There's no __eq__, use the base class __hash__.
+                hash_action = ''
+    assert hash_action == _hash_action[bool(unsafe_hash),
+                                       bool(eq),
+                                       bool(frozen),
+                                       has_explicit_hash]
+
     # No need to call _set_new_attribute here, since we already know if
     #  we're overwriting a __hash__ or not.
-    if generate_hash == '':
+    if hash_action == '':
         # Do nothing.
         pass
-    elif generate_hash == 'none':
+    elif hash_action == 'none':
         cls.__hash__ = None
-    elif generate_hash in ('fn', 'fn-x'):
-        if generate_hash == 'fn' or auto_hash_test:
-            flds = [f for f in field_list
-                    if (f.compare if f.hash is None else f.hash)]
-            cls.__hash__ = _hash_fn(flds)
+    elif hash_action == 'add':
+        flds = [f for f in field_list if (f.compare if f.hash is None else f.hash)]
+        cls.__hash__ = _hash_fn(flds)
+    elif hash_action == 'exception':
+        # Raise an exception.
+        raise TypeError(f'Cannot overwrite attribute __hash__ '
+                        f'in class {cls.__name__}')
     else:
-        assert False, f"can't get here: {generate_hash}"
+        assert False, f"can't get here: {hash_action}"
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.

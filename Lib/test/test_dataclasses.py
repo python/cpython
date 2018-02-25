@@ -83,13 +83,59 @@ class TestCase(unittest.TestCase):
             class C(B):
                 x: int = 0
 
-    def test_overwriting_hash(self):
-        # Test that declaring this class isn't an error.
+    def test_overwrite_hash(self):
+        # Test that declaring this class isn't an error.  It should
+        #  use the user-provided __hash__.
         @dataclass(frozen=True)
         class C:
             x: int
             def __hash__(self):
+                return 301
+        self.assertEqual(hash(C(100)), 301)
+
+        # Test that declaring this class isn't an error.  It should
+        #  use the generated __hash__.
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            def __eq__(self, other):
+                return False
+        self.assertEqual(hash(C(100)), hash((100,)))
+
+        # But this one should generate an exception, because with
+        #  unsafe_hash=True, it's an error to have a __hash__ defined.
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __hash__'):
+            @dataclass(unsafe_hash=True)
+            class C:
+                def __hash__(self):
+                    pass
+
+        # Creating this class should not generate an exception,
+        #  because even though __hash__ exists before @dataclass is
+        #  called, (due to __eq__ being defined), since it's None
+        #  that's okay.
+        @dataclass(unsafe_hash=True)
+        class C:
+            x: int
+            def __eq__(self):
                 pass
+        # The generated hash function works as we'd expect.
+        self.assertEqual(hash(C(10)), hash((10,)))
+
+        # Creating this class should generate an exception, because
+        # __hash__ exists and is not None, which it would be if it had
+        # been auto-generated do due __eq__ being defined.
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __hash__'):
+            @dataclass(unsafe_hash=True)
+            class C:
+                x: int
+                def __eq__(self):
+                    pass
+                def __hash__(self):
+                    pass
+
 
     def test_overwrite_fields_in_derived_class(self):
         # Note that x from C1 replaces x in Base, but the order remains
