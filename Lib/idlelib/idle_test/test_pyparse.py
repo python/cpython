@@ -9,13 +9,18 @@ from idlelib import pyparse
 
 
 class ParseMapTest(unittest.TestCase):
-    # ParseMap is further tested by PyParseTest.test_map1.
 
-    def test__get_item__(self):
+    def test_getitem(self):
         keepwhite = {ord(c): ord(c) for c in ' \t\n\r'}
         mapping = pyparse.ParseMap(keepwhite)
         self.assertEqual(mapping[ord('\t')], ord('\t'))
         self.assertEqual(mapping[ord('a')], 'x')
+
+    def test_map1(self):
+        # map1 is the production instance of ParseMap, used in _study1
+        parser = pyparse.Parser(4, 4)
+        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(parser.map1),
+                          'xxx(((x)))x"x\'x\n')
 
 
 class PyParseTest(unittest.TestCase):
@@ -121,10 +126,6 @@ class PyParseTest(unittest.TestCase):
         # An index that is preceded by a newline.
         p.set_lo(44)
         self.assertEqual(p.code, code[44:])
-
-    def test_map1(self):
-        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(self.parser.map1),
-                          'xxx(((x)))x"x\'x\n')
 
     def test_study1(self):
         eq = self.assertEqual
