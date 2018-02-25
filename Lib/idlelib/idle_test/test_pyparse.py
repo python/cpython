@@ -9,6 +9,7 @@ from idlelib import pyparse
 
 
 class ParseMapTest(unittest.TestCase):
+    # ParseMap is further tested by PyParseTest.test_map1.
 
     def test__get_item__(self):
         keepwhite = {ord(c): ord(c) for c in ' \t\n\r'}
