@@ -39,7 +39,7 @@
 
 enum {TYPE_NONE, TYPE_NOT_STARTED, TYPE_READ, TYPE_READINTO, TYPE_WRITE,
       TYPE_ACCEPT, TYPE_CONNECT, TYPE_DISCONNECT, TYPE_CONNECT_NAMED_PIPE,
-      TYPE_WAIT_NAMED_PIPE_AND_CONNECT};
+      TYPE_WAIT_NAMED_PIPE_AND_CONNECT, TYPE_TRANSMIT_FILE};
 
 typedef struct {
     PyObject_HEAD
@@ -89,6 +89,7 @@ SetFromWindowsErr(DWORD err)
 static LPFN_ACCEPTEX Py_AcceptEx = NULL;
 static LPFN_CONNECTEX Py_ConnectEx = NULL;
 static LPFN_DISCONNECTEX Py_DisconnectEx = NULL;
+static LPFN_TRANSMITFILE Py_TransmitFile = NULL;
 static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
 
 #define GET_WSA_POINTER(s, x)                                           \
@@ -102,6 +103,7 @@ initialize_function_pointers(void)
     GUID GuidAcceptEx = WSAID_ACCEPTEX;
     GUID GuidConnectEx = WSAID_CONNECTEX;
     GUID GuidDisconnectEx = WSAID_DISCONNECTEX;
+    GUID GuidTransmitFile = WSAID_TRANSMITFILE;
     HINSTANCE hKernel32;
     SOCKET s;
     DWORD dwBytes;
@@ -114,7 +116,8 @@ initialize_function_pointers(void)
 
     if (!GET_WSA_POINTER(s, AcceptEx) ||
         !GET_WSA_POINTER(s, ConnectEx) ||
-        !GET_WSA_POINTER(s, DisconnectEx))
+        !GET_WSA_POINTER(s, DisconnectEx) ||
+        !GET_WSA_POINTER(s, TransmitFile))
     {
         closesocket(s);
         SetFromWindowsErr(WSAGetLastError());
@@ -1195,6 +1198,61 @@ Overlapped_DisconnectEx(OverlappedObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(
+    Overlapped_TransmitFile_doc,
+    "TransmitFile(socket, file, offset, offset_high, "
+    "count_to_write, count_per_send, flags) "
+    "-> Overlapped[None]\n\n"
+    "Transmit file data over a connected socket.");
+
+static PyObject *
+Overlapped_TransmitFile(OverlappedObject *self, PyObject *args)
+{
+    SOCKET Socket;
+    HANDLE File;
+    DWORD offset;
+    DWORD offset_high;
+    DWORD count_to_write;
+    DWORD count_per_send;
+    DWORD flags;
+    BOOL ret;
+    DWORD err;
+
+    if (!PyArg_ParseTuple(args,
+                          F_HANDLE F_HANDLE F_DWORD F_DWORD
+                          F_DWORD F_DWORD F_DWORD,
+                          &Socket, &File, &offset, &offset_high,
+                          &count_to_write, &count_per_send,
+                          &flags))
+        return NULL;
+
+    if (self->type != TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation already attempted");
+        return NULL;
+    }
+
+    self->type = TYPE_TRANSMIT_FILE;
+    self->handle = (HANDLE)Socket;
+    self->overlapped.Offset = offset;
+    self->overlapped.OffsetHigh = offset_high;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = Py_TransmitFile(Socket, File, count_to_write, count_per_send,
+                          &self->overlapped,
+                          NULL, flags);
+    Py_END_ALLOW_THREADS
+
+    self->error = err = ret ? ERROR_SUCCESS : WSAGetLastError();
+    switch (err) {
+        case ERROR_SUCCESS:
+        case ERROR_IO_PENDING:
+            Py_RETURN_NONE;
+        default:
+            self->type = TYPE_NOT_STARTED;
+            return SetFromWindowsErr(err);
+    }
+}
+
+PyDoc_STRVAR(
     Overlapped_ConnectNamedPipe_doc,
     "ConnectNamedPipe(handle) -> Overlapped[None]\n\n"
     "Start overlapped wait for a client to connect.");
@@ -1303,6 +1361,8 @@ static PyMethodDef Overlapped_methods[] = {
      METH_VARARGS, Overlapped_ConnectEx_doc},
     {"DisconnectEx", (PyCFunction) Overlapped_DisconnectEx,
      METH_VARARGS, Overlapped_DisconnectEx_doc},
+    {"TransmitFile", (PyCFunction) Overlapped_TransmitFile,
+     METH_VARARGS, Overlapped_TransmitFile_doc},
     {"ConnectNamedPipe", (PyCFunction) Overlapped_ConnectNamedPipe,
      METH_VARARGS, Overlapped_ConnectNamedPipe_doc},
     {NULL}
