@@ -10,7 +10,6 @@ _itemre - line that may have bracket structure start;
 _closere - line that must be followed by dedent.
 _chew_ordinaryre - non-special characters.
 """
-from collections.abc import Mapping
 import re
 import sys
 
