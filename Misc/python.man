@@ -164,10 +164,13 @@ for the named module and runs the corresponding
 file as a script.
 .TP
 .B \-O
-Turn on basic optimizations.  Given twice, causes docstrings to be discarded.
+Remove assert statements and any code conditional on the value of
+__debug__; augment the filename for compiled (bytecode) files by
+adding .opt-1 before the .pyc extension.
 .TP
 .B \-OO
-Discard docstrings in addition to the \fB-O\fP optimizations.
+Do \fB-O\fP and also discard docstrings; change the filename for
+compiled (bytecode) files by adding .opt-2 before the .pyc extension.
 .TP
 .B \-q
 Do not print the version and copyright messages. These messages are
