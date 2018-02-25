@@ -127,6 +127,19 @@ struct py_ssl_library_code {
 # define HAVE_ALPN
 #endif
 
+/* We cannot rely on OPENSSL_NO_NEXTPROTONEG because LibreSSL 2.6.1 dropped
+ * NPN support but did not set OPENSSL_NO_NEXTPROTONEG for compatibility
+ * reasons. The check for TLSEXT_TYPE_next_proto_neg works with
+ * OpenSSL 1.0.1+ and LibreSSL.
+ */
+#ifdef OPENSSL_NO_NEXTPROTONEG
+#  define HAVE_NPN 0
+#elif defined(TLSEXT_TYPE_next_proto_neg)
+#  define HAVE_NPN 1
+#else
+#  define HAVE_NPN 0
+# endif
+
 #ifndef INVALID_SOCKET /* MS defines this */
 #define INVALID_SOCKET (-1)
 #endif
@@ -285,7 +298,7 @@ static unsigned int _ssl_locks_count = 0;
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#ifdef HAVE_NPN
     unsigned char *npn_protocols;
     int npn_protocols_len;
 #endif
@@ -2195,7 +2208,7 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     self->ctx = ctx;
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#ifdef HAVE_NPN
     self->npn_protocols = NULL;
 #endif
 #ifdef HAVE_ALPN
@@ -2273,7 +2286,7 @@ context_dealloc(PySSLContext *self)
     PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#ifdef HAVE_NPN
     PyMem_FREE(self->npn_protocols);
 #endif
 #ifdef HAVE_ALPN
@@ -2303,7 +2316,7 @@ set_ciphers(PySSLContext *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG) || defined(HAVE_ALPN)
+#if defined(HAVE_NPN) || defined(HAVE_ALPN)
 static int
 do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
                       const unsigned char *server_protocols, unsigned int server_protocols_len,
@@ -2329,7 +2342,7 @@ do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
 }
 #endif
 
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#ifdef HAVE_NPN
 /* this callback gets passed to SSL_CTX_set_next_protos_advertise_cb */
 static int
 _advertiseNPN_cb(SSL *s,
@@ -2364,7 +2377,7 @@ _selectNPN_cb(SSL *s,
 static PyObject *
 _set_npn_protocols(PySSLContext *self, PyObject *args)
 {
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#ifdef HAVE_NPN
     Py_buffer protos;
 
     if (!PyArg_ParseTuple(args, "s*:set_npn_protocols", &protos))
@@ -4373,7 +4386,7 @@ init_ssl(void)
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_ECDH", r);
 
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#ifdef HAVE_NPN
     r = Py_True;
 #else
     r = Py_False;
