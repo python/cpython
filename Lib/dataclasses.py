@@ -34,11 +34,6 @@ __all__ = ['dataclass',
 # +---------+-----------------------------------------+
 # | add     | Generated method is added.              |
 # +---------+-----------------------------------------+
-# | add*    | Generated method is added only if the   |
-# |         |  existing attribute is None and if the  |
-# |         |  user supplied a __eq__ method in the   |
-# |         |  class definition.                      |
-# +---------+-----------------------------------------+
 # | raise   | TypeError is raised.                    |
 # +---------+-----------------------------------------+
 # | None    | Attribute is set to None.               |
@@ -130,13 +125,13 @@ __all__ = ['dataclass',
 # +-------+-------+-------+--------+--------+
 # | False | True  | True  | add    |        | Frozen, so hashable, allows override
 # +-------+-------+-------+--------+--------+
-# | True  | False | False | add    | error  | Has no __eq__, but hashable
+# | True  | False | False | add    | raise  | Has no __eq__, but hashable
 # +-------+-------+-------+--------+--------+
-# | True  | False | True  | add    | error  | Has no __eq__, but hashable
+# | True  | False | True  | add    | raise  | Has no __eq__, but hashable
 # +-------+-------+-------+--------+--------+
-# | True  | True  | False | add    | error  | Not frozen, but hashable
+# | True  | True  | False | add    | raise  | Not frozen, but hashable
 # +-------+-------+-------+--------+--------+
-# | True  | True  | True  | add    | error  | Frozen, so hashable
+# | True  | True  | True  | add    | raise  | Frozen, so hashable
 # +=======+=======+=======+========+========+
 # For boxes that are blank, __hash__ is untouched and therefore
 #  inherited from the base class.  If the base is object, then
@@ -144,7 +139,7 @@ __all__ = ['dataclass',
 # Note that a class may have already __hash__=None if it specified an
 #  __eq__ method in the class body (not one that was created by
 #  @dataclass).
-# See _hash_lookup (below) for a coded version of this table.
+# See _hash_action (below) for a coded version of this table.
 
 
 # Raised when an attempt is made to modify a frozen class.
