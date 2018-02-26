@@ -1,0 +1,2 @@
+socket: Remove TCP_FASTOPEN, TCP_KEEPCNT flags on older version Windows
+during run-time.

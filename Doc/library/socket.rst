@@ -303,6 +303,10 @@ Constants
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
+   .. versionchanged:: 3.6.5
+      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
+      supports.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
