@@ -90,8 +90,6 @@ ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
 ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
-import ipaddress
-import re
 import sys
 import os
 from collections import namedtuple
@@ -160,6 +158,7 @@ if sys.platform == "win32":
 
 from socket import socket, AF_INET, SOCK_STREAM, create_connection
 from socket import SOL_SOCKET, SO_TYPE
+import socket as _socket
 import base64        # for DER-to-PEM translation
 import errno
 import warnings
@@ -167,10 +166,7 @@ import warnings
 
 socket_error = OSError  # keep that public name in module namespace
 
-if _ssl.HAS_TLS_UNIQUE:
-    CHANNEL_BINDING_TYPES = ['tls-unique']
-else:
-    CHANNEL_BINDING_TYPES = []
+CHANNEL_BINDING_TYPES = ['tls-unique']
 
 HAS_NEVER_CHECK_COMMON_NAME = hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT')
 
@@ -183,55 +179,75 @@ CertificateError = SSLCertVerificationError
 def _dnsname_match(dn, hostname):
     """Matching according to RFC 6125, section 6.4.3
 
-    http://tools.ietf.org/html/rfc6125#section-6.4.3
+    - Hostnames are compared lower case.
+    - For IDNA, both dn and hostname must be encoded as IDN A-label (ACE).
+    - Partial wildcards like 'www*.example.org', multiple wildcards, sole
+      wildcard or wildcards in labels other then the left-most label are not
+      supported and a CertificateError is raised.
+    - A wildcard must match at least one character.
     """
-    pats = []
     if not dn:
         return False
 
-    leftmost, *remainder = dn.split(r'.')
-
-    wildcards = leftmost.count('*')
-    if wildcards == 1 and len(leftmost) > 1:
-        # Only match wildcard in leftmost segment.
-        raise CertificateError(
-            "wildcard can only be present in the leftmost segment: " + repr(dn))
-
-    if wildcards > 1:
-        # Issue #17980: avoid denials of service by refusing more
-        # than one wildcard per fragment.  A survey of established
-        # policy among SSL implementations showed it to be a
-        # reasonable choice.
-        raise CertificateError(
-            "too many wildcards in certificate DNS name: " + repr(dn))
-
+    wildcards = dn.count('*')
     # speed up common case w/o wildcards
     if not wildcards:
         return dn.lower() == hostname.lower()
 
-    # RFC 6125, section 6.4.3, subitem 1.
-    # The client SHOULD NOT attempt to match a presented identifier in which
-    # the wildcard character comprises a label other than the left-most label.
-    if leftmost == '*':
-        # When '*' is a fragment by itself, it matches a non-empty dotless
-        # fragment.
-        pats.append('[^.]+')
-    elif leftmost.startswith('xn--') or hostname.startswith('xn--'):
-        # RFC 6125, section 6.4.3, subitem 3.
-        # The client SHOULD NOT attempt to match a presented identifier
-        # where the wildcard character is embedded within an A-label or
-        # U-label of an internationalized domain name.
-        pats.append(re.escape(leftmost))
-    else:
-        # Otherwise, '*' matches any dotless string, e.g. www*
-        pats.append(re.escape(leftmost).replace(r'\*', '[^.]*'))
+    if wildcards > 1:
+        raise CertificateError(
+            "too many wildcards in certificate DNS name: {!r}.".format(dn))
 
-    # add the remaining fragments, ignore any wildcards
-    for frag in remainder:
-        pats.append(re.escape(frag))
+    dn_leftmost, sep, dn_remainder = dn.partition('.')
 
-    pat = re.compile(r'\A' + r'\.'.join(pats) + r'\Z', re.IGNORECASE)
-    return pat.match(hostname)
+    if '*' in dn_remainder:
+        # Only match wildcard in leftmost segment.
+        raise CertificateError(
+            "wildcard can only be present in the leftmost label: "
+            "{!r}.".format(dn))
+
+    if not sep:
+        # no right side
+        raise CertificateError(
+            "sole wildcard without additional labels are not support: "
+            "{!r}.".format(dn))
+
+    if dn_leftmost != '*':
+        # no partial wildcard matching
+        raise CertificateError(
+            "partial wildcards in leftmost label are not supported: "
+            "{!r}.".format(dn))
+
+    hostname_leftmost, sep, hostname_remainder = hostname.partition('.')
+    if not hostname_leftmost or not sep:
+        # wildcard must match at least one char
+        return False
+    return dn_remainder.lower() == hostname_remainder.lower()
+
+
+def _inet_paton(ipname):
+    """Try to convert an IP address to packed binary form
+
+    Supports IPv4 addresses on all platforms and IPv6 on platforms with IPv6
+    support.
+    """
+    # inet_aton() also accepts strings like '1'
+    if ipname.count('.') == 3:
+        try:
+            return _socket.inet_aton(ipname)
+        except OSError:
+            pass
+
+    try:
+        return _socket.inet_pton(_socket.AF_INET6, ipname)
+    except OSError:
+        raise ValueError("{!r} is neither an IPv4 nor an IP6 "
+                         "address.".format(ipname))
+    except AttributeError:
+        # AF_INET6 not available
+        pass
+
+    raise ValueError("{!r} is not an IPv4 address.".format(ipname))
 
 
 def _ipaddress_match(ipname, host_ip):
@@ -241,14 +257,19 @@ def _ipaddress_match(ipname, host_ip):
     (section 1.7.2 - "Out of Scope").
     """
     # OpenSSL may add a trailing newline to a subjectAltName's IP address
-    ip = ipaddress.ip_address(ipname.rstrip())
+    ip = _inet_paton(ipname.rstrip())
     return ip == host_ip
 
 
 def match_hostname(cert, hostname):
     """Verify that *cert* (in decoded format as returned by
     SSLSocket.getpeercert()) matches the *hostname*.  RFC 2818 and RFC 6125
-    rules are followed, but IP addresses are not accepted for *hostname*.
+    rules are followed.
+
+    The function matches IP addresses rather than dNSNames if hostname is a
+    valid ipaddress string. IPv4 addresses are supported on all platforms.
+    IPv6 addresses are supported on platforms with IPv6 support (AF_INET6
+    and inet_pton).
 
     CertificateError is raised on failure. On success, the function
     returns nothing.
@@ -258,7 +279,7 @@ def match_hostname(cert, hostname):
                          "SSL socket or SSL context with either "
                          "CERT_OPTIONAL or CERT_REQUIRED")
     try:
-        host_ip = ipaddress.ip_address(hostname)
+        host_ip = _inet_paton(hostname)
     except ValueError:
         # Not an IP address (common case)
         host_ip = None
@@ -355,13 +376,20 @@ class SSLContext(_SSLContext):
         self = _SSLContext.__new__(cls, protocol)
         return self
 
-    def __init__(self, protocol=PROTOCOL_TLS):
-        self.protocol = protocol
+    def _encode_hostname(self, hostname):
+        if hostname is None:
+            return None
+        elif isinstance(hostname, str):
+            return hostname.encode('idna').decode('ascii')
+        else:
+            return hostname.decode('ascii')
 
     def wrap_socket(self, sock, server_side=False,
                     do_handshake_on_connect=True,
                     suppress_ragged_eofs=True,
                     server_hostname=None, session=None):
+        # SSLSocket class handles server_hostname encoding before it calls
+        # ctx._wrap_socket()
         return self.sslsocket_class(
             sock=sock,
             server_side=server_side,
@@ -374,9 +402,13 @@ class SSLContext(_SSLContext):
 
     def wrap_bio(self, incoming, outgoing, server_side=False,
                  server_hostname=None, session=None):
-        sslobj = self._wrap_bio(incoming, outgoing, server_side=server_side,
-                                server_hostname=server_hostname)
-        return self.sslobject_class(sslobj, session=session)
+        # Need to encode server_hostname here because _wrap_bio() can only
+        # handle ASCII str.
+        return self.sslobject_class(
+            incoming, outgoing, server_side=server_side,
+            server_hostname=self._encode_hostname(server_hostname),
+            session=session, _context=self,
+        )
 
     def set_npn_protocols(self, npn_protocols):
         protos = bytearray()
@@ -388,6 +420,19 @@ class SSLContext(_SSLContext):
             protos.extend(b)
 
         self._set_npn_protocols(protos)
+
+    def set_servername_callback(self, server_name_callback):
+        if server_name_callback is None:
+            self.sni_callback = None
+        else:
+            if not callable(server_name_callback):
+                raise TypeError("not a callable object")
+
+            def shim_cb(sslobj, servername, sslctx):
+                servername = self._encode_hostname(servername)
+                return server_name_callback(sslobj, servername, sslctx)
+
+            self.sni_callback = shim_cb
 
     def set_alpn_protocols(self, alpn_protocols):
         protos = bytearray()
@@ -446,6 +491,10 @@ class SSLContext(_SSLContext):
         @property
         def hostname_checks_common_name(self):
             return True
+
+    @property
+    def protocol(self):
+        return _SSLMethod(super().protocol)
 
     @property
     def verify_flags(self):
@@ -564,12 +613,13 @@ class SSLObject:
      * The ``do_handshake_on_connect`` and ``suppress_ragged_eofs`` machinery.
     """
 
-    def __init__(self, sslobj, owner=None, session=None):
-        self._sslobj = sslobj
-        # Note: _sslobj takes a weak reference to owner
-        self._sslobj.owner = owner or self
-        if session is not None:
-            self._sslobj.session = session
+    def __init__(self, incoming, outgoing, server_side=False,
+                 server_hostname=None, session=None, _context=None):
+        self._sslobj = _context._wrap_bio(
+            incoming, outgoing, server_side=server_side,
+            server_hostname=server_hostname,
+            owner=self, session=session
+        )
 
     @property
     def context(self):
@@ -632,7 +682,7 @@ class SSLObject:
         Return None if no certificate was provided, {} if a certificate was
         provided, but not validated.
         """
-        return self._sslobj.peer_certificate(binary_form)
+        return self._sslobj.getpeercert(binary_form)
 
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``
@@ -680,13 +730,7 @@ class SSLObject:
         """Get channel binding data for current connection.  Raise ValueError
         if the requested `cb_type` is not supported.  Return bytes of the data
         or None if the data is not available (e.g. before the handshake)."""
-        if cb_type not in CHANNEL_BINDING_TYPES:
-            raise ValueError("Unsupported channel binding type")
-        if cb_type != "tls-unique":
-            raise NotImplementedError(
-                            "{0} channel binding type not implemented"
-                            .format(cb_type))
-        return self._sslobj.tls_unique_cb()
+        return self._sslobj.get_channel_binding(cb_type)
 
     def version(self):
         """Return a string identifying the protocol version used by the
@@ -749,7 +793,7 @@ class SSLSocket(socket):
             raise ValueError("check_hostname requires server_hostname")
         self._session = _session
         self.server_side = server_side
-        self.server_hostname = server_hostname
+        self.server_hostname = self._context._encode_hostname(server_hostname)
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
         if sock is not None:
@@ -780,10 +824,10 @@ class SSLSocket(socket):
         if connected:
             # create the SSL object
             try:
-                sslobj = self._context._wrap_socket(self, server_side,
-                                                    server_hostname)
-                self._sslobj = SSLObject(sslobj, owner=self,
-                                         session=self._session)
+                self._sslobj = self._context._wrap_socket(
+                    self, server_side, self.server_hostname,
+                    owner=self, session=self._session,
+                )
                 if do_handshake_on_connect:
                     timeout = self.gettimeout()
                     if timeout == 0.0:
@@ -843,10 +887,13 @@ class SSLSocket(socket):
         Return zero-length string on EOF."""
 
         self._checkClosed()
-        if not self._sslobj:
+        if self._sslobj is None:
             raise ValueError("Read on closed or unwrapped SSL socket.")
         try:
-            return self._sslobj.read(len, buffer)
+            if buffer is not None:
+                return self._sslobj.read(len, buffer)
+            else:
+                return self._sslobj.read(len)
         except SSLError as x:
             if x.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
                 if buffer is not None:
@@ -861,7 +908,7 @@ class SSLSocket(socket):
         number of bytes of DATA actually transmitted."""
 
         self._checkClosed()
-        if not self._sslobj:
+        if self._sslobj is None:
             raise ValueError("Write on closed or unwrapped SSL socket.")
         return self._sslobj.write(data)
 
@@ -877,41 +924,42 @@ class SSLSocket(socket):
 
     def selected_npn_protocol(self):
         self._checkClosed()
-        if not self._sslobj or not _ssl.HAS_NPN:
+        if self._sslobj is None or not _ssl.HAS_NPN:
             return None
         else:
             return self._sslobj.selected_npn_protocol()
 
     def selected_alpn_protocol(self):
         self._checkClosed()
-        if not self._sslobj or not _ssl.HAS_ALPN:
+        if self._sslobj is None or not _ssl.HAS_ALPN:
             return None
         else:
             return self._sslobj.selected_alpn_protocol()
 
     def cipher(self):
         self._checkClosed()
-        if not self._sslobj:
+        if self._sslobj is None:
             return None
         else:
             return self._sslobj.cipher()
 
     def shared_ciphers(self):
         self._checkClosed()
-        if not self._sslobj:
+        if self._sslobj is None:
             return None
-        return self._sslobj.shared_ciphers()
+        else:
+            return self._sslobj.shared_ciphers()
 
     def compression(self):
         self._checkClosed()
-        if not self._sslobj:
+        if self._sslobj is None:
             return None
         else:
             return self._sslobj.compression()
 
     def send(self, data, flags=0):
         self._checkClosed()
-        if self._sslobj:
+        if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
                     "non-zero flags not allowed in calls to send() on %s" %
@@ -922,7 +970,7 @@ class SSLSocket(socket):
 
     def sendto(self, data, flags_or_addr, addr=None):
         self._checkClosed()
-        if self._sslobj:
+        if self._sslobj is not None:
             raise ValueError("sendto not allowed on instances of %s" %
                              self.__class__)
         elif addr is None:
@@ -938,7 +986,7 @@ class SSLSocket(socket):
 
     def sendall(self, data, flags=0):
         self._checkClosed()
-        if self._sslobj:
+        if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
                     "non-zero flags not allowed in calls to sendall() on %s" %
@@ -956,15 +1004,15 @@ class SSLSocket(socket):
         """Send a file, possibly by using os.sendfile() if this is a
         clear-text socket.  Return the total number of bytes sent.
         """
-        if self._sslobj is None:
+        if self._sslobj is not None:
+            return self._sendfile_use_send(file, offset, count)
+        else:
             # os.sendfile() works with plain sockets only
             return super().sendfile(file, offset, count)
-        else:
-            return self._sendfile_use_send(file, offset, count)
 
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()
-        if self._sslobj:
+        if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
                     "non-zero flags not allowed in calls to recv() on %s" %
@@ -979,7 +1027,7 @@ class SSLSocket(socket):
             nbytes = len(buffer)
         elif nbytes is None:
             nbytes = 1024
-        if self._sslobj:
+        if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
                   "non-zero flags not allowed in calls to recv_into() on %s" %
@@ -990,7 +1038,7 @@ class SSLSocket(socket):
 
     def recvfrom(self, buflen=1024, flags=0):
         self._checkClosed()
-        if self._sslobj:
+        if self._sslobj is not None:
             raise ValueError("recvfrom not allowed on instances of %s" %
                              self.__class__)
         else:
@@ -998,7 +1046,7 @@ class SSLSocket(socket):
 
     def recvfrom_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
-        if self._sslobj:
+        if self._sslobj is not None:
             raise ValueError("recvfrom_into not allowed on instances of %s" %
                              self.__class__)
         else:
@@ -1014,7 +1062,7 @@ class SSLSocket(socket):
 
     def pending(self):
         self._checkClosed()
-        if self._sslobj:
+        if self._sslobj is not None:
             return self._sslobj.pending()
         else:
             return 0
@@ -1026,7 +1074,7 @@ class SSLSocket(socket):
 
     def unwrap(self):
         if self._sslobj:
-            s = self._sslobj.unwrap()
+            s = self._sslobj.shutdown()
             self._sslobj = None
             return s
         else:
@@ -1044,6 +1092,11 @@ class SSLSocket(socket):
             if timeout == 0.0 and block:
                 self.settimeout(None)
             self._sslobj.do_handshake()
+            if self.context.check_hostname:
+                if not self.server_hostname:
+                    raise ValueError("check_hostname needs server_hostname "
+                                     "argument")
+                match_hostname(self.getpeercert(), self.server_hostname)
         finally:
             self.settimeout(timeout)
 
@@ -1052,11 +1105,12 @@ class SSLSocket(socket):
             raise ValueError("can't connect in server-side mode")
         # Here we assume that the socket is client-side, and not
         # connected at the time of the call.  We connect it, then wrap it.
-        if self._connected:
+        if self._connected or self._sslobj is not None:
             raise ValueError("attempt to connect already-connected SSLSocket!")
-        sslobj = self.context._wrap_socket(self, False, self.server_hostname)
-        self._sslobj = SSLObject(sslobj, owner=self,
-                                 session=self._session)
+        self._sslobj = self.context._wrap_socket(
+            self, False, self.server_hostname,
+            owner=self, session=self._session
+        )
         try:
             if connect_ex:
                 rc = super().connect_ex(addr)
@@ -1099,18 +1153,24 @@ class SSLSocket(socket):
         if the requested `cb_type` is not supported.  Return bytes of the data
         or None if the data is not available (e.g. before the handshake).
         """
-        if self._sslobj is None:
+        if self._sslobj is not None:
+            return self._sslobj.get_channel_binding(cb_type)
+        else:
+            if cb_type not in CHANNEL_BINDING_TYPES:
+                raise ValueError(
+                    "{0} channel binding type not implemented".format(cb_type)
+                )
             return None
-        return self._sslobj.get_channel_binding(cb_type)
 
     def version(self):
         """
         Return a string identifying the protocol version used by the
         current SSL channel, or None if there is no established channel.
         """
-        if self._sslobj is None:
+        if self._sslobj is not None:
+            return self._sslobj.version()
+        else:
             return None
-        return self._sslobj.version()
 
 
 # Python does not support forward declaration of types.
