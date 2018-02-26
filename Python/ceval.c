@@ -4858,7 +4858,7 @@ import_all_from(PyObject *locals, PyObject *v)
                 break;
             }
             PyErr_Format(PyExc_TypeError,
-                         "%s in %U.%s must be str, not %.100s",
+                         "%s in %S.%s must be str, not %.100s",
                          skip_leading_underscores ? "Key" : "Item",
                          modname,
                          skip_leading_underscores ? "__dict__" : "__all__",

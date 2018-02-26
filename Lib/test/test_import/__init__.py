@@ -112,25 +112,24 @@ class ImportTests(unittest.TestCase):
         self.assertIsNotNone(cm.exception)
 
     def test_from_import_star_invalid_type(self):
-        TESTFNnoat = TESTFN[1:]
-        source = TESTFNnoat + os.extsep + "py"
-        sys.path.insert(0, os.curdir)
-        try:
-            with open(source, "w") as f:
-                f.write("__all__ = [1]")
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("__all__ = [b'invalid_type']")
+            globals = {}
             with self.assertRaisesRegex(
-                    TypeError, f"{TESTFNnoat}.__all__ must be str"):
-                exec(f"from {TESTFNnoat} import *")
-            unload(TESTFNnoat)
-            with open(source, "w") as f:
-                f.write("import sys\nsys.modules[__name__].__dict__[1] = 1")
+                TypeError, f"{name}.__all__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("globals()[b'invalid_type'] = object()")
+            globals = {}
             with self.assertRaisesRegex(
-                    TypeError, f"{TESTFNnoat}.__dict__ must be str"):
-                exec(f"from {TESTFNnoat} import *")
-        finally:
-            del sys.path[0]
-            remove_files(TESTFNnoat)
-            unload(TESTFNnoat)
+                TypeError, f"{name}.__dict__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
 
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
