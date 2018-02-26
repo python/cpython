@@ -305,6 +305,70 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <VersionHelpers.h>
 
+/* remove some flags on older version Windows during run-time.
+   https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
+typedef struct {
+    DWORD build_number;  /* available starting with this Win10 BuildNumber */
+    const char flag_name[20];
+} FlagRuntimeInfo;
+
+/* IMPORTANT: make sure the list ordered by descending build_number */
+static FlagRuntimeInfo win_runtime_flags[] = {
+    /* available starting with Windows 10 1709 */
+    {16299, "TCP_KEEPIDLE"},
+    {16299, "TCP_KEEPINTVL"},
+    /* available starting with Windows 10 1703 */
+    {15063, "TCP_KEEPCNT"},
+    /* available starting with Windows 10 1607 */
+    {14393, "TCP_FASTOPEN"}
+};
+
+static void
+remove_unusable_flags(PyObject *m)
+{
+    PyObject *dict;
+    OSVERSIONINFOEX info;
+    DWORDLONG dwlConditionMask;
+
+    dict = PyModule_GetDict(m);
+    if (dict == NULL) {
+        return;
+    }
+
+    /* set to Windows 10, except BuildNumber. */
+    memset(&info, 0, sizeof(info));
+    info.dwOSVersionInfoSize = sizeof(info);
+    info.dwMajorVersion = 10;
+    info.dwMinorVersion = 0;
+
+    /* set Condition Mask */
+    dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
+        info.dwBuildNumber = win_runtime_flags[i].build_number;
+        /* greater than or equal to the specified version? 
+           Compatibility Mode will not cheat VerifyVersionInfo(...) */
+        if (VerifyVersionInfo(
+                &info,
+                VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
+                dwlConditionMask)) {
+            break;
+        }
+        else {
+            if (PyDict_GetItemString(
+                    dict,
+                    win_runtime_flags[i].flag_name) != NULL) {
+                PyDict_DelItemString(
+                    dict,
+                    win_runtime_flags[i].flag_name);
+            }
+        }
+    }
+}
+
 #endif
 
 #include <stddef.h>
@@ -7890,5 +7954,11 @@ PyInit__socket(void)
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
     netdb_lock = PyThread_allocate_lock();
 #endif
+
+#ifdef MS_WINDOWS
+    /* remove some flags on older version Windows during run-time */
+    remove_unusable_flags(m);
+#endif
+
     return m;
 }
