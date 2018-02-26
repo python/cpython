@@ -1493,7 +1493,6 @@ class Popen(object):
                         else:
                             env_list = [envKey + "=" + envVal for envKey,envVal in env.items()] #Sacrifice efficiency for readability
 
-                        print(env_list)
                         self.pid = _vxwapi.rtpSpawn(
                             executable_list[0].decode("UTF-8"),
                             args,env_list, 100,0x1000000,0,0)
@@ -1743,13 +1742,16 @@ class Popen(object):
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
                     if timeout is not None and timeout < 0:
-                        raise TimeoutExpired(self.args, orig_timeout)
+                        if not _vxworks:
+                            raise TimeoutExpired(self.args, orig_timeout)
+                        else:
+                            break;
                     ready = selector.select(timeout)
                     #TODO Also a temporary workaround for V7COR-5635
                     if not _vxworks:
                         self._check_timeout(endtime, orig_timeout)
                     else:
-                        self._check_timeout(int(endtime or 0) + 1, int(orig_timeout or 0) + 1)
+                        pass
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!
 

@@ -180,7 +180,6 @@ isfile(wchar_t *filename)          /* Is file, not directory */
 static int
 ismodule(wchar_t *filename)        /* Is module -- check for .pyc too */
 {
-	printf("checking : %ls\n",filename);
     if (isfile(filename)) {
         return 1;
     }
@@ -281,7 +280,6 @@ checkDev(wchar_t *p) {
 static void
 copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
 {
-	printf("ASD %ls \n", p);
 
 #ifdef __VXWORKS__
 	if (checkDev(p) || p[0] == SEP) {
@@ -580,7 +578,6 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
      * other way to find a directory to start the search from.  If
      * $PATH isn't exported, you lose.
      */
-    printf("ASDASD %ls \n", core_config->program_name);
     if (wcschr(core_config->program_name, SEP)) {
         wcsncpy(program_full_path, core_config->program_name, MAXPATHLEN);
     }
@@ -972,7 +969,6 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     }
 
     calculate_reduce_exec_prefix(calculate, exec_prefix);
-    printf("final: %ls\n", exec_prefix);
     config->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
     if (config->exec_prefix == NULL) {
         return _Py_INIT_NO_MEMORY();

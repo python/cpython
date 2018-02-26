@@ -2135,9 +2135,7 @@ config_init_path_config(_PyCoreConfig *config)
         if (config->exec_prefix == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
-        printf("PYPREFIX: %ls\n", config->exec_prefix );
     }
-    printf("AFTER");
 
     if (config->base_prefix == NULL) {
         config->base_prefix = _PyMem_RawWcsdup(config->prefix);

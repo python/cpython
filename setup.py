@@ -309,17 +309,13 @@ class PyBuildExt(build_ext):
         if compiler is not None:
             (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
-            print("ASDSADJSADIAJDAIDJSAIDASDA")
-            print(host_platform);
             #VxWorks uses '@filepath' extension to add include paths without overflowing windows cmd line buffer
             if _vxworks:
-                print("VXWORKSSSS")
                 cppflags = sysconfig.get_config_var('CPPFLAGS').split()
                 for item in cppflags:
                     self.announce('ITEM: "%s"' % item )
                     if item.startswith('@'):
                         args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags + ' ' + item
-        print(args);
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)

@@ -1322,7 +1322,6 @@ new_interpreter(PyThreadState **tstate_p)
     PyObject *sys_path = PySys_GetObject("path");
     PyObject* objectsRepresentation = PyObject_Repr(sys_path);
     const char* s = PyBytes_AS_STRING(PyUnicode_AsUTF8String(objectsRepresentation));
-    printf("OOOK: %s \n", s);
     bimod = _PyImport_FindBuiltin("builtins", modules);
     if (bimod != NULL) {
         interp->builtins = PyModule_GetDict(bimod);
