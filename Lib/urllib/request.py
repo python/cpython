@@ -1286,7 +1286,8 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update((k, v) for k, v in req.headers.items() if k not in headers)
+        headers.update({k: v for k, v in req.headers.items()
+                        if k not in headers})
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
