@@ -117,5 +117,9 @@ class SunauULAWTest(SunauTest, unittest.TestCase):
         frames = byteswap(frames, 2)
 
 
+class SunauMiscTests(audiotests.AudioMiscTests, unittest.TestCase):
+    module = sunau
+
+
 if __name__ == "__main__":
     unittest.main()

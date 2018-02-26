@@ -9,15 +9,13 @@ import select
 import signal
 import socket
 import tempfile
+import threading
 import unittest
 import socketserver
 
 import test.support
 from test.support import reap_children, reap_threads, verbose
-try:
-    import threading
-except ImportError:
-    threading = None
+
 
 test.support.requires("network")
 
@@ -62,13 +60,16 @@ def simple_subprocess(testcase):
     if pid == 0:
         # Don't raise an exception; it would be caught by the test harness.
         os._exit(72)
-    yield None
-    pid2, status = os.waitpid(pid, 0)
-    testcase.assertEqual(pid2, pid)
-    testcase.assertEqual(72 << 8, status)
+    try:
+        yield None
+    except:
+        raise
+    finally:
+        pid2, status = os.waitpid(pid, 0)
+        testcase.assertEqual(pid2, pid)
+        testcase.assertEqual(72 << 8, status)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
@@ -111,7 +112,12 @@ class SocketServerTest(unittest.TestCase):
                 self.wfile.write(line)
 
         if verbose: print("creating server")
-        server = MyServer(addr, MyHandler)
+        try:
+            server = MyServer(addr, MyHandler)
+        except PermissionError as e:
+            # Issue 29184: cannot bind() a Unix socket on Android.
+            self.skipTest('Cannot create server (%s, %s): %s' %
+                          (svrcls, addr, e))
         self.assertEqual(server.server_address, server.socket.getsockname())
         return server
 
@@ -144,6 +150,10 @@ class SocketServerTest(unittest.TestCase):
         t.join()
         server.server_close()
         self.assertEqual(-1, server.socket.fileno())
+        if HAVE_FORKING and isinstance(server, socketserver.ForkingMixIn):
+            # bpo-31151: Check that ForkingMixIn.server_close() waits until
+            # all children completed
+            self.assertFalse(server.active_children)
         if verbose: print("done")
 
     def stream_examine(self, proto, addr):
@@ -302,12 +312,10 @@ class ErrorHandlerTest(unittest.TestCase):
             BaseErrorTestServer(SystemExit)
         self.check_result(handled=False)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threading_handled(self):
         ThreadingErrorTestServer(ValueError)
         self.check_result(handled=True)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threading_not_handled(self):
         ThreadingErrorTestServer(SystemExit)
         self.check_result(handled=False)
@@ -371,10 +379,7 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
 
 if HAVE_FORKING:
     class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-        def wait_done(self):
-            [child] = self.active_children
-            os.waitpid(child, 0)
-            self.active_children.clear()
+        pass
 
 
 class SocketWriterTest(unittest.TestCase):
@@ -395,7 +400,6 @@ class SocketWriterTest(unittest.TestCase):
         self.assertIsInstance(server.wfile, io.BufferedIOBase)
         self.assertEqual(server.wfile_fileno, server.request_fileno)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_write(self):
         # Test that wfile.write() sends data immediately, and that it does
         # not truncate sends when interrupted by a Unix signal

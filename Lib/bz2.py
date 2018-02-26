@@ -14,11 +14,7 @@ import io
 import os
 import warnings
 import _compression
-
-try:
-    from threading import RLock
-except ImportError:
-    from dummy_threading import RLock
+from threading import RLock
 
 from _bz2 import BZ2Compressor, BZ2Decompressor
 

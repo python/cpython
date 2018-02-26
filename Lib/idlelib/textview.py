@@ -57,7 +57,7 @@ class ViewWindow(Toplevel):
     "A simple text viewer dialog for IDLE."
 
     def __init__(self, parent, title, text, modal=True,
-                 _htest=False, _utest=False):
+                 *, _htest=False, _utest=False):
         """Show the given text in a scrollable window with a 'close' button.
 
         If modal is left True, users cannot interact with other windows
@@ -107,7 +107,7 @@ def view_text(parent, title, text, modal=True, _utest=False):
     return ViewWindow(parent, title, text, modal, _utest=_utest)
 
 
-def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
+def view_file(parent, title, filename, encoding, modal=True, _utest=False):
     """Create text viewer for text in filename.
 
     Return error message if file cannot be read.  Otherwise calls view_text

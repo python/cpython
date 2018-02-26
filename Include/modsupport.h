@@ -52,7 +52,7 @@ PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyArg_UnpackStack(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     const char *name,
     Py_ssize_t min,
@@ -60,12 +60,9 @@ PyAPI_FUNC(int) _PyArg_UnpackStack(
     ...);
 
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kwargs);
-PyAPI_FUNC(int) _PyArg_NoStackKeywords(const char *funcname, PyObject *kwnames);
 PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #define _PyArg_NoKeywords(funcname, kwargs) \
     ((kwargs) == NULL || _PyArg_NoKeywords((funcname), (kwargs)))
-#define _PyArg_NoStackKeywords(funcname, kwnames) \
-    ((kwnames) == NULL || _PyArg_NoStackKeywords((funcname), (kwnames)))
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
 
@@ -102,12 +99,12 @@ typedef struct _PyArg_Parser {
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject *, PyObject *,
                                                  struct _PyArg_Parser *, ...);
 PyAPI_FUNC(int) _PyArg_ParseStack(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     const char *format,
     ...);
 PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames,
     struct _PyArg_Parser *,
@@ -194,6 +191,10 @@ PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
 
 PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
                                      int apiver);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyModule_CreateInitialized(struct PyModuleDef*,
+                                                   int apiver);
+#endif
 
 #ifdef Py_LIMITED_API
 #define PyModule_Create(module) \

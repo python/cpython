@@ -1793,7 +1793,6 @@ class URLopener:
             if filename:
                 tfp = open(filename, 'wb')
             else:
-                import tempfile
                 garbage, path = splittype(url)
                 garbage, path = splithost(path or "")
                 path, garbage = splitquery(path or "")

@@ -23,7 +23,7 @@ BASE_PREFIX = os.path.normpath(sys.base_prefix)
 BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
 # Path to the base directory of the project. On Windows the binary may
-# live in project/PCBuild/win32 or project/PCBuild/amd64.
+# live in project/PCbuild/win32 or project/PCbuild/amd64.
 # set for cross builds
 if "_PYTHON_PROJECT_BASE" in os.environ:
     project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])

@@ -1,0 +1,2 @@
+Fixed guessing quote and delimiter in csv.Sniffer.sniff() when only the last
+field is quoted.  Patch by Jake Davis.

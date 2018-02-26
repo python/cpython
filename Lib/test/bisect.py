@@ -38,7 +38,7 @@ def write_tests(filename, tests):
 def write_output(filename, tests):
     if not filename:
         return
-    print("Write %s tests into %s" % (len(tests), filename))
+    print("Writing %s tests into %s" % (len(tests), filename))
     write_tests(filename, tests)
     return filename
 
@@ -133,11 +133,11 @@ def main():
             print("ran %s tests/%s" % (ntest, len(tests)))
             print("exit", exitcode)
             if exitcode:
-                print("Tests failed: use this new subtest")
+                print("Tests failed: continuing with this subtest")
                 tests = subtests
                 output = write_output(args.output, tests)
             else:
-                print("Tests succeeded: skip this subtest, try a new subbset")
+                print("Tests succeeded: skipping this subtest, trying a new subset")
             print()
             iteration += 1
     except KeyboardInterrupt:

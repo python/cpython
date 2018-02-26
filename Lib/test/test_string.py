@@ -219,6 +219,16 @@ class TestTemplate(unittest.TestCase):
         self.assertRaises(KeyError, s.substitute,
                           dict(who='tim', what='ham'))
 
+    def test_regular_templates_with_upper_case(self):
+        s = Template('$WHO likes ${WHAT} for ${MEAL}')
+        d = dict(WHO='tim', WHAT='ham', MEAL='dinner')
+        self.assertEqual(s.substitute(d), 'tim likes ham for dinner')
+
+    def test_regular_templates_with_non_letters(self):
+        s = Template('$_wh0_ likes ${_w_h_a_t_} for ${mea1}')
+        d = dict(_wh0_='tim', _w_h_a_t_='ham', mea1='dinner')
+        self.assertEqual(s.substitute(d), 'tim likes ham for dinner')
+
     def test_escapes(self):
         eq = self.assertEqual
         s = Template('$who likes to eat a bag of $$what worth $$100')
@@ -270,6 +280,12 @@ class TestTemplate(unittest.TestCase):
         raises(ValueError, s.substitute, dict(who='tim'))
         s = Template('$who likes $100')
         raises(ValueError, s.substitute, dict(who='tim'))
+        # Template.idpattern should match to only ASCII characters.
+        # https://bugs.python.org/issue31672
+        s = Template("$who likes $\u0131")  # (DOTLESS I)
+        raises(ValueError, s.substitute, dict(who='tim'))
+        s = Template("$who likes $\u0130")  # (LATIN CAPITAL LETTER I WITH DOT ABOVE)
+        raises(ValueError, s.substitute, dict(who='tim'))
 
     def test_idpattern_override(self):
         class PathPattern(Template):
@@ -281,6 +297,38 @@ class TestTemplate(unittest.TestCase):
         m.bag.what = 'ham'
         s = PathPattern('$bag.foo.who likes to eat a bag of $bag.what')
         self.assertEqual(s.substitute(m), 'tim likes to eat a bag of ham')
+
+    def test_flags_override(self):
+        class MyPattern(Template):
+            flags = 0
+        s = MyPattern('$wHO likes ${WHAT} for ${meal}')
+        d = dict(wHO='tim', WHAT='ham', meal='dinner', w='fred')
+        self.assertRaises(ValueError, s.substitute, d)
+        self.assertEqual(s.safe_substitute(d), 'fredHO likes ${WHAT} for dinner')
+
+    def test_idpattern_override_inside_outside(self):
+        # bpo-1198569: Allow the regexp inside and outside braces to be
+        # different when deriving from Template.
+        class MyPattern(Template):
+            idpattern = r'[a-z]+'
+            braceidpattern = r'[A-Z]+'
+            flags = 0
+        m = dict(foo='foo', BAR='BAR')
+        s = MyPattern('$foo ${BAR}')
+        self.assertEqual(s.substitute(m), 'foo BAR')
+
+    def test_idpattern_override_inside_outside_invalid_unbraced(self):
+        # bpo-1198569: Allow the regexp inside and outside braces to be
+        # different when deriving from Template.
+        class MyPattern(Template):
+            idpattern = r'[a-z]+'
+            braceidpattern = r'[A-Z]+'
+            flags = 0
+        m = dict(foo='foo', BAR='BAR')
+        s = MyPattern('$FOO')
+        self.assertRaises(ValueError, s.substitute, m)
+        s = MyPattern('${bar}')
+        self.assertRaises(ValueError, s.substitute, m)
 
     def test_pattern_override(self):
         class MyPattern(Template):

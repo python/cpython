@@ -5,8 +5,8 @@ import weakref
 import gc
 
 # Modules under test
-_thread = support.import_module('_thread')
-threading = support.import_module('threading')
+import _thread
+import threading
 import _threading_local
 
 

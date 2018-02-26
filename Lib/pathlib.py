@@ -6,7 +6,7 @@ import os
 import posixpath
 import re
 import sys
-from collections.abc import Sequence
+from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -585,7 +585,9 @@ class _PathParents(Sequence):
 
 
 class PurePath(object):
-    """PurePath represents a filesystem path and offers operations which
+    """Base class for manipulating paths without I/O.
+
+    PurePath represents a filesystem path and offers operations which
     don't imply any actual filesystem I/O.  Depending on your system,
     instantiating a PurePath will return either a PurePosixPath or a
     PureWindowsPath object.  You can also instantiate either of these classes
@@ -940,11 +942,21 @@ os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):
+    """PurePath subclass for non-Windows systems.
+
+    On a POSIX system, instantiating a PurePath should return this object.
+    However, you can also instantiate it directly on any system.
+    """
     _flavour = _posix_flavour
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
+    """PurePath subclass for Windows systems.
+
+    On a Windows system, instantiating a PurePath should return this object.
+    However, you can also instantiate it directly on any system.
+    """
     _flavour = _windows_flavour
     __slots__ = ()
 
@@ -953,6 +965,14 @@ class PureWindowsPath(PurePath):
 
 
 class Path(PurePath):
+    """PurePath subclass that can make system calls.
+
+    Path represents a filesystem path but unlike PurePath, also offers
+    methods to do system calls on path objects. Depending on your system,
+    instantiating a Path will return either a PosixPath or a WindowsPath
+    object. You can also instantiate a PosixPath or WindowsPath directly,
+    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+    """
     __slots__ = (
         '_accessor',
         '_closed',
@@ -1330,6 +1350,27 @@ class Path(PurePath):
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
 
+    def is_mount(self):
+        """
+        Check if this path is a POSIX mount point
+        """
+        # Need to exist and be a dir
+        if not self.exists() or not self.is_dir():
+            return False
+
+        parent = Path(self.parent)
+        try:
+            parent_dev = parent.stat().st_dev
+        except OSError:
+            return False
+
+        dev = self.stat().st_dev
+        if dev != parent_dev:
+            return True
+        ino = self.stat().st_ino
+        parent_ino = parent.stat().st_ino
+        return ino == parent_ino
+
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
@@ -1407,9 +1448,17 @@ class Path(PurePath):
 
 
 class PosixPath(Path, PurePosixPath):
+    """Path subclass for non-Windows systems.
+
+    On a POSIX system, instantiating a Path should return this object.
+    """
     __slots__ = ()
 
 class WindowsPath(Path, PureWindowsPath):
+    """Path subclass for Windows systems.
+
+    On a Windows system, instantiating a Path should return this object.
+    """
     __slots__ = ()
 
     def owner(self):
@@ -1417,3 +1466,6 @@ class WindowsPath(Path, PureWindowsPath):
 
     def group(self):
         raise NotImplementedError("Path.group() is unsupported on this system")
+
+    def is_mount(self):
+        raise NotImplementedError("Path.is_mount() is unsupported on this system")

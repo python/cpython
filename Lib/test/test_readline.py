@@ -3,6 +3,7 @@ Very minimal unittests for parts of the readline module.
 """
 from contextlib import ExitStack
 from errno import EIO
+import locale
 import os
 import selectors
 import subprocess
@@ -153,6 +154,13 @@ print("History length:", readline.get_current_history_length())
         self.assertIn(b"History length: 0\r\n", output)
 
     def test_nonascii(self):
+        loc = locale.setlocale(locale.LC_CTYPE, None)
+        if loc in ('C', 'POSIX'):
+            # bpo-29240: On FreeBSD, if the LC_CTYPE locale is C or POSIX,
+            # writing and reading non-ASCII bytes into/from a TTY works, but
+            # readline or ncurses ignores non-ASCII bytes on read.
+            self.skipTest(f"the LC_CTYPE locale is {loc!r}")
+
         try:
             readline.add_history("\xEB\xEF")
         except UnicodeEncodeError as err:
@@ -226,6 +234,13 @@ print("history", ascii(readline.get_history_item(1)))
         self.assertIn(b"result " + expected + b"\r\n", output)
         self.assertIn(b"history " + expected + b"\r\n", output)
 
+    # We have 2 reasons to skip this test:
+    # - readline: history size was added in 6.0
+    #   See https://cnswww.cns.cwru.edu/php/chet/readline/CHANGES
+    # - editline: history size is broken on OS X 10.11.6.
+    #   Newer versions were not tested yet.
+    @unittest.skipIf(readline._READLINE_VERSION < 0x600,
+                     "this readline version does not support history-size")
     @unittest.skipIf(is_editline,
                      "editline history size configuration is broken")
     def test_history_size(self):

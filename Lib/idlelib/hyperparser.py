@@ -44,7 +44,7 @@ class HyperParser:
                 # at end. We add a space so that index won't be at end
                 # of line, so that its status will be the same as the
                 # char before it, if should.
-                parser.set_str(text.get(startatindex, stopatindex)+' \n')
+                parser.set_code(text.get(startatindex, stopatindex)+' \n')
                 bod = parser.find_good_parse_start(
                           editwin._build_char_in_string_func(startatindex))
                 if bod is not None or startat == 1:
@@ -60,12 +60,12 @@ class HyperParser:
             # We add the newline because PyParse requires it. We add a
             # space so that index won't be at end of line, so that its
             # status will be the same as the char before it, if should.
-            parser.set_str(text.get(startatindex, stopatindex)+' \n')
+            parser.set_code(text.get(startatindex, stopatindex)+' \n')
             parser.set_lo(0)
 
         # We want what the parser has, minus the last newline and space.
-        self.rawtext = parser.str[:-2]
-        # Parser.str apparently preserves the statement we are in, so
+        self.rawtext = parser.code[:-2]
+        # Parser.code apparently preserves the statement we are in, so
         # that stopatindex can be used to synchronize the string with
         # the text box indices.
         self.stopatindex = stopatindex
