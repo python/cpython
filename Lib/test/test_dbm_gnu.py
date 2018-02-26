@@ -2,7 +2,7 @@ from test import support
 gdbm = support.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support import TESTFN, unlink
+from test.support import TESTFN, TESTFN_NONASCII, unlink
 
 
 filename = TESTFN
@@ -92,6 +92,40 @@ class TestGdbm(unittest.TestCase):
             db.keys()
         self.assertEqual(str(cm.exception),
                          "GDBM object has already been closed")
+
+    def test_bytes(self):
+        with gdbm.open(filename, 'c') as db:
+            db[b'bytes key \xbd'] = b'bytes value \xbd'
+        with gdbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b'bytes key \xbd'])
+            self.assertTrue(b'bytes key \xbd' in db)
+            self.assertEqual(db[b'bytes key \xbd'], b'bytes value \xbd')
+
+    def test_unicode(self):
+        with gdbm.open(filename, 'c') as db:
+            db['Unicode key \U0001f40d'] = 'Unicode value \U0001f40d'
+        with gdbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), ['Unicode key \U0001f40d'.encode()])
+            self.assertTrue('Unicode key \U0001f40d'.encode() in db)
+            self.assertTrue('Unicode key \U0001f40d' in db)
+            self.assertEqual(db['Unicode key \U0001f40d'.encode()],
+                             'Unicode value \U0001f40d'.encode())
+            self.assertEqual(db['Unicode key \U0001f40d'],
+                             'Unicode value \U0001f40d'.encode())
+
+    @unittest.skipUnless(TESTFN_NONASCII,
+                         'requires OS support of non-ASCII encodings')
+    def test_nonascii_filename(self):
+        filename = TESTFN_NONASCII
+        self.addCleanup(unlink, filename)
+        with gdbm.open(filename, 'c') as db:
+            db[b'key'] = b'value'
+        self.assertTrue(os.path.exists(filename))
+        with gdbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b'key'])
+            self.assertTrue(b'key' in db)
+            self.assertEqual(db[b'key'], b'value')
+
 
 if __name__ == '__main__':
     unittest.main()

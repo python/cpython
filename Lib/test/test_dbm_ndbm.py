@@ -1,5 +1,6 @@
 from test import support
 support.import_module("dbm.ndbm") #skip if not supported
+import os
 import unittest
 import dbm.ndbm
 from dbm.ndbm import error
@@ -46,6 +47,42 @@ class DbmTestCase(unittest.TestCase):
             db.keys()
         self.assertEqual(str(cm.exception),
                          "DBM object has already been closed")
+
+    def test_bytes(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            db[b'bytes key \xbd'] = b'bytes value \xbd'
+        with dbm.ndbm.open(self.filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b'bytes key \xbd'])
+            self.assertTrue(b'bytes key \xbd' in db)
+            self.assertEqual(db[b'bytes key \xbd'], b'bytes value \xbd')
+
+    def test_unicode(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            db['Unicode key \U0001f40d'] = 'Unicode value \U0001f40d'
+        with dbm.ndbm.open(self.filename, 'r') as db:
+            self.assertEqual(list(db.keys()), ['Unicode key \U0001f40d'.encode()])
+            self.assertTrue('Unicode key \U0001f40d'.encode() in db)
+            self.assertTrue('Unicode key \U0001f40d' in db)
+            self.assertEqual(db['Unicode key \U0001f40d'.encode()],
+                             'Unicode value \U0001f40d'.encode())
+            self.assertEqual(db['Unicode key \U0001f40d'],
+                             'Unicode value \U0001f40d'.encode())
+
+    @unittest.skipUnless(support.TESTFN_NONASCII,
+                         'requires OS support of non-ASCII encodings')
+    def test_nonascii_filename(self):
+        filename = support.TESTFN_NONASCII
+        for suffix in ['', '.pag', '.dir', '.db']:
+            self.addCleanup(support.unlink, filename + suffix)
+        with dbm.ndbm.open(filename, 'c') as db:
+            db[b'key'] = b'value'
+        self.assertTrue(any(os.path.exists(filename + suffix)
+                            for suffix in ['', '.pag', '.dir', '.db']))
+        with dbm.ndbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b'key'])
+            self.assertTrue(b'key' in db)
+            self.assertEqual(db[b'key'], b'value')
+
 
 
 if __name__ == '__main__':
