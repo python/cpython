@@ -579,6 +579,8 @@ _hash_action = {(False, False, False, False): (''),
                 (True,  True,  True,  False): ('add'),
                 (True,  True,  True,  True ): ('exception'),
                 }
+# See https://bugs.python.org/issue32929#msg312829 for an if-statement
+#  version of this table.
 
 
 def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
