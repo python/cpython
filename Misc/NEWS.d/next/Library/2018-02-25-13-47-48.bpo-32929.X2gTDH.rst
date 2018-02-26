@@ -1,0 +1,6 @@
+Remove the tri-state parameter "hash", and add the boolean "unsafe_hash". If
+unsafe_hash is True, add a __hash__ function, but if a __hash__ exists,
+raise TypeError.  If unsafe_hash is False, add a __hash__ based on the
+values of eq= and frozen=.  The unsafe_hash=False behavior is the same as
+the old hash=None behavior.  unsafe_hash=False is the default, just as
+hash=None used to be.
