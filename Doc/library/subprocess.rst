@@ -39,7 +39,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None)
+                  encoding=None, errors=None, text=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -47,12 +47,14 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    The arguments shown above are merely the most common ones, described below
    in :ref:`frequently-used-arguments` (hence the use of keyword-only notation
    in the abbreviated signature). The full function signature is largely the
-   same as that of the :class:`Popen` constructor - apart from *timeout*,
-   *input* and *check*, all the arguments to this function are passed through to
-   that interface.
+   same as that of the :class:`Popen` constructor - most of the arguments to
+   this function are passed through to that interface. (*timeout*,  *input*,
+   *check*, and *capture_output* are not.)
 
-   This does not capture stdout or stderr by default. To do so, pass
-   :data:`PIPE` for the *stdout* and/or *stderr* arguments.
+   If *capture_output* is true, stdout and stderr will be captured.
+   When used, the internal :class:`Popen` object is automatically created with
+   ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
+   not be used as well.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
@@ -86,9 +88,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
         ...
       subprocess.CalledProcessError: Command 'exit 1' returned non-zero exit status 1
 
-      >>> subprocess.run(["ls", "-l", "/dev/null"], stdout=subprocess.PIPE)
+      >>> subprocess.run(["ls", "-l", "/dev/null"], capture_output=True)
       CompletedProcess(args=['ls', '-l', '/dev/null'], returncode=0,
-      stdout=b'crw-rw-rw- 1 root root 1, 3 Jan 23 16:23 /dev/null\n')
+      stdout=b'crw-rw-rw- 1 root root 1, 3 Jan 23 16:23 /dev/null\n', stderr=b'')
 
    .. versionadded:: 3.5
 
@@ -98,7 +100,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    .. versionchanged:: 3.7
 
-      Added the *text* parameter, as a more understandable alias of *universal_newlines*
+      Added the *text* parameter, as a more understandable alias of *universal_newlines*.
+      Added the *capture_output* parameter.
 
 .. class:: CompletedProcess
 
@@ -264,7 +267,8 @@ default values. The arguments that are most commonly needed are:
    .. index::
       single: universal newlines; subprocess module
 
-   If *encoding* or *errors* are specified, or *universal_newlines* is true,
+   If *encoding* or *errors* are specified, or *text* (also known as
+   *universal_newlines*) is true,
    the file objects *stdin*, *stdout* and *stderr* will be opened in text
    mode using the *encoding* and *errors* specified in the call or the
    defaults for :class:`io.TextIOWrapper`.
@@ -280,6 +284,9 @@ default values. The arguments that are most commonly needed are:
 
    .. versionadded:: 3.6
       Added *encoding* and *errors* parameters.
+
+   .. versionadded:: 3.7
+      Added the *text* parameter as an alias for *universal_newlines*.
 
    .. note::
 
@@ -325,19 +332,19 @@ functions.
                  cwd=None, env=None, universal_newlines=False, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, \
-                 encoding=None, errors=None)
+                 encoding=None, errors=None, text=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string.
-   By default, the program to execute is the first item in *args* if *args* is
-   a sequence.  If *args* is a string, the interpretation is
-   platform-dependent and described below.  See the *shell* and *executable*
-   arguments for additional differences from the default behavior.  Unless
-   otherwise stated, it is recommended to pass *args* as a sequence.
+   *args* should be a sequence of program arguments or else a single string or
+   :term:`path-like object`. By default, the program to execute is the first
+   item in *args* if *args* is a sequence. If *args* is a string, the
+   interpretation is platform-dependent and described below.  See the *shell*
+   and *executable* arguments for additional differences from the default
+   behavior.  Unless otherwise stated, it is recommended to pass *args* as a sequence.
 
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
@@ -452,16 +459,19 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed. (POSIX only).
-   The default varies by platform:  Always true on POSIX.  On Windows it is
-   true when *stdin*/*stdout*/*stderr* are :const:`None`, false otherwise.
+   :const:`2` will be closed before the child process is executed.
    On Windows, if *close_fds* is true then no handles will be inherited by the
-   child process.  Note that on Windows, you cannot set *close_fds* to true and
-   also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
+   child process unless explicitly passed in the ``handle_list`` element of
+   :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
 
    .. versionchanged:: 3.2
       The default for *close_fds* was changed from :const:`False` to
       what is described above.
+
+   .. versionchanged:: 3.7
+      On Windows the default for *close_fds* was changed from :const:`False` to
+      :const:`True` when redirecting the standard handles. It's now possible to
+      set *close_fds* to :const:`True` when redirecting the standard handles.
 
    *pass_fds* is an optional sequence of file descriptors to keep open
    between the parent and child.  Providing any *pass_fds* forces
@@ -505,19 +515,34 @@ functions.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
-   If *encoding* or *errors* are specified, the file objects *stdin*, *stdout*
-   and *stderr* are opened in text mode with the specified encoding and
-   *errors*, as described above in :ref:`frequently-used-arguments`. If
-   *universal_newlines* is ``True``, they are opened in text mode with default
-   encoding. Otherwise, they are opened as binary streams.
+   If *encoding* or *errors* are specified, or *text* is true, the file objects
+   *stdin*, *stdout* and *stderr* are opened in text mode with the specified
+   encoding and *errors*, as described above in :ref:`frequently-used-arguments`.
+   The *universal_newlines* argument is equivalent  to *text* and is provided
+   for backwards compatibility. By default, file objects are opened in binary mode.
 
    .. versionadded:: 3.6
       *encoding* and *errors* were added.
 
+   .. versionadded:: 3.7
+      *text* was added as a more readable alias for *universal_newlines*.
+
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be :data:`CREATE_NEW_CONSOLE` or
-   :data:`CREATE_NEW_PROCESS_GROUP`. (Windows only)
+   *creationflags*, if given, can be one or more of the following flags:
+
+      * :data:`CREATE_NEW_CONSOLE`
+      * :data:`CREATE_NEW_PROCESS_GROUP`
+      * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
+      * :data:`BELOW_NORMAL_PRIORITY_CLASS`
+      * :data:`HIGH_PRIORITY_CLASS`
+      * :data:`IDLE_PRIORITY_CLASS`
+      * :data:`NORMAL_PRIORITY_CLASS`
+      * :data:`REALTIME_PRIORITY_CLASS`
+      * :data:`CREATE_NO_WINDOW`
+      * :data:`DETACHED_PROCESS`
+      * :data:`CREATE_DEFAULT_ERROR_MODE`
+      * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -532,6 +557,10 @@ functions.
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
+
+   .. versionchanged:: 3.7
+      *args*, or the first element of *args* if *args* is a sequence, can now
+      be a :term:`path-like object`.
 
 
 Exceptions
@@ -752,7 +781,7 @@ The :class:`STARTUPINFO` class and following constants are only available
 on Windows.
 
 .. class:: STARTUPINFO(*, dwFlags=0, hStdInput=None, hStdOutput=None, \
-                       hStdError=None, wShowWindow=0)
+                       hStdError=None, wShowWindow=0, lpAttributeList=None)
 
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
@@ -802,9 +831,36 @@ on Windows.
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
+   .. attribute:: lpAttributeList
 
-Constants
-^^^^^^^^^
+      A dictionary of additional attributes for process creation as given in
+      ``STARTUPINFOEX``, see
+      `UpdateProcThreadAttribute <https://msdn.microsoft.com/en-us/library/windows/desktop/ms686880(v=vs.85).aspx>`__.
+
+      Supported attributes:
+
+      **handle_list**
+         Sequence of handles that will be inherited. *close_fds* must be true if
+         non-empty.
+
+         The handles must be temporarily made inheritable by
+         :func:`os.set_handle_inheritable` when passed to the :class:`Popen`
+         constructor, else :class:`OSError` will be raised with Windows error
+         ``ERROR_INVALID_PARAMETER`` (87).
+
+         .. warning::
+
+            In a multithreaded process, use caution to avoid leaking handles
+            that are marked inheritable when combining this feature with
+            concurrent calls to other process creation functions that inherit
+            all handles such as :func:`os.system`.  This also applies to
+            standard handle redirection, which temporarily creates inheritable
+            handles.
+
+      .. versionadded:: 3.7
+
+Windows Constants
+^^^^^^^^^^^^^^^^^
 
 The :mod:`subprocess` module exposes the following constants.
 
@@ -850,6 +906,84 @@ The :mod:`subprocess` module exposes the following constants.
    on the subprocess.
 
    This flag is ignored if :data:`CREATE_NEW_CONSOLE` is specified.
+
+.. data:: ABOVE_NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an above average priority.
+
+   .. versionadded:: 3.7
+
+.. data:: BELOW_NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have a below average priority.
+
+   .. versionadded:: 3.7
+
+.. data:: HIGH_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have a high priority.
+
+   .. versionadded:: 3.7
+
+.. data:: IDLE_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an idle (lowest) priority.
+
+   .. versionadded:: 3.7
+
+.. data:: NORMAL_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have an normal priority. (default)
+
+   .. versionadded:: 3.7
+
+.. data:: REALTIME_PRIORITY_CLASS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will have realtime priority.
+   You should almost never use REALTIME_PRIORITY_CLASS, because this interrupts
+   system threads that manage mouse input, keyboard input, and background disk
+   flushing. This class can be appropriate for applications that "talk" directly
+   to hardware or that perform brief tasks that should have limited interruptions.
+
+   .. versionadded:: 3.7
+
+.. data:: CREATE_NO_WINDOW
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will not create a window
+
+   .. versionadded:: 3.7
+
+.. data:: DETACHED_PROCESS
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   will not inherit its parent's console.
+   This value cannot be used with CREATE_NEW_CONSOLE.
+
+   .. versionadded:: 3.7
+
+.. data:: CREATE_DEFAULT_ERROR_MODE
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   does not inherit the error mode of the calling process. Instead, the new
+   process gets the default error mode.
+   This feature is particularly useful for multithreaded shell applications
+   that run with hard errors disabled.
+
+   .. versionadded:: 3.7
+
+.. data:: CREATE_BREAKAWAY_FROM_JOB
+
+   A :class:`Popen` ``creationflags`` parameter to specify that a new process
+   is not associated with the job.
+
+   .. versionadded:: 3.7
 
 .. _call-function-trio:
 
@@ -959,6 +1093,9 @@ calls these functions.
 
    .. versionchanged:: 3.4
       Support for the *input* keyword argument was added.
+
+   .. versionchanged:: 3.6
+      *encoding* and *errors* were added.  See :func:`run` for details.
 
 .. _subprocess-replacements:
 

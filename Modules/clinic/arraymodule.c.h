@@ -54,7 +54,7 @@ array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
                        Py_ssize_t stop);
 
 static PyObject *
-array_array_index(arrayobject *self, PyObject **args, Py_ssize_t nargs)
+array_array_index(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *v;
@@ -95,7 +95,7 @@ static PyObject *
 array_array_pop_impl(arrayobject *self, Py_ssize_t i);
 
 static PyObject *
-array_array_pop(arrayobject *self, PyObject **args, Py_ssize_t nargs)
+array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t i = -1;
@@ -132,7 +132,7 @@ static PyObject *
 array_array_insert_impl(arrayobject *self, Py_ssize_t i, PyObject *v);
 
 static PyObject *
-array_array_insert(arrayobject *self, PyObject **args, Py_ssize_t nargs)
+array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t i;
@@ -230,7 +230,7 @@ static PyObject *
 array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n);
 
 static PyObject *
-array_array_fromfile(arrayobject *self, PyObject **args, Py_ssize_t nargs)
+array_array_fromfile(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *f;
@@ -476,7 +476,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
                                 PyObject *items);
 
 static PyObject *
-array__array_reconstructor(PyObject *module, PyObject **args, Py_ssize_t nargs)
+array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyTypeObject *arraytype;
@@ -529,4 +529,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=6ceae8ae18fa3034 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8823a7df5745072f input=a9049054013a1b77]*/

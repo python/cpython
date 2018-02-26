@@ -8,11 +8,15 @@ test_grammar.py files from both Python 2 and Python 3.
 
 # Testing imports
 from . import support
-from .support import driver
+from .support import driver, driver_no_print_statement
 from test.support import verbose
 
 # Python imports
+import difflib
+import importlib
+import operator
 import os
+import pickle
 import shutil
 import subprocess
 import sys
@@ -99,6 +103,18 @@ pgen2_driver.load_grammar(%r, save=True, force=True)
         finally:
             shutil.rmtree(tmpdir)
 
+    def test_load_packaged_grammar(self):
+        modname = __name__ + '.load_test'
+        class MyLoader:
+            def get_data(self, where):
+                return pickle.dumps({'elephant': 19})
+        class MyModule:
+            __file__ = 'parsertestmodule'
+            __spec__ = importlib.util.spec_from_loader(modname, MyLoader())
+        sys.modules[modname] = MyModule()
+        self.addCleanup(operator.delitem, sys.modules, modname)
+        g = pgen2_driver.load_packaged_grammar(modname, 'Grammar.txt')
+        self.assertEqual(g.elephant, 19)
 
 
 class GrammarTest(support.TestCase):
@@ -398,8 +414,6 @@ class TestParserIdempotency(support.TestCase):
 
     """A cut-down version of pytree_idempotency.py."""
 
-    # Issue 13125
-    @unittest.expectedFailure
     def test_all_project_files(self):
         for filepath in support.all_project_files():
             with open(filepath, "rb") as fp:
@@ -410,13 +424,14 @@ class TestParserIdempotency(support.TestCase):
                 source = fp.read()
             try:
                 tree = driver.parse_string(source)
-            except ParseError as err:
-                if verbose > 0:
-                    warnings.warn('ParseError on file %s (%s)' % (filepath, err))
-                continue
+            except ParseError:
+                try:
+                    tree = driver_no_print_statement.parse_string(source)
+                except ParseError as err:
+                    self.fail('ParseError on file %s (%s)' % (filepath, err))
             new = str(tree)
-            x = diff(filepath, new)
-            if x:
+            if new != source:
+                print(diff_texts(source, new, filepath))
                 self.fail("Idempotency failed: %s" % filepath)
 
     def test_extended_unpacking(self):
@@ -466,17 +481,12 @@ class TestGeneratorExpressions(GrammarTest):
         self.validate("set(x for x in [],)")
 
 
-def diff(fn, result):
-    try:
-        with open('@', 'w') as f:
-            f.write(str(result))
-        fn = fn.replace('"', '\\"')
-        return subprocess.call(['diff', '-u', fn, '@'], stdout=(subprocess.DEVNULL if verbose < 1 else None))
-    finally:
-        try:
-            os.remove("@")
-        except OSError:
-            pass
+def diff_texts(a, b, filename):
+    a = a.splitlines()
+    b = b.splitlines()
+    return difflib.unified_diff(a, b, filename, filename,
+                                "(original)", "(reserialized)",
+                                lineterm="")
 
 
 if __name__ == '__main__':

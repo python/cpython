@@ -668,7 +668,7 @@ class EditorWindow(object):
 
     def open_path_browser(self, event=None):
         from idlelib import pathbrowser
-        pathbrowser.PathBrowser(self.flist)
+        pathbrowser.PathBrowser(self.root)
         return "break"
 
     def open_turtle_demo(self, event = None):
@@ -1302,7 +1302,7 @@ class EditorWindow(object):
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
                     rawtext = text.get(startatindex, "insert")
-                    y.set_str(rawtext)
+                    y.set_code(rawtext)
                     bod = y.find_good_parse_start(
                               self.context_use_ps1,
                               self._build_char_in_string_func(startatindex))
@@ -1316,7 +1316,7 @@ class EditorWindow(object):
                 else:
                     startatindex = "1.0"
                 rawtext = text.get(startatindex, "insert")
-                y.set_str(rawtext)
+                y.set_code(rawtext)
                 y.set_lo(0)
 
             c = y.get_continuation_type()

@@ -135,7 +135,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               const char *newline, int closefd, PyObject *opener);
 
 static PyObject *
-_io_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
@@ -158,4 +158,4 @@ _io_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7e0ab289d8465580 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9de1ae79c960e81 input=a9049054013a1b77]*/

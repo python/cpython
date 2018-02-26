@@ -241,6 +241,7 @@ Functions
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
+   * ``'thread_time'``: :func:`time.thread_time`
    * ``'time'``: :func:`time.time`
 
    The result has the following attributes:
@@ -603,6 +604,32 @@ Functions
    of the calendar date may be accessed as attributes.
 
 
+.. function:: thread_time() -> float
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
+
+   Return the value (in fractional seconds) of the sum of the system and user
+   CPU time of the current thread.  It does not include time elapsed during
+   sleep.  It is thread-specific by definition.  The reference point of the
+   returned value is undefined, so that only the difference between the results
+   of consecutive calls in the same thread is valid.
+
+   Availability:  Windows, Linux, Unix systems supporting
+   ``CLOCK_THREAD_CPUTIME_ID``.
+
+   .. versionadded:: 3.7
+
+
+.. function:: thread_time_ns() -> int
+
+   Similar to :func:`thread_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+
 .. function:: time_ns() -> int
 
    Similar to :func:`time` but returns time as an integer number of nanoseconds
@@ -765,7 +792,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   Availability: FreeBSD 3 or later, NetBSD 7 or later, OpenBSD.
+   Availability: FreeBSD, NetBSD 7 or later, OpenBSD.
 
    .. versionadded:: 3.7
 
@@ -785,7 +812,7 @@ These constants are used as parameters for :func:`clock_getres` and
    suspended, providing accurate uptime measurement, both absolute and
    interval.
 
-   Availability: FreeBSD 7 or later, OpenBSD 5.5 or later.
+   Availability: FreeBSD, OpenBSD 5.5 or later.
 
    .. versionadded:: 3.7
 

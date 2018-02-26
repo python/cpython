@@ -3,7 +3,7 @@ These tests are meant to exercise that requests to create objects bigger
 than what the address space allows are properly met with an OverflowError
 (rather than crash weirdly).
 
-Primarily, this means 32-bit builds with at least 2 GB of available memory.
+Primarily, this means 32-bit builds with at least 2 GiB of available memory.
 You need to pass the -M option to regrtest (e.g. "-M 2.1G") for tests to
 be enabled.
 """

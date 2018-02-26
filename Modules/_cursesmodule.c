@@ -96,7 +96,7 @@
 
 /* Release Number */
 
-char *PyCursesVersion = "2.2";
+static const char PyCursesVersion[] = "2.2";
 
 /* Includes */
 
@@ -1363,7 +1363,7 @@ PyCursesWindow_InsCh(PyCursesWindowObject *self, PyObject *args)
         use_xy = TRUE;
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "insch requires 1 or 4 arguments");
+        PyErr_SetString(PyExc_TypeError, "insch requires 1 to 4 arguments");
         return NULL;
     }
 
@@ -1394,7 +1394,7 @@ PyCursesWindow_InCh(PyCursesWindowObject *self, PyObject *args)
         rtn = mvwinch(self->win,y,x);
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "inch requires 0 or 2 arguments");
+        PyErr_SetString(PyExc_TypeError, "inch requires 0 to 2 arguments");
         return NULL;
     }
     return PyLong_FromUnsignedLong(rtn);
@@ -2562,7 +2562,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
     }
 
     if (!initialised_setupterm && setupterm(termstr,fd,&err) == ERR) {
-        char* s = "setupterm: unknown error";
+        const char* s = "setupterm: unknown error";
 
         if (err == 0) {
             s = "setupterm: could not find terminal";
