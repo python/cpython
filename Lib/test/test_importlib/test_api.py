@@ -307,7 +307,6 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__doc__': None,
-                                '__file__': None,
                                 }
                     os.mkdir(name)
                     with open(bad_path, 'w') as init_file:
@@ -319,9 +318,8 @@ class ReloadTests:
                     spec = ns.pop('__spec__')
                     ns.pop('__builtins__', None)  # An implementation detail.
                     self.assertEqual(spec.name, name)
-                    self.assertIsNotNone(spec.loader)
-                    self.assertIsNotNone(loader)
-                    self.assertEqual(spec.loader, loader)
+                    self.assertIs(spec.loader, None)
+                    self.assertIsNot(loader, None)
                     self.assertEqual(set(path),
                                      set([os.path.dirname(bad_path)]))
                     with self.assertRaises(AttributeError):
