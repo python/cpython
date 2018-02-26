@@ -2411,7 +2411,7 @@ class TestHash(unittest.TestCase):
                 return 301
 
         # If frozen or eq is None, then use the default value (do not
-        # specify any value in the deecorator).
+        # specify any value in the decorator).
         for frozen, eq,    base,   expected       in [
             (None,  None,  object, 'unhashable'),
             (None,  None,  Base,   'unhashable'),
