@@ -333,7 +333,7 @@ class install(Command):
         # module distribution is pure or not.  Of course, if the user
         # already specified install_lib, use their selection.
         if self.install_lib is None:
-            if self.distribution.ext_modules: # has extensions: non-pure
+            if self.distribution.has_ext_modules(): # has extensions: non-pure
                 self.install_lib = self.install_platlib
             else:
                 self.install_lib = self.install_purelib
