@@ -2402,8 +2402,9 @@ class TestHash(unittest.TestCase):
 
     def test_hash_no_args(self):
         # Test dataclasses with no hash= argument.  This exists to
-        # make sure that if the @dataclass parameter name is changed,
-        # the default hashability keeps working.
+        # make sure that if the @dataclass parameter name is changed
+        # or the non-default hashing behavior changes, the default
+        # hashability keeps working the same way.
 
         class Base:
             def __hash__(self):
