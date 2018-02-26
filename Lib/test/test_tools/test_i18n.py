@@ -1,12 +1,13 @@
 """Tests to cover the Tools/i18n package"""
 
 import os
+import re
 import sys
 import unittest
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
-from test.support import temp_cwd
+from test.support import temp_cwd, temp_dir
 
 
 skip_if_missing()
@@ -72,3 +73,20 @@ class Test_pygettext(unittest.TestCase):
 
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
+
+    def test_files_list(self):
+        """Make sure the directories are inspected for source files
+           bpo-31920
+        """
+        source_dir = 'pypkg'
+        text = 'Text to translate'
+        with temp_cwd(None) as cwd:
+            with temp_dir(os.path.join(cwd, source_dir)) as sdir:
+                with open(os.path.join(sdir, 'pymod.py'), 'w') as sfile:
+                    sfile.write('_("{}")'.format(text))
+                assert_python_ok(self.script, source_dir)
+                with open('messages.pot') as fp:
+                    data = fp.read()
+                msgids = re.findall(r'msgid "(.*?)"', data)
+
+                self.assertIn(text, msgids)
