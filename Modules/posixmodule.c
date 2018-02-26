@@ -5420,7 +5420,7 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     spawnval = _wspawnv(mode, path->wide, argvlist);
 #elif defined (HAVE_RTPSPAWN)
     spawnval = rtpSpawn(path->narrow, (const char **)argvlist, 
-                   NULL, 100, 0, 0, 0);
+                   NULL, 100, 0x1000000, 0, 0);
     if ( (spawnval != RTP_ID_ERROR) && (mode == _P_WAIT) )
         waitpid(spawnval, &spawnval, 0);
 #else
@@ -5530,7 +5530,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
 #elif defined (HAVE_RTPSPAWN)
     spawnval = rtpSpawn(path->narrow, (const char **)argvlist, 
-                   (const char **)envlist, 100, 0, 0, 0);
+                   (const char **)envlist, 100, 0x1000000, 0, 0);
     if ( (spawnval != RTP_ID_ERROR) && (mode == _P_WAIT) )
         waitpid(spawnval, &spawnval, 0);
 #else

@@ -1496,7 +1496,7 @@ class Popen(object):
                         print(env_list)
                         self.pid = _vxwapi.rtpSpawn(
                             executable_list[0].decode("UTF-8"),
-                            args,env_list, 100,0,0,0)
+                            args,env_list, 100,0x1000000,0,0)
 
                         if tmp_stdin is not None:
                             os.dup2(tmp_stdin, sys.stdin.fileno())
