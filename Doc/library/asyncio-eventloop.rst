@@ -500,6 +500,9 @@ Creating listening connections
    This method is a :ref:`coroutine <coroutine>`.  When completed, the
    coroutine returns a ``(transport, protocol)`` pair.
 
+   .. versionadded:: 3.5.3
+
+
 Watch file descriptors
 ----------------------
 

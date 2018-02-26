@@ -102,6 +102,26 @@ PyByteArray_FromObject(PyObject *input)
                                         input, NULL);
 }
 
+static PyObject *
+_PyByteArray_FromBufferObject(PyObject *obj)
+{
+    PyObject *result;
+    Py_buffer view;
+
+    if (PyObject_GetBuffer(obj, &view, PyBUF_FULL_RO) < 0) {
+        return NULL;
+    }
+    result = PyByteArray_FromStringAndSize(NULL, view.len);
+    if (result != NULL &&
+        PyBuffer_ToContiguous(PyByteArray_AS_STRING(result),
+                              &view, view.len, 'C') < 0)
+    {
+        Py_CLEAR(result);
+    }
+    PyBuffer_Release(&view);
+    return result;
+}
+
 PyObject *
 PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
 {
@@ -224,7 +244,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
             return -1;
         }
         memcpy(sval, PyByteArray_AS_STRING(self),
-               Py_MIN(requested_size, Py_SIZE(self)));
+               Py_MIN((size_t)requested_size, (size_t)Py_SIZE(self)));
         PyObject_Free(obj->ob_bytes);
     }
     else {
@@ -534,7 +554,8 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
     if (values == (PyObject *)self) {
         /* Make a copy and call this function recursively */
         int err;
-        values = PyByteArray_FromObject(values);
+        values = PyByteArray_FromStringAndSize(PyByteArray_AS_STRING(values),
+                                               PyByteArray_GET_SIZE(values));
         if (values == NULL)
             return -1;
         err = bytearray_setslice(self, lo, hi, values);
@@ -1381,19 +1402,19 @@ Partition the bytearray into three parts using the given separator.
 
 This will search for the separator sep in the bytearray. If the separator is
 found, returns a 3-tuple containing the part before the separator, the
-separator itself, and the part after it.
+separator itself, and the part after it as new bytearray objects.
 
-If the separator is not found, returns a 3-tuple containing the original
-bytearray object and two empty bytearray objects.
+If the separator is not found, returns a 3-tuple containing the copy of the
+original bytearray object and two empty bytearray objects.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_partition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=45d2525ddd35f957 input=86f89223892b70b5]*/
+/*[clinic end generated code: output=45d2525ddd35f957 input=8f644749ee4fc83a]*/
 {
     PyObject *bytesep, *result;
 
-    bytesep = PyByteArray_FromObject(sep);
+    bytesep = _PyByteArray_FromBufferObject(sep);
     if (! bytesep)
         return NULL;
 
@@ -1414,23 +1435,24 @@ bytearray.rpartition
     sep: object
     /
 
-Partition the bytes into three parts using the given separator.
+Partition the bytearray into three parts using the given separator.
 
-This will search for the separator sep in the bytearray, starting and the end.
+This will search for the separator sep in the bytearray, starting at the end.
 If the separator is found, returns a 3-tuple containing the part before the
-separator, the separator itself, and the part after it.
+separator, the separator itself, and the part after it as new bytearray
+objects.
 
 If the separator is not found, returns a 3-tuple containing two empty bytearray
-objects and the original bytearray object.
+objects and the copy of the original bytearray object.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_rpartition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=440de3c9426115e8 input=5f4094f2de87c8f3]*/
+/*[clinic end generated code: output=440de3c9426115e8 input=7e3df3e6cb8fa0ac]*/
 {
     PyObject *bytesep, *result;
 
-    bytesep = PyByteArray_FromObject(sep);
+    bytesep = _PyByteArray_FromBufferObject(sep);
     if (! bytesep)
         return NULL;
 

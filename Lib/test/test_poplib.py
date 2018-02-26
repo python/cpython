@@ -352,7 +352,7 @@ class TestPOP3Class(TestCase):
     @requires_ssl
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.load_verify_locations(CAFILE)
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.check_hostname = True
@@ -392,7 +392,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
         self.assertIn('POP3_SSL', poplib.__all__)
 
     def test_context(self):
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
                             self.server.port, keyfile=CERTFILE, context=ctx)
         self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,

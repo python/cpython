@@ -440,7 +440,17 @@ DTRACE_DEPS = \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
+build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
+		Programs/_testembed python-config
+
+# Check that the source is clean when building out of source.
+check-clean-src:
+	@if test -n "$(VPATH)" -a -f "$(srcdir)/Programs/python.o"; then \
+		echo "Error: The source directory ($(srcdir)) is not clean" ; \
+		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
+		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
+		exit 1; \
+	fi
 
 # Compile a binary with profile guided optimization.
 profile-opt:
@@ -528,10 +538,9 @@ coverage-report: regen-grammar regen-importlib
 	$(MAKE) coverage-lcov
 
 # Run "Argument Clinic" over all source files
-# (depends on python having already been built)
 .PHONY=clinic
-clinic: $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2s_impl.c
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) ./Tools/clinic/clinic.py --make
+clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
+	$(PYTHON_FOR_REGEN) ./Tools/clinic/clinic.py --make
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
@@ -561,9 +570,9 @@ Modules/_math.o: Modules/_math.c Modules/_math.h
 	$(CC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
 
 # blake2s is auto-generated from blake2b
-$(srcdir)/Modules/_blake2/blake2s_impl.c: $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/clinic/clinic.py -f $@
+$(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
 
 # Build the shared modules
 # Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
@@ -710,7 +719,8 @@ regen-importlib: Programs/_freeze_importlib
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-ast regen-importlib
+regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
+	regen-ast regen-importlib clinic
 
 ############################################################################
 # Special rules for object files
@@ -1091,7 +1101,7 @@ altinstall: commoninstall
 			$$ensurepip --root=$(DESTDIR)/ ; \
 	fi
 
-commoninstall:  @FRAMEWORKALTINSTALLFIRST@ \
+commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
 		sharedinstall oldsharedinstall altmaninstall \
 		@FRAMEWORKALTINSTALLLAST@
@@ -1589,10 +1599,9 @@ autoconf:
 
 # Create a tags file for vi
 tags::
-	cd $(srcdir); \
-	ctags -w Include/*.h; \
-	for i in $(SRCDIRS); do ctags -w -a $$i/*.[ch]; \
-	done; \
+	ctags -w $(srcdir)/Include/*.h
+	for i in $(SRCDIRS); do ctags -f tags -w -a $(srcdir)/$$i/*.[ch]; done
+	ctags -f tags -w -a $(srcdir)/Modules/_ctypes/*.[ch]
 	LC_ALL=C sort -o tags tags
 
 # Create a tags file for GNU Emacs
@@ -1714,7 +1723,7 @@ patchcheck: @DEF_MAKE_RULE@
 Python/thread.o: @THREADHEADERS@
 
 # Declare targets that aren't real files
-.PHONY: all build_all sharedmods oldsharedmods test quicktest
+.PHONY: all build_all sharedmods check-clean-src oldsharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure

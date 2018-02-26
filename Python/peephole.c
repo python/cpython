@@ -167,6 +167,37 @@ copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
     return maxi - 1;
 }
 
+/* Check whether a collection doesn't containing too much items (including
+   subcollections).  This protects from creating a constant that needs
+   too much time for calculating a hash.
+   "limit" is the maximal number of items.
+   Returns the negative number if the total number of items exceeds the
+   limit.  Otherwise returns the limit minus the total number of items.
+*/
+
+static Py_ssize_t
+check_complexity(PyObject *obj, Py_ssize_t limit)
+{
+    if (PyTuple_Check(obj)) {
+        Py_ssize_t i;
+        limit -= PyTuple_GET_SIZE(obj);
+        for (i = 0; limit >= 0 && i < PyTuple_GET_SIZE(obj); i++) {
+            limit = check_complexity(PyTuple_GET_ITEM(obj, i), limit);
+        }
+        return limit;
+    }
+    else if (PyFrozenSet_Check(obj)) {
+        Py_ssize_t i = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        limit -= PySet_GET_SIZE(obj);
+        while (limit >= 0 && _PySet_NextEntry(obj, &i, &item, &hash)) {
+            limit = check_complexity(item, limit);
+        }
+    }
+    return limit;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -218,6 +249,101 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
     return copy_op_arg(codestr, c_start, LOAD_CONST, len_consts, opcode_end);
 }
 
+#define MAX_INT_SIZE           128  /* bits */
+#define MAX_COLLECTION_SIZE     20  /* items */
+#define MAX_STR_SIZE            20  /* characters */
+#define MAX_TOTAL_ITEMS       1024  /* including nested collections */
+
+static PyObject *
+safe_multiply(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+        size_t vbits = _PyLong_NumBits(v);
+        size_t wbits = _PyLong_NumBits(w);
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (vbits + wbits > MAX_INT_SIZE) {
+            return NULL;
+        }
+    }
+    else if (PyLong_Check(v) && (PyTuple_Check(w) || PyFrozenSet_Check(w))) {
+        Py_ssize_t size = PyTuple_Check(w) ? PyTuple_GET_SIZE(w) :
+                                             PySet_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
+                return NULL;
+            }
+            if (n && check_complexity(w, MAX_TOTAL_ITEMS / n) < 0) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(v) && (PyUnicode_Check(w) || PyBytes_Check(w))) {
+        Py_ssize_t size = PyUnicode_Check(w) ? PyUnicode_GET_LENGTH(w) :
+                                               PyBytes_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_STR_SIZE / size) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(w) &&
+             (PyTuple_Check(v) || PyFrozenSet_Check(v) ||
+              PyUnicode_Check(v) || PyBytes_Check(v)))
+    {
+        return safe_multiply(w, v);
+    }
+
+    return PyNumber_Multiply(v, w);
+}
+
+static PyObject *
+safe_power(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w) > 0) {
+        size_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (vbits > MAX_INT_SIZE / wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Power(v, w, Py_None);
+}
+
+static PyObject *
+safe_lshift(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+        size_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Lshift(v, w);
+}
+
+static PyObject *
+safe_mod(PyObject *v, PyObject *w)
+{
+    if (PyUnicode_Check(v) || PyBytes_Check(v)) {
+        return NULL;
+    }
+
+    return PyNumber_Remainder(v, w);
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2, BINOP
    with    LOAD_CONST binop(c1,c2)
    The consts table must still be in list form so that the
@@ -234,7 +360,7 @@ fold_binops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
                          PyObject *consts, PyObject **objs)
 {
     PyObject *newconst, *v, *w;
-    Py_ssize_t len_consts, size;
+    Py_ssize_t len_consts;
 
     /* Pre-conditions */
     assert(PyList_CheckExact(consts));
@@ -245,10 +371,10 @@ fold_binops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
     w = objs[1];
     switch (opcode) {
         case BINARY_POWER:
-            newconst = PyNumber_Power(v, w, Py_None);
+            newconst = safe_power(v, w);
             break;
         case BINARY_MULTIPLY:
-            newconst = PyNumber_Multiply(v, w);
+            newconst = safe_multiply(v, w);
             break;
         case BINARY_TRUE_DIVIDE:
             newconst = PyNumber_TrueDivide(v, w);
@@ -257,7 +383,7 @@ fold_binops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
             newconst = PyNumber_FloorDivide(v, w);
             break;
         case BINARY_MODULO:
-            newconst = PyNumber_Remainder(v, w);
+            newconst = safe_mod(v, w);
             break;
         case BINARY_ADD:
             newconst = PyNumber_Add(v, w);
@@ -269,7 +395,7 @@ fold_binops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
             newconst = PyObject_GetItem(v, w);
             break;
         case BINARY_LSHIFT:
-            newconst = PyNumber_Lshift(v, w);
+            newconst = safe_lshift(v, w);
             break;
         case BINARY_RSHIFT:
             newconst = PyNumber_Rshift(v, w);
@@ -294,16 +420,6 @@ fold_binops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
         if(!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
             PyErr_Clear();
         }
-        return -1;
-    }
-    size = PyObject_Size(newconst);
-    if (size == -1) {
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            return -1;
-        }
-        PyErr_Clear();
-    } else if (size > 20) {
-        Py_DECREF(newconst);
         return -1;
     }
 

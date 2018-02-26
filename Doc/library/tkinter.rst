@@ -154,7 +154,7 @@ background material, while the second half can be taken to the keyboard as a
 handy reference.
 
 When trying to answer questions of the form "how do I do blah", it is often best
-to find out how to do"blah" in straight Tk, and then convert this back into the
+to find out how to do "blah" in straight Tk, and then convert this back into the
 corresponding :mod:`tkinter` call. Python programmers can often guess at the
 correct Python command by looking at the Tk documentation. This means that in
 order to use Tkinter, you will have to know a little bit about Tk. This document

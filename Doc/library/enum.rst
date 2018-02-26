@@ -654,7 +654,7 @@ value and let :class:`Flag` select an appropriate value.
 Like :class:`IntFlag`, if a combination of :class:`Flag` members results in no
 flags being set, the boolean evaluation is :data:`False`::
 
-    >>> from enum import Flag
+    >>> from enum import Flag, auto
     >>> class Color(Flag):
     ...     RED = auto()
     ...     BLUE = auto()

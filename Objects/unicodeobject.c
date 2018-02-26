@@ -3439,8 +3439,9 @@ locale_error_handler(const char *errors, int *surrogateescape)
     }
 }
 
-PyObject *
-PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
+static PyObject *
+unicode_encode_locale(PyObject *unicode, const char *errors,
+                      int current_locale)
 {
     Py_ssize_t wlen, wlen2;
     wchar_t *wstr;
@@ -3469,7 +3470,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
         /* "surrogateescape" error handler */
         char *str;
 
-        str = Py_EncodeLocale(wstr, &error_pos);
+        str = _Py_EncodeLocaleEx(wstr, &error_pos, current_locale);
         if (str == NULL) {
             if (error_pos == (size_t)-1) {
                 PyErr_NoMemory();
@@ -3550,6 +3551,12 @@ encode_error:
 }
 
 PyObject *
+PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
+{
+    return unicode_encode_locale(unicode, errors, 1);
+}
+
+PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
 #if defined(__APPLE__)
@@ -3571,7 +3578,8 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
                                          Py_FileSystemDefaultEncodeErrors);
     }
     else {
-        return PyUnicode_EncodeLocale(unicode, Py_FileSystemDefaultEncodeErrors);
+        return unicode_encode_locale(unicode,
+                                     Py_FileSystemDefaultEncodeErrors, 0);
     }
 #endif
 }
@@ -3741,9 +3749,9 @@ mbstowcs_errorpos(const char *str, size_t len)
     return 0;
 }
 
-PyObject*
-PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
-                              const char *errors)
+static PyObject*
+unicode_decode_locale(const char *str, Py_ssize_t len,
+                      const char *errors, int current_locale)
 {
     wchar_t smallbuf[256];
     size_t smallbuf_len = Py_ARRAY_LENGTH(smallbuf);
@@ -3766,7 +3774,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
 
     if (surrogateescape) {
         /* "surrogateescape" error handler */
-        wstr = Py_DecodeLocale(str, &wlen);
+        wstr = _Py_DecodeLocaleEx(str, &wlen, current_locale);
         if (wstr == NULL) {
             if (wlen == (size_t)-1)
                 PyErr_NoMemory();
@@ -3845,10 +3853,17 @@ decode_error:
 }
 
 PyObject*
+PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t size,
+                              const char *errors)
+{
+    return unicode_decode_locale(str, size, errors, 1);
+}
+
+PyObject*
 PyUnicode_DecodeLocale(const char *str, const char *errors)
 {
     Py_ssize_t size = (Py_ssize_t)strlen(str);
-    return PyUnicode_DecodeLocaleAndSize(str, size, errors);
+    return unicode_decode_locale(str, size, errors, 1);
 }
 
 
@@ -3880,7 +3895,8 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
                                 Py_FileSystemDefaultEncodeErrors);
     }
     else {
-        return PyUnicode_DecodeLocaleAndSize(s, size, Py_FileSystemDefaultEncodeErrors);
+        return unicode_decode_locale(s, size,
+                                     Py_FileSystemDefaultEncodeErrors, 0);
     }
 #endif
 }
@@ -4413,7 +4429,10 @@ unicode_decode_call_errorhandler_writer(
     Py_ssize_t insize;
     Py_ssize_t newpos;
     Py_ssize_t replen;
+    Py_ssize_t remain;
     PyObject *inputobj = NULL;
+    int need_to_grow = 0;
+    const char *new_inptr;
 
     if (*errorHandler == NULL) {
         *errorHandler = PyCodec_LookupError(errors);
@@ -4447,6 +4466,7 @@ unicode_decode_call_errorhandler_writer(
     if (!PyBytes_Check(inputobj)) {
         PyErr_Format(PyExc_TypeError, "exception attribute object must be bytes");
     }
+    remain = *inend - *input - *endinpos;
     *input = PyBytes_AS_STRING(inputobj);
     insize = PyBytes_GET_SIZE(inputobj);
     *inend = *input + insize;
@@ -4466,8 +4486,21 @@ unicode_decode_call_errorhandler_writer(
     replen = PyUnicode_GET_LENGTH(repunicode);
     if (replen > 1) {
         writer->min_length += replen - 1;
+        need_to_grow = 1;
+    }
+    new_inptr = *input + newpos;
+    if (*inend - new_inptr > remain) {
+        /* We don't know the decoding algorithm here so we make the worst
+           assumption that one byte decodes to one unicode character.
+           If unfortunately one byte could decode to more unicode characters,
+           the decoder may write out-of-bound then.  Is it possible for the
+           algorithms using this function? */
+        writer->min_length += *inend - new_inptr - remain;
+        need_to_grow = 1;
+    }
+    if (need_to_grow) {
         writer->overallocate = 1;
-        if (_PyUnicodeWriter_Prepare(writer, writer->min_length,
+        if (_PyUnicodeWriter_Prepare(writer, writer->min_length - writer->pos,
                             PyUnicode_MAX_CHAR_VALUE(repunicode)) == -1)
             goto onError;
     }
@@ -4475,7 +4508,7 @@ unicode_decode_call_errorhandler_writer(
         goto onError;
 
     *endinpos = newpos;
-    *inptr = *input + newpos;
+    *inptr = new_inptr;
 
     /* we made it! */
     Py_XDECREF(restuple);
@@ -5647,7 +5680,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 #endif
 
     /* Note: size will always be longer than the resulting Unicode
-       character count */
+       character count normally.  Error handler will take care of
+       resizing when needed. */
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = (e - q + 1) / 2;
     if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
@@ -6142,9 +6176,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_ASCII_CHAR
 #undef WRITE_CHAR
@@ -6421,9 +6453,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_CHAR
     }
@@ -11201,7 +11231,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-    assert(_PyUnicode_HASH(right_uni) != 1);
+    assert(_PyUnicode_HASH(right_uni) != -1);
     hash = _PyUnicode_HASH(left);
     if (hash != -1 && hash != _PyUnicode_HASH(right_uni))
         return 0;

@@ -1016,6 +1016,11 @@ attribute defaults to ``['gztar']``. Although not anticipated,
 any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
 
+The ``upload`` command now longer tries to change CR end-of-line characters
+to CRLF.  This fixes a corruption issue with sdists that ended with a byte
+equivalent to CR.
+(Contributed by Bo Bayles in :issue:`32304`.)
+
 
 email
 -----
@@ -2346,3 +2351,11 @@ It has been replaced by the new ``make regen-all`` target.
 (Contributed by Victor Stinner in :issue:`23404`.)
 
 .. versionchanged:: 3.6.2
+
+
+Notable changes in Python 3.6.5
+===============================
+
+The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+locale to the ``LC_NUMERIC`` locale in some cases.
+(Contributed by Victor Stinner in :issue:`31900`.)

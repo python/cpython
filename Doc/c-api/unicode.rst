@@ -773,6 +773,12 @@ system.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.6.5
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler. Previously, :c:func:`Py_DecodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
+
 
 .. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
 
@@ -799,6 +805,12 @@ system.
       The :c:func:`Py_EncodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.6.5
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler. Previously, :c:func:`Py_EncodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 File System Encoding

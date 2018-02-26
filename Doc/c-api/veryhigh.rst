@@ -141,7 +141,8 @@ the same library that the Python runtime is using.
    Read and execute statements from a file associated with an interactive device
    until EOF is reached.  The user will be prompted using ``sys.ps1`` and
    ``sys.ps2``.  *filename* is decoded from the filesystem encoding
-   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF.
+   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF or a negative
+   number upon failure.
 
 
 .. c:var:: int (*PyOS_InputHook)(void)

@@ -1,0 +1,2 @@
+Importing native path module (``posixpath``, ``ntpath``) now works even if
+the ``os`` module still is not imported.

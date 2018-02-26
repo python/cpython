@@ -295,6 +295,23 @@ class QueueGetTests(_QueueTestBase):
                            loop=self.loop),
             )
 
+    def test_cancelled_getters_not_being_held_in_self_getters(self):
+        def a_generator():
+            yield 0.1
+            yield 0.2
+
+        self.loop = self.new_test_loop(a_generator)
+        @asyncio.coroutine
+        def consumer(queue):
+            try:
+                item = yield from asyncio.wait_for(queue.get(), 0.1, loop=self.loop)
+            except asyncio.TimeoutError:
+                pass
+
+        queue = asyncio.Queue(loop=self.loop, maxsize=5)
+        self.loop.run_until_complete(self.loop.create_task(consumer(queue)))
+        self.assertEqual(len(queue._getters), 0)
+
 
 class QueuePutTests(_QueueTestBase):
 

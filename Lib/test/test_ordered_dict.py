@@ -355,6 +355,20 @@ class OrderedDictTests:
         self.assertEqual(repr(od),
             "OrderedDict([('a', None), ('b', None), ('c', None), ('x', ...)])")
 
+    def test_repr_recursive_values(self):
+        OrderedDict = self.OrderedDict
+        od = OrderedDict()
+        od[42] = od.values()
+        r = repr(od)
+        # Cannot perform a stronger test, as the contents of the repr
+        # are implementation-dependent.  All we can say is that we
+        # want a str result, not an exception of any sort.
+        self.assertIsInstance(r, str)
+        od[42] = od.items()
+        r = repr(od)
+        # Again.
+        self.assertIsInstance(r, str)
+
     def test_setdefault(self):
         OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]

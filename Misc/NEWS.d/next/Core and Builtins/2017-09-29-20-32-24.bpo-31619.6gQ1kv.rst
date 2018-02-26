@@ -1,2 +1,0 @@
-Fixed a ValueError when convert a string with large number of underscores
-to integer with binary base.

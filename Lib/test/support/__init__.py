@@ -93,7 +93,7 @@ __all__ = [
     "check__all__", "requires_android_level", "requires_multiprocessing_queue",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
-    "setswitchinterval", "android_not_root",
+    "setswitchinterval",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     "bind_unix_socket",
@@ -281,7 +281,6 @@ max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
 failfast = False
-match_tests = None
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
 # This may be "the real" stdout, or IDLE's emulation of stdout, or whatever.
@@ -779,7 +778,6 @@ is_jython = sys.platform.startswith('java')
 
 _ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
 is_android = (_ANDROID_API_LEVEL is not None and _ANDROID_API_LEVEL > 0)
-android_not_root = (is_android and os.geteuid() != 0)
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -954,10 +952,14 @@ def temp_dir(path=None, quiet=False):
                 raise
             warnings.warn('tests may fail, unable to create temp dir: ' + path,
                           RuntimeWarning, stacklevel=3)
+    if dir_created:
+        pid = os.getpid()
     try:
         yield path
     finally:
-        if dir_created:
+        # In case the process forks, let only the parent remove the
+        # directory. The child has a diffent process id. (bpo-30028)
+        if dir_created and pid == os.getpid():
             rmtree(path)
 
 @contextlib.contextmanager
@@ -1898,21 +1900,67 @@ def _run_suite(suite):
         raise TestFailed(err)
 
 
-def _match_test(test):
-    global match_tests
+# By default, don't filter tests
+_match_test_func = None
+_match_test_patterns = None
 
-    if match_tests is None:
+
+def match_test(test):
+    # Function used by support.run_unittest() and regrtest --list-cases
+    if _match_test_func is None:
         return True
-    test_id = test.id()
+    else:
+        return _match_test_func(test.id())
 
-    for match_test in match_tests:
-        if fnmatch.fnmatchcase(test_id, match_test):
-            return True
 
-        for name in test_id.split("."):
-            if fnmatch.fnmatchcase(name, match_test):
+def _is_full_match_test(pattern):
+    # If a pattern contains at least one dot, it's considered
+    # as a full test identifier.
+    # Example: 'test.test_os.FileTests.test_access'.
+    #
+    # Reject patterns which contain fnmatch patterns: '*', '?', '[...]'
+    # or '[!...]'. For example, reject 'test_access*'.
+    return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
+
+
+def set_match_tests(patterns):
+    global _match_test_func, _match_test_patterns
+
+    if patterns == _match_test_patterns:
+        # No change: no need to recompile patterns.
+        return
+
+    if not patterns:
+        func = None
+        # set_match_tests(None) behaves as set_match_tests(())
+        patterns = ()
+    elif all(map(_is_full_match_test, patterns)):
+        # Simple case: all patterns are full test identifier.
+        # The test.bisect utility only uses such full test identifiers.
+        func = set(patterns).__contains__
+    else:
+        regex = '|'.join(map(fnmatch.translate, patterns))
+        # The search *is* case sensitive on purpose:
+        # don't use flags=re.IGNORECASE
+        regex_match = re.compile(regex).match
+
+        def match_test_regex(test_id):
+            if regex_match(test_id):
+                # The regex matchs the whole identifier like
+                # 'test.test_os.FileTests.test_access'
                 return True
-    return False
+            else:
+                # Try to match parts of the test identifier.
+                # For example, split 'test.test_os.FileTests.test_access'
+                # into: 'test', 'test_os', 'FileTests' and 'test_access'.
+                return any(map(regex_match, test_id.split(".")))
+
+        func = match_test_regex
+
+    # Create a copy since patterns can be mutable and so modified later
+    _match_test_patterns = tuple(patterns)
+    _match_test_func = func
+
 
 
 def run_unittest(*classes):
@@ -1929,7 +1977,7 @@ def run_unittest(*classes):
             suite.addTest(cls)
         else:
             suite.addTest(unittest.makeSuite(cls))
-    _filter_suite(suite, _match_test)
+    _filter_suite(suite, match_test)
     _run_suite(suite)
 
 #=======================================================================
@@ -2621,3 +2669,42 @@ def disable_faulthandler():
     finally:
         if is_enabled:
             faulthandler.enable(file=fd, all_threads=True)
+
+
+class SaveSignals:
+    """
+    Save an restore signal handlers.
+
+    This class is only able to save/restore signal handlers registered
+    by the Python signal module: see bpo-13285 for "external" signal
+    handlers.
+    """
+
+    def __init__(self):
+        import signal
+        self.signal = signal
+        self.signals = list(range(1, signal.NSIG))
+        # SIGKILL and SIGSTOP signals cannot be ignored nor catched
+        for signame in ('SIGKILL', 'SIGSTOP'):
+            try:
+                signum = getattr(signal, signame)
+            except AttributeError:
+                continue
+            self.signals.remove(signum)
+        self.handlers = {}
+
+    def save(self):
+        for signum in self.signals:
+            handler = self.signal.getsignal(signum)
+            if handler is None:
+                # getsignal() returns None if a signal handler was not
+                # registered by the Python signal module,
+                # and the handler is not SIG_DFL nor SIG_IGN.
+                #
+                # Ignore the signal: we cannot restore the handler.
+                continue
+            self.handlers[signum] = handler
+
+    def restore(self):
+        for signum, handler in self.handlers.items():
+            self.signal.signal(signum, handler)

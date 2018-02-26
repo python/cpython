@@ -19,7 +19,8 @@ import sys
 import threading
 import traceback
 
-from asyncio import compat
+from . import compat
+from . import constants
 
 
 def _get_function_source(func):
@@ -77,6 +78,23 @@ def _format_callback_source(func, args):
     return func_repr
 
 
+def extract_stack(f=None, limit=None):
+    """Replacement for traceback.extract_stack() that only does the
+    necessary work for asyncio debug mode.
+    """
+    if f is None:
+        f = sys._getframe().f_back
+    if limit is None:
+        # Limit the amount of work to a reasonable amount, as extract_stack()
+        # can be called for each coroutine and future in debug mode.
+        limit = constants.DEBUG_STACK_DEPTH
+    stack = traceback.StackSummary.extract(traceback.walk_stack(f),
+                                           limit=limit,
+                                           lookup_lines=False)
+    stack.reverse()
+    return stack
+
+
 class Handle:
     """Object returned by callback registration methods."""
 
@@ -90,7 +108,7 @@ class Handle:
         self._cancelled = False
         self._repr = None
         if self._loop.get_debug():
-            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+            self._source_traceback = extract_stack(sys._getframe(1))
         else:
             self._source_traceback = None
 

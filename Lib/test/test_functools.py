@@ -420,7 +420,7 @@ class TestPartialC(TestPartial, unittest.TestCase):
                 p.keywords[self] = ['sth2']
                 return 'astr'
 
-        # Raplacing the value during key formatting should keep the original
+        # Replacing the value during key formatting should keep the original
         # value alive (at least long enough).
         p.keywords[MutatesYourDict()] = ['sth']
         r = repr(p)

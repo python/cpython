@@ -1,0 +1,2 @@
+Explain real behaviour of sys.settrace and sys.setprofile and their C-API counterparts
+regarding which type of events are received in each function. Patch by Pablo Galindo Salgado.

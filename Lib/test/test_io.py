@@ -568,8 +568,8 @@ class IOTest(unittest.TestCase):
         self.read_ops(f, True)
 
     def test_large_file_ops(self):
-        # On Windows and Mac OSX this test comsumes large resources; It takes
-        # a long time to build the >2GB file and takes >2GB of disk space
+        # On Windows and Mac OSX this test consumes large resources; It takes
+        # a long time to build the >2 GiB file and takes >2 GiB of disk space
         # therefore the resource must be enabled to run this test.
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
             support.requires(
@@ -796,8 +796,8 @@ class IOTest(unittest.TestCase):
         self.assertRaises(ValueError, f.flush)
 
     def test_RawIOBase_read(self):
-        # Exercise the default RawIOBase.read() implementation (which calls
-        # readinto() internally).
+        # Exercise the default limited RawIOBase.read(n) implementation (which
+        # calls readinto() internally).
         rawio = self.MockRawIOWithoutRead((b"abc", b"d", None, b"efg", None))
         self.assertEqual(rawio.read(2), b"ab")
         self.assertEqual(rawio.read(2), b"c")
@@ -904,6 +904,55 @@ class IOTest(unittest.TestCase):
         # ensure that refcounting is correct with some error conditions
         with self.assertRaisesRegex(ValueError, 'read/write/append mode'):
             self.open(PathLike(support.TESTFN), 'rwxa')
+
+    def test_RawIOBase_readall(self):
+        # Exercise the default unlimited RawIOBase.read() and readall()
+        # implementations.
+        rawio = self.MockRawIOWithoutRead((b"abc", b"d", b"efg"))
+        self.assertEqual(rawio.read(), b"abcdefg")
+        rawio = self.MockRawIOWithoutRead((b"abc", b"d", b"efg"))
+        self.assertEqual(rawio.readall(), b"abcdefg")
+
+    def test_BufferedIOBase_readinto(self):
+        # Exercise the default BufferedIOBase.readinto() and readinto1()
+        # implementations (which call read() or read1() internally).
+        class Reader(self.BufferedIOBase):
+            def __init__(self, avail):
+                self.avail = avail
+            def read(self, size):
+                result = self.avail[:size]
+                self.avail = self.avail[size:]
+                return result
+            def read1(self, size):
+                """Returns no more than 5 bytes at once"""
+                return self.read(min(size, 5))
+        tests = (
+            # (test method, total data available, read buffer size, expected
+            #     read size)
+            ("readinto", 10, 5, 5),
+            ("readinto", 10, 6, 6),  # More than read1() can return
+            ("readinto", 5, 6, 5),  # Buffer larger than total available
+            ("readinto", 6, 7, 6),
+            ("readinto", 10, 0, 0),  # Empty buffer
+            ("readinto1", 10, 5, 5),  # Result limited to single read1() call
+            ("readinto1", 10, 6, 5),  # Buffer larger than read1() can return
+            ("readinto1", 5, 6, 5),  # Buffer larger than total available
+            ("readinto1", 6, 7, 5),
+            ("readinto1", 10, 0, 0),  # Empty buffer
+        )
+        UNUSED_BYTE = 0x81
+        for test in tests:
+            with self.subTest(test):
+                method, avail, request, result = test
+                reader = Reader(bytes(range(avail)))
+                buffer = bytearray((UNUSED_BYTE,) * request)
+                method = getattr(reader, method)
+                self.assertEqual(method(buffer), result)
+                self.assertEqual(len(buffer), request)
+                self.assertSequenceEqual(buffer[:result], range(result))
+                unused = (UNUSED_BYTE,) * (request - result)
+                self.assertSequenceEqual(buffer[result:], unused)
+                self.assertEqual(len(reader.avail), avail - result)
 
 
 class CIOTest(IOTest):
@@ -1653,6 +1702,23 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
             self.assertEqual(bufio.tell(), 6)
         with self.open(support.TESTFN, "rb", buffering=0) as f:
             self.assertEqual(f.read(), b"abc")
+
+    def test_truncate_after_write(self):
+        # Ensure that truncate preserves the file position after
+        # writes longer than the buffer size.
+        # Issue: https://bugs.python.org/issue32228
+        with self.open(support.TESTFN, "wb") as f:
+            # Fill with some buffer
+            f.write(b'\x00' * 10000)
+        buffer_sizes = [8192, 4096, 200]
+        for buffer_size in buffer_sizes:
+            with self.open(support.TESTFN, "r+b", buffering=buffer_size) as f:
+                f.write(b'\x00' * (buffer_size + 1))
+                # After write write_pos and write_end are set to 0
+                f.read(1)
+                # read operation makes sure that pos != raw_pos
+                f.truncate()
+                self.assertEqual(f.tell(), buffer_size + 2)
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.requires_resource('cpu')

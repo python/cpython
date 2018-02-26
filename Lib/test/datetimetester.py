@@ -1500,6 +1500,13 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
 
+    def test_subclass_replace(self):
+        class DateSubclass(self.theclass):
+            pass
+
+        dt = DateSubclass(2012, 1, 1)
+        self.assertIs(type(dt.replace(year=2013)), DateSubclass)
+
     def test_subclass_date(self):
 
         class C(self.theclass):
@@ -1702,7 +1709,7 @@ class TestDateTime(TestDate):
 
         # Make sure comparison doesn't forget microseconds, and isn't done
         # via comparing a float timestamp (an IEEE double doesn't have enough
-        # precision to span microsecond resolution across years 1 thru 9999,
+        # precision to span microsecond resolution across years 1 through 9999,
         # so comparing via timestamp necessarily calls some distinct values
         # equal).
         dt1 = self.theclass(MAXYEAR, 12, 31, 23, 59, 59, 999998)
@@ -2598,6 +2605,13 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, minute=-1)
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
+
+    def test_subclass_replace(self):
+        class TimeSubclass(self.theclass):
+            pass
+
+        ctime = TimeSubclass(12, 30)
+        self.assertIs(type(ctime.replace(hour=10)), TimeSubclass)
 
     def test_subclass_time(self):
 

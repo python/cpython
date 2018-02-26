@@ -13,7 +13,7 @@ import struct
 import subprocess
 import sys
 import tempfile
-from test.support import (captured_stdout, captured_stderr,
+from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -286,6 +286,24 @@ class BasicTest(BaseTest):
         out, err = p.communicate()
         self.assertEqual(out.strip(), envpy.encode())
 
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_unicode_in_batch_file(self):
+        """
+        Test isolation from system site-packages
+        """
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'ϼўТλФЙ')
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        envpy = os.path.join(env_dir, self.bindir, self.exe)
+        cmd = [activate, '&', self.exe, '-c', 'print(0)']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, encoding='oem',
+                             shell=True)
+        out, err = p.communicate()
+        print(err)
+        self.assertEqual(out.strip(), '0')
 
 @skipInVenv
 class EnsurePipTest(BaseTest):
@@ -424,6 +442,7 @@ class EnsurePipTest(BaseTest):
                                     ' module unconditionally')
     # Issue #26610: pip/pep425tags.py requires ctypes
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
+    @requires_zlib
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

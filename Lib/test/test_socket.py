@@ -1357,7 +1357,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.gethostbyname(domain)
         socket.gethostbyname_ex(domain)
         socket.getaddrinfo(domain,0,socket.AF_UNSPEC,socket.SOCK_STREAM)
-        # this may not work if the forward lookup choses the IPv6 address, as that doesn't
+        # this may not work if the forward lookup chooses the IPv6 address, as that doesn't
         # have a reverse entry yet
         # socket.gethostbyaddr('испытание.python.org')
 
@@ -4239,7 +4239,7 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.write_file.write(self.write_msg)
         self.write_file.flush()
         self.evt2.set()
-        # Avoid cloding the socket before the server test has finished,
+        # Avoid closing the socket before the server test has finished,
         # otherwise system recv() will return 0 instead of EWOULDBLOCK.
         self.serv_finished.wait(5.0)
 
@@ -4373,6 +4373,10 @@ class NetworkConnectionNoServer(unittest.TestCase):
         expected_errnos = [ errno.ECONNREFUSED, ]
         if hasattr(errno, 'ENETUNREACH'):
             expected_errnos.append(errno.ENETUNREACH)
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # bpo-31910: socket.create_connection() fails randomly
+            # with EADDRNOTAVAIL on Travis CI
+            expected_errnos.append(errno.EADDRNOTAVAIL)
 
         self.assertIn(cm.exception.errno, expected_errnos)
 
@@ -5415,6 +5419,9 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
         else:
             return sock
 
+    # bpo-31705: On kernel older than 4.5, sendto() failed with ENOKEY,
+    # at least on ppc64le architecture
+    @support.requires_linux_version(4, 5)
     def test_sha256(self):
         expected = bytes.fromhex("ba7816bf8f01cfea414140de5dae2223b00361a396"
                                  "177a9cb410ff61f20015ad")

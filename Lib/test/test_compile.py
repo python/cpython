@@ -35,6 +35,7 @@ class TestSpecifics(unittest.TestCase):
         import builtins
         prev = builtins.__debug__
         setattr(builtins, '__debug__', 'sure')
+        self.assertEqual(__debug__, prev)
         setattr(builtins, '__debug__', prev)
 
     def test_argument_handling(self):

@@ -1,0 +1,1 @@
+Create standalone _distutils_findvs module.

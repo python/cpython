@@ -391,8 +391,8 @@ is used to initialize an object after it's created. Unlike the new method, we
 can't guarantee that the initializer is called.  The initializer isn't called
 when unpickling objects and it can be overridden.  Our initializer accepts
 arguments to provide initial values for our instance. Initializers always accept
-positional and keyword arguments. Initializers should return either 0 on
-success or -1 on error.
+positional and keyword arguments. Initializers should return either ``0`` on
+success or ``-1`` on error.
 
 Initializers can be called multiple times.  Anyone can call the :meth:`__init__`
 method on our objects.  For this reason, we have to be extra careful when
@@ -666,7 +666,7 @@ Fortunately, Python's cyclic-garbage collector will eventually figure out that
 the list is garbage and free it.
 
 In the second version of the :class:`Noddy` example, we allowed any kind of
-object to be stored in the :attr:`first` or :attr:`last` attributes. [#]_ This
+object to be stored in the :attr:`first` or :attr:`last` attributes [#]_. This
 means that :class:`Noddy` objects can participate in cycles::
 
    >>> import noddy2

@@ -150,7 +150,7 @@ The default raw memory block allocator uses the following functions:
 
    Frees the memory block pointed to by *p*, which must have been returned by a
    previous call to :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc` or
-   :c:func:`PyMem_RawCalloc`.  Otherwise, or if ``PyMem_Free(p)`` has been
+   :c:func:`PyMem_RawCalloc`.  Otherwise, or if ``PyMem_RawFree(p)`` has been
    called before, undefined behavior occurs.
 
    If *p* is *NULL*, no operation is performed.
@@ -261,6 +261,69 @@ versions and is therefore deprecated in extension modules.
 * ``PyMem_RESIZE(ptr, type, size)``
 * ``PyMem_FREE(ptr)``
 * ``PyMem_DEL(ptr)``
+
+
+Object allocators
+=================
+
+The following function sets, modeled after the ANSI C standard, but specifying
+behavior when requesting zero bytes, are available for allocating and releasing
+memory from the Python heap.
+
+By default, these functions use :ref:`pymalloc memory allocator <pymalloc>`.
+
+.. warning::
+
+   The :term:`GIL <global interpreter lock>` must be held when using these
+   functions.
+
+.. c:function:: void* PyObject_Malloc(size_t n)
+
+   Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
+   allocated memory, or *NULL* if the request fails.
+
+   Requesting zero bytes returns a distinct non-*NULL* pointer if possible, as
+   if ``PyObject_Malloc(1)`` had been called instead. The memory will not have
+   been initialized in any way.
+
+
+.. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
+
+   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   a pointer of type :c:type:`void\*` to the allocated memory, or *NULL* if the
+   request fails. The memory is initialized to zeros.
+
+   Requesting zero elements or elements of size zero bytes returns a distinct
+   non-*NULL* pointer if possible, as if ``PyObject_Calloc(1, 1)`` had been called
+   instead.
+
+   .. versionadded:: 3.5
+
+
+.. c:function:: void* PyObject_Realloc(void *p, size_t n)
+
+   Resizes the memory block pointed to by *p* to *n* bytes. The contents will be
+   unchanged to the minimum of the old and the new sizes.
+
+   If *p* is *NULL*, the call is equivalent to ``PyObject_Malloc(n)``; else if *n*
+   is equal to zero, the memory block is resized but is not freed, and the
+   returned pointer is non-*NULL*.
+
+   Unless *p* is *NULL*, it must have been returned by a previous call to
+   :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc` or :c:func:`PyObject_Calloc`.
+
+   If the request fails, :c:func:`PyObject_Realloc` returns *NULL* and *p* remains
+   a valid pointer to the previous memory area.
+
+
+.. c:function:: void PyObject_Free(void *p)
+
+   Frees the memory block pointed to by *p*, which must have been returned by a
+   previous call to :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc` or
+   :c:func:`PyObject_Calloc`.  Otherwise, or if ``PyObject_Free(p)`` has been called
+   before, undefined behavior occurs.
+
+   If *p* is *NULL*, no operation is performed.
 
 
 Customize Memory Allocators

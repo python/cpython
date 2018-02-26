@@ -284,6 +284,7 @@ msiobj_dealloc(msiobj* msidb)
 {
     MsiCloseHandle(msidb->h);
     msidb->h = 0;
+    PyObject_Del(msidb);
 }
 
 static PyObject*
@@ -323,6 +324,12 @@ msierror(int status)
             return NULL;
         case ERROR_INVALID_PARAMETER:
             PyErr_SetString(MSIError, "invalid parameter");
+            return NULL;
+        case ERROR_OPEN_FAILED:
+            PyErr_SetString(MSIError, "open failed");
+            return NULL;
+        case ERROR_CREATE_FAILED:
+            PyErr_SetString(MSIError, "create failed");
             return NULL;
         default:
             PyErr_Format(MSIError, "unknown error %x", status);
@@ -571,6 +578,8 @@ summary_getproperty(msiobj* si, PyObject *args)
             if (sval != sbuf)
                 free(sval);
             return result;
+        case VT_EMPTY:
+            Py_RETURN_NONE;
     }
     PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
     return NULL;
@@ -728,8 +737,12 @@ view_fetch(msiobj *view, PyObject*args)
     int status;
     MSIHANDLE result;
 
-    if ((status = MsiViewFetch(view->h, &result)) != ERROR_SUCCESS)
+    status = MsiViewFetch(view->h, &result);
+    if (status == ERROR_NO_MORE_ITEMS) {
+        Py_RETURN_NONE;
+    } else if (status != ERROR_SUCCESS) {
         return msierror(status);
+    }
 
     return record_new(result);
 }

@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from test.support import script_helper, is_android
 from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
-    assert_python_failure)
+    assert_python_failure, interpreter_requires_environment)
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -57,6 +57,8 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-vv')
         self.assertNotIn(b'stack overflow', err)
 
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
     def test_xoptions(self):
         def get_xoptions(*args):
             # use subprocess module directly because test.support.script_helper adds
@@ -272,11 +274,7 @@ class CmdLineTest(unittest.TestCase):
 
     def test_displayhook_unencodable(self):
         for encoding in ('ascii', 'latin-1', 'utf-8'):
-            # We are testing a PYTHON environment variable here, so we can't
-            # use -E, -I, or script_helper (which uses them).  So instead we do
-            # poor-man's isolation by deleting the PYTHON vars from env.
-            env = {key:value for (key,value) in os.environ.copy().items()
-                   if not key.startswith('PYTHON')}
+            env = os.environ.copy()
             env['PYTHONIOENCODING'] = encoding
             p = subprocess.Popen(
                 [sys.executable, '-i'],
@@ -426,9 +424,14 @@ class CmdLineTest(unittest.TestCase):
 
         # Verify that sys.flags contains hash_randomization
         code = 'import sys; print("random is", sys.flags.hash_randomization)'
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(rc, 0)
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='')
         self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='random')
+        self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='0')
+        self.assertIn(b'random is 0', out)
 
     def test_del___main__(self):
         # Issue #15001: PyRun_SimpleFileExFlags() did crash because it kept a
@@ -485,6 +488,19 @@ class CmdLineTest(unittest.TestCase):
             out = subprocess.check_output([sys.executable, "-I", main],
                                           cwd=tmpdir)
             self.assertEqual(out.strip(), b"ok")
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'bpo-32457 only applies on Windows')
+    def test_argv0_normalization(self):
+        args = sys.executable, '-c', 'print(0)'
+        prefix, exe = os.path.split(sys.executable)
+        executable = prefix + '\\.\\.\\.\\' + exe
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              executable=executable)
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.strip(), b'0')
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)

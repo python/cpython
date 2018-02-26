@@ -3948,14 +3948,22 @@ static PyObject *
 dictview_repr(_PyDictViewObject *dv)
 {
     PyObject *seq;
-    PyObject *result;
+    PyObject *result = NULL;
+    Py_ssize_t rc;
 
+    rc = Py_ReprEnter((PyObject *)dv);
+    if (rc != 0) {
+        return rc > 0 ? PyUnicode_FromString("...") : NULL;
+    }
     seq = PySequence_List((PyObject *)dv);
-    if (seq == NULL)
-        return NULL;
-
+    if (seq == NULL) {
+        goto Done;
+    }
     result = PyUnicode_FromFormat("%s(%R)", Py_TYPE(dv)->tp_name, seq);
     Py_DECREF(seq);
+
+Done:
+    Py_ReprLeave((PyObject *)dv);
     return result;
 }
 

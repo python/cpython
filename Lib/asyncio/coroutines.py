@@ -10,6 +10,7 @@ import traceback
 import types
 
 from . import compat
+from . import constants
 from . import events
 from . import base_futures
 from .log import logger
@@ -91,7 +92,7 @@ class CoroWrapper:
         assert inspect.isgenerator(gen) or inspect.iscoroutine(gen), gen
         self.gen = gen
         self.func = func  # Used to unwrap @coroutine decorator
-        self._source_traceback = traceback.extract_stack(sys._getframe(1))
+        self._source_traceback = events.extract_stack(sys._getframe(1))
         self.__name__ = getattr(gen, '__name__', None)
         self.__qualname__ = getattr(gen, '__qualname__', None)
 
@@ -183,8 +184,9 @@ class CoroWrapper:
             tb = getattr(self, '_source_traceback', ())
             if tb:
                 tb = ''.join(traceback.format_list(tb))
-                msg += ('\nCoroutine object created at '
-                        '(most recent call last):\n')
+                msg += (f'\nCoroutine object created at '
+                        f'(most recent call last, truncated to '
+                        f'{constants.DEBUG_STACK_DEPTH} last lines):\n')
                 msg += tb.rstrip()
             logger.error(msg)
 

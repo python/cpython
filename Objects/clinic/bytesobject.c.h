@@ -86,7 +86,7 @@ PyDoc_STRVAR(bytes_rpartition__doc__,
 "\n"
 "Partition the bytes into three parts using the given separator.\n"
 "\n"
-"This will search for the separator sep in the bytes, starting and the end. If\n"
+"This will search for the separator sep in the bytes, starting at the end. If\n"
 "the separator is found, returns a 3-tuple containing the part before the\n"
 "separator, the separator itself, and the part after it.\n"
 "\n"
@@ -499,4 +499,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2dc3c93cfd2dc440 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4ac7e35150d47467 input=a9049054013a1b77]*/

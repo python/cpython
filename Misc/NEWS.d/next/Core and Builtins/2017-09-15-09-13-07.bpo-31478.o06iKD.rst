@@ -1,2 +1,0 @@
-Fix an assertion failure in `_random.Random.seed()` in case the argument has a
-bad ``__abs__()`` method. Patch by Oren Milman.

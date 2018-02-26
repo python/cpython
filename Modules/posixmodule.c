@@ -2790,6 +2790,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                                                    dir_fd, follow_symlinks);
             else
                 follow_symlinks_specified("chmod", follow_symlinks);
+            return NULL;
         }
         else
 #endif
@@ -5779,7 +5780,7 @@ error:
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX) */
 
 
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
@@ -7126,11 +7127,11 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                 "not a symbolic link");
         return NULL;
     }
-    print_name = rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
+    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
 
     result = PyUnicode_FromWideChar(print_name,
-                    rdb->SymbolicLinkReparseBuffer.PrintNameLength/2);
+                    rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
     return result;
 }
 
@@ -7703,7 +7704,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #if defined(HAVE_DUP3) && \
     !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
     /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
-    int dup3_works = -1;
+    static int dup3_works = -1;
 #endif
 
     if (fd < 0 || fd2 < 0)
@@ -8791,11 +8792,16 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG */
 
@@ -8833,11 +8839,16 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
 

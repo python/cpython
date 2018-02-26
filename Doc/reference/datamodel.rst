@@ -1157,60 +1157,68 @@ Basic customization
 
    .. index::
       single: destructor
+      single: finalizer
       statement: del
 
    Called when the instance is about to be destroyed.  This is also called a
-   destructor.  If a base class has a :meth:`__del__` method, the derived class's
-   :meth:`__del__` method, if any, must explicitly call it to ensure proper
-   deletion of the base class part of the instance.  Note that it is possible
-   (though not recommended!) for the :meth:`__del__` method to postpone destruction
-   of the instance by creating a new reference to it.  It may then be called at a
-   later time when this new reference is deleted.  It is not guaranteed that
-   :meth:`__del__` methods are called for objects that still exist when the
-   interpreter exits.
+   finalizer or (improperly) a destructor.  If a base class has a
+   :meth:`__del__` method, the derived class's :meth:`__del__` method,
+   if any, must explicitly call it to ensure proper deletion of the base
+   class part of the instance.
+
+   It is possible (though not recommended!) for the :meth:`__del__` method
+   to postpone destruction of the instance by creating a new reference to
+   it.  This is called object *resurrection*.  It is implementation-dependent
+   whether :meth:`__del__` is called a second time when a resurrected object
+   is about to be destroyed; the current :term:`CPython` implementation
+   only calls it once.
+
+   It is not guaranteed that :meth:`__del__` methods are called for objects
+   that still exist when the interpreter exits.
 
    .. note::
 
       ``del x`` doesn't directly call ``x.__del__()`` --- the former decrements
       the reference count for ``x`` by one, and the latter is only called when
-      ``x``'s reference count reaches zero.  Some common situations that may
-      prevent the reference count of an object from going to zero include:
-      circular references between objects (e.g., a doubly-linked list or a tree
-      data structure with parent and child pointers); a reference to the object
-      on the stack frame of a function that caught an exception (the traceback
-      stored in ``sys.exc_info()[2]`` keeps the stack frame alive); or a
-      reference to the object on the stack frame that raised an unhandled
-      exception in interactive mode (the traceback stored in
-      ``sys.last_traceback`` keeps the stack frame alive).  The first situation
-      can only be remedied by explicitly breaking the cycles; the second can be
-      resolved by freeing the reference to the traceback object when it is no
-      longer useful, and the third can be resolved by storing ``None`` in
-      ``sys.last_traceback``.
-      Circular references which are garbage are detected and cleaned up when
-      the cyclic garbage collector is enabled (it's on by default). Refer to the
-      documentation for the :mod:`gc` module for more information about this
-      topic.
+      ``x``'s reference count reaches zero.
+
+   .. impl-detail::
+      It is possible for a reference cycle to prevent the reference count
+      of an object from going to zero.  In this case, the cycle will be
+      later detected and deleted by the :term:`cyclic garbage collector
+      <garbage collection>`.  A common cause of reference cycles is when
+      an exception has been caught in a local variable.  The frame's
+      locals then reference the exception, which references its own
+      traceback, which references the locals of all frames caught in the
+      traceback.
+
+      .. seealso::
+         Documentation for the :mod:`gc` module.
 
    .. warning::
 
       Due to the precarious circumstances under which :meth:`__del__` methods are
       invoked, exceptions that occur during their execution are ignored, and a warning
-      is printed to ``sys.stderr`` instead.  Also, when :meth:`__del__` is invoked in
-      response to a module being deleted (e.g., when execution of the program is
-      done), other globals referenced by the :meth:`__del__` method may already have
-      been deleted or in the process of being torn down (e.g. the import
-      machinery shutting down).  For this reason, :meth:`__del__` methods
-      should do the absolute
-      minimum needed to maintain external invariants.  Starting with version 1.5,
-      Python guarantees that globals whose name begins with a single underscore are
-      deleted from their module before other globals are deleted; if no other
-      references to such globals exist, this may help in assuring that imported
-      modules are still available at the time when the :meth:`__del__` method is
-      called.
+      is printed to ``sys.stderr`` instead.  In particular:
 
-      .. index::
-         single: repr() (built-in function); __repr__() (object method)
+      * :meth:`__del__` can be invoked when arbitrary code is being executed,
+        including from any arbitrary thread.  If :meth:`__del__` needs to take
+        a lock or invoke any other blocking resource, it may deadlock as
+        the resource may already be taken by the code that gets interrupted
+        to execute :meth:`__del__`.
 
+      * :meth:`__del__` can be executed during interpreter shutdown.  As a
+        consequence, the global variables it needs to access (including other
+        modules) may already have been deleted or set to ``None``. Python
+        guarantees that globals whose name begins with a single underscore
+        are deleted from their module before other globals are deleted; if
+        no other references to such globals exist, this may help in assuring
+        that imported modules are still available at the time when the
+        :meth:`__del__` method is called.
+
+
+   .. index::
+      single: repr() (built-in function); __repr__() (object method)
 
 .. method:: object.__repr__(self)
 
@@ -1435,10 +1443,12 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__getattr__(self, name)
 
-   Called when an attribute lookup has not found the attribute in the usual places
-   (i.e. it is not an instance attribute nor is it found in the class tree for
-   ``self``).  ``name`` is the attribute name. This method should return the
-   (computed) attribute value or raise an :exc:`AttributeError` exception.
+   Called when the default attribute access fails with an :exc:`AttributeError`
+   (either :meth:`__getattribute__` raises an :exc:`AttributeError` because
+   *name* is not an instance attribute or an attribute in the class tree
+   for ``self``; or :meth:`__get__` of a *name* property raises
+   :exc:`AttributeError`).  This method should either return the (computed)
+   attribute value or raise an :exc:`AttributeError` exception.
 
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
@@ -1490,6 +1500,39 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
    Called when :func:`dir` is called on the object. A sequence must be
    returned. :func:`dir` converts the returned sequence to a list and sorts it.
+
+
+Customizing module attribute access
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __class__ (module attribute)
+
+For a more fine grained customization of the module behavior (setting
+attributes, properties, etc.), one can set the ``__class__`` attribute of
+a module object to a subclass of :class:`types.ModuleType`. For example::
+
+   import sys
+   from types import ModuleType
+
+   class VerboseModule(ModuleType):
+       def __repr__(self):
+           return f'Verbose {self.__name__}'
+
+       def __setattr__(self, attr, value):
+           print(f'Setting {attr}...')
+           setattr(self, attr, value)
+
+   sys.modules[__name__].__class__ = VerboseModule
+
+.. note::
+   Setting module ``__class__`` only affects lookups made using the attribute
+   access syntax -- directly accessing the module globals (whether by code
+   within the module, or via a reference to the module's globals dictionary)
+   is unaffected.
+
+.. versionchanged:: 3.5
+   ``__class__`` module attribute is now writable.
 
 
 .. _descriptors:
@@ -1610,15 +1653,11 @@ instances cannot override the behavior of a property.
 __slots__
 ^^^^^^^^^
 
-By default, instances of classes have a dictionary for attribute storage.  This
-wastes space for objects having very few instance variables.  The space
-consumption can become acute when creating large numbers of instances.
+*__slots__* allow us to explicitly declare data members (like
+properties) and deny the creation of *__dict__* and *__weakref__*
+(unless explicitly declared in *__slots__* or available in a parent.)
 
-The default can be overridden by defining *__slots__* in a class definition.
-The *__slots__* declaration takes a sequence of instance variables and reserves
-just enough space in each instance to hold a value for each variable.  Space is
-saved because *__dict__* is not created for each instance.
-
+The space saved over using *__dict__* can be significant.
 
 .. data:: object.__slots__
 
@@ -1631,9 +1670,8 @@ saved because *__dict__* is not created for each instance.
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
-* When inheriting from a class without *__slots__*, the *__dict__* attribute of
-  that class will always be accessible, so a *__slots__* definition in the
-  subclass is meaningless.
+* When inheriting from a class without *__slots__*, the *__dict__* and
+  *__weakref__* attribute of the instances will always be accessible.
 
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
@@ -1652,9 +1690,11 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__* (which must only contain names of any *additional* slots).
+* The action of a *__slots__* declaration is not limited to the class
+  where it is defined.  *__slots__* declared in parents are available in
+  child classes. However, child subclasses will get a *__dict__*  and
+  *__weakref__* unless they also define *__slots__* (which should only
+  contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -1670,6 +1710,10 @@ Notes on using *__slots__*
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
 
+* Multiple inheritance with multiple slotted parent classes can be used,
+  but only one parent is allowed to have attributes created by slots
+  (the other bases must have empty slot layouts) - violations raise
+  :exc:`TypeError`.
 
 .. _class-customization:
 

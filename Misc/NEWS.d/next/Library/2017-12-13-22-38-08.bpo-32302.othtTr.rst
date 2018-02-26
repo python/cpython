@@ -1,0 +1,2 @@
+Fix bdist_wininst of distutils for CRT v142: it binary compatible with CRT
+v140.

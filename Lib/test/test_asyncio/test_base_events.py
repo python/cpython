@@ -116,13 +116,6 @@ class BaseEventTests(test_utils.TestCase):
         self.assertIsNone(
             base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
 
-        if hasattr(socket, 'SOCK_NONBLOCK'):
-            self.assertEqual(
-                None,
-                base_events._ipaddr_info(
-                    '1.2.3.4', 1, INET, STREAM | socket.SOCK_NONBLOCK, TCP))
-
-
     def test_port_parameter_types(self):
         # Test obscure kinds of arguments for "port".
         INET = socket.AF_INET

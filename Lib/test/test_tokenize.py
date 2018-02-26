@@ -632,6 +632,11 @@ def"', """\
     NUMBER     '1'           (1, 8) (1, 9)
     """)
 
+        self.check_tokenize("async\\", """\
+    ERRORTOKEN '\\\\'          (1, 5) (1, 6)
+    NAME       'async'       (1, 0) (1, 5)
+    """)
+
         self.check_tokenize("a = (async = 1)", """\
     NAME       'a'           (1, 0) (1, 1)
     OP         '='           (1, 2) (1, 3)

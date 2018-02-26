@@ -31,7 +31,7 @@ if "%DO_FETCH%"=="false" goto end
 
 if "%ORG%"=="" (set ORG=python)
 
-call "%PCBUILD%find_python.bat" "%PYTHON%"
+call "%PCBUILD%\find_python.bat" "%PYTHON%"
 
 if "%PYTHON%"=="" (
     where /Q git || echo Python 3.6 could not be found or installed, and git.exe is not on your PATH && exit /B 1
@@ -42,7 +42,7 @@ echo.Fetching external libraries...
 set libraries=
 set libraries=%libraries%                                    bzip2-1.0.6
 if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     openssl-1.0.2k
-set libraries=%libraries%                                    sqlite-3.14.2.0
+set libraries=%libraries%                                    sqlite-3.21.0.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tcl-core-8.6.6.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tk-8.6.6.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tix-8.4.3.6
@@ -56,7 +56,7 @@ for %%e in (%libraries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
         echo.Fetching %%e...
-        %PYTHON% "%PCBUILD%get_external.py" -O %ORG% %%e
+        %PYTHON% -E "%PCBUILD%\get_external.py" -O %ORG% -e "%EXTERNALS_DIR%" %%e
     )
 )
 
@@ -74,7 +74,7 @@ for %%b in (%binaries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        %PYTHON% "%PCBUILD%get_external.py" -b -O %ORG% %%b
+        %PYTHON% -E "%PCBUILD%\get_external.py" -b -O %ORG% -e "%EXTERNALS_DIR%" %%b
     )
 )
 
