@@ -320,6 +320,7 @@ class TokenEater:
         self.__lineno = -1
         self.__freshmodule = 1
         self.__curfile = None
+        self.__enclosurecount = 0
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
@@ -340,7 +341,7 @@ class TokenEater:
                 elif ttype not in (tokenize.COMMENT, tokenize.NL):
                     self.__freshmodule = 0
                 return
-            # class docstring?
+            # class or func/method docstring?
             if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
                 return
@@ -348,9 +349,15 @@ class TokenEater:
             self.__state = self.__keywordseen
 
     def __suiteseen(self, ttype, tstring, lineno):
-        # ignore anything until we see the colon
-        if ttype == tokenize.OP and tstring == ':':
-            self.__state = self.__suitedocstring
+        # skip over any enclosure pairs until we see the colon
+        if ttype == tokenize.OP:
+            if tstring == ':' and self.__enclosurecount == 0:
+                # we see a colon and we're not in an enclosure: end of def
+                self.__state = self.__suitedocstring
+            elif tstring in '([{':
+                self.__enclosurecount += 1
+            elif tstring in ')]}':
+                self.__enclosurecount -= 1
 
     def __suitedocstring(self, ttype, tstring, lineno):
         # ignore any intervening noise
