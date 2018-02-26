@@ -1522,7 +1522,6 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case WITH:
         case ASYNC_WITH:
-            ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
                 ADDOP(c, ROT_TWO);
             }
@@ -1531,6 +1530,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 return 0;
             }
             ADDOP_N(c, LOAD_CONST, args, consts);
+            ADDOP(c, POP_BLOCK);
             ADDOP_I(c, CALL_FUNCTION_EX, 0);
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
@@ -4389,13 +4389,13 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
             return 0;
 
     /* End of try block; call __aexit__(None, None, None) */
-    ADDOP(c, POP_BLOCK);
-    compiler_pop_fblock(c, ASYNC_WITH, block);
     PyObject *args = PyTuple_Pack(3, Py_None, Py_None, Py_None);
     if (args == NULL) {
         return 0;
     }
     ADDOP_N(c, LOAD_CONST, args, consts);
+    ADDOP(c, POP_BLOCK);
+    compiler_pop_fblock(c, ASYNC_WITH, block);
     ADDOP_I(c, CALL_FUNCTION_EX, 0);
 
     ADDOP(c, GET_AWAITABLE);
@@ -4490,13 +4490,13 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
             return 0;
 
     /* End of try block; call __exit__(None, None, None) */
-    ADDOP(c, POP_BLOCK);
-    compiler_pop_fblock(c, WITH, block);
     PyObject *args = PyTuple_Pack(3, Py_None, Py_None, Py_None);
     if (args == NULL) {
         return 0;
     }
     ADDOP_N(c, LOAD_CONST, args, consts);
+    ADDOP(c, POP_BLOCK);
+    compiler_pop_fblock(c, WITH, block);
     ADDOP_I(c, CALL_FUNCTION_EX, 0);
     ADDOP(c, POP_TOP);
     ADDOP_JREL(c, JUMP_FORWARD, end);

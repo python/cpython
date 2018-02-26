@@ -1841,7 +1841,7 @@ main_loop:
         PREDICTED(POP_BLOCK);
         TARGET(POP_BLOCK) {
             PyFrame_BlockPop(f);
-            DISPATCH();
+            FAST_DISPATCH();
         }
 
         TARGET(POP_FINALLY) {
