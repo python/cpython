@@ -240,7 +240,7 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 # include <ctype.h>
 #endif
 
-#if defined(__APPLE__) || defined(__NetBSD__)
+#if defined(__APPLE__) || defined(__CYGWIN__) || defined(__NetBSD__)
 # include <sys/ioctl.h>
 #endif
 
