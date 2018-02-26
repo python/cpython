@@ -17,6 +17,7 @@ import shutil
 import threading
 import gc
 import textwrap
+from test.test_os import _PathLike
 
 try:
     import ctypes
@@ -302,6 +303,12 @@ class ProcessTestCase(BaseTestCase):
                                     "doesnotexist")
         self._assert_python([doesnotexist, "-c"], executable=sys.executable)
 
+    def test_pathlike_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=_PathLike(sys.executable))
+
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
         #
@@ -317,6 +324,11 @@ class ProcessTestCase(BaseTestCase):
         # Check that the executable argument replaces the default shell
         # when shell=True.
         self._assert_python([], executable=sys.executable, shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_pathlike_executable_replaces_shell(self):
+        self._assert_python([], executable=_PathLike(sys.executable),
+                            shell=True)
 
     # For use in the test_cwd* tests below.
     def _normalize_cwd(self, cwd):
@@ -1477,33 +1489,19 @@ class RunFuncTestCase(BaseTestCase):
 
     def test_run_with_pathlike_path(self):
         # bpo-31961: test run(pathlike_object)
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exit fast
-                return 'dir' if mswindows else 'ls'
-
-        path = Path()
-        if mswindows:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
-        else:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL)
-
+        # the name of a command that can be run without
+        # any argumenets that exit fast
+        path = _PathLike('tree.com' if mswindows else 'ls')
+        res = subprocess.run(path, stdout=subprocess.DEVNULL)
         self.assertEqual(res.returncode, 0)
+        with self.assertRaises(TypeError):
+            subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
 
     def test_run_with_pathlike_path_and_arguments(self):
         # bpo-31961: test run([pathlike_object, 'additional arguments'])
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exits fast
-                return sys.executable
-
-        path = Path()
-
+        path = _PathLike(sys.executable)
         args = [path, '-c', 'import sys; sys.exit(57)']
         res = subprocess.run(args)
-
         self.assertEqual(res.returncode, 57)
 
     def test_capture_output(self):
