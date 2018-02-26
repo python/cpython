@@ -1,0 +1,2 @@
+Simplified and changed opcodes WITH_CLEANUP_START and WITH_CLEANUP_FINISH.
+The trivial "with" statement is now up to 10% faster.
