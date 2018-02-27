@@ -623,13 +623,20 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
             else:
                 setattr(cls, f.name, f.default)
 
+    # We're inheriting from a frozen dataclass, but we're not frozen.
+    if cls.__setattr__ is _frozen_setattr and not frozen:
+        raise TypeError('cannot inherit non-frozen dataclass from a '
+                        'frozen one')
+
+    # We're inheriting from a non-frozen dataclass, but we're frozen.
+    if (hasattr(cls, _MARKER) and cls.__setattr__ is not _frozen_setattr
+        and frozen):
+        raise TypeError('cannot inherit frozen dataclass from a '
+                        'non-frozen one')
+
     # Remember all of the fields on our class (including bases).  This
     #  marks this class as being a dataclass.
     setattr(cls, _MARKER, fields)
-
-    # We also need to check if a parent class is frozen: frozen has to
-    #  be inherited down.
-    is_frozen = frozen or cls.__setattr__ is _frozen_setattr
 
     # Was this class defined with an explicit __hash__?  Note that if
     #  __eq__ is defined in this class, then python will automatically
@@ -654,7 +661,7 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
                 if f._field_type in (_FIELD, _FIELD_INITVAR)]
         _set_new_attribute(cls, '__init__',
                            _init_fn(flds,
-                                    is_frozen,
+                                    frozen,
                                     has_post_init,
                                     # The name to use for the "self" param
                                     #  in __init__.  Use "self" if possible.
@@ -696,7 +703,7 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
                                 f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
 
-    if is_frozen:
+    if frozen:
         for name, fn in [('__setattr__', _frozen_setattr),
                          ('__delattr__', _frozen_delattr)]:
             if _set_new_attribute(cls, name, fn):
