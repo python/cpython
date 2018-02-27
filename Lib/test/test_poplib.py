@@ -153,6 +153,8 @@ class DummyPOP3Handler(asynchat.async_chat):
             if self.tls_active is False:
                 self.push('+OK Begin TLS negotiation')
                 context = ssl.SSLContext()
+                # TODO: fix TLSv1.3 support
+                context.options |= ssl.OP_NO_TLSv1_3
                 context.load_cert_chain(CERTFILE)
                 tls_sock = context.wrap_socket(self.socket,
                                                server_side=True,
@@ -356,6 +358,8 @@ class TestPOP3Class(TestCase):
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # TODO: fix TLSv1.3 support
+        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.load_verify_locations(CAFILE)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertEqual(ctx.check_hostname, True)
@@ -396,6 +400,8 @@ class TestPOP3_SSLClass(TestPOP3Class):
 
     def test_context(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # TODO: fix TLSv1.3 support
+        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
