@@ -194,9 +194,23 @@ def _run_module_as_main(mod_name, alter_argv=True):
 
 def run_module(mod_name, init_globals=None,
                run_name=None, alter_sys=False):
-    """Execute a module's code without importing it
+    """Execute a module's code without importing it.
 
-       Returns the resulting top level namespace dictionary
+       mod_name -- an absolute module name or package name. 
+
+       Optional arguments:
+       init_globals -- dictionary used to pre-populate the module’s 
+       globals dictionary before the code is executed.
+
+       run_name -- sets __name__ if this optional argument is not 
+       None, to mod_name + '.__main__' if the named module is a 
+       package and to the mod_name argument otherwise.
+
+       alter_sys -- if True, sys.argv[0] is updated with the value of 
+       __file__ and sys.modules[__name__] is updated with a temporary 
+       module objectfor the module being executed.
+
+       Returns the resulting top level namespace dictionary.
     """
     mod_name, mod_spec, code = _get_module_details(mod_name)
     if run_name is None:
@@ -237,14 +251,19 @@ def _get_code_from_file(run_name, fname):
     return code, fname
 
 def run_path(path_name, init_globals=None, run_name=None):
-    """Execute code located at the specified filesystem location
+    """Execute code located at the specified filesystem location.
 
-       Returns the resulting top level namespace dictionary
+       path_name -- filesystem location of a Python script, zipfile, 
+       or directory containing a top level __main__.py script.
 
-       The file path may refer directly to a Python script (i.e.
-       one that could be directly executed with execfile) or else
-       it may refer to a zipfile or directory containing a top
-       level __main__.py script.
+       Optional arguments:
+       init_globals -- dictionary used to pre-populate the module’s 
+       globals dictionary before the code is executed.
+
+       run_name -- sets __name__ if this optional argument is not 
+       None and to '<run_path>' otherwise.
+
+       Returns the resulting top level namespace dictionary.
     """
     if run_name is None:
         run_name = "<run_path>"
