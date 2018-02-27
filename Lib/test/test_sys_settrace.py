@@ -556,16 +556,21 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
 class JumpTracer:
     """Defines a trace function that jumps from one place to another."""
 
-    def __init__(self, function, jumpFrom, jumpTo):
-        self.function = function
+    def __init__(self, function, jumpFrom, jumpTo, event='line'):
+        self.code = function.__code__
         self.jumpFrom = jumpFrom
         self.jumpTo = jumpTo
+        self.event = event
         self.done = False
 
     def trace(self, frame, event, arg):
-        if not self.done and frame.f_code == self.function.__code__:
+        # Jumps can also be traced in a nested function (e.g
+        # no_jump_from_call_event()).
+        if (not self.done and (frame.f_code == self.code or
+                (frame.f_back and frame.f_back.f_code == self.code))):
             firstLine = frame.f_code.co_firstlineno
-            if event == 'line' and frame.f_lineno == firstLine + self.jumpFrom:
+            if (event == self.event and
+                    frame.f_lineno == firstLine + self.jumpFrom):
                 # Cope with non-integer self.jumpTo (because of
                 # no_jump_to_non_integers below).
                 try:
@@ -581,6 +586,25 @@ def no_jump_to_non_integers(output):
         output.append(2)
     except ValueError as e:
         output.append('integer' in str(e))
+
+def no_jump_from_call_event(output):
+    def nested():
+        lineno = 1
+    nested()
+
+def no_jump_from_return_event(output):
+    lineno = 1
+    return
+
+def no_jump_from_yield(output):
+    def gen():
+        lineno = 1
+        yield 1
+    next(gen())
+
+def no_jump_from_exception_event(output):
+    lineno = 1
+    1 / 0
 
 # This verifies that you can't set f_lineno via _getframe or similar
 # trickery.
@@ -609,8 +633,9 @@ class JumpTestCase(unittest.TestCase):
                        "Expected: " + repr(expected) + "\n" +
                        "Received: " + repr(received))
 
-    def run_test(self, func, jumpFrom, jumpTo, expected, error=None):
-        tracer = JumpTracer(func, jumpFrom, jumpTo)
+    def run_test(self, func, jumpFrom, jumpTo, expected, error=None,
+                 event='line'):
+        tracer = JumpTracer(func, jumpFrom, jumpTo, event)
         sys.settrace(tracer.trace)
         output = []
         if error is None:
@@ -1075,6 +1100,22 @@ output.append(4)
         exec(code, namespace)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
+
+    def test_no_jump_from_call(self):
+        self.run_test(no_jump_from_call_event, 0, 1, [], event='call',
+                      error=(ValueError, "can't jump from the 'call' trace"
+                             " event of a new frame"))
+
+    def test_no_jump_from_return_exception_events(self):
+        for func, event in ((no_jump_from_return_event, 'return'),
+                            (no_jump_from_exception_event, 'exception')):
+            with self.subTest(event=event):
+                self.run_test(func, 2, 1, [], event=event, error=(ValueError,
+                              "can only jump from a 'line' trace event"))
+
+    def test_no_jump_from_yield(self):
+        self.run_test(no_jump_from_yield, 2, 1, [], event='return',
+                      error=(ValueError, "can't jump from a yield statement"))
 
 
 if __name__ == "__main__":
