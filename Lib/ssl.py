@@ -112,9 +112,11 @@ except ImportError:
     pass
 
 
-from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_TLSv1_3
-from _ssl import _DEFAULT_CIPHERS
-from _ssl import _OPENSSL_API_VERSION
+from _ssl import (
+    HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3
+)
+from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
 
 _IntEnum._convert(
@@ -151,6 +153,16 @@ PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
+
+
+class TLSVersion(_IntEnum):
+    MINIMUM_SUPPORTED = _ssl.PROTO_MINIMUM_SUPPORTED
+    SSLv3 = _ssl.PROTO_SSLv3
+    TLSv1 = _ssl.PROTO_TLSv1
+    TLSv1_1 = _ssl.PROTO_TLSv1_1
+    TLSv1_2 = _ssl.PROTO_TLSv1_2
+    TLSv1_3 = _ssl.PROTO_TLSv1_3
+    MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
 
 
 if sys.platform == "win32":
@@ -466,6 +478,25 @@ class SSLContext(_SSLContext):
             for storename in self._windows_cert_stores:
                 self._load_windows_store_certs(storename, purpose)
         self.set_default_verify_paths()
+
+    if hasattr(_SSLContext, 'minimum_version'):
+        @property
+        def minimum_version(self):
+            return TLSVersion(super().minimum_version)
+
+        @minimum_version.setter
+        def minimum_version(self, value):
+            if value == TLSVersion.SSLv3:
+                self.options &= ~Options.OP_NO_SSLv3
+            super(SSLContext, SSLContext).minimum_version.__set__(self, value)
+
+        @property
+        def maximum_version(self):
+            return TLSVersion(super().maximum_version)
+
+        @maximum_version.setter
+        def maximum_version(self, value):
+            super(SSLContext, SSLContext).maximum_version.__set__(self, value)
 
     @property
     def options(self):
