@@ -339,12 +339,12 @@ functions.
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string or
-   :term:`path-like object`. By default, the program to execute is the first
-   item in *args* if *args* is a sequence. If *args* is a string, the
-   interpretation is platform-dependent and described below.  See the *shell*
-   and *executable* arguments for additional differences from the default
-   behavior.  Unless otherwise stated, it is recommended to pass *args* as a sequence.
+   *args* should be a sequence of program arguments or else a single string.
+   By default, the program to execute is the first item in *args* if *args* is
+   a sequence.  If *args* is a string, the interpretation is
+   platform-dependent and described below.  See the *shell* and *executable*
+   arguments for additional differences from the default behavior.  Unless
+   otherwise stated, it is recommended to pass *args* as a sequence.
 
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
@@ -557,10 +557,6 @@ functions.
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
-
-   .. versionchanged:: 3.7
-      *args*, or the first element of *args* if *args* is a sequence, can now
-      be a :term:`path-like object`.
 
 
 Exceptions
