@@ -1077,6 +1077,69 @@ class ContextTests(unittest.TestCase):
             with self.assertRaises(AttributeError):
                 ctx.hostname_checks_common_name = True
 
+    @unittest.skipUnless(hasattr(ssl.SSLContext, 'minimum_version'),
+                         "required OpenSSL 1.1.0g")
+    def test_min_max_version(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.assertEqual(
+            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
+        )
+        self.assertEqual(
+            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+        )
+
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_1
+        ctx.maximum_version = ssl.TLSVersion.TLSv1_2
+        self.assertEqual(
+            ctx.minimum_version, ssl.TLSVersion.TLSv1_1
+        )
+        self.assertEqual(
+            ctx.maximum_version, ssl.TLSVersion.TLSv1_2
+        )
+
+        ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+        ctx.maximum_version = ssl.TLSVersion.TLSv1
+        self.assertEqual(
+            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
+        )
+        self.assertEqual(
+            ctx.maximum_version, ssl.TLSVersion.TLSv1
+        )
+
+        ctx.maximum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
+        self.assertEqual(
+            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+        )
+
+        ctx.maximum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+        self.assertIn(
+            ctx.maximum_version,
+            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.SSLv3}
+        )
+
+        ctx.minimum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
+        self.assertIn(
+            ctx.minimum_version,
+            {ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.TLSv1_3}
+        )
+
+        with self.assertRaises(ValueError):
+            ctx.minimum_version = 42
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
+
+        self.assertEqual(
+            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
+        )
+        self.assertEqual(
+            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+        )
+        with self.assertRaises(ValueError):
+            ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+        with self.assertRaises(ValueError):
+            ctx.maximum_version = ssl.TLSVersion.TLSv1
+
+
     @unittest.skipUnless(have_verify_flags(),
                          "verify_flags need OpenSSL > 0.9.8")
     def test_verify_flags(self):
@@ -3456,6 +3519,60 @@ class ThreadedTests(unittest.TestCase):
                     'TLS13-AES-128-GCM-SHA256',
                 })
                 self.assertEqual(s.version(), 'TLSv1.3')
+
+    @unittest.skipUnless(hasattr(ssl.SSLContext, 'minimum_version'),
+                         "required OpenSSL 1.1.0g")
+    def test_min_max_version(self):
+        client_context, server_context, hostname = testing_context()
+        # client TLSv1.0 to 1.2
+        client_context.minimum_version = ssl.TLSVersion.TLSv1
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        # server only TLSv1.2
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        server_context.maximum_version = ssl.TLSVersion.TLSv1_2
+
+        with ThreadedEchoServer(context=server_context) as server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                self.assertEqual(s.version(), 'TLSv1.2')
+
+        # client 1.0 to 1.2, server 1.0 to 1.1
+        server_context.minimum_version = ssl.TLSVersion.TLSv1
+        server_context.maximum_version = ssl.TLSVersion.TLSv1_1
+
+        with ThreadedEchoServer(context=server_context) as server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                self.assertEqual(s.version(), 'TLSv1.1')
+
+        # client 1.0, server 1.2 (mismatch)
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        server_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        client_context.minimum_version = ssl.TLSVersion.TLSv1
+        client_context.maximum_version = ssl.TLSVersion.TLSv1
+        with ThreadedEchoServer(context=server_context) as server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                with self.assertRaises(ssl.SSLError) as e:
+                    s.connect((HOST, server.port))
+                self.assertIn("alert", str(e.exception))
+
+
+    @unittest.skipUnless(hasattr(ssl.SSLContext, 'minimum_version'),
+                         "required OpenSSL 1.1.0g")
+    @unittest.skipUnless(ssl.HAS_SSLv3, "requires SSLv3 support")
+    def test_min_max_version_sslv3(self):
+        client_context, server_context, hostname = testing_context()
+        server_context.minimum_version = ssl.TLSVersion.SSLv3
+        client_context.minimum_version = ssl.TLSVersion.SSLv3
+        client_context.maximum_version = ssl.TLSVersion.SSLv3
+        with ThreadedEchoServer(context=server_context) as server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                self.assertEqual(s.version(), 'SSLv3')
 
     @unittest.skipUnless(ssl.HAS_ECDH, "test requires ECDH-enabled OpenSSL")
     def test_default_ecdh_curve(self):
