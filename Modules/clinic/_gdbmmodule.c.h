@@ -234,23 +234,24 @@ PyDoc_STRVAR(dbmopen__doc__,
     {"open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
 
 static PyObject *
-dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode);
+dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
+             int mode);
 
 static PyObject *
 dbmopen(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    const char *name;
+    PyObject *filename;
     const char *flags = "r";
     int mode = 438;
 
-    if (!PyArg_ParseTuple(args, "s|si:open",
-        &name, &flags, &mode)) {
+    if (!PyArg_ParseTuple(args, "U|si:open",
+        &filename, &flags, &mode)) {
         goto exit;
     }
-    return_value = dbmopen_impl(module, name, flags, mode);
+    return_value = dbmopen_impl(module, filename, flags, mode);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ed0f5d4e3d79b80c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=afb99364ac420d10 input=a9049054013a1b77]*/
