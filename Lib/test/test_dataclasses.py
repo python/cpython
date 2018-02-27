@@ -637,29 +637,6 @@ class TestCase(unittest.TestCase):
             y: int
         self.assertNotEqual(Point(1, 3), C(1, 3))
 
-    def test_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            i: int
-
-        c = C(10)
-        self.assertEqual(c.i, 10)
-        with self.assertRaises(FrozenInstanceError):
-            c.i = 5
-        self.assertEqual(c.i, 10)
-
-        # Check that a derived class is still frozen, even if not
-        #  marked so.
-        @dataclass
-        class D(C):
-            pass
-
-        d = D(20)
-        self.assertEqual(d.i, 20)
-        with self.assertRaises(FrozenInstanceError):
-            d.i = 5
-        self.assertEqual(d.i, 20)
-
     def test_not_tuple(self):
         # Test that some of the problems with namedtuple don't happen
         #  here.
@@ -2473,6 +2450,67 @@ class TestHash(unittest.TestCase):
 
                 else:
                     assert False, f'unknown value for expected={expected!r}'
+
+
+class TestFrozen(unittest.TestCase):
+    def test_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            i: int
+
+        c = C(10)
+        self.assertEqual(c.i, 10)
+        with self.assertRaises(FrozenInstanceError):
+            c.i = 5
+        self.assertEqual(c.i, 10)
+
+    def test_inherit(self):
+        @dataclass(frozen=True)
+        class C:
+            i: int
+
+        @dataclass(frozen=True)
+        class D(C):
+            j: int
+
+        d = D(0, 10)
+        with self.assertRaises(FrozenInstanceError):
+            d.i = 5
+        self.assertEqual(d.i, 0)
+
+    def test_inherit_from_nonfrozen_from_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            i: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit non-frozen dataclass from a frozen one'):
+            @dataclass
+            class D(C):
+                pass
+
+    def test_inherit_from_frozen_from_nonfrozen(self):
+        @dataclass
+        class C:
+            i: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit frozen dataclass from a non-frozen one'):
+            @dataclass(frozen=True)
+            class D(C):
+                pass
+
+    def test_inherit_from_normal_class(self):
+        class C:
+            pass
+
+        @dataclass(frozen=True)
+        class D(C):
+            i: int
+
+        d = D(10)
+        with self.assertRaises(FrozenInstanceError):
+            d.i = 5
 
 
 if __name__ == '__main__':
