@@ -263,6 +263,11 @@ class BasicSocketTests(unittest.TestCase):
             ssl.OP_NO_TLSv1_2
         self.assertEqual(ssl.PROTOCOL_TLS, ssl.PROTOCOL_SSLv23)
 
+    def test_private_init(self):
+        with self.assertRaisesRegex(TypeError, "public constructor"):
+            with socket.socket() as s:
+                ssl.SSLSocket(s)
+
     def test_str_for_enums(self):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
@@ -1657,6 +1662,13 @@ class MemoryBIOTests(unittest.TestCase):
         self.assertRaises(TypeError, bio.write, 1)
 
 
+class SSLObjectTests(unittest.TestCase):
+    def test_private_init(self):
+        bio = ssl.MemoryBIO()
+        with self.assertRaisesRegex(TypeError, "public constructor"):
+            ssl.SSLObject(bio, bio)
+
+
 class SimpleBackgroundTests(unittest.TestCase):
     """Tests that connect to a simple server running in the background"""
 
@@ -2734,12 +2746,6 @@ class ThreadedTests(unittest.TestCase):
                     cert = s.getpeercert()
                     self.assertEqual(s.server_hostname, expected_hostname)
                     self.assertTrue(cert, "Can't get peer certificate.")
-
-                with ssl.SSLSocket(socket.socket(),
-                                   server_hostname=server_hostname) as s:
-                    s.connect((HOST, server.port))
-                    s.getpeercert()
-                    self.assertEqual(s.server_hostname, expected_hostname)
 
         # incorrect hostname should raise an exception
         server = ThreadedEchoServer(context=server_context, chatty=True)
@@ -3999,7 +4005,7 @@ def test_main(verbose=False):
 
     tests = [
         ContextTests, BasicSocketTests, SSLErrorTests, MemoryBIOTests,
-        SimpleBackgroundTests, ThreadedTests,
+        SSLObjectTests, SimpleBackgroundTests, ThreadedTests,
     ]
 
     if support.is_resource_enabled('network'):
