@@ -762,6 +762,11 @@ Constants
 
    .. versionadded:: 3.2
 
+   .. deprecated:: 3.7
+      The option is deprecated since OpenSSL 1.1.0, use the new
+      :attr:`SSLContext.minimum_version` and
+      :attr:`SSLContext.maximum_version` instead.
+
 .. data:: OP_NO_TLSv1_1
 
    Prevents a TLSv1.1 connection. This option is only applicable in conjunction
@@ -770,6 +775,9 @@ Constants
 
    .. versionadded:: 3.4
 
+   .. deprecated:: 3.7
+      The option is deprecated since OpenSSL 1.1.0.
+
 .. data:: OP_NO_TLSv1_2
 
    Prevents a TLSv1.2 connection. This option is only applicable in conjunction
@@ -777,6 +785,9 @@ Constants
    the protocol version. Available only with openssl version 1.0.1+.
 
    .. versionadded:: 3.4
+
+   .. deprecated:: 3.7
+      The option is deprecated since OpenSSL 1.1.0.
 
 .. data:: OP_NO_TLSv1_3
 
@@ -787,6 +798,10 @@ Constants
    flag defaults to *0*.
 
    .. versionadded:: 3.7
+
+   .. deprecated:: 3.7
+      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
+      3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
 
 .. data:: OP_CIPHER_SERVER_PREFERENCE
 
@@ -856,7 +871,7 @@ Constants
 
 .. data:: HAS_ECDH
 
-   Whether the OpenSSL library has built-in support for Elliptic Curve-based
+   Whether the OpenSSL library has built-in support for the Elliptic Curve-based
    Diffie-Hellman key exchange.  This should be true unless the feature was
    explicitly disabled by the distributor.
 
@@ -871,13 +886,43 @@ Constants
 
 .. data:: HAS_NPN
 
-   Whether the OpenSSL library has built-in support for *Next Protocol
+   Whether the OpenSSL library has built-in support for the *Next Protocol
    Negotiation* as described in the `Application Layer Protocol
    Negotiation <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation>`_.
    When true, you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
    which protocols you want to support.
 
    .. versionadded:: 3.3
+
+.. data:: HAS_SSLv2
+
+   Whether the OpenSSL library has built-in support for the SSL 2.0 protocol.
+
+   .. versionadded:: 3.7
+
+.. data:: HAS_SSLv3
+
+   Whether the OpenSSL library has built-in support for the SSL 3.0 protocol.
+
+   .. versionadded:: 3.7
+
+.. data:: HAS_TLSv1
+
+   Whether the OpenSSL library has built-in support for the TLS 1.0 protocol.
+
+   .. versionadded:: 3.7
+
+.. data:: HAS_TLSv1_1
+
+   Whether the OpenSSL library has built-in support for the TLS 1.1 protocol.
+
+   .. versionadded:: 3.7
+
+.. data:: HAS_TLSv1_2
+
+   Whether the OpenSSL library has built-in support for the TLS 1.2 protocol.
+
+   .. versionadded:: 3.7
 
 .. data:: HAS_TLSv1_3
 
@@ -965,6 +1010,27 @@ Constants
 
    .. versionadded:: 3.6
 
+.. class:: TLSVersion
+
+   :class:`enum.IntEnum` collection of SSL and TLS versions for
+   :attr:`SSLContext.maximum_version` and :attr:`SSLContext.minimum_version`.
+
+   .. versionadded:: 3.7
+
+.. attribute:: TLSVersion.MINIMUM_SUPPORTED
+.. attribute:: TLSVersion.MAXIMUM_SUPPORTED
+
+   The minimum or maximum supported SSL or TLS version. These are magic
+   constants. Their values don't reflect the lowest and highest available
+   TLS/SSL versions.
+
+.. attribute:: TLSVersion.SSLv3
+.. attribute:: TLSVersion.TLSv1
+.. attribute:: TLSVersion.TLSv1_1
+.. attribute:: TLSVersion.TLSv1_2
+.. attribute:: TLSVersion.TLSv1_3
+
+   SSL 3.0 to TLS 1.3.
 
 SSL Sockets
 -----------
@@ -1787,6 +1853,37 @@ to speed up repeated connections from the same clients.
    .. note::
 
      This features requires OpenSSL 0.9.8f or newer.
+
+.. attribute:: SSLContext.maximum_version
+
+   A :class:`TLSVersion` enum member representing the highest supported
+   TLS version. The value defaults to :attr:`TLSVersion.MAXIMUM_SUPPORTED`.
+   The attribute is read-only for protocols other than :attr:`PROTOCOL_TLS`,
+   :attr:`PROTOCOL_TLS_CLIENT`, and :attr:`PROTOCOL_TLS_SERVER`.
+
+   The attributes :attr:`~SSLContext.maximum_version`,
+   :attr:`~SSLContext.minimum_version` and
+   :attr:`SSLContext.options` all affect the supported SSL
+   and TLS versions of the context. The implementation does not prevent
+   invalid combination. For example a context with
+   :attr:`OP_NO_TLSv1_2` in :attr:`~SSLContext.options` and
+   :attr:`~SSLContext.maximum_version` set to :attr:`TLSVersion.TLSv1_2`
+   will not be able to establish a TLS 1.2 connection.
+
+   .. note::
+
+     This attribute is not available unless the ssl module is compiled
+     with OpenSSL 1.1.0g or newer.
+
+.. attribute:: SSLContext.minimum_version
+
+   Like :attr:`SSLContext.maximum_version` except it is the lowest
+   supported version or :attr:`TLSVersion.MINIMUM_SUPPORTED`.
+
+   .. note::
+
+     This attribute is not available unless the ssl module is compiled
+     with OpenSSL 1.1.0g or newer.
 
 .. attribute:: SSLContext.options
 
