@@ -1491,7 +1491,11 @@ class RunFuncTestCase(BaseTestCase):
         # bpo-31961: test run(pathlike_object)
         # the name of a command that can be run without
         # any argumenets that exit fast
-        path = _PathLike('tree.com' if mswindows else 'ls')
+        prog = 'tree.com' if mswindows else 'ls'
+        path = shutil.which(prog)
+        if path is None:
+            self.skipTest(f'{prog} required for this test')
+        path = _PathLike(path)
         res = subprocess.run(path, stdout=subprocess.DEVNULL)
         self.assertEqual(res.returncode, 0)
         with self.assertRaises(TypeError):

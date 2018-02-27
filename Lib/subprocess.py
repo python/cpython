@@ -1099,7 +1099,7 @@ class Popen(object):
             if isinstance(args, str):
                 pass
             elif not shell and isinstance(args, os.PathLike):
-                args = os.fsdecode(args)
+                args = list2cmdline([os.fsdecode(args)])
             else:
                 args = list(args)
                 args[0] = os.fsdecode(args[0])
@@ -1375,10 +1375,9 @@ class Popen(object):
                            restore_signals, start_new_session):
             """Execute program (POSIX version)"""
 
-            if isinstance(args, (str, bytes)):
+            if (isinstance(args, (str, bytes)) or
+                not shell and isinstance(args, os.PathLike)):
                 args = [args]
-            elif not shell and isinstance(args, os.PathLike):
-                args = [os.fsencode(args)]
             else:
                 args = list(args)
 
