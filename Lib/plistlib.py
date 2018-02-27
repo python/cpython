@@ -649,8 +649,9 @@ class _BinaryPlistParser:
             s = self._get_size(tokenL)
             result = self._fp.read(s * 2).decode('utf-16be')
 
-        # tokenH == 0x80 is documented as 'UID' and appears to be used for
-        # keyed-archiving, not in plists.
+        elif tokenH == 0x80:  # UID
+            # used by Key-Archiver plist files
+            result = int.from_bytes(self._fp.read(1 + tokenL), 'big')
 
         elif tokenH == 0xA0:  # array
             s = self._get_size(tokenL)
