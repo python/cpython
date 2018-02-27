@@ -320,6 +320,53 @@ enum py_ssl_version {
     PY_SSL_VERSION_TLS_SERVER,
 };
 
+enum py_proto_version {
+    PY_PROTO_MINIMUM_SUPPORTED = -2,
+    PY_PROTO_SSLv3 = SSL3_VERSION,
+    PY_PROTO_TLSv1 = TLS1_VERSION,
+    PY_PROTO_TLSv1_1 = TLS1_1_VERSION,
+    PY_PROTO_TLSv1_2 = TLS1_2_VERSION,
+#ifdef TLS1_3_VERSION
+    PY_PROTO_TLSv1_3 = TLS1_3_VERSION,
+#else
+    PY_PROTO_TLSv1_3 = 0x304,
+#endif
+    PY_PROTO_MAXIMUM_SUPPORTED = -1,
+
+/* OpenSSL has no dedicated API to set the minimum version to the maximum
+ * available version, and the other way around. We have to figure out the
+ * minimum and maximum available version on our own and hope for the best.
+ */
+#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_SSLv3,
+#elif defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1,
+#elif defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_1,
+#elif defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_2,
+#elif defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_3,
+#else
+    #error "PY_PROTO_MINIMUM_AVAILABLE not found"
+#endif
+
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_3,
+#elif defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_2,
+#elif defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_1,
+#elif defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1,
+#elif defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_SSLv3,
+#else
+    #error "PY_PROTO_MAXIMUM_AVAILABLE not found"
+#endif
+};
+
+
 /* serves as a flag to see whether we've initialized the SSL thread support. */
 /* 0 means no, greater than 0 means yes */
 
@@ -3323,6 +3370,106 @@ set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+/* Getter and setter for protocol version */
+#if defined(SSL_CTRL_GET_MAX_PROTO_VERSION)
+
+
+static int
+set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
+{
+    long v;
+    int result;
+
+    if (!PyArg_Parse(arg, "l", &v))
+        return -1;
+    if (v > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "Option is too long");
+        return -1;
+    }
+
+    switch(self->protocol) {
+    case PY_SSL_VERSION_TLS_CLIENT:  /* fall through */
+    case PY_SSL_VERSION_TLS_SERVER:  /* fall through */
+    case PY_SSL_VERSION_TLS:
+        break;
+    default:
+        PyErr_SetString(
+            PyExc_ValueError,
+            "The context's protocol doesn't support modification of "
+            "highest and lowest version."
+        );
+        return -1;
+    }
+
+    if (what == 0) {
+        switch(v) {
+        case PY_PROTO_MINIMUM_SUPPORTED:
+            v = 0;
+            break;
+        case PY_PROTO_MAXIMUM_SUPPORTED:
+            /* Emulate max for set_min_proto_version */
+            v = PY_PROTO_MAXIMUM_AVAILABLE;
+            break;
+        default:
+            break;
+        }
+        result = SSL_CTX_set_min_proto_version(self->ctx, v);
+    }
+    else {
+        switch(v) {
+        case PY_PROTO_MAXIMUM_SUPPORTED:
+            v = 0;
+            break;
+        case PY_PROTO_MINIMUM_SUPPORTED:
+            /* Emulate max for set_min_proto_version */
+            v = PY_PROTO_MINIMUM_AVAILABLE;
+            break;
+        default:
+            break;
+        }
+        result = SSL_CTX_set_max_proto_version(self->ctx, v);
+    }
+    if (result == 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "Unsupported protocol version 0x%x", v);
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+get_minimum_version(PySSLContext *self, void *c)
+{
+    int v = SSL_CTX_ctrl(self->ctx, SSL_CTRL_GET_MIN_PROTO_VERSION, 0, NULL);
+    if (v == 0) {
+        v = PY_PROTO_MINIMUM_SUPPORTED;
+    }
+    return PyLong_FromLong(v);
+}
+
+static int
+set_minimum_version(PySSLContext *self, PyObject *arg, void *c)
+{
+    return set_min_max_proto_version(self, arg, 0);
+}
+
+static PyObject *
+get_maximum_version(PySSLContext *self, void *c)
+{
+    int v = SSL_CTX_ctrl(self->ctx, SSL_CTRL_GET_MAX_PROTO_VERSION, 0, NULL);
+    if (v == 0) {
+        v = PY_PROTO_MAXIMUM_SUPPORTED;
+    }
+    return PyLong_FromLong(v);
+}
+
+static int
+set_maximum_version(PySSLContext *self, PyObject *arg, void *c)
+{
+    return set_min_max_proto_version(self, arg, 1);
+}
+#endif /* SSL_CTRL_GET_MAX_PROTO_VERSION */
+
 static PyObject *
 get_options(PySSLContext *self, void *c)
 {
@@ -4289,8 +4436,14 @@ static PyGetSetDef context_getsetlist[] = {
                        (setter) set_check_hostname, NULL},
     {"_host_flags", (getter) get_host_flags,
                     (setter) set_host_flags, NULL},
+#if SSL_CTRL_GET_MAX_PROTO_VERSION
+    {"minimum_version", (getter) get_minimum_version,
+                        (setter) set_minimum_version, NULL},
+    {"maximum_version", (getter) get_maximum_version,
+                        (setter) set_maximum_version, NULL},
+#endif
     {"sni_callback", (getter) get_sni_callback,
-                       (setter) set_sni_callback, PySSLContext_sni_callback_doc},
+                     (setter) set_sni_callback, PySSLContext_sni_callback_doc},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
     {"protocol", (getter) get_protocol,
@@ -5711,45 +5864,82 @@ PyInit__ssl(void)
                             X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
 #endif
 
-#if HAVE_SNI
-    r = Py_True;
-#else
-    r = Py_False;
-#endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_SNI", r);
+    /* protocol versions */
+    PyModule_AddIntConstant(m, "PROTO_MINIMUM_SUPPORTED",
+                            PY_PROTO_MINIMUM_SUPPORTED);
+    PyModule_AddIntConstant(m, "PROTO_MAXIMUM_SUPPORTED",
+                            PY_PROTO_MAXIMUM_SUPPORTED);
+    PyModule_AddIntConstant(m, "PROTO_SSLv3", PY_PROTO_SSLv3);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1", PY_PROTO_TLSv1);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1_1", PY_PROTO_TLSv1_1);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1_2", PY_PROTO_TLSv1_2);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1_3", PY_PROTO_TLSv1_3);
 
-#ifdef OPENSSL_NO_ECDH
-    r = Py_False;
+#define addbool(m, v, b) \
+    Py_INCREF((b) ? Py_True : Py_False); \
+    PyModule_AddObject((m), (v), (b) ? Py_True : Py_False);
+
+#if HAVE_SNI
+    addbool(m, "HAS_SNI", 1);
 #else
-    r = Py_True;
+    addbool(m, "HAS_SNI", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_ECDH", r);
+
+    addbool(m, "HAS_TLS_UNIQUE", 1);
+
+#ifndef OPENSSL_NO_ECDH
+    addbool(m, "HAS_ECDH", 1);
+#else
+    addbool(m, "HAS_ECDH", 0);
+#endif
 
 #if HAVE_NPN
-    r = Py_True;
+    addbool(m, "HAS_NPN", 1);
 #else
-    r = Py_False;
+    addbool(m, "HAS_NPN", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_NPN", r);
 
 #if HAVE_ALPN
-    r = Py_True;
+    addbool(m, "HAS_ALPN", 1);
 #else
-    r = Py_False;
+    addbool(m, "HAS_ALPN", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_ALPN", r);
+
+#if defined(SSL2_VERSION) && !defined(OPENSSL_NO_SSL2)
+    addbool(m, "HAS_SSLv2", 1);
+#else
+    addbool(m, "HAS_SSLv2", 0);
+#endif
+
+#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    addbool(m, "HAS_SSLv3", 1);
+#else
+    addbool(m, "HAS_SSLv3", 0);
+#endif
+
+#if defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    addbool(m, "HAS_TLSv1", 1);
+#else
+    addbool(m, "HAS_TLSv1", 0);
+#endif
+
+#if defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    addbool(m, "HAS_TLSv1_1", 1);
+#else
+    addbool(m, "HAS_TLSv1_1", 0);
+#endif
+
+#if defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    addbool(m, "HAS_TLSv1_2", 1);
+#else
+    addbool(m, "HAS_TLSv1_2", 0);
+#endif
 
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
-    r = Py_True;
+    addbool(m, "HAS_TLSv1_3", 1);
 #else
-    r = Py_False;
+    addbool(m, "HAS_TLSv1_3", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_TLSv1_3", r);
 
     /* Mappings for error codes */
     err_codes_to_names = PyDict_New();
