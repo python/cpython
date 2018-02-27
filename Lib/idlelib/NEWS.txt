@@ -3,6 +3,22 @@ Released on 2017-03-26?
 ======================================
 
 
+bpo-32916: Change 'str' to 'code' in idlelib.pyparse and users.
+
+bpo-32905: Remove unused code in pyparse module.
+
+bpo-32874: IDLE - add pyparse tests with 97% coverage.
+
+bpo-32837: IDLE - require encoding argument for textview.view_file.
+Using the system and place-dependent default encoding for open()
+is a bad idea for IDLE's system and location-independent files.
+
+bpo-32826: Add "encoding=utf-8" to open() in IDLE's test_help_about.
+GUI test test_file_buttons() only looks at initial ascii-only lines,
+but failed on systems where open() defaults to 'ascii' because
+readline() internally reads and decodes far enough ahead to encounter
+a non-ascii character in CREDITS.txt.
+
 bpo-32765: Update configdialog General tab create page docstring.
 Add new widgets to the widget list.
 
