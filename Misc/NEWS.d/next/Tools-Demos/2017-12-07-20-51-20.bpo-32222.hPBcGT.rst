@@ -1,3 +1,0 @@
-Fix pygettext not extracting docstrings for functions with type annotated
-arguments.
-Patch by Toby Harradine.

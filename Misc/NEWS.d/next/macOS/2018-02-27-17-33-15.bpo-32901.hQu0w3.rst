@@ -1,1 +1,0 @@
-Update macOS 10.9+ installer to Tcl/Tk 8.6.8.
