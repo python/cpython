@@ -1,0 +1,1 @@
+Make patchcheck.py work for out-of-tree builds.
