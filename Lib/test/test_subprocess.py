@@ -1475,37 +1475,6 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
-    def test_run_with_pathlike_path(self):
-        # bpo-31961: test run(pathlike_object)
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exit fast
-                return 'dir' if mswindows else 'ls'
-
-        path = Path()
-        if mswindows:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
-        else:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL)
-
-        self.assertEqual(res.returncode, 0)
-
-    def test_run_with_pathlike_path_and_arguments(self):
-        # bpo-31961: test run([pathlike_object, 'additional arguments'])
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exits fast
-                return sys.executable
-
-        path = Path()
-
-        args = [path, '-c', 'import sys; sys.exit(57)']
-        res = subprocess.run(args)
-
-        self.assertEqual(res.returncode, 57)
-
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "

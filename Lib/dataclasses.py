@@ -20,11 +20,11 @@ __all__ = ['dataclass',
 
 # Conditions for adding methods.  The boxes indicate what action the
 #  dataclass decorator takes.  For all of these tables, when I talk
-#  about init=, repr=, eq=, order=, hash=, or frozen=, I'm referring
-#  to the arguments to the @dataclass decorator.  When checking if a
-#  dunder method already exists, I mean check for an entry in the
-#  class's __dict__.  I never check to see if an attribute is defined
-#  in a base class.
+#  about init=, repr=, eq=, order=, unsafe_hash=, or frozen=, I'm
+#  referring to the arguments to the @dataclass decorator.  When
+#  checking if a dunder method already exists, I mean check for an
+#  entry in the class's __dict__.  I never check to see if an
+#  attribute is defined in a base class.
 
 # Key:
 # +=========+=========================================+
@@ -33,11 +33,6 @@ __all__ = ['dataclass',
 # | <blank> | No action: no method is added.          |
 # +---------+-----------------------------------------+
 # | add     | Generated method is added.              |
-# +---------+-----------------------------------------+
-# | add*    | Generated method is added only if the   |
-# |         |  existing attribute is None and if the  |
-# |         |  user supplied a __eq__ method in the   |
-# |         |  class definition.                      |
 # +---------+-----------------------------------------+
 # | raise   | TypeError is raised.                    |
 # +---------+-----------------------------------------+
@@ -115,43 +110,36 @@ __all__ = ['dataclass',
 
 # __hash__
 
-#      +------------------- hash= parameter
-#      |       +----------- eq= parameter
-#      |       |       +--- frozen= parameter
-#      |       |       |
-#      v       v       v    |        |        |
-#                           |   no   |  yes   |  <--- class has __hash__ in __dict__?
-# +=========+=======+=======+========+========+
-# | 1 None  | False | False |        |        | No __eq__, use the base class __hash__
-# +---------+-------+-------+--------+--------+
-# | 2 None  | False | True  |        |        | No __eq__, use the base class __hash__
-# +---------+-------+-------+--------+--------+
-# | 3 None  | True  | False | None   |        | <-- the default, not hashable
-# +---------+-------+-------+--------+--------+
-# | 4 None  | True  | True  | add    | add*   | Frozen, so hashable
-# +---------+-------+-------+--------+--------+
-# | 5 False | False | False |        |        |
-# +---------+-------+-------+--------+--------+
-# | 6 False | False | True  |        |        |
-# +---------+-------+-------+--------+--------+
-# | 7 False | True  | False |        |        |
-# +---------+-------+-------+--------+--------+
-# | 8 False | True  | True  |        |        |
-# +---------+-------+-------+--------+--------+
-# | 9 True  | False | False | add    | add*   | Has no __eq__, but hashable
-# +---------+-------+-------+--------+--------+
-# |10 True  | False | True  | add    | add*   | Has no __eq__, but hashable
-# +---------+-------+-------+--------+--------+
-# |11 True  | True  | False | add    | add*   | Not frozen, but hashable
-# +---------+-------+-------+--------+--------+
-# |12 True  | True  | True  | add    | add*   | Frozen, so hashable
-# +=========+=======+=======+========+========+
+#    +------------------- unsafe_hash= parameter
+#    |       +----------- eq= parameter
+#    |       |       +--- frozen= parameter
+#    |       |       |
+#    v       v       v    |        |        |
+#                         |   no   |  yes   |  <--- class has explicitly defined __hash__
+# +=======+=======+=======+========+========+
+# | False | False | False |        |        | No __eq__, use the base class __hash__
+# +-------+-------+-------+--------+--------+
+# | False | False | True  |        |        | No __eq__, use the base class __hash__
+# +-------+-------+-------+--------+--------+
+# | False | True  | False | None   |        | <-- the default, not hashable
+# +-------+-------+-------+--------+--------+
+# | False | True  | True  | add    |        | Frozen, so hashable, allows override
+# +-------+-------+-------+--------+--------+
+# | True  | False | False | add    | raise  | Has no __eq__, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | False | True  | add    | raise  | Has no __eq__, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | True  | False | add    | raise  | Not frozen, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | True  | True  | add    | raise  | Frozen, so hashable
+# +=======+=======+=======+========+========+
 # For boxes that are blank, __hash__ is untouched and therefore
 #  inherited from the base class.  If the base is object, then
 #  id-based hashing is used.
 # Note that a class may have already __hash__=None if it specified an
 #  __eq__ method in the class body (not one that was created by
 #  @dataclass).
+# See _hash_action (below) for a coded version of this table.
 
 
 # Raised when an attempt is made to modify a frozen class.
@@ -557,7 +545,45 @@ def _set_new_attribute(cls, name, value):
     return False
 
 
-def _process_class(cls, repr, eq, order, hash, init, frozen):
+# Decide if/how we're going to create a hash function.  Key is
+#  (unsafe_hash, eq, frozen, does-hash-exist).  Value is the action to
+#  take.
+# Actions:
+#  '':          Do nothing.
+#  'none':      Set __hash__ to None.
+#  'add':       Always add a generated __hash__function.
+#  'exception': Raise an exception.
+#
+#                +-------------------------------------- unsafe_hash?
+#                |      +------------------------------- eq?
+#                |      |      +------------------------ frozen?
+#                |      |      |      +----------------  has-explicit-hash?
+#                |      |      |      |
+#                |      |      |      |        +-------  action
+#                |      |      |      |        |
+#                v      v      v      v        v
+_hash_action = {(False, False, False, False): (''),
+                (False, False, False, True ): (''),
+                (False, False, True,  False): (''),
+                (False, False, True,  True ): (''),
+                (False, True,  False, False): ('none'),
+                (False, True,  False, True ): (''),
+                (False, True,  True,  False): ('add'),
+                (False, True,  True,  True ): (''),
+                (True,  False, False, False): ('add'),
+                (True,  False, False, True ): ('exception'),
+                (True,  False, True,  False): ('add'),
+                (True,  False, True,  True ): ('exception'),
+                (True,  True,  False, False): ('add'),
+                (True,  True,  False, True ): ('exception'),
+                (True,  True,  True,  False): ('add'),
+                (True,  True,  True,  True ): ('exception'),
+                }
+# See https://bugs.python.org/issue32929#msg312829 for an if-statement
+#  version of this table.
+
+
+def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
     # Now that dicts retain insertion order, there's no reason to use
     #  an ordered dict.  I am leveraging that ordering here, because
     #  derived class fields overwrite base class fields, but the order
@@ -597,16 +623,29 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
             else:
                 setattr(cls, f.name, f.default)
 
+    # We're inheriting from a frozen dataclass, but we're not frozen.
+    if cls.__setattr__ is _frozen_setattr and not frozen:
+        raise TypeError('cannot inherit non-frozen dataclass from a '
+                        'frozen one')
+
+    # We're inheriting from a non-frozen dataclass, but we're frozen.
+    if (hasattr(cls, _MARKER) and cls.__setattr__ is not _frozen_setattr
+        and frozen):
+        raise TypeError('cannot inherit frozen dataclass from a '
+                        'non-frozen one')
+
     # Remember all of the fields on our class (including bases).  This
     #  marks this class as being a dataclass.
     setattr(cls, _MARKER, fields)
 
-    # We also need to check if a parent class is frozen: frozen has to
-    #  be inherited down.
-    is_frozen = frozen or cls.__setattr__ is _frozen_setattr
-
-    # Was this class defined with an __eq__?  Used in __hash__ logic.
-    auto_hash_test= '__eq__' in cls.__dict__ and getattr(cls.__dict__, '__hash__', MISSING) is None
+    # Was this class defined with an explicit __hash__?  Note that if
+    #  __eq__ is defined in this class, then python will automatically
+    #  set __hash__ to None.  This is a heuristic, as it's possible
+    #  that such a __hash__ == None was not auto-generated, but it
+    #  close enough.
+    class_hash = cls.__dict__.get('__hash__', MISSING)
+    has_explicit_hash = not (class_hash is MISSING or
+                             (class_hash is None and '__eq__' in cls.__dict__))
 
     # If we're generating ordering methods, we must be generating
     #  the eq methods.
@@ -622,7 +661,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                 if f._field_type in (_FIELD, _FIELD_INITVAR)]
         _set_new_attribute(cls, '__init__',
                            _init_fn(flds,
-                                    is_frozen,
+                                    frozen,
                                     has_post_init,
                                     # The name to use for the "self" param
                                     #  in __init__.  Use "self" if possible.
@@ -661,48 +700,38 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
             if _set_new_attribute(cls, name,
                                   _cmp_fn(name, op, self_tuple, other_tuple)):
                 raise TypeError(f'Cannot overwrite attribute {name} '
-                                f'in {cls.__name__}. Consider using '
+                                f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
 
-    if is_frozen:
+    if frozen:
         for name, fn in [('__setattr__', _frozen_setattr),
                          ('__delattr__', _frozen_delattr)]:
             if _set_new_attribute(cls, name, fn):
                 raise TypeError(f'Cannot overwrite attribute {name} '
-                                f'in {cls.__name__}')
+                                f'in class {cls.__name__}')
 
     # Decide if/how we're going to create a hash function.
-    # TODO: Move this table to module scope, so it's not recreated
-    #  all the time.
-    generate_hash = {(None,  False, False): ('',     ''),
-                     (None,  False, True):  ('',     ''),
-                     (None,  True,  False): ('none', ''),
-                     (None,  True,  True):  ('fn',   'fn-x'),
-                     (False, False, False): ('',     ''),
-                     (False, False, True):  ('',     ''),
-                     (False, True,  False): ('',     ''),
-                     (False, True,  True):  ('',     ''),
-                     (True,  False, False): ('fn',   'fn-x'),
-                     (True,  False, True):  ('fn',   'fn-x'),
-                     (True,  True,  False): ('fn',   'fn-x'),
-                     (True,  True,  True):  ('fn',   'fn-x'),
-                     }[None if hash is None else bool(hash),   # Force bool() if not None.
-                       bool(eq),
-                       bool(frozen)]['__hash__' in cls.__dict__]
+    hash_action = _hash_action[bool(unsafe_hash),
+                               bool(eq),
+                               bool(frozen),
+                               has_explicit_hash]
+
     # No need to call _set_new_attribute here, since we already know if
     #  we're overwriting a __hash__ or not.
-    if generate_hash == '':
+    if hash_action == '':
         # Do nothing.
         pass
-    elif generate_hash == 'none':
+    elif hash_action == 'none':
         cls.__hash__ = None
-    elif generate_hash in ('fn', 'fn-x'):
-        if generate_hash == 'fn' or auto_hash_test:
-            flds = [f for f in field_list
-                    if (f.compare if f.hash is None else f.hash)]
-            cls.__hash__ = _hash_fn(flds)
+    elif hash_action == 'add':
+        flds = [f for f in field_list if (f.compare if f.hash is None else f.hash)]
+        cls.__hash__ = _hash_fn(flds)
+    elif hash_action == 'exception':
+        # Raise an exception.
+        raise TypeError(f'Cannot overwrite attribute __hash__ '
+                        f'in class {cls.__name__}')
     else:
-        assert False, f"can't get here: {generate_hash}"
+        assert False, f"can't get here: {hash_action}"
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
@@ -716,7 +745,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 #  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
-              hash=None, frozen=False):
+              unsafe_hash=None, frozen=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -724,13 +753,13 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
 
     If init is true, an __init__() method is added to the class. If
     repr is true, a __repr__() method is added. If order is true, rich
-    comparison dunder methods are added. If hash is true, a __hash__()
-    method function is added. If frozen is true, fields may not be
-    assigned to after instance creation.
+    comparison dunder methods are added. If unsafe_hash is true, a
+    __hash__() method function is added. If frozen is true, fields may
+    not be assigned to after instance creation.
     """
 
     def wrap(cls):
-        return _process_class(cls, repr, eq, order, hash, init, frozen)
+        return _process_class(cls, repr, eq, order, unsafe_hash, init, frozen)
 
     # See if we're being called as @dataclass or @dataclass().
     if _cls is None:
@@ -793,6 +822,7 @@ def asdict(obj, *, dict_factory=dict):
         raise TypeError("asdict() should be called on dataclass instances")
     return _asdict_inner(obj, dict_factory)
 
+
 def _asdict_inner(obj, dict_factory):
     if _is_dataclass_instance(obj):
         result = []
@@ -832,6 +862,7 @@ def astuple(obj, *, tuple_factory=tuple):
         raise TypeError("astuple() should be called on dataclass instances")
     return _astuple_inner(obj, tuple_factory)
 
+
 def _astuple_inner(obj, tuple_factory):
     if _is_dataclass_instance(obj):
         result = []
@@ -849,7 +880,8 @@ def _astuple_inner(obj, tuple_factory):
 
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
-                   repr=True, eq=True, order=False, hash=None, frozen=False):
+                   repr=True, eq=True, order=False, unsafe_hash=None,
+                   frozen=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -869,7 +901,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     For the bases and namespace parameters, see the builtin type() function.
 
-    The parameters init, repr, eq, order, hash, and frozen are passed to
+    The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to
     dataclass().
     """
 
@@ -894,7 +926,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     namespace['__annotations__'] = anns
     cls = type(cls_name, bases, namespace)
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
-                     hash=hash, frozen=frozen)
+                     unsafe_hash=unsafe_hash, frozen=frozen)
+
 
 def replace(obj, **changes):
     """Return a new object replacing specified fields with new values.
