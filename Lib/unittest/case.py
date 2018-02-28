@@ -10,6 +10,8 @@ import warnings
 import collections
 import contextlib
 import traceback
+import asyncio
+import inspect
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -602,7 +604,10 @@ class TestCase(object):
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    if inspect.iscoroutinefunction(testMethod):
+                        asyncio.get_event_loop().run_until_complete(testMethod())
+                    else:
+                        testMethod()
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
                     self.tearDown()
