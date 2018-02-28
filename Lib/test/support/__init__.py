@@ -2842,14 +2842,14 @@ def with_pymalloc():
     return _testcapi.WITH_PYMALLOC
 
 
-class SimplePath:
+class FakePath:
     """Simple implementing of the path protocol.
     """
     def __init__(self, path):
         self.path = path
 
     def __repr__(self):
-        return f'<SimplePath {self.path!r}>'
+        return f'<FakePath {self.path!r}>'
 
     def __fspath__(self):
         if (isinstance(self.path, BaseException) or

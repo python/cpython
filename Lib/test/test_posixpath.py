@@ -4,7 +4,7 @@ import unittest
 import warnings
 from posixpath import realpath, abspath, dirname, basename
 from test import support, test_genericpath
-from test.support import SimplePath
+from test.support import FakePath
 
 try:
     import posix
@@ -603,7 +603,7 @@ class PathLikeTests(unittest.TestCase):
 
     def setUp(self):
         self.file_name = support.TESTFN.lower()
-        self.file_path = SimplePath(support.TESTFN)
+        self.file_path = FakePath(support.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         with open(self.file_name, 'xb', 0) as file:
             file.write(b"test_posixpath.PathLikeTests")
@@ -618,7 +618,7 @@ class PathLikeTests(unittest.TestCase):
         self.assertPathEqual(self.path.isabs)
 
     def test_path_join(self):
-        self.assertEqual(self.path.join('a', SimplePath('b'), 'c'),
+        self.assertEqual(self.path.join('a', FakePath('b'), 'c'),
                          self.path.join('a', 'b', 'c'))
 
     def test_path_split(self):

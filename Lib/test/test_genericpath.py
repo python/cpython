@@ -9,7 +9,7 @@ import unittest
 import warnings
 from test import support
 from test.support.script_helper import assert_python_ok
-from test.support import SimplePath
+from test.support import FakePath
 
 
 def create_file(filename, data=b'foo'):
@@ -496,7 +496,7 @@ class PathLikeTests(unittest.TestCase):
 
     def setUp(self):
         self.file_name = support.TESTFN.lower()
-        self.file_path = SimplePath(support.TESTFN)
+        self.file_path = FakePath(support.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         create_file(self.file_name, b"test_genericpath.PathLikeTests")
 

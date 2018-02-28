@@ -6,7 +6,7 @@ import _ast
 import tempfile
 import types
 from test import support
-from test.support import script_helper, SimplePath
+from test.support import script_helper, FakePath
 
 class TestSpecifics(unittest.TestCase):
 
@@ -663,7 +663,7 @@ if 1:
 
     def test_path_like_objects(self):
         # An implicit test for PyUnicode_FSDecoder().
-        compile("42", SimplePath("test_compile_pathlike"), "single")
+        compile("42", FakePath("test_compile_pathlike"), "single")
 
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of

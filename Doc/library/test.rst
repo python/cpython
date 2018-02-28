@@ -1293,7 +1293,7 @@ The :mod:`test.support` module defines the following classes:
    Class for logging support.
 
 
-.. class:: SimplePath(path)
+.. class:: FakePath(path)
 
    Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
