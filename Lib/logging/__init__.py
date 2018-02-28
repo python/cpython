@@ -1647,7 +1647,7 @@ class LoggerAdapter(object):
         adapter = LoggerAdapter(someLogger, dict(p1=v1, p2="v2"))
         """
         self.logger = logger
-        self.extra = extra
+        self.extra = extra or {}
 
     def process(self, msg, kwargs):
         """
@@ -1659,7 +1659,7 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        kwargs["extra"] = self.extra
+        kwargs["extra"] = { **self.extra, **(kwargs.get("extra", {})) }
         return msg, kwargs
 
     #

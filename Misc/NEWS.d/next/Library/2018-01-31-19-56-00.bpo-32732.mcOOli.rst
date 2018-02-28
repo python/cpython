@@ -1,0 +1,1 @@
+Do not ignore extra in logging method when a LoggerAdapter is configured. Patch by Cyril Martin
