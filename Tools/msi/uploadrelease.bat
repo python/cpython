@@ -31,13 +31,17 @@ if "%1" NEQ "" echo Unexpected argument "%1" & exit /B 1
 
 if not defined PLINK where plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
 if not defined PLINK where /R "%ProgramFiles(x86)%\PuTTY" plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
+if not defined PLINK where /R "%ProgramFiles%\PuTTY" plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
 if not defined PLINK where /R "%ProgramFiles(x86)%" plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
+if not defined PLINK where /R "%ProgramFiles%" plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
 if not defined PLINK echo Cannot locate plink.exe & exit /B 1
 echo Found plink.exe at %PLINK%
 
 if not defined PSCP where pscp > "%TEMP%\pscp.loc" 2> nul && set /P pscp= < "%TEMP%\pscp.loc" & del "%TEMP%\pscp.loc"
 if not defined PSCP where /R "%ProgramFiles(x86)%\PuTTY" pscp > "%TEMP%\pscp.loc" 2> nul && set /P pscp= < "%TEMP%\pscp.loc" & del "%TEMP%\pscp.loc"
+if not defined PSCP where /R "%ProgramFiles%\PuTTY" pscp > "%TEMP%\pscp.loc" 2> nul && set /P pscp= < "%TEMP%\pscp.loc" & del "%TEMP%\pscp.loc"
 if not defined PSCP where /R "%ProgramFiles(x86)%" pscp > "%TEMP%\pscp.loc" 2> nul && set /P pscp= < "%TEMP%\pscp.loc" & del "%TEMP%\pscp.loc"
+if not defined PSCP where /R "%ProgramFiles%" pscp > "%TEMP%\pscp.loc" 2> nul && set /P pscp= < "%TEMP%\pscp.loc" & del "%TEMP%\pscp.loc"
 if not defined PSCP echo Cannot locate pscp.exe & exit /B 1
 echo Found pscp.exe at %PSCP%
 
