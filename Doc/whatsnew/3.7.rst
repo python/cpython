@@ -886,6 +886,11 @@ Optimizations
   start-up time by up to 10%. (Contributed by Ivan Levkivskyi and INADA Naoki
   in :issue:`31333`)
 
+* Significant speed improvements to alternate constructors for
+  :class:`datetime.date` and :class:`datetime.datetime` by using fast-path
+  constructors when not constructing subclasses. (Contributed by Paul Ganssle
+  in :issue:`32403`)
+
 Build and C API Changes
 =======================
 
@@ -935,6 +940,11 @@ Build and C API Changes
 
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
+
+* Added C API support for timezones with timezone constructors
+  :c:func:`PyTimeZone_FromOffset` and :c:func:`PyTimeZone_FromOffsetAndName`,
+  and access to the UTC singleton with :c:data:`PyDateTime_TimeZone_UTC`.
+  Contributed by Paul Ganssle in :issue:`10381`.
 
 
 Other CPython Implementation Changes
