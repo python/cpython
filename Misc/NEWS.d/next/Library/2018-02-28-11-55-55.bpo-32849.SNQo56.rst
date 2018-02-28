@@ -1,0 +1,2 @@
+Use fstat() instead of dup() to validate fds on POSIX to avoid failure if
+dup() succeeds but fstat() fails afterwards.
