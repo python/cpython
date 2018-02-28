@@ -1468,23 +1468,18 @@ class Popen(object):
                         tmp_stdout = None;
                         tmp_stderr = None;
                         #save old stdio fds
-                        if sys.stdin.fileno() >= 0:
-                            tmp_stdin = os.dup(sys.stdin.fileno());
-
-                        if sys.stdout.fileno() >= 0:
-                            tmp_stdout = os.dup(sys.stdout.fileno());
-
-                        if sys.stderr.fileno() >= 0:
-                            tmp_stderr = os.dup(sys.stderr.fileno());
                         #replace stdiofds with desired child fds
                         if c2pwrite >= 0:
-                            os.dup2(c2pwrite, sys.stdout.fileno());
+                            tmp_stdout = os.dup(1);
+                            os.dup2(c2pwrite, 1);
 
                         if p2cread >= 0:
-                            os.dup2(p2cread, sys.stdin.fileno());
+                            tmp_stdin = os.dup(0);
+                            os.dup2(p2cread, 0);
 
                         if errwrite >= 0:
-                            os.dup2(errwrite, sys.stderr.fileno());
+                            tmp_stderr = os.dup(2);
+                            os.dup2(errwrite, 2);
 
                         if cwd:
                             os.chdir(cwd);
@@ -1498,15 +1493,15 @@ class Popen(object):
                             args,env_list, 100,0x1000000,0,0)
 
                         if tmp_stdin is not None:
-                            os.dup2(tmp_stdin, sys.stdin.fileno())
+                            os.dup2(tmp_stdin, 0)
                             os.close(tmp_stdin)
 
                         if tmp_stdout is not None:
-                            os.dup2(tmp_stdout, sys.stdout.fileno())
+                            os.dup2(tmp_stdout, 1)
                             os.close(tmp_stdout)
 
                         if tmp_stderr is not None:
-                            os.dup2(tmp_stderr, sys.stderr.fileno())
+                            os.dup2(tmp_stderr, 2)
                             os.close(tmp_stderr)
 
 
