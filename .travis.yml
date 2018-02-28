@@ -52,6 +52,15 @@ matrix:
         - python -m pip install sphinx~=1.6.1 blurb
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
+    - os: osx
+      language: c
+      compiler: clang
+      # Testing under macOS is optional until testing stability has been demonstrated.
+      env: OPTIONAL=true
+      before_install:
+        # Python 3 is needed for Argument Clinic and multissl
+        - brew install xz python3
+        - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - os: linux
       language: c
       compiler: gcc
@@ -76,9 +85,9 @@ before_install:
   - set -e
   - |
       # Check short-circuit conditions
-      if [ "${TESTING}" != "docs" ]
+      if [[ "${TESTING}" != "docs" ]]
       then
-        if [ "$TRAVIS_PULL_REQUEST" = "false" ]
+        if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]
         then
           echo "Not a PR, doing full build."
         else
@@ -101,7 +110,7 @@ before_install:
 install:
   - |
       # Install OpenSSL as necessary
-      if [ "${TESTING}" != "docs" ]
+      if [[ "${TESTING}" != "docs" ]]
       then
         # clang complains about unused-parameter a lot, redirect stderr
         python3 Tools/ssl/multissltests.py --steps=library \
