@@ -107,7 +107,7 @@ class ParseMap(dict):
     Anything not specifically mapped otherwise becomes 'x'.
     Example: replace everything except whitespace with 'x'.
 
-    >>> keepwhite = ParseMap((ord(c),ord(c)) for c in ' \t\n\r')
+    >>> keepwhite = ParseMap((ord(c), ord(c)) for c in ' \t\n\r')
     >>> "a + b\tc\nd".translate(keepwhite)
     'x x x\tx\nx'
     """
@@ -117,7 +117,7 @@ class ParseMap(dict):
 
 
 # Map all ascii to 120 to avoid __missing__ call, then replace some.
-trans = ParseMap((i,120) for i in range(128))
+trans = ParseMap.fromkeys(range(128), 120)
 trans.update((ord(c), ord('(')) for c in "({[")  # open brackets => '(';
 trans.update((ord(c), ord(')')) for c in ")}]")  # close brackets => ')'.
 trans.update((ord(c), ord(c)) for c in "\"'\\\n#")  # Keep these.
