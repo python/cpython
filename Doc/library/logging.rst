@@ -328,7 +328,7 @@ is the module's name in the Python package namespace.
       .. versionadded:: 3.2
 
    .. versionchanged:: 3.7
-      Loggers can now be picked and unpickled.
+      Loggers can now be pickled and unpickled.
 
 .. _levels:
 
