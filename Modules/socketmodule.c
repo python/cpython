@@ -607,7 +607,7 @@ internal_setblocking(PySocketSockObject *s, int block)
         goto done;
     if (block)
         new_delay_flag = delay_flag & (~O_NONBLOCK);
-    elsehttp://vxgit.wrs.com/projects/VX7/repos/vxworks/browse/vxworks-7/pkgs/app/xml
+    else
         new_delay_flag = delay_flag | O_NONBLOCK;
     if (new_delay_flag != delay_flag)
         if (fcntl(s->sock_fd, F_SETFL, new_delay_flag) == -1)
