@@ -196,18 +196,18 @@ def run_module(mod_name, init_globals=None,
                run_name=None, alter_sys=False):
     """Execute a module's code without importing it.
 
-       mod_name -- an absolute module name or package name. 
+       mod_name -- an absolute module name or package name.
 
        Optional arguments:
-       init_globals -- dictionary used to pre-populate the module’s 
+       init_globals -- dictionary used to pre-populate the module’s
        globals dictionary before the code is executed.
 
-       run_name -- sets __name__ if this optional argument is not 
-       None, to mod_name + '.__main__' if the named module is a 
+       run_name -- sets __name__ if this optional argument is not
+       None, to mod_name + '.__main__' if the named module is a
        package and to the mod_name argument otherwise.
 
-       alter_sys -- if True, sys.argv[0] is updated with the value of 
-       __file__ and sys.modules[__name__] is updated with a temporary 
+       alter_sys -- if True, sys.argv[0] is updated with the value of
+       __file__ and sys.modules[__name__] is updated with a temporary
        module objectfor the module being executed.
 
        Returns the resulting top level namespace dictionary.
@@ -253,14 +253,14 @@ def _get_code_from_file(run_name, fname):
 def run_path(path_name, init_globals=None, run_name=None):
     """Execute code located at the specified filesystem location.
 
-       path_name -- filesystem location of a Python script, zipfile, 
+       path_name -- filesystem location of a Python script, zipfile,
        or directory containing a top level __main__.py script.
 
        Optional arguments:
-       init_globals -- dictionary used to pre-populate the module’s 
+       init_globals -- dictionary used to pre-populate the module’s
        globals dictionary before the code is executed.
 
-       run_name -- sets __name__ if this optional argument is not 
+       run_name -- sets __name__ if this optional argument is not
        None and to '<run_path>' otherwise.
 
        Returns the resulting top level namespace dictionary.
