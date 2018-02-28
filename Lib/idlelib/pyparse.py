@@ -111,8 +111,16 @@ class ParseMap(dict):
     >>> "a + b\tc\nd".translate(keepwhite)
     'x x x\tx\nx'
     """
-    def __getitem__(self, key):
-        return self.get(key, 'x')
+    # Calling this triples access time; see bpo-32940
+    def __missing__(self, key):
+        return 120  # ord('x')
+
+
+# Map all ascii to 120 to avoid __missing__ call, then replace some.
+trans = ParseMap((i,120) for i in range(128))
+trans.update((ord(c), ord('(')) for c in "({[")  # open brackets => '(';
+trans.update((ord(c), ord(')')) for c in ")}]")  # close brackets => ')'.
+trans.update((ord(c), ord(c)) for c in "\"'\\\n#")  # Keep these.
 
 
 class Parser:
@@ -196,14 +204,6 @@ class Parser:
         if lo > 0:
             self.code = self.code[lo:]
 
-    # Map1 maps uninteresting chars to 'x', open brackets to '(',
-    # close brackets to ')', and preserves quotes,  backslashes,
-    # newlines and hashes.  Used for str.translate() in _study1().
-    map1 = ParseMap()
-    map1.update((ord(c), ord('(')) for c in "({[")
-    map1.update((ord(c), ord(')')) for c in ")}]")
-    map1.update((ord(c), ord(c)) for c in "\"'\\\n#")
-
     def _study1(self):
         """Find the line numbers of non-continuation lines.
 
@@ -220,7 +220,7 @@ class Parser:
         # uninteresting characters.  This can cut the number of chars
         # by a factor of 10-40, and so greatly speed the following loop.
         code = self.code
-        code = code.translate(self.map1)
+        code = code.translate(trans)
         code = code.replace('xxxxxxxx', 'x')
         code = code.replace('xxxx', 'x')
         code = code.replace('xx', 'x')
