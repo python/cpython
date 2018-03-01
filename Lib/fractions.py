@@ -435,7 +435,7 @@ class Fraction(numbers.Rational):
         """a // b"""
         return math.floor(a / b)
 
-    def __mod__(a, b):
+    def _mod(a, b):
         """a % b"""
         div = a // b
         return a - b * div
@@ -444,6 +444,8 @@ class Fraction(numbers.Rational):
         """a % b"""
         div = a // b
         return a - b * div
+
+    __mod__, _ = _operator_fallbacks(_mod, operator.mod)
 
     def __pow__(a, b):
         """a ** b

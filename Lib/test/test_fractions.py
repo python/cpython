@@ -410,6 +410,10 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(0.1, F(1, 10) % 1.0)
         self.assertTypedEquals(F(0, 1), 1 % F(1, 10))
         self.assertTypedEquals(0.0, 1.0 % F(1, 10))
+        self.assertTypedEquals(0.1, F(1, 10) % float('inf'))
+        self.assertTypedEquals(float('-inf'), F(1, 10) % float('-inf'))
+        self.assertTypedEquals(float('inf'), F(-1, 10) % float('inf'))
+        self.assertTypedEquals(-0.1, F(-1, 10) % float('-inf'))
 
         # No need for divmod since we don't override it.
 
