@@ -20,10 +20,10 @@ tree but are maintained separately and are available from
 
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
+* `python-docs-theme <https://pypi.org/project/python-docs-theme/>`_
 
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
-
 
 Using make
 ----------

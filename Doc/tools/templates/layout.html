@@ -1,118 +1,25 @@
 {% extends "!layout.html" %}
+
 {% block rootrellink %}
-        <li><img src="{{ pathto('_static/py.png', 1) }}" alt=""
-                 style="vertical-align: middle; margin-top: -1px"/></li>
-        <li><a href="https://www.python.org/">Python</a>{{ reldelim1 }}</li>
-        <li>
-          {%- if switchers is defined %}
-          <span class="language_switcher_placeholder">{{ language or 'en' }}</span>
-          <span class="version_switcher_placeholder">{{ release }}</span>
-          <a href="{{ pathto('index') }}">{% trans %}Documentation {% endtrans %}</a>{{ reldelim1 }}
-          {%- else %}
-          <a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}
-          {%- endif %}
-        </li>
-{% endblock %}
-{%- macro searchbox() %}
-{# modified from sphinx/themes/basic/searchbox.html #}
-    {%- if builder != "htmlhelp" %}
-    <div class="inline-search" style="display: none" role="search">
-        <form class="inline-search" action="{{ pathto('search') }}" method="get">
-          <input placeholder="{{ _('Quick search') }}" type="text" name="q" />
-          <input type="submit" value="{{ _('Go') }}" />
-          <input type="hidden" name="check_keywords" value="yes" />
-          <input type="hidden" name="area" value="default" />
-        </form>
-    </div>
-    <script type="text/javascript">$('.inline-search').show(0);</script>
-    {%- endif %}
-{%- endmacro %}
-{% block relbar1 %} {% if builder != 'qthelp' %} {{ relbar() }} {% endif %} {% endblock %}
-{% block relbar2 %} {% if builder != 'qthelp' %} {{ relbar() }} {% endif %} {% endblock %}
-{% block relbaritems %}
-    {%- if pagename != "search" and builder != "singlehtml" and builder != "htmlhelp" %}
-    <li class="right">
-        {{ searchbox() }}
-        {{ reldelim2 }}
+{{ super() }}
+    <li>
+      {%- if switchers is defined %}
+      <span class="language_switcher_placeholder">{{ language or 'en' }}</span>
+      <span class="version_switcher_placeholder">{{ release }}</span>
+      <a href="{{ pathto('index') }}">{% trans %}Documentation {% endtrans %}</a>{{ reldelim1 }}
+      {%- else %}
+      <a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}
+      {%- endif %}
     </li>
-    {%- endif %}
 {% endblock %}
+
 {% block extrahead %}
-    <link rel="shortcut icon" type="image/png" href="{{ pathto('_static/py.png', 1) }}" />
     <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html" />
     {% if builder != "htmlhelp" %}
-    {% if not embedded %}<script type="text/javascript" src="{{ pathto('_static/copybutton.js', 1) }}"></script>{% endif %}
-    {% if switchers is defined and not embedded %}<script type="text/javascript" src="{{ pathto('_static/switchers.js', 1) }}"></script>{% endif %}
-    {% if pagename == 'whatsnew/changelog' and not embedded %}
-    <script type="text/javascript">
-      $(document).ready(function() {
-          // add the search form and bind the events
-          $('h1').after([
-            '<p>Filter entries by content:',
-            '<input type="text" value="" id="searchbox" style="width: 50%">',
-            '<input type="submit" id="searchbox-submit" value="Filter"></p>'
-          ].join('\n'));
-
-          function dofilter() {
-              try {
-                  var query = new RegExp($('#searchbox').val(), 'i');
-              }
-              catch (e) {
-                  return; // not a valid regex (yet)
-              }
-              // find headers for the versions (What's new in Python X.Y.Z?)
-              $('#changelog h2').each(function(index1, h2) {
-                  var h2_parent = $(h2).parent();
-                  var sections_found = 0;
-                  // find headers for the sections (Core, Library, etc.)
-                  h2_parent.find('h3').each(function(index2, h3) {
-                      var h3_parent = $(h3).parent();
-                      var entries_found = 0;
-                      // find all the entries
-                      h3_parent.find('li').each(function(index3, li) {
-                          var li = $(li);
-                          // check if the query matches the entry
-                          if (query.test(li.text())) {
-                              li.show();
-                              entries_found++;
-                          }
-                          else {
-                              li.hide();
-                          }
-                      });
-                      // if there are entries, show the section, otherwise hide it
-                      if (entries_found > 0) {
-                          h3_parent.show();
-                          sections_found++;
-                      }
-                      else {
-                          h3_parent.hide();
-                      }
-                  });
-                  if (sections_found > 0)
-                      h2_parent.show();
-                  else
-                      h2_parent.hide();
-              });
-          }
-          $('#searchbox').keyup(dofilter);
-          $('#searchbox-submit').click(dofilter);
-      });
-    </script>
-    {% endif %}
+      {% if switchers is defined and not embedded %}
+      <script type="text/javascript" src="{{ pathto('_static/switchers.js', 1) }}"></script>{% endif %}
+      {% if pagename == 'whatsnew/changelog' and not embedded %}
+      <script type="text/javascript" src="{{ pathto('_static/changelog_search.js', 1) }}"></script>{% endif %}
     {% endif %}
 {{ super() }}
-{% endblock %}
-{% block footer %}
-    <div class="footer">
-    &copy; <a href="{{ pathto('copyright') }}">{% trans %}Copyright{% endtrans %}</a> {{ copyright|e }}.
-    <br />
-    {% trans %}The Python Software Foundation is a non-profit corporation.{% endtrans %}
-    <a href="https://www.python.org/psf/donations/">{% trans %}Please donate.{% endtrans %}</a>
-    <br />
-    {% trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}
-    {% trans pathto_bugs=pathto('bugs') %}<a href="{{ pathto_bugs }}">Found a bug</a>?{% endtrans %}
-    <br />
-    {% trans sphinx_version=sphinx_version|e %}Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}
-    </div>
 {% endblock %}

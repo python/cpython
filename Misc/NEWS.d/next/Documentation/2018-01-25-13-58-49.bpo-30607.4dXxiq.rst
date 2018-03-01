@@ -1,0 +1,2 @@
+Use the externalized ``python-docs-theme`` package when building the
+documenation.
