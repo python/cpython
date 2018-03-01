@@ -1529,7 +1529,8 @@ win32_wchdir(LPCWSTR path)
             return FALSE;
         }
     }
-    if (wcsncmp(new_path, L"\\\\", 2) != 0) {
+    int has_drive = (new_path[0] && new_path[1] == L':');
+    if (has_drive) {
         env[1] = new_path[0];
         result = SetEnvironmentVariableW(env, new_path);
     }
