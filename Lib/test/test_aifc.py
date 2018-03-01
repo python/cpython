@@ -225,10 +225,10 @@ class AIFCLowLevelTest(unittest.TestCase):
             getattr(aifc, '_write_' + what)(f, x)
             f.seek(0)
             return getattr(aifc, '_read_' + what)(f)
-        for x in (-1, 0, 0.1, 1):
+        for x in (-1, 0, 0.1, 1, sys.float_info.min, sys.float_info.max):
             self.assertEqual(read_written(x, 'float'), x)
         for x in (float('NaN'), float('Inf')):
-            self.assertEqual(read_written(x, 'float'), aifc._HUGE_VAL)
+            self.assertEqual(read_written(x, 'float'), sys.float_info.max)
         for x in (b'', b'foo', b'a' * 255):
             self.assertEqual(read_written(x, 'string'), x)
         for x in (-0x7FFFFFFF, -1, 0, 1, 0x7FFFFFFF):
@@ -279,6 +279,16 @@ class AIFCLowLevelTest(unittest.TestCase):
         b += b'COMM' + struct.pack('>LhlhhLL', 23, 0, 0, 0, 0, 0, 0)
         b += b'WRNG' + struct.pack('B', 0)
         self.assertRaises(aifc.Error, aifc.open, io.BytesIO(b))
+
+    def test_read_huge_frame_rate(self):
+        for framerate in ((0x7FFF, 2**32-1, 2**32-1),
+                          (0x7FFE, 2**32-1, 2**32-1)):
+            b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+            b += b'COMM' + struct.pack('>LhlhhLL', 38, 1, 0, 8, *framerate)
+            b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+            b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+            with aifc.open(io.BytesIO(b)) as f:
+                self.assertEqual(f.getframerate(), sys.float_info.max)
 
     def test_read_wrong_marks(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFF'

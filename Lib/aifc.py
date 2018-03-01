@@ -134,8 +134,10 @@ changed by calling aiff() or aifc() before the first writeframes or
 writeframesraw.
 """
 
-import struct
 import builtins
+import math
+import struct
+import sys
 import warnings
 
 __all__ = ["Error", "open", "openfp"]
@@ -179,23 +181,26 @@ def _read_string(file):
         dummy = file.read(1)
     return data
 
-_HUGE_VAL = 1.79769313486231e+308 # See <limits.h>
-
 def _read_float(f): # 10 bytes
-    expon = _read_short(f) # 2 bytes
+    data = f.read(10)
+    if len(data) != 10:
+        raise EOFError
+    expon = int.from_bytes(data[:2], 'big', signed=True)
     sign = 1
     if expon < 0:
         sign = -1
         expon = expon + 0x8000
-    himant = _read_ulong(f) # 4 bytes
-    lomant = _read_ulong(f) # 4 bytes
-    if expon == himant == lomant == 0:
+    mant = int.from_bytes(data[2:], 'big')
+    if not expon and not mant:
         f = 0.0
     elif expon == 0x7FFF:
-        f = _HUGE_VAL
+        f = sys.float_info.max
     else:
-        expon = expon - 16383
-        f = (himant * 0x100000000 + lomant) * pow(2.0, expon - 63)
+        expon = expon - 0x3FFF
+        try:
+            f = math.ldexp(mant, expon - 63)
+        except OverflowError:
+            f = sys.float_info.max
     return sign * f
 
 def _write_short(f, x):
@@ -219,7 +224,6 @@ def _write_string(f, s):
         f.write(b'\x00')
 
 def _write_float(f, x):
-    import math
     if x < 0:
         sign = 0x8000
         x = x * -1
@@ -231,12 +235,12 @@ def _write_float(f, x):
         lomant = 0
     else:
         fmant, expon = math.frexp(x)
-        if expon > 16384 or fmant >= 1 or fmant != fmant: # Infinity or NaN
+        if expon > 0x4000 or fmant >= 1 or fmant != fmant: # Infinity or NaN
             expon = sign|0x7FFF
             himant = 0
             lomant = 0
         else:                   # Finite
-            expon = expon + 16382
+            expon = expon + 0x3FFE
             if expon < 0:           # denormalized
                 fmant = math.ldexp(fmant, expon)
                 expon = 0

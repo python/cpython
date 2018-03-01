@@ -1,0 +1,1 @@
+Fixed reading huge floats in AIFC files.
