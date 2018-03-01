@@ -636,7 +636,7 @@ static PyNumberMethods range_as_number = {
 };
 
 static PyObject * range_iter(PyObject *seq);
-static PyObject * range_reverse(PyObject *seq);
+static PyObject * range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reverse_doc,
 "Return a reverse iterator.");
@@ -649,7 +649,7 @@ PyDoc_STRVAR(index_doc,
 "Raise ValueError if the value is not present.");
 
 static PyMethodDef range_methods[] = {
-    {"__reversed__",    (PyCFunction)range_reverse, METH_NOARGS, reverse_doc},
+    {"__reversed__",    range_reverse,              METH_NOARGS, reverse_doc},
     {"__reduce__",      (PyCFunction)range_reduce,  METH_VARARGS},
     {"count",           (PyCFunction)range_count,   METH_O,      count_doc},
     {"index",           (PyCFunction)range_index,   METH_O,      index_doc},
@@ -731,7 +731,7 @@ rangeiter_next(rangeiterobject *r)
 }
 
 static PyObject *
-rangeiter_len(rangeiterobject *r)
+rangeiter_len(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(r->len - r->index);
 }
@@ -740,7 +740,7 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-rangeiter_reduce(rangeiterobject *r)
+rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
@@ -896,7 +896,7 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 }
 
 static PyObject *
-longrangeiter_reduce(longrangeiterobject *r)
+longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     PyObject *product, *stop=NULL;
     PyObject *range;
@@ -1081,7 +1081,7 @@ range_iter(PyObject *seq)
 }
 
 static PyObject *
-range_reverse(PyObject *seq)
+range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored))
 {
     rangeobject *range = (rangeobject*) seq;
     longrangeiterobject *it;
