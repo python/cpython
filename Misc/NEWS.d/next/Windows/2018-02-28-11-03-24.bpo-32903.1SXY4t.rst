@@ -1,0 +1,2 @@
+Fix a memory leak in os.chdir() on Windows if the current directory is set
+to a UNC path.
