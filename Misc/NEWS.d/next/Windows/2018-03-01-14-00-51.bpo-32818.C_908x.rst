@@ -1,0 +1,2 @@
+Fix a subprocess crash in Windows compatibility mode when
+``STARTUPINFO.lpAttributeList`` is empty.  Patch By Segev Finer.

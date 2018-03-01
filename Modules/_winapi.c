@@ -1048,7 +1048,8 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                            NULL,
                            NULL,
                            inherit_handles,
-                           creation_flags | EXTENDED_STARTUPINFO_PRESENT |
+                           creation_flags |
+                           (si.lpAttributeList ? EXTENDED_STARTUPINFO_PRESENT : 0) |
                            CREATE_UNICODE_ENVIRONMENT,
                            wenvironment,
                            current_directory,
