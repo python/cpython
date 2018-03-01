@@ -1505,7 +1505,7 @@ posix_fildes_fd(int fd, int (*func)(int))
    chdir is essentially a wrapper around SetCurrentDirectory; however,
    it also needs to set "magic" environment variables indicating
    the per-drive current directory, which are of the form =<drive>: */
-static int
+static BOOL __stdcall
 win32_wchdir(LPCWSTR path)
 {
     wchar_t path_buf[MAX_PATH], *new_path = path_buf;
@@ -1513,20 +1513,20 @@ win32_wchdir(LPCWSTR path)
     wchar_t env[4] = L"=x:";
 
     if(!SetCurrentDirectoryW(path))
-        return 0;
+        return FALSE;
     result = GetCurrentDirectoryW(Py_ARRAY_LENGTH(path_buf), new_path);
     if (!result)
-        return 0;
+        return FALSE;
     if (result > Py_ARRAY_LENGTH(path_buf)) {
         new_path = PyMem_RawMalloc(result * sizeof(wchar_t));
         if (!new_path) {
             SetLastError(ERROR_OUTOFMEMORY);
-            return 0;
+            return FALSE;
         }
         result = GetCurrentDirectoryW(result, new_path);
         if (!result) {
             PyMem_RawFree(new_path);
-            return 0;
+            return FALSE;
         }
     }
     if (wcsncmp(new_path, L"\\\\", 2) != 0) {
