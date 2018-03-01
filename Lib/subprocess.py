@@ -914,6 +914,9 @@ class Popen(object):
         universal_newlines.
         """
 
+        if _vxworks:
+            timeout=5
+
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
 
@@ -937,11 +940,7 @@ class Popen(object):
             if timeout is not None:
                 endtime = _time() + timeout
             else:
-                #TODO timeout for V7COR-5635
-                if(_vxworks):
-                    endtime = _time() + 5 #hard coded 5s timeout on subprocess
-                else:
-                    endtime = None
+                endtime = None
 
             try:
                 stdout, stderr = self._communicate(input, endtime, timeout)
@@ -1480,14 +1479,14 @@ class Popen(object):
                         if errwrite >= 0:
                             tmp_stderr = os.dup(2);
                             os.dup2(errwrite, 2);
-
                         if cwd:
                             os.chdir(cwd);
                         if env_list is None:
                             env_list = [envKey + "=" + envVal for envKey,envVal in os.environ.copy().items()]
                         else:
                             env_list = [envKey + "=" + envVal for envKey,envVal in env.items()] #Sacrifice efficiency for readability
-
+                        if p2cwrite > 2:
+                            env_list.append("closeFD="+str(p2cwrite))
                         self.pid = _vxwapi.rtpSpawn(
                             executable_list[0].decode("UTF-8"),
                             args,env_list, 100,0x1000000,0,0)
@@ -1536,6 +1535,8 @@ class Popen(object):
                 # exception (limited in size)
                 errpipe_data = bytearray()
                 while True:
+                    if _vxworks:
+                        break
                     part = os.read(errpipe_read, 50000)
                     errpipe_data += part
                     if not part or len(errpipe_data) > 50000:

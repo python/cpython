@@ -2526,6 +2526,7 @@ For IP sockets, the address info is a pair (hostaddr, port).");
 static PyObject *
 sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
+#ifndef __VXWORKS__
     long block;
 
     block = PyLong_AsLong(arg);
@@ -2536,6 +2537,9 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
     if (internal_setblocking(s, block) == -1) {
         return NULL;
     }
+#else
+    return NULL;
+#endif
     Py_RETURN_NONE;
 }
 

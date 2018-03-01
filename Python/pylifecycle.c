@@ -56,6 +56,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static _PyInitError add_main_module(PyInterpreterState *interp);
 static _PyInitError initfsencoding(PyInterpreterState *interp);
 static _PyInitError initsite(void);
+static void initVxworksSubprocess(void);
 static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
@@ -892,6 +893,10 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
             return err;
         }
     }
+#ifdef __VXWORKS__
+    initVxworksSubprocess();
+#endif
+
     return _Py_INIT_OK();
 }
 
@@ -1560,6 +1565,22 @@ initsite(void)
     Py_DECREF(m);
     return _Py_INIT_OK();
 }
+
+#ifdef __VXWORKS__
+static void
+initVxworksSubprocess(void)
+{
+    const char* s = getenv("closeFD");
+    if(s)
+    {
+        int fd = atoi(s);
+        if(fd > 2){
+            int err = close(fd);
+        }
+        putenv("closeFD=");
+    }             
+}
+#endif
 
 /* Check if a file descriptor is valid or not.
    Return 0 if the file descriptor is invalid, return non-zero otherwise. */
