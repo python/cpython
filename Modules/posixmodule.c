@@ -984,6 +984,7 @@ win32_wchdir(LPCWSTR path)
     wchar_t _new_path[MAX_PATH+1], *new_path = _new_path;
     int result;
     wchar_t env[4] = L"=x:";
+    int is_unc_like_path;
 
     if(!SetCurrentDirectoryW(path))
         return FALSE;
@@ -1002,8 +1003,8 @@ win32_wchdir(LPCWSTR path)
             return FALSE;
         }
     }
-    int is_unc_like_path = (wcsncmp(new_path, L"\\\\", 2) == 0 ||
-                            wcsncmp(new_path, L"//", 2) == 0);
+    is_unc_like_path = (wcsncmp(new_path, L"\\\\", 2) == 0 ||
+                        wcsncmp(new_path, L"//", 2) == 0);
     if (!is_unc_like_path) {
         env[1] = new_path[0];
         result = SetEnvironmentVariableW(env, new_path);
