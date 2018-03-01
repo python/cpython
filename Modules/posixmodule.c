@@ -1535,7 +1535,7 @@ win32_wchdir(LPCWSTR path)
     }
     if (new_path != path_buf)
         PyMem_RawFree(new_path);
-    return result;
+    return result ? TRUE : FALSE;
 }
 #endif
 
