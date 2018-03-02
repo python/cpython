@@ -2538,6 +2538,7 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
         return NULL;
     }
 #else
+    PyErr_SetString(PyExc_RuntimeError, "Timeout");
     return NULL;
 #endif
     Py_RETURN_NONE;

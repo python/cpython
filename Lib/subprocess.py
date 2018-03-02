@@ -1479,8 +1479,10 @@ class Popen(object):
                         if errwrite >= 0:
                             tmp_stderr = os.dup(2);
                             os.dup2(errwrite, 2);
+                        tmp_cwd = None;
                         if cwd:
-                            os.chdir(cwd);
+                            tmp_cwd = os.getcwd()
+                            os.chdir(cwd)
                         if env_list is None:
                             env_list = [envKey + "=" + envVal for envKey,envVal in os.environ.copy().items()]
                         else:
@@ -1490,6 +1492,9 @@ class Popen(object):
                         self.pid = _vxwapi.rtpSpawn(
                             executable_list[0].decode("UTF-8"),
                             args,env_list, 100,0x1000000,0,0)
+                        if tmp_cwd is not None:
+                            os.chdir(tmp_cwd)
+
 
                         if tmp_stdin is not None:
                             os.dup2(tmp_stdin, 0)
