@@ -317,7 +317,7 @@ class TestPOP3Class(TestCase):
         evil_welcome = b'+OK' + (b'<' * 1000000)
         with test_support.swap_attr(self.client, 'welcome', evil_welcome):
             # The evil welcome is invalid, so apop should throw.
-            self.assertRaises(poplib.error_proto, self.client.apop, 'arthur', 'kingofbritons')
+            self.assertRaises(poplib.error_proto, self.client.apop, 'a', 'kb')
 
     def test_top(self):
         expected =  (b'+OK 116 bytes',

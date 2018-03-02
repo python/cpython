@@ -469,11 +469,11 @@ class TestBytes(unittest.TestCase):
 class TestJunkAPIs(unittest.TestCase):
     def test_is_line_junk_true(self):
         for line in ['#', '  ', ' #', '# ', ' # ', '']:
-            self.assertTrue(difflib.IS_LINE_JUNK(line), 'should be junk: {}'.format(line))
+            self.assertTrue(difflib.IS_LINE_JUNK(line), repr(line))
 
     def test_is_line_junk_false(self):
-        for line in ['##', ' ##', '## ', 'abc ', 'abc #', 'abc # ', 'Mr. Moose is up!']:
-            self.assertFalse(difflib.IS_LINE_JUNK(line), 'should not be junk: {}'.format(line))
+        for line in ['##', ' ##', '## ', 'abc ', 'abc #', 'Mr. Moose is up!']:
+            self.assertFalse(difflib.IS_LINE_JUNK(line), repr(line))
 
     def test_is_line_junk_REDOS(self):
         evil_input = ('\t' * 1000000) + '##'
@@ -481,11 +481,11 @@ class TestJunkAPIs(unittest.TestCase):
 
     def test_is_character_junk_true(self):
         for char in [' ', '\t']:
-            self.assertTrue(difflib.IS_CHARACTER_JUNK(char), 'should be junk: {}'.format(char))
+            self.assertTrue(difflib.IS_CHARACTER_JUNK(char), repr(char))
 
     def test_is_character_junk_false(self):
         for char in ['a', '#', '\n', '\f', '\r', '\v']:
-            self.assertFalse(difflib.IS_CHARACTER_JUNK(char), 'should not be junk: {}'.format(char))
+            self.assertFalse(difflib.IS_CHARACTER_JUNK(char), repr(char))
 
 def test_main():
     difflib.HtmlDiff._default_prefix = 0
