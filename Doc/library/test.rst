@@ -677,3 +677,10 @@ The :mod:`test.support` module defines the following classes:
 
    Class used to record warnings for unit tests. See documentation of
    :func:`check_warnings` above for more details.
+
+
+.. class:: FakePath(path)
+
+   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   method which just returns the *path* argument.  If *path* is an exception,
+   it will be raised in :meth:`!__fspath__`.
