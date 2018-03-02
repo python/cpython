@@ -498,7 +498,8 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
             self.assertTrue(text[3].startswith('NameError'))
-
+    @unittest.skipIf('vxworks' in sys.platform,
+                     "Not Supported on vxWorks: Non ascii names not supported")
     def test_non_ascii(self):
         # Mac OS X denies the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
