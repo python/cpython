@@ -17,7 +17,7 @@ import shutil
 import threading
 import gc
 import textwrap
-from test.test_os import _PathLike
+from test.support import FakePath
 
 try:
     import ctypes
@@ -307,7 +307,7 @@ class ProcessTestCase(BaseTestCase):
         doesnotexist = os.path.join(os.path.dirname(sys.executable),
                                     "doesnotexist")
         self._assert_python([doesnotexist, "-c"],
-                            executable=_PathLike(sys.executable))
+                            executable=FakePath(sys.executable))
 
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
@@ -327,7 +327,7 @@ class ProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
     def test_pathlike_executable_replaces_shell(self):
-        self._assert_python([], executable=_PathLike(sys.executable),
+        self._assert_python([], executable=FakePath(sys.executable),
                             shell=True)
 
     # For use in the test_cwd* tests below.
@@ -371,12 +371,7 @@ class ProcessTestCase(BaseTestCase):
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
-
-        class _PathLikeObj:
-            def __fspath__(self):
-                return temp_dir
-
-        self._assert_cwd(temp_dir, sys.executable, cwd=_PathLikeObj())
+        self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
@@ -1495,7 +1490,7 @@ class RunFuncTestCase(BaseTestCase):
         path = shutil.which(prog)
         if path is None:
             self.skipTest(f'{prog} required for this test')
-        path = _PathLike(path)
+        path = FakePath(path)
         res = subprocess.run(path, stdout=subprocess.DEVNULL)
         self.assertEqual(res.returncode, 0)
         with self.assertRaises(TypeError):
@@ -1503,7 +1498,7 @@ class RunFuncTestCase(BaseTestCase):
 
     def test_run_with_pathlike_path_and_arguments(self):
         # bpo-31961: test run([pathlike_object, 'additional arguments'])
-        path = _PathLike(sys.executable)
+        path = FakePath(sys.executable)
         args = [path, '-c', 'import sys; sys.exit(57)']
         res = subprocess.run(args)
         self.assertEqual(res.returncode, 57)
