@@ -1,0 +1,2 @@
+Multiprocessing now looks to the environment variable NCPUS for default
+pool size, before falling-back to os.cpu_count()
