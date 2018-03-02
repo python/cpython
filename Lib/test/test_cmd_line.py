@@ -154,6 +154,8 @@ class CmdLineTest(unittest.TestCase):
     # arguments as unicode (using wmain() instead of main()).
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows has a native unicode API')
+    @unittest.skipIf('vxworks' in sys.platform,
+                     "Not supported on VxWorks: VxWorks doesnt support non ascii rtpSpawn")
     def test_undecodable_code(self):
         undecodable = b"\xff"
         env = os.environ.copy()
@@ -369,6 +371,7 @@ class CmdLineTest(unittest.TestCase):
     # Issue #7111: Python should work without standard streams
 
     @unittest.skipIf(os.name != 'posix', "test needs POSIX semantics")
+    @unittest.skipIf('vxworks' in sys.platform, "Not supported on VxWorks: No preexec fn")
     def _test_no_stdio(self, streams):
         code = """if 1:
             import os, sys

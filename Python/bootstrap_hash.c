@@ -19,6 +19,7 @@
 #    include <sys/syscall.h>
 #  endif
 #  ifdef __VXWORKS__
+#    include <randomNumGen.h>
 #    include <stdlib.h>
 #    include <time.h>
 #  endif
@@ -505,12 +506,10 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #endif
 
 #ifdef __VXWORKS__
-    srand(time(NULL));
-    return rand();
-
-   // unsigned char *randBuf[sizeof(int)];
-   // randBytes(randBuf, sizeof(int));
-   // return (const int) randBuf;
+    
+    //srand((uintmax_t)time(NULL));
+    //return rand();
+    return randPseudoBytes((unsigned char *)buffer, size);
 #endif  // __VXWORKS__
 
     return dev_urandom(buffer, size, raise);
