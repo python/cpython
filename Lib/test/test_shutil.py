@@ -22,7 +22,7 @@ import tarfile
 import zipfile
 
 from test import support
-from test.support import TESTFN
+from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
 
@@ -1232,14 +1232,7 @@ class TestShutil(unittest.TestCase):
     def check_unpack_archive(self, format):
         self.check_unpack_archive_with_converter(format, lambda path: path)
         self.check_unpack_archive_with_converter(format, pathlib.Path)
-
-        class MyPath:
-            def __init__(self, path):
-                self.path = path
-            def __fspath__(self):
-                return self.path
-
-        self.check_unpack_archive_with_converter(format, MyPath)
+        self.check_unpack_archive_with_converter(format, FakePath)
 
     def check_unpack_archive_with_converter(self, format, converter):
         root_dir, base_dir = self._create_files()
