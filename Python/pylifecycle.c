@@ -277,8 +277,10 @@ get_locale_encoding(void)
         return NULL;
     }
     return get_codec_name(codeset);
-#elif defined(__ANDROID__) || defined(__VXWORKS__)
+#elif defined(__ANDROID__) 
     return get_codec_name("UTF-8");
+#elif defined(__VXWORKS__)
+    return get_codec_name("ascii");
 #else
     PyErr_SetNone(PyExc_NotImplementedError);
     return NULL;
