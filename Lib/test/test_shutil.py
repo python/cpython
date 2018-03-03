@@ -10,6 +10,7 @@ import os
 import os.path
 import errno
 import functools
+import pathlib
 import subprocess
 from contextlib import ExitStack
 from shutil import (make_archive,
@@ -21,9 +22,10 @@ from shutil import (make_archive,
 import tarfile
 import zipfile
 import warnings
+import pathlib
 
 from test import support
-from test.support import TESTFN, check_warnings, captured_stdout
+from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
 
@@ -1231,6 +1233,11 @@ class TestShutil(unittest.TestCase):
         self.assertNotIn('xxx', formats)
 
     def check_unpack_archive(self, format):
+        self.check_unpack_archive_with_converter(format, lambda path: path)
+        self.check_unpack_archive_with_converter(format, pathlib.Path)
+        self.check_unpack_archive_with_converter(format, FakePath)
+
+    def check_unpack_archive_with_converter(self, format, converter):
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
