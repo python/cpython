@@ -185,22 +185,20 @@ def _read_float(f): # 10 bytes
     data = f.read(10)
     if len(data) != 10:
         raise EOFError
-    expon = int.from_bytes(data[:2], 'big', signed=True)
+    expon = int.from_bytes(data[:2], 'big')
     sign = 1
-    if expon < 0:
+    if expon & 0x8000:
         sign = -1
-        expon = expon + 0x8000
+        expon = expon & 0x7FFF
     mant = int.from_bytes(data[2:], 'big')
-    if not expon and not mant:
-        f = 0.0
-    elif expon == 0x7FFF:
-        f = sys.float_info.max
+    if expon == 0x7FFF:
+        if mant == 1<<63:
+            f = float('inf')
+        else:
+            f = float('nan')
     else:
         expon = expon - 0x3FFF
-        try:
-            f = math.ldexp(mant, expon - 63)
-        except OverflowError:
-            f = sys.float_info.max
+        f = math.ldexp(mant, expon - 63)
     return sign * f
 
 def _write_short(f, x):
@@ -224,21 +222,25 @@ def _write_string(f, s):
         f.write(b'\x00')
 
 def _write_float(f, x):
-    if x < 0:
+    if math.copysign(1.0, x) < 0:
         sign = 0x8000
         x = x * -1
     else:
         sign = 0
     if x == 0:
-        expon = 0
+        expon = sign
         himant = 0
         lomant = 0
     else:
         fmant, expon = math.frexp(x)
         if expon > 0x4000 or fmant >= 1 or fmant != fmant: # Infinity or NaN
             expon = sign|0x7FFF
-            himant = 0
-            lomant = 0
+            if fmant != fmant:  # NaN
+                himant = 0xFFFFFFFF
+                lomant = 0xFFFFFFFF
+            else:
+                himant = 0x80000000
+                lomant = 0
         else:                   # Finite
             expon = expon + 0x3FFE
             if expon < 0:           # denormalized
@@ -470,7 +472,14 @@ class Aifc_read:
         self._nchannels = _read_short(chunk)
         self._nframes = _read_long(chunk)
         self._sampwidth = (_read_short(chunk) + 7) // 8
-        self._framerate = int(_read_float(chunk))
+        try:
+            self._framerate = _read_float(chunk)
+        except OverflowError:
+            raise Error('bad sampling rate')
+        try:
+            self._framerate = int(self._framerate)
+        except (OverflowError, ValueError):  # Infinity, NaN
+            self._framerate = int(sys.float_info.max)
         self._framesize = self._nchannels * self._sampwidth
         if self._aifc:
             #DEBUG: SGI's soundeditor produces a bad size :-(

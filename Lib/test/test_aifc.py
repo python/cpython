@@ -4,6 +4,7 @@ from unittest import mock
 from test import audiotests
 from audioop import byteswap
 import io
+import math
 import sys
 import struct
 import aifc
@@ -220,15 +221,20 @@ class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
 class AIFCLowLevelTest(unittest.TestCase):
 
     def test_read_written(self):
-        def read_written(self, what):
+        def read_written(x, what):
             f = io.BytesIO()
             getattr(aifc, '_write_' + what)(f, x)
             f.seek(0)
             return getattr(aifc, '_read_' + what)(f)
-        for x in (-1, 0, 0.1, 1, sys.float_info.min, sys.float_info.max):
+        for x in (-1, 0.0, -0.0, 0.1, 1,
+                  sys.float_info.min, sys.float_info.max,
+                  -sys.float_info.min, -sys.float_info.max,
+                  float('Inf'), -float('Inf')):
             self.assertEqual(read_written(x, 'float'), x)
-        for x in (float('NaN'), float('Inf')):
-            self.assertEqual(read_written(x, 'float'), sys.float_info.max)
+        x = read_written(float('NaN'), 'float')
+        self.assertNotEqual(x, x)
+        x = read_written(-0.0, 'float')
+        self.assertLess(math.copysign(1, x), 0)
         for x in (b'', b'foo', b'a' * 255):
             self.assertEqual(read_written(x, 'string'), x)
         for x in (-0x7FFFFFFF, -1, 0, 1, 0x7FFFFFFF):
@@ -280,15 +286,31 @@ class AIFCLowLevelTest(unittest.TestCase):
         b += b'WRNG' + struct.pack('B', 0)
         self.assertRaises(aifc.Error, aifc.open, io.BytesIO(b))
 
-    def test_read_huge_frame_rate(self):
-        for framerate in ((0x7FFF, 2**32-1, 2**32-1),
-                          (0x7FFE, 2**32-1, 2**32-1)):
+    def test_read_wrong_frame_rate(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 38, 1, 0, 8,
+                                    0x7FFE, 2**32-1, 2**32-1)
+        b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+        b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+        self.assertRaises(aifc.Error, aifc.open, io.BytesIO(b))
+
+        for framerate in (
+                (0x7FFF, 0x80000000, 0),  # Infinity
+                (0x7FFF, 0xFFFFFFFF, 0xFFFFFFFF),  # NaN
+                (0x7FFF, 0, 0),
+                (0x7FFF, 0, 1),
+                (0x7FFF, 0x40000000, 0),
+                (0x7FFF, 0x40000000, 1),
+                (0x7FFF, 0x80000000, 1),
+                (0x7FFF, 0xC0000000, 0),
+                (0x7FFF, 0xC0000000, 1),
+            ):
             b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
             b += b'COMM' + struct.pack('>LhlhhLL', 38, 1, 0, 8, *framerate)
             b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
             b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
             with aifc.open(io.BytesIO(b)) as f:
-                self.assertEqual(f.getframerate(), sys.float_info.max)
+                self.assertEqual(f.getframerate(), int(sys.float_info.max))
 
     def test_read_wrong_marks(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFF'
