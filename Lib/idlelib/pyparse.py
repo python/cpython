@@ -150,7 +150,7 @@ class Parser:
         """
         code, pos = self.code, None
 
-        if not is_char_in_string:
+        if is_char_in_string is None:
             # no clue -- make the caller pass everything
             return None
 
