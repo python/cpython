@@ -1,1 +1,3 @@
-Fixed reading huge floats in AIFC files.
+Fixed reading huge floats in AIFC files. :func:`aifc.open` no longer raises
+OverflowError.
+
