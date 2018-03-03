@@ -682,7 +682,7 @@ Task functions
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. function:: shield(arg, \*, loop=None)
+.. coroutinefunction:: shield(arg, \*, loop=None)
 
    Wait for a future, shielding it from cancellation.
 
