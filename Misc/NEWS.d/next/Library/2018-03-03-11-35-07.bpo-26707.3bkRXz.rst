@@ -1,0 +1,3 @@
+Allow plistlib to read binary plist files that were created as a Key-Archive
+file. Specifically, this allows the binary reader to process 0x80 (UID)
+elements as integers.
