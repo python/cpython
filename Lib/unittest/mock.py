@@ -2364,6 +2364,12 @@ def mock_open(mock=None, read_data=''):
         while True:
             yield type(read_data)()
 
+    def _iter_side_effect():
+        if handle.readline.return_value is not None:
+            while True:
+                yield handle.readline.return_value
+        for line in _state[0]:
+            yield line
 
     global file_spec
     if file_spec is None:
@@ -2387,6 +2393,8 @@ def mock_open(mock=None, read_data=''):
     _state[1] = _readline_side_effect()
     handle.readline.side_effect = _state[1]
     handle.readlines.side_effect = _readlines_side_effect
+
+    handle.__iter__.side_effect = _iter_side_effect
 
     def reset_data(*args, **kwargs):
         _state[0] = _iterate_read_data(read_data)
