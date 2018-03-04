@@ -1214,6 +1214,10 @@ Changes in the Python API
 
   (Contributed by Serhiy Storchaka in :issue:`25054` and :issue:`32308`.)
 
+* Change :func:`re.escape` to only escape regex special characters instead
+  of escaping all characters other than ASCII letters, numbers, and ``'_'``.
+  (Contributed by Serhiy Storchaka in :issue:`29995`.)
+
 * :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
   recent to be more consistent with :mod:`traceback`.
   (Contributed by Jesse Bakker in :issue:`32121`.)
