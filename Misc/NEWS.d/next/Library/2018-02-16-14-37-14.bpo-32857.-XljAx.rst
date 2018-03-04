@@ -1,0 +1,1 @@
+In :mod:`tkinter`, ``after_cancel(None)`` now raises a :exc:`ValueError` instead of canceling the first scheduled function.  Patch by Cheryl Sabella.
