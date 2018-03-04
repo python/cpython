@@ -605,8 +605,6 @@ class _BaseAddress(_IPAddressBase):
 
         """
 
-        import re
-        fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
 
         # string
         if len(fmt) == 0 or fmt[-1] == 's':
@@ -615,7 +613,8 @@ class _BaseAddress(_IPAddressBase):
 
         # from here on down, support for 'bnXx'
 
-        #fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
+        import re
+        fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
         m = fmt_re.match(fmt)
         if not m:
             return super().__format__(fmt)
