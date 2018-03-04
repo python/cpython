@@ -607,9 +607,6 @@ class _BaseAddress(_IPAddressBase):
 
         import re
         
-        ## TODO: raise the right error (ValueError?)
-        ## TODO: when do I call valueerror, when do I call super()?
-
         # string
         if len(fmt) == 0 or fmt[-1] == 's':
             # let format() handle it
@@ -621,7 +618,6 @@ class _BaseAddress(_IPAddressBase):
         m = fmt_re.match(fmt)
         if not m:
             return super().__format__(fmt)
-            #raise ValueError("Invalid format string")
 
         alternate = m.group(1)
         grouping = m.group(2)
@@ -657,6 +653,7 @@ class _BaseAddress(_IPAddressBase):
                 padlen = int(IPV6LENGTH/4)+2 + (7*len(grouping))
 
         retstr = f'{int(self):#0{padlen}{grouping}{fmt_base}}'
+
         if fmt_base == 'X':
             retstr = retstr.upper()
 
