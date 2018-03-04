@@ -1454,8 +1454,8 @@ class MockTest(unittest.TestCase):
         mocked_open = mock.mock_open(read_data='Remarkable Bird\nThe Norwegian Blue\nBeautiful Plumage')
         f1 = mocked_open('a-name')
         lines = [line for line in f1]
-        self.assertEqual(lines[0], 'Remarkable Bird')
-        self.assertEqual(lines[1], 'The Norwegian Blue')
+        self.assertEqual(lines[0], 'Remarkable Bird\n')
+        self.assertEqual(lines[1], 'The Norwegian Blue\n')
         self.assertEqual(lines[2], 'Beautiful Plumage')
 
     def test_mock_open_write(self):
