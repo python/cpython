@@ -1,0 +1,2 @@
+unitttest.mock.mock_open helper now supports iterator protocol. Patch and
+backport by Tony Flury
