@@ -594,6 +594,82 @@ class _BaseAddress(_IPAddressBase):
     def __reduce__(self):
         return self.__class__, (self._ip,)
 
+    def __format__(self, fmt):
+        """Returns a formatted string. Supported presentation types are:
+            's': returns the IP address as a string (default)
+            'b' or 'n': converts to binary and returns a zero-padded string 
+            'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string 
+
+            For binary and hex presentation types, the alternate form specifier
+            '#' and the grouping option '_' are supported.
+
+        """
+
+        import re
+        
+        ## TODO: raise the right error (ValueError?)
+        ## TODO: when do I call valueerror, when do I call super()?
+
+        print("DEBUG:FMT:", fmt, len(fmt))
+
+        # string
+        if len(fmt) == 0 or fmt[-1] == 's':
+            # let format() handle it
+            return format(str(self), fmt)
+
+        # from here on down, support for 'bnXx'
+        
+        fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
+        m = fmt_re.match(fmt)
+        if not m:
+            return super().__format__(fmt)
+            #raise ValueError("Invalid format string")
+
+        alternate = m.group(1)
+        grouping = m.group(2)
+        fmt_base = m.group(3)
+        print(f'DEBUG:alternate:{alternate}, grouping:{grouping}, fmt_base:{fmt_base}')
+
+        # set default
+        if fmt_base == 'n':
+            if self._version == 4:
+                fmt_base = 'b'  # binary is default for ipv4
+            if self._version == 6:
+                fmt_base = 'x'  # hex is default for ipv6
+
+        # binary
+        if fmt_base == 'b':
+            if self._version == 4:
+                # resulting string is '0b' + 32 bits
+                #  plus 7 _ if needed
+                padlen = IPV4LENGTH+2 + (7*len(grouping))
+            elif self._version == 6:
+                # resulting string is '0b' + 128 bits
+                #  plus 31 _ if needed
+                padlen = IPV6LENGTH+2 + (31*len(grouping))
+
+        # hex
+        elif fmt_base in 'Xx':
+            if self._version == 4:
+                # resulting string is '0x' + 8 hex digits
+                # plus a single _ if needed
+                padlen = int(IPV4LENGTH/4)+2 + len(grouping)
+            elif self._version == 6:
+                # resulting string is '0x' + 32 hex digits
+                # plus 7 _ if needed
+                padlen = int(IPV6LENGTH/4)+2 + (7*len(grouping))
+
+        retstr = f'{int(self):#0{padlen}{grouping}{fmt_base}}'
+        if fmt_base == 'X':
+            retstr = retstr.upper()
+
+        # strip left two characters if necessary
+        if not alternate:
+            retstr = retstr[2:]
+
+        return retstr
+
+
 
 @functools.total_ordering
 class _BaseNetwork(_IPAddressBase):
@@ -1088,43 +1164,6 @@ class _BaseV4:
 
     def _explode_shorthand_ip_string(self):
         return str(self)
-
-    def __format__(self, fmt):
-        """Format: ends with b for bin, h for hex, n for native (bin for ipv4,
-        hex for ipv6).  Takes # to include 0b, and _ as a separator
-        """
-        if len(fmt) and fmt[-1] in 'bnx':
-            fmt_base = fmt[-1]
-            if fmt_base == 'n':
-                fmt_base = 'b'  # binary is default for ipv4
-
-            if '_' in fmt:
-                separator = '_'
-            else:
-                separator = ''
-
-            # binary
-            if fmt_base == 'b':
-                # resulting string is '0b' + 32 bits
-                #  plus 7 _ if needed
-                padlen = IPV4LENGTH+2 + (7*len(separator))
-
-            # hex
-            elif fmt_base == 'x':
-                # resulting string is '0x' + 8 hex digits
-                # plus a single _ if needed
-                padlen = int(IPV4LENGTH/4)+2 + len(separator)
-
-            retstr = f'{int(self):#0{padlen}{separator}{fmt_base}}'
-
-            # strip left two if necessary
-            if '#' not in fmt:
-                retstr = retstr[2:]
-
-        else:
-            retstr = str(self)
-
-        return retstr
 
     @classmethod
     def _make_netmask(cls, arg):
@@ -1663,43 +1702,6 @@ class _BaseV6:
     # There are only a bunch of valid v6 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
     _netmask_cache = {}
-
-    def __format__(self, fmt):
-        """Format: ends with b for bin, h for hex, n for native (bin for ipv4,
-        hex for ipv6).  Takes # to include 0b, and _ as a separator
-        """
-        if len(fmt) and fmt[-1] in 'bnx':
-            fmt_base = fmt[-1]
-            if fmt_base == 'n':
-                fmt_base = 'x'  # hex is default for ipv4
-
-            if '_' in fmt:
-                separator = '_'
-            else:
-                separator = ''
-
-            # binary
-            if fmt_base == 'b':
-                # resulting string is '0b' + 32 bits
-                #  plus 7 _ if needed
-                padlen = IPV6LENGTH+2 + (31*len(separator))
-
-            # hex
-            elif fmt_base == 'x':
-                # resulting string is '0x' + 8 hex digits
-                # plus 7 single _ if needed
-                padlen = int(IPV6LENGTH/4)+2 + (7*len(separator))
-
-            retstr = f'{int(self):#0{padlen}{separator}{fmt_base}}'
-
-            # strip left two if necessary
-            if '#' not in fmt:
-                retstr = retstr[2:]
-
-        else:
-            retstr = str(self)
-
-        return retstr
 
     @classmethod
     def _make_netmask(cls, arg):
