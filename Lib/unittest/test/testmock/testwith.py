@@ -220,8 +220,8 @@ class TestMockOpen(unittest.TestCase):
         mock = mock_open(read_data='foo')
         with patch('%s.open' % __name__, mock, create=True):
             h = open('bar')
-            result = h.readline()
-        self.assertEqual(result, 'foo')
+            lines = [l for l in h]
+        self.assertEqual(lines[0], 'foo')
 
 
     def test_readlines_data(self):
