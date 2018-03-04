@@ -597,8 +597,8 @@ class _BaseAddress(_IPAddressBase):
     def __format__(self, fmt):
         """Returns a formatted string. Supported presentation types are:
             's': returns the IP address as a string (default)
-            'b' or 'n': converts to binary and returns a zero-padded string 
-            'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string 
+            'b' or 'n': converts to binary and returns a zero-padded string
+            'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string
 
             For binary and hex presentation types, the alternate form specifier
             '#' and the grouping option '_' are supported.
@@ -606,15 +606,16 @@ class _BaseAddress(_IPAddressBase):
         """
 
         import re
-        
+        fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
+
         # string
         if len(fmt) == 0 or fmt[-1] == 's':
             # let format() handle it
             return format(str(self), fmt)
 
         # from here on down, support for 'bnXx'
-        
-        fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
+
+        #fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
         m = fmt_re.match(fmt)
         if not m:
             return super().__format__(fmt)
@@ -622,7 +623,7 @@ class _BaseAddress(_IPAddressBase):
         alternate = m.group(1)
         grouping = m.group(2)
         fmt_base = m.group(3)
-       
+
        # set default
         if fmt_base == 'n':
             if self._version == 4:
