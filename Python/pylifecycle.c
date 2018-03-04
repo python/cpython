@@ -690,9 +690,6 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
 
     _Py_ReadyTypes();
 
-    if (!_PyFrame_Init())
-        return _Py_INIT_ERR("can't init frames");
-
     if (!_PyLong_Init())
         return _Py_INIT_ERR("can't init longs");
 

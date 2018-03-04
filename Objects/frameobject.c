@@ -552,14 +552,6 @@ PyTypeObject PyFrame_Type = {
 
 _Py_IDENTIFIER(__builtins__);
 
-int _PyFrame_Init()
-{
-    /* Before, PyId___builtins__ was a string created explicitly in
-       this function. Now there is nothing to initialize anymore, but
-       the function is kept for backward compatibility. */
-    return 1;
-}
-
 PyFrameObject* _Py_HOT_FUNCTION
 _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
                      PyObject *globals, PyObject *locals)
