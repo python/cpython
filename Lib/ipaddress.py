@@ -610,8 +610,6 @@ class _BaseAddress(_IPAddressBase):
         ## TODO: raise the right error (ValueError?)
         ## TODO: when do I call valueerror, when do I call super()?
 
-        print("DEBUG:FMT:", fmt, len(fmt))
-
         # string
         if len(fmt) == 0 or fmt[-1] == 's':
             # let format() handle it
@@ -628,9 +626,8 @@ class _BaseAddress(_IPAddressBase):
         alternate = m.group(1)
         grouping = m.group(2)
         fmt_base = m.group(3)
-        print(f'DEBUG:alternate:{alternate}, grouping:{grouping}, fmt_base:{fmt_base}')
-
-        # set default
+       
+       # set default
         if fmt_base == 'n':
             if self._version == 4:
                 fmt_base = 'b'  # binary is default for ipv4
