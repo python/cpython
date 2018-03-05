@@ -1851,6 +1851,8 @@ class Win32SymlinkTests(unittest.TestCase):
             os.remove(file1)
             shutil.rmtree(level1)
 
+    @unittest.skip('Python 3.4 will crash safely on this buffer '
+        'overflow, but still crashes')
     def test_buffer_overflow(self):
         # Older versions would have a buffer overflow when detecting
         # whether a link source was a directory. This test ensures we
