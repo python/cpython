@@ -2175,8 +2175,6 @@ class Win32SymlinkTests(unittest.TestCase):
             ('\\' + path, segment),
             # overflow dest with relative src
             (segment, path),
-            # overflow dest when appending '\\' for join
-            (segment, path[:261]),
             # overflow when joining src
             (path[:180], path[:180]),
         ]
