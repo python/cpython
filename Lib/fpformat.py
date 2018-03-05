@@ -19,7 +19,7 @@ import re
 __all__ = ["fix","sci","NotANumber"]
 
 # Compiled regular expression to "decode" a number
-decoder = re.compile(r'^([-+]?)(\d*)?((?:\.\d*)?)(([eE][-+]?\d+)?)$')
+decoder = re.compile(r'^([-+]?)(\d*)((?:\.\d*)?)(([eE][-+]?\d+)?)$')
 # \0 the whole thing
 # \1 leading sign or empty
 # \2 digits left of decimal point
