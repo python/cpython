@@ -1,0 +1,3 @@
+Test methods,  ``setUp`` and ``tearDown`` in ``unittest.TestCase`` may now be
+coroutine functions and will be excuted in the default ``asyncio`` loop.
+Patch by Petter Strandmark.

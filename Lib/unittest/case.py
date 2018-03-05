@@ -1,5 +1,6 @@
 """Test case implementation"""
 
+import asyncio
 import sys
 import functools
 import difflib
@@ -369,6 +370,9 @@ class TestCase(object):
     of the classes are instantiated automatically by parts of the framework
     in order to be run.
 
+    The setUp, tearDown, and any test methods may optionally be coroutine
+    functions and will be executed in the default loop.
+
     When subclassing TestCase, you can set these attributes:
     * failureException: determines which exception will be raised when
         the instance's assertion methods fail; test methods raising this
@@ -608,14 +612,14 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                self._runIfCoroutine(self.setUp())
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self._runIfCoroutine(testMethod())
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    self._runIfCoroutine(self.tearDown())
 
             self.doCleanups()
             for test, reason in outcome.skipped:
@@ -1329,6 +1333,17 @@ class TestCase(object):
             msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)
 
+    def _runIfCoroutine(self, possible_coroutine):
+        """Execute the argument in the default loop if it is a coroutine.
+
+        Otherwise, just return the argument. This function wraps test
+        methods and allows them to be async.
+        """
+        if asyncio.iscoroutine(possible_coroutine):
+            loop = asyncio.get_event_loop()
+            return loop.run_until_complete(possible_coroutine)
+        else:
+            return possible_coroutine
 
     def _deprecate(original_func):
         def deprecated_func(*args, **kwargs):

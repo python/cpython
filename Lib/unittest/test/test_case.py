@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import difflib
 import pprint
@@ -1827,6 +1828,36 @@ test case
             testcase = TestCase(method_name)
             testcase.run()
             self.assertEqual(MyException.ninstance, 0)
+
+    def test_coroutines(self):
+        # Test that test methods, setUp and tearDown can
+        # be coroutines.
+        class TestCase(unittest.TestCase):
+            def __init__(self, method_name):
+                super().__init__(method_name)
+                self.setUp_called = False
+                self.tearDown_called = False
+                self.test1_called = False
+
+            async def setUp(self):
+                # Await 0 seconds to prevent the entire function
+                # from executing immediately.
+                await asyncio.sleep(0.0)
+                self.setUp_called = True
+
+            async def tearDown(self):
+                await asyncio.sleep(0.0)
+                self.tearDown_called = True
+
+            async def test1(self):
+                await asyncio.sleep(0.0)
+                self.test1_called = True
+
+        testcase = TestCase('test1')
+        testcase.run()
+        self.assertTrue(testcase.setUp_called)
+        self.assertTrue(testcase.tearDown_called)
+        self.assertTrue(testcase.test1_called)
 
 
 if __name__ == "__main__":
