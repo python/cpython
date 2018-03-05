@@ -958,6 +958,14 @@ Other CPython Implementation Changes
   by setting the new ``f_trace_opcodes`` attribute to :const:`True` on the frame
   being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
 
+* Fixed some consistency problems with namespace package module attributes.
+  Namespace module objects now have an ``__file__`` that is set to ``None``
+  (previously unset), and their ``__spec__.origin`` is also set to ``None``
+  (previously the string ``"namespace"``).  See :issue:`32305`.  Also, the
+  namespace module object's ``__spec__.loader`` is set to the same value as
+  ``__loader__`` (previously, the former was set to ``None``).  See
+  :issue:`32303`.
+
 
 Deprecated
 ==========
