@@ -263,6 +263,7 @@ class _PlistParser:
     def __init__(self, use_builtin_types, dict_type):
         self.stack = []
         self.current_key = None
+        self.last_dict_key = None
         self.root = None
         self._use_builtin_types = use_builtin_types
         self._dict_type = dict_type
@@ -314,6 +315,7 @@ class _PlistParser:
 
     def begin_dict(self, attrs):
         d = self._dict_type()
+        self.last_dict_key = self.current_key
         self.add_object(d)
         self.stack.append(d)
 
@@ -321,7 +323,14 @@ class _PlistParser:
         if self.current_key:
             raise ValueError("missing value for key '%s' at line %d" %
                              (self.current_key,self.parser.CurrentLineNumber))
-        self.stack.pop()
+        last_dict = self.stack.pop()
+        if len(last_dict.keys()) == 1 and list(last_dict.keys())[0] == 'CF$UID':
+            uid = UID(last_dict['CF$UID'])
+            if isinstance(self.stack[-1], type([])):
+                self.stack[-1][-1] = uid
+            elif isinstance(self.stack[-1], type({})):
+                self.stack[-1][self.last_dict_key] = uid
+                self.last_dict_key = None
 
     def end_key(self):
         if self.current_key or not isinstance(self.stack[-1], type({})):
